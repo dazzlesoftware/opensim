@@ -3,16 +3,20 @@
 #include "opensim/server/login_application.hpp"
 #include <iostream>
 using namespace opensim;
+
 struct Service : services::ILoginService {
     std::string peer;
-    network::Value login(const services::LoginRequest& value) override {
+
+    network::Value login(const services::LoginRequest &value) override {
         peer = value.remote_ip;
         return services::login_failure("GridProblem");
     }
+
     network::Value set_level(std::string_view, std::string_view, std::string_view, int) override {
         return {};
     }
 };
+
 int main() {
     try {
         Service service;
@@ -20,9 +24,8 @@ int main() {
         server::LoginApplication app(service, config);
         network::HttpRequest request{
             "POST", "/",
-            network::xml_rpc_request(
-                {"login_to_simulator",
-                 {network::Value::object({{"first", "A"}, {"last", "B"}, {"passwd", "secret"}})}}),
+            network::xml_rpc_request({"login_to_simulator",
+                                      {network::Value::object({{"first", "A"}, {"last", "B"}, {"passwd", "secret"}})}}),
             "192.0.2.9", "text/xml"};
         std::string line;
         while (std::getline(std::cin, line)) {
@@ -34,7 +37,7 @@ int main() {
             app.handle(request);
             std::cout << service.peer << '\n';
         }
-    } catch (const std::exception& error) {
+    } catch (const std::exception &error) {
         std::cerr << error.what() << '\n';
         return 1;
     }

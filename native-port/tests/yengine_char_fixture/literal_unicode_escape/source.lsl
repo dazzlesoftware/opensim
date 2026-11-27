@@ -1,0 +1,1 @@
+YOption chars;char value;integer result;default{state_entry(){value='\u0041';result=(integer)value;}}

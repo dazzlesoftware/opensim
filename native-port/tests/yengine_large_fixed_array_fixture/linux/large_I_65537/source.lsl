@@ -1,0 +1,1 @@
+YOption arrays;YOption chars;object input;object alias;integer same;integer after;default{state_entry(){input=xmrFixedArrayAllocI(65537);alias=input;xmrFixedArraySetI(input,0,19);xmrFixedArraySetI(input,32768,-7);xmrFixedArraySetI(input,65536,31);llSleep(0.1);same=(input==alias);after=1;}}

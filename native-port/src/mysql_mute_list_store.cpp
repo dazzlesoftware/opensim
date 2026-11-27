@@ -22,7 +22,7 @@ std::string text_literal(std::string_view value) {
 struct MysqlMuteList {
     using Result = std::unique_ptr<MYSQL_RES, decltype(&mysql_free_result)>;
 
-    explicit MysqlMuteList(const std::string& settings) : connection(connect_mysql(settings)) {
+    explicit MysqlMuteList(const std::string &settings) : connection(connect_mysql(settings)) {
         constexpr auto lock_name = "SHA2(CONCAT(DATABASE(), ':MuteListStore'), 256)";
         const auto lock = query(std::string("SELECT GET_LOCK(") + lock_name + ", 30)");
         const auto row = mysql_fetch_row(lock.get());
@@ -47,18 +47,18 @@ struct MysqlMuteList {
         query(std::string("SELECT RELEASE_LOCK(") + lock_name + ")");
     }
 
-    Result query(const std::string& sql) {
-        auto* db = connection.get();
+    Result query(const std::string &sql) {
+        auto *db = connection.get();
         if (mysql_real_query(db, sql.data(), static_cast<unsigned long>(sql.size())) != 0)
-            throw std::runtime_error("MySQL mute-list query failed (client error " +
-                                     std::to_string(mysql_errno(db)) + ")");
+            throw std::runtime_error("MySQL mute-list query failed (client error " + std::to_string(mysql_errno(db)) +
+                                     ")");
         Result rows(mysql_store_result(db), mysql_free_result);
         if (!rows && mysql_field_count(db) != 0)
             throw std::runtime_error("MySQL mute-list result failed");
         return rows;
     }
 
-    bool execute(const std::string& sql) {
+    bool execute(const std::string &sql) {
         std::lock_guard lock(mutex);
         query(sql);
         return mysql_affected_rows(connection.get()) > 0;
@@ -66,8 +66,8 @@ struct MysqlMuteList {
 
     std::string read(framework::Uuid agent) {
         std::lock_guard lock(mutex);
-        const auto rows = query("SELECT MuteType,MuteID,MuteName,MuteFlags FROM MuteList WHERE AgentID=" +
-                                text_literal(agent.str()));
+        const auto rows =
+            query("SELECT MuteType,MuteID,MuteName,MuteFlags FROM MuteList WHERE AgentID=" + text_literal(agent.str()));
         std::string data;
         while (const auto row = mysql_fetch_row(rows.get())) {
             const auto lengths = mysql_fetch_lengths(rows.get());
@@ -82,24 +82,22 @@ struct MysqlMuteList {
     MysqlConnection connection;
     std::mutex mutex;
 };
-}
+} // namespace
 
-MuteListStore mysql_mute_list_store(const std::string& connection) {
+MuteListStore mysql_mute_list_store(const std::string &connection) {
     const auto database = std::make_shared<MysqlMuteList>(connection);
-    return {
-        [database](framework::Uuid agent) { return database->read(agent); },
-        [database](framework::Uuid agent, framework::Uuid mute, const std::string& name,
-                   std::int32_t type, std::int32_t flags, std::int64_t stamp) {
-            return database->execute(
-                "REPLACE INTO MuteList (AgentID,MuteID,MuteName,MuteType,MuteFlags,Stamp) VALUES (" +
-                text_literal(agent.str()) + "," + text_literal(mute.str()) + "," + text_literal(name) +
-                "," + std::to_string(type) + "," + std::to_string(flags) + "," + std::to_string(stamp) + ")");
-        },
-        [database](framework::Uuid agent, framework::Uuid mute, const std::string& name) {
-            return database->execute("DELETE FROM MuteList WHERE AgentID=" + text_literal(agent.str()) +
-                                     " AND MuteID=" + text_literal(mute.str()) +
-                                     " AND MuteName=" + text_literal(name));
-        }
-    };
+    return {[database](framework::Uuid agent) { return database->read(agent); },
+            [database](framework::Uuid agent, framework::Uuid mute, const std::string &name, std::int32_t type,
+                       std::int32_t flags, std::int64_t stamp) {
+                return database->execute(
+                    "REPLACE INTO MuteList (AgentID,MuteID,MuteName,MuteType,MuteFlags,Stamp) VALUES (" +
+                    text_literal(agent.str()) + "," + text_literal(mute.str()) + "," + text_literal(name) + "," +
+                    std::to_string(type) + "," + std::to_string(flags) + "," + std::to_string(stamp) + ")");
+            },
+            [database](framework::Uuid agent, framework::Uuid mute, const std::string &name) {
+                return database->execute("DELETE FROM MuteList WHERE AgentID=" + text_literal(agent.str()) +
+                                         " AND MuteID=" + text_literal(mute.str()) +
+                                         " AND MuteName=" + text_literal(name));
+            }};
 }
-}
+} // namespace opensim::services

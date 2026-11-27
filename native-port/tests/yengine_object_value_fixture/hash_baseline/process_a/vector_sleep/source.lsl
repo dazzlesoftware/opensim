@@ -1,0 +1,1 @@
+YOption arrays;vector input=<1,1,1>;integer before_hash;integer result;integer repeat_hash;integer entries;integer after;default{state_entry(){entries++;before_hash=xmrHashCode((object)input);llSleep(0.1);result=xmrHashCode((object)input);repeat_hash=xmrHashCode((object)input);after=1;}}

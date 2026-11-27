@@ -1,0 +1,5508 @@
+[
+  {
+    "name": "literal_zero",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "69FD886430CF96AE97A5A72D44C434D4",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": null,
+    "live_cycles": [],
+    "migrated_cycles": [],
+    "prefix_resume": null,
+    "live_resume_exception": null,
+    "live_resume": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "boxed": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "rotation",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+              "value": [
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 1,
+                  "bits": "3ff0000000000000",
+                  "text": "1"
+                }
+              ]
+            },
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 0
+            }
+          ]
+        },
+        "casted": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "negated": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "r": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 1,
+              "bits": "3ff0000000000000",
+              "text": "1"
+            }
+          ]
+        },
+        "truth": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "boxed": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "rotation",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+              "value": [
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 1,
+                  "bits": "3ff0000000000000",
+                  "text": "1"
+                }
+              ]
+            },
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 0
+            }
+          ]
+        },
+        "casted": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "negated": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "r": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 1,
+              "bits": "3ff0000000000000",
+              "text": "1"
+            }
+          ]
+        },
+        "truth": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual original CodeGen and SDK quaternion constructors, strict parse, casts, field mutation, copies, list extraction and arithmetic. Exact component IEEE bits and helper/condition/list-boxing results recorded. Sleep cases use unchanged original StartEx/base CheckRunWork, SAME live ResumeEx and separate MigrateOut/In\u002Boriginal queueXML, so constructor normalization during binary receive is measured independently from live continuation. No hand-normalized rotation stand-in.",
+    "sha256": {
+      "cache_key.txt": "561ac3e46d576bd2e6389e26a6481fd2142a91f35b4cd7e09df99d50d1d5eac7",
+      "original.il.txt": "6cba5d058118ede1eb2204e0d57756aa1ec01f5b7aa8d8c8de595dd8de059d18",
+      "original.yobj": "b26f7ab9006629be079e39825524b9509b4db9ad83a9335923ab3c5873b974ab",
+      "source.lsl": "b8e6eec2e3f0a89fe06b03d4eecfe59f63c5c44e106f8c1938c623c590aebe72",
+      "generator_source": "e2b80cda5ed631e3f0c2a58023ad5ce44205e79d17b9450f506d66ddf6b9d177",
+      "input_cases.json": "f57b7f56249bc44b5877f5c27a3c872c7dd44b2ca9e59420a48597871a8c6333",
+      "generator_assembly": "423231205958747cc3419327259e61fc831519744a50dac553bac26c40ffffb8",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "literal_signed_zero",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "5D0464CA0BFD504A2CD5CEA26E1C6438",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": null,
+    "live_cycles": [],
+    "migrated_cycles": [],
+    "prefix_resume": null,
+    "live_resume_exception": null,
+    "live_resume": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "boxed": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "rotation",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+              "value": [
+                {
+                  "clr": "System.Double",
+                  "value": -0,
+                  "bits": "8000000000000000",
+                  "text": "-0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 1,
+                  "bits": "3ff0000000000000",
+                  "text": "1"
+                }
+              ]
+            },
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 0
+            }
+          ]
+        },
+        "casted": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "negated": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "r": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": -0,
+              "bits": "8000000000000000",
+              "text": "-0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 1,
+              "bits": "3ff0000000000000",
+              "text": "1"
+            }
+          ]
+        },
+        "truth": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "boxed": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "rotation",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+              "value": [
+                {
+                  "clr": "System.Double",
+                  "value": -0,
+                  "bits": "8000000000000000",
+                  "text": "-0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 1,
+                  "bits": "3ff0000000000000",
+                  "text": "1"
+                }
+              ]
+            },
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 0
+            }
+          ]
+        },
+        "casted": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "negated": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "r": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": -0,
+              "bits": "8000000000000000",
+              "text": "-0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 1,
+              "bits": "3ff0000000000000",
+              "text": "1"
+            }
+          ]
+        },
+        "truth": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual original CodeGen and SDK quaternion constructors, strict parse, casts, field mutation, copies, list extraction and arithmetic. Exact component IEEE bits and helper/condition/list-boxing results recorded. Sleep cases use unchanged original StartEx/base CheckRunWork, SAME live ResumeEx and separate MigrateOut/In\u002Boriginal queueXML, so constructor normalization during binary receive is measured independently from live continuation. No hand-normalized rotation stand-in.",
+    "sha256": {
+      "cache_key.txt": "6799be94599c1920f044527dd9f53e27a087e54cb03a82b1cec092ee82fac877",
+      "original.il.txt": "8e8b7cfc3a2e59e49238c70d39b4313128893a4792da569c7d0342d809908d3c",
+      "original.yobj": "64320c92135d61ba2729a49ba974666a386b8a38965a9f216d63dd3d6ebfcc93",
+      "source.lsl": "311bc70fca7ece48826ab12878efbd29891bd760c39c523b6260f685d761b9e6",
+      "generator_source": "e2b80cda5ed631e3f0c2a58023ad5ce44205e79d17b9450f506d66ddf6b9d177",
+      "input_cases.json": "f57b7f56249bc44b5877f5c27a3c872c7dd44b2ca9e59420a48597871a8c6333",
+      "generator_assembly": "423231205958747cc3419327259e61fc831519744a50dac553bac26c40ffffb8",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "strict_zero",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "D511F40D808F6C91547FAEE513914CA8",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": null,
+    "live_cycles": [],
+    "migrated_cycles": [],
+    "prefix_resume": null,
+    "live_resume_exception": null,
+    "live_resume": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "boxed": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "rotation",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+              "value": [
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 1,
+                  "bits": "3ff0000000000000",
+                  "text": "1"
+                }
+              ]
+            },
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 0
+            }
+          ]
+        },
+        "casted": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "negated": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "r": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 1,
+              "bits": "3ff0000000000000",
+              "text": "1"
+            }
+          ]
+        },
+        "truth": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "boxed": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "rotation",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+              "value": [
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 1,
+                  "bits": "3ff0000000000000",
+                  "text": "1"
+                }
+              ]
+            },
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 0
+            }
+          ]
+        },
+        "casted": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "negated": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "r": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 1,
+              "bits": "3ff0000000000000",
+              "text": "1"
+            }
+          ]
+        },
+        "truth": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual original CodeGen and SDK quaternion constructors, strict parse, casts, field mutation, copies, list extraction and arithmetic. Exact component IEEE bits and helper/condition/list-boxing results recorded. Sleep cases use unchanged original StartEx/base CheckRunWork, SAME live ResumeEx and separate MigrateOut/In\u002Boriginal queueXML, so constructor normalization during binary receive is measured independently from live continuation. No hand-normalized rotation stand-in.",
+    "sha256": {
+      "cache_key.txt": "8725be236ec9bac6e77220662dc98c02ccc624493b9881fb27c0a6f0cf8147ed",
+      "original.il.txt": "b98674ad0ca697a6e2bd440d909423570e5b810b3b67aa96faefbdbf23a6aa2e",
+      "original.yobj": "25796bdf1d2e998e4e1cacaf08ad364b9ef0d8741bfa21d9d15be0caba437743",
+      "source.lsl": "707d8b6f8f892e1bae4b9cafbce201595cede9ee08b951012d45d761936c5088",
+      "generator_source": "e2b80cda5ed631e3f0c2a58023ad5ce44205e79d17b9450f506d66ddf6b9d177",
+      "input_cases.json": "f57b7f56249bc44b5877f5c27a3c872c7dd44b2ca9e59420a48597871a8c6333",
+      "generator_assembly": "423231205958747cc3419327259e61fc831519744a50dac553bac26c40ffffb8",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "cast_zero",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "8472E3D11432ECEED0140E69FCEAA5A4",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": null,
+    "live_cycles": [],
+    "migrated_cycles": [],
+    "prefix_resume": null,
+    "live_resume_exception": null,
+    "live_resume": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "boxed": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "rotation",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+              "value": [
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                }
+              ]
+            },
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 1
+            }
+          ]
+        },
+        "casted": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "negated": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "r": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            }
+          ]
+        },
+        "truth": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "boxed": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "rotation",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+              "value": [
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                }
+              ]
+            },
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 1
+            }
+          ]
+        },
+        "casted": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "negated": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "r": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            }
+          ]
+        },
+        "truth": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual original CodeGen and SDK quaternion constructors, strict parse, casts, field mutation, copies, list extraction and arithmetic. Exact component IEEE bits and helper/condition/list-boxing results recorded. Sleep cases use unchanged original StartEx/base CheckRunWork, SAME live ResumeEx and separate MigrateOut/In\u002Boriginal queueXML, so constructor normalization during binary receive is measured independently from live continuation. No hand-normalized rotation stand-in.",
+    "sha256": {
+      "cache_key.txt": "2a7e5811aed861e9d640a102acc11f4bbe9db7c3a8ccb88afc5827788f829c20",
+      "original.il.txt": "d4f1bcff3b1c81e0d5bbb721a97b44727450a00c871c1e3c780863ea42052aea",
+      "original.yobj": "2f0d7bb855a160bb65180325579d3aa30f41f1109b6caf7e1028b980d77446da",
+      "source.lsl": "ea7742ad373bb3d073a884ed2ca16269e81209fea1a603294c4eb35ab55316b0",
+      "generator_source": "e2b80cda5ed631e3f0c2a58023ad5ce44205e79d17b9450f506d66ddf6b9d177",
+      "input_cases.json": "f57b7f56249bc44b5877f5c27a3c872c7dd44b2ca9e59420a48597871a8c6333",
+      "generator_assembly": "423231205958747cc3419327259e61fc831519744a50dac553bac26c40ffffb8",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "mutable_zero",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "E9AD384A8E0D547594BB0442D6FE7F52",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": null,
+    "live_cycles": [],
+    "migrated_cycles": [],
+    "prefix_resume": null,
+    "live_resume_exception": null,
+    "live_resume": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "boxed": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "rotation",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+              "value": [
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                }
+              ]
+            },
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 1
+            }
+          ]
+        },
+        "casted": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "copied": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            }
+          ]
+        },
+        "negated": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "r": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            }
+          ]
+        },
+        "truth": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "boxed": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "rotation",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+              "value": [
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                }
+              ]
+            },
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 1
+            }
+          ]
+        },
+        "casted": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "copied": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            }
+          ]
+        },
+        "negated": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "r": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            }
+          ]
+        },
+        "truth": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual original CodeGen and SDK quaternion constructors, strict parse, casts, field mutation, copies, list extraction and arithmetic. Exact component IEEE bits and helper/condition/list-boxing results recorded. Sleep cases use unchanged original StartEx/base CheckRunWork, SAME live ResumeEx and separate MigrateOut/In\u002Boriginal queueXML, so constructor normalization during binary receive is measured independently from live continuation. No hand-normalized rotation stand-in.",
+    "sha256": {
+      "cache_key.txt": "5bc6678e12a372ec4c5a18971f69d75d69c61b50f00e94583b649a8c56d4387f",
+      "original.il.txt": "67bcb4ba68d63473e407f83d34be3c7cce63340be64baaedf7df43a951c92798",
+      "original.yobj": "aa6a41307203b33fd992af6b37c93b440740c6cb4a35433c85955b014da93b83",
+      "source.lsl": "a69a5b3864efd550b406b2ba5996a3a88cbb5c4ae613d5a07876774fc95b2aaf",
+      "generator_source": "e2b80cda5ed631e3f0c2a58023ad5ce44205e79d17b9450f506d66ddf6b9d177",
+      "input_cases.json": "f57b7f56249bc44b5877f5c27a3c872c7dd44b2ca9e59420a48597871a8c6333",
+      "generator_assembly": "423231205958747cc3419327259e61fc831519744a50dac553bac26c40ffffb8",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "mutable_signed_zero",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "B4B64428DEE88C7964EF70B923C08F53",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": null,
+    "live_cycles": [],
+    "migrated_cycles": [],
+    "prefix_resume": null,
+    "live_resume_exception": null,
+    "live_resume": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "boxed": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "rotation",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+              "value": [
+                {
+                  "clr": "System.Double",
+                  "value": -0,
+                  "bits": "8000000000000000",
+                  "text": "-0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": -0,
+                  "bits": "8000000000000000",
+                  "text": "-0"
+                }
+              ]
+            },
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 1
+            }
+          ]
+        },
+        "casted": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "copied": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": -0,
+              "bits": "8000000000000000",
+              "text": "-0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": -0,
+              "bits": "8000000000000000",
+              "text": "-0"
+            }
+          ]
+        },
+        "negated": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "r": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": -0,
+              "bits": "8000000000000000",
+              "text": "-0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": -0,
+              "bits": "8000000000000000",
+              "text": "-0"
+            }
+          ]
+        },
+        "truth": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "boxed": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "rotation",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+              "value": [
+                {
+                  "clr": "System.Double",
+                  "value": -0,
+                  "bits": "8000000000000000",
+                  "text": "-0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": -0,
+                  "bits": "8000000000000000",
+                  "text": "-0"
+                }
+              ]
+            },
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 1
+            }
+          ]
+        },
+        "casted": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "copied": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": -0,
+              "bits": "8000000000000000",
+              "text": "-0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": -0,
+              "bits": "8000000000000000",
+              "text": "-0"
+            }
+          ]
+        },
+        "negated": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "r": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": -0,
+              "bits": "8000000000000000",
+              "text": "-0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": -0,
+              "bits": "8000000000000000",
+              "text": "-0"
+            }
+          ]
+        },
+        "truth": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual original CodeGen and SDK quaternion constructors, strict parse, casts, field mutation, copies, list extraction and arithmetic. Exact component IEEE bits and helper/condition/list-boxing results recorded. Sleep cases use unchanged original StartEx/base CheckRunWork, SAME live ResumeEx and separate MigrateOut/In\u002Boriginal queueXML, so constructor normalization during binary receive is measured independently from live continuation. No hand-normalized rotation stand-in.",
+    "sha256": {
+      "cache_key.txt": "6cdc36527bef5d2c5366a25dd2214f49b533854e829a6f8a9ac447a0098f6a5c",
+      "original.il.txt": "4275b954d9d0e2c253b41907fa73aa3f577787e64720e7d14631a2a88eff7720",
+      "original.yobj": "b31832ca5b038e5b44ccfdffcf6e23e1e41291df12974fa98ea3848963e7614a",
+      "source.lsl": "5064fd405b2710f0f35569cecfbad3c5d45383027925c31f8d627bff1fc793b4",
+      "generator_source": "e2b80cda5ed631e3f0c2a58023ad5ce44205e79d17b9450f506d66ddf6b9d177",
+      "input_cases.json": "f57b7f56249bc44b5877f5c27a3c872c7dd44b2ca9e59420a48597871a8c6333",
+      "generator_assembly": "423231205958747cc3419327259e61fc831519744a50dac553bac26c40ffffb8",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "function_copy",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "C4283DEC7F3B807202534F7A9DF9FD4C",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": null,
+    "live_cycles": [],
+    "migrated_cycles": [],
+    "prefix_resume": null,
+    "live_resume_exception": null,
+    "live_resume": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "boxed": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "rotation",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+              "value": [
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                }
+              ]
+            },
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 1
+            }
+          ]
+        },
+        "casted": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "copied": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            }
+          ]
+        },
+        "negated": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "r": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            }
+          ]
+        },
+        "truth": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "boxed": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "rotation",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+              "value": [
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                }
+              ]
+            },
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 1
+            }
+          ]
+        },
+        "casted": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "copied": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            }
+          ]
+        },
+        "negated": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "r": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            }
+          ]
+        },
+        "truth": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual original CodeGen and SDK quaternion constructors, strict parse, casts, field mutation, copies, list extraction and arithmetic. Exact component IEEE bits and helper/condition/list-boxing results recorded. Sleep cases use unchanged original StartEx/base CheckRunWork, SAME live ResumeEx and separate MigrateOut/In\u002Boriginal queueXML, so constructor normalization during binary receive is measured independently from live continuation. No hand-normalized rotation stand-in.",
+    "sha256": {
+      "cache_key.txt": "440297407b9db63c4ab553117d35e7ab0ad06b96a3378b2488c52175741b556d",
+      "original.il.txt": "dc91b8de4f8dd4ec1f4e1cea8fc17187c7c320a53b39ff76b77a036e317bd815",
+      "original.yobj": "de6d7efd92d050ff70c72794daa31aa1769da02d89f84778d0613a88f32e8399",
+      "source.lsl": "95b576d906693e5d13ddf3a1527d140f359af97a3eb303da21d0fa54e5399414",
+      "generator_source": "e2b80cda5ed631e3f0c2a58023ad5ce44205e79d17b9450f506d66ddf6b9d177",
+      "input_cases.json": "f57b7f56249bc44b5877f5c27a3c872c7dd44b2ca9e59420a48597871a8c6333",
+      "generator_assembly": "423231205958747cc3419327259e61fc831519744a50dac553bac26c40ffffb8",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "reconstruct_after_mutation",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "C4EDCC3981A4EFA156C928E2A57DF827",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": null,
+    "live_cycles": [],
+    "migrated_cycles": [],
+    "prefix_resume": null,
+    "live_resume_exception": null,
+    "live_resume": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "boxed": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "rotation",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+              "value": [
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                }
+              ]
+            },
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 1
+            }
+          ]
+        },
+        "casted": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "copied": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            }
+          ]
+        },
+        "copiedTruth": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "negated": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "r": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            }
+          ]
+        },
+        "rebuilt": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 1,
+              "bits": "3ff0000000000000",
+              "text": "1"
+            }
+          ]
+        },
+        "rebuiltTruth": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "truth": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "boxed": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "rotation",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+              "value": [
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                }
+              ]
+            },
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 1
+            }
+          ]
+        },
+        "casted": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "copied": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            }
+          ]
+        },
+        "copiedTruth": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "negated": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "r": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            }
+          ]
+        },
+        "rebuilt": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 1,
+              "bits": "3ff0000000000000",
+              "text": "1"
+            }
+          ]
+        },
+        "rebuiltTruth": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "truth": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual original CodeGen and SDK quaternion constructors, strict parse, casts, field mutation, copies, list extraction and arithmetic. Exact component IEEE bits and helper/condition/list-boxing results recorded. Sleep cases use unchanged original StartEx/base CheckRunWork, SAME live ResumeEx and separate MigrateOut/In\u002Boriginal queueXML, so constructor normalization during binary receive is measured independently from live continuation. No hand-normalized rotation stand-in.",
+    "sha256": {
+      "cache_key.txt": "3806228aaa373cf27e57f9341e885825f8b788d45cee9c48278cae3eaae35333",
+      "original.il.txt": "8494aae4648b7ed87e9fb645d16baee012ef8948d6d39f9a8621e559932f206b",
+      "original.yobj": "18d985207ceae62848754db24f6e54dcd511361459e6f79b796e65ca4088657e",
+      "source.lsl": "d8eacb6022305f9b9ca29f1d9d2f819fa4eae3be568f047f4af2455fdd98c97d",
+      "generator_source": "e2b80cda5ed631e3f0c2a58023ad5ce44205e79d17b9450f506d66ddf6b9d177",
+      "input_cases.json": "f57b7f56249bc44b5877f5c27a3c872c7dd44b2ca9e59420a48597871a8c6333",
+      "generator_assembly": "423231205958747cc3419327259e61fc831519744a50dac553bac26c40ffffb8",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "list_copy",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "E9C2BB0C792278150661A1C5DEAB30AC",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": null,
+    "live_cycles": [],
+    "migrated_cycles": [],
+    "prefix_resume": null,
+    "live_resume_exception": null,
+    "live_resume": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "boxed": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "rotation",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+              "value": [
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                }
+              ]
+            },
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 1
+            }
+          ]
+        },
+        "casted": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "copied": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            }
+          ]
+        },
+        "negated": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "r": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            }
+          ]
+        },
+        "truth": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "boxed": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "rotation",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+              "value": [
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                }
+              ]
+            },
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 1
+            }
+          ]
+        },
+        "casted": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "copied": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            }
+          ]
+        },
+        "negated": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "r": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            }
+          ]
+        },
+        "truth": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual original CodeGen and SDK quaternion constructors, strict parse, casts, field mutation, copies, list extraction and arithmetic. Exact component IEEE bits and helper/condition/list-boxing results recorded. Sleep cases use unchanged original StartEx/base CheckRunWork, SAME live ResumeEx and separate MigrateOut/In\u002Boriginal queueXML, so constructor normalization during binary receive is measured independently from live continuation. No hand-normalized rotation stand-in.",
+    "sha256": {
+      "cache_key.txt": "84ced7bd4dbe081f0b779ee5458d7983095cf63012b575d2f2ea6aa3a81ac20f",
+      "original.il.txt": "825c8429c0daada72d8a6e3f4110510f47f90b8342cd8b52515db9f3dafcb2e6",
+      "original.yobj": "0dcb7246504d9efcef670edcb0f6f6f6db545661430dac29d26c45352b8512a2",
+      "source.lsl": "6102eb870d602c4e92266ff17c829662d58134d6872eaa0779b9e20d10f6c09e",
+      "generator_source": "e2b80cda5ed631e3f0c2a58023ad5ce44205e79d17b9450f506d66ddf6b9d177",
+      "input_cases.json": "f57b7f56249bc44b5877f5c27a3c872c7dd44b2ca9e59420a48597871a8c6333",
+      "generator_assembly": "423231205958747cc3419327259e61fc831519744a50dac553bac26c40ffffb8",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "global_zero_sleep",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "F3E8FA373B0EAC12558F65E13C6FFF80",
+    "compiled_version": -11,
+    "suspended": true,
+    "migrated": true,
+    "initial_exception": null,
+    "live_cycles": [
+      {
+        "cycle": 1,
+        "exception": null,
+        "checks": 1,
+        "state": {
+          "globals": {
+            "after": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 1
+            },
+            "before": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 1
+            },
+            "copied": {
+              "type": "rotation",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+              "value": [
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                }
+              ]
+            },
+            "r": {
+              "type": "rotation",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+              "value": [
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                }
+              ]
+            }
+          },
+          "event_code": "None",
+          "call_mode": 0,
+          "sleep_until_ticks": 639312750920448142,
+          "object_description": "",
+          "event_arguments": null,
+          "state_index": 0,
+          "new_state_index": -1,
+          "initialize_globals": false,
+          "running": true,
+          "detectors": [
+            {
+              "key": "11111111-2222-3333-4444-555555555555",
+              "owner": "22222222-3333-4444-5555-666666666666",
+              "group": "33333333-4444-5555-6666-777777777777",
+              "name": "original rich detector 3",
+              "link_number": 5,
+              "type": 11,
+              "grab": [
+                3.125,
+                3.25,
+                3.5
+              ],
+              "position": [
+                13.00000003,
+                14.00000003,
+                15.00000003
+              ],
+              "rotation": [
+                0.125,
+                0.25,
+                0.5,
+                0.875
+              ],
+              "velocity": [
+                23.00000003,
+                24.00000003,
+                25.00000003
+              ],
+              "touch_st": [
+                4.00000003,
+                5.00000003,
+                6.00000003
+              ],
+              "touch_normal": [
+                7.00000003,
+                8.000000029999999,
+                9.000000029999999
+              ],
+              "touch_binormal": [
+                10.000000029999999,
+                11.000000029999999,
+                12.000000029999999
+              ],
+              "touch_pos": [
+                13.000000029999999,
+                14.000000029999999,
+                15.000000029999999
+              ],
+              "touch_uv": [
+                16.00000003,
+                17.00000003,
+                18.00000003
+              ],
+              "touch_face": 6
+            }
+          ],
+          "queue": [],
+          "frames": []
+        }
+      }
+    ],
+    "migrated_cycles": [
+      {
+        "cycle": 1,
+        "exception": null,
+        "checks": 1,
+        "state": {
+          "globals": {
+            "after": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            },
+            "before": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 1
+            },
+            "copied": {
+              "type": "rotation",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+              "value": [
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 1,
+                  "bits": "3ff0000000000000",
+                  "text": "1"
+                }
+              ]
+            },
+            "r": {
+              "type": "rotation",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+              "value": [
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 1,
+                  "bits": "3ff0000000000000",
+                  "text": "1"
+                }
+              ]
+            }
+          },
+          "event_code": "None",
+          "call_mode": 0,
+          "sleep_until_ticks": 0,
+          "object_description": "",
+          "event_arguments": null,
+          "state_index": 0,
+          "new_state_index": -1,
+          "initialize_globals": false,
+          "running": true,
+          "detectors": [],
+          "queue": [],
+          "frames": []
+        }
+      }
+    ],
+    "prefix_resume": null,
+    "live_resume_exception": null,
+    "live_resume": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "before": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "copied": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            }
+          ]
+        },
+        "r": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            }
+          ]
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 639312750920448142,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "before": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "copied": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            }
+          ]
+        },
+        "r": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            }
+          ]
+        }
+      },
+      "event_code": "state_entry",
+      "call_mode": 1,
+      "sleep_until_ticks": 639312750920448142,
+      "object_description": "",
+      "event_arguments": [],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 1,
+          "slots": 2,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32"
+          ]
+        }
+      ]
+    },
+    "after_followup": null,
+    "after_load": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "before": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "copied": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 1,
+              "bits": "3ff0000000000000",
+              "text": "1"
+            }
+          ]
+        },
+        "r": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 1,
+              "bits": "3ff0000000000000",
+              "text": "1"
+            }
+          ]
+        }
+      },
+      "event_code": "state_entry",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": [],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 1,
+          "slots": 2,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32"
+          ]
+        }
+      ]
+    },
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "before": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "copied": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 1,
+              "bits": "3ff0000000000000",
+              "text": "1"
+            }
+          ]
+        },
+        "r": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 1,
+              "bits": "3ff0000000000000",
+              "text": "1"
+            }
+          ]
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual original CodeGen and SDK quaternion constructors, strict parse, casts, field mutation, copies, list extraction and arithmetic. Exact component IEEE bits and helper/condition/list-boxing results recorded. Sleep cases use unchanged original StartEx/base CheckRunWork, SAME live ResumeEx and separate MigrateOut/In\u002Boriginal queueXML, so constructor normalization during binary receive is measured independently from live continuation. No hand-normalized rotation stand-in.",
+    "sha256": {
+      "cache_key.txt": "cfc0a67c0bbef77a40849a9a0c2f1b4418cd0e18831197eddc249f31afa10cc6",
+      "event-queue.xml": "09030ac3a8d5dbaa452ef2076d8c8a18f45eb5608570c79b134fc4ffc843309e",
+      "original.il.txt": "c1359f4355548dbd8eac93f357aa268bc7d58cc7d08d9d34c4ae448129bc9dea",
+      "original.yobj": "c51b089098dbadb401e1c4e4012de577299a6a79dd8f774fe99342a49c316a81",
+      "snapshot.bin": "3d65d5154aec89b6e61c3a8c5b258d82fedd8b5df4cb13a75418108b43734ac4",
+      "source.lsl": "ba62137d88cd35a29b1c4c8b520f9d32f940a0ddba850cb4f7596a2d332f7acc",
+      "generator_source": "e2b80cda5ed631e3f0c2a58023ad5ce44205e79d17b9450f506d66ddf6b9d177",
+      "input_cases.json": "f57b7f56249bc44b5877f5c27a3c872c7dd44b2ca9e59420a48597871a8c6333",
+      "generator_assembly": "423231205958747cc3419327259e61fc831519744a50dac553bac26c40ffffb8",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "local_zero_sleep",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "FA4F060D59B22543D58A13EDF7E62CD8",
+    "compiled_version": -11,
+    "suspended": true,
+    "migrated": true,
+    "initial_exception": null,
+    "live_cycles": [
+      {
+        "cycle": 1,
+        "exception": null,
+        "checks": 1,
+        "state": {
+          "globals": {
+            "after": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 1
+            },
+            "before": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 1
+            },
+            "copied": {
+              "type": "rotation",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+              "value": [
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                }
+              ]
+            }
+          },
+          "event_code": "None",
+          "call_mode": 0,
+          "sleep_until_ticks": 639312750920605354,
+          "object_description": "",
+          "event_arguments": null,
+          "state_index": 0,
+          "new_state_index": -1,
+          "initialize_globals": false,
+          "running": true,
+          "detectors": [
+            {
+              "key": "11111111-2222-3333-4444-555555555555",
+              "owner": "22222222-3333-4444-5555-666666666666",
+              "group": "33333333-4444-5555-6666-777777777777",
+              "name": "original rich detector 3",
+              "link_number": 5,
+              "type": 11,
+              "grab": [
+                3.125,
+                3.25,
+                3.5
+              ],
+              "position": [
+                13.00000003,
+                14.00000003,
+                15.00000003
+              ],
+              "rotation": [
+                0.125,
+                0.25,
+                0.5,
+                0.875
+              ],
+              "velocity": [
+                23.00000003,
+                24.00000003,
+                25.00000003
+              ],
+              "touch_st": [
+                4.00000003,
+                5.00000003,
+                6.00000003
+              ],
+              "touch_normal": [
+                7.00000003,
+                8.000000029999999,
+                9.000000029999999
+              ],
+              "touch_binormal": [
+                10.000000029999999,
+                11.000000029999999,
+                12.000000029999999
+              ],
+              "touch_pos": [
+                13.000000029999999,
+                14.000000029999999,
+                15.000000029999999
+              ],
+              "touch_uv": [
+                16.00000003,
+                17.00000003,
+                18.00000003
+              ],
+              "touch_face": 6
+            }
+          ],
+          "queue": [],
+          "frames": []
+        }
+      }
+    ],
+    "migrated_cycles": [
+      {
+        "cycle": 1,
+        "exception": null,
+        "checks": 1,
+        "state": {
+          "globals": {
+            "after": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            },
+            "before": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 1
+            },
+            "copied": {
+              "type": "rotation",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+              "value": [
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 1,
+                  "bits": "3ff0000000000000",
+                  "text": "1"
+                }
+              ]
+            }
+          },
+          "event_code": "None",
+          "call_mode": 0,
+          "sleep_until_ticks": 0,
+          "object_description": "",
+          "event_arguments": null,
+          "state_index": 0,
+          "new_state_index": -1,
+          "initialize_globals": false,
+          "running": true,
+          "detectors": [],
+          "queue": [],
+          "frames": []
+        }
+      }
+    ],
+    "prefix_resume": null,
+    "live_resume_exception": null,
+    "live_resume": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "before": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "copied": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            }
+          ]
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 639312750920605354,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "before": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "copied": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 1,
+              "bits": "3ff0000000000000",
+              "text": "1"
+            }
+          ]
+        }
+      },
+      "event_code": "state_entry",
+      "call_mode": 1,
+      "sleep_until_ticks": 639312750920605354,
+      "object_description": "",
+      "event_arguments": [],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 1,
+          "slots": 2,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32"
+          ]
+        },
+        {
+          "function": "probe(rotation)",
+          "call_no": 1,
+          "slots": 2,
+          "slot_types": [
+            "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+            "System.Int32"
+          ]
+        }
+      ]
+    },
+    "after_followup": null,
+    "after_load": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "before": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "copied": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 1,
+              "bits": "3ff0000000000000",
+              "text": "1"
+            }
+          ]
+        }
+      },
+      "event_code": "state_entry",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": [],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 1,
+          "slots": 2,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32"
+          ]
+        },
+        {
+          "function": "probe(rotation)",
+          "call_no": 1,
+          "slots": 2,
+          "slot_types": [
+            "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+            "System.Int32"
+          ]
+        }
+      ]
+    },
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "before": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "copied": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 1,
+              "bits": "3ff0000000000000",
+              "text": "1"
+            }
+          ]
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual original CodeGen and SDK quaternion constructors, strict parse, casts, field mutation, copies, list extraction and arithmetic. Exact component IEEE bits and helper/condition/list-boxing results recorded. Sleep cases use unchanged original StartEx/base CheckRunWork, SAME live ResumeEx and separate MigrateOut/In\u002Boriginal queueXML, so constructor normalization during binary receive is measured independently from live continuation. No hand-normalized rotation stand-in.",
+    "sha256": {
+      "cache_key.txt": "592aa0588c7659497b38b051b287497721fb6a2d9b88821e814d9571b7b06e3e",
+      "event-queue.xml": "09030ac3a8d5dbaa452ef2076d8c8a18f45eb5608570c79b134fc4ffc843309e",
+      "original.il.txt": "fc7f38bf489ec36674b1791d04e005688479807aae9384ce6d1a7982cec9fc55",
+      "original.yobj": "c27c4e355f9ba7e9d04713ac0a38ecdb6afa804abe52d6a0a29138404a311326",
+      "snapshot.bin": "661e1c7193a539740947ab8a11869a670c8aff924da385593fd1bab0d5902360",
+      "source.lsl": "1be1c2ca563d8b2c251fbd01da0e71719207c22bafc15a173fb78f2f14854e28",
+      "generator_source": "e2b80cda5ed631e3f0c2a58023ad5ce44205e79d17b9450f506d66ddf6b9d177",
+      "input_cases.json": "f57b7f56249bc44b5877f5c27a3c872c7dd44b2ca9e59420a48597871a8c6333",
+      "generator_assembly": "423231205958747cc3419327259e61fc831519744a50dac553bac26c40ffffb8",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "arithmetic_zero",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "B4384161882F75B9619390DE522447E8",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": null,
+    "live_cycles": [],
+    "migrated_cycles": [],
+    "prefix_resume": null,
+    "live_resume_exception": null,
+    "live_resume": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "boxed": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "rotation",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+              "value": [
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                }
+              ]
+            },
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 1
+            }
+          ]
+        },
+        "casted": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "copied": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            }
+          ]
+        },
+        "negated": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "r": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            }
+          ]
+        },
+        "truth": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "boxed": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "rotation",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+              "value": [
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                },
+                {
+                  "clr": "System.Double",
+                  "value": 0,
+                  "bits": "0000000000000000",
+                  "text": "0"
+                }
+              ]
+            },
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 1
+            }
+          ]
+        },
+        "casted": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "copied": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            }
+          ]
+        },
+        "negated": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "r": {
+          "type": "rotation",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "value": [
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0,
+              "bits": "0000000000000000",
+              "text": "0"
+            }
+          ]
+        },
+        "truth": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual original CodeGen and SDK quaternion constructors, strict parse, casts, field mutation, copies, list extraction and arithmetic. Exact component IEEE bits and helper/condition/list-boxing results recorded. Sleep cases use unchanged original StartEx/base CheckRunWork, SAME live ResumeEx and separate MigrateOut/In\u002Boriginal queueXML, so constructor normalization during binary receive is measured independently from live continuation. No hand-normalized rotation stand-in.",
+    "sha256": {
+      "cache_key.txt": "2a56b4cd21a403cdb2d63162ccce016b1b4cd785304e333c18c3ef9597446972",
+      "original.il.txt": "f2fdb066c01d852fe9ff2662f8493ea1a6190fd57b40c24e941aaa96dd802cd0",
+      "original.yobj": "de8a0f4341acfab6e33e459dc82ef4ce0f2ef8196b4ba9c23d7a7f516e972f3b",
+      "source.lsl": "df7cd25460fe3807b0f1e37aac83772918fdc9724f57a59d699b153b80ec36b2",
+      "generator_source": "e2b80cda5ed631e3f0c2a58023ad5ce44205e79d17b9450f506d66ddf6b9d177",
+      "input_cases.json": "f57b7f56249bc44b5877f5c27a3c872c7dd44b2ca9e59420a48597871a8c6333",
+      "generator_assembly": "423231205958747cc3419327259e61fc831519744a50dac553bac26c40ffffb8",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  }
+]

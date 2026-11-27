@@ -9,7 +9,9 @@ namespace log4net
     public interface ILog
     {
         void Debug(object o);
+        void DebugFormat(string format, params object[] args);
         void Warn(object o);
+        void WarnFormat(string format, params object[] args);
         void ErrorFormat(string f, params object[] a);
     }
     public static class LogManager
@@ -19,7 +21,13 @@ namespace log4net
             public void Debug(object o)
             {
             }
+            public void DebugFormat(string format, params object[] args)
+            {
+            }
             public void Warn(object o)
+            {
+            }
+            public void WarnFormat(string format, params object[] args)
             {
             }
             public void ErrorFormat(string f, params object[] a)

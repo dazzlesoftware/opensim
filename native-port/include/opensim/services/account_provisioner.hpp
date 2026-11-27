@@ -3,11 +3,12 @@
 #pragma once
 #include "opensim/services/user_account.hpp"
 #include "opensim/services/region_store.hpp"
+
 namespace opensim::services {
 struct AccountProvisioning {
     using Id = framework::Uuid;
     std::function<std::shared_ptr<UserAccount>(Id, std::string, std::string)> by_name;
-    std::function<bool(UserAccount&)> store;
+    std::function<bool(UserAccount &)> store;
     std::function<bool(Id, std::optional<std::string>)> set_password;
     std::function<std::vector<std::optional<GridRegion>>(Id)> default_regions;
     std::function<bool(std::string, Id, framework::Vector3, framework::Vector3)> set_home;
@@ -15,12 +16,14 @@ struct AccountProvisioning {
     std::function<void(Id)> default_appearance;
     std::function<void(Id, std::string)> model_appearance;
 };
+
 class AccountProvisioner {
   public:
     AccountProvisioner(AccountProvisioning operations, bool create_default_entries = false,
                        UserAccount::Clock clock = {})
         : operations_(std::move(operations)), create_default_entries_(create_default_entries),
           clock_(std::move(clock)) {}
+
     std::shared_ptr<UserAccount> create(framework::Uuid scope, framework::Uuid principal,
                                         std::optional<std::string> first, std::optional<std::string> last,
                                         std::optional<std::string> password, std::optional<std::string> email,
@@ -31,4 +34,4 @@ class AccountProvisioner {
     bool create_default_entries_;
     UserAccount::Clock clock_;
 };
-}
+} // namespace opensim::services

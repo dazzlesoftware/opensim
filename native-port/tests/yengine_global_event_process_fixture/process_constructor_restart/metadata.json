@@ -1,0 +1,799 @@
+{
+  "name": "process_constructor_restart",
+  "accepted": true,
+  "diagnostics": [],
+  "compile_exception": null,
+  "source_hash": "1CD555E43B735DD83879AFE776CE13A0",
+  "compiled_version": -11,
+  "suspended": true,
+  "migrated": true,
+  "initial_exception": null,
+  "initial": {
+    "globals": {
+      "calls": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 1
+      },
+      "entries": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 0
+      },
+      "result": {
+        "type": "list",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+        "value": []
+      },
+      "saved": {
+        "type": "list",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+        "value": [
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 1
+          },
+          {
+            "type": "string",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+            "value": "11111111-2222-3333-4444-555555555555"
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              1,
+              2,
+              3
+            ]
+          },
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 7
+          },
+          {
+            "type": "string",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+            "value": "22222222-3333-4444-5555-666666666666"
+          },
+          {
+            "type": "string",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+            "value": "constructor detector"
+          },
+          {
+            "type": "string",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+            "value": "00000000-0000-0000-0000-000000000000"
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              4,
+              5,
+              6
+            ]
+          },
+          {
+            "type": "rotation",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+            "value": [
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 3
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              7,
+              8,
+              9
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              0.125,
+              0.25,
+              0
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              0,
+              0,
+              1
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              0,
+              1,
+              0
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              10,
+              11,
+              12
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              0.5,
+              0.75,
+              0
+            ]
+          },
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 5
+          }
+        ]
+      },
+      "seen": {
+        "type": "string",
+        "clr": "System.String",
+        "value": ""
+      },
+      "value": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 0
+      }
+    },
+    "object_description": "initializing:1",
+    "event_code": "state_entry",
+    "state_index": 0,
+    "new_state_index": -1,
+    "initialize_globals": true,
+    "running": true,
+    "detectors": [],
+    "queue": [
+      {
+        "name": "touch_start",
+        "arguments": [
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 9
+          }
+        ],
+        "detectors": [
+          {
+            "key": "11111111-2222-3333-4444-555555555555",
+            "owner": "00000000-0000-0000-0000-000000000000",
+            "group": "22222222-3333-4444-5555-666666666666",
+            "name": "constructor detector",
+            "link_number": 7,
+            "type": 3,
+            "grab": [
+              1,
+              2,
+              3
+            ],
+            "position": [
+              4,
+              5,
+              6
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "velocity": [
+              7,
+              8,
+              9
+            ],
+            "touch_st": [
+              0.125,
+              0.25,
+              0
+            ],
+            "touch_normal": [
+              0,
+              0,
+              1
+            ],
+            "touch_binormal": [
+              0,
+              1,
+              0
+            ],
+            "touch_pos": [
+              10,
+              11,
+              12
+            ],
+            "touch_uv": [
+              0.5,
+              0.75,
+              0
+            ],
+            "touch_face": 5
+          }
+        ]
+      }
+    ],
+    "frames": [
+      {
+        "function": "default state_entry",
+        "call_no": 0,
+        "slots": 3,
+        "slot_types": [
+          "EventHelpersInstance",
+          "System.Int32",
+          "System.Int32"
+        ]
+      },
+      {
+        "function": "$globalvarinit()",
+        "call_no": 1,
+        "slots": 0,
+        "slot_types": []
+      },
+      {
+        "function": "initialize()",
+        "call_no": 5,
+        "slots": 3,
+        "slot_types": [
+          "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+          "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+          "System.Int32"
+        ]
+      }
+    ]
+  },
+  "after_followup": null,
+  "after_load": {
+    "globals": {
+      "calls": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 1
+      },
+      "entries": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 0
+      },
+      "result": {
+        "type": "list",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+        "value": []
+      },
+      "saved": {
+        "type": "list",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+        "value": [
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 1
+          },
+          {
+            "type": "string",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+            "value": "11111111-2222-3333-4444-555555555555"
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              1,
+              2,
+              3
+            ]
+          },
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 7
+          },
+          {
+            "type": "string",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+            "value": "22222222-3333-4444-5555-666666666666"
+          },
+          {
+            "type": "string",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+            "value": "constructor detector"
+          },
+          {
+            "type": "string",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+            "value": "00000000-0000-0000-0000-000000000000"
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              4,
+              5,
+              6
+            ]
+          },
+          {
+            "type": "rotation",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+            "value": [
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 3
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              7,
+              8,
+              9
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              0.125,
+              0.25,
+              0
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              0,
+              0,
+              1
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              0,
+              1,
+              0
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              10,
+              11,
+              12
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              0.5,
+              0.75,
+              0
+            ]
+          },
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 5
+          }
+        ]
+      },
+      "seen": {
+        "type": "string",
+        "clr": "System.String",
+        "value": ""
+      },
+      "value": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 0
+      }
+    },
+    "object_description": "",
+    "event_code": "state_entry",
+    "state_index": 0,
+    "new_state_index": -1,
+    "initialize_globals": true,
+    "running": true,
+    "detectors": [],
+    "queue": [
+      {
+        "name": "touch_start",
+        "arguments": [
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 9
+          }
+        ],
+        "detectors": [
+          {
+            "key": "11111111-2222-3333-4444-555555555555",
+            "owner": "00000000-0000-0000-0000-000000000000",
+            "group": "22222222-3333-4444-5555-666666666666",
+            "name": "constructor detector",
+            "link_number": 7,
+            "type": 3,
+            "grab": [
+              1,
+              2,
+              3
+            ],
+            "position": [
+              4,
+              5,
+              6
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "velocity": [
+              7,
+              8,
+              9
+            ],
+            "touch_st": [
+              -1,
+              -1,
+              0
+            ],
+            "touch_normal": [
+              0,
+              0,
+              0
+            ],
+            "touch_binormal": [
+              0,
+              0,
+              0
+            ],
+            "touch_pos": [
+              0,
+              0,
+              0
+            ],
+            "touch_uv": [
+              -1,
+              -1,
+              0
+            ],
+            "touch_face": -1
+          }
+        ]
+      }
+    ],
+    "frames": [
+      {
+        "function": "default state_entry",
+        "call_no": 0,
+        "slots": 3,
+        "slot_types": [
+          "EventHelpersInstance",
+          "System.Int32",
+          "System.Int32"
+        ]
+      },
+      {
+        "function": "$globalvarinit()",
+        "call_no": 1,
+        "slots": 0,
+        "slot_types": []
+      },
+      {
+        "function": "initialize()",
+        "call_no": 5,
+        "slots": 3,
+        "slot_types": [
+          "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+          "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+          "System.Int32"
+        ]
+      }
+    ]
+  },
+  "after_stop": null,
+  "after_restart_wait": null,
+  "resume_exception": null,
+  "final": {
+    "globals": {
+      "calls": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 1
+      },
+      "entries": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 1
+      },
+      "result": {
+        "type": "list",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+        "value": [
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 21
+          },
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 9
+          }
+        ]
+      },
+      "saved": {
+        "type": "list",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+        "value": [
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 1
+          },
+          {
+            "type": "string",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+            "value": "11111111-2222-3333-4444-555555555555"
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              1,
+              2,
+              3
+            ]
+          },
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 7
+          },
+          {
+            "type": "string",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+            "value": "22222222-3333-4444-5555-666666666666"
+          },
+          {
+            "type": "string",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+            "value": "constructor detector"
+          },
+          {
+            "type": "string",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+            "value": "00000000-0000-0000-0000-000000000000"
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              4,
+              5,
+              6
+            ]
+          },
+          {
+            "type": "rotation",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+            "value": [
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 3
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              7,
+              8,
+              9
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              0.125,
+              0.25,
+              0
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              0,
+              0,
+              1
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              0,
+              1,
+              0
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              10,
+              11,
+              12
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              0.5,
+              0.75,
+              0
+            ]
+          },
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 5
+          }
+        ]
+      },
+      "seen": {
+        "type": "string",
+        "clr": "System.String",
+        "value": "constructor detector"
+      },
+      "value": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 7
+      }
+    },
+    "object_description": "1:1:7:21:9:constructor detector:7",
+    "event_code": "None",
+    "state_index": 0,
+    "new_state_index": -1,
+    "initialize_globals": false,
+    "running": true,
+    "detectors": [
+      {
+        "key": "11111111-2222-3333-4444-555555555555",
+        "owner": "00000000-0000-0000-0000-000000000000",
+        "group": "22222222-3333-4444-5555-666666666666",
+        "name": "constructor detector",
+        "link_number": 7,
+        "type": 3,
+        "grab": [
+          1,
+          2,
+          3
+        ],
+        "position": [
+          4,
+          5,
+          6
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "velocity": [
+          7,
+          8,
+          9
+        ],
+        "touch_st": [
+          0.125,
+          0.25,
+          0
+        ],
+        "touch_normal": [
+          0,
+          0,
+          1
+        ],
+        "touch_binormal": [
+          0,
+          1,
+          0
+        ],
+        "touch_pos": [
+          10,
+          11,
+          12
+        ],
+        "touch_uv": [
+          0.5,
+          0.75,
+          0
+        ],
+        "touch_face": 5
+      }
+    ],
+    "queue": [],
+    "frames": []
+  },
+  "incomplete_scene_resource_boundary": false,
+  "scheduler_guard_boundary": false,
+  "stop_scheduler_context": null,
+  "methodology": "Actual unchanged CodeGen/XMRInstance helpers/API/engine instance lookup/PostEvent/Running setter/MigrateOut/MigrateIn/CallSEH. Only CheckRunWork scheduler capture is overridden. Scene resource cleanup is not replaced; real minimal Scene and empty original async plugin resources supplied; no StateChange override. Uninterrupted and captured reentrant cases are separate actual executions.",
+  "sha256": {
+    "cache_key.txt": "b1f8759b5316a595d7ff826b6bdd7b6892805f00bfd324726995b52344249ff7",
+    "event-queue.xml": "db9d4483ead3bb381434dd00c7e9c05c2fc626cd440835f21c08c933d0c4a7b1",
+    "original.il.txt": "3cd1b09c4e7034aef72ba4d013ee4bdc7fc64725c2322fb940ab2eacb65d14e5",
+    "original.yobj": "2a41919657308d97c8b3be6b4913bbf58c0c1a6b219ccd4d3e6438a22b85c01b",
+    "snapshot.bin": "3feb83a8a3933d23c1cf268f8b61fb0ed96f0a09dfa0f0d55cc68fad7fa673f7",
+    "source.lsl": "7736fc06adaba68e535f571e71244484116ce5713f849434ed3b661922bdca3b",
+    "generator_source": "26528cecd7340389c7415c628d783edd99b34c539e6132ec9788e459ef2f08ee",
+    "generator_assembly": "675b7e94b94e8ae9dd3d408dd76f03a0b4b1a81c99a96bafaaccad1b6b5e7bea",
+    "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+    "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+    "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+    "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+    "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+    "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+    "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+    "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+    "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+    "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+    "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+    "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+    "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+    "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+    "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+  }
+}

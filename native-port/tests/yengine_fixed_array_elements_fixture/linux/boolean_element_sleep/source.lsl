@@ -1,0 +1,1 @@
+YOption arrays;integer dynamic=1;object input;string typename;integer after;default{state_entry(){input=xmrFixedArrayAllocO(1);xmrFixedArraySetO(input,0,dynamic<2);llSleep(0.1);typename=xmrTypeName(xmrFixedArrayGetO(input,0));after=1;}}

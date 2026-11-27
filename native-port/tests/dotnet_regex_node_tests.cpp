@@ -7,7 +7,8 @@
 #include <map>
 #include <sstream>
 using namespace opensim::framework;
-DotnetRegexNodeText dec(const std::string& s) {
+
+DotnetRegexNodeText dec(const std::string &s) {
     if (s == "-")
         return {};
     std::u16string v;
@@ -16,7 +17,8 @@ DotnetRegexNodeText dec(const std::string& s) {
             v.push_back(static_cast<char16_t>(std::stoul(s.substr(i, 4), nullptr, 16)));
     return v.empty() ? runtime_empty_text() : std::make_shared<const std::u16string>(v);
 }
-std::string hex(const DotnetRegexNodeText& s) {
+
+std::string hex(const DotnetRegexNodeText &s) {
     if (!s)
         return "-";
     if (s->empty())
@@ -26,21 +28,25 @@ std::string hex(const DotnetRegexNodeText& s) {
         out << std::hex << std::setfill('0') << std::setw(4) << unsigned(c);
     return out.str();
 }
+
 std::string bit(bool b) {
     return b ? "1" : "0";
 }
-std::string capture(const std::function<std::string()>& f) {
+
+std::string capture(const std::function<std::string()> &f) {
     try {
         return f();
-    } catch (const DotnetRegexClassError& e) {
+    } catch (const DotnetRegexClassError &e) {
         std::ostringstream out;
         out << "E:" << e.source_type << ':' << std::hex << e.hresult << ':'
             << hex(std::make_shared<const std::u16string>(utf16(e.what())));
         return out.str();
     }
 }
-using Nodes = std::map<int, DotnetRegexNode*>;
-std::string id(Nodes& nodes, DotnetRegexNode* node) {
+
+using Nodes = std::map<int, DotnetRegexNode *>;
+
+std::string id(Nodes &nodes, DotnetRegexNode *node) {
     if (!node)
         return "-";
     for (auto entry : nodes)
@@ -48,9 +54,10 @@ std::string id(Nodes& nodes, DotnetRegexNode* node) {
             return std::to_string(entry.first);
     return "?";
 }
+
 namespace opensim::framework {
 struct DotnetRegexNodeProbe {
-    static void children(DotnetRegexNode& n, int shape, const std::vector<DotnetRegexNode*>& values) {
+    static void children(DotnetRegexNode &n, int shape, const std::vector<DotnetRegexNode *> &values) {
         if (shape == 0 || (shape == 1 && !values[0]))
             n.children_ = std::monostate{};
         else if (shape == 1)
@@ -58,7 +65,8 @@ struct DotnetRegexNodeProbe {
         else
             n.children_ = values;
     }
-    static void field(DotnetRegexNode& n, const std::string& name, const std::string& value, Nodes& nodes) {
+
+    static void field(DotnetRegexNode &n, const std::string &name, const std::string &value, Nodes &nodes) {
         if (name == "Str")
             n.str_ = dec(value);
         else if (name == "Parent")
@@ -77,11 +85,12 @@ struct DotnetRegexNodeProbe {
                 n.options_ = static_cast<std::int32_t>(v);
         }
     }
-    static std::string snapshot(DotnetRegexNode& n, Nodes& nodes) {
+
+    static std::string snapshot(DotnetRegexNode &n, Nodes &nodes) {
         std::string shape = "-";
-        if (auto one = std::get_if<DotnetRegexNode*>(&n.children_))
+        if (auto one = std::get_if<DotnetRegexNode *>(&n.children_))
             shape = "o:" + id(nodes, *one);
-        else if (auto list = std::get_if<std::vector<DotnetRegexNode*>>(&n.children_)) {
+        else if (auto list = std::get_if<std::vector<DotnetRegexNode *>>(&n.children_)) {
             shape = "l:";
             for (std::size_t i = 0; i < list->size(); ++i) {
                 if (i)
@@ -90,28 +99,28 @@ struct DotnetRegexNodeProbe {
             }
         }
         return std::to_string(unsigned(n.kind_)) + ":" + std::to_string(n.options_) + ":" +
-               std::to_string(unsigned(n.ch_)) + ":" + std::to_string(n.m_) + ":" + std::to_string(n.n_) +
-               ":" + hex(n.str_) + ":" + id(nodes, n.parent_) + ":" + shape + ":" + bit(n.is_one_family()) +
+               std::to_string(unsigned(n.ch_)) + ":" + std::to_string(n.m_) + ":" + std::to_string(n.n_) + ":" +
+               hex(n.str_) + ":" + id(nodes, n.parent_) + ":" + shape + ":" + bit(n.is_one_family()) +
                bit(n.is_notone_family()) + bit(n.is_set_family());
     }
 };
-}
-std::string literal(DotnetRegexNode& node, int capacity) {
+} // namespace opensim::framework
+
+std::string literal(DotnetRegexNode &node, int capacity) {
     auto result = node.find_starting_literal(capacity);
     if (!result)
         return "-";
     DotnetRegexNodeText ascii;
     if (result->ascii_chars)
-        ascii =
-            std::make_shared<const std::u16string>(result->ascii_chars->begin(), result->ascii_chars->end());
-    return std::to_string(unsigned(result->range.first)) + "," +
-           std::to_string(unsigned(result->range.last)) + ":" + hex(result->string) + ":" +
-           hex(result->set_chars) + ":" + hex(ascii) + ":" + bit(result->negated);
+        ascii = std::make_shared<const std::u16string>(result->ascii_chars->begin(), result->ascii_chars->end());
+    return std::to_string(unsigned(result->range.first)) + "," + std::to_string(unsigned(result->range.last)) + ":" +
+           hex(result->string) + ":" + hex(result->set_chars) + ":" + hex(ascii) + ":" + bit(result->negated);
 }
+
 std::string graph(Nodes nodes) {
     Nodes objects;
-    std::map<DotnetRegexNode*, int> ids;
-    auto add = [&](DotnetRegexNode* node) {
+    std::map<DotnetRegexNode *, int> ids;
+    auto add = [&](DotnetRegexNode *node) {
         if (!node)
             return std::string("-");
         auto found = ids.find(node);
@@ -133,8 +142,7 @@ std::string graph(Nodes nodes) {
         add(node->parent());
     }
     for (auto entry : objects) {
-        result +=
-            "/" + std::to_string(entry.first) + "=" + DotnetRegexNodeProbe::snapshot(*entry.second, objects);
+        result += "/" + std::to_string(entry.first) + "=" + DotnetRegexNodeProbe::snapshot(*entry.second, objects);
         int first = 0;
         for (auto other : objects) {
             if (other.second->text() == entry.second->text()) {
@@ -146,7 +154,8 @@ std::string graph(Nodes nodes) {
     }
     return result;
 }
-int main(int argc, char**) {
+
+int main(int argc, char **) {
     if (argc > 1) {
         DotnetRegexNodeArena arena;
         auto root = arena.create(DotnetRegexNodeKind::Capture);
@@ -160,7 +169,7 @@ int main(int argc, char**) {
         try {
             root->compute_min_length({});
             return 2;
-        } catch (const std::invalid_argument&) {
+        } catch (const std::invalid_argument &) {
         }
         if (DotnetRegexNode::can_be_made_atomic(nullptr, nullptr, true, true, no))
             return 3;
@@ -168,20 +177,18 @@ int main(int argc, char**) {
         try {
             DotnetRegexNode::can_be_made_atomic(nullptr, nullptr, true, true, {});
             return 4;
-        } catch (const std::invalid_argument&) {
+        } catch (const std::invalid_argument &) {
         }
         int before = calls;
-        if (*dotnet_regex_find_prefix(nullptr, no) != u"" ||
-            dotnet_regex_find_first_char_class(nullptr, no) ||
+        if (*dotnet_regex_find_prefix(nullptr, no) != u"" || dotnet_regex_find_first_char_class(nullptr, no) ||
             dotnet_regex_find_fixed_distance_sets(nullptr, true, no) ||
             dotnet_regex_find_leading_anchor(nullptr, no) != DotnetRegexNodeKind::Unknown ||
-            dotnet_regex_find_trailing_anchor(nullptr, no) != DotnetRegexNodeKind::Unknown ||
-            calls - before != 6)
+            dotnet_regex_find_trailing_anchor(nullptr, no) != DotnetRegexNodeKind::Unknown || calls - before != 6)
             return 5;
         try {
             dotnet_regex_find_prefix(nullptr, {});
             return 6;
-        } catch (const std::invalid_argument&) {
+        } catch (const std::invalid_argument &) {
         }
         std::cout << "PASS required stack policy\n";
         return 0;
@@ -235,8 +242,7 @@ int main(int argc, char**) {
                             return name ? *name : std::u16string{};
                         },
                         behavior);
-                    return op + ":" + std::to_string(static_cast<int>(behavior)) + ":" +
-                           std::to_string(reads);
+                    return op + ":" + std::to_string(static_cast<int>(behavior)) + ":" + std::to_string(reads);
                 }
                 if (op == "U") {
                     int source;
@@ -253,8 +259,8 @@ int main(int argc, char**) {
                     int start, bound, zero, consumed = 123;
                     in >> start >> bound >> zero;
                     auto result = std::make_shared<const std::u16string>(u"sentinel");
-                    bool success = node->try_get_ordinal_case_insensitive_string(start, bound, consumed,
-                                                                                 result, zero != 0);
+                    bool success =
+                        node->try_get_ordinal_case_insensitive_string(start, bound, consumed, result, zero != 0);
                     return bit(success) + ":" + std::to_string(consumed) + ":" + hex(result);
                 }
                 if (op == "D")
@@ -283,7 +289,7 @@ int main(int argc, char**) {
                 }
                 if (op == "Y") {
                     in >> a;
-                    DotnetRegexNode* result = node;
+                    DotnetRegexNode *result = node;
                     if (a == "r")
                         result = node->reduce([] { return true; });
                     else if (a == "a")
@@ -304,14 +310,13 @@ int main(int argc, char**) {
                 if (op == "W") {
                     int other, iterate, lazy;
                     in >> other >> iterate >> lazy;
-                    return bit(DotnetRegexNode::can_be_made_atomic(node, nodes.at(other), iterate != 0,
-                                                                   lazy != 0, [] { return true; }));
+                    return bit(DotnetRegexNode::can_be_made_atomic(node, nodes.at(other), iterate != 0, lazy != 0,
+                                                                   [] { return true; }));
                 }
                 if (op == "E") {
                     in >> a;
                     if (a == "f")
-                        return id(nodes,
-                                  node->find_last_expression_in_loop_for_auto_atomic([] { return true; }));
+                        return id(nodes, node->find_last_expression_in_loop_for_auto_atomic([] { return true; }));
                     node->find_and_make_loops_atomic([] { return true; });
                     return op;
                 }
@@ -331,7 +336,7 @@ int main(int argc, char**) {
                 if (op == "H") {
                     int shape;
                     in >> shape;
-                    std::vector<DotnetRegexNode*> values;
+                    std::vector<DotnetRegexNode *> values;
                     while (in >> a)
                         values.push_back(a == "-" ? nullptr : nodes.at(std::stoi(a)));
                     DotnetRegexNodeProbe::children(*node, shape, values);
@@ -376,8 +381,8 @@ int main(int argc, char**) {
                 }
                 if (op == "A") {
                     std::vector<std::string> fields;
-                    fields.push_back(capture(
-                        [&]() { return std::to_string(node->compute_min_length([]() { return true; })); }));
+                    fields.push_back(
+                        capture([&]() { return std::to_string(node->compute_min_length([]() { return true; })); }));
                     fields.push_back(capture([&]() {
                         auto value = node->compute_max_length([]() { return true; });
                         return value ? std::to_string(*value) : "-";
@@ -386,12 +391,10 @@ int main(int argc, char**) {
                     auto support = capture([&]() { return bit(node->supports_compilation(reason)); });
                     fields.push_back(support + ":" +
                                      hex(reason ? std::make_shared<const std::u16string>(*reason) : nullptr));
+                    fields.push_back(capture([&]() { return id(nodes, node->find_branch_one_or_multi_start()); }));
                     fields.push_back(
-                        capture([&]() { return id(nodes, node->find_branch_one_or_multi_start()); }));
-                    fields.push_back(capture(
-                        [&]() { return std::to_string(unsigned(node->first_char_of_one_or_multi())); }));
-                    fields.push_back(
-                        capture([&]() { return id(nodes, node->find_starting_literal_node()); }));
+                        capture([&]() { return std::to_string(unsigned(node->first_char_of_one_or_multi())); }));
+                    fields.push_back(capture([&]() { return id(nodes, node->find_starting_literal_node()); }));
                     std::string result;
                     for (std::size_t i = 0; i < fields.size(); ++i) {
                         if (i)

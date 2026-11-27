@@ -2,6 +2,7 @@
 #include <iostream>
 #include <sstream>
 using namespace opensim::framework;
+
 int main() {
     ConfigXmlNativeHttpServices policy;
     policy.error = [](std::string, int) {
@@ -9,7 +10,7 @@ int main() {
     };
     ConfigHttpX509ResourceClient client(policy);
     std::string line;
-    auto hex = [](const auto& bytes) {
+    auto hex = [](const auto &bytes) {
         constexpr char digits[] = "0123456789abcdef";
         for (auto byte : bytes)
             std::cout << digits[byte >> 4] << digits[byte & 15];

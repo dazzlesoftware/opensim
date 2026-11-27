@@ -1,0 +1,1 @@
+integer order;list result;string left(){order=order*10+1;return "L";}string right(){order=order*10+2;return "R";}default{state_entry(){result=[left()!=right()];}}

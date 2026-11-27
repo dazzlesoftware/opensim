@@ -3,8 +3,9 @@
 #include <cstdint>
 #include <span>
 #include <string_view>
+
 namespace opensim::framework {
 #ifdef __linux__
-bool config_http_linux_certificate_name(std::span<const std::uint8_t>,std::u16string_view normalized_host);
+bool config_http_linux_certificate_name(std::span<const std::uint8_t>, std::u16string_view normalized_host);
 #endif
-}
+} // namespace opensim::framework

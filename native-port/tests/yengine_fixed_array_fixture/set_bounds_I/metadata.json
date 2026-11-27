@@ -1,0 +1,41 @@
+{
+  "accepted": true,
+  "executed": true,
+  "globals": {
+    "a": {
+      "type": "array",
+      "clr": "System.Int32[]",
+      "id": 0,
+      "entries": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "result": {
+      "type": "integer",
+      "clr": "System.Int32",
+      "value": 0
+    }
+  },
+  "errors": [],
+  "exception": "Index was outside the bounds of the array.",
+  "exceptionType": "System.IndexOutOfRangeException",
+  "stackSize": 1000000,
+  "stackLimit": 1024,
+  "finalStackLeft": 1000000,
+  "stackSamples": [],
+  "name": "set_bounds_I",
+  "source": "YOption arrays;object a;integer result;default{state_entry(){a=xmrFixedArrayAllocI(1);xmrFixedArraySetI(a,-1,7);}}",
+  "methodology": "Actual original CodeGen/CallSEH; scheduler CheckRunWork no-op. Separate process per case. No migration claim.",
+  "sha256": {
+    "original.il.txt": "9eb0f31621b0bead87041b41c76ce56c08ca8356f0b8031550d322152c629e40",
+    "original.yobj": "8f84fb9658e7595590dbec87b4d2424e913e82af7316c6d5a3c0a230fde9327c",
+    "source.lsl": "8055e47c67d16ed1b8f2f2b6a70032956a0d693e8b1fc18b1f77bdebf952e9ea",
+    "source_hash.txt": "9354e5297208e30c98fef2b9be40654a1a2e4b6fa8417b3a297025223c5612b5",
+    "generator_source": "d86517a13d8f4094e933279614d487a0e69d44a49f2296c4af7562bf7386d651",
+    "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056"
+  }
+}

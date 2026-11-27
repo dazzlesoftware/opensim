@@ -1,0 +1,1 @@
+string value;integer converted;integer after;default{state_entry(){value=llComputeHash("payload","unsupported");converted=xmrStringToBool(value);after=1;}}

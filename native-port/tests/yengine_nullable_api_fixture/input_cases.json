@@ -1,0 +1,202 @@
+[
+  {
+    "name": "list2string",
+    "kind": "Source",
+    "source": "string n;string result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=llList2String([n],0);after=1;}}"
+  },
+  {
+    "name": "list2key",
+    "kind": "Source",
+    "source": "string n;key result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=llList2Key([n],0);after=1;}}"
+  },
+  {
+    "name": "list_entry_type",
+    "kind": "Source",
+    "source": "string n;integer result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=llGetListEntryType([n],0);after=1;}}"
+  },
+  {
+    "name": "index_left",
+    "kind": "Source",
+    "source": "string n;integer result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=llSubStringIndex(n,\"x\");after=1;}}"
+  },
+  {
+    "name": "index_right",
+    "kind": "Source",
+    "source": "string n;integer result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=llSubStringIndex(\"x\",n);after=1;}}"
+  },
+  {
+    "name": "index_both",
+    "kind": "Source",
+    "source": "string n;integer result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=llSubStringIndex(n,n);after=1;}}"
+  },
+  {
+    "name": "compare_both",
+    "kind": "Source",
+    "source": "string n;integer result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=xmrStringCompare(n,n);after=1;}}"
+  },
+  {
+    "name": "compare_left",
+    "kind": "Source",
+    "source": "string n;integer result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=xmrStringCompare(n,\"\");after=1;}}"
+  },
+  {
+    "name": "compare_right",
+    "kind": "Source",
+    "source": "string n;integer result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=xmrStringCompare(\"\",n);after=1;}}"
+  },
+  {
+    "name": "encode_null",
+    "kind": "Source",
+    "source": "string n;string result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=llStringToBase64(n);after=1;}}"
+  },
+  {
+    "name": "decode_null",
+    "kind": "Source",
+    "source": "string n;string result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=llBase64ToString(n);after=1;}}"
+  },
+  {
+    "name": "md5_null",
+    "kind": "Source",
+    "source": "string n;string result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=llMD5String(n,7);after=1;}}"
+  },
+  {
+    "name": "sha1_null",
+    "kind": "Source",
+    "source": "string n;string result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=llSHA1String(n);after=1;}}"
+  },
+  {
+    "name": "sha256_null",
+    "kind": "Source",
+    "source": "string n;string result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=llSHA256String(n);after=1;}}"
+  },
+  {
+    "name": "sort_null",
+    "kind": "Source",
+    "source": "string n;list result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=llListSort([\"b\",n,\"a\"],1,TRUE);after=1;}}"
+  },
+  {
+    "name": "sort_desc",
+    "kind": "Source",
+    "source": "string n;list result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=llListSort([\"b\",n,\"a\"],1,FALSE);after=1;}}"
+  },
+  {
+    "name": "find_null_receiver",
+    "kind": "Source",
+    "source": "string n;integer result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=llListFindList([n],[n]);after=1;}}"
+  },
+  {
+    "name": "find_null_rhs",
+    "kind": "Source",
+    "source": "string n;integer result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=llListFindList([\"x\"],[n]);after=1;}}"
+  },
+  {
+    "name": "trim_invalid",
+    "kind": "Source",
+    "source": "string n;string result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=llStringTrim(n,99);after=1;}}"
+  },
+  {
+    "name": "trim_head",
+    "kind": "Source",
+    "source": "string n;string result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=llStringTrim(n,STRING_TRIM_HEAD);after=1;}}"
+  },
+  {
+    "name": "trim_tail",
+    "kind": "Source",
+    "source": "string n;string result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=llStringTrim(n,STRING_TRIM_TAIL);after=1;}}"
+  },
+  {
+    "name": "trim_both",
+    "kind": "Source",
+    "source": "string n;string result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=llStringTrim(n,STRING_TRIM);after=1;}}"
+  },
+  {
+    "name": "upper_null",
+    "kind": "Source",
+    "source": "string n;string result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=llToUpper(n);after=1;}}"
+  },
+  {
+    "name": "lower_null",
+    "kind": "Source",
+    "source": "string n;string result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=llToLower(n);after=1;}}"
+  },
+  {
+    "name": "dump_null_sep",
+    "kind": "Source",
+    "source": "string n;string result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=llDumpList2String([1,2],n);after=1;}}"
+  },
+  {
+    "name": "dump_single_null_sep",
+    "kind": "Source",
+    "source": "string n;string result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=llDumpList2String([1],n);after=1;}}"
+  },
+  {
+    "name": "dump_empty_null_sep",
+    "kind": "Source",
+    "source": "string n;string result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=llDumpList2String([],n);after=1;}}"
+  },
+  {
+    "name": "list2string_missing",
+    "kind": "Source",
+    "source": "string n;string result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=llList2String([n],1);after=1;}}"
+  },
+  {
+    "name": "list2key_missing",
+    "kind": "Source",
+    "source": "string n;key result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=llList2Key([n],1);after=1;}}"
+  },
+  {
+    "name": "find_empty_receiver",
+    "kind": "Source",
+    "source": "string n;integer result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=llListFindList([],[n]);after=1;}}"
+  },
+  {
+    "name": "sort_stride",
+    "kind": "Source",
+    "source": "string n;list result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=llListSort([\"z\",10,n,20,\"a\",30],2,TRUE);after=1;}}"
+  },
+  {
+    "name": "sort_all_null",
+    "kind": "Source",
+    "source": "string n;list result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=llListSort([n,n],1,TRUE);after=1;}}"
+  },
+  {
+    "name": "find_null_empty",
+    "kind": "Source",
+    "source": "string n;integer result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=llListFindList([n],[\"\"]);after=1;}}"
+  },
+  {
+    "name": "find_empty_null",
+    "kind": "Source",
+    "source": "string n;integer result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=llListFindList([\"\"],[n]);after=1;}}"
+  },
+  {
+    "name": "trim_zero",
+    "kind": "Source",
+    "source": "string n;string result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=llStringTrim(n,0);after=1;}}"
+  },
+  {
+    "name": "dump_null_item",
+    "kind": "Source",
+    "source": "string n;string result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=llDumpList2String([n],\"|\");after=1;}}"
+  },
+  {
+    "name": "csv_null_items",
+    "kind": "Source",
+    "source": "string n;string result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=llList2CSV([n,\"x\",n]);after=1;}}"
+  },
+  {
+    "name": "relational_less",
+    "kind": "Source",
+    "source": "string n;integer result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=n<\"\";after=1;}}"
+  },
+  {
+    "name": "relational_greater",
+    "kind": "Source",
+    "source": "string n;integer result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=\"\">n;after=1;}}"
+  },
+  {
+    "name": "relational_equal",
+    "kind": "Source",
+    "source": "string n;integer result;integer after;default{state_entry(){n=llComputeHash(\"payload\",\"unsupported\");result=n<=n;after=1;}}"
+  }
+]

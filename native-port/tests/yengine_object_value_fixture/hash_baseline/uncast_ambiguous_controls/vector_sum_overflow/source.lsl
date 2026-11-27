@@ -1,0 +1,1 @@
+vector input=<1,1,1>;integer result;integer after;default{state_entry(){result=xmrHashCode(input);after=1;}}

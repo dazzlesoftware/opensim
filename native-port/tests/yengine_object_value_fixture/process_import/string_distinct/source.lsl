@@ -1,0 +1,1 @@
+YOption arrays;object input;object alias;integer before_equal;integer result;integer entries;integer after;string make(){return llGetSubString("xsame",1,-1);}default{state_entry(){entries++;input=make();alias=make();before_equal=(input==alias);result=(input==alias);after=1;}}

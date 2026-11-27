@@ -1,0 +1,1 @@
+rotation input;integer result;integer after;default{state_entry(){input.x=llSqrt(-1.0);input.y=-llLog(0.0);input.z=llLog(0.0);input.s=-0.0;result=xmrHashCode(input);after=1;}}

@@ -1,0 +1,1 @@
+integer item=7;vector result;default{state_entry(){result=(vector)item;}}

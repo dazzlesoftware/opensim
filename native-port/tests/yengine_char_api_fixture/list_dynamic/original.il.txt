@@ -1,0 +1,94 @@
+  state[0] = default
+  numGblArrays       0
+  numGblChars        0
+  numGblFloats       0
+  numGblIntegers     2
+  numGblLists        0
+  numGblObjects      0
+  numGblRotations    0
+  numGblStrings      1
+  numGblVectors      0
+  numGblSDTClObjs    0
+  numGblSDTIntfObjs  0
+  input = iarIntegers[0]
+  result = iarStrings[0]
+  after = iarIntegers[1]
+  delegate void $anondel$void()();
+
+Void $globalvarinit() (EventHelpersInstance)
+{
+  0000    ldarg.0     
+  0001    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0006    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  000B    ldc.i4.0    
+  000C    ldc.i4      65536   (int)
+  0011    stelem.i4   
+  0012    ldarg.0     
+  0013    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0018    ldc.i4.0    
+  0019    ldstr       ""   (string)
+  001E    call        XMRInstArrays:PopString(Int32,String) -> Void
+  0023    ldarg.0     
+  0024    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0029    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  002E    ldc.i4.1    
+  002F    ldc.i4.0    
+  0030    stelem.i4   
+  0031    leave       __retlbl$0   (label)
+  0036  __retlbl$0:
+  0036    ret         
+}
+
+Void default state_entry (XMRInstAbstract)
+{
+          xmrsuper    __xmrinst$0
+  0000    ldarg.0     
+  0001    castclass   EventHelpersInstance   (type)
+  0006    stloc       __xmrinst$0   (local)
+  0007    ldloc       __xmrinst$0   (local)
+  0008    ldfld       XMRInstAbstract:m_localsHeapUsed -> Int32   (field)
+          int         __curHeap$1
+  000D    stloc       __curHeap$1   (local)
+          char        tmp$1$2
+          lslstr      tmp$2$3
+  000E    ldloc       __xmrinst$0   (local)
+  000F    ldfld       XMRInstAbstract:doGblInit -> Boolean   (field)
+  0014    brfalse     __skipGblInit$1   (label)
+  0019    ldloc       __xmrinst$0   (local)
+  001A    call        $globalvarinit()(EventHelpersInstance) -> Void
+  001F    ldloc       __xmrinst$0   (local)
+  0020    ldc.i4.0    
+  0021    stfld       XMRInstAbstract:doGblInit -> Boolean   (field)
+  0026  __skipGblInit$1:
+  0026    ldloc       __xmrinst$0   (local)
+  0027    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  002C    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  0031    ldc.i4.0    
+  0032    ldelem.i4   
+  0033    stloc       tmp$1$2   (local)
+  0034    ldloc       __xmrinst$0   (local)
+  0035    ldloc       tmp$1$2   (local)
+  0036    call        TypeCast:CharToList(Char) -> list
+  003B    ldstr       "|"   (string)
+  0040    call        ScriptBaseClass:llDumpList2String(list,String) -> LSLString
+  0045    stloc       tmp$2$3   (local)
+  0046    ldloc       __xmrinst$0   (local)
+  0047    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  004C    ldc.i4.0    
+  004D    ldloc       tmp$2$3   (local)
+  004E    ldfld       LSLString:m_string -> String   (field)
+  0053    call        XMRInstArrays:PopString(Int32,String) -> Void
+  0058    ldloc       __xmrinst$0   (local)
+  0059    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  005E    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  0063    ldc.i4.1    
+  0064    ldc.i4.1    
+  0065    stelem.i4   
+  0066    leave       __retlbl$0   (label)
+  006B  __retlbl$0:
+  006B    ldloc       __xmrinst$0   (local)
+  006C    ldloc       __curHeap$1   (local)
+  006D    stfld       XMRInstAbstract:m_localsHeapUsed -> Int32   (field)
+  0072    ret         
+}
+TheEnd.

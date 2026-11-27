@@ -31,17 +31,18 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <array>
 #include <deque>
 #include <span>
+
 namespace opensim::network {
 // Like LLUDPClient.DequeueOutgoing, calls are serialized by the owning transport.
 class ClientPacketQueue {
   public:
     using Packet = std::shared_ptr<OutgoingPacket>;
-    using Send = std::function<void(const Packet&)>;
+    using Send = std::function<void(const Packet &)>;
     using Empty = std::function<void(ThrottleOutPacketTypeFlags)>;
-    explicit ClientPacketQueue(const ThrottleRates& rates = ThrottleRates{}, TokenBucket* parent = nullptr,
+    explicit ClientPacketQueue(const ThrottleRates &rates = ThrottleRates{}, TokenBucket *parent = nullptr,
                                TokenBucket::Clock clock = {});
-    bool enqueue(const Packet& packet);
-    bool drain(const Send& send, const std::function<int()>& unacked_count, const Empty& empty = {});
+    bool enqueue(const Packet &packet);
+    bool drain(const Send &send, const std::function<int()> &unacked_count, const Empty &empty = {});
     void clear();
     std::size_t queued(ThrottleOutPacketType category) const;
     std::size_t queued() const;
@@ -50,7 +51,8 @@ class ClientPacketQueue {
     int bytes_can_send(ThrottleOutPacketType category, int time_ms) const;
     void force_setting(int category, int setting, int mtu = 1200);
     int setting(int category) const;
-    AdaptiveTokenBucket& flow() {
+
+    AdaptiveTokenBucket &flow() {
         return flow_;
     }
 
@@ -62,4 +64,4 @@ class ClientPacketQueue {
     std::array<Packet, 7> next_;
     bool closed_ = false;
 };
-}
+} // namespace opensim::network

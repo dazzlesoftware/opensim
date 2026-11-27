@@ -1,0 +1,1 @@
+YOption arrays;object input;object typename;object text;object repeat;object literal;integer same;integer type_same;integer literal_same;default{state_entry(){input=xmrFixedArrayAllocO(1);typename=xmrTypeName(input);text=(string)input;repeat=(string)input;literal="System.Object[]";same=(text==repeat);type_same=(text==typename);literal_same=(text==literal);}}

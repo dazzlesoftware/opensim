@@ -1,0 +1,27 @@
+{
+  "containerClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist[]",
+  "inputAliases": [
+    false,
+    false
+  ],
+  "globalUsage": 16,
+  "ownUsage": 16,
+  "values": [
+    {
+      "type": "list",
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+      "value": [
+        {
+          "type": "integer",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+          "value": 19
+        }
+      ]
+    },
+    {
+      "type": "null",
+      "clr": null,
+      "value": null
+    }
+  ]
+}

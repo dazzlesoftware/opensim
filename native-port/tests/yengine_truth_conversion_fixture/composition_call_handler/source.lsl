@@ -1,0 +1,1 @@
+integer after;integer seen;default{state_entry(){xmrEventCallHandler([21,xmrStringToBool("x")]);after=1;}touch_start(integer n){seen=n;}}

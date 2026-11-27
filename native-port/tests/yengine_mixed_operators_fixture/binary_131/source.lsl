@@ -1,0 +1,1 @@
+key left=(key)"bad";integer right=7;list result;default{state_entry(){result=[left<=right];}}

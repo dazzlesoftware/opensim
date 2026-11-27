@@ -6,6 +6,7 @@
 #include <thread>
 #include <vector>
 using namespace opensim::framework;
+
 int main() {
     ConfigHttpEnvironmentProxyNativeOptions native;
     int calls = 0;
@@ -35,7 +36,7 @@ int main() {
     bool null = false;
     try {
         cache.set({});
-    } catch (const ConfigUriComponentsError& e) {
+    } catch (const ConfigUriComponentsError &e) {
         null = e.source_type == "System.ArgumentNullException" &&
                e.parameter == std::optional<std::u16string>(u"value") && e.hresult == 0x80004003;
     }
@@ -52,7 +53,7 @@ int main() {
         try {
             failed.get();
             return 6;
-        } catch (const std::runtime_error& e) {
+        } catch (const std::runtime_error &e) {
             if (std::string(e.what()) != "OS proxy failure")
                 return 7;
         }
@@ -107,7 +108,7 @@ int main() {
     std::vector<std::future<std::shared_ptr<ConfigHttpProxy>>> pending_readers;
     for (int i = 0; i < 8; ++i)
         pending_readers.push_back(std::async(std::launch::async, [&] { return readers.get(); }));
-    for (auto& reader : pending_readers)
+    for (auto &reader : pending_readers)
         if (reader.get() != first)
             return 14;
     if (factories != 1)
@@ -126,7 +127,7 @@ int main() {
     bool missing = false;
     try {
         config_http_construct_default_proxy(options);
-    } catch (const ConfigHttpProxyProviderError&) {
+    } catch (const ConfigHttpProxyProviderError &) {
         missing = true;
     }
     if (!missing)
@@ -135,8 +136,8 @@ int main() {
     if (first->credentials())
         return 19;
     for (auto text : {u"http://example.com/", u"https://example.com/", u"socks5://localhost/", u"relative"}) {
-        auto uri = native_config_uri_object_backend()->create(nini_writer_text(text),
-                                                              ConfigUriObjectKind::RelativeOrAbsolute);
+        auto uri =
+            native_config_uri_object_backend()->create(nini_writer_text(text), ConfigUriObjectKind::RelativeOrAbsolute);
         if (first->get_proxy(uri) || !first->is_bypassed(uri))
             return 13;
     }

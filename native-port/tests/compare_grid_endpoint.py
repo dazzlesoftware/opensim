@@ -206,6 +206,7 @@ def main():
         ]:
             bodies.append("METHOD=" + method + tail)
     encoded_lookup = "METHOD=get_region_by_name&NAME=Alpha"
+    bodies.append("METHOD=get_region_by_uuid&REGIONID=%20" + first + "suffix")
     body_encodings = ("utf-8-sig", "utf-16", "utf-32")
     bodies = [body.encode() for body in bodies]
     bodies.extend(encoded_lookup.encode(encoding) for encoding in body_encodings)

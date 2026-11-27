@@ -1,0 +1,1 @@
+string result;integer after;default{state_entry(){result=llGetSubString(<0,0,0,1>,0,-1);after=1;}}

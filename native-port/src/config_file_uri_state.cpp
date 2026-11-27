@@ -2,23 +2,28 @@
 #include "opensim/framework/config_file_uri_state.hpp"
 #include "opensim/framework/config_file_uri_canonical.hpp"
 #include "opensim/framework/config_uri_iri.hpp"
+
 namespace opensim::framework {
 namespace {
 using U = std::uint64_t;
-constexpr U Implicit = 0x20000000, Authority = 0x100000, Dos = 0x8000000, Unc = 0x10000000,
-            Unicode = 0x200000000, Rest = 0x800000000;
+constexpr U Implicit = 0x20000000, Authority = 0x100000, Dos = 0x8000000, Unc = 0x10000000, Unicode = 0x200000000,
+            Rest = 0x800000000;
+
 bool sep(char16_t c) {
     return c == u'/' || c == u'\\';
 }
+
 bool lws(char16_t c) {
     return c == u' ' || c == u'\t' || c == u'\r' || c == u'\n';
 }
-void trim(std::u16string_view str, std::size_t& length, std::size_t index) {
+
+void trim(std::u16string_view str, std::size_t &length, std::size_t index) {
     while (length > index && lws(str[length - 1]))
         --length;
 }
-}
-void config_file_uri_create_info(ConfigFileUriState& s) {
+} // namespace
+
+void config_file_uri_create_info(ConfigFileUriState &s) {
     if (s.info)
         return;
     auto cf = s.flags;
@@ -26,7 +31,7 @@ void config_file_uri_create_info(ConfigFileUriState& s) {
     o.end = static_cast<std::uint16_t>(s.parse_string.size());
     bool flag = false;
     std::size_t i = 0;
-    auto& text = s.parse_string;
+    auto &text = s.parse_string;
     auto at = [&](std::size_t index) {
         if (index >= text.size())
             throw ConfigFileUriStateError(true);
@@ -87,7 +92,8 @@ void config_file_uri_create_info(ConfigFileUriState& s) {
     s.info = true;
     s.flags = (s.flags & ~U(65535)) | cf;
 }
-void config_file_uri_parse_remaining(ConfigFileUriState& s) {
+
+void config_file_uri_parse_remaining(ConfigFileUriState &s) {
     if (s.flags & 0x80000000)
         return;
     config_file_uri_create_info(s);
@@ -103,8 +109,8 @@ void config_file_uri_parse_remaining(ConfigFileUriState& s) {
         for (std::size_t i = 0; i < 4; ++i)
             if (scheme[i] != s.parse_string[position + i])
                 flags |= 1;
-        if ((s.flags & Authority) && (position + 7 >= length || s.parse_string[position + 5] != u'/' ||
-                                      s.parse_string[position + 6] != u'/'))
+        if ((s.flags & Authority) &&
+            (position + 7 >= length || s.parse_string[position + 5] != u'/' || s.parse_string[position + 6] != u'/'))
             flags |= 1;
     }
     position = s.offsets.path;
@@ -136,8 +142,8 @@ void config_file_uri_parse_remaining(ConfigFileUriState& s) {
             trim(s.parse_string, length, position);
     }
     auto canonical = [&](char16_t delimiter) {
-        auto r = config_file_uri_check_canonical(s.parse_string, position, length, delimiter,
-                                                 (s.flags & Implicit) != 0, (s.flags & Unicode) != 0);
+        auto r = config_file_uri_check_canonical(s.parse_string, position, length, delimiter, (s.flags & Implicit) != 0,
+                                                 (s.flags & Unicode) != 0);
         check = r.check;
         position = r.position;
     };
@@ -213,4 +219,4 @@ void config_file_uri_parse_remaining(ConfigFileUriState& s) {
     s.offsets.end = static_cast<std::uint16_t>(position);
     s.flags |= flags | 0x80000000ull | Rest;
 }
-}
+} // namespace opensim::framework

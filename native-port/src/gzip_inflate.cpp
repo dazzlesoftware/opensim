@@ -7,28 +7,32 @@
 #include <stdexcept>
 #define Z_PREFIX
 #include "../third_party/zlib/zlib.h"
+
 namespace opensim::network {
 std::string inflate_gzip(std::string_view bytes) {
     z_stream stream{};
     if (inflateInit2(&stream, 31) != Z_OK)
         throw std::runtime_error("gzip inflate initialization failed");
+
     struct End {
-        z_stream& stream;
+        z_stream &stream;
+
         ~End() {
             inflateEnd(&stream);
         }
     } end{stream};
+
     std::size_t offset = 0;
     std::string result;
     std::array<char, 8192> buffer{};
     while (true) {
         if (stream.avail_in == 0 && offset < bytes.size()) {
             auto size = std::min<std::size_t>(bytes.size() - offset, std::numeric_limits<uInt>::max());
-            stream.next_in = reinterpret_cast<Bytef*>(const_cast<char*>(bytes.data() + offset));
+            stream.next_in = reinterpret_cast<Bytef *>(const_cast<char *>(bytes.data() + offset));
             stream.avail_in = static_cast<uInt>(size);
             offset += size;
         }
-        stream.next_out = reinterpret_cast<Bytef*>(buffer.data());
+        stream.next_out = reinterpret_cast<Bytef *>(buffer.data());
         stream.avail_out = static_cast<uInt>(buffer.size());
         auto status = inflate(&stream, Z_NO_FLUSH);
         auto produced = buffer.size() - stream.avail_out;
@@ -54,4 +58,4 @@ std::string inflate_gzip(std::string_view bytes) {
     }
     return result;
 }
-}
+} // namespace opensim::network

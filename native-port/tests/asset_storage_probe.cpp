@@ -6,6 +6,7 @@
 #include <sstream>
 using namespace opensim;
 using namespace services;
+
 std::string hex(std::string_view text) {
     std::string result;
     for (unsigned char c : text) {
@@ -14,6 +15,7 @@ std::string hex(std::string_view text) {
     }
     return result;
 }
+
 std::optional<std::string> text(const std::string &value) {
     if (value == "N")
         return {};
@@ -24,22 +26,27 @@ std::optional<std::string> text(const std::string &value) {
         result += char(std::stoi(value.substr(i, 2), nullptr, 16));
     return result;
 }
+
 std::string token(const std::optional<std::string> &value) {
     return value ? "s" + hex(*value) : "N";
 }
+
 std::string bytes(const framework::AssetBytes &value) {
     return value ? hex(std::string(value->begin(), value->end())) : "N";
 }
+
 std::string snapshot(const std::shared_ptr<framework::AssetMetadata> &m) {
     if (!m)
         return "N";
-    return m->full_id().str() + ":" + token(m->id()) + ":" + token(m->name) + ":" + token(m->description) +
-           ":" + std::to_string(m->type) + ":" + std::to_string(m->flags) + ":" + (m->local ? "1" : "0") +
-           ":" + (m->temporary ? "1" : "0") + ":" + token(m->creator_id) + ":" + bytes(m->sha1);
+    return m->full_id().str() + ":" + token(m->id()) + ":" + token(m->name) + ":" + token(m->description) + ":" +
+           std::to_string(m->type) + ":" + std::to_string(m->flags) + ":" + (m->local ? "1" : "0") + ":" +
+           (m->temporary ? "1" : "0") + ":" + token(m->creator_id) + ":" + bytes(m->sha1);
 }
+
 std::string snapshot(const AssetService::Asset &asset) {
     return asset ? snapshot(asset->metadata()) + "/" + bytes(asset->data) : "N";
 }
+
 framework::Uuid uuid(const std::string &token) {
     auto value = text(token);
     framework::Uuid id;
@@ -47,6 +54,7 @@ framework::Uuid uuid(const std::string &token) {
         throw std::invalid_argument("UUID");
     return framework::parse_sdk_uuid(*value);
 }
+
 int main(int argc, char **argv) {
     try {
         if (argc != 2)
@@ -71,15 +79,15 @@ int main(int argc, char **argv) {
                     std::string id, name, desc, creator, data;
                     int type, flags, local, temp;
                     in >> id >> name >> desc >> type >> flags >> local >> temp >> creator >> data;
-                    asset = std::make_shared<framework::AssetBase>(text(id), text(name),
-                                                                   static_cast<int8_t>(type), text(creator));
+                    asset = std::make_shared<framework::AssetBase>(text(id), text(name), static_cast<int8_t>(type),
+                                                                   text(creator));
                     asset->description(text(desc));
                     asset->flags(flags);
                     asset->local(local != 0);
                     asset->temporary(temp != 0);
                     auto value = text(data);
-                    asset->data = value ? std::make_shared<std::vector<uint8_t>>(value->begin(), value->end())
-                                        : nullptr;
+                    asset->data =
+                        value ? std::make_shared<std::vector<uint8_t>>(value->begin(), value->end()) : nullptr;
                     result = snapshot(asset);
                 } else if (op == "s")
                     result = store->store(asset) ? "T" : "F";

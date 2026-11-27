@@ -154,6 +154,8 @@ static class Program
         var row = store.Get(Id(1), UUID.Zero);
         row.Data["flags"] = flags[seed % 8].ToString();
         row.Data["PrincipalID"] = (seed % 4 == 0 ? UUID.Zero : Id(9)).ToString();
+        if (seed % 8 == 1)
+            row.Data["PrincipalID"] = " " + Id(9).ToString() + "suffix";
         Emit(() => grid.RegisterRegion(Id(8), first));
         Emit(() => grid.GetRegionFlags(Id(8), Id(1)).ToString());
         first.RegionLocX += 8192;
@@ -164,6 +166,7 @@ static class Program
         Emit(() => grid.GetRegionFlags(Id(8), Id(99)).ToString());
         Emit(() => grid.Flags(3, "DefaultRegion -fallbackregion +PERSISTENT -DefaultRegion unknown +1024"));
         Emit(() => grid.Flags(-1, "-2147483648 +0 -1"));
+        Emit(() => grid.Flags(2, "\tDefaultRegion\t -\tfallbackregion\t +\tPERSISTENT"));
         // Provider quirks: scope is ignored; deletion reuses dictionary slots;
         // range Y extent uses sizeX, and !static flags still query the singleton.
         var tall = Region(10, "Tall", 1000, 10000, 256, 1024);

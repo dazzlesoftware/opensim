@@ -5,14 +5,17 @@
 #include <stdexcept>
 using namespace opensim;
 using namespace scene;
+
 static std::string h(float f) {
     std::ostringstream s;
     s << std::hex << std::bit_cast<std::uint32_t>(f);
     return s.str();
 }
+
 static std::string v(framework::Vector3 x) {
     return h(x.x) + "," + h(x.y) + "," + h(x.z);
 }
+
 static std::string probe(int seed, int mode) {
     PosPhysicsScene scene;
     std::vector<float> heights(65536);
@@ -32,8 +35,7 @@ static std::string probe(int seed, int mode) {
         c->set_velocity({2, -3, 4});
     if (mode & 256)
         scene.add_prim(p, {1, 1, 2},
-                       mode & 512 ? framework::Quaternion{.1f, .2f, .3f, .4f}
-                                  : framework::Quaternion{0, 0, 0, 1});
+                       mode & 512 ? framework::Quaternion{.1f, .2f, .3f, .4f} : framework::Quaternion{0, 0, 0, 1});
     float dt = mode % 4 == 0 ? 0.f : mode % 4 == 1 ? .016f : mode % 4 == 2 ? .25f : -.125f;
     int callbacks = 0;
     c->on_terse_update = [&] { callbacks++; };
@@ -42,14 +44,15 @@ static std::string probe(int seed, int mode) {
     try {
         for (int i = 0; i < (mode & 1024 ? 5 : 1); i++)
             fps = scene.simulate(dt);
-    } catch (const std::out_of_range&) {
+    } catch (const std::out_of_range &) {
         error = "EX;";
     }
-    return error + v(c->position) + "|" + v(c->velocity) + "|" + v(c->target_velocity) + "|" + v(c->size()) +
-           "|" + std::to_string(c->is_colliding) + "|" + std::to_string(c->terse_update_count) + "|" +
+    return error + v(c->position) + "|" + v(c->velocity) + "|" + v(c->target_velocity) + "|" + v(c->size()) + "|" +
+           std::to_string(c->is_colliding) + "|" + std::to_string(c->terse_update_count) + "|" +
            std::to_string(callbacks) + "|" + h(fps);
 }
-int main(int argc, char**) {
+
+int main(int argc, char **) {
     try {
         if (argc > 1) {
             int seed, mode;
@@ -72,7 +75,7 @@ int main(int argc, char**) {
         if (c->position != before)
             throw std::runtime_error("remove");
         std::cout << "PASS: POS avatar defaults, old-position clamps, gravity and lifecycle\n";
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << "\n";
         return 1;
     }

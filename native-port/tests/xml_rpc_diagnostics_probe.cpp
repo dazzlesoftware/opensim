@@ -11,7 +11,8 @@
 using namespace opensim;
 using namespace network;
 using Text = std::optional<std::u16string>;
-std::string H(const std::u16string& t) {
+
+std::string H(const std::u16string &t) {
     if (t.empty())
         return ".";
     std::string o;
@@ -22,32 +23,34 @@ std::string H(const std::u16string& t) {
         }
     return o;
 }
-Text D(const std::string& h) {
+
+Text D(const std::string &h) {
     if (h == "-")
         return {};
     if (h == ".")
         return u"";
     std::u16string o;
     for (std::size_t i = 0; i < h.size(); i += 4)
-        o += char16_t(std::stoi(h.substr(i, 2), nullptr, 16) |
-                      (std::stoi(h.substr(i + 2, 2), nullptr, 16) << 8));
+        o += char16_t(std::stoi(h.substr(i, 2), nullptr, 16) | (std::stoi(h.substr(i + 2, 2), nullptr, 16) << 8));
     return o;
 }
+
 std::string Error() {
     try {
         throw;
-    } catch (const NwcXmlRpcError& e) {
+    } catch (const NwcXmlRpcError &e) {
         return e.source_type + ":" + H(e.message);
-    } catch (const framework::NiniXmlProviderError& e) {
+    } catch (const framework::NiniXmlProviderError &e) {
         return e.source_type + ":" + H(e.message);
-    } catch (const framework::XmlTextWriterError& e) {
+    } catch (const framework::XmlTextWriterError &e) {
         return e.source_type + ":" + H(e.message);
-    } catch (const framework::XmlEncoderError& e) {
+    } catch (const framework::XmlEncoderError &e) {
         return std::string(e.source_type) + ":" + H(e.message);
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         return "UNEXPECTED:" + std::string(e.what());
     }
 }
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -63,9 +66,8 @@ int main() {
                     throw NwcXmlRpcError("System.NullReferenceException",
                                          u"Object reference not set to an instance of an object.");
                 std::u16string log;
-                xml_rpc_log_detail([&] { return level; }, [&](const auto& v) { log += v; },
-                                   (id == 0 ? u"SEND " : u"RESPONSE ") +
-                                       framework::utf16(std::to_string(id)) + u": ",
+                xml_rpc_log_detail([&] { return level; }, [&](const auto &v) { log += v; },
+                                   (id == 0 ? u"SEND " : u"RESPONSE ") + framework::utf16(std::to_string(id)) + u": ",
                                    *text);
                 result = "L:" + H(log);
             } else {
@@ -92,14 +94,12 @@ int main() {
                             real.real = 3.5;
                             Value date;
                             date.kind = Value::Kind::Date;
-                            date.sdk_date =
-                                std::make_shared<framework::AssetDateTime>(638448068960000000LL, 0);
+                            date.sdk_date = std::make_shared<framework::AssetDateTime>(638448068960000000LL, 0);
                             inner.array = {Value(true), Value(std::int32_t(47)), real, date,
                                            osd_from_binary(std::make_shared<std::vector<std::uint8_t>>(
                                                std::initializer_list<std::uint8_t>{0, 255}))};
-                            values->array = {
-                                v ? Value::alias(v) : Value::null_reference(), inner,
-                                Value::object({{"name", v ? Value::alias(v) : Value::null_reference()}})};
+                            values->array = {v ? Value::alias(v) : Value::null_reference(), inner,
+                                             Value::object({{"name", v ? Value::alias(v) : Value::null_reference()}})};
                             v = values;
                         }
                         r->set_value(v);
@@ -107,8 +107,7 @@ int main() {
                     }
                 }
                 if (!text)
-                    throw NwcXmlRpcError("System.ArgumentNullException",
-                                         u"Value cannot be null. (Parameter 's')");
+                    throw NwcXmlRpcError("System.ArgumentNullException", u"Value cannot be null. (Parameter 's')");
                 result = "X:" + H(compact_nwc_xml_rpc_diagnostic(*text));
             }
         } catch (...) {

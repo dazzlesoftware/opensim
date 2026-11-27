@@ -14,81 +14,101 @@
 #include <utility>
 using namespace opensim;
 using namespace opensim::services;
+
 namespace {
 int checks = 0;
+
 void check(bool value, const char *label) {
     ++checks;
     if (!value)
         throw std::runtime_error(label);
 }
+
 std::string text(const std::filesystem::path &path) {
     auto value = path.u8string();
     return {reinterpret_cast<const char *>(value.data()), value.size()};
 }
+
 struct TemporaryDirectory {
     std::filesystem::path path =
         std::filesystem::temp_directory_path() / ("opensim-region-assets-" + framework::Uuid::random().str());
+
     TemporaryDirectory() {
         std::filesystem::create_directory(path);
     }
+
     ~TemporaryDirectory() {
         std::error_code error;
         std::filesystem::remove_all(path, error);
     }
 };
+
 struct Backend final : SceneCapabilityBackend {
     std::shared_ptr<server::RegistryCapabilityListener> registry;
-    explicit Backend(std::shared_ptr<server::RegistryCapabilityListener> listener)
-        : registry(std::move(listener)) {}
+
+    explicit Backend(std::shared_ptr<server::RegistryCapabilityListener> listener) : registry(std::move(listener)) {}
+
     std::string scene_name() const override {
         return "Asset test scene";
     }
+
     std::optional<std::string> region_name() const override {
         return "Asset test region";
     }
+
     std::optional<std::string> external_host() const override {
         return "127.0.0.1";
     }
+
     std::shared_ptr<CapabilityRuntimeListener> listener() const override {
         return registry;
     }
+
     bool check_client(framework::Uuid, const network::HttpRequest &) override {
         return true;
     }
+
     void debug(const std::string &) override {}
+
     void warn(const std::string &) override {}
+
     void error(const std::string &) override {}
+
     void console(const std::string &) override {}
+
     void add_command(CapabilityCommand) override {}
 };
+
 server::IniConfig config(const TemporaryDirectory &directory, const std::string &filename, bool connector,
                          const std::string &provider = "OpenSim.Data.SQLite.dll") {
     auto path = directory.path / filename;
     std::ofstream file(path, std::ios::binary);
-    file
-        << "[Modules]\nAssetServices=" << (connector ? "LocalAssetServicesConnector" : "")
-        << "\n[AssetService]\nLocalServiceModule=OpenSim.Services.AssetService.dll:AssetService\nStorageProvider="
-        << provider << "\nConnectionString=URI=file:" << text(directory.path / "assets.db")
-        << ";version=3;Pooling=false"
-        << "\nAssetLoaderEnabled=false\n[ClientStack.LindenCaps]\nCap_GetTexture=localhost\nCap_GetMesh=localhost\nCap_GetMesh2=localhost\nCap_GetAsset=localhost\n";
+    file << "[Modules]\nAssetServices=" << (connector ? "LocalAssetServicesConnector" : "")
+         << "\n[AssetService]\nLocalServiceModule=OpenSim.Services.AssetService.dll:AssetService\nStorageProvider="
+         << provider << "\nConnectionString=URI=file:" << text(directory.path / "assets.db")
+         << ";version=3;Pooling=false"
+         << "\nAssetLoaderEnabled=false\n[ClientStack.LindenCaps]\nCap_GetTexture=localhost\nCap_GetMesh="
+            "localhost\nCap_GetMesh2=localhost\nCap_GetAsset=localhost\n";
     file.close();
     if (!file)
         throw std::runtime_error("Cannot write test configuration");
     return server::IniConfig::load(path);
 }
+
 void cache_profiles() {
     TemporaryDirectory directory;
     config(directory, "cache.ini", true);
     auto file = directory.path / "cache.ini";
     {
         std::ofstream out(file, std::ios::app);
-        out << "\n[Modules]\nAssetServices=LocalAssetServicesConnector\nAssetCaching=FlotsamAssetCache\n[AssetCache]\nFileCacheEnabled=false\nMemoryCacheEnabled=true\nMemoryCacheTimeout=0.25\n";
+        out << "\n[Modules]\nAssetServices=LocalAssetServicesConnector\nAssetCaching=FlotsamAssetCache\n[AssetCache]"
+               "\nFileCacheEnabled=false\nMemoryCacheEnabled=true\nMemoryCacheTimeout=0.25\n";
     }
     auto settings = server::IniConfig::load(file);
     auto local = framework::Uuid::random();
     for (int pass = 0; pass < 2; ++pass) {
-        auto registry = std::make_shared<server::RegistryCapabilityListener>(
-            server::CapabilityListenerInfo{false, 19002, 0, {}});
+        auto registry =
+            std::make_shared<server::RegistryCapabilityListener>(server::CapabilityListenerInfo{false, 19002, 0, {}});
         SceneCapabilities scene(std::make_shared<Backend>(registry));
         RegionAssetRuntime assets(settings, scene.shared_events());
         check(bool(assets.asset_cache()), "selected real memory cache exposed");
@@ -96,14 +116,12 @@ void cache_profiles() {
             auto a = std::make_shared<framework::AssetBase>(local, "local bake", std::int8_t(0), "creator");
             a->local(true);
             a->temporary(true);
-            a->data =
-                std::make_shared<std::vector<std::uint8_t>>(std::initializer_list<std::uint8_t>{0, 255, 1});
+            a->data = std::make_shared<std::vector<std::uint8_t>>(std::initializer_list<std::uint8_t>{0, 255, 1});
             check(assets.store(a) == local.str() && assets.get(local) == a &&
                       assets.asset_cache()->get_cached(local.str()) == a,
                   "real connector retains local asset in cache without ordinary persistence");
         } else
-            check(!assets.get(local),
-                  "local cached asset is absent from actual SQLite after cache/runtime restart");
+            check(!assets.get(local), "local cached asset is absent from actual SQLite after cache/runtime restart");
         std::vector<std::string> lines;
         auto output = [&](const std::string &text) { lines.push_back(text); };
         check(assets.cache_console({"fcache", "expire", "invalid-date"}, output) &&
@@ -125,8 +143,8 @@ void cache_profiles() {
         std::ofstream out(file, std::ios::app);
         out << "\n[AssetCache]\nFileCacheEnabled=true\n";
     }
-    auto registry = std::make_shared<server::RegistryCapabilityListener>(
-        server::CapabilityListenerInfo{false, 19003, 0, {}});
+    auto registry =
+        std::make_shared<server::RegistryCapabilityListener>(server::CapabilityListenerInfo{false, 19003, 0, {}});
     SceneCapabilities scene(std::make_shared<Backend>(registry));
     auto before = scene.events().on_register_caps.snapshot().size();
     bool rejected = false;
@@ -140,8 +158,8 @@ void cache_profiles() {
     const auto cache_directory = directory.path / "disk-cache";
     {
         std::ofstream out(file, std::ios::app);
-        out << "\n[AssetCache]\nFileCleanupTimer=0\nMemoryCacheEnabled=false\nCacheDirectory="
-            << text(cache_directory) << '\n';
+        out << "\n[AssetCache]\nFileCleanupTimer=0\nMemoryCacheEnabled=false\nCacheDirectory=" << text(cache_directory)
+            << '\n';
     }
     const auto disk_settings = server::IniConfig::load(file);
     const auto disk_file = cache_directory / local.str().substr(0, 3) / local.str();
@@ -166,7 +184,7 @@ void cache_profiles() {
         std::ofstream(status_file) << "Cache status fixture";
         auto status = std::make_shared<std::promise<bool>>();
         auto reported = status->get_future();
-        auto output = [status, local, counted = false](const std::string& line) mutable {
+        auto output = [status, local, counted = false](const std::string &line) mutable {
             if (line == "[FLOTSAM ASSET CACHE]   File Cache: 2 assets")
                 counted = true;
             if (line.starts_with("[FLOTSAM ASSET CACHE] Region: " + local.str() + "."))
@@ -179,9 +197,9 @@ void cache_profiles() {
         check(!std::filesystem::exists(disk_file) && !assets.get(local),
               "explicit asset expiry removes the file and the cached asset");
         std::string cleared;
-        check(assets.cache_console({"fcache", "clear", "file"}, [&](const auto& line) { cleared = line; }) &&
-                  cleared == "File cache cleared." &&
-                  std::filesystem::is_directory(cache_directory) && std::filesystem::is_empty(cache_directory),
+        check(assets.cache_console({"fcache", "clear", "file"}, [&](const auto &line) { cleared = line; }) &&
+                  cleared == "File cache cleared." && std::filesystem::is_directory(cache_directory) &&
+                  std::filesystem::is_empty(cache_directory),
               "disk clear removes the cache tier and root region stamp");
         assets.stop();
     }
@@ -192,7 +210,7 @@ void cache_profiles() {
     }
     const auto stale = framework::Uuid::random().str();
     const auto stale_file = cache_directory / stale.substr(0, 3) / stale;
-    for (const auto& entry : {disk_file, stale_file}) {
+    for (const auto &entry : {disk_file, stale_file}) {
         std::filesystem::create_directories(entry.parent_path());
         std::ofstream(entry) << "cache cleanup fixture";
     }
@@ -201,11 +219,11 @@ void cache_profiles() {
         std::mutex cleanup_log_mutex;
         RegionAssetRuntime assets(
             server::IniConfig::load(file), scene.shared_events(), {}, {}, local,
-            [&](const auto&, const auto& message) {
+            [&](const auto &, const auto &message) {
                 std::lock_guard lock(cleanup_log_mutex);
                 cleanup_log += message + '\n';
-            }, {}, {},
-            [local](opensim::scene::UuidGatherer& gatherer) { gatherer.add_gathered(local, 0); });
+            },
+            {}, {}, [local](opensim::scene::UuidGatherer &gatherer) { gatherer.add_gathered(local, 0); });
         for (int attempt = 0; attempt < 200 && std::filesystem::exists(stale_file); ++attempt)
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         assets.quiesce_cache_cleanup();
@@ -224,13 +242,12 @@ void cache_profiles() {
         const auto destination = cache_directory / referenced.str().substr(0, 3) / referenced.str();
         std::promise<void> allow_scan;
         auto scan_ready = allow_scan.get_future().share();
-        RegionAssetRuntime assets(
-            disk_settings, scene.shared_events(), {}, {}, local, {}, {}, {},
-            [referenced, scan_ready](opensim::scene::UuidGatherer& gatherer) {
-                if (scan_ready.wait_for(std::chrono::seconds(2)) != std::future_status::ready)
-                    throw std::runtime_error("Cache scan ran on the console thread");
-                gatherer.add_gathered(referenced, 0);
-            });
+        RegionAssetRuntime assets(disk_settings, scene.shared_events(), {}, {}, local, {}, {}, {},
+                                  [referenced, scan_ready](opensim::scene::UuidGatherer &gatherer) {
+                                      if (scan_ready.wait_for(std::chrono::seconds(2)) != std::future_status::ready)
+                                          throw std::runtime_error("Cache scan ran on the console thread");
+                                      gatherer.add_gathered(referenced, 0);
+                                  });
         auto texture = std::make_shared<framework::AssetBase>(referenced, "scene texture", std::int8_t(0), "");
         texture->data = std::make_shared<std::vector<std::uint8_t>>(3, 42);
         check(assets.store(texture) == referenced.str(), "store a persistent scene texture");
@@ -244,13 +261,14 @@ void cache_profiles() {
         check(!std::filesystem::exists(destination), "prefetch fixture starts with a cache miss");
         auto completion = std::make_shared<std::promise<std::string>>();
         auto result = completion->get_future();
-        check(assets.cache_console({"fcache", "assets"}, [completion](const auto& line) {
-                  if (line.starts_with("Completed check"))
-                      completion->set_value(line);
-              }),
+        check(assets.cache_console({"fcache", "assets"},
+                                   [completion](const auto &line) {
+                                       if (line.starts_with("Completed check"))
+                                           completion->set_value(line);
+                                   }),
               "fcache assets returns while the scan is still pending");
         std::string overlap;
-        check(assets.cache_console({"fcache", "assets"}, [&](const auto& line) { overlap = line; }) &&
+        check(assets.cache_console({"fcache", "assets"}, [&](const auto &line) { overlap = line; }) &&
                   overlap == "Flotsam assets check already running",
               "fcache rejects an overlapping scan while the worker is active");
         allow_scan.set_value();
@@ -261,12 +279,14 @@ void cache_profiles() {
         auto entered_future = entered->get_future();
         std::promise<void> release;
         auto released = release.get_future().share();
-        check(assets.cache_console({"fcache", "status"}, [entered, released, first = true](const auto&) mutable {
-                  if (std::exchange(first, false)) {
-                      entered->set_value();
-                      released.wait_for(std::chrono::seconds(2));
-                  }
-              }) && entered_future.wait_for(std::chrono::seconds(2)) == std::future_status::ready,
+        check(assets.cache_console({"fcache", "status"},
+                                   [entered, released, first = true](const auto &) mutable {
+                                       if (std::exchange(first, false)) {
+                                           entered->set_value();
+                                           released.wait_for(std::chrono::seconds(2));
+                                       }
+                                   }) &&
+                  entered_future.wait_for(std::chrono::seconds(2)) == std::future_status::ready,
               "status starts on the console worker");
         auto shutdown = std::async(std::launch::async, [&] { assets.quiesce_cache_cleanup(); });
         const auto waits_for_status = shutdown.wait_for(std::chrono::milliseconds(30)) == std::future_status::timeout;
@@ -277,19 +297,19 @@ void cache_profiles() {
     }
     scene.shutdown();
 }
+
 void run() {
     TemporaryDirectory directory;
     auto settings = config(directory, "assets.ini", true);
     // Each pass owns fresh connector/module state; the SQLite database survives.
     for (int pass = 0; pass < 2; ++pass) {
-        auto registry = std::make_shared<server::RegistryCapabilityListener>(
-            server::CapabilityListenerInfo{false, 19000, 0, {}});
+        auto registry =
+            std::make_shared<server::RegistryCapabilityListener>(server::CapabilityListenerInfo{false, 19000, 0, {}});
         SceneCapabilities capabilities(std::make_shared<Backend>(registry));
         auto registrations = capabilities.events().on_register_caps.snapshot().size();
         std::vector<std::pair<std::string, std::string>> logs;
-        RegionAssetRuntime assets(
-            settings, capabilities.shared_events(), "Asset region", {}, {},
-            [&](const auto &level, const auto &message) { logs.emplace_back(level, message); });
+        RegionAssetRuntime assets(settings, capabilities.shared_events(), "Asset region", {}, {},
+                                  [&](const auto &level, const auto &message) { logs.emplace_back(level, message); });
         check(capabilities.events().on_register_caps.snapshot().size() == registrations + 1,
               "asset module subscribes once");
         framework::Uuid stored_id("00000000-0000-0000-0000-00000000a501");
@@ -312,8 +332,8 @@ void run() {
         capabilities.capabilities().set_agent_caps_seeds(circuit);
         capabilities.capabilities().create_caps(circuit->agent_id, circuit->circuit_code);
         capabilities.capabilities().activate_caps(circuit->circuit_code);
-        auto caps = std::dynamic_pointer_cast<Caps>(
-            capabilities.capabilities().get_caps_for_user(circuit->circuit_code));
+        auto caps =
+            std::dynamic_pointer_cast<Caps>(capabilities.capabilities().get_caps_for_user(circuit->circuit_code));
         check(bool(caps), "real circuit caps created");
         check(registry->routes.simple_keys().size() == 1, "single seed route registered");
         check(registry->routes.poll_keys().size() == 5, "four asset routes plus event queue registered");
@@ -326,8 +346,8 @@ void run() {
         network::HttpRequest request;
         request.method = "POST";
         request.content_type = "application/llsd+xml";
-        request.body =
-            "<llsd><array><string>GetTexture</string><string>GetMesh</string><string>GetMesh2</string><string>ViewerAsset</string></array></llsd>";
+        request.body = "<llsd><array><string>GetTexture</string><string>GetMesh</string><string>GetMesh2</"
+                       "string><string>ViewerAsset</string></array></llsd>";
         auto response = seed->handle(request);
         check(response.status == 200, "seed negotiation succeeds");
         for (auto name : {"GetTexture", "GetMesh", "GetMesh2", "ViewerAsset"})
@@ -343,8 +363,7 @@ void run() {
             check(std::any_of(logs.begin(), logs.end(),
                               [](const auto &entry) {
                                   return entry.first == "error" &&
-                                         entry.second.starts_with(
-                                             "[ASSET SERVICE]: Exception getting asset ");
+                                         entry.second.starts_with("[ASSET SERVICE]: Exception getting asset ");
                               }),
                   "asset runtime retains error severity without flattening it into message text");
         }
@@ -370,8 +389,8 @@ void run() {
     }
     for (auto invalid : {config(directory, "disabled.ini", false),
                          config(directory, "unsupported.ini", true, "Unsupported.Asset.Provider")}) {
-        auto registry = std::make_shared<server::RegistryCapabilityListener>(
-            server::CapabilityListenerInfo{false, 19001, 0, {}});
+        auto registry =
+            std::make_shared<server::RegistryCapabilityListener>(server::CapabilityListenerInfo{false, 19001, 0, {}});
         SceneCapabilities capabilities(std::make_shared<Backend>(registry));
         auto before = capabilities.events().on_register_caps.snapshot().size();
         bool failed = false;
@@ -388,7 +407,8 @@ void run() {
         capabilities.shutdown();
     }
 }
-}
+} // namespace
+
 int main() {
     try {
         run();

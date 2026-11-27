@@ -1,0 +1,1 @@
+string left="a";integer right=7;default{state_entry(){left+=right;}}

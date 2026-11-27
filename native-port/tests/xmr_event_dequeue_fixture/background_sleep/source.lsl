@@ -1,0 +1,1 @@
+list result;integer count;integer background;default{state_entry(){count++;result=xmrEventDequeue(600.0,536870912,0,2097152,0);count+=10;}touch_start(integer n){llSleep(0.2);background=n;}touch_end(integer n){background+=100;}timer(){background+=1000;}}

@@ -37,6 +37,7 @@
 #include <stdexcept>
 #include <bit>
 #include <cstdint>
+
 namespace opensim::framework {
 namespace {
 std::string number(double value) {
@@ -72,11 +73,12 @@ std::string number(double value) {
     scientific[separator] = 'E';
     return scientific;
 }
-bool floating(std::u16string_view input, double& value) {
+
+bool floating(std::u16string_view input, double &value) {
     const auto nul = input.find(char16_t{});
     const bool has_nul = nul != std::u16string_view::npos;
-    if (has_nul && !std::all_of(input.begin() + static_cast<std::ptrdiff_t>(nul), input.end(),
-                                [](char16_t c) { return c == 0; }))
+    if (has_nul &&
+        !std::all_of(input.begin() + static_cast<std::ptrdiff_t>(nul), input.end(), [](char16_t c) { return c == 0; }))
         return false;
     bool non_ascii_padding = false;
     while (!input.empty() && unicode_whitespace(input.front())) {
@@ -100,8 +102,8 @@ bool floating(std::u16string_view input, double& value) {
         value = negative ? -std::numeric_limits<double>::infinity() : std::numeric_limits<double>::infinity();
         return true;
     }
-    if (input.size() == 3 && (input[0] == u'N' || input[0] == u'n') &&
-        (input[1] == u'A' || input[1] == u'a') && (input[2] == u'N' || input[2] == u'n')) {
+    if (input.size() == 3 && (input[0] == u'N' || input[0] == u'n') && (input[1] == u'A' || input[1] == u'a') &&
+        (input[2] == u'N' || input[2] == u'n')) {
         value = std::bit_cast<double>(std::uint64_t{0xfff8000000000000});
         return true;
     }
@@ -169,11 +171,13 @@ bool floating(std::u16string_view input, double& value) {
         value = -value;
     return true;
 }
-}
-std::string vector3d_string(const Vector3d& value) {
+} // namespace
+
+std::string vector3d_string(const Vector3d &value) {
     return "<" + number(value.x) + ", " + number(value.y) + ", " + number(value.z) + ">";
 }
-bool try_parse_sdk_vector3d(std::u16string_view input, Vector3d& value) {
+
+bool try_parse_sdk_vector3d(std::u16string_view input, Vector3d &value) {
     value = {};
     const auto size = input.size();
     if (size < 7)
@@ -208,4 +212,4 @@ bool try_parse_sdk_vector3d(std::u16string_view input, Vector3d& value) {
     value = {x, y, z};
     return true;
 }
-}
+} // namespace opensim::framework

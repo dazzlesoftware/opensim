@@ -1,0 +1,45 @@
+{
+  "os_release": "PRETTY_NAME=\"Ubuntu 24.04.5 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"24.04\"\nVERSION=\"24.04.5 LTS (Noble Numbat)\"\nVERSION_CODENAME=noble\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=noble\nLOGO=ubuntu-logo\n",
+  "runtime": "Microsoft.NETCore.App 8.0.34 [/usr/lib/dotnet/shared/Microsoft.NETCore.App]",
+  "packages": "fontconfig\t2.15.0-1.1ubuntu2\nfonts-liberation\t1:2.1.5-3\nlibc6:amd64\t2.39-0ubuntu8.12\nlibfontconfig1:amd64\t2.15.0-1.1ubuntu2\nlibgdiplus\t6.1+dfsg-1build3",
+  "fontconfig_fonts_in_command_order": [
+    "Liberation Mono\t/usr/share/fonts/truetype/liberation/LiberationMono-Bold.ttf",
+    "Liberation Serif\t/usr/share/fonts/truetype/liberation/LiberationSerif-BoldItalic.ttf",
+    "Liberation Sans\t/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+    "Liberation Sans\t/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+    "Liberation Mono\t/usr/share/fonts/truetype/liberation/LiberationMono-Italic.ttf",
+    "Liberation Serif\t/usr/share/fonts/truetype/liberation/LiberationSerif-Italic.ttf",
+    "Liberation Sans\t/usr/share/fonts/truetype/liberation/LiberationSans-Italic.ttf",
+    "Liberation Mono\t/usr/share/fonts/truetype/liberation/LiberationMono-BoldItalic.ttf",
+    "Liberation Mono\t/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf",
+    "Liberation Sans\t/usr/share/fonts/truetype/liberation/LiberationSans-BoldItalic.ttf",
+    "Liberation Serif\t/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf",
+    "Liberation Serif\t/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf"
+  ],
+  "font_files_sha256": {
+    "/usr/share/fonts/truetype/liberation/LiberationMono-Bold.ttf": "626655e94dd82f3f42549daf995c921b0915fa8ab1f4b839559e8892ea41d240",
+    "/usr/share/fonts/truetype/liberation/LiberationMono-BoldItalic.ttf": "15eb161953e3ecc7fc05a3fec8a59e0f4e0a54a4e375736adf8e98d65981f813",
+    "/usr/share/fonts/truetype/liberation/LiberationMono-Italic.ttf": "a71b2c25c89da05cf0e7c4dbba8d473fdead0b181ae56165217747d2c1f39215",
+    "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf": "395fa5ab8d40c8eba390ced528744ea75a7f69aabf3e68b6f925ca0e39a27370",
+    "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf": "3973aa5054fb467dd5627245d3dc82e37bf16fe075756156a570455871351582",
+    "/usr/share/fonts/truetype/liberation/LiberationSans-BoldItalic.ttf": "c80fa7f2ffa0e01d4d8dcd6a6d1e43eda665222d1b4db597dde1174c456006cf",
+    "/usr/share/fonts/truetype/liberation/LiberationSans-Italic.ttf": "830c5fa600505fb4c1a271b4271c53c44bae43f492b2a240d0e98a3a7a380121",
+    "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf": "4659bc0c58c5028dd488ec928d41d9265db43d9b669fc14ca8b0832daca7b144",
+    "/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf": "9e66c25e20868756bf12eb24a520a4552727c9cd108f577f7ae33e3c0110e39c",
+    "/usr/share/fonts/truetype/liberation/LiberationSerif-BoldItalic.ttf": "379010e87421a883f7bbfa7936d23dfe0257a54ce850819b74556e9f2c615a8a",
+    "/usr/share/fonts/truetype/liberation/LiberationSerif-Italic.ttf": "eaeaf7f2b12544ecde64290c1fa7ec403ff70fd58b313637b265400b20249242",
+    "/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf": "705903ae1382f0150f115d6f10a30f5b2f3d6ade649c474afe6366c39174fb65"
+  },
+  "locale_environment": {
+    "LANG": null,
+    "LC_ALL": null,
+    "LC_CTYPE": "C.UTF-8",
+    "LANGUAGE": null
+  },
+  "reference_image": "opensim-native-original-grid:ubuntu24.04",
+  "reference_image_id": "sha256:cbf15413c836e13ef6678f93d68dddd09ae6edf037449f9a1dd3507138c7450d",
+  "isolation": "New disposable --rm --network none reference containers only; source/managed references mounted readonly; no host software/image/preview/TestBuild changes.",
+  "original_font_method_evidence": "fonts-available-original-linux.json",
+  "original_font_method_evidence_sha256": "9607a69eaf08d4945a16a56c1978a6a391214582d67d88de9a88996e42206076",
+  "selected_drawing_linux_sha256": "89ea595ccb1fd1384480c1e30bd487c92af5d06d3b06f295323eff601acd9019"
+}

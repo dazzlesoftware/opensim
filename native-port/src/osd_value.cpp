@@ -17,12 +17,14 @@
 #include <iomanip>
 #include <sstream>
 #include <stdexcept>
+
 namespace opensim::network {
 namespace {
 bool white(char16_t c) {
     return c == ' ' || (c >= '\t' && c <= '\r');
 }
-bool number(std::string_view text, double& value) {
+
+bool number(std::string_view text, double &value) {
     const auto storage = framework::utf16_replacing(text);
     auto special = std::u16string_view(storage);
     while (!special.empty() && framework::unicode_whitespace(special.front()))
@@ -35,7 +37,7 @@ bool number(std::string_view text, double& value) {
         special.remove_prefix(1);
     }
     std::u16string lower(special);
-    for (auto& c : lower)
+    for (auto &c : lower)
         if (c >= 'A' && c <= 'Z')
             c += 32;
     if (lower == u"nan") {
@@ -108,12 +110,11 @@ bool number(std::string_view text, double& value) {
         ++position;
     if (position != input.size())
         return false;
-    const auto parsed = std::from_chars(normalized.data(), normalized.data() + normalized.size(), value,
-                                        std::chars_format::general);
+    const auto parsed =
+        std::from_chars(normalized.data(), normalized.data() + normalized.size(), value, std::chars_format::general);
     if (parsed.ec == std::errc::result_out_of_range) {
-        const auto power =
-            exponent + static_cast<std::int64_t>(before) -
-            static_cast<std::int64_t>(first_nonzero == std::string::npos ? digits : first_nonzero) - 1;
+        const auto power = exponent + static_cast<std::int64_t>(before) -
+                           static_cast<std::int64_t>(first_nonzero == std::string::npos ? digits : first_nonzero) - 1;
         value = power >= 0 ? std::numeric_limits<double>::infinity() : 0.;
     } else if (parsed.ec != std::errc{} || parsed.ptr != normalized.data() + normalized.size())
         return false;
@@ -121,6 +122,7 @@ bool number(std::string_view text, double& value) {
         value = -value;
     return true;
 }
+
 std::vector<std::uint8_t> binary(std::string_view encoded) {
     std::string text;
     for (char c : encoded)
@@ -157,6 +159,7 @@ std::vector<std::uint8_t> binary(std::string_view encoded) {
     }
     return result;
 }
+
 std::int64_t date_ticks(std::string_view text) {
     const auto read = [&](std::size_t at, std::size_t count) {
         int value = 0;
@@ -210,11 +213,12 @@ std::int64_t date_ticks(std::string_view text) {
     }
     if (at != text.size())
         throw std::invalid_argument("Invalid OSD date");
-    const auto seconds = duration_cast<std::chrono::seconds>(sys_days{calendar}.time_since_epoch()).count() +
-                         h * 3600 + m * 60 + s - offset;
+    const auto seconds = duration_cast<std::chrono::seconds>(sys_days{calendar}.time_since_epoch()).count() + h * 3600 +
+                         m * 60 + s - offset;
     return seconds * 10000000 + fraction;
 }
-std::int64_t date_ticks(const Value& value) {
+
+std::int64_t date_ticks(const Value &value) {
     if (!value.sdk_date)
         return date_ticks(std::string_view(value.text));
     auto ticks = value.sdk_date->ticks();
@@ -225,11 +229,13 @@ std::int64_t date_ticks(const Value& value) {
             0, 3155378975999999999LL);
     return ticks - 621355968000000000LL;
 }
-std::int32_t date_integer(const Value& value) {
+
+std::int32_t date_integer(const Value &value) {
     const auto truncated = static_cast<std::int64_t>(static_cast<double>(date_ticks(value)) / 10000000.);
     return std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(truncated));
 }
-std::string base64(const std::vector<std::uint8_t>& bytes) {
+
+std::string base64(const std::vector<std::uint8_t> &bytes) {
     constexpr char alphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     std::string result;
     for (std::size_t i = 0; i < bytes.size(); i += 3) {
@@ -245,14 +251,14 @@ std::string base64(const std::vector<std::uint8_t>& bytes) {
     }
     return result;
 }
+
 std::string real_text(double value) {
     if (std::isnan(value))
         return "NaN";
     if (std::isinf(value))
         return std::signbit(value) ? "-\xe2\x88\x9e" : "\xe2\x88\x9e";
     char buffer[128];
-    const auto converted =
-        std::to_chars(buffer, buffer + sizeof(buffer), value, std::chars_format::scientific);
+    const auto converted = std::to_chars(buffer, buffer + sizeof(buffer), value, std::chars_format::scientific);
     if (converted.ec != std::errc{})
         throw std::runtime_error("OSD real formatting failed");
     std::string scientific(buffer, converted.ptr);
@@ -274,7 +280,8 @@ std::string real_text(double value) {
     }
     return scientific;
 }
-std::string date_text(const Value& value) {
+
+std::string date_text(const Value &value) {
     using namespace std::chrono;
     const auto ticks = date_ticks(value);
     auto seconds_value = ticks / 10000000, remainder = ticks % 10000000;
@@ -289,19 +296,21 @@ std::string date_text(const Value& value) {
     std::ostringstream out;
     out.imbue(std::locale::classic());
     out << std::setfill('0') << std::setw(4) << int(calendar.year()) << '-' << std::setw(2)
-        << unsigned(calendar.month()) << '-' << std::setw(2) << unsigned(calendar.day()) << 'T'
-        << std::setw(2) << time.hours().count() << ':' << std::setw(2) << time.minutes().count() << ':'
-        << std::setw(2) << time.seconds().count();
+        << unsigned(calendar.month()) << '-' << std::setw(2) << unsigned(calendar.day()) << 'T' << std::setw(2)
+        << time.hours().count() << ':' << std::setw(2) << time.minutes().count() << ':' << std::setw(2)
+        << time.seconds().count();
     if ((value.sdk_date ? value.sdk_date->ticks() % 10000000 : remainder) / 10000 > 0)
         out << '.' << std::setw(2) << remainder / 100000;
     return out.str() + "Z";
 }
-}
-bool try_parse_invariant_real(std::string_view text, double& value) {
+} // namespace
+
+bool try_parse_invariant_real(std::string_view text, double &value) {
     return number(text, value);
 }
-framework::Uuid osd_uuid(const Value& input) {
-    const auto& value = input.view();
+
+framework::Uuid osd_uuid(const Value &input) {
+    const auto &value = input.view();
     if (value.kind != Value::Kind::String && value.kind != Value::Kind::Uuid)
         return {};
     framework::Uuid result;
@@ -310,8 +319,9 @@ framework::Uuid osd_uuid(const Value& input) {
                                   result);
     return result;
 }
-bool osd_boolean(const Value& input) {
-    const auto& value = input.view();
+
+bool osd_boolean(const Value &input) {
+    const auto &value = input.view();
     switch (value.kind) {
     case Value::Kind::Boolean:
         return value.boolean;
@@ -338,9 +348,8 @@ bool osd_boolean(const Value& input) {
                 text[i + 1] <= 0xdfff) {
                 point = 0x10000 + ((point - 0xd800) << 10) + (text[++i] - 0xdc00);
             }
-            auto ignored =
-                std::lower_bound(detail::boolean_ignorables.begin(), detail::boolean_ignorables.end(), point,
-                                 [](auto range, char32_t n) { return range.second < n; });
+            auto ignored = std::lower_bound(detail::boolean_ignorables.begin(), detail::boolean_ignorables.end(), point,
+                                            [](auto range, char32_t n) { return range.second < n; });
             if (ignored != detail::boolean_ignorables.end() && ignored->first <= point)
                 continue;
             if (point > 127)
@@ -356,8 +365,9 @@ bool osd_boolean(const Value& input) {
         return false;
     }
 }
-double osd_real(const Value& input) {
-    const auto& value = input.view();
+
+double osd_real(const Value &input) {
+    const auto &value = input.view();
     switch (value.kind) {
     case Value::Kind::Boolean:
         return value.boolean ? 1. : 0.;
@@ -375,10 +385,10 @@ double osd_real(const Value& input) {
         return 0.;
     }
 }
-std::int32_t osd_integer(const Value& input) {
-    const auto& value = input.view();
-    constexpr auto low = std::numeric_limits<std::int32_t>::min(),
-                   high = std::numeric_limits<std::int32_t>::max();
+
+std::int32_t osd_integer(const Value &input) {
+    const auto &value = input.view();
+    constexpr auto low = std::numeric_limits<std::int32_t>::min(), high = std::numeric_limits<std::int32_t>::max();
     switch (value.kind) {
     case Value::Kind::Integer:
         return value.integer;
@@ -395,8 +405,7 @@ std::int32_t osd_integer(const Value& input) {
         if (n < low)
             return low;
         const auto floor = std::floor(n), part = n - floor;
-        return static_cast<std::int32_t>(
-            floor + ((part > .5 || (part == .5 && std::fmod(floor, 2.) != 0.)) ? 1. : 0.));
+        return static_cast<std::int32_t>(floor + ((part > .5 || (part == .5 && std::fmod(floor, 2.) != 0.)) ? 1. : 0.));
     }
     case Value::Kind::String: {
         double n = 0;
@@ -429,8 +438,9 @@ std::int32_t osd_integer(const Value& input) {
         return 0;
     }
 }
-std::uint32_t osd_unsigned(const Value& input) {
-    const auto& value = input.view();
+
+std::uint32_t osd_unsigned(const Value &input) {
+    const auto &value = input.view();
     switch (value.kind) {
     case Value::Kind::Real: {
         const auto n = value.real;
@@ -439,8 +449,7 @@ std::uint32_t osd_unsigned(const Value& input) {
         if (n > 4294967295.)
             return 4294967295u;
         const auto low = std::floor(n), part = n - low;
-        return static_cast<std::uint32_t>(
-            low + ((part > .5 || (part == .5 && std::fmod(low, 2.) != 0.)) ? 1. : 0.));
+        return static_cast<std::uint32_t>(low + ((part > .5 || (part == .5 && std::fmod(low, 2.) != 0.)) ? 1. : 0.));
     }
     case Value::Kind::String: {
         double n = 0;
@@ -455,6 +464,7 @@ std::uint32_t osd_unsigned(const Value& input) {
         return static_cast<std::uint32_t>(osd_integer(value));
     }
 }
+
 Value osd_from_binary(BinaryData bytes) {
     static const auto empty = std::make_shared<std::vector<std::uint8_t>>();
     Value result;
@@ -462,14 +472,16 @@ Value osd_from_binary(BinaryData bytes) {
     result.binary_data = bytes ? std::move(bytes) : empty;
     return result;
 }
+
 Value osd_from_unsigned(std::uint32_t number) {
     auto bytes = std::make_shared<std::vector<std::uint8_t>>(4);
     for (int i = 0; i < 4; ++i)
         (*bytes)[i] = static_cast<std::uint8_t>(number >> (24 - i * 8));
     return osd_from_binary(std::move(bytes));
 }
-BinaryData osd_binary(const Value& input) {
-    const auto& value = input.view();
+
+BinaryData osd_binary(const Value &input) {
+    const auto &value = input.view();
     if (value.kind == Value::Kind::Binary) {
         auto existing = value.binary_data.load();
         if (existing)
@@ -516,7 +528,7 @@ BinaryData osd_binary(const Value& input) {
         break;
     }
     case Value::Kind::Array:
-        for (const auto& item : value.array)
+        for (const auto &item : value.array)
             result->push_back(static_cast<std::uint8_t>(osd_integer(item)));
         break;
     case Value::Kind::Map:
@@ -526,13 +538,15 @@ BinaryData osd_binary(const Value& input) {
     }
     return result;
 }
-std::string binary_base64(const Value& input) {
-    const auto& value = input.view();
+
+std::string binary_base64(const Value &input) {
+    const auto &value = input.view();
     const auto data = value.binary_data.load();
     return data ? base64(*data) : value.text;
 }
-std::string osd_to_string(const Value& input) {
-    const auto& value = input.view();
+
+std::string osd_to_string(const Value &input) {
+    const auto &value = input.view();
     if (value.kind == Value::Kind::Map || value.kind == Value::Kind::Array)
         return osd_json(value, true);
     if (value.kind == Value::Kind::Undefined)
@@ -540,7 +554,7 @@ std::string osd_to_string(const Value& input) {
     if (value.kind == Value::Kind::Binary) {
         auto bytes = osd_binary(value);
         std::string out;
-        const char* h = "0123456789ABCDEF";
+        const char *h = "0123456789ABCDEF";
         for (std::size_t i = 0; i < bytes->size(); ++i) {
             if (i)
                 out += i % 16 ? ' ' : '\n';
@@ -552,8 +566,9 @@ std::string osd_to_string(const Value& input) {
     }
     return osd_string(value);
 }
-std::string osd_string(const Value& input) {
-    const auto& value = input.view();
+
+std::string osd_string(const Value &input) {
+    const auto &value = input.view();
     switch (value.kind) {
     case Value::Kind::Boolean:
         return value.boolean ? "1" : "0";
@@ -582,4 +597,4 @@ std::string osd_string(const Value& input) {
         return "";
     }
 }
-}
+} // namespace opensim::network

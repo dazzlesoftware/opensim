@@ -6,18 +6,22 @@
 #include <stdexcept>
 using namespace opensim;
 using namespace scene;
-static float f(const std::string& s) {
+
+static float f(const std::string &s) {
     return std::bit_cast<float>(static_cast<std::uint32_t>(std::stoul(s, nullptr, 16)));
 }
+
 static std::string h(float v) {
     std::ostringstream s;
     s << std::hex << std::bit_cast<std::uint32_t>(v);
     return s.str();
 }
+
 static std::string v(framework::Vector3 p) {
     return h(p.x) + "," + h(p.y) + "," + h(p.z);
 }
-int main(int argc, char**) {
+
+int main(int argc, char **) {
     try {
         if (argc > 1) {
             std::uint32_t width, height;
@@ -43,25 +47,22 @@ int main(int argc, char**) {
             return 0;
         }
         int checks = 0;
-        auto test = [&](bool b, const char* text) {
+        auto test = [&](bool b, const char *text) {
             if (!b)
                 throw std::runtime_error(text);
             checks++;
         };
         int calls = 0;
-        test(clamp_default_landing({-10, 900, 70000}, 256, 512) ==
-                 framework::Vector3{5, 507, 65536},
+        test(clamp_default_landing({-10, 900, 70000}, 256, 512) == framework::Vector3{5, 507, 65536},
              "default landing uses a five-meter border and caps altitude");
-        test(clamp_default_landing({150, 150, -101}, 256, 256) ==
-                 framework::Vector3{150, 150, -100},
+        test(clamp_default_landing({150, 150, -101}, 256, 256) == framework::Vector3{150, 150, -100},
              "default landing preserves valid horizontal coordinates and caps minimum altitude");
         framework::Vector3 teleport_sample;
         const auto emergency = local_teleport_position({-1, 256, 0}, 256, 256, {}, [&](float x, float y) {
             teleport_sample = {x, y, 0};
             return 20.f;
         });
-        test(emergency == framework::Vector3{128, 128, 128} &&
-                 teleport_sample == framework::Vector3{128, 128, 0},
+        test(emergency == framework::Vector3{128, 128, 128} && teleport_sample == framework::Vector3{128, 128, 0},
              "out-of-bounds local teleport samples the emergency destination");
         const auto ground = [](float, float) { return 20.f; };
         test(local_teleport_position({12, 16, 0}, 256, 256, 2.f, ground).z == 20.f + (1.f + .1f) &&
@@ -69,9 +70,11 @@ int main(int argc, char**) {
                  local_teleport_position({12, 16, 0}, 256, 256, 0.f, ground).z == 20.f + .1f,
              "local teleport clearance uses the avatar appearance and the managed margin");
         test(local_teleport_position({12, 16, 70000}, 256, 256, {}, ground).z == 65536.f &&
-                 local_teleport_position({12, 16, -500}, 256, 256, {}, [](float, float) {
-                     return std::numeric_limits<float>::infinity();
-                 }).z == -100.f,
+                 local_teleport_position(
+                     {12, 16, -500}, 256, 256, {},
+                     [](float, float) {
+                         return std::numeric_limits<float>::infinity();
+                     }).z == -100.f,
              "local teleport clamps altitude and ignores nonfinite terrain");
         framework::Vector3 sampled;
         auto p = root_landing_position({-1, 256, 0}, 256, 256, 1.9f, [&](float x, float y) {
@@ -89,7 +92,7 @@ int main(int argc, char**) {
         bool missing = false;
         try {
             root_landing_position({}, 256, 256, 1.9f, {});
-        } catch (const std::invalid_argument&) {
+        } catch (const std::invalid_argument &) {
             missing = true;
         }
         test(missing, "required backend");
@@ -97,12 +100,12 @@ int main(int argc, char**) {
         try {
             root_landing_position({}, 256, 256, 1.9f,
                                   [](float, float) -> float { throw std::runtime_error("ground failure"); });
-        } catch (const std::runtime_error&) {
+        } catch (const std::runtime_error &) {
             propagated = true;
         }
         test(propagated, "ground backend exception propagation");
         std::cout << "PASS: " << checks << " root placement/backend checks\n";
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << "\n";
         return 1;
     }

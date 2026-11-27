@@ -1,0 +1,8465 @@
+{
+  "method": "xmrFontsAvailable",
+  "methodology": "Actual unchanged original method and actual FontFamily.Families/Name/GetName on this runtime. Returned SDK ordering and wrapper identity recorded without sorting or fixed font-name assumptions. No Linux result inferred; enumeration failure remains an exception, never an invented empty list.",
+  "platform": "Microsoft Windows NT 10.0.26300.0",
+  "framework": ".NET 8.0.34",
+  "current_culture": {
+    "name": "en-CA",
+    "lcid": 4105
+  },
+  "current_ui_culture": {
+    "name": "en-US",
+    "lcid": 1033
+  },
+  "registered": [
+    {
+      "signature": "xmrFontsAvailable()",
+      "returns": "list"
+    }
+  ],
+  "returned": [
+    {
+      "index": 0,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Arial"
+    },
+    {
+      "index": 1,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Arial Black"
+    },
+    {
+      "index": 2,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Bahnschrift"
+    },
+    {
+      "index": 3,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Bahnschrift Condensed"
+    },
+    {
+      "index": 4,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Bahnschrift Light"
+    },
+    {
+      "index": 5,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Bahnschrift Light Condensed"
+    },
+    {
+      "index": 6,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Bahnschrift Light SemiCondensed"
+    },
+    {
+      "index": 7,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Bahnschrift SemiBold"
+    },
+    {
+      "index": 8,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Bahnschrift SemiBold Condensed"
+    },
+    {
+      "index": 9,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Bahnschrift SemiBold SemiConden"
+    },
+    {
+      "index": 10,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Bahnschrift SemiCondensed"
+    },
+    {
+      "index": 11,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Bahnschrift SemiLight"
+    },
+    {
+      "index": 12,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Bahnschrift SemiLight Condensed"
+    },
+    {
+      "index": 13,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Bahnschrift SemiLight SemiConde"
+    },
+    {
+      "index": 14,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Calibri"
+    },
+    {
+      "index": 15,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Calibri Light"
+    },
+    {
+      "index": 16,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Cambria"
+    },
+    {
+      "index": 17,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Cambria Math"
+    },
+    {
+      "index": 18,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Candara"
+    },
+    {
+      "index": 19,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Candara Light"
+    },
+    {
+      "index": 20,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Cascadia Code"
+    },
+    {
+      "index": 21,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Cascadia Code ExtraLight"
+    },
+    {
+      "index": 22,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Cascadia Code Light"
+    },
+    {
+      "index": 23,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Cascadia Code SemiBold"
+    },
+    {
+      "index": 24,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Cascadia Code SemiLight"
+    },
+    {
+      "index": 25,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Cascadia Mono"
+    },
+    {
+      "index": 26,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Cascadia Mono ExtraLight"
+    },
+    {
+      "index": 27,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Cascadia Mono Light"
+    },
+    {
+      "index": 28,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Cascadia Mono SemiBold"
+    },
+    {
+      "index": 29,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Cascadia Mono SemiLight"
+    },
+    {
+      "index": 30,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Comic Sans MS"
+    },
+    {
+      "index": 31,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Consolas"
+    },
+    {
+      "index": 32,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Constantia"
+    },
+    {
+      "index": 33,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Corbel"
+    },
+    {
+      "index": 34,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Corbel Light"
+    },
+    {
+      "index": 35,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Courier New"
+    },
+    {
+      "index": 36,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Ebrima"
+    },
+    {
+      "index": 37,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Franklin Gothic Medium"
+    },
+    {
+      "index": 38,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "FreeSans"
+    },
+    {
+      "index": 39,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Gabriola"
+    },
+    {
+      "index": 40,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Gadugi"
+    },
+    {
+      "index": 41,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Georgia"
+    },
+    {
+      "index": 42,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Great Vibes"
+    },
+    {
+      "index": 43,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Impact"
+    },
+    {
+      "index": 44,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Ink Free"
+    },
+    {
+      "index": 45,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Javanese Text"
+    },
+    {
+      "index": 46,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Leelawadee UI"
+    },
+    {
+      "index": 47,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Leelawadee UI Semilight"
+    },
+    {
+      "index": 48,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Lucida Console"
+    },
+    {
+      "index": 49,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Lucida Sans Unicode"
+    },
+    {
+      "index": 50,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Malgun Gothic"
+    },
+    {
+      "index": 51,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Malgun Gothic Semilight"
+    },
+    {
+      "index": 52,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Marlett"
+    },
+    {
+      "index": 53,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Microsoft Himalaya"
+    },
+    {
+      "index": 54,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Microsoft JhengHei"
+    },
+    {
+      "index": 55,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Microsoft JhengHei Light"
+    },
+    {
+      "index": 56,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Microsoft JhengHei UI"
+    },
+    {
+      "index": 57,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Microsoft JhengHei UI Light"
+    },
+    {
+      "index": 58,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Microsoft New Tai Lue"
+    },
+    {
+      "index": 59,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Microsoft PhagsPa"
+    },
+    {
+      "index": 60,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Microsoft Sans Serif"
+    },
+    {
+      "index": 61,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Microsoft Tai Le"
+    },
+    {
+      "index": 62,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Microsoft YaHei"
+    },
+    {
+      "index": 63,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Microsoft YaHei Light"
+    },
+    {
+      "index": 64,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Microsoft YaHei UI"
+    },
+    {
+      "index": 65,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Microsoft YaHei UI Light"
+    },
+    {
+      "index": 66,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Microsoft Yi Baiti"
+    },
+    {
+      "index": 67,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "MingLiU-ExtB"
+    },
+    {
+      "index": 68,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "MingLiU_HKSCS-ExtB"
+    },
+    {
+      "index": 69,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "MingLiU_MSCS-ExtB"
+    },
+    {
+      "index": 70,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Mongolian Baiti"
+    },
+    {
+      "index": 71,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "MS Gothic"
+    },
+    {
+      "index": 72,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "MS PGothic"
+    },
+    {
+      "index": 73,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "MS UI Gothic"
+    },
+    {
+      "index": 74,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "MV Boli"
+    },
+    {
+      "index": 75,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Myanmar Text"
+    },
+    {
+      "index": 76,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Nirmala Text"
+    },
+    {
+      "index": 77,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Nirmala Text Semilight"
+    },
+    {
+      "index": 78,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Nirmala UI"
+    },
+    {
+      "index": 79,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Nirmala UI Semilight"
+    },
+    {
+      "index": 80,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "NSimSun"
+    },
+    {
+      "index": 81,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Palatino Linotype"
+    },
+    {
+      "index": 82,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "PMingLiU-ExtB"
+    },
+    {
+      "index": 83,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Sans Serif Collection"
+    },
+    {
+      "index": 84,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Segoe Fluent Icons"
+    },
+    {
+      "index": 85,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Segoe MDL2 Assets"
+    },
+    {
+      "index": 86,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Segoe Print"
+    },
+    {
+      "index": 87,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Segoe Script"
+    },
+    {
+      "index": 88,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Segoe UI"
+    },
+    {
+      "index": 89,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Segoe UI Black"
+    },
+    {
+      "index": 90,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Segoe UI Emoji"
+    },
+    {
+      "index": 91,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Segoe UI Historic"
+    },
+    {
+      "index": 92,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Segoe UI Light"
+    },
+    {
+      "index": 93,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Segoe UI Semibold"
+    },
+    {
+      "index": 94,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Segoe UI Semilight"
+    },
+    {
+      "index": 95,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Segoe UI Symbol"
+    },
+    {
+      "index": 96,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Segoe UI Variable Display"
+    },
+    {
+      "index": 97,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Segoe UI Variable Display Light"
+    },
+    {
+      "index": 98,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Segoe UI Variable Display Semib"
+    },
+    {
+      "index": 99,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Segoe UI Variable Display Semil"
+    },
+    {
+      "index": 100,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Segoe UI Variable Small"
+    },
+    {
+      "index": 101,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Segoe UI Variable Small Light"
+    },
+    {
+      "index": 102,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Segoe UI Variable Small Semibol"
+    },
+    {
+      "index": 103,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Segoe UI Variable Small Semilig"
+    },
+    {
+      "index": 104,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Segoe UI Variable Text"
+    },
+    {
+      "index": 105,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Segoe UI Variable Text Light"
+    },
+    {
+      "index": 106,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Segoe UI Variable Text Semibold"
+    },
+    {
+      "index": 107,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Segoe UI Variable Text Semiligh"
+    },
+    {
+      "index": 108,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "SimSun"
+    },
+    {
+      "index": 109,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "SimSun-ExtB"
+    },
+    {
+      "index": 110,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "SimSun-ExtG"
+    },
+    {
+      "index": 111,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Sitka Banner"
+    },
+    {
+      "index": 112,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Sitka Banner Semibold"
+    },
+    {
+      "index": 113,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Sitka Display"
+    },
+    {
+      "index": 114,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Sitka Display Semibold"
+    },
+    {
+      "index": 115,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Sitka Heading"
+    },
+    {
+      "index": 116,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Sitka Heading Semibold"
+    },
+    {
+      "index": 117,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Sitka Small"
+    },
+    {
+      "index": 118,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Sitka Small Semibold"
+    },
+    {
+      "index": 119,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Sitka Subheading"
+    },
+    {
+      "index": 120,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Sitka Subheading Semibold"
+    },
+    {
+      "index": 121,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Sitka Text"
+    },
+    {
+      "index": 122,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Sitka Text Semibold"
+    },
+    {
+      "index": 123,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Source Code Pro"
+    },
+    {
+      "index": 124,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Source Code Pro Black"
+    },
+    {
+      "index": 125,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Source Code Pro ExtraLight"
+    },
+    {
+      "index": 126,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Source Code Pro Light"
+    },
+    {
+      "index": 127,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Source Code Pro Medium"
+    },
+    {
+      "index": 128,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Source Code Pro Semibold"
+    },
+    {
+      "index": 129,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Sylfaen"
+    },
+    {
+      "index": 130,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Symbol"
+    },
+    {
+      "index": 131,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Tahoma"
+    },
+    {
+      "index": 132,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Times New Roman"
+    },
+    {
+      "index": 133,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Trebuchet MS"
+    },
+    {
+      "index": 134,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Verdana"
+    },
+    {
+      "index": 135,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Webdings"
+    },
+    {
+      "index": 136,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Wingdings"
+    },
+    {
+      "index": 137,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Yu Gothic"
+    },
+    {
+      "index": 138,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Yu Gothic Light"
+    },
+    {
+      "index": 139,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Yu Gothic Medium"
+    },
+    {
+      "index": 140,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Yu Gothic UI"
+    },
+    {
+      "index": 141,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Yu Gothic UI Light"
+    },
+    {
+      "index": 142,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Yu Gothic UI Semibold"
+    },
+    {
+      "index": 143,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Yu Gothic UI Semilight"
+    },
+    {
+      "index": 144,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "ZWAdobeF"
+    }
+  ],
+  "exception": null,
+  "font_count": 145,
+  "independent_families": [
+    {
+      "index": 0,
+      "name": "Arial",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Arial",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Arial",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Arial",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Arial",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Arial",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Arial"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Arial"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Arial"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Arial"
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "name": "Arial Black",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Arial Black",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Arial Black",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Arial Black",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Arial Black",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Arial Black",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Arial Black"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Arial Black"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Arial Black"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Arial Black"
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "name": "Bahnschrift",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Bahnschrift",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Bahnschrift",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Bahnschrift",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Bahnschrift",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Bahnschrift",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Bahnschrift"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Bahnschrift"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Bahnschrift"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Bahnschrift"
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "name": "Bahnschrift Condensed",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Bahnschrift Condensed",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Bahnschrift Condensed",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Bahnschrift Condensed",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Bahnschrift Condensed",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Bahnschrift Condensed",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Bahnschrift Condensed"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Bahnschrift Condensed"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Bahnschrift Condensed"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Bahnschrift Condensed"
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "name": "Bahnschrift Light",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Bahnschrift Light",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Bahnschrift Light",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Bahnschrift Light",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Bahnschrift Light",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Bahnschrift Light",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Bahnschrift Light"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Bahnschrift Light"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Bahnschrift Light"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Bahnschrift Light"
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "name": "Bahnschrift Light Condensed",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Bahnschrift Light Condensed",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Bahnschrift Light Condensed",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Bahnschrift Light Condensed",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Bahnschrift Light Condensed",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Bahnschrift Light Condensed",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Bahnschrift Light Condensed"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Bahnschrift Light Condensed"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Bahnschrift Light Condensed"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Bahnschrift Light Condensed"
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "name": "Bahnschrift Light SemiCondensed",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Bahnschrift Light SemiCondensed",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Bahnschrift Light SemiCondensed",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Bahnschrift Light SemiCondensed",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Bahnschrift Light SemiCondensed",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Bahnschrift Light SemiCondensed",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Bahnschrift Light SemiCondensed"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Bahnschrift Light SemiCondensed"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Bahnschrift Light SemiCondensed"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Bahnschrift Light SemiCondensed"
+        }
+      ]
+    },
+    {
+      "index": 7,
+      "name": "Bahnschrift SemiBold",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Bahnschrift SemiBold",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Bahnschrift SemiBold",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Bahnschrift SemiBold",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Bahnschrift SemiBold",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Bahnschrift SemiBold",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Bahnschrift SemiBold"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Bahnschrift SemiBold"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Bahnschrift SemiBold"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Bahnschrift SemiBold"
+        }
+      ]
+    },
+    {
+      "index": 8,
+      "name": "Bahnschrift SemiBold Condensed",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Bahnschrift SemiBold Condensed",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Bahnschrift SemiBold Condensed",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Bahnschrift SemiBold Condensed",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Bahnschrift SemiBold Condensed",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Bahnschrift SemiBold Condensed",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Bahnschrift SemiBold Condensed"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Bahnschrift SemiBold Condensed"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Bahnschrift SemiBold Condensed"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Bahnschrift SemiBold Condensed"
+        }
+      ]
+    },
+    {
+      "index": 9,
+      "name": "Bahnschrift SemiBold SemiConden",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Bahnschrift SemiBold SemiConden",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Bahnschrift SemiBold SemiConden",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Bahnschrift SemiBold SemiConden",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Bahnschrift SemiBold SemiConden",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Bahnschrift SemiBold SemiConden",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Bahnschrift SemiBold SemiConden"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Bahnschrift SemiBold SemiConden"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Bahnschrift SemiBold SemiConden"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Bahnschrift SemiBold SemiConden"
+        }
+      ]
+    },
+    {
+      "index": 10,
+      "name": "Bahnschrift SemiCondensed",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Bahnschrift SemiCondensed",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Bahnschrift SemiCondensed",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Bahnschrift SemiCondensed",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Bahnschrift SemiCondensed",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Bahnschrift SemiCondensed",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Bahnschrift SemiCondensed"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Bahnschrift SemiCondensed"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Bahnschrift SemiCondensed"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Bahnschrift SemiCondensed"
+        }
+      ]
+    },
+    {
+      "index": 11,
+      "name": "Bahnschrift SemiLight",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Bahnschrift SemiLight",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Bahnschrift SemiLight",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Bahnschrift SemiLight",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Bahnschrift SemiLight",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Bahnschrift SemiLight",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Bahnschrift SemiLight"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Bahnschrift SemiLight"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Bahnschrift SemiLight"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Bahnschrift SemiLight"
+        }
+      ]
+    },
+    {
+      "index": 12,
+      "name": "Bahnschrift SemiLight Condensed",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Bahnschrift SemiLight Condensed",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Bahnschrift SemiLight Condensed",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Bahnschrift SemiLight Condensed",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Bahnschrift SemiLight Condensed",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Bahnschrift SemiLight Condensed",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Bahnschrift SemiLight Condensed"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Bahnschrift SemiLight Condensed"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Bahnschrift SemiLight Condensed"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Bahnschrift SemiLight Condensed"
+        }
+      ]
+    },
+    {
+      "index": 13,
+      "name": "Bahnschrift SemiLight SemiConde",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Bahnschrift SemiLight SemiConde",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Bahnschrift SemiLight SemiConde",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Bahnschrift SemiLight SemiConde",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Bahnschrift SemiLight SemiConde",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Bahnschrift SemiLight SemiConde",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Bahnschrift SemiLight SemiConde"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Bahnschrift SemiLight SemiConde"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Bahnschrift SemiLight SemiConde"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Bahnschrift SemiLight SemiConde"
+        }
+      ]
+    },
+    {
+      "index": 14,
+      "name": "Calibri",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Calibri",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Calibri",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Calibri",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Calibri",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Calibri",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Calibri"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Calibri"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Calibri"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Calibri"
+        }
+      ]
+    },
+    {
+      "index": 15,
+      "name": "Calibri Light",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Calibri Light",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Calibri Light",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Calibri Light",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Calibri Light",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Calibri Light",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Calibri Light"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Calibri Light"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Calibri Light"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Calibri Light"
+        }
+      ]
+    },
+    {
+      "index": 16,
+      "name": "Cambria",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Cambria",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Cambria",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Cambria",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Cambria",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Cambria",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Cambria"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Cambria"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Cambria"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Cambria"
+        }
+      ]
+    },
+    {
+      "index": 17,
+      "name": "Cambria Math",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Cambria Math",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Cambria Math",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Cambria Math",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Cambria Math",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Cambria Math",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Cambria Math"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Cambria Math"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Cambria Math"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Cambria Math"
+        }
+      ]
+    },
+    {
+      "index": 18,
+      "name": "Candara",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Candara",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Candara",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Candara",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Candara",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Candara",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Candara"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Candara"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Candara"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Candara"
+        }
+      ]
+    },
+    {
+      "index": 19,
+      "name": "Candara Light",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Candara Light",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Candara Light",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Candara Light",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Candara Light",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Candara Light",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Candara Light"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Candara Light"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Candara Light"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Candara Light"
+        }
+      ]
+    },
+    {
+      "index": 20,
+      "name": "Cascadia Code",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Cascadia Code",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Cascadia Code",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Cascadia Code",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Cascadia Code",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Cascadia Code",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Cascadia Code"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Cascadia Code"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Cascadia Code"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Cascadia Code"
+        }
+      ]
+    },
+    {
+      "index": 21,
+      "name": "Cascadia Code ExtraLight",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Cascadia Code ExtraLight",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Cascadia Code ExtraLight",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Cascadia Code ExtraLight",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Cascadia Code ExtraLight",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Cascadia Code ExtraLight",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Cascadia Code ExtraLight"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Cascadia Code ExtraLight"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Cascadia Code ExtraLight"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Cascadia Code ExtraLight"
+        }
+      ]
+    },
+    {
+      "index": 22,
+      "name": "Cascadia Code Light",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Cascadia Code Light",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Cascadia Code Light",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Cascadia Code Light",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Cascadia Code Light",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Cascadia Code Light",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Cascadia Code Light"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Cascadia Code Light"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Cascadia Code Light"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Cascadia Code Light"
+        }
+      ]
+    },
+    {
+      "index": 23,
+      "name": "Cascadia Code SemiBold",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Cascadia Code SemiBold",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Cascadia Code SemiBold",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Cascadia Code SemiBold",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Cascadia Code SemiBold",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Cascadia Code SemiBold",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Cascadia Code SemiBold"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Cascadia Code SemiBold"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Cascadia Code SemiBold"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Cascadia Code SemiBold"
+        }
+      ]
+    },
+    {
+      "index": 24,
+      "name": "Cascadia Code SemiLight",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Cascadia Code SemiLight",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Cascadia Code SemiLight",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Cascadia Code SemiLight",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Cascadia Code SemiLight",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Cascadia Code SemiLight",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Cascadia Code SemiLight"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Cascadia Code SemiLight"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Cascadia Code SemiLight"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Cascadia Code SemiLight"
+        }
+      ]
+    },
+    {
+      "index": 25,
+      "name": "Cascadia Mono",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Cascadia Mono",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Cascadia Mono",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Cascadia Mono",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Cascadia Mono",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Cascadia Mono",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Cascadia Mono"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Cascadia Mono"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Cascadia Mono"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Cascadia Mono"
+        }
+      ]
+    },
+    {
+      "index": 26,
+      "name": "Cascadia Mono ExtraLight",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Cascadia Mono ExtraLight",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Cascadia Mono ExtraLight",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Cascadia Mono ExtraLight",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Cascadia Mono ExtraLight",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Cascadia Mono ExtraLight",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Cascadia Mono ExtraLight"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Cascadia Mono ExtraLight"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Cascadia Mono ExtraLight"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Cascadia Mono ExtraLight"
+        }
+      ]
+    },
+    {
+      "index": 27,
+      "name": "Cascadia Mono Light",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Cascadia Mono Light",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Cascadia Mono Light",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Cascadia Mono Light",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Cascadia Mono Light",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Cascadia Mono Light",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Cascadia Mono Light"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Cascadia Mono Light"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Cascadia Mono Light"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Cascadia Mono Light"
+        }
+      ]
+    },
+    {
+      "index": 28,
+      "name": "Cascadia Mono SemiBold",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Cascadia Mono SemiBold",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Cascadia Mono SemiBold",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Cascadia Mono SemiBold",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Cascadia Mono SemiBold",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Cascadia Mono SemiBold",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Cascadia Mono SemiBold"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Cascadia Mono SemiBold"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Cascadia Mono SemiBold"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Cascadia Mono SemiBold"
+        }
+      ]
+    },
+    {
+      "index": 29,
+      "name": "Cascadia Mono SemiLight",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Cascadia Mono SemiLight",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Cascadia Mono SemiLight",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Cascadia Mono SemiLight",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Cascadia Mono SemiLight",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Cascadia Mono SemiLight",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Cascadia Mono SemiLight"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Cascadia Mono SemiLight"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Cascadia Mono SemiLight"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Cascadia Mono SemiLight"
+        }
+      ]
+    },
+    {
+      "index": 30,
+      "name": "Comic Sans MS",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Comic Sans MS",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Comic Sans MS",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Comic Sans MS",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Comic Sans MS",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Comic Sans MS",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Comic Sans MS"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Comic Sans MS"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Comic Sans MS"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Comic Sans MS"
+        }
+      ]
+    },
+    {
+      "index": 31,
+      "name": "Consolas",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Consolas",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Consolas",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Consolas",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Consolas",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Consolas",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Consolas"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Consolas"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Consolas"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Consolas"
+        }
+      ]
+    },
+    {
+      "index": 32,
+      "name": "Constantia",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Constantia",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Constantia",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Constantia",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Constantia",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Constantia",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Constantia"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Constantia"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Constantia"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Constantia"
+        }
+      ]
+    },
+    {
+      "index": 33,
+      "name": "Corbel",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Corbel",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Corbel",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Corbel",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Corbel",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Corbel",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Corbel"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Corbel"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Corbel"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Corbel"
+        }
+      ]
+    },
+    {
+      "index": 34,
+      "name": "Corbel Light",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Corbel Light",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Corbel Light",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Corbel Light",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Corbel Light",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Corbel Light",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Corbel Light"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Corbel Light"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Corbel Light"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Corbel Light"
+        }
+      ]
+    },
+    {
+      "index": 35,
+      "name": "Courier New",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Courier New",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Courier New",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Courier New",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Courier New",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Courier New",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Courier New"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Courier New"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Courier New"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Courier New"
+        }
+      ]
+    },
+    {
+      "index": 36,
+      "name": "Ebrima",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Ebrima",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Ebrima",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Ebrima",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Ebrima",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Ebrima",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Ebrima"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Ebrima"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Ebrima"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Ebrima"
+        }
+      ]
+    },
+    {
+      "index": 37,
+      "name": "Franklin Gothic Medium",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Franklin Gothic Medium",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Franklin Gothic Medium",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Franklin Gothic Medium",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Franklin Gothic Medium",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Franklin Gothic Medium",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Franklin Gothic Medium"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Franklin Gothic Medium"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Franklin Gothic Medium"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Franklin Gothic Medium"
+        }
+      ]
+    },
+    {
+      "index": 38,
+      "name": "FreeSans",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "FreeSans",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "FreeSans",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "FreeSans",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "FreeSans",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "FreeSans",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "FreeSans"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "FreeSans"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "FreeSans"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "FreeSans"
+        }
+      ]
+    },
+    {
+      "index": 39,
+      "name": "Gabriola",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Gabriola",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Gabriola",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Gabriola",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Gabriola",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Gabriola",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Gabriola"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Gabriola"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Gabriola"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Gabriola"
+        }
+      ]
+    },
+    {
+      "index": 40,
+      "name": "Gadugi",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Gadugi",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Gadugi",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Gadugi",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Gadugi",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Gadugi",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Gadugi"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Gadugi"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Gadugi"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Gadugi"
+        }
+      ]
+    },
+    {
+      "index": 41,
+      "name": "Georgia",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Georgia",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Georgia",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Georgia",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Georgia",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Georgia",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Georgia"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Georgia"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Georgia"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Georgia"
+        }
+      ]
+    },
+    {
+      "index": 42,
+      "name": "Great Vibes",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Great Vibes",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Great Vibes",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Great Vibes",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Great Vibes",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Great Vibes",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Great Vibes"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Great Vibes"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Great Vibes"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Great Vibes"
+        }
+      ]
+    },
+    {
+      "index": 43,
+      "name": "Impact",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Impact",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Impact",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Impact",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Impact",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Impact",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Impact"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Impact"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Impact"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Impact"
+        }
+      ]
+    },
+    {
+      "index": 44,
+      "name": "Ink Free",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Ink Free",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Ink Free",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Ink Free",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Ink Free",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Ink Free",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Ink Free"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Ink Free"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Ink Free"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Ink Free"
+        }
+      ]
+    },
+    {
+      "index": 45,
+      "name": "Javanese Text",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Javanese Text",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Javanese Text",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Javanese Text",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Javanese Text",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Javanese Text",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Javanese Text"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Javanese Text"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Javanese Text"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Javanese Text"
+        }
+      ]
+    },
+    {
+      "index": 46,
+      "name": "Leelawadee UI",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Leelawadee UI",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Leelawadee UI",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Leelawadee UI",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Leelawadee UI",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Leelawadee UI",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Leelawadee UI"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Leelawadee UI"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Leelawadee UI"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Leelawadee UI"
+        }
+      ]
+    },
+    {
+      "index": 47,
+      "name": "Leelawadee UI Semilight",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Leelawadee UI Semilight",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Leelawadee UI Semilight",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Leelawadee UI Semilight",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Leelawadee UI Semilight",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Leelawadee UI Semilight",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Leelawadee UI Semilight"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Leelawadee UI Semilight"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Leelawadee UI Semilight"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Leelawadee UI Semilight"
+        }
+      ]
+    },
+    {
+      "index": 48,
+      "name": "Lucida Console",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Lucida Console",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Lucida Console",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Lucida Console",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Lucida Console",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Lucida Console",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Lucida Console"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Lucida Console"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Lucida Console"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Lucida Console"
+        }
+      ]
+    },
+    {
+      "index": 49,
+      "name": "Lucida Sans Unicode",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Lucida Sans Unicode",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Lucida Sans Unicode",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Lucida Sans Unicode",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Lucida Sans Unicode",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Lucida Sans Unicode",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Lucida Sans Unicode"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Lucida Sans Unicode"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Lucida Sans Unicode"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Lucida Sans Unicode"
+        }
+      ]
+    },
+    {
+      "index": 50,
+      "name": "Malgun Gothic",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Malgun Gothic",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Malgun Gothic",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Malgun Gothic",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Malgun Gothic",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Malgun Gothic",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Malgun Gothic"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Malgun Gothic"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Malgun Gothic"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Malgun Gothic"
+        }
+      ]
+    },
+    {
+      "index": 51,
+      "name": "Malgun Gothic Semilight",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Malgun Gothic Semilight",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Malgun Gothic Semilight",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Malgun Gothic Semilight",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Malgun Gothic Semilight",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Malgun Gothic Semilight",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Malgun Gothic Semilight"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Malgun Gothic Semilight"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Malgun Gothic Semilight"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Malgun Gothic Semilight"
+        }
+      ]
+    },
+    {
+      "index": 52,
+      "name": "Marlett",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Marlett",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Marlett",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Marlett",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Marlett",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Marlett",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Marlett"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Marlett"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Marlett"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Marlett"
+        }
+      ]
+    },
+    {
+      "index": 53,
+      "name": "Microsoft Himalaya",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Microsoft Himalaya",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Microsoft Himalaya",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Microsoft Himalaya",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Microsoft Himalaya",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Microsoft Himalaya",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Microsoft Himalaya"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Microsoft Himalaya"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Microsoft Himalaya"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Microsoft Himalaya"
+        }
+      ]
+    },
+    {
+      "index": 54,
+      "name": "Microsoft JhengHei",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Microsoft JhengHei",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Microsoft JhengHei",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Microsoft JhengHei",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Microsoft JhengHei",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Microsoft JhengHei",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Microsoft JhengHei"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Microsoft JhengHei"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Microsoft JhengHei"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Microsoft JhengHei"
+        }
+      ]
+    },
+    {
+      "index": 55,
+      "name": "Microsoft JhengHei Light",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Microsoft JhengHei Light",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Microsoft JhengHei Light",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Microsoft JhengHei Light",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Microsoft JhengHei Light",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Microsoft JhengHei Light",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Microsoft JhengHei Light"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Microsoft JhengHei Light"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Microsoft JhengHei Light"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Microsoft JhengHei Light"
+        }
+      ]
+    },
+    {
+      "index": 56,
+      "name": "Microsoft JhengHei UI",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Microsoft JhengHei UI",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Microsoft JhengHei UI",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Microsoft JhengHei UI",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Microsoft JhengHei UI",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Microsoft JhengHei UI",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Microsoft JhengHei UI"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Microsoft JhengHei UI"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Microsoft JhengHei UI"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Microsoft JhengHei UI"
+        }
+      ]
+    },
+    {
+      "index": 57,
+      "name": "Microsoft JhengHei UI Light",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Microsoft JhengHei UI Light",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Microsoft JhengHei UI Light",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Microsoft JhengHei UI Light",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Microsoft JhengHei UI Light",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Microsoft JhengHei UI Light",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Microsoft JhengHei UI Light"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Microsoft JhengHei UI Light"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Microsoft JhengHei UI Light"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Microsoft JhengHei UI Light"
+        }
+      ]
+    },
+    {
+      "index": 58,
+      "name": "Microsoft New Tai Lue",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Microsoft New Tai Lue",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Microsoft New Tai Lue",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Microsoft New Tai Lue",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Microsoft New Tai Lue",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Microsoft New Tai Lue",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Microsoft New Tai Lue"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Microsoft New Tai Lue"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Microsoft New Tai Lue"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Microsoft New Tai Lue"
+        }
+      ]
+    },
+    {
+      "index": 59,
+      "name": "Microsoft PhagsPa",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Microsoft PhagsPa",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Microsoft PhagsPa",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Microsoft PhagsPa",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Microsoft PhagsPa",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Microsoft PhagsPa",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Microsoft PhagsPa"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Microsoft PhagsPa"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Microsoft PhagsPa"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Microsoft PhagsPa"
+        }
+      ]
+    },
+    {
+      "index": 60,
+      "name": "Microsoft Sans Serif",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Microsoft Sans Serif",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Microsoft Sans Serif",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Microsoft Sans Serif",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Microsoft Sans Serif",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Microsoft Sans Serif",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Microsoft Sans Serif"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Microsoft Sans Serif"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Microsoft Sans Serif"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Microsoft Sans Serif"
+        }
+      ]
+    },
+    {
+      "index": 61,
+      "name": "Microsoft Tai Le",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Microsoft Tai Le",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Microsoft Tai Le",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Microsoft Tai Le",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Microsoft Tai Le",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Microsoft Tai Le",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Microsoft Tai Le"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Microsoft Tai Le"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Microsoft Tai Le"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Microsoft Tai Le"
+        }
+      ]
+    },
+    {
+      "index": 62,
+      "name": "Microsoft YaHei",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Microsoft YaHei",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Microsoft YaHei",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Microsoft YaHei",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Microsoft YaHei",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Microsoft YaHei",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Microsoft YaHei"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Microsoft YaHei"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Microsoft YaHei"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Microsoft YaHei"
+        }
+      ]
+    },
+    {
+      "index": 63,
+      "name": "Microsoft YaHei Light",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Microsoft YaHei Light",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Microsoft YaHei Light",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Microsoft YaHei Light",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Microsoft YaHei Light",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Microsoft YaHei Light",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Microsoft YaHei Light"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Microsoft YaHei Light"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Microsoft YaHei Light"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Microsoft YaHei Light"
+        }
+      ]
+    },
+    {
+      "index": 64,
+      "name": "Microsoft YaHei UI",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Microsoft YaHei UI",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Microsoft YaHei UI",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Microsoft YaHei UI",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Microsoft YaHei UI",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Microsoft YaHei UI",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Microsoft YaHei UI"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Microsoft YaHei UI"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Microsoft YaHei UI"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Microsoft YaHei UI"
+        }
+      ]
+    },
+    {
+      "index": 65,
+      "name": "Microsoft YaHei UI Light",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Microsoft YaHei UI Light",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Microsoft YaHei UI Light",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Microsoft YaHei UI Light",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Microsoft YaHei UI Light",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Microsoft YaHei UI Light",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Microsoft YaHei UI Light"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Microsoft YaHei UI Light"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Microsoft YaHei UI Light"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Microsoft YaHei UI Light"
+        }
+      ]
+    },
+    {
+      "index": 66,
+      "name": "Microsoft Yi Baiti",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Microsoft Yi Baiti",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Microsoft Yi Baiti",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Microsoft Yi Baiti",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Microsoft Yi Baiti",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Microsoft Yi Baiti",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Microsoft Yi Baiti"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Microsoft Yi Baiti"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Microsoft Yi Baiti"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Microsoft Yi Baiti"
+        }
+      ]
+    },
+    {
+      "index": 67,
+      "name": "MingLiU-ExtB",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "MingLiU-ExtB",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "MingLiU-ExtB",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "MingLiU-ExtB",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "MingLiU-ExtB",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "MingLiU-ExtB",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "MingLiU-ExtB"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "MingLiU-ExtB"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "MingLiU-ExtB"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "MingLiU-ExtB"
+        }
+      ]
+    },
+    {
+      "index": 68,
+      "name": "MingLiU_HKSCS-ExtB",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "MingLiU_HKSCS-ExtB",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "MingLiU_HKSCS-ExtB",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "MingLiU_HKSCS-ExtB",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "MingLiU_HKSCS-ExtB",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "MingLiU_HKSCS-ExtB",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "MingLiU_HKSCS-ExtB"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "MingLiU_HKSCS-ExtB"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "MingLiU_HKSCS-ExtB"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "MingLiU_HKSCS-ExtB"
+        }
+      ]
+    },
+    {
+      "index": 69,
+      "name": "MingLiU_MSCS-ExtB",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "MingLiU_MSCS-ExtB",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "MingLiU_MSCS-ExtB",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "MingLiU_MSCS-ExtB",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "MingLiU_MSCS-ExtB",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "MingLiU_MSCS-ExtB",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "MingLiU_MSCS-ExtB"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "MingLiU_MSCS-ExtB"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "MingLiU_MSCS-ExtB"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "MingLiU_MSCS-ExtB"
+        }
+      ]
+    },
+    {
+      "index": 70,
+      "name": "Mongolian Baiti",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Mongolian Baiti",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Mongolian Baiti",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Mongolian Baiti",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Mongolian Baiti",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Mongolian Baiti",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Mongolian Baiti"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Mongolian Baiti"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Mongolian Baiti"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Mongolian Baiti"
+        }
+      ]
+    },
+    {
+      "index": 71,
+      "name": "MS Gothic",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "MS Gothic",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "MS Gothic",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "MS Gothic",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "\uFF2D\uFF33 \u30B4\u30B7\u30C3\u30AF",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "MS Gothic",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "MS Gothic"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "MS Gothic"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "MS Gothic"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "\uFF2D\uFF33 \u30B4\u30B7\u30C3\u30AF"
+        }
+      ]
+    },
+    {
+      "index": 72,
+      "name": "MS PGothic",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "MS PGothic",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "MS PGothic",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "MS PGothic",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "\uFF2D\uFF33 \uFF30\u30B4\u30B7\u30C3\u30AF",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "MS PGothic",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "MS PGothic"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "MS PGothic"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "MS PGothic"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "\uFF2D\uFF33 \uFF30\u30B4\u30B7\u30C3\u30AF"
+        }
+      ]
+    },
+    {
+      "index": 73,
+      "name": "MS UI Gothic",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "MS UI Gothic",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "MS UI Gothic",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "MS UI Gothic",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "MS UI Gothic",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "MS UI Gothic",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "MS UI Gothic"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "MS UI Gothic"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "MS UI Gothic"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "MS UI Gothic"
+        }
+      ]
+    },
+    {
+      "index": 74,
+      "name": "MV Boli",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "MV Boli",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "MV Boli",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "MV Boli",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "MV Boli",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "MV Boli",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "MV Boli"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "MV Boli"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "MV Boli"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "MV Boli"
+        }
+      ]
+    },
+    {
+      "index": 75,
+      "name": "Myanmar Text",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Myanmar Text",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Myanmar Text",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Myanmar Text",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Myanmar Text",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Myanmar Text",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Myanmar Text"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Myanmar Text"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Myanmar Text"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Myanmar Text"
+        }
+      ]
+    },
+    {
+      "index": 76,
+      "name": "Nirmala Text",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Nirmala Text",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Nirmala Text",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Nirmala Text",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Nirmala Text",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Nirmala Text",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Nirmala Text"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Nirmala Text"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Nirmala Text"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Nirmala Text"
+        }
+      ]
+    },
+    {
+      "index": 77,
+      "name": "Nirmala Text Semilight",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Nirmala Text Semilight",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Nirmala Text Semilight",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Nirmala Text Semilight",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Nirmala Text Semilight",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Nirmala Text Semilight",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Nirmala Text Semilight"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Nirmala Text Semilight"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Nirmala Text Semilight"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Nirmala Text Semilight"
+        }
+      ]
+    },
+    {
+      "index": 78,
+      "name": "Nirmala UI",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Nirmala UI",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Nirmala UI",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Nirmala UI",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Nirmala UI",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Nirmala UI",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Nirmala UI"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Nirmala UI"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Nirmala UI"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Nirmala UI"
+        }
+      ]
+    },
+    {
+      "index": 79,
+      "name": "Nirmala UI Semilight",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Nirmala UI Semilight",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Nirmala UI Semilight",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Nirmala UI Semilight",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Nirmala UI Semilight",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Nirmala UI Semilight",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Nirmala UI Semilight"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Nirmala UI Semilight"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Nirmala UI Semilight"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Nirmala UI Semilight"
+        }
+      ]
+    },
+    {
+      "index": 80,
+      "name": "NSimSun",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "NSimSun",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "NSimSun",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "NSimSun",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "NSimSun",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "NSimSun",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "NSimSun"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "NSimSun"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "NSimSun"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "NSimSun"
+        }
+      ]
+    },
+    {
+      "index": 81,
+      "name": "Palatino Linotype",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Palatino Linotype",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Palatino Linotype",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Palatino Linotype",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Palatino Linotype",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Palatino Linotype",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Palatino Linotype"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Palatino Linotype"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Palatino Linotype"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Palatino Linotype"
+        }
+      ]
+    },
+    {
+      "index": 82,
+      "name": "PMingLiU-ExtB",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "PMingLiU-ExtB",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "PMingLiU-ExtB",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "PMingLiU-ExtB",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "PMingLiU-ExtB",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "PMingLiU-ExtB",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "PMingLiU-ExtB"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "PMingLiU-ExtB"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "PMingLiU-ExtB"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "PMingLiU-ExtB"
+        }
+      ]
+    },
+    {
+      "index": 83,
+      "name": "Sans Serif Collection",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Sans Serif Collection",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Sans Serif Collection",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Sans Serif Collection",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Sans Serif Collection",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Sans Serif Collection",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Sans Serif Collection"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Sans Serif Collection"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Sans Serif Collection"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Sans Serif Collection"
+        }
+      ]
+    },
+    {
+      "index": 84,
+      "name": "Segoe Fluent Icons",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Segoe Fluent Icons",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Segoe Fluent Icons",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Segoe Fluent Icons",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Segoe Fluent Icons",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Segoe Fluent Icons",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe Fluent Icons"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Segoe Fluent Icons"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe Fluent Icons"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Segoe Fluent Icons"
+        }
+      ]
+    },
+    {
+      "index": 85,
+      "name": "Segoe MDL2 Assets",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Segoe MDL2 Assets",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Segoe MDL2 Assets",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Segoe MDL2 Assets",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Segoe MDL2 Assets",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Segoe MDL2 Assets",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe MDL2 Assets"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Segoe MDL2 Assets"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe MDL2 Assets"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Segoe MDL2 Assets"
+        }
+      ]
+    },
+    {
+      "index": 86,
+      "name": "Segoe Print",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Segoe Print",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Segoe Print",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Segoe Print",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Segoe Print",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Segoe Print",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe Print"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Segoe Print"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe Print"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Segoe Print"
+        }
+      ]
+    },
+    {
+      "index": 87,
+      "name": "Segoe Script",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Segoe Script",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Segoe Script",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Segoe Script",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Segoe Script",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Segoe Script",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe Script"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Segoe Script"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe Script"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Segoe Script"
+        }
+      ]
+    },
+    {
+      "index": 88,
+      "name": "Segoe UI",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Segoe UI",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Segoe UI",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Segoe UI",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Segoe UI",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Segoe UI",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Segoe UI"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Segoe UI"
+        }
+      ]
+    },
+    {
+      "index": 89,
+      "name": "Segoe UI Black",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Segoe UI Black",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Segoe UI Black",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Segoe UI Black",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Segoe UI Black",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Segoe UI Black",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI Black"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Segoe UI Black"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI Black"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Segoe UI Black"
+        }
+      ]
+    },
+    {
+      "index": 90,
+      "name": "Segoe UI Emoji",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Segoe UI Emoji",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Segoe UI Emoji",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Segoe UI Emoji",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Segoe UI Emoji",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Segoe UI Emoji",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI Emoji"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Segoe UI Emoji"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI Emoji"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Segoe UI Emoji"
+        }
+      ]
+    },
+    {
+      "index": 91,
+      "name": "Segoe UI Historic",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Segoe UI Historic",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Segoe UI Historic",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Segoe UI Historic",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Segoe UI Historic",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Segoe UI Historic",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI Historic"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Segoe UI Historic"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI Historic"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Segoe UI Historic"
+        }
+      ]
+    },
+    {
+      "index": 92,
+      "name": "Segoe UI Light",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Segoe UI Light",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Segoe UI Light",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Segoe UI Light",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Segoe UI Light",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Segoe UI Light",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI Light"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Segoe UI Light"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI Light"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Segoe UI Light"
+        }
+      ]
+    },
+    {
+      "index": 93,
+      "name": "Segoe UI Semibold",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Segoe UI Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Segoe UI Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Segoe UI Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Segoe UI Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Segoe UI Semibold",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI Semibold"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Segoe UI Semibold"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI Semibold"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Segoe UI Semibold"
+        }
+      ]
+    },
+    {
+      "index": 94,
+      "name": "Segoe UI Semilight",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Segoe UI Semilight",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Segoe UI Semilight",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Segoe UI Semilight",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Segoe UI Semilight",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Segoe UI Semilight",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI Semilight"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Segoe UI Semilight"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI Semilight"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Segoe UI Semilight"
+        }
+      ]
+    },
+    {
+      "index": 95,
+      "name": "Segoe UI Symbol",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Segoe UI Symbol",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Segoe UI Symbol",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Segoe UI Symbol",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Segoe UI Symbol",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Segoe UI Symbol",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI Symbol"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Segoe UI Symbol"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI Symbol"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Segoe UI Symbol"
+        }
+      ]
+    },
+    {
+      "index": 96,
+      "name": "Segoe UI Variable Display",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Segoe UI Variable Display",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Segoe UI Variable Display",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Segoe UI Variable Display",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Segoe UI Variable Display",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Segoe UI Variable Display",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI Variable Display"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Segoe UI Variable Display"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI Variable Display"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Segoe UI Variable Display"
+        }
+      ]
+    },
+    {
+      "index": 97,
+      "name": "Segoe UI Variable Display Light",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Segoe UI Variable Display Light",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Segoe UI Variable Display Light",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Segoe UI Variable Display Light",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Segoe UI Variable Display Light",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Segoe UI Variable Display Light",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI Variable Display Light"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Segoe UI Variable Display Light"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI Variable Display Light"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Segoe UI Variable Display Light"
+        }
+      ]
+    },
+    {
+      "index": 98,
+      "name": "Segoe UI Variable Display Semib",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Segoe UI Variable Display Semib",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Segoe UI Variable Display Semib",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Segoe UI Variable Display Semib",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Segoe UI Variable Display Semib",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Segoe UI Variable Display Semib",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI Variable Display Semib"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Segoe UI Variable Display Semib"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI Variable Display Semib"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Segoe UI Variable Display Semib"
+        }
+      ]
+    },
+    {
+      "index": 99,
+      "name": "Segoe UI Variable Display Semil",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Segoe UI Variable Display Semil",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Segoe UI Variable Display Semil",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Segoe UI Variable Display Semil",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Segoe UI Variable Display Semil",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Segoe UI Variable Display Semil",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI Variable Display Semil"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Segoe UI Variable Display Semil"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI Variable Display Semil"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Segoe UI Variable Display Semil"
+        }
+      ]
+    },
+    {
+      "index": 100,
+      "name": "Segoe UI Variable Small",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Segoe UI Variable Small",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Segoe UI Variable Small",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Segoe UI Variable Small",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Segoe UI Variable Small",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Segoe UI Variable Small",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI Variable Small"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Segoe UI Variable Small"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI Variable Small"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Segoe UI Variable Small"
+        }
+      ]
+    },
+    {
+      "index": 101,
+      "name": "Segoe UI Variable Small Light",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Segoe UI Variable Small Light",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Segoe UI Variable Small Light",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Segoe UI Variable Small Light",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Segoe UI Variable Small Light",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Segoe UI Variable Small Light",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI Variable Small Light"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Segoe UI Variable Small Light"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI Variable Small Light"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Segoe UI Variable Small Light"
+        }
+      ]
+    },
+    {
+      "index": 102,
+      "name": "Segoe UI Variable Small Semibol",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Segoe UI Variable Small Semibol",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Segoe UI Variable Small Semibol",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Segoe UI Variable Small Semibol",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Segoe UI Variable Small Semibol",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Segoe UI Variable Small Semibol",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI Variable Small Semibol"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Segoe UI Variable Small Semibol"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI Variable Small Semibol"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Segoe UI Variable Small Semibol"
+        }
+      ]
+    },
+    {
+      "index": 103,
+      "name": "Segoe UI Variable Small Semilig",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Segoe UI Variable Small Semilig",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Segoe UI Variable Small Semilig",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Segoe UI Variable Small Semilig",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Segoe UI Variable Small Semilig",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Segoe UI Variable Small Semilig",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI Variable Small Semilig"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Segoe UI Variable Small Semilig"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI Variable Small Semilig"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Segoe UI Variable Small Semilig"
+        }
+      ]
+    },
+    {
+      "index": 104,
+      "name": "Segoe UI Variable Text",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Segoe UI Variable Text",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Segoe UI Variable Text",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Segoe UI Variable Text",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Segoe UI Variable Text",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Segoe UI Variable Text",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI Variable Text"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Segoe UI Variable Text"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI Variable Text"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Segoe UI Variable Text"
+        }
+      ]
+    },
+    {
+      "index": 105,
+      "name": "Segoe UI Variable Text Light",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Segoe UI Variable Text Light",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Segoe UI Variable Text Light",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Segoe UI Variable Text Light",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Segoe UI Variable Text Light",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Segoe UI Variable Text Light",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI Variable Text Light"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Segoe UI Variable Text Light"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI Variable Text Light"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Segoe UI Variable Text Light"
+        }
+      ]
+    },
+    {
+      "index": 106,
+      "name": "Segoe UI Variable Text Semibold",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Segoe UI Variable Text Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Segoe UI Variable Text Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Segoe UI Variable Text Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Segoe UI Variable Text Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Segoe UI Variable Text Semibold",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI Variable Text Semibold"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Segoe UI Variable Text Semibold"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI Variable Text Semibold"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Segoe UI Variable Text Semibold"
+        }
+      ]
+    },
+    {
+      "index": 107,
+      "name": "Segoe UI Variable Text Semiligh",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Segoe UI Variable Text Semiligh",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Segoe UI Variable Text Semiligh",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Segoe UI Variable Text Semiligh",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Segoe UI Variable Text Semiligh",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Segoe UI Variable Text Semiligh",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI Variable Text Semiligh"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Segoe UI Variable Text Semiligh"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Segoe UI Variable Text Semiligh"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Segoe UI Variable Text Semiligh"
+        }
+      ]
+    },
+    {
+      "index": 108,
+      "name": "SimSun",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "SimSun",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "SimSun",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "SimSun",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "SimSun",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "SimSun",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "SimSun"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "SimSun"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "SimSun"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "SimSun"
+        }
+      ]
+    },
+    {
+      "index": 109,
+      "name": "SimSun-ExtB",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "SimSun-ExtB",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "SimSun-ExtB",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "SimSun-ExtB",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "SimSun-ExtB",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "SimSun-ExtB",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "SimSun-ExtB"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "SimSun-ExtB"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "SimSun-ExtB"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "SimSun-ExtB"
+        }
+      ]
+    },
+    {
+      "index": 110,
+      "name": "SimSun-ExtG",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "SimSun-ExtG",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "SimSun-ExtG",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "SimSun-ExtG",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "SimSun-ExtG",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "SimSun-ExtG",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "SimSun-ExtG"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "SimSun-ExtG"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "SimSun-ExtG"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "SimSun-ExtG"
+        }
+      ]
+    },
+    {
+      "index": 111,
+      "name": "Sitka Banner",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Sitka Banner",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Sitka Banner",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Sitka Banner",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Sitka Banner",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Sitka Banner",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Sitka Banner"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Sitka Banner"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Sitka Banner"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Sitka Banner"
+        }
+      ]
+    },
+    {
+      "index": 112,
+      "name": "Sitka Banner Semibold",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Sitka Banner Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Sitka Banner Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Sitka Banner Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Sitka Banner Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Sitka Banner Semibold",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Sitka Banner Semibold"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Sitka Banner Semibold"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Sitka Banner Semibold"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Sitka Banner Semibold"
+        }
+      ]
+    },
+    {
+      "index": 113,
+      "name": "Sitka Display",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Sitka Display",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Sitka Display",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Sitka Display",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Sitka Display",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Sitka Display",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Sitka Display"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Sitka Display"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Sitka Display"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Sitka Display"
+        }
+      ]
+    },
+    {
+      "index": 114,
+      "name": "Sitka Display Semibold",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Sitka Display Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Sitka Display Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Sitka Display Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Sitka Display Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Sitka Display Semibold",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Sitka Display Semibold"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Sitka Display Semibold"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Sitka Display Semibold"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Sitka Display Semibold"
+        }
+      ]
+    },
+    {
+      "index": 115,
+      "name": "Sitka Heading",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Sitka Heading",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Sitka Heading",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Sitka Heading",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Sitka Heading",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Sitka Heading",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Sitka Heading"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Sitka Heading"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Sitka Heading"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Sitka Heading"
+        }
+      ]
+    },
+    {
+      "index": 116,
+      "name": "Sitka Heading Semibold",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Sitka Heading Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Sitka Heading Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Sitka Heading Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Sitka Heading Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Sitka Heading Semibold",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Sitka Heading Semibold"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Sitka Heading Semibold"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Sitka Heading Semibold"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Sitka Heading Semibold"
+        }
+      ]
+    },
+    {
+      "index": 117,
+      "name": "Sitka Small",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Sitka Small",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Sitka Small",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Sitka Small",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Sitka Small",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Sitka Small",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Sitka Small"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Sitka Small"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Sitka Small"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Sitka Small"
+        }
+      ]
+    },
+    {
+      "index": 118,
+      "name": "Sitka Small Semibold",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Sitka Small Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Sitka Small Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Sitka Small Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Sitka Small Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Sitka Small Semibold",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Sitka Small Semibold"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Sitka Small Semibold"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Sitka Small Semibold"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Sitka Small Semibold"
+        }
+      ]
+    },
+    {
+      "index": 119,
+      "name": "Sitka Subheading",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Sitka Subheading",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Sitka Subheading",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Sitka Subheading",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Sitka Subheading",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Sitka Subheading",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Sitka Subheading"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Sitka Subheading"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Sitka Subheading"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Sitka Subheading"
+        }
+      ]
+    },
+    {
+      "index": 120,
+      "name": "Sitka Subheading Semibold",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Sitka Subheading Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Sitka Subheading Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Sitka Subheading Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Sitka Subheading Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Sitka Subheading Semibold",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Sitka Subheading Semibold"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Sitka Subheading Semibold"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Sitka Subheading Semibold"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Sitka Subheading Semibold"
+        }
+      ]
+    },
+    {
+      "index": 121,
+      "name": "Sitka Text",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Sitka Text",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Sitka Text",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Sitka Text",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Sitka Text",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Sitka Text",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Sitka Text"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Sitka Text"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Sitka Text"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Sitka Text"
+        }
+      ]
+    },
+    {
+      "index": 122,
+      "name": "Sitka Text Semibold",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Sitka Text Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Sitka Text Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Sitka Text Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Sitka Text Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Sitka Text Semibold",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Sitka Text Semibold"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Sitka Text Semibold"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Sitka Text Semibold"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Sitka Text Semibold"
+        }
+      ]
+    },
+    {
+      "index": 123,
+      "name": "Source Code Pro",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Source Code Pro",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Source Code Pro",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Source Code Pro",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Source Code Pro",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Source Code Pro",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Source Code Pro"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Source Code Pro"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Source Code Pro"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Source Code Pro"
+        }
+      ]
+    },
+    {
+      "index": 124,
+      "name": "Source Code Pro Black",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Source Code Pro Black",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Source Code Pro Black",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Source Code Pro Black",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Source Code Pro Black",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Source Code Pro Black",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Source Code Pro Black"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Source Code Pro Black"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Source Code Pro Black"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Source Code Pro Black"
+        }
+      ]
+    },
+    {
+      "index": 125,
+      "name": "Source Code Pro ExtraLight",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Source Code Pro ExtraLight",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Source Code Pro ExtraLight",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Source Code Pro ExtraLight",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Source Code Pro ExtraLight",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Source Code Pro ExtraLight",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Source Code Pro ExtraLight"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Source Code Pro ExtraLight"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Source Code Pro ExtraLight"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Source Code Pro ExtraLight"
+        }
+      ]
+    },
+    {
+      "index": 126,
+      "name": "Source Code Pro Light",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Source Code Pro Light",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Source Code Pro Light",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Source Code Pro Light",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Source Code Pro Light",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Source Code Pro Light",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Source Code Pro Light"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Source Code Pro Light"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Source Code Pro Light"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Source Code Pro Light"
+        }
+      ]
+    },
+    {
+      "index": 127,
+      "name": "Source Code Pro Medium",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Source Code Pro Medium",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Source Code Pro Medium",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Source Code Pro Medium",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Source Code Pro Medium",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Source Code Pro Medium",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Source Code Pro Medium"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Source Code Pro Medium"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Source Code Pro Medium"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Source Code Pro Medium"
+        }
+      ]
+    },
+    {
+      "index": 128,
+      "name": "Source Code Pro Semibold",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Source Code Pro Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Source Code Pro Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Source Code Pro Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Source Code Pro Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Source Code Pro Semibold",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Source Code Pro Semibold"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Source Code Pro Semibold"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Source Code Pro Semibold"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Source Code Pro Semibold"
+        }
+      ]
+    },
+    {
+      "index": 129,
+      "name": "Sylfaen",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Sylfaen",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Sylfaen",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Sylfaen",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Sylfaen",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Sylfaen",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Sylfaen"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Sylfaen"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Sylfaen"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Sylfaen"
+        }
+      ]
+    },
+    {
+      "index": 130,
+      "name": "Symbol",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Symbol",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Symbol",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Symbol",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Symbol",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Symbol",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Symbol"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Symbol"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Symbol"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Symbol"
+        }
+      ]
+    },
+    {
+      "index": 131,
+      "name": "Tahoma",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Tahoma",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Tahoma",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Tahoma",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Tahoma",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Tahoma",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Tahoma"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Tahoma"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Tahoma"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Tahoma"
+        }
+      ]
+    },
+    {
+      "index": 132,
+      "name": "Times New Roman",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Times New Roman",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Times New Roman",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Times New Roman",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Times New Roman",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Times New Roman",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Times New Roman"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Times New Roman"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Times New Roman"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Times New Roman"
+        }
+      ]
+    },
+    {
+      "index": 133,
+      "name": "Trebuchet MS",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Trebuchet MS",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Trebuchet MS",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Trebuchet MS",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Trebuchet MS",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Trebuchet MS",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Trebuchet MS"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Trebuchet MS"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Trebuchet MS"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Trebuchet MS"
+        }
+      ]
+    },
+    {
+      "index": 134,
+      "name": "Verdana",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Verdana",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Verdana",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Verdana",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Verdana",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Verdana",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Verdana"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Verdana"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Verdana"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Verdana"
+        }
+      ]
+    },
+    {
+      "index": 135,
+      "name": "Webdings",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Webdings",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Webdings",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Webdings",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Webdings",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Webdings",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Webdings"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Webdings"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Webdings"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Webdings"
+        }
+      ]
+    },
+    {
+      "index": 136,
+      "name": "Wingdings",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Wingdings",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Wingdings",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Wingdings",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Wingdings",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Wingdings",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Wingdings"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Wingdings"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Wingdings"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Wingdings"
+        }
+      ]
+    },
+    {
+      "index": 137,
+      "name": "Yu Gothic",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Yu Gothic",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Yu Gothic",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Yu Gothic",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "\u6E38\u30B4\u30B7\u30C3\u30AF",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Yu Gothic",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Yu Gothic"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Yu Gothic"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Yu Gothic"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "\u6E38\u30B4\u30B7\u30C3\u30AF"
+        }
+      ]
+    },
+    {
+      "index": 138,
+      "name": "Yu Gothic Light",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Yu Gothic Light",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Yu Gothic Light",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Yu Gothic Light",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "\u6E38\u30B4\u30B7\u30C3\u30AF Light",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Yu Gothic Light",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Yu Gothic Light"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Yu Gothic Light"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Yu Gothic Light"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "\u6E38\u30B4\u30B7\u30C3\u30AF Light"
+        }
+      ]
+    },
+    {
+      "index": 139,
+      "name": "Yu Gothic Medium",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Yu Gothic Medium",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Yu Gothic Medium",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Yu Gothic Medium",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "\u6E38\u30B4\u30B7\u30C3\u30AF Medium",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Yu Gothic Medium",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Yu Gothic Medium"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Yu Gothic Medium"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Yu Gothic Medium"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "\u6E38\u30B4\u30B7\u30C3\u30AF Medium"
+        }
+      ]
+    },
+    {
+      "index": 140,
+      "name": "Yu Gothic UI",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Yu Gothic UI",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Yu Gothic UI",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Yu Gothic UI",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Yu Gothic UI",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Yu Gothic UI",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Yu Gothic UI"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Yu Gothic UI"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Yu Gothic UI"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Yu Gothic UI"
+        }
+      ]
+    },
+    {
+      "index": 141,
+      "name": "Yu Gothic UI Light",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Yu Gothic UI Light",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Yu Gothic UI Light",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Yu Gothic UI Light",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Yu Gothic UI Light",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Yu Gothic UI Light",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Yu Gothic UI Light"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Yu Gothic UI Light"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Yu Gothic UI Light"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Yu Gothic UI Light"
+        }
+      ]
+    },
+    {
+      "index": 142,
+      "name": "Yu Gothic UI Semibold",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Yu Gothic UI Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Yu Gothic UI Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Yu Gothic UI Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Yu Gothic UI Semibold",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Yu Gothic UI Semibold",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Yu Gothic UI Semibold"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Yu Gothic UI Semibold"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Yu Gothic UI Semibold"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Yu Gothic UI Semibold"
+        }
+      ]
+    },
+    {
+      "index": 143,
+      "name": "Yu Gothic UI Semilight",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Yu Gothic UI Semilight",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Yu Gothic UI Semilight",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Yu Gothic UI Semilight",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Yu Gothic UI Semilight",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "Yu Gothic UI Semilight",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Yu Gothic UI Semilight"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Yu Gothic UI Semilight"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Yu Gothic UI Semilight"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Yu Gothic UI Semilight"
+        }
+      ]
+    },
+    {
+      "index": 144,
+      "name": "ZWAdobeF",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "ZWAdobeF",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "ZWAdobeF",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "ZWAdobeF",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "ZWAdobeF",
+          "exception": null
+        },
+        {
+          "lcid": 4105,
+          "name": "ZWAdobeF",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "ZWAdobeF"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "ZWAdobeF"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "ZWAdobeF"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "ZWAdobeF"
+        }
+      ]
+    }
+  ],
+  "independent_exception": null,
+  "independent_order_matches_method": true,
+  "drawing_assemblies": [
+    {
+      "file": "System.Drawing.Common.dll",
+      "sha256": "4d3001697df50cca54f32ed2dbbd1f3f415b48d5d756b1bf9500a43ae9b68da0",
+      "assembly_version": "6.0.0.0"
+    },
+    {
+      "file": "System.Drawing.Common.dll.win",
+      "sha256": "4d3001697df50cca54f32ed2dbbd1f3f415b48d5d756b1bf9500a43ae9b68da0",
+      "assembly_version": "6.0.0.0"
+    },
+    {
+      "file": "System.Drawing.Common.dll.linux",
+      "sha256": "89ea595ccb1fd1384480c1e30bd487c92af5d06d3b06f295323eff601acd9019",
+      "assembly_version": "6.0.0.0"
+    }
+  ],
+  "loaded_drawing_path": "G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\fonts-available-reference\\bin\\Debug\\net8.0\\System.Drawing.Common.dll",
+  "original_source": {
+    "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+    "method_line": 1396,
+    "families_line": 1398,
+    "name_line": 1401,
+    "sha256": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00"
+  },
+  "original_yengine_assembly_sha256": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+  "generator_sha256": "8a5a17a57d47fafdd48d70203fc9ce20546ece087b0130c9db23a68dea1f4388"
+}

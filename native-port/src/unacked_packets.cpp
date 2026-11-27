@@ -29,25 +29,29 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <bit>
 #include <chrono>
 #include <stdexcept>
+
 namespace opensim::network {
 namespace {
 std::int32_t tick() {
-    const auto now = std::chrono::duration_cast<std::chrono::milliseconds>(
-                         std::chrono::steady_clock::now().time_since_epoch())
-                         .count();
+    const auto now =
+        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch())
+            .count();
     return static_cast<std::int32_t>(static_cast<std::uint64_t>(now) & 0x7fffffffu);
 }
+
 std::int32_t subtract(std::int32_t a, std::int32_t b) {
     return std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(a) - static_cast<std::uint32_t>(b));
 }
-}
+} // namespace
+
 UnackedPacketCollection::UnackedPacketCollection(Clock clock, FreeBuffer free_buffer)
-    : clock_(clock ? std::move(clock) : Clock{tick}), free_buffer_(std::move(free_buffer)) {
-}
+    : clock_(clock ? std::move(clock) : Clock{tick}), free_buffer_(std::move(free_buffer)) {}
+
 void UnackedPacketCollection::require_open() const {
     if (closed_)
         throw std::logic_error("Unacked packet collection was cleared");
 }
+
 void UnackedPacketCollection::clear() {
     std::lock_guard consumer(consumer_mutex_);
     std::lock_guard pending(pending_mutex_);
@@ -58,15 +62,17 @@ void UnackedPacketCollection::clear() {
     oldest_ = 0;
     closed_ = true;
 }
+
 std::int32_t UnackedPacketCollection::count() const {
     std::lock_guard consumer(consumer_mutex_);
     std::lock_guard pending(pending_mutex_);
     require_open();
-    const auto size = static_cast<std::uint32_t>(packets_.size() + pending_adds_.size() -
-                                                 pending_acks_.size() - pending_removes_.size());
+    const auto size = static_cast<std::uint32_t>(packets_.size() + pending_adds_.size() - pending_acks_.size() -
+                                                 pending_removes_.size());
     return std::bit_cast<std::int32_t>(size);
 }
-void UnackedPacketCollection::add(const Packet& packet) {
+
+void UnackedPacketCollection::add(const Packet &packet) {
     std::lock_guard lock(pending_mutex_);
     require_open();
     pending_adds_.push_back(packet);
@@ -74,17 +80,20 @@ void UnackedPacketCollection::add(const Packet& packet) {
         throw std::invalid_argument("Invalid outgoing reliable packet");
     packet->client->unacked_bytes.fetch_add(packet->buffer->data_length);
 }
+
 void UnackedPacketCollection::acknowledge(std::uint32_t sequence, std::int32_t time, bool resend) {
     std::lock_guard lock(pending_mutex_);
     require_open();
     pending_acks_.push_back({sequence, time, resend});
 }
+
 void UnackedPacketCollection::remove(std::uint32_t sequence) {
     std::lock_guard lock(pending_mutex_);
     require_open();
     pending_removes_.push_back(sequence);
 }
-void UnackedPacketCollection::free(const Packet& packet) {
+
+void UnackedPacketCollection::free(const Packet &packet) {
     if (packet && packet->buffer) {
         packet->client->unacked_bytes.fetch_sub(packet->buffer->data_length);
         if (free_buffer_)
@@ -92,6 +101,7 @@ void UnackedPacketCollection::free(const Packet& packet) {
         packet->buffer.reset();
     }
 }
+
 void UnackedPacketCollection::process_queues() {
     for (;;) {
         std::uint32_t sequence;
@@ -143,6 +153,7 @@ void UnackedPacketCollection::process_queues() {
         }
     }
 }
+
 std::optional<std::vector<UnackedPacketCollection::Packet>>
 UnackedPacketCollection::get_expired_packets(std::int32_t timeout) {
     std::lock_guard consumer(consumer_mutex_);
@@ -151,7 +162,7 @@ UnackedPacketCollection::get_expired_packets(std::int32_t timeout) {
     bool first = true;
     if (!packets_.empty()) {
         const auto now = clock_() & 0x7fffffff;
-        for (const auto& [sequence, packet] : packets_) {
+        for (const auto &[sequence, packet] : packets_) {
             if (!packet->buffer) {
                 remove(sequence);
                 continue;
@@ -178,4 +189,4 @@ UnackedPacketCollection::get_expired_packets(std::int32_t timeout) {
     }
     return expired;
 }
-}
+} // namespace opensim::network

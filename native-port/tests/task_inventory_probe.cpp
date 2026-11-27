@@ -3,25 +3,28 @@
 #include <map>
 #include <optional>
 #include <iostream>
+
 namespace opensim::tests {
 namespace {
 using framework::Uuid;
 using network::lludp::Packet;
+
 void require(bool v, const char *message) {
     if (!v)
         throw std::runtime_error(std::string("Task inventory UDP probe: ") + message);
 }
+
 bool named(const Packet &p, const char *name) {
     return p.spec && p.spec->name == name;
 }
+
 Packet reply(Uuid object, std::uint32_t local, const LegacyInventoryProbeIo &io) {
     auto first = io.snapshot().size();
     auto request = io.make("RequestTaskInventory");
     request.block("InventoryData")["LocalID"] = std::uint64_t(local);
     io.send(request);
     auto matches = [&](const Packet &p) {
-        return named(p, "ReplyTaskInventory") &&
-               std::get<Uuid>(p.block("InventoryData").at("TaskID")) == object;
+        return named(p, "ReplyTaskInventory") && std::get<Uuid>(p.block("InventoryData").at("TaskID")) == object;
     };
     io.wait([&](const auto &list) {
         for (auto n = first; n < list.size(); ++n)
@@ -37,11 +40,12 @@ Packet reply(Uuid object, std::uint32_t local, const LegacyInventoryProbeIo &io)
         }
     throw std::runtime_error("Missing task reply");
 }
+
 std::uint32_t le(const std::vector<std::uint8_t> &b) {
     require(b.size() >= 4, "first chunk length header");
-    return std::uint32_t(b[0]) | (std::uint32_t(b[1]) << 8) | (std::uint32_t(b[2]) << 16) |
-           (std::uint32_t(b[3]) << 24);
+    return std::uint32_t(b[0]) | (std::uint32_t(b[1]) << 8) | (std::uint32_t(b[2]) << 16) | (std::uint32_t(b[3]) << 24);
 }
+
 std::vector<std::uint8_t> download(std::uint64_t id, const std::vector<std::uint8_t> &filename,
                                    const LegacyInventoryProbeIo &io) {
     auto cursor = io.snapshot().size();
@@ -103,7 +107,8 @@ std::vector<std::uint8_t> download(std::uint64_t id, const std::vector<std::uint
     ack(*final);
     return result;
 }
-}
+} // namespace
+
 DownloadedTaskInventory read_task_inventory_file(Uuid object, std::uint32_t local, std::int16_t serial,
                                                  const LegacyInventoryProbeIo &io) {
     auto packet = reply(object, local, io);
@@ -118,19 +123,19 @@ DownloadedTaskInventory read_task_inventory_file(Uuid object, std::uint32_t loca
             "task cached bytes");
     require(!bytes.empty() && bytes.back() == 0, "task text terminator");
     return {{filename.begin(), filename.end() - 1}, {bytes.begin(), bytes.end() - 1}};
-
 }
+
 void check_empty_task_inventory(Uuid object, std::uint32_t local, const LegacyInventoryProbeIo &io) {
     auto packet = reply(object, local, io);
     require(std::get<std::int64_t>(packet.block("InventoryData").at("Serial")) == 0, "empty serial");
     require(std::get<std::vector<std::uint8_t>>(packet.block("InventoryData").at("Filename")).empty(),
             "empty filename");
 }
+
 std::string check_task_inventory_download(Uuid agent, Uuid object, std::uint32_t local, std::int16_t serial,
                                           const LegacyInventoryProbeIo &io,
                                           const std::function<void(Uuid)> &verify_asset,
-                                          const std::function<void(Uuid, Uuid)> &verify_running,
-                                          int expected_items) {
+                                          const std::function<void(Uuid, Uuid)> &verify_running, int expected_items) {
     auto packet = reply(object, local, io);
     const auto &b = packet.block("InventoryData");
     require(std::get<std::int64_t>(b.at("Serial")) == serial, "actual task mutation serial");
@@ -149,9 +154,8 @@ std::string check_task_inventory_download(Uuid agent, Uuid object, std::uint32_t
     for (const auto &token :
          {std::string("obj_id\t") + object.str(), std::string("parent_id\t") + object.str(),
           std::string("owner_id\t") + agent.str(), std::string("creator_id\t") + agent.str(),
-          std::string("group_mask\t00000000"),
-          std::string("last_owner_id\t00000000-0000-0000-0000-000000000000"), std::string("inv_type\tscript"),
-          std::string("name\tContents|"), std::string("name\tNew Script|")})
+          std::string("group_mask\t00000000"), std::string("last_owner_id\t00000000-0000-0000-0000-000000000000"),
+          std::string("inv_type\tscript"), std::string("name\tContents|"), std::string("name\tNew Script|")})
         require(text.find(token) != text.npos, "actual task metadata missing");
     std::size_t asset_offset = 0;
     while ((asset_offset = text.find("asset_id\t", asset_offset)) != text.npos) {
@@ -182,8 +186,7 @@ std::string check_task_inventory_download(Uuid agent, Uuid object, std::uint32_t
         ++items;
         ++offset;
     }
-    require(items == static_cast<std::size_t>(expected_items < 0 ? static_cast<std::uint16_t>(serial)
-                                                                 : expected_items),
+    require(items == static_cast<std::size_t>(expected_items < 0 ? static_cast<std::uint16_t>(serial) : expected_items),
             "task item count differs from additions");
     if (serial >= 2)
         require(text.find("name\tNew Script 1|") != text.npos, "source duplicate script name suffix");
@@ -191,4 +194,4 @@ std::string check_task_inventory_download(Uuid agent, Uuid object, std::uint32_t
               << " actual Xfer bytes and cache reuse\n";
     return name;
 }
-}
+} // namespace opensim::tests

@@ -11,45 +11,55 @@
 #include "opensim/framework/dotnet_regex_char_class.hpp"
 #include <bit>
 #include <stdexcept>
+
 namespace opensim::network {
 namespace {
 using namespace framework;
+
 class NotationParser {
     std::u16string text_;
     std::size_t position_ = 0;
+
     [[noreturn]] static void fail(std::string message) {
         throw SdkNotationError(std::move(message));
     }
+
     int peek() const {
         return position_ < text_.size() ? text_[position_] : -1;
     }
+
     int read() {
         int c = peek();
         if (c >= 0)
             ++position_;
         return c;
     }
+
     static bool digit(int c) {
         return c >= 0 && dotnet_regex_unicode_category(static_cast<char16_t>(c)) == 8;
     }
+
     int skip() {
         int c;
         while ((c = peek()) > 0 && (c == 32 || c == 9 || c == 10 || c == 13))
             read();
         return c;
     }
+
     int next() {
         int c = skip();
         read();
         return c;
     }
-    std::u16string block(std::size_t size, const char* error) {
+
+    std::u16string block(std::size_t size, const char *error) {
         if (size > text_.size() - position_)
             fail(error);
         auto value = text_.substr(position_, size);
         position_ += size;
         return value;
     }
+
     static int nibble(int c) {
         if (c >= '0' && c <= '9')
             return c - '0';
@@ -59,6 +69,7 @@ class NotationParser {
             return c - 'A' + 10;
         fail("invalid hex char");
     }
+
     std::u16string quoted(char16_t delimiter) {
         std::u16string value;
         bool escape = false, hex = false, second = false;
@@ -68,8 +79,8 @@ class NotationParser {
             // Source casts EOF to char and loops appending U+FFFF until allocation failure.
             // Keep this known termination difference explicit instead of exhausting the host.
             if (input < 0)
-                fail(
-                    "Native notation reader reached EOF in quoted text (source allocation loop remains unimplemented).");
+                fail("Native notation reader reached EOF in quoted text (source allocation loop remains "
+                     "unimplemented).");
             auto c = static_cast<char16_t>(input);
             if (c == 0)
                 break;
@@ -128,6 +139,7 @@ class NotationParser {
         }
         return value;
     }
+
     int length() {
         std::u16string buffer;
         if (skip() == u'(')
@@ -143,11 +155,13 @@ class NotationParser {
             fail("Notation LLSD parsing: Can't parse length value.");
         }
     }
+
     static Value string(std::u16string data) {
         Value value(utf8(data));
         value.sdk_string = std::make_shared<const std::u16string>(std::move(data));
         return value;
     }
+
     Value container(bool map) {
         Value result;
         result.kind = map ? Value::Kind::Map : Value::Kind::Array;
@@ -179,6 +193,7 @@ class NotationParser {
                      : "Notation LLSD parsing: Unexpected end of array discovered.");
         return result;
     }
+
     Value element() {
         int marker = next();
         Value result;
@@ -224,8 +239,7 @@ class NotationParser {
             if (peek() == u'-' || peek() == u'+')
                 buffer += static_cast<char16_t>(read());
             int c;
-            while ((c = peek()) > 0 &&
-                   (digit(c) || c == u'.' || c == u'e' || c == u'E' || c == u'+' || c == u'-'))
+            while ((c = peek()) > 0 && (digit(c) || c == u'.' || c == u'e' || c == u'E' || c == u'+' || c == u'-'))
                 buffer += static_cast<char16_t>(read());
             double number;
             if (!try_parse_invariant_real(utf8(buffer), number))
@@ -259,16 +273,16 @@ class NotationParser {
                     fail("Notation LLSD parsing: Invalid binary encoding base.");
                 }
                 if (number != 64)
-                    fail("Notation LLSD parsing: Encoding base" + std::to_string(number) +
-                         " + not supported.");
+                    fail("Notation LLSD parsing: Encoding base" + std::to_string(number) + " + not supported.");
                 if (read() < 0)
                     fail("Notation LLSD parsing: Unexpected end of stream in binary.");
                 result.text = utf8(quoted(u'"'));
                 try {
                     osd_binary(result);
-                } catch (const std::invalid_argument&) {
+                } catch (const std::invalid_argument &) {
                     fail(
-                        "The input is not a valid Base-64 string as it contains a non-base 64 character, more than two padding characters, or an illegal character among the padding characters.");
+                        "The input is not a valid Base-64 string as it contains a non-base 64 character, more than two "
+                        "padding characters, or an illegal character among the padding characters.");
                 }
             } else
                 result.binary_data = std::make_shared<std::vector<std::uint8_t>>();
@@ -278,8 +292,8 @@ class NotationParser {
             int size = length();
             if (read() < 0)
                 fail("Notation LLSD parsing: Unexpected end of stream in string.");
-            auto data = block(static_cast<std::size_t>(size),
-                              "Notation LLSD parsing: Unexpected end of stream in string.");
+            auto data =
+                block(static_cast<std::size_t>(size), "Notation LLSD parsing: Unexpected end of stream in string.");
             if (read() < 0)
                 fail("Notation LLSD parsing: Unexpected end of stream in string.");
             return string(std::move(data));
@@ -325,11 +339,10 @@ class NotationParser {
 
   public:
     explicit NotationParser(std::string_view bytes)
-        : text_(decode_stream_reader_text({reinterpret_cast<const std::uint8_t*>(bytes.data()), bytes.size()})
-                    .text) {
-    }
-    explicit NotationParser(std::u16string_view text) : text_(text) {
-    }
+        : text_(decode_stream_reader_text({reinterpret_cast<const std::uint8_t *>(bytes.data()), bytes.size()}).text) {}
+
+    explicit NotationParser(std::u16string_view text) : text_(text) {}
+
     Value parse() {
         int c = skip();
         if (c < 0)
@@ -339,11 +352,13 @@ class NotationParser {
         return element();
     }
 };
-}
+} // namespace
+
 Value deserialize_sdk_llsd_notation_text(std::u16string_view text) {
     return NotationParser(text).parse();
 }
+
 Value deserialize_sdk_llsd_notation(std::string_view bytes) {
     return NotationParser(bytes).parse();
 }
-}
+} // namespace opensim::network

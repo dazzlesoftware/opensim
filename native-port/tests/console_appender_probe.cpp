@@ -4,7 +4,8 @@
 #include <iostream>
 #include <vector>
 using namespace opensim::framework;
-std::vector<std::string> split(const std::string& value, char delimiter) {
+
+std::vector<std::string> split(const std::string &value, char delimiter) {
     std::vector<std::string> out;
     std::size_t at = 0;
     while (true) {
@@ -15,33 +16,36 @@ std::vector<std::string> split(const std::string& value, char delimiter) {
         at = end + 1;
     }
 }
-std::u16string decode(const std::string& value) {
+
+std::u16string decode(const std::string &value) {
     std::u16string out;
     for (std::size_t at = 0; at < value.size(); at += 4)
         out += static_cast<char16_t>(std::stoul(value.substr(at, 4), nullptr, 16));
     return out;
 }
-std::string hex(const std::u16string& value) {
-    const char* digits = "0123456789abcdef";
+
+std::string hex(const std::u16string &value) {
+    const char *digits = "0123456789abcdef";
     std::string out;
     for (auto c : value)
         for (int shift : {12, 8, 4, 0})
             out += digits[(c >> shift) & 15];
     return out;
 }
+
 int main() {
     std::string row;
     while (std::getline(std::cin, row)) {
         auto f = split(row, '|');
         std::string logs;
-        auto log = [&](const std::string& value) {
+        auto log = [&](const std::string &value) {
             if (!logs.empty())
                 logs += ';';
             logs += value;
         };
         auto message = decode(f.at(4));
         int writer_mode = std::stoi(f[3]), writes = 0;
-        ConsoleAppender appender([&](const auto& text, bool newline) {
+        ConsoleAppender appender([&](const auto &text, bool newline) {
             auto value = text;
             if (value.starts_with(u"Couldn't write out log message: ")) {
                 auto at = value.find(u'\n');
@@ -59,7 +63,7 @@ int main() {
         auto target = [&](int mode) -> std::shared_ptr<ConsoleAppender::Output> {
             if (mode == 0)
                 return {};
-            return std::make_shared<ConsoleAppender::Output>([&, mode](const auto& text, const auto& level) {
+            return std::make_shared<ConsoleAppender::Output>([&, mode](const auto &text, const auto &level) {
                 log("output:" + hex(text) + ":" + hex(level));
                 if (mode == 2)
                     throw ConsoleAppenderFailure(u"output failure");
@@ -83,9 +87,9 @@ int main() {
                     appender.console(target(mutation == 2 ? 0 : mutation == 3 ? 1 : 2));
                 return message;
             });
-        } catch (const ConsoleAppenderFailure& error) {
+        } catch (const ConsoleAppenderFailure &error) {
             result = "err:" + hex(error.source_text);
-        } catch (const std::exception&) {
+        } catch (const std::exception &) {
             result = "err:unexpected";
         }
         std::cout << result << "|" << (appender.console() ? "1" : "0") << "|" << logs << "\n";

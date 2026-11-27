@@ -1,0 +1,30 @@
+{
+  "date": "2026-11-26",
+  "automatedTests": {
+    "Windows": {
+      "passed": true,
+      "checks": 16,
+      "report": "native-port\\parity-audit\\test-20261126-python-viewers\\results.json",
+      "reportSha256": "1c17247f42348f5296de5d32b2db5f288ddefe19df1ebacb296904a8a488c5eb"
+    },
+    "Linux": {
+      "passed": true,
+      "checks": 16,
+      "report": "native-port\\parity-audit\\test-linux-20261126\\results.json",
+      "reportSha256": "2c18bdeb4bade7799bff3db13eb892495c7e397eca6abaee02ec8c2e22ac1540"
+    }
+  },
+  "scriptOverloads": {
+    "acceptedBoth": 745,
+    "rejectedBoth": 25,
+    "platformDisagreements": 0
+  },
+  "estimateValidation": "17 task ranges and total arithmetic verified; engineering duration is judgement, not empirical",
+  "fullSemanticReviewComplete": false,
+  "testServer": {
+    "path": "G:\\GitHub\\SecondLife\\TestBuild\\Builds\\20261126-review",
+    "url": "http://127.0.0.1:19126/",
+    "binarySha256": "9f0ca0f079391ae69d0c1293a4b6b89726a4793618cb2da1dd7f3cda3c23a23a"
+  },
+  "freshRealFirestormVerified": false
+}

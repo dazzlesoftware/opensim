@@ -3,7 +3,9 @@
 #include <algorithm>
 #include <bit>
 #include <span>
+#include <stdexcept>
 #include <vector>
+
 namespace opensim::framework::regex_detail {
 template <class T, class Compare> void intro_sort(std::span<T> values, int depth, Compare compare) {
     auto swap_greater = [&](int a, int b) {
@@ -63,8 +65,12 @@ template <class T, class Compare> void intro_sort(std::span<T> values, int depth
         int left = 0, right = high - 1;
         while (left < right) {
             while (compare(values[++left], pivot) < 0) {
+                if (left == high)
+                    throw std::invalid_argument("Unable to sort because the comparer gives inconsistent results.");
             }
             while (compare(pivot, values[--right]) < 0) {
+                if (right == 0)
+                    throw std::invalid_argument("Unable to sort because the comparer gives inconsistent results.");
             }
             if (left >= right)
                 break;
@@ -76,8 +82,9 @@ template <class T, class Compare> void intro_sort(std::span<T> values, int depth
         count = left;
     }
 }
-template <class T, class Compare> void sort(std::vector<T>& values, Compare compare) {
+
+template <class T, class Compare> void sort(std::vector<T> &values, Compare compare) {
     if (values.size() > 1)
         intro_sort(std::span<T>(values), 2 * std::bit_width(static_cast<unsigned>(values.size())), compare);
 }
-}
+} // namespace opensim::framework::regex_detail

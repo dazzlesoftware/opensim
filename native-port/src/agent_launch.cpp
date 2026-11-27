@@ -4,6 +4,7 @@
 #include "opensim/framework/http_uri.hpp"
 #include <random>
 #include <stdexcept>
+
 namespace opensim::services {
 AgentLauncher::AgentLauncher(GridService *grid, ISimulationLogin *local, ISimulationLogin *remote,
                              IUserAgentLogin *user_agent, std::string uri, CircuitCode code)
@@ -15,6 +16,7 @@ AgentLauncher::AgentLauncher(GridService *grid, ISimulationLogin *local, ISimula
             return std::uniform_int_distribution<std::uint32_t>(0, 2147483646u)(random);
         };
 }
+
 void AgentLauncher::resolve_gatekeeper() {
     try {
         framework::HttpUri uri(gatekeeper_uri_);
@@ -25,16 +27,18 @@ void AgentLauncher::resolve_gatekeeper() {
     } catch (const std::exception &) {
     }
 }
+
 bool AgentLauncher::directly(ISimulationLogin &connector, GridRegion &region,
                              const std::shared_ptr<framework::AgentCircuitData> &circuit, std::uint32_t flags,
                              std::string &reason) {
     LoginTransferContext context;
     std::vector<framework::Uuid> features;
-    if (!connector.query_access(region, circuit->agent_id, std::nullopt, true, circuit->start_position,
-                                features, context, reason))
+    if (!connector.query_access(region, circuit->agent_id, std::nullopt, true, circuit->start_position, features,
+                                context, reason))
         return false;
     return connector.create_agent(nullptr, region, circuit, flags, context, reason);
 }
+
 AgentLaunchResult AgentLauncher::launch(const AgentLaunchRequest &request) {
     AgentLaunchResult result;
     result.where = request.where;
@@ -81,14 +85,14 @@ AgentLaunchResult AgentLauncher::launch(const AgentLaunchRequest &request) {
         if (!circuit)
             throw std::invalid_argument("MakeAgent returned null");
         circuit->teleport_flags |= request.flags;
-        success = user_agent_->login_agent_to_grid_owned(nullptr, circuit, gatekeeper, destination, true,
-                                                         result.reason);
+        success =
+            user_agent_->login_agent_to_grid_owned(nullptr, circuit, gatekeeper, destination, true, result.reason);
         if (!success && grid_) {
             const auto fallbacks = grid_->fallback(request.account_scope, destination->x, destination->y);
             for (const auto &fallback : fallbacks) {
                 auto region = std::make_shared<GridRegion>(fallback);
-                success = user_agent_->login_agent_to_grid_owned(nullptr, circuit, gatekeeper, region, true,
-                                                                 result.reason);
+                success =
+                    user_agent_->login_agent_to_grid_owned(nullptr, circuit, gatekeeper, region, true, result.reason);
                 if (success) {
                     result.where = "safe";
                     destination = std::move(region);
@@ -102,4 +106,4 @@ AgentLaunchResult AgentLauncher::launch(const AgentLaunchRequest &request) {
         result.circuit = std::move(circuit);
     return result;
 }
-}
+} // namespace opensim::services

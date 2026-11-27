@@ -1,0 +1,1 @@
+string value;integer negated;integer after;default{state_entry(){value=llComputeHash("payload","unsupported");negated=!value;after=1;}}

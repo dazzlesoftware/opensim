@@ -30,6 +30,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 #include <iomanip>
 using namespace opensim;
+
 std::optional<std::string> text(std::string_view input) {
     if (input == "N")
         return std::nullopt;
@@ -38,7 +39,8 @@ std::optional<std::string> text(std::string_view input) {
         result += static_cast<char>(std::stoi(std::string(input.substr(i, 2)), nullptr, 16));
     return result;
 }
-std::string array(const std::optional<std::vector<std::string>>& value) {
+
+std::string array(const std::optional<std::vector<std::string>> &value) {
     if (!value)
         return "NULL";
     std::string result;
@@ -49,13 +51,13 @@ std::string array(const std::optional<std::vector<std::string>>& value) {
     }
     return result;
 }
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     try {
         const auto config = server::IniConfig::load(framework::utf8_path(argv[1]));
-        server::GridIdentity info(
-            config, text(argv[2]), [](const std::string& host) -> std::optional<std::string> {
-                return host == "bad.invalid" ? std::nullopt : std::optional<std::string>{"203.0.113.7"};
-            });
+        server::GridIdentity info(config, text(argv[2]), [](const std::string &host) -> std::optional<std::string> {
+            return host == "bad.invalid" ? std::nullopt : std::optional<std::string>{"203.0.113.7"};
+        });
         const int action = std::stoi(argv[3]);
         try {
             if (action == 1) {
@@ -67,10 +69,8 @@ int main(int argc, char** argv) {
                 info.set_search_url("http://search.example/new?q=2");
                 info.set_destination_url("http://bad.invalid");
                 info.set_economy_url("https://economy.example/path");
-                info.add_grid_aliases(
-                    std::vector<std::string>{"added.example", "http://added.example:80", "bad/path"});
-                info.set_stuns(
-                    std::vector<std::string>{"stun.example:3478", "bad/path", "stun.example:3478"});
+                info.add_grid_aliases(std::vector<std::string>{"added.example", "http://added.example:80", "bad/path"});
+                info.set_stuns(std::vector<std::string>{"stun.example:3478", "bad/path", "stun.example:3478"});
             }
             if (action == 2) {
                 info.add_grid_aliases(std::vector<std::string>{});
@@ -103,10 +103,9 @@ int main(int argc, char** argv) {
                                          info.destination_url,
                                          info.economy_url.value_or("NULL"),
                                          array(info.stun_servers)};
-        for (const auto& value : std::vector<std::optional<std::string>>{
-                 std::nullopt, "", "bad/path", "http://gate.example", "https://gate.example:80",
-                 "alias.example", "home.example", "http://bad.invalid", "http://unrelated.example",
-                 "added.example"}) {
+        for (const auto &value : std::vector<std::optional<std::string>>{
+                 std::nullopt, "", "bad/path", "http://gate.example", "https://gate.example:80", "alias.example",
+                 "home.example", "http://bad.invalid", "http://unrelated.example", "added.example"}) {
             rows.push_back(std::to_string(info.is_local_grid(value)));
             rows.push_back(std::to_string(info.is_local_grid(value, true)));
             rows.push_back(std::to_string(info.is_local_home(value)));
@@ -122,7 +121,7 @@ int main(int argc, char** argv) {
             std::cout << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(c);
         std::cout << '\n';
         return 0;
-    } catch (const std::exception& error) {
+    } catch (const std::exception &error) {
         std::cout << "ERROR|" << error.what() << '\n';
         return 0;
     }

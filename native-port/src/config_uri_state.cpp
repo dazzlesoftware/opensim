@@ -2,8 +2,9 @@
 #include "opensim/framework/config_uri_state.hpp"
 #include "opensim/framework/config_uri_canonical.hpp"
 #include "opensim/framework/config_uri_iri.hpp"
+
 namespace opensim::framework {
-void config_uri_create_info(ConfigUriState& s) {
+void config_uri_create_info(ConfigUriState &s) {
     if (s.info)
         return;
     if (!s.syntax)
@@ -11,7 +12,7 @@ void config_uri_create_info(ConfigUriState& s) {
     auto cf = s.flags;
     ConfigUriOffsets o;
     o.end = static_cast<std::uint16_t>(s.parse_string.size());
-    auto& text = s.parse_string;
+    auto &text = s.parse_string;
     auto at = [&](std::size_t i) {
         if (i >= text.size())
             throw ConfigUriStateError(true);
@@ -114,7 +115,8 @@ void config_uri_create_info(ConfigUriState& s) {
     s.info = true;
     s.flags = (s.flags & ~0xffffull) | cf;
 }
-void config_uri_parse_remaining(ConfigUriState& s) {
+
+void config_uri_parse_remaining(ConfigUriState &s) {
     if (s.flags & 0x80000000ull)
         return;
     config_uri_create_info(s);
@@ -128,7 +130,7 @@ void config_uri_parse_remaining(ConfigUriState& s) {
             throw ConfigUriStateError(true);
         return s.parse_string[i];
     };
-    auto trim = [&](std::size_t& length, std::size_t index) {
+    auto trim = [&](std::size_t &length, std::size_t index) {
         while (length > index && lws(at(length - 1)))
             --length;
     };
@@ -147,7 +149,7 @@ void config_uri_parse_remaining(ConfigUriState& s) {
         if (implicit)
             flags |= 1;
         else {
-            auto& name = *s.syntax->scheme;
+            auto &name = *s.syntax->scheme;
             for (std::size_t i = 0; i < name.size(); ++i)
                 if (name[i] != at(position + i))
                     flags |= 1;
@@ -298,4 +300,4 @@ void config_uri_parse_remaining(ConfigUriState& s) {
     }
     s.flags |= flags | 0x80000000ull | 0x800000000ull;
 }
-}
+} // namespace opensim::framework

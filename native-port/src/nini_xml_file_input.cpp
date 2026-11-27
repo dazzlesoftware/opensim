@@ -35,37 +35,42 @@ namespace {
                           std::optional<std::u16string> p = {}) {
     throw NiniStreamError(std::move(type), std::bit_cast<std::int32_t>(hr), std::move(message), std::move(p));
 }
-[[noreturn]] void missing_file(const std::u16string& path) {
+
+[[noreturn]] void missing_file(const std::u16string &path) {
     NiniStreamError e("System.IO.FileNotFoundException", std::bit_cast<std::int32_t>(0x80070002u),
                       u"Could not find file '" + path + u"'.");
     e.file_name = path;
     throw e;
 }
-void pathcheck(const NiniWriterText& p) {
+
+void pathcheck(const NiniWriterText &p) {
     if (!p)
-        failure("System.ArgumentNullException", 0x80004003u, u"Value cannot be null. (Parameter 'path')",
-                u"path");
+        failure("System.ArgumentNullException", 0x80004003u, u"Value cannot be null. (Parameter 'path')", u"path");
     if (p->empty())
-        failure("System.ArgumentException", 0x80070057u,
-                u"The value cannot be an empty string. (Parameter 'path')", u"path");
+        failure("System.ArgumentException", 0x80070057u, u"The value cannot be an empty string. (Parameter 'path')",
+                u"path");
 }
+
 std::u16string number(std::int32_t n) {
     auto s = std::to_string(n);
     return {s.begin(), s.end()};
 }
-}
+} // namespace
+
 namespace {
 #ifdef _WIN32
 bool sep(char16_t c) {
     return c == u'\\' || c == u'/';
 }
+
 bool extended(std::u16string_view p) {
     return p.size() >= 4 && p[0] == u'\\' && (p[1] == u'\\' || p[1] == u'?') && p[2] == u'?' && p[3] == u'\\';
 }
+
 bool device(std::u16string_view p) {
-    return extended(p) ||
-           (p.size() >= 4 && sep(p[0]) && sep(p[1]) && (p[2] == u'.' || p[2] == u'?') && sep(p[3]));
+    return extended(p) || (p.size() >= 4 && sep(p[0]) && sep(p[1]) && (p[2] == u'.' || p[2] == u'?') && sep(p[3]));
 }
+
 std::size_t rootlength(std::u16string_view p) {
     auto n = p.size();
     std::size_t i = 0;
@@ -91,9 +96,11 @@ std::size_t rootlength(std::u16string_view p) {
     }
     return i;
 }
+
 struct MediaPrompt {
     DWORD old_mode = 0;
     BOOL changed = SetThreadErrorMode(SEM_FAILCRITICALERRORS, &old_mode);
+
     ~MediaPrompt() {
         if (changed) {
             DWORD ignored = 0;
@@ -101,14 +108,14 @@ struct MediaPrompt {
         }
     }
 };
+
 std::u16string system_message(DWORD code) {
-    wchar_t* b = nullptr;
-    auto n = FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
-                                FORMAT_MESSAGE_IGNORE_INSERTS,
-                            nullptr, code, 0, reinterpret_cast<wchar_t*>(&b), 0, nullptr);
+    wchar_t *b = nullptr;
+    auto n = FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                            nullptr, code, 0, reinterpret_cast<wchar_t *>(&b), 0, nullptr);
     std::u16string result;
     if (n) {
-        result.assign(reinterpret_cast<char16_t*>(b), n);
+        result.assign(reinterpret_cast<char16_t *>(b), n);
         LocalFree(b);
         while (!result.empty() && (result.back() == u'\r' || result.back() == u'\n' || result.back() == u' '))
             result.pop_back();
@@ -116,7 +123,8 @@ std::u16string system_message(DWORD code) {
         result = u"Unknown error (0x" + number(static_cast<std::int32_t>(code)) + u")";
     return result;
 }
-[[noreturn]] void io_error(DWORD code, const std::u16string& path) {
+
+[[noreturn]] void io_error(DWORD code, const std::u16string &path) {
     auto hr = (code & 0xffff0000u) ? code : 0x80070000u | code;
     switch (code) {
     case ERROR_FILE_NOT_FOUND:
@@ -125,29 +133,26 @@ std::u16string system_message(DWORD code) {
         failure("System.IO.DirectoryNotFoundException", 0x80070003u,
                 u"Could not find a part of the path '" + path + u"'.");
     case ERROR_ACCESS_DENIED:
-        failure("System.UnauthorizedAccessException", 0x80070005u,
-                u"Access to the path '" + path + u"' is denied.");
+        failure("System.UnauthorizedAccessException", 0x80070005u, u"Access to the path '" + path + u"' is denied.");
     case ERROR_SHARING_VIOLATION:
         failure("System.IO.IOException", hr,
-                u"The process cannot access the file '" + path +
-                    u"' because it is being used by another process.");
+                u"The process cannot access the file '" + path + u"' because it is being used by another process.");
     case ERROR_FILENAME_EXCED_RANGE:
         failure("System.IO.PathTooLongException", 0x800700ceu,
                 u"The path '" + path + u"' is too long, or a component of the specified path is too long.");
     case ERROR_OPERATION_ABORTED:
         failure("System.OperationCanceledException", 0x8013153bu, u"The operation was canceled.");
     default:
-        failure("System.IO.IOException", hr,
-                system_message(code) + (path.empty() ? u"" : u" : '" + path + u"'"));
+        failure("System.IO.IOException", hr, system_message(code) + (path.empty() ? u"" : u" : '" + path + u"'"));
     }
 }
-std::u16string full_file_path(const NiniWriterText& p) {
+
+std::u16string full_file_path(const NiniWriterText &p) {
     pathcheck(p);
     if (std::all_of(p->begin(), p->end(), [](auto c) { return c == u' '; }))
         failure("System.ArgumentException", 0x80070057u, u"The path is empty. (Parameter 'path')", u"path");
     if (p->find(u'\0') != p->npos)
-        failure("System.ArgumentException", 0x80070057u, u"Null character in path. (Parameter 'path')",
-                u"path");
+        failure("System.ArgumentException", 0x80070057u, u"Null character in path. (Parameter 'path')", u"path");
     if (extended(*p))
         return *p;
     try {
@@ -156,13 +161,14 @@ std::u16string full_file_path(const NiniWriterText& p) {
         if (full.find(u'~') != full.npos)
             full = backend->expand_short(full);
         return full;
-    } catch (const FullPathError& e) {
+    } catch (const FullPathError &e) {
         if (e.win32_code)
             io_error(*e.win32_code, *p);
         throw;
     }
 }
-std::u16string file_io_path(const std::u16string& p) {
+
+std::u16string file_io_path(const std::u16string &p) {
     if (device(p) || p.size() < 260 && (!p.ends_with(u'.') && !p.ends_with(u' ')))
         return p;
     if (p.starts_with(u"\\\\"))
@@ -170,7 +176,7 @@ std::u16string file_io_path(const std::u16string& p) {
     return u"\\\\?\\" + p;
 }
 #else
-[[noreturn]] void io_error(int code, const std::u16string& path) {
+[[noreturn]] void io_error(int code, const std::u16string &path) {
     auto p = utf8(path);
     switch (code) {
     case ENOENT: {
@@ -197,40 +203,36 @@ std::u16string file_io_path(const std::u16string& p) {
     case EBADF:
     case EPERM:
     case EISDIR:
-        failure("System.UnauthorizedAccessException", 0x80070005u,
-                u"Access to the path '" + path + u"' is denied.");
+        failure("System.UnauthorizedAccessException", 0x80070005u, u"Access to the path '" + path + u"' is denied.");
     case ENAMETOOLONG:
         failure("System.IO.PathTooLongException", 0x800700ceu,
                 u"The path '" + path + u"' is too long, or a component of the specified path is too long.");
     case EWOULDBLOCK:
         failure("System.IO.IOException", static_cast<std::uint32_t>(code),
-                u"The process cannot access the file '" + path +
-                    u"' because it is being used by another process.");
+                u"The process cannot access the file '" + path + u"' because it is being used by another process.");
     case ECANCELED:
         failure("System.OperationCanceledException", 0x8013153bu, u"The operation was canceled.");
     case EFBIG:
         failure("System.ArgumentOutOfRangeException", 0x80131502u,
                 u"Specified file length was too large for the file system. (Parameter 'value')", u"value");
     case EEXIST:
-        failure("System.IO.IOException", static_cast<std::uint32_t>(code),
-                u"The file '" + path + u"' already exists.");
+        failure("System.IO.IOException", static_cast<std::uint32_t>(code), u"The file '" + path + u"' already exists.");
     default:
         failure("System.IO.IOException", static_cast<std::uint32_t>(code),
-                utf16_replacing(std::generic_category().message(code)) +
-                    (path.empty() ? u"" : u" : '" + path + u"'"));
+                utf16_replacing(std::generic_category().message(code)) + (path.empty() ? u"" : u" : '" + path + u"'"));
     }
 }
-std::u16string full_file_path(const NiniWriterText& p) {
+
+std::u16string full_file_path(const NiniWriterText &p) {
     pathcheck(p);
     if (p->find(u'\0') != p->npos)
-        failure("System.ArgumentException", 0x80070057u, u"Null character in path. (Parameter 'path')",
-                u"path");
+        failure("System.ArgumentException", 0x80070057u, u"Null character in path. (Parameter 'path')", u"path");
     std::u16string path = *p;
     if (path.front() != u'/') {
         std::u16string cwd;
         try {
             cwd = utf16_replacing(get_full_path(std::string(".")));
-        } catch (const FullPathError& e) {
+        } catch (const FullPathError &e) {
             switch (e.kind) {
             case FullPathFailure::MissingFile:
                 failure("System.IO.FileNotFoundException", 0x80070002u, utf16_replacing(e.what()));
@@ -267,7 +269,7 @@ std::u16string full_file_path(const NiniWriterText& p) {
         start = end + 1;
     }
     std::u16string full = u"/";
-    for (auto& part : parts) {
+    for (auto &part : parts) {
         if (full.size() > 1)
             full += u'/';
         full += part;
@@ -293,6 +295,7 @@ class NativeFile final : public NiniByteStream {
         if (closed_)
             failure("System.ObjectDisposedException", 0x80131622u, u"Cannot access a closed file.");
     }
+
     std::size_t raw_read(std::span<std::uint8_t> b) {
 #ifdef _WIN32
         DWORD n = 0;
@@ -325,6 +328,7 @@ class NativeFile final : public NiniByteStream {
         return static_cast<std::size_t>(n);
 #endif
     }
+
     void raw_write(std::span<const std::uint8_t> b) {
 #ifdef _WIN32
         if (b.empty())
@@ -363,10 +367,12 @@ class NativeFile final : public NiniByteStream {
             write_pos_ = 0;
         }
     }
+
     void flush_read() {
         os_pos_ -= static_cast<std::int64_t>(read_len_ - read_pos_);
         read_pos_ = read_len_ = 0;
     }
+
     void release() noexcept {
 #ifdef _WIN32
         if (handle_ != INVALID_HANDLE_VALUE)
@@ -384,7 +390,7 @@ class NativeFile final : public NiniByteStream {
     }
 
   public:
-    NativeFile(const NiniWriterText& path, std::int32_t mode, std::int32_t access, std::int32_t share,
+    NativeFile(const NiniWriterText &path, std::int32_t mode, std::int32_t access, std::int32_t share,
                std::optional<bool> override_locking) {
 #ifdef _WIN32
         (void)override_locking;
@@ -395,9 +401,8 @@ class NativeFile final : public NiniByteStream {
 #ifdef _WIN32
         MediaPrompt prompt;
         auto io = file_io_path(path_);
-        handle_ = CreateFileW(reinterpret_cast<const wchar_t*>(io.c_str()),
-                              readable_ ? GENERIC_READ : GENERIC_WRITE, static_cast<DWORD>(share), nullptr,
-                              mode == 2 ? CREATE_ALWAYS : OPEN_EXISTING,
+        handle_ = CreateFileW(reinterpret_cast<const wchar_t *>(io.c_str()), readable_ ? GENERIC_READ : GENERIC_WRITE,
+                              static_cast<DWORD>(share), nullptr, mode == 2 ? CREATE_ALWAYS : OPEN_EXISTING,
                               SECURITY_SQOS_PRESENT | SECURITY_ANONYMOUS, nullptr);
         if (handle_ == INVALID_HANDLE_VALUE) {
             auto code = GetLastError();
@@ -488,6 +493,7 @@ class NativeFile final : public NiniByteStream {
         }
 #endif
     }
+
     std::optional<std::int64_t> xml_length() {
         if (!can_seek())
             return {};
@@ -507,6 +513,7 @@ class NativeFile final : public NiniByteStream {
         return info.st_size;
 #endif
     }
+
     std::int32_t xml_read(std::span<std::uint8_t> bytes) {
         check();
         return static_cast<std::int32_t>(raw_read(bytes));
@@ -520,22 +527,26 @@ class NativeFile final : public NiniByteStream {
                 release();
             }
     }
+
     bool can_read() override {
         return !closed_ && readable_;
     }
+
     bool can_write() override {
         return !closed_ && writable_;
     }
+
     bool can_seek() override {
         return !closed_ && seek_;
     }
+
     std::int64_t position() override {
         check();
         if (!seek_)
             failure("System.NotSupportedException", 0x80131515u, u"Stream does not support seeking.");
-        return os_pos_ - static_cast<std::int64_t>(read_len_ - read_pos_) +
-               static_cast<std::int64_t>(write_pos_);
+        return os_pos_ - static_cast<std::int64_t>(read_len_ - read_pos_) + static_cast<std::int64_t>(write_pos_);
     }
+
     std::size_t read(std::span<std::uint8_t> buffer, std::size_t offset, std::size_t count) override {
         check();
         if (!readable_)
@@ -565,6 +576,7 @@ class NativeFile final : public NiniByteStream {
         }
         return n;
     }
+
     void write(std::span<const std::uint8_t> b) override {
         if (closed_)
             failure("System.ObjectDisposedException", 0x80131622u, u"Cannot access a closed Stream.");
@@ -588,6 +600,7 @@ class NativeFile final : public NiniByteStream {
             write_pos_ = b.size();
         }
     }
+
     void flush() override {
         check();
         if (write_pos_)
@@ -595,6 +608,7 @@ class NativeFile final : public NiniByteStream {
         else if (read_len_ && seek_)
             flush_read();
     }
+
     void close() override {
         if (closed_)
             return;
@@ -609,14 +623,16 @@ class NativeFile final : public NiniByteStream {
         release();
     }
 };
-}
+} // namespace
+
 namespace {
-[[noreturn]] void xml_stream_error(const NiniStreamError& e) {
+[[noreturn]] void xml_stream_error(const NiniStreamError &e) {
     NiniXmlProviderError x(e.source_type, static_cast<std::uint32_t>(e.hresult), e.message, e.parameter);
     x.file_name = e.file_name;
     x.object_name = e.object_name;
     throw x;
 }
+
 class XmlFileInput final : public NativeNiniXmlByteInput {
     std::shared_ptr<NativeFile> file_;
 
@@ -624,47 +640,51 @@ class XmlFileInput final : public NativeNiniXmlByteInput {
     explicit XmlFileInput(NiniWriterText path, std::optional<bool> locking) {
         try {
             file_ = std::make_shared<NativeFile>(path, 3, 1, 1, locking);
-        } catch (const NiniStreamError& e) {
+        } catch (const NiniStreamError &e) {
             xml_stream_error(e);
         }
     }
+
     std::int32_t read(std::span<std::uint8_t> b) override {
         try {
             return file_->xml_read(b);
-        } catch (const NiniStreamError& e) {
+        } catch (const NiniStreamError &e) {
             xml_stream_error(e);
         }
     }
+
     std::optional<std::int64_t> length_hint() const override {
         try {
             return file_->xml_length();
-        } catch (const NiniStreamError& e) {
+        } catch (const NiniStreamError &e) {
             xml_stream_error(e);
         }
     }
+
     void close() override {
         try {
             file_->close();
-        } catch (const NiniStreamError& e) {
+        } catch (const NiniStreamError &e) {
             xml_stream_error(e);
         }
     }
 };
-}
-std::shared_ptr<NativeNiniXmlByteInput> native_nini_xml_file_input(NiniWriterText path,
-                                                                   std::optional<bool> locking) {
+} // namespace
+
+std::shared_ptr<NativeNiniXmlByteInput> native_nini_xml_file_input(NiniWriterText path, std::optional<bool> locking) {
     return std::make_shared<XmlFileInput>(std::move(path), locking);
 }
+
 NiniWriterText native_nini_xml_full_path(NiniWriterText path) {
 #ifdef _WIN32
     if (path && path->empty())
-        throw NiniXmlProviderError("System.ArgumentException", 0x80070057,
-                                   u"The path is empty. (Parameter 'path')", u"path");
+        throw NiniXmlProviderError("System.ArgumentException", 0x80070057, u"The path is empty. (Parameter 'path')",
+                                   u"path");
 #endif
     try {
         return nini_writer_text(full_file_path(path));
-    } catch (const NiniStreamError& e) {
+    } catch (const NiniStreamError &e) {
         xml_stream_error(e);
     }
 }
-}
+} // namespace opensim::framework

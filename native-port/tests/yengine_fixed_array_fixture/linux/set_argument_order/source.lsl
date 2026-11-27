@@ -1,0 +1,1 @@
+YOption arrays;YOption chars;object input;integer order;integer result;object array_arg(){order=order*10+1;return input;}integer index_arg(){order=order*10+2;return 0;}integer value_arg(){order=order*10+3;return 19;}default{state_entry(){input=xmrFixedArrayAllocI(1);xmrFixedArraySetI(array_arg(),index_arg(),value_arg());result=xmrFixedArrayGetI(input,0);}}

@@ -92,6 +92,7 @@ std::string serialize_baked_appearance(const framework::WearableCacheItems &cach
     document.save(output, "", pugi::format_raw | pugi::format_no_declaration);
     return output.str();
 }
+
 namespace {
 std::string date_xml(framework::AssetDateTime date) {
     using namespace std::chrono;
@@ -101,9 +102,9 @@ std::string date_xml(framework::AssetDateTime date) {
     const year_month_day calendar{day};
     const hh_mm_ss clock{instant - day};
     char text[48];
-    std::snprintf(text, sizeof(text), "%04d-%02u-%02uT%02d:%02d:%02d",
-                  int(calendar.year()), unsigned(calendar.month()), unsigned(calendar.day()),
-                  int(clock.hours().count()), int(clock.minutes().count()), int(clock.seconds().count()));
+    std::snprintf(text, sizeof(text), "%04d-%02u-%02uT%02d:%02d:%02d", int(calendar.year()), unsigned(calendar.month()),
+                  unsigned(calendar.day()), int(clock.hours().count()), int(clock.minutes().count()),
+                  int(clock.seconds().count()));
     std::string value(text);
     if (const auto fraction = clock.subseconds().count()) {
         std::snprintf(text, sizeof(text), ".%07lld", static_cast<long long>(fraction));
@@ -117,8 +118,8 @@ std::string date_xml(framework::AssetDateTime date) {
         const auto runtime = framework::shared_native_invariant_datetime_context();
         const auto minutes = runtime->local_rule_snapshot()->local_offset_no_throw(date) / 600000000;
         const auto magnitude = minutes < 0 ? -minutes : minutes;
-        std::snprintf(text, sizeof(text), "%c%02d:%02d", minutes < 0 ? '-' : '+',
-                      static_cast<int>(magnitude / 60), static_cast<int>(magnitude % 60));
+        std::snprintf(text, sizeof(text), "%c%02d:%02d", minutes < 0 ? '-' : '+', static_cast<int>(magnitude / 60),
+                      static_cast<int>(magnitude % 60));
         value += text;
     }
     return value;
@@ -171,7 +172,7 @@ std::string asset_xml(const framework::AssetMetadata &metadata, const framework:
     row.print(output, "", pugi::format_raw);
     return output.str();
 }
-}
+} // namespace
 
 std::string serialize_remote_asset(const framework::AssetBase &asset) {
     const auto metadata = asset.metadata();
@@ -187,8 +188,8 @@ std::string serialize_remote_asset_metadata(const framework::AssetMetadata &meta
 namespace {
 framework::AssetDateTime parse_metadata_date(std::string value) {
     value = framework::trim_utf8(value);
-    if (value.size() < 19 || value[4] != '-' || value[7] != '-' || value[10] != 'T' ||
-        value[13] != ':' || value[16] != ':')
+    if (value.size() < 19 || value[4] != '-' || value[7] != '-' || value[10] != 'T' || value[13] != ':' ||
+        value[16] != ':')
         throw std::invalid_argument("Invalid asset metadata creation date");
     const bool utc = value.ends_with('Z');
     if (utc)
@@ -346,7 +347,7 @@ std::shared_ptr<framework::AssetBase> deserialize_asset_wire(std::string_view xm
     }
     return asset;
 }
-}
+} // namespace
 
 std::shared_ptr<framework::AssetBase> deserialize_remote_asset(std::string_view xml) {
     return deserialize_asset_wire(xml, false);
@@ -379,15 +380,14 @@ framework::WearableCacheItems deserialize_baked_appearance(std::string_view xml)
     }
     return result;
 }
+
 std::shared_ptr<framework::AssetBase> request_remote_asset(const network::WebHttpClients &clients,
-                                                           const std::string &server,
-                                                           const framework::Uuid &id) {
+                                                           const std::string &server, const framework::Uuid &id) {
     using Clock = std::chrono::steady_clock;
     try {
         auto backend = framework::native_config_uri_object_backend();
         auto url = framework::utf16_replacing(server + "/assets/" + id.str());
-        auto uri =
-            backend->create(framework::nini_writer_text(url), framework::ConfigUriObjectKind::Absolute);
+        auto uri = backend->create(framework::nini_writer_text(url), framework::ConfigUriObjectKind::Absolute);
         framework::ConfigXmlHttpOperation operation;
         operation.method = "GET";
         operation.headers = {{"Keep-Alive", framework::nini_writer_text(u"timeout=30, max=10")},
@@ -401,13 +401,13 @@ std::shared_ptr<framework::AssetBase> request_remote_asset(const network::WebHtt
             length = framework::config_http_content_length(values);
         };
         auto deadline = std::make_shared<Clock::time_point>(Clock::time_point::max());
-        operation.body_interrupted = [deadline] {
-            return Clock::now() >= *deadline;
-        };
+        operation.body_interrupted = [deadline] { return Clock::now() >= *deadline; };
         auto client = clients.get_new_global_client(0);
         auto stream = client->send_headers(std::move(uri), std::move(operation), true);
+
         struct Close {
             std::shared_ptr<framework::ConfigXmlStream> stream;
+
             ~Close() {
                 try {
                     stream->close();
@@ -415,6 +415,7 @@ std::shared_ptr<framework::AssetBase> request_remote_asset(const network::WebHtt
                 }
             }
         } close{stream};
+
         if (!length || *length == 0)
             return {};
         const auto timeout = network::osd_service_receive_timeout(length, true);
@@ -430,13 +431,14 @@ std::shared_ptr<framework::AssetBase> request_remote_asset(const network::WebHtt
         return {};
     }
 }
+
 namespace {
 struct ForeignAssetTarget {
     std::string url;
     framework::Uuid id;
 };
 
-std::optional<ForeignAssetTarget> foreign_asset_target(const std::string& value) {
+std::optional<ForeignAssetTarget> foreign_asset_target(const std::string &value) {
     if (!value.starts_with('h') && !value.starts_with('H'))
         return std::nullopt;
     const framework::HttpUri target(value, true);
@@ -458,7 +460,7 @@ class GridAssetService final : public AssetService, public std::enable_shared_fr
     std::mutex pending_mutex_;
     std::unordered_map<std::string, std::vector<std::function<void(Asset)>>> pending_;
 
-    void finish_async(const std::string& id, const Asset& asset, bool scheduled) {
+    void finish_async(const std::string &id, const Asset &asset, bool scheduled) {
         std::vector<std::function<void(Asset)>> callbacks;
         {
             std::lock_guard lock(pending_mutex_);
@@ -487,10 +489,10 @@ class GridAssetService final : public AssetService, public std::enable_shared_fr
             if (!operation.body.empty())
                 operation.headers.emplace_back("Content-Type", framework::nini_writer_text(u"text/xml"));
             if (!authorization_.empty())
-                operation.headers.emplace_back(
-                    "Authorization", framework::nini_writer_text(framework::utf16_replacing(authorization_)));
-            auto stream = clients_->get_new_global_client(30000)->send_headers(std::move(url),
-                                                                               std::move(operation), true);
+                operation.headers.emplace_back("Authorization",
+                                               framework::nini_writer_text(framework::utf16_replacing(authorization_)));
+            auto stream =
+                clients_->get_new_global_client(30000)->send_headers(std::move(url), std::move(operation), true);
             const auto bytes = stream->copy_to_memory();
             stream->close();
             return std::string(bytes.begin(), bytes.end());
@@ -498,11 +500,13 @@ class GridAssetService final : public AssetService, public std::enable_shared_fr
             return std::nullopt;
         }
     }
+
     static std::string xml(pugi::xml_node node) {
         std::ostringstream output;
         node.print(output, "", pugi::format_raw);
         return output.str();
     }
+
     static bool boolean_reply(const std::optional<std::string> &reply) {
         pugi::xml_document document;
         if (!reply || !document.load_buffer(reply->data(), reply->size()))
@@ -512,7 +516,7 @@ class GridAssetService final : public AssetService, public std::enable_shared_fr
             return false;
         try {
             return xml_boolean(asset_element_text(root)).value_or(false);
-        } catch (const std::invalid_argument&) {
+        } catch (const std::invalid_argument &) {
             return false;
         }
     }
@@ -533,61 +537,64 @@ class GridAssetService final : public AssetService, public std::enable_shared_fr
         if (!clients_ || !host.resolved())
             throw std::invalid_argument("AssetServicesConnector requires a resolved AssetServerURI");
         uri_ = std::move(host.uri);
-        if (config.get("AssetService", "AuthType", config.get("Network", "AuthType")) ==
-            "BasicHttpAuthentication") {
+        if (config.get("AssetService", "AuthType", config.get("Network", "AuthType")) == "BasicHttpAuthentication") {
             const auto username =
                 config.get("AssetService", "HttpAuthUsername", config.get("Network", "HttpAuthUsername"));
             const auto password =
                 config.get("AssetService", "HttpAuthPassword", config.get("Network", "HttpAuthPassword"));
             const auto credentials = username + ":" + password;
             authorization_ =
-                "Basic " +
-                network::binary_base64(network::osd_from_binary(
-                    std::make_shared<std::vector<std::uint8_t>>(credentials.begin(), credentials.end())));
+                "Basic " + network::binary_base64(network::osd_from_binary(
+                               std::make_shared<std::vector<std::uint8_t>>(credentials.begin(), credentials.end())));
         }
     }
+
     Asset get_asset(const std::string &id) override {
         const auto reply = request("GET", "/assets/" + id);
         return reply ? deserialize_remote_asset(*reply) : nullptr;
     }
+
     Asset get_foreign(const std::string &, const std::optional<std::string> &, bool) override {
         return {};
     }
+
     Asset get_cached(const std::string &) override {
         return {};
     }
+
     std::shared_ptr<framework::AssetMetadata> get_metadata(const std::string &id) override {
         const auto reply = request("GET", "/assets/" + id + "/metadata");
         const auto asset = reply ? deserialize_asset_wire(*reply, true) : nullptr;
         return asset ? asset->metadata() : nullptr;
     }
+
     framework::AssetBytes get_data(const std::string &id) override {
         const auto reply = request("GET", "/assets/" + id + "/data");
-        return reply && !reply->empty()
-                   ? std::make_shared<std::vector<std::uint8_t>>(reply->begin(), reply->end())
-                   : nullptr;
+        return reply && !reply->empty() ? std::make_shared<std::vector<std::uint8_t>>(reply->begin(), reply->end())
+                                        : nullptr;
     }
+
     bool get_async(const std::string &id, std::any sender, Retrieved callback) override {
         {
             std::lock_guard lock(pending_mutex_);
-            auto& callbacks = pending_[id];
+            auto &callbacks = pending_[id];
             callbacks.emplace_back([id, sender = std::move(sender), callback = std::move(callback)](Asset asset) {
                 callback(id, sender, std::move(asset));
             });
             if (callbacks.size() > 1)
                 return true;
         }
-        if (schedule_([self = shared_from_this(), id] {
-                self->finish_async(id, self->get_asset(id), true);
-            }))
+        if (schedule_([self = shared_from_this(), id] { self->finish_async(id, self->get_asset(id), true); }))
             return true;
         finish_async(id, {}, false);
         return false;
     }
+
     void get(const std::string &, const std::optional<std::string> &, bool, Complete callback) override {
         if (callback)
             callback(nullptr);
     }
+
     std::vector<bool> assets_exist(const std::vector<std::string> &ids) override {
         pugi::xml_document document;
         auto array = document.append_child("ArrayOfString");
@@ -598,8 +605,7 @@ class GridAssetService final : public AssetService, public std::enable_shared_fr
         if (!reply || !response.load_buffer(reply->data(), reply->size()))
             return std::vector<bool>(ids.size());
         const auto flags = response.document_element();
-        if (std::string_view(flags.name()) != "ArrayOfBoolean" ||
-            *flags.attribute("xmlns").value() || is_nil(flags))
+        if (std::string_view(flags.name()) != "ArrayOfBoolean" || *flags.attribute("xmlns").value() || is_nil(flags))
             return std::vector<bool>(ids.size());
         std::vector<bool> result;
         try {
@@ -611,11 +617,12 @@ class GridAssetService final : public AssetService, public std::enable_shared_fr
                     return std::vector<bool>(ids.size());
                 result.push_back(*value);
             }
-        } catch (const std::invalid_argument&) {
+        } catch (const std::invalid_argument &) {
             return std::vector<bool>(ids.size());
         }
         return result;
     }
+
     std::optional<std::string> store(Asset asset) override {
         if (!asset)
             return std::nullopt;
@@ -638,7 +645,7 @@ class GridAssetService final : public AssetService, public std::enable_shared_fr
         std::string stored;
         try {
             stored = asset_element_text(root);
-        } catch (const std::invalid_argument&) {
+        } catch (const std::invalid_argument &) {
             return std::string{};
         }
         if (stored.empty() || stored == framework::Uuid{}.str())
@@ -646,6 +653,7 @@ class GridAssetService final : public AssetService, public std::enable_shared_fr
         asset->id(stored);
         return stored;
     }
+
     bool update_content(const std::string &id, framework::AssetBytes data) override {
         const auto metadata = get_metadata(id);
         if (!metadata)
@@ -655,6 +663,7 @@ class GridAssetService final : public AssetService, public std::enable_shared_fr
         asset->data = std::move(data);
         return boolean_reply(request("POST", "/assets/" + id, serialize_remote_asset(*asset)));
     }
+
     bool erase(const std::string &id) override {
         return boolean_reply(request("DELETE", "/assets/" + id));
     }
@@ -664,14 +673,17 @@ std::shared_ptr<FlotsamStaticConfig> shared_cache_configuration() {
     static auto state = std::make_shared<FlotsamStaticConfig>();
     return state;
 }
+
 std::shared_ptr<std::recursive_mutex> shared_cache_configuration_gate() {
     static auto gate = std::make_shared<std::recursive_mutex>();
     return gate;
 }
+
 bool white(const std::string &text) {
     auto chars = framework::utf16_replacing(text);
     return std::all_of(chars.begin(), chars.end(), framework::unicode_whitespace);
 }
+
 struct Backend final : AssetsModuleBackend, AssetConnectorBackend {
     std::function<void(std::string)> log;
     RegionAssetRuntime::StructuredLog structured_log;
@@ -683,17 +695,15 @@ struct Backend final : AssetsModuleBackend, AssetConnectorBackend {
     framework::ObjectJobEngine callbacks;
     framework::ObjectJobEngine local_reads;
     framework::ObjectJobEngine remote_reads;
+
     explicit Backend(std::function<void(std::string)> logger, RegionAssetRuntime::StructuredLog typed)
         : log(std::move(logger)), structured_log(std::move(typed)),
-          callbacks([](std::any value) { std::any_cast<std::function<void()>>(value)(); },
-                    "RegionAssetCallbacks", 1000, 3,
-                    [this](const auto &name, const auto &error) { job_error(name, error); }),
-          local_reads([](std::any value) { std::any_cast<std::function<void()>>(value)(); },
-                    "GetAssetsWorkers", 2000, 2,
-                    [this](const auto &name, const auto &error) { job_error(name, error); }),
-          remote_reads([](std::any value) { std::any_cast<std::function<void()>>(value)(); },
-                    "GetRemoteAssetsWorkers", 2000, 2,
-                    [this](const auto &name, const auto &error) { job_error(name, error); }) {
+          callbacks([](std::any value) { std::any_cast<std::function<void()>>(value)(); }, "RegionAssetCallbacks", 1000,
+                    3, [this](const auto &name, const auto &error) { job_error(name, error); }),
+          local_reads([](std::any value) { std::any_cast<std::function<void()>>(value)(); }, "GetAssetsWorkers", 2000,
+                      2, [this](const auto &name, const auto &error) { job_error(name, error); }),
+          remote_reads([](std::any value) { std::any_cast<std::function<void()>>(value)(); }, "GetRemoteAssetsWorkers",
+                       2000, 2, [this](const auto &name, const auto &error) { job_error(name, error); }) {
         // Capture the logger by value: storage may outlive the runtime through caps.
         storage = std::make_shared<NativeAssetStorageBackend>(
             [logger = log, typed = structured_log](const auto &level, const auto &text) {
@@ -703,6 +713,7 @@ struct Backend final : AssetsModuleBackend, AssetConnectorBackend {
                     logger(level + ": " + text);
             });
     }
+
     void emit(const std::string &level, const std::string &text) noexcept {
         try {
             if (structured_log)
@@ -712,32 +723,39 @@ struct Backend final : AssetsModuleBackend, AssetConnectorBackend {
         } catch (...) {
         }
     }
+
     void warn(const std::string &text) override {
         emit("warn", text);
     }
+
     void error(const std::string &text) override {
         emit("error", text);
     }
+
     void info(const std::string &text) override {
         emit("info", text);
     }
+
     void debug(const std::string &text) override {
         emit("debug", text);
     }
+
     void job_error(const std::string &name, const std::exception &error) override {
         emit("error", name + ": " + error.what());
     }
+
     void post(std::function<void()> callback, const std::string &) override {
         callbacks.enqueue(std::move(callback));
     }
+
     bool queue_asset_read(std::function<void()> callback, bool remote) override {
         return (remote ? remote_reads : local_reads).enqueue(std::move(callback));
     }
-    std::shared_ptr<AssetService> load_service(const std::string &module,
-                                               const server::IniConfig *config) override {
+
+    std::shared_ptr<AssetService> load_service(const std::string &module, const server::IniConfig *config) override {
         if (module == "OpenSim.Services.Connectors.dll:AssetServicesConnector") {
-            service = make_grid_asset_service(
-                *config, http, [this](auto task) { return callbacks.enqueue(std::move(task)); });
+            service = make_grid_asset_service(*config, http,
+                                              [this](auto task) { return callbacks.enqueue(std::move(task)); });
             return service;
         }
         if (module == fs_asset_module) {
@@ -752,23 +770,27 @@ struct Backend final : AssetsModuleBackend, AssetConnectorBackend {
         return service;
     }
 };
+
 struct CacheBackend final : FlotsamCacheModuleBackend {
     std::shared_ptr<NativeAssetStorageBackend> storage;
     std::shared_ptr<FlotsamCacheCleaner> cleaner;
-    std::function<void(const std::string&)> cleanup_warning;
+    std::function<void(const std::string &)> cleanup_warning;
     std::mutex cleanup_mutex;
     std::atomic<bool> stopping = false;
+
     explicit CacheBackend(std::shared_ptr<NativeAssetStorageBackend> value) : storage(std::move(value)) {}
+
     std::shared_ptr<DefaultAssetLoader> load_loader(const std::string &name) override {
         return storage->load_loader(name);
     }
+
     void cleanup_elapsed(std::shared_ptr<FlotsamCacheLifecycle> life) override {
         std::lock_guard lock(cleanup_mutex);
         if (stopping || !cleaner)
             return;
         try {
             cleaner->elapsed();
-        } catch (const std::exception& error) {
+        } catch (const std::exception &error) {
             if (cleanup_warning)
                 cleanup_warning(std::string("[FLOTSAM ASSET CACHE] Cleanup failed: ") + error.what());
             std::lock_guard timer_lock(life->timer_mutex);
@@ -777,40 +799,48 @@ struct CacheBackend final : FlotsamCacheModuleBackend {
                 life->timer->start();
         }
     }
+
     void expire(framework::AssetDateTime date) {
         std::lock_guard lock(cleanup_mutex);
         if (!stopping && cleaner)
             cleaner->clean_all(date);
     }
-    std::int32_t touch(FlotsamCacheMaintenance& maintenance, bool fetch_uncached) {
+
+    std::int32_t touch(FlotsamCacheMaintenance &maintenance, bool fetch_uncached) {
         std::lock_guard lock(cleanup_mutex);
         return stopping ? 0 : maintenance.touch(fetch_uncached);
     }
-    void quiesce(const std::shared_ptr<FlotsamCacheLifecycle>& life) {
+
+    void quiesce(const std::shared_ptr<FlotsamCacheLifecycle> &life) {
         stopping = true;
         life->cleanup_running = false;
         std::lock_guard lock(cleanup_mutex);
     }
 };
+
 class LiveCacheAccessEntries final : public FlotsamAccessEntries {
     std::function<std::shared_ptr<FlotsamKeyEntries>()> tracker_;
 
   public:
     explicit LiveCacheAccessEntries(std::function<std::shared_ptr<FlotsamKeyEntries>()> tracker)
         : tracker_(std::move(tracker)) {}
-    bool contains(const std::filesystem::path& path) override {
+
+    bool contains(const std::filesystem::path &path) override {
         const auto entries = tracker_();
         return !entries || entries->contains(framework::utf8(path.u16string()));
     }
-    void add(const std::filesystem::path& path, int duration) override {
+
+    void add(const std::filesystem::path &path, int duration) override {
         if (const auto entries = tracker_())
             entries->add(framework::utf8(path.u16string()), duration);
     }
+
     void pump() override {
         if (const auto entries = tracker_())
             entries->pump();
     }
 };
+
 std::int64_t cache_heap_bytes() {
 #if defined(__APPLE__)
     malloc_statistics_t statistics{};
@@ -833,13 +863,17 @@ std::int64_t cache_heap_bytes() {
     return 0;
 #endif
 }
+
 struct AssetCircuitDirectory final : AssetsUserManagement {
     RegionAssetRuntime::AssetServerLookup lookup;
+
     explicit AssetCircuitDirectory(RegionAssetRuntime::AssetServerLookup value) : lookup(std::move(value)) {}
+
     std::optional<std::string> user_server_url(framework::Uuid agent, const std::string &key) override {
         return key == "AssetServerURI" ? lookup(agent) : std::nullopt;
     }
 };
+
 struct Scene final : AssetsModuleScene, AssetConnectorScene, FlotsamCacheScene {
     std::shared_ptr<SceneCapabilityEvents> source;
     std::shared_ptr<AssetService> registered;
@@ -847,52 +881,66 @@ struct Scene final : AssetsModuleScene, AssetConnectorScene, FlotsamCacheScene {
     std::optional<std::string> name;
     framework::Uuid id;
     std::atomic<bool> stopping = false;
-    Scene(std::shared_ptr<SceneCapabilityEvents> events, std::optional<std::string> region,
-          framework::Uuid region_id)
+
+    Scene(std::shared_ptr<SceneCapabilityEvents> events, std::optional<std::string> region, framework::Uuid region_id)
         : source(std::move(events)), name(std::move(region)), id(region_id) {}
+
     void register_service(std::shared_ptr<AssetService> service) override {
         registered = std::move(service);
     }
+
     AssetConnectorCache asset_cache() override {
         return {cache, true};
     }
+
     std::optional<std::string> region_name() override {
         return name;
     }
+
     SceneCapabilityEvents &events() override {
         return *source;
     }
+
     bool shutting_down() const override {
         return stopping;
     }
+
     std::shared_ptr<server::AssetRetrievalService> asset_service() override {
         return registered;
     }
+
     std::shared_ptr<AssetsUserManagement> directory;
+
     std::shared_ptr<AssetsUserManagement> user_management() override {
         return directory;
     }
+
     std::shared_ptr<AssetsExternalCaps> external_caps() override {
         return {};
     }
+
     void register_cache(std::shared_ptr<framework::IAssetCache> value) override {
         cache = std::move(value);
     }
+
     void unregister_cache(std::shared_ptr<framework::IAssetCache> value) override {
         if (cache == value)
             cache.reset();
     }
+
     std::shared_ptr<AssetService> request_asset_service() override {
         return registered;
     }
+
     framework::Uuid cache_region_id() override {
         return id;
     }
 };
-}
-std::shared_ptr<AssetService>
-make_grid_asset_service(const server::IniConfig &config, std::shared_ptr<network::WebHttpClients> clients,
-                        std::function<bool(std::function<void()>)> schedule) {
+} // namespace
+
+std::shared_ptr<AssetService> make_grid_asset_service(const server::IniConfig &config,
+                                                      std::shared_ptr<network::WebHttpClients> clients,
+                                                      std::function<bool(std::function<void()>)> schedule) {
     return std::make_shared<GridAssetService>(config, std::move(clients), std::move(schedule));
 }
 
@@ -914,6 +962,7 @@ struct RegionAssetRuntime::State {
     std::shared_ptr<network::WebHttpClients> foreign_http;
     AssetExchangePermissions exchange_permissions;
     std::atomic<bool> stopped = false;
+
     void quiesce_cache_cleanup() {
         if (cache_console_jobs)
             cache_console_jobs->dispose();
@@ -923,6 +972,7 @@ struct RegionAssetRuntime::State {
             while (cache_console_jobs->active_threads() != 0)
                 std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
+
     void stop() {
         if (stopped.exchange(true))
             return;
@@ -950,8 +1000,8 @@ struct RegionAssetRuntime::State {
                 std::this_thread::sleep_for(std::chrono::milliseconds(1));
         std::shared_ptr<framework::ObjectJobEngine> file_worker;
         if (cache_module)
-            file_worker = std::dynamic_pointer_cast<framework::ObjectJobEngine>(
-                cache_module->shared_state()->worker.load());
+            file_worker =
+                std::dynamic_pointer_cast<framework::ObjectJobEngine>(cache_module->shared_state()->worker.load());
         if (cache_module && scene)
             attempt([&] { cache_module->remove_region(scene); });
         if (cache_module)
@@ -962,9 +1012,9 @@ struct RegionAssetRuntime::State {
         if (connector && scene)
             attempt([&] { connector->remove_region(scene); });
         if (backend) {
-            for (auto* queue : {&backend->local_reads, &backend->remote_reads})
+            for (auto *queue : {&backend->local_reads, &backend->remote_reads})
                 attempt([&] { queue->dispose(); });
-            for (auto* queue : {&backend->local_reads, &backend->remote_reads})
+            for (auto *queue : {&backend->local_reads, &backend->remote_reads})
                 while (queue->active_threads() != 0)
                     std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
@@ -990,6 +1040,7 @@ struct RegionAssetRuntime::State {
         if (first)
             std::rethrow_exception(first);
     }
+
     ~State() {
         try {
             stop();
@@ -997,13 +1048,12 @@ struct RegionAssetRuntime::State {
         }
     }
 };
-RegionAssetRuntime::RegionAssetRuntime(const server::IniConfig &config,
-                                       std::shared_ptr<SceneCapabilityEvents> events,
-                                       std::optional<std::string> region_name,
-                                       std::function<void(std::string)> log, framework::Uuid region_id,
-                                       StructuredLog structured_log,
-                                       std::shared_ptr<network::WebHttpClients> http,
-                                       AssetServerLookup foreign_server, GatherSceneAssets gather_assets)
+
+RegionAssetRuntime::RegionAssetRuntime(const server::IniConfig &config, std::shared_ptr<SceneCapabilityEvents> events,
+                                       std::optional<std::string> region_name, std::function<void(std::string)> log,
+                                       framework::Uuid region_id, StructuredLog structured_log,
+                                       std::shared_ptr<network::WebHttpClients> http, AssetServerLookup foreign_server,
+                                       GatherSceneAssets gather_assets)
     : state_(std::make_unique<State>()) {
     if (!events)
         throw std::invalid_argument("Null region asset capability events");
@@ -1031,11 +1081,9 @@ RegionAssetRuntime::RegionAssetRuntime(const server::IniConfig &config,
         std::lock_guard configuration_lock(*state_->cache_containers.gate);
         FlotsamCacheConfig initializer(state_->cache_config, common, state_->cache_containers.backend);
         initializer.initialise(typed_source);
-        const auto& cache_config = *state_->cache_config;
-        if (cache_config.file && cache_config.expiration_ticks > 0 && cache_config.cleanup_ticks > 0 &&
-            !gather_assets)
-            throw std::invalid_argument(
-                "Native Flotsam automatic file expiration requires live scene asset gathering");
+        const auto &cache_config = *state_->cache_config;
+        if (cache_config.file && cache_config.expiration_ticks > 0 && cache_config.cleanup_ticks > 0 && !gather_assets)
+            throw std::invalid_argument("Native Flotsam automatic file expiration requires live scene asset gathering");
         auto settings = state_->cache_containers.entries->live_options();
         auto warn = [log, structured_log](const auto &text) {
             if (structured_log)
@@ -1047,14 +1095,13 @@ RegionAssetRuntime::RegionAssetRuntime(const server::IniConfig &config,
             std::lock_guard lock(*gate);
             return std::static_pointer_cast<FlotsamKeyEntries>(common->access_entries);
         };
-        file_access = std::make_shared<FlotsamFileAccess>(
-            std::make_shared<LiveCacheAccessEntries>(access_tracker), native_flotsam_access_time_setter());
-        const auto file_options = [instance = state_->cache_config, common,
-                                   gate = state_->cache_containers.gate] {
+        file_access = std::make_shared<FlotsamFileAccess>(std::make_shared<LiveCacheAccessEntries>(access_tracker),
+                                                          native_flotsam_access_time_setter());
+        const auto file_options = [instance = state_->cache_config, common, gate = state_->cache_containers.gate] {
             std::lock_guard lock(*gate);
             return FlotsamFileStore::Options{
-                std::filesystem::path(framework::utf16_replacing(instance->directory.value_or(""))),
-                common->tiers, common->tier_length, common->update_access};
+                std::filesystem::path(framework::utf16_replacing(instance->directory.value_or(""))), common->tiers,
+                common->tier_length, common->update_access};
         };
         std::shared_ptr<FlotsamMemoryCache::FileOperations> files;
         if (cache_config.file) {
@@ -1062,10 +1109,10 @@ RegionAssetRuntime::RegionAssetRuntime(const server::IniConfig &config,
             const auto disk = native_flotsam_shared_file_backend(shared, warn);
             attach_flotsam_file_access(disk, file_access);
             FlotsamFileStore::Options paths{
-                std::filesystem::path(framework::utf16_replacing(cache_config.directory.value_or(""))),
-                common->tiers, common->tier_length, common->update_access};
+                std::filesystem::path(framework::utf16_replacing(cache_config.directory.value_or(""))), common->tiers,
+                common->tier_length, common->update_access};
             state_->cache_maintenance = std::make_shared<FlotsamCacheMaintenance>(
-                paths.directory, [logger, warn](const std::string& level, const std::string& message) {
+                paths.directory, [logger, warn](const std::string &level, const std::string &message) {
                     if (level == "warn")
                         warn(message);
                     else
@@ -1078,7 +1125,7 @@ RegionAssetRuntime::RegionAssetRuntime(const server::IniConfig &config,
             files->debug = logger;
             files->warn = warn;
             // Another initialization can enable the static access tracker.
-            files->touch = [file_options, file_access](const std::string& id) {
+            files->touch = [file_options, file_access](const std::string &id) {
                 FlotsamFileStore names(file_options(), native_flotsam_file_backend({}));
                 file_access->touch(names.file_name(id));
             };
@@ -1096,8 +1143,8 @@ RegionAssetRuntime::RegionAssetRuntime(const server::IniConfig &config,
     state_->scene = std::make_shared<Scene>(std::move(events), std::move(region_name), region_id);
     if (cache) {
         state_->cache_backend = std::make_shared<CacheBackend>(state_->backend->storage);
-        state_->cache_module = std::make_shared<FlotsamCacheModule>(std::move(cache_options),
-                                                                    std::move(cache), state_->cache_backend);
+        state_->cache_module =
+            std::make_shared<FlotsamCacheModule>(std::move(cache_options), std::move(cache), state_->cache_backend);
         state_->cache_module->post_initialise();
         state_->cache_module->add_region(state_->scene);
     }
@@ -1115,7 +1162,7 @@ RegionAssetRuntime::RegionAssetRuntime(const server::IniConfig &config,
             state_->exchange_permissions = AssetExchangePermissions(config, "HGAssetService");
         }
         state_->connector->initialise_service(&config, module);
-        state_->connector->foreign_url_fetch([this](const auto& value) -> AssetService::Asset {
+        state_->connector->foreign_url_fetch([this](const auto &value) -> AssetService::Asset {
             const auto target = foreign_asset_target(value);
             if (!target)
                 return {};
@@ -1138,8 +1185,8 @@ RegionAssetRuntime::RegionAssetRuntime(const server::IniConfig &config,
             framework::Uuid asset;
             return framework::try_parse_sdk_uuid(id, asset) ? get_foreign(asset, server, local) : nullptr;
         });
-        state_->connector->foreign_store([http = state_->foreign_http, permissions = state_->exchange_permissions]
-                                          (const auto& asset) -> std::optional<std::string> {
+        state_->connector->foreign_store([http = state_->foreign_http, permissions = state_->exchange_permissions](
+                                             const auto &asset) -> std::optional<std::string> {
             if (!permissions.allows_export(asset->type()))
                 return std::string{};
             const auto target = foreign_asset_target(asset->id());
@@ -1148,7 +1195,7 @@ RegionAssetRuntime::RegionAssetRuntime(const server::IniConfig &config,
             asset->full_id(target->id);
             return GridAssetService(target->url, http).store(asset);
         });
-        state_->connector->foreign_exists([http = state_->foreign_http](const auto& ids) {
+        state_->connector->foreign_exists([http = state_->foreign_http](const auto &ids) {
             struct Batch {
                 std::string url;
                 std::vector<std::string> ids;
@@ -1163,12 +1210,12 @@ RegionAssetRuntime::RegionAssetRuntime(const server::IniConfig &config,
                 const auto [group, inserted] = by_url.try_emplace(target->url, batches.size());
                 if (inserted)
                     batches.push_back({target->url, {}, {}});
-                auto& batch = batches[group->second];
+                auto &batch = batches[group->second];
                 batch.ids.push_back(target->id.str());
                 batch.positions.push_back(index);
             }
             std::vector<bool> result(ids.size());
-            for (const auto& batch : batches) {
+            for (const auto &batch : batches) {
                 const auto flags = GridAssetService(batch.url, http).assets_exist(batch.ids);
                 for (std::size_t index = 0; index < batch.positions.size(); ++index)
                     result[batch.positions[index]] = flags.at(index);
@@ -1186,46 +1233,45 @@ RegionAssetRuntime::RegionAssetRuntime(const server::IniConfig &config,
     if (state_->cache_module) {
         const auto life = state_->cache_module->lifecycle();
         state_->cache_console_jobs = std::make_shared<framework::ObjectJobEngine>(
-            [](std::any work) { std::any_cast<std::function<void()>>(std::move(work))(); },
-            "FlotsamConsole", 1000, 1,
-            [backend = state_->backend](const auto& job, const auto& error) { backend->job_error(job, error); });
+            [](std::any work) { std::any_cast<std::function<void()>>(std::move(work))(); }, "FlotsamConsole", 1000, 1,
+            [backend = state_->backend](const auto &job, const auto &error) { backend->job_error(job, error); });
         state_->cache_dates->post = [queue = std::weak_ptr(state_->cache_console_jobs),
-                                     cache = std::weak_ptr(state_->cache_backend), life](
-                                        std::function<void()> operation, const std::string& name) {
+                                     cache = std::weak_ptr(state_->cache_backend),
+                                     life](std::function<void()> operation, const std::string &name) {
             const auto worker = queue.lock();
             const bool scan = name == "TouchAllSceneAssets" || name == "ExpireSceneAssets";
-            if (!worker || !worker->enqueue(std::function<void()>(
-                    [operation = std::move(operation), cache, life, scan] {
-                        const bool resume_timer = scan && life->timer_running;
-                        try {
-                            operation();
-                        } catch (...) {
-                            if (scan) {
-                                const auto owner = cache.lock();
-                                std::lock_guard lock(life->timer_mutex);
-                                life->cleanup_running = false;
-                                if (owner && !owner->stopping && resume_timer && !life->timer_running) {
-                                    life->timer->start();
-                                    life->timer_running = true;
-                                }
+            if (!worker ||
+                !worker->enqueue(std::function<void()>([operation = std::move(operation), cache, life, scan] {
+                    const bool resume_timer = scan && life->timer_running;
+                    try {
+                        operation();
+                    } catch (...) {
+                        if (scan) {
+                            const auto owner = cache.lock();
+                            std::lock_guard lock(life->timer_mutex);
+                            life->cleanup_running = false;
+                            if (owner && !owner->stopping && resume_timer && !life->timer_running) {
+                                life->timer->start();
+                                life->timer_running = true;
                             }
-                            throw;
                         }
-                    })))
+                        throw;
+                    }
+                })))
                 throw std::runtime_error("Flotsam console is stopping");
         };
     }
     if (gather_assets && state_->cache_maintenance) {
         const auto life = state_->cache_module->lifecycle();
-        const auto log_cache = [backend = state_->backend](const std::string& level, const std::string& message) {
+        const auto log_cache = [backend = state_->backend](const std::string &level, const std::string &message) {
             backend->emit(level, message);
         };
-        state_->cache_backend->cleanup_warning = [log_cache](const auto& message) { log_cache("warn", message); };
+        state_->cache_backend->cleanup_warning = [log_cache](const auto &message) { log_cache("warn", message); };
         const auto inspectors = scene::native_uuid_gatherer_backend(
-            state_->scene->registered, [log_cache](const auto& message) { log_cache("error", message); },
-            [log_cache](const auto& message) { log_cache("debug", message); });
-        auto gather_scene = [gather = std::move(gather_assets), inspectors,
-                             maintenance = state_->cache_maintenance, region_id] {
+            state_->scene->registered, [log_cache](const auto &message) { log_cache("error", message); },
+            [log_cache](const auto &message) { log_cache("debug", message); });
+        auto gather_scene = [gather = std::move(gather_assets), inspectors, maintenance = state_->cache_maintenance,
+                             region_id] {
             scene::UuidGatherer gatherer(inspectors);
             gather(gatherer);
             gatherer.gather_all();
@@ -1235,12 +1281,12 @@ RegionAssetRuntime::RegionAssetRuntime(const server::IniConfig &config,
         auto protected_assets = [gather_scene] {
             FlotsamProtectedAssets assets;
             const auto gathered = gather_scene();
-            for (const auto& [id, type] : gathered->gathered)
+            for (const auto &[id, type] : gathered->gathered)
                 assets.insert(id);
             return assets;
         };
         const auto memory_cache = std::static_pointer_cast<FlotsamMemoryCache>(state_->scene->cache);
-        const auto& settings = *state_->cache_config;
+        const auto &settings = *state_->cache_config;
         const auto common = shared_cache_configuration();
         int warn_at;
         {
@@ -1261,11 +1307,12 @@ RegionAssetRuntime::RegionAssetRuntime(const server::IniConfig &config,
         };
         auto maintenance = std::make_shared<FlotsamCacheMaintenance>(
             file_store->directory(), FlotsamCacheMaintenance::native_backend(
-                file_store, file_access, state_->scene->registered, std::move(gather_scene),
-                [life = std::weak_ptr(life)] {
-                    const auto active = life.lock();
-                    return active && active->cleanup_running;
-                }, log_cache));
+                                         file_store, file_access, state_->scene->registered, std::move(gather_scene),
+                                         [life = std::weak_ptr(life)] {
+                                             const auto active = life.lock();
+                                             return active && active->cleanup_running;
+                                         },
+                                         log_cache));
         state_->cache_dates->touch = [backend = std::weak_ptr(state_->cache_backend), maintenance](bool fetch) {
             if (const auto owner = backend.lock())
                 return owner->touch(*maintenance, fetch);
@@ -1279,22 +1326,25 @@ RegionAssetRuntime::RegionAssetRuntime(const server::IniConfig &config,
     state_->module->add_region(state_->scene);
     state_->module->region_loaded(state_->scene);
 }
+
 std::shared_ptr<AssetService> RegionAssetRuntime::asset_service() const {
     if (!state_ || state_->stopped || !state_->scene || !state_->scene->registered)
         throw std::runtime_error("Region asset service stopped");
     return state_->scene->registered;
 }
-void RegionAssetRuntime::register_filesystem_console(
-    framework::ConsoleCommandResolver &commands, const std::function<void(const std::string &)> &output) const {
+
+void RegionAssetRuntime::register_filesystem_console(framework::ConsoleCommandResolver &commands,
+                                                     const std::function<void(const std::string &)> &output) const {
     if (state_ && state_->backend)
         register_fs_asset_console(state_->backend->service, commands, output);
 }
+
 std::shared_ptr<framework::AssetBase> RegionAssetRuntime::get(const framework::Uuid &id) {
     return asset_service()->get_asset(id.str());
 }
+
 std::shared_ptr<framework::AssetBase>
-RegionAssetRuntime::get_foreign(const framework::Uuid &id, const std::optional<std::string> &server,
-                                bool store_local) {
+RegionAssetRuntime::get_foreign(const framework::Uuid &id, const std::optional<std::string> &server, bool store_local) {
     if (!state_ || state_->stopped || !state_->scene || !state_->scene->registered)
         throw std::runtime_error("Region asset service stopped");
     if (!state_->foreign_http)
@@ -1323,23 +1373,24 @@ RegionAssetRuntime::get_foreign(const framework::Uuid &id, const std::optional<s
     }
     return asset;
 }
+
 std::optional<std::string> RegionAssetRuntime::store(std::shared_ptr<framework::AssetBase> asset) {
     return asset_service()->store(std::move(asset));
 }
+
 bool RegionAssetRuntime::default_assets_command(bool remove) {
     if (!state_ || state_->stopped)
         throw std::runtime_error("Region asset service stopped");
     if (!state_->cache_module)
         return false;
-    auto logger = [backend = state_->backend](const std::string &text) {
-        backend->emit("normal", text);
-    };
+    auto logger = [backend = state_->backend](const std::string &text) { backend->emit("normal", text); };
     if (remove)
         state_->cache_module->delete_default_assets(logger);
     else
         state_->cache_module->load_default_assets(logger);
     return true;
 }
+
 std::vector<std::string> RegionAssetRuntime::cache_command_names() const {
     std::vector<std::string> names;
     if (state_ && !state_->stopped)
@@ -1347,6 +1398,7 @@ std::vector<std::string> RegionAssetRuntime::cache_command_names() const {
             names.push_back(command.command);
     return names;
 }
+
 std::vector<framework::ConsoleCommandDescription> RegionAssetRuntime::cache_command_descriptions() const {
     std::vector<framework::ConsoleCommandDescription> commands;
     if (state_ && !state_->stopped)
@@ -1355,6 +1407,7 @@ std::vector<framework::ConsoleCommandDescription> RegionAssetRuntime::cache_comm
                 {command.category, command.command, command.usage, command.description, "", command.shared});
     return commands;
 }
+
 bool RegionAssetRuntime::cache_console(const std::vector<std::string> &args,
                                        std::function<void(const std::string &)> output) {
     if (!state_ || state_->stopped)
@@ -1370,13 +1423,17 @@ bool RegionAssetRuntime::cache_console(const std::vector<std::string> &args,
     if (!cache)
         throw std::runtime_error("Flotsam cache unavailable");
     auto settings = cache->settings();
+
     struct Output final : FlotsamConsoleOutput {
         std::function<void(const std::string &)> sink;
+
         explicit Output(std::function<void(const std::string &)> value) : sink(std::move(value)) {}
+
         void output(const std::string &value) override {
             sink(value);
         }
     };
+
     if (action == "assets") {
         if (!state_->cache_dates->touch)
             return false;
@@ -1401,11 +1458,11 @@ bool RegionAssetRuntime::cache_console(const std::vector<std::string> &args,
         backend->memory_count = [cache] { return cache->status().memory_entries; };
         backend->hit_report = [cache] { return cache->hit_report(); };
         if (settings.file) {
-            backend->file_count = [maintenance = state_->cache_maintenance](const auto& directory) {
+            backend->file_count = [maintenance = state_->cache_maintenance](const auto &directory) {
                 return maintenance->count(std::filesystem::path(framework::utf16_replacing(directory.value_or(""))));
             };
             bind_flotsam_console_files(*backend);
-            backend->format_date = [](auto date, const std::string&) {
+            backend->format_date = [](auto date, const std::string &) {
                 return framework::format_invariant_status_date(date);
             };
         }
@@ -1415,8 +1472,7 @@ bool RegionAssetRuntime::cache_console(const std::vector<std::string> &args,
     }
     if (action == "clearnegatives") {
         if (settings.negative)
-            output("Flotsam cache of negatives cleared (" + std::to_string(cache->clear_negatives()) +
-                   " entries)");
+            output("Flotsam cache of negatives cleared (" + std::to_string(cache->clear_negatives()) + " entries)");
         else
             output("Flotsam cache of negatives not enabled");
         return true;
@@ -1453,14 +1509,18 @@ bool RegionAssetRuntime::cache_console(const std::vector<std::string> &args,
     }
     return false;
 }
+
 RegionAssetRuntime::~RegionAssetRuntime() = default;
+
 std::shared_ptr<framework::IAssetCache> RegionAssetRuntime::asset_cache() const {
     return state_ && state_->scene ? state_->scene->cache : std::shared_ptr<framework::IAssetCache>{};
 }
+
 void RegionAssetRuntime::stop() {
     state_->stop();
 }
+
 void RegionAssetRuntime::quiesce_cache_cleanup() {
     state_->quiesce_cache_cleanup();
 }
-}
+} // namespace opensim::services

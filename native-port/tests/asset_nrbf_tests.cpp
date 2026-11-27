@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sstream>
 using namespace opensim::framework;
+
 namespace {
 std::string hex(std::span<const std::uint8_t> bytes) {
     std::string out;
@@ -13,12 +14,15 @@ std::string hex(std::span<const std::uint8_t> bytes) {
     }
     return out;
 }
+
 std::string text(const std::optional<std::string> &s) {
     return !s ? "n" : "s" + hex(std::span(reinterpret_cast<const std::uint8_t *>(s->data()), s->size()));
 }
+
 std::string bytes(const AssetBytes &b) {
     return !b ? "n" : "b" + hex(*b);
 }
+
 std::vector<std::uint8_t> unhex(std::string_view text) {
     if (text.size() % 2)
         throw std::invalid_argument("hex");
@@ -36,18 +40,19 @@ std::vector<std::uint8_t> unhex(std::string_view text) {
         out.push_back(static_cast<std::uint8_t>(digit(text[i]) * 16 + digit(text[i + 1])));
     return out;
 }
+
 std::string snapshot(const AssetBase &a) {
     auto result = bytes(a.data) + "|" + std::to_string(a.upload_attempts) + "|";
     auto m = a.metadata();
     if (!m)
         return result + "META_NULL";
-    return result + m->full_id().str() + "|" + text(m->raw_id()) + "|" + text(m->name) + "|" +
-           text(m->description) + "|" + text(m->creator_id) + "|" + std::to_string(m->type) + "|" +
-           text(m->raw_content_type()) + "|" + std::to_string(m->creation_date.serialized_data()) + "|" +
-           bytes(m->sha1) + "|" + (m->local ? "1" : "0") + (m->temporary ? "1" : "0") + "|" +
-           std::to_string(m->flags) + "|" + (a.data == m->sha1 ? "1" : "0");
+    return result + m->full_id().str() + "|" + text(m->raw_id()) + "|" + text(m->name) + "|" + text(m->description) +
+           "|" + text(m->creator_id) + "|" + std::to_string(m->type) + "|" + text(m->raw_content_type()) + "|" +
+           std::to_string(m->creation_date.serialized_data()) + "|" + bytes(m->sha1) + "|" + (m->local ? "1" : "0") +
+           (m->temporary ? "1" : "0") + "|" + std::to_string(m->flags) + "|" + (a.data == m->sha1 ? "1" : "0");
 }
-}
+} // namespace
+
 int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string_view(argv[1]) == "--probe") {
@@ -84,8 +89,7 @@ int main(int argc, char **argv) {
             result->data != result->metadata()->sha1)
             throw std::runtime_error("NRBF private fields/alias roundtrip");
         if (!AssetNrbfCodec::decode_legacy(encoded, result) || result->upload_attempts != 0 ||
-            result->metadata()->sha1 ||
-            result->metadata()->creation_date.serialized_data() != 0x8000000000000123ull)
+            result->metadata()->sha1 || result->metadata()->creation_date.serialized_data() != 0x8000000000000123ull)
             throw std::runtime_error("Original legacy decoder omissions/DateTime normalization");
         for (std::size_t n = 0; n < encoded.size(); ++n)
             if (AssetNrbfCodec::decode_file(std::span(encoded).first(n), result))

@@ -1,0 +1,1 @@
+list item;string result;string dumped;string csv;string rawFloat;string boxedFloat;default{state_entry(){item=xmrEventDequeue(0.0,2097152,0,0,0);result=(string)item;dumped=llDumpList2String(item,"|");csv=llList2CSV(item);rawFloat=llList2String(item,1);boxedFloat=llList2String(item,2);}touch_start(integer n){}}

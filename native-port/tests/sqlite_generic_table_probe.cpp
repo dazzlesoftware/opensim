@@ -7,6 +7,7 @@
 using namespace opensim;
 using namespace services;
 using network::Value;
+
 std::string hex(std::string_view s) {
     std::string out;
     for (unsigned char c : s) {
@@ -15,34 +16,39 @@ std::string hex(std::string_view s) {
     }
     return out;
 }
+
 std::string unhex(std::string_view s) {
     std::string out;
     for (size_t i = 0; i < s.size(); i += 2)
         out += char(std::stoi(std::string(s.substr(i, 2)), nullptr, 16));
     return out;
 }
-std::optional<std::string> text(const Value& v) {
+
+std::optional<std::string> text(const Value &v) {
     if (v.kind == Value::Kind::Undefined)
         return {};
     auto s = network::osd_string(v);
     return s == "." ? "" : s;
 }
-std::optional<SqliteTableStrings> strings(const Value& v) {
+
+std::optional<SqliteTableStrings> strings(const Value &v) {
     if (v.kind != Value::Kind::Array)
         return {};
     SqliteTableStrings out;
-    for (auto& x : v.array)
+    for (auto &x : v.array)
         out.push_back(text(x));
     return out;
 }
-std::shared_ptr<SqliteTableFields> fields(const Value& v) {
+
+std::shared_ptr<SqliteTableFields> fields(const Value &v) {
     if (v.kind != Value::Kind::Array)
         return {};
     auto out = std::make_shared<SqliteTableFields>();
-    for (auto& pair : v.array)
+    for (auto &pair : v.array)
         (*out)[text(pair.array.at(0)).value()] = text(pair.array.at(1));
     return out;
 }
+
 struct TypedRow {
     framework::Uuid principal;
     bool active = false;
@@ -50,47 +56,53 @@ struct TypedRow {
     std::optional<std::string> name;
     std::shared_ptr<SqliteTableFields> data;
 };
+
 SqliteTableSchema<TypedRow> schema() {
     SqliteTableSchema<TypedRow> s;
-    s.fields = {{"PrincipalID", [](auto& r) { return r.principal.str(); },
-                 [](auto& r, const auto& row, int col) {
-                     framework::try_parse_sdk_uuid(row.value_text(col), r.principal);
-                 }},
-                {"Active", [](auto& r) { return r.active ? "True" : "False"; },
-                 [](auto& r, const auto& row, int col) { r.active = row.int32_value(col) != 0; }},
-                {"Count", [](auto& r) { return std::to_string(r.count); },
-                 [](auto& r, const auto& row, int col) { r.count = row.int32_value(col); }},
-                {"Name", [](auto& r) { return r.name; },
-                 [](auto& r, const auto& row, int col) { r.name = row.string_value(col); }}};
-    s.data = [](auto& r) -> std::shared_ptr<SqliteTableFields>& { return r.data; };
+    s.fields = {
+        {"PrincipalID", [](auto &r) { return r.principal.str(); },
+         [](auto &r, const auto &row, int col) { framework::try_parse_sdk_uuid(row.value_text(col), r.principal); }},
+        {"Active", [](auto &r) { return r.active ? "True" : "False"; },
+         [](auto &r, const auto &row, int col) { r.active = row.int32_value(col) != 0; }},
+        {"Count", [](auto &r) { return std::to_string(r.count); },
+         [](auto &r, const auto &row, int col) { r.count = row.int32_value(col); }},
+        {"Name", [](auto &r) { return r.name; },
+         [](auto &r, const auto &row, int col) { r.name = row.string_value(col); }}};
+    s.data = [](auto &r) -> std::shared_ptr<SqliteTableFields> & { return r.data; };
     return s;
 }
-std::string data(const std::shared_ptr<SqliteTableFields>& d) {
+
+std::string data(const std::shared_ptr<SqliteTableFields> &d) {
     std::string out;
-    for (auto& [key, v] : *d)
+    for (auto &[key, v] : *d)
         out += hex(key) + "=" + (v ? hex(*v) : "N") + ",";
     return out;
 }
-std::string rows(const std::vector<std::shared_ptr<TypedRow>>& values) {
+
+std::string rows(const std::vector<std::shared_ptr<TypedRow>> &values) {
     std::string out = std::to_string(values.size()) + "|";
-    for (auto& r : values)
+    for (auto &r : values)
         out += r->principal.str() + ":" + (r->active ? "1" : "0") + ":" + std::to_string(r->count) + ":" +
                (r->name ? hex(*r->name) : "N") + ":" + data(r->data) + ";";
     return out;
 }
-std::string rows(const std::vector<std::shared_ptr<FriendsData>>& values) {
+
+std::string rows(const std::vector<std::shared_ptr<FriendsData>> &values) {
     std::string out = std::to_string(values.size()) + "|";
-    for (auto& r : values)
-        out += (r->principal ? hex(*r->principal) : "N") + ":" + (r->friend_id ? hex(*r->friend_id) : "N") +
-               ":" + data(r->data) + ";";
+    for (auto &r : values)
+        out += (r->principal ? hex(*r->principal) : "N") + ":" + (r->friend_id ? hex(*r->friend_id) : "N") + ":" +
+               data(r->data) + ";";
     return out;
 }
-std::string snapshot(sqlite3* db, bool friends) {
-    const char* sql =
-        friends
-            ? "SELECT coalesce(group_concat(v,'|'),'') FROM (SELECT quote(PrincipalID)||':'||quote(Friend)||':'||quote(Flags)||':'||quote(Offered) AS v FROM Friends ORDER BY PrincipalID,Friend)"
-            : "SELECT coalesce(group_concat(v,'|'),'') FROM (SELECT quote(PrincipalID)||':'||quote(Active)||':'||quote(Count)||':'||quote(Name) AS v FROM Records ORDER BY PrincipalID,Name)";
-    sqlite3_stmt* s = nullptr;
+
+std::string snapshot(sqlite3 *db, bool friends) {
+    const char *sql = friends ? "SELECT coalesce(group_concat(v,'|'),'') FROM (SELECT "
+                                "quote(PrincipalID)||':'||quote(Friend)||':'||quote(Flags)||':'||quote(Offered) AS v "
+                                "FROM Friends ORDER BY PrincipalID,Friend)"
+                              : "SELECT coalesce(group_concat(v,'|'),'') FROM (SELECT "
+                                "quote(PrincipalID)||':'||quote(Active)||':'||quote(Count)||':'||quote(Name) AS v FROM "
+                                "Records ORDER BY PrincipalID,Name)";
+    sqlite3_stmt *s = nullptr;
     if (sqlite3_prepare_v2(db, sql, -1, &s, nullptr) != SQLITE_OK) {
         if (s)
             sqlite3_finalize(s);
@@ -100,11 +112,12 @@ std::string snapshot(sqlite3* db, bool friends) {
     if (sqlite3_step(s) == SQLITE_ROW) {
         auto p = sqlite3_column_text(s, 0);
         if (p)
-            value.assign(reinterpret_cast<const char*>(p), sqlite3_column_bytes(s, 0));
+            value.assign(reinterpret_cast<const char *>(p), sqlite3_column_bytes(s, 0));
     }
     sqlite3_finalize(s);
     return hex(value);
 }
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -120,7 +133,7 @@ int main() {
         SqliteGenericTable<TypedRow> typed([db] { return db; }, "Records", schema());
         SqliteFriendsStore store(db, "Friends");
         std::string output;
-        for (auto& op : input.get("ops").array) {
+        for (auto &op : input.get("ops").array) {
             std::string result = "-";
             try {
                 auto kind = network::osd_string(op.get("op"));

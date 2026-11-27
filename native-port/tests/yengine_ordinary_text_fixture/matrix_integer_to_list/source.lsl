@@ -1,0 +1,1 @@
+integer item=7;list result;default{state_entry(){result=(list)item;}}

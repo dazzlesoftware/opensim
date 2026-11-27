@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "nativeParityVerified": false,
+  "fullParityVerified": false,
+  "scope": "Actual original compiler-created rank1 integer arrays, generated constructor heap-limit rejection, two distinct wrapper allocations, unchanged instVars.PopObject delta checks and rejection atomicity. Windows/Linux x64 only.",
+  "generatorSha256": "3961ad4b1e2d175b333dde01749f4c3de25fce921f579a63809a692a6d20c24d",
+  "generatorAssemblySha256": "68e99c8869262b19f40bfefd3ba39948909b9ad23579cb0ead7de4c0b1418270",
+  "verifierSha256": "53f52dc876a959788f05260d8467f5b525aabf743cfd3c5a319c59d3cf4a516b",
+  "platforms": {
+    "windows": {
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "observationsSha256": "4ba2515b82361e5e1d8d103e995b0e75e701a0ff4a85c7e9a167383e7e672d12",
+      "metadataSha256": "737c37b37deb7a094bcbb789a64a8cb2c8df5bb0446313802188fdff3a089f47",
+      "sourceSha256": "5faf7cbedcb211c1a7e57fe6bff785d354eb02e3353dd90bbc2b023a76fcb6d4",
+      "cases": 7
+    },
+    "linux": {
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "observationsSha256": "54673d6a6471f34b085362a151710a4d96dd272336bfbb7e3cbf89af7ceeb476",
+      "metadataSha256": "2d90d656c0ed919d1d90cac558021a2358baa930ace04f786352c739824072de",
+      "sourceSha256": "5faf7cbedcb211c1a7e57fe6bff785d354eb02e3353dd90bbc2b023a76fcb6d4",
+      "cases": 7
+    }
+  },
+  "findings": [
+    "Global usage4 plus dimension allocation4 rejects atlimit7 before wrapper global assignment.",
+    "Limit8 allows dimension allocation but rejects backing delta12; limit15 rejects backing, limit16 allows two distinct own16 wrappers with global usage4 unchanged.",
+    "Backing replacement delta8 rejects atlimit8 without field or own-ledger mutation.",
+    "Replacement delta4 succeeds atlimit8 even though resulting own ledger20 exceeds limit.",
+    "Negative delta-16 succeeds atlimit0 while global usage4 exceeds limit; wrapper own ledger becomes4."
+  ],
+  "pending": [
+    "Native boundary parity tests not run by this reference harness.",
+    "No macOS/ARM64 claim."
+  ]
+}

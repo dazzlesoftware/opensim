@@ -36,34 +36,35 @@
 #endif
 namespace opensim::framework {
 NativeTimeZoneError::NativeTimeZoneError(std::string t, std::uint32_t h, std::u16string m,
-                                         std::optional<std::u16string> p,
-                                         std::shared_ptr<const NativeTimeZoneError> i)
+                                         std::optional<std::u16string> p, std::shared_ptr<const NativeTimeZoneError> i)
     : std::runtime_error(utf8(m)), source_type(std::move(t)), hresult(h), message(std::move(m)),
-      parameter(std::move(p)), inner(std::move(i)) {
-}
+      parameter(std::move(p)), inner(std::move(i)) {}
+
 namespace {
 std::string lower(std::string value) {
-    for (auto& c : value)
+    for (auto &c : value)
         if (c >= 'A' && c <= 'Z')
             c += 32;
     return value;
 }
+
 // ICU is used only for identifier conversion, never as a substitute for OS rule data.
 struct Icu {
-    using IanaToWindows = std::int32_t (*)(const char16_t*, std::int32_t, char16_t*, std::int32_t,
-                                           std::int32_t*);
-    using WindowsToIana = std::int32_t (*)(const char16_t*, std::int32_t, const char*, char16_t*,
-                                           std::int32_t, std::int32_t*);
+    using IanaToWindows = std::int32_t (*)(const char16_t *, std::int32_t, char16_t *, std::int32_t, std::int32_t *);
+    using WindowsToIana = std::int32_t (*)(const char16_t *, std::int32_t, const char *, char16_t *, std::int32_t,
+                                           std::int32_t *);
     IanaToWindows to_windows = nullptr;
     WindowsToIana to_iana = nullptr;
 #ifdef _WIN32
     HMODULE module = nullptr;
-    void* symbol(const std::string& name) {
-        return reinterpret_cast<void*>(GetProcAddress(module, name.c_str()));
+
+    void *symbol(const std::string &name) {
+        return reinterpret_cast<void *>(GetProcAddress(module, name.c_str()));
     }
 #else
-    void* module = nullptr;
-    void* symbol(const std::string& name) {
+    void *module = nullptr;
+
+    void *symbol(const std::string &name) {
         return dlsym(module, name.c_str());
     }
 #endif
@@ -92,6 +93,7 @@ struct Icu {
         to_windows = reinterpret_cast<IanaToWindows>(symbol("ucal_getWindowsTimeZoneID" + suffix));
         to_iana = reinterpret_cast<WindowsToIana>(symbol("ucal_getTimeZoneIDForWindowsID" + suffix));
     }
+
     ~Icu() {
 #ifdef _WIN32
         if (module)
@@ -101,6 +103,7 @@ struct Icu {
             dlclose(module);
 #endif
     }
+
     std::optional<std::u16string> convert(std::u16string_view id, bool windows) {
         if (id.find_first_of(u"\\\n\r") != std::u16string_view::npos)
             return {};
@@ -123,21 +126,22 @@ struct Icu {
         return std::u16string(buffer.data(), n);
     }
 };
-[[maybe_unused]] Icu& icu() {
+
+[[maybe_unused]] Icu &icu() {
     static Icu value;
     return value;
 }
 #ifdef _WIN32
 struct MissingNativeZone : std::exception {};
+
 std::shared_ptr<const InvariantTimeZoneRules> windows_named(std::u16string_view id) {
-    auto model =
-        invariant_datetime_platform::windows_registry_zone_lookup(std::wstring(id.begin(), id.end()));
+    auto model = invariant_datetime_platform::windows_registry_zone_lookup(std::wstring(id.begin(), id.end()));
     if (!model)
         return {};
     return std::make_shared<InvariantTimeZoneRules>(model->base_offset, std::move(model->rules));
 }
 #else
-[[noreturn]] void zone_io_error(int code, const std::u16string& path) {
+[[noreturn]] void zone_io_error(int code, const std::u16string &path) {
     if (code == ENOENT) {
         auto trimmed = std::filesystem::path(utf8(path));
         if (trimmed.filename().empty())
@@ -160,17 +164,15 @@ std::shared_ptr<const InvariantTimeZoneRules> windows_named(std::u16string_view 
                                   u"Could not find a part of the path '" + path + u"'.");
     if (code == EACCES || code == EPERM || code == EBADF)
         throw NativeTimeZoneError(
-            "System.UnauthorizedAccessException", 0x80070005u,
-            u"Access to the path '" + path + u"' is denied.", {},
+            "System.UnauthorizedAccessException", 0x80070005u, u"Access to the path '" + path + u"' is denied.", {},
             std::make_shared<NativeTimeZoneError>("System.IO.IOException", static_cast<std::uint32_t>(code),
                                                   utf16_replacing(std::generic_category().message(code))));
     if (code == ECANCELED)
-        throw NativeTimeZoneError("System.OperationCanceledException", 0x8013153bu,
-                                  u"The operation was canceled.");
+        throw NativeTimeZoneError("System.OperationCanceledException", 0x8013153bu, u"The operation was canceled.");
     if (code == EFBIG)
-        throw NativeTimeZoneError(
-            "System.ArgumentOutOfRangeException", 0x80131502u,
-            u"Specified file length was too large for the file system. (Parameter 'value')", u"value");
+        throw NativeTimeZoneError("System.ArgumentOutOfRangeException", 0x80131502u,
+                                  u"Specified file length was too large for the file system. (Parameter 'value')",
+                                  u"value");
     if (code == EEXIST)
         throw NativeTimeZoneError("System.IO.IOException", static_cast<std::uint32_t>(code),
                                   u"The file '" + path + u"' already exists.");
@@ -185,17 +187,17 @@ std::shared_ptr<const InvariantTimeZoneRules> windows_named(std::u16string_view 
     throw NativeTimeZoneError("System.IO.IOException", static_cast<std::uint32_t>(code),
                               utf16_replacing(std::generic_category().message(code)) + u" : '" + path + u"'");
 }
+
 struct TzFile {
 
     std::shared_ptr<const InvariantTimeZoneRules> rules;
-    bool at(std::int64_t utc_ticks) const {
-        return rules->utc_is_daylight(utc_ticks);
-    }
-    static std::vector<std::uint8_t> read_bytes(const std::filesystem::path& path,
+
+    static std::vector<std::uint8_t> read_bytes(const std::filesystem::path &path,
                                                 std::optional<bool> override_locking = {}) {
         struct File {
             int fd = -1;
             bool locked = false;
+
             ~File() {
                 if (fd >= 0) {
                     if (locked) {
@@ -208,6 +210,7 @@ struct TzFile {
                 }
             }
         } file;
+
         auto full = get_full_path(path.native());
         auto raw_path = utf16_replacing(full);
         do {
@@ -243,16 +246,15 @@ struct TzFile {
                 result = ::lseek(file.fd, 0, SEEK_CUR);
             } while (result < 0 && errno == EINTR);
             if (result < 0)
-                throw NativeTimeZoneError("System.IO.IOException", 0x80131620u,
-                                          u"Unsupported unseekable file.");
+                throw NativeTimeZoneError("System.IO.IOException", 0x80131620u, u"Unsupported unseekable file.");
         }
         // Preserve the source's repeated fs.Length evaluation and its short circuit/error order.
         auto length = [&]() { return status().st_size; };
         if (length() == 0 || length() > 20 * 1024 * 1024)
-            throw NativeTimeZoneError(
-                "System.IO.IOException", 0x80131620u,
-                length() == 0 ? u"The read operation returned an invalid length."
-                              : u"IO operation will not work. Most likely the file will become too long.");
+            throw NativeTimeZoneError("System.IO.IOException", 0x80131620u,
+                                      length() == 0
+                                          ? u"The read operation returned an invalid length."
+                                          : u"IO operation will not work. Most likely the file will become too long.");
         auto size = length();
         if (size < 0)
             throw NativeTimeZoneError("System.OverflowException", 0x80131516u,
@@ -289,31 +291,29 @@ struct TzFile {
         }
         return bytes; // SafeFileHandle disposal precedes TimeZoneInfo construction/rule parsing.
     }
-    static std::shared_ptr<TzFile> parse(const std::vector<std::uint8_t>& bytes,
-                                         const std::string& requested_id) {
+
+    static std::shared_ptr<TzFile> parse(const std::vector<std::uint8_t> &bytes, const std::string &requested_id) {
         invariant_datetime_platform::ZoneModel model;
         try {
-            model = invariant_datetime_platform::unix_tzif_zone(bytes, requested_id, false, []() {
-                return invariant_datetime_platform::native_utc_now().ticks();
-            });
-        } catch (const std::out_of_range&) {
+            model = invariant_datetime_platform::unix_tzif_zone(
+                bytes, requested_id, false, []() { return invariant_datetime_platform::native_utc_now().ticks(); });
+        } catch (const std::out_of_range &) {
             throw NativeTimeZoneError("System.IndexOutOfRangeException", 0x80131508u,
                                       u"Index was outside the bounds of the array.");
-        } catch (const std::overflow_error&) {
+        } catch (const std::overflow_error &) {
             throw NativeTimeZoneError("System.OverflowException", 0x80131516u,
                                       u"Arithmetic operation resulted in an overflow.");
-        } catch (const std::runtime_error&) {
+        } catch (const std::runtime_error &) {
             try {
-                model = invariant_datetime_platform::unix_tzif_zone(bytes, requested_id, true, []() {
-                    return invariant_datetime_platform::native_utc_now().ticks();
-                });
-            } catch (const std::out_of_range&) {
+                model = invariant_datetime_platform::unix_tzif_zone(
+                    bytes, requested_id, true, []() { return invariant_datetime_platform::native_utc_now().ticks(); });
+            } catch (const std::out_of_range &) {
                 throw NativeTimeZoneError("System.IndexOutOfRangeException", 0x80131508u,
                                           u"Index was outside the bounds of the array.");
-            } catch (const std::overflow_error&) {
+            } catch (const std::overflow_error &) {
                 throw NativeTimeZoneError("System.OverflowException", 0x80131516u,
                                           u"Arithmetic operation resulted in an overflow.");
-            } catch (const std::runtime_error&) {
+            } catch (const std::runtime_error &) {
                 throw std::invalid_argument("Invalid timezone data");
             }
         }
@@ -322,6 +322,7 @@ struct TzFile {
         return result;
     }
 };
+
 std::filesystem::path zone_directory() {
     auto value = runtime_environment_get(std::make_shared<const std::u16string>(u"TZDIR"));
     auto path = value ? utf8(*value) : std::string("/usr/share/zoneinfo/");
@@ -329,7 +330,8 @@ std::filesystem::path zone_directory() {
         path += '/';
     return std::filesystem::path(path);
 }
-std::shared_ptr<TzFile> named_file(const std::u16string& id, std::optional<bool> override_locking = {}) {
+
+std::shared_ptr<TzFile> named_file(const std::u16string &id, std::optional<bool> override_locking = {}) {
     bool invalid = id.starts_with(u'/');
     for (auto c : id)
         if (!((c >= u'a' && c <= u'z') || (c >= u'A' && c <= u'Z') || (c >= u'0' && c <= u'9') || c == u'/' ||
@@ -339,13 +341,12 @@ std::shared_ptr<TzFile> named_file(const std::u16string& id, std::optional<bool>
         throw NativeTimeZoneError("System.TimeZoneNotFoundException", 0x80131500u,
                                   u"The time zone ID '" + id + u"' is invalid.");
     auto path = zone_directory() / std::filesystem::path(utf8(id));
-    auto invalid_message = u"The time zone ID '" + id +
-                           u"' was found on the local computer, but the file at '" +
+    auto invalid_message = u"The time zone ID '" + id + u"' was found on the local computer, but the file at '" +
                            utf16_replacing(path.native()) + u"' was corrupt.";
     std::vector<std::uint8_t> bytes;
     try {
         bytes = TzFile::read_bytes(path, override_locking);
-    } catch (const NativeTimeZoneError& e) {
+    } catch (const NativeTimeZoneError &e) {
         if (!e.source_type.starts_with("System.IO.") && e.source_type != "System.UnauthorizedAccessException")
             throw;
         if (e.source_type == "System.UnauthorizedAccessException" ||
@@ -354,81 +355,92 @@ std::shared_ptr<TzFile> named_file(const std::u16string& id, std::optional<bool>
             throw;
         throw NativeTimeZoneError("System.InvalidTimeZoneException", 0x80131500u, invalid_message, {},
                                   std::make_shared<NativeTimeZoneError>(e));
-    } catch (const std::bad_alloc&) {
-        throw NativeTimeZoneError("System.InvalidTimeZoneException", 0x80131500u, invalid_message, {},
-                                  std::make_shared<NativeTimeZoneError>(
-                                      "System.OutOfMemoryException", 0x8007000eu,
-                                      u"Exception of type 'System.OutOfMemoryException' was thrown."));
+    } catch (const std::bad_alloc &) {
+        throw NativeTimeZoneError(
+            "System.InvalidTimeZoneException", 0x80131500u, invalid_message, {},
+            std::make_shared<NativeTimeZoneError>("System.OutOfMemoryException", 0x8007000eu,
+                                                  u"Exception of type 'System.OutOfMemoryException' was thrown."));
     }
     try {
         return TzFile::parse(bytes, utf8(id));
-    } catch (const std::invalid_argument&) {
+    } catch (const std::invalid_argument &) {
         throw NativeTimeZoneError("System.InvalidTimeZoneException", 0x80131500u, invalid_message);
-    } catch (const std::bad_alloc&) {
+    } catch (const std::bad_alloc &) {
         throw NativeTimeZoneError("System.OutOfMemoryException", 0x8007000eu,
                                   u"Exception of type 'System.OutOfMemoryException' was thrown.");
     }
 }
 #endif
-}
+} // namespace
+
 TimeZoneText time_zone_utc_id_text() {
     static auto value = std::make_shared<const std::u16string>(u"UTC");
     return value;
 }
-TimeZone::TimeZone(std::string id, std::function<bool(std::int64_t)> daylight)
-    : TimeZone(std::make_shared<const std::u16string>(utf16_replacing(id)), std::move(daylight)) {
-}
-TimeZone::TimeZone(TimeZoneText id, std::function<bool(std::int64_t)> daylight)
-    : id_(utf8(*id)), daylight_(std::move(daylight)), raw_id_(std::move(id)) {
-}
+
+TimeZone::TimeZone(TimeZoneText id, std::shared_ptr<const InvariantTimeZoneRules> rules)
+    : id_(utf8(*id)), rules_(std::move(rules)), raw_id_(std::move(id)) {}
+
 bool TimeZone::daylight_at(std::int64_t utc_seconds) const {
     if (utc_seconds < -62135596800ll || utc_seconds > 253402300799ll)
         throw std::out_of_range("Timezone date is outside DateTime range");
     return daylight_at_ticks(621355968000000000ll + utc_seconds * 10000000ll);
 }
+
 bool TimeZone::daylight_at_ticks(std::int64_t utc_ticks) const {
     if (utc_ticks < 0 || utc_ticks > 3155378975999999999ll)
         throw std::out_of_range("Timezone date is outside DateTime range");
-    return daylight_(utc_ticks);
+    return rules_ && rules_->utc_is_daylight(utc_ticks);
 }
+
+std::int64_t TimeZone::utc_offset_ticks(std::int64_t utc_ticks) const {
+    if (utc_ticks < 0 || utc_ticks > 3155378975999999999ll)
+        throw std::out_of_range("Timezone date is outside DateTime range");
+    return rules_ ? rules_->utc_offset(utc_ticks).ticks : 0;
+}
+
 struct TimeZoneDatabase::State {
     std::shared_ptr<NativeInvariantDateTimeContext> owner;
     NativeTimeZoneLookupOptions options;
 };
-TimeZoneDatabase::TimeZoneDatabase() : TimeZoneDatabase(std::make_shared<NativeInvariantDateTimeContext>()) {
-}
+
+TimeZoneDatabase::TimeZoneDatabase() : TimeZoneDatabase(std::make_shared<NativeInvariantDateTimeContext>()) {}
+
 TimeZoneDatabase::TimeZoneDatabase(std::shared_ptr<NativeInvariantDateTimeContext> owner)
-    : TimeZoneDatabase(std::move(owner), {}) {
-}
+    : TimeZoneDatabase(std::move(owner), {}) {}
+
 TimeZoneDatabase::TimeZoneDatabase(std::shared_ptr<NativeInvariantDateTimeContext> owner,
                                    NativeTimeZoneLookupOptions options)
     : state_(std::make_unique<State>(State{std::move(owner), std::move(options)})) {
     if (!state_->owner)
         throw std::invalid_argument("Null timezone cache owner");
 }
+
 TimeZoneDatabase::~TimeZoneDatabase() = default;
-std::shared_ptr<TimeZone> TimeZoneDatabase::find(const std::optional<std::string>& id) {
+
+std::shared_ptr<TimeZone> TimeZoneDatabase::find(const std::optional<std::string> &id) {
     return find_utf16(id ? std::optional(utf16_replacing(*id)) : std::nullopt);
 }
-std::shared_ptr<TimeZone> TimeZoneDatabase::find_utf16(const std::optional<std::u16string>& id) {
+
+std::shared_ptr<TimeZone> TimeZoneDatabase::find_utf16(const std::optional<std::u16string> &id) {
     return find_text(id ? std::make_shared<const std::u16string>(*id) : TimeZoneText{});
 }
+
 std::shared_ptr<TimeZone> TimeZoneDatabase::find_text(TimeZoneText id) {
     if (!id)
         throw NativeTimeZoneError("System.ArgumentNullException", 0x80004003u,
                                   u"Value cannot be null. (Parameter 'id')", u"id");
     auto missing = [&](std::shared_ptr<const NativeTimeZoneError> inner = {}) {
         return NativeTimeZoneError("System.TimeZoneNotFoundException", 0x80131500u,
-                                   u"The time zone ID '" + *id + u"' was not found on the local computer.",
-                                   {}, std::move(inner));
+                                   u"The time zone ID '" + *id + u"' was not found on the local computer.", {},
+                                   std::move(inner));
     };
     if (id->empty() || id->size() > 255 || id->find(u'\0') != id->npos)
         throw missing();
     auto requested = utf8(*id);
     auto key = lower(requested);
     if (key == "utc") {
-        static const auto utc =
-            std::shared_ptr<TimeZone>(new TimeZone(time_zone_utc_id_text(), [](auto) { return false; }));
+        static const auto utc = std::shared_ptr<TimeZone>(new TimeZone(time_zone_utc_id_text(), {}));
         return utc;
     }
     auto owner = state_->owner;
@@ -439,20 +451,17 @@ std::shared_ptr<TimeZone> TimeZoneDatabase::find_text(TimeZoneText id) {
     return owner->cached_legacy_named_raw(
         raw,
         [owner, requested, key, raw, converter, id, comparer, lease] {
-            std::function<bool(std::int64_t)> daylight;
+            std::shared_ptr<const InvariantTimeZoneRules> rules;
 #ifdef _WIN32
             std::shared_ptr<const NativeTimeZoneError> error;
-            std::shared_ptr<const InvariantTimeZoneRules> rules;
             try {
                 rules = windows_named(raw);
-            } catch (const NativeTimeZoneError& e) {
+            } catch (const NativeTimeZoneError &e) {
                 if (e.source_type == "System.Security.SecurityException")
                     throw;
                 error = std::make_shared<NativeTimeZoneError>(e);
             }
-            if (rules)
-                daylight = [rules](auto seconds) { return rules->utc_is_daylight(seconds); };
-            else {
+            if (!rules) {
                 auto alternative = owner->legacy_iana_to_windows_raw(*id);
                 if (alternative) {
                     try {
@@ -464,16 +473,14 @@ std::shared_ptr<TimeZone> TimeZoneDatabase::find_text(TimeZoneText id) {
                                 if (!alternate_rules)
                                     throw MissingNativeZone{};
                                 return std::shared_ptr<TimeZone>(
-                                    new TimeZone(alternate_text, [alternate_rules](auto seconds) {
-                                        return alternate_rules->utc_is_daylight(seconds);
-                                    }));
+                                    new TimeZone(alternate_text, std::move(alternate_rules)));
                             },
                             comparer, lease);
-                        daylight = alternate->daylight_;
+                        rules = alternate->rules_;
                         error.reset();
-                    } catch (const MissingNativeZone&) {
+                    } catch (const MissingNativeZone &) {
                         error.reset();
-                    } catch (const NativeTimeZoneError& e) {
+                    } catch (const NativeTimeZoneError &e) {
                         if (e.source_type == "System.Security.SecurityException")
                             throw;
                         error = std::make_shared<NativeTimeZoneError>(e);
@@ -481,10 +488,9 @@ std::shared_ptr<TimeZone> TimeZoneDatabase::find_text(TimeZoneText id) {
                 }
                 if (error)
                     throw *error;
-                if (!daylight)
+                if (!rules)
                     throw NativeTimeZoneError("System.TimeZoneNotFoundException", 0x80131500u,
-                                              u"The time zone ID '" + raw +
-                                                  u"' was not found on the local computer.");
+                                              u"The time zone ID '" + raw + u"' was not found on the local computer.");
             }
 
 #else
@@ -492,7 +498,7 @@ std::shared_ptr<TimeZone> TimeZoneDatabase::find_text(TimeZoneText id) {
             std::shared_ptr<const NativeTimeZoneError> error;
             try {
                 data = named_file(raw, owner->legacy_file_locking_override());
-            } catch (const NativeTimeZoneError& e) {
+            } catch (const NativeTimeZoneError &e) {
                 if (e.source_type != "System.InvalidTimeZoneException" &&
                     e.source_type != "System.TimeZoneNotFoundException" &&
                     e.source_type != "System.UnauthorizedAccessException" &&
@@ -511,15 +517,12 @@ std::shared_ptr<TimeZone> TimeZoneDatabase::find_text(TimeZoneText id) {
                             [owner, alternate_text] {
                                 auto alternate_data =
                                     named_file(*alternate_text, owner->legacy_file_locking_override());
-                                return std::shared_ptr<TimeZone>(
-                                    new TimeZone(alternate_text, [alternate_data](auto seconds) {
-                                        return alternate_data->at(seconds);
-                                    }));
+                                return std::shared_ptr<TimeZone>(new TimeZone(alternate_text, alternate_data->rules));
                             },
                             comparer, lease);
-                        daylight = alternate->daylight_;
+                        rules = alternate->rules_;
                         error.reset();
-                    } catch (const NativeTimeZoneError& a) {
+                    } catch (const NativeTimeZoneError &a) {
                         if (a.source_type != "System.InvalidTimeZoneException" &&
                             a.source_type != "System.TimeZoneNotFoundException" &&
                             a.source_type != "System.UnauthorizedAccessException" &&
@@ -534,33 +537,36 @@ std::shared_ptr<TimeZone> TimeZoneDatabase::find_text(TimeZoneText id) {
                 if (error->source_type == "System.InvalidTimeZoneException")
                     throw *error;
                 if (error->source_type == "System.UnauthorizedAccessException")
-                    throw NativeTimeZoneError(
-                        "System.Security.SecurityException", 0x8013150au,
-                        u"The time zone ID '" + raw +
-                            u"' was found on the local computer, but the application does not have permission to read the file.",
-                        {}, error);
-                throw NativeTimeZoneError(
-                    "System.TimeZoneNotFoundException", 0x80131500u,
-                    u"The time zone ID '" + raw + u"' was not found on the local computer.", {}, error);
+                    throw NativeTimeZoneError("System.Security.SecurityException", 0x8013150au,
+                                              u"The time zone ID '" + raw +
+                                                  u"' was found on the local computer, but the application does not "
+                                                  u"have permission to read the file.",
+                                              {}, error);
+                throw NativeTimeZoneError("System.TimeZoneNotFoundException", 0x80131500u,
+                                          u"The time zone ID '" + raw + u"' was not found on the local computer.", {},
+                                          error);
             }
             if (data)
-                daylight = [data](auto seconds) { return data->at(seconds); };
+                rules = data->rules;
 #endif
-            return std::shared_ptr<TimeZone>(new TimeZone(id, std::move(daylight)));
+            return std::shared_ptr<TimeZone>(new TimeZone(id, std::move(rules)));
         },
         comparer, lease);
 }
+
 std::shared_ptr<TimeZone> TimeZoneDatabase::local() {
     return state_->owner->cached_legacy_local([](std::shared_ptr<const InvariantTimeZoneRules> rules) {
         return std::shared_ptr<TimeZone>(
-            new TimeZone("Local", [rules](std::int64_t seconds) { return rules->utc_is_daylight(seconds); }));
+            new TimeZone(std::make_shared<const std::u16string>(u"Local"), std::move(rules)));
     });
 }
+
 void TimeZoneDatabase::clear() {
     state_->owner->clear_cached_time_zone_data();
 }
-TimeZoneDatabase& time_zones() {
+
+TimeZoneDatabase &time_zones() {
     static TimeZoneDatabase value(shared_native_invariant_datetime_context());
     return value;
 }
-}
+} // namespace opensim::framework

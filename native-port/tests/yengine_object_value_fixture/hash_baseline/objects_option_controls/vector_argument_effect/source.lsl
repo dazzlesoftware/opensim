@@ -1,0 +1,1 @@
+YOption objects;vector input=<1,2,3>;integer calls;integer result;vector argument(){calls++;return input;}default{state_entry(){result=xmrHashCode((object)argument());}}

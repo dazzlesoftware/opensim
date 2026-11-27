@@ -9,12 +9,13 @@
 #include "opensim/framework/stream_reader_text.hpp"
 #include "opensim/framework/text.hpp"
 #include <stdexcept>
+
 namespace opensim::network {
 namespace {
 enum class Format { Xml, Notation, Binary, Json };
+
 Format sniff(std::string_view prefix, bool ignore_case) {
-    auto starts =
-        ignore_case ? framework::invariant_starts_with_ignore_case : framework::invariant_starts_with;
+    auto starts = ignore_case ? framework::invariant_starts_with_ignore_case : framework::invariant_starts_with;
     if (starts(prefix, "<llsd>") || starts(prefix, "<?xml") || starts(prefix, "<? llsd/xml"))
         return Format::Xml;
     if (starts(prefix, "<? llsd/notatio"))
@@ -23,6 +24,7 @@ Format sniff(std::string_view prefix, bool ignore_case) {
         return Format::Binary;
     return Format::Json;
 }
+
 std::string ascii_prefix(std::string_view bytes, bool padded) {
     std::string prefix(padded ? 15 : std::min<std::size_t>(15, bytes.size()), '\0');
     for (std::size_t i = 0; i < prefix.size() && i < bytes.size(); ++i) {
@@ -31,7 +33,8 @@ std::string ascii_prefix(std::string_view bytes, bool padded) {
     }
     return prefix;
 }
-}
+} // namespace
+
 Value deserialize_sdk_osd_text(std::u16string_view text) {
     switch (sniff(framework::utf8(text), true)) {
     case Format::Xml:
@@ -45,6 +48,7 @@ Value deserialize_sdk_osd_text(std::u16string_view text) {
     }
     return {};
 }
+
 Value deserialize_sdk_osd_bytes(std::string_view bytes) {
     switch (sniff(ascii_prefix(bytes, false), true)) {
     case Format::Xml:
@@ -58,6 +62,7 @@ Value deserialize_sdk_osd_bytes(std::string_view bytes) {
     }
     return {};
 }
+
 Value deserialize_sdk_osd_stream(std::string_view bytes, bool seekable) {
     if (!seekable)
         throw std::runtime_error("Cannot deserialize structured data from unseekable streams");
@@ -71,8 +76,8 @@ Value deserialize_sdk_osd_stream(std::string_view bytes, bool seekable) {
     case Format::Json:
         break;
     }
-    auto decoded = framework::decode_stream_reader_text(
-        {reinterpret_cast<const std::uint8_t*>(bytes.data()), bytes.size()});
+    auto decoded =
+        framework::decode_stream_reader_text({reinterpret_cast<const std::uint8_t *>(bytes.data()), bytes.size()});
     return parse_osd_json_utf16(decoded.text);
 }
-}
+} // namespace opensim::network

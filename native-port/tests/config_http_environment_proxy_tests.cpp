@@ -12,6 +12,7 @@
 using namespace opensim::framework;
 using Text = ConfigUriText;
 using Object = ConfigUriObjectPtr;
+
 Text d(std::string s) {
     if (s == "~")
         return {};
@@ -21,6 +22,7 @@ Text d(std::string s) {
             text += char16_t(std::stoul(s.substr(i, 4), nullptr, 16));
     return nini_writer_text(text);
 }
+
 std::string h(Text text) {
     if (!text)
         return "~";
@@ -32,16 +34,19 @@ std::string h(Text text) {
         o << std::setw(4) << unsigned(c);
     return o.str();
 }
-std::string error(const ConfigUriComponentsError& e) {
+
+std::string error(const ConfigUriComponentsError &e) {
     std::ostringstream o;
     o << e.source_type << ':' << std::hex << e.hresult << ':' << h(nini_writer_text(e.message)) << ':'
       << (e.parameter ? h(nini_writer_text(*e.parameter)) : "~");
     return o.str();
 }
+
 struct Credential : ConfigXmlCredentials {
     Text user, password, domain;
     bool is_default = false;
 };
+
 std::shared_ptr<Credential> default_credential() {
     static auto value = []() {
         auto c = std::make_shared<Credential>();
@@ -51,7 +56,8 @@ std::shared_ptr<Credential> default_credential() {
     }();
     return value;
 }
-std::string credential(const std::shared_ptr<ConfigXmlCredentials>& value) {
+
+std::string credential(const std::shared_ptr<ConfigXmlCredentials> &value) {
     if (!value)
         return "null";
     auto n = std::dynamic_pointer_cast<ConfigHttpNetworkCredential>(value);
@@ -61,12 +67,14 @@ std::string credential(const std::shared_ptr<ConfigXmlCredentials>& value) {
     auto c = std::dynamic_pointer_cast<Credential>(value);
     if (!c)
         return "external";
-    return std::string(value == default_credential() ? "D" : "N") + ":" + h(c->user) + ":" + h(c->password) +
-           ":" + h(c->domain);
+    return std::string(value == default_credential() ? "D" : "N") + ":" + h(c->user) + ":" + h(c->password) + ":" +
+           h(c->domain);
 }
+
 ConfigHttpEnvironmentProxyNativeOptions options() {
     return {};
 }
+
 std::string snapshot(Object uri) {
     if (!uri)
         return "null";
@@ -77,11 +85,11 @@ std::string snapshot(Object uri) {
                std::to_string(config_generic_uri_port(uri)) + "/" +
                h(config_generic_uri_component(uri, ConfigGenericUriComponent::UserInfo)) + "/" +
                h(uri->absolute_uri()) + "/" + h(uri->to_string());
-    return h(uri->original_string()) + "/" + h(uri->scheme()) + "/" + h(c->host()) + "/" +
-           std::to_string(c->port()) + "/" + h(c->user_info()) + "/" + h(uri->absolute_uri()) + "/" +
-           h(uri->to_string());
+    return h(uri->original_string()) + "/" + h(uri->scheme()) + "/" + h(c->host()) + "/" + std::to_string(c->port()) +
+           "/" + h(c->user_info()) + "/" + h(uri->absolute_uri()) + "/" + h(uri->to_string());
 }
-int main(int argc, char**) {
+
+int main(int argc, char **) {
     auto uris = *native_config_uri_object_backend();
     if (argc == 1) {
         auto o = options();
@@ -109,16 +117,13 @@ int main(int argc, char**) {
             config_generic_uri_port(socks) != 1080)
             return 4;
         auto native = native_config_http_environment_proxy_backend();
-        auto target =
-            config_http_environment_proxy_uri(nini_writer_text(u"domain%5Cuser:secret@host"), native);
+        auto target = config_http_environment_proxy_uri(nini_writer_text(u"domain%5Cuser:secret@host"), native);
         auto credentials = ConfigHttpEnvironmentProxyCredentials::try_create(target, {}, native);
-        auto value =
-            std::dynamic_pointer_cast<ConfigHttpNetworkCredential>(credentials->get_credential(target, {}));
-        if (!value || *value->user_name != u"user" || *value->password != u"secret" ||
-            *value->domain != u"domain" || value->is_default)
+        auto value = std::dynamic_pointer_cast<ConfigHttpNetworkCredential>(credentials->get_credential(target, {}));
+        if (!value || *value->user_name != u"user" || *value->password != u"secret" || *value->domain != u"domain" ||
+            value->is_default)
             return 5;
-        auto first = config_http_default_network_credentials(),
-             second = config_http_default_network_credentials();
+        auto first = config_http_default_network_credentials(), second = config_http_default_network_credentials();
         if (first != second || !std::dynamic_pointer_cast<ConfigHttpNetworkCredential>(first)->is_default)
             return 6;
         return 0;
@@ -130,7 +135,7 @@ int main(int argc, char**) {
         try {
             auto backend = native_config_http_environment_proxy_backend(options());
             if (mode == "E") {
-                const char16_t* names[] = {u"http_proxy",  u"HTTP_PROXY", u"https_proxy",
+                const char16_t *names[] = {u"http_proxy",  u"HTTP_PROXY", u"https_proxy",
                                            u"HTTPS_PROXY", u"all_proxy",  u"ALL_PROXY",
                                            u"no_proxy",    u"NO_PROXY",   u"GATEWAY_INTERFACE"};
                 for (auto name : names)
@@ -141,14 +146,13 @@ int main(int argc, char**) {
                     if (value)
                         runtime_environment_set(nini_writer_text(name), value);
                 }
-                auto environment =
-                    ConfigHttpEnvironmentProxy::try_create(backend,
+                auto environment = ConfigHttpEnvironmentProxy::try_create(backend,
 #ifdef _WIN32
-                                                           ConfigHttpEnvironmentProxyPlatform::Windows
+                                                                          ConfigHttpEnvironmentProxyPlatform::Windows
 #else
-                                                           ConfigHttpEnvironmentProxyPlatform::Unix
+                                                                          ConfigHttpEnvironmentProxyPlatform::Unix
 #endif
-                    );
+                );
                 in >> a;
                 if (!environment) {
                     std::cout << "null\n";
@@ -157,12 +161,11 @@ int main(int argc, char**) {
                 auto target = uris.create(d(a), ConfigUriObjectKind::Absolute);
                 auto proxy = environment->get_proxy(target);
                 std::cout << snapshot(proxy) << ":" << (environment->is_bypassed(target) ? "1" : "0") << ":"
-                          << credential(
-                                 environment->credentials()
-                                     ? std::dynamic_pointer_cast<ConfigHttpEnvironmentProxyCredentials>(
-                                           environment->credentials())
-                                           ->get_credential(proxy, {})
-                                     : nullptr)
+                          << credential(environment->credentials()
+                                            ? std::dynamic_pointer_cast<ConfigHttpEnvironmentProxyCredentials>(
+                                                  environment->credentials())
+                                                  ->get_credential(proxy, {})
+                                            : nullptr)
                           << '\n';
                 continue;
             }
@@ -218,26 +221,24 @@ int main(int argc, char**) {
                         return d(c);
                     return {};
                 };
-                auto p =
-                    ConfigHttpEnvironmentProxy::try_create(native_config_http_environment_proxy_backend(o),
-                                                           ConfigHttpEnvironmentProxyPlatform::Windows);
+                auto p = ConfigHttpEnvironmentProxy::try_create(native_config_http_environment_proxy_backend(o),
+                                                                ConfigHttpEnvironmentProxyPlatform::Windows);
                 if (!p) {
                     std::cout << "null" << '\n';
                     continue;
                 }
                 auto request = d(e);
-                auto target =
-                    request ? uris.create(request, ConfigUriObjectKind::RelativeOrAbsolute) : Object{};
+                auto target = request ? uris.create(request, ConfigUriObjectKind::RelativeOrAbsolute) : Object{};
                 auto proxy = p->get_proxy(target);
                 std::cout << snapshot(proxy) << ":" << (p->is_bypassed(target) ? "1" : "0") << '\n';
                 continue;
             }
             throw std::runtime_error("Unknown mode");
-        } catch (const ConfigUriComponentsError& e) {
+        } catch (const ConfigUriComponentsError &e) {
             std::cout << error(e) << '\n';
-        } catch (const ConfigHttpProxyProviderError& e) {
+        } catch (const ConfigHttpProxyProviderError &e) {
             std::cout << "REQUIRES:" << e.what() << '\n';
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
             std::cout << "NATIVE:" << e.what() << '\n';
         }
     }

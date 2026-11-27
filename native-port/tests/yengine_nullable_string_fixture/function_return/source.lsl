@@ -1,0 +1,1 @@
+string result;integer after;string make(){return llComputeHash("payload","unsupported");}default{state_entry(){result=make();after=1;}}

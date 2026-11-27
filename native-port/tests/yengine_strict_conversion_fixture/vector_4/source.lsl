@@ -1,0 +1,1 @@
+vector result;integer after;default{state_entry(){result=xmrString2Vector("<1e309,1e-400,-1e-400>");after=1;}}

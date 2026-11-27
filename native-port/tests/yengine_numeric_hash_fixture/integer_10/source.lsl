@@ -1,0 +1,1 @@
+integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Integer("1073741824"));after=1;}}

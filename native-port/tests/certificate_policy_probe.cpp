@@ -3,7 +3,8 @@
 #include <sstream>
 #include <iomanip>
 using namespace opensim::framework;
-CertificatePolicyData::Bytes bytes(const std::string& text) {
+
+CertificatePolicyData::Bytes bytes(const std::string &text) {
     if (text == "-")
         return {};
     std::vector<std::uint8_t> result;
@@ -12,6 +13,7 @@ CertificatePolicyData::Bytes bytes(const std::string& text) {
             result.push_back(static_cast<std::uint8_t>(std::stoul(text.substr(i, 2), nullptr, 16)));
     return result;
 }
+
 std::string hex(std::string_view text) {
     std::ostringstream out;
     out << std::hex << std::setfill('0');
@@ -19,6 +21,7 @@ std::string hex(std::string_view text) {
         out << std::setw(4) << unsigned(c);
     return out.str();
 }
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -44,8 +47,7 @@ int main() {
             std::vector<CertificatePolicyChain::Oid> queries;
             for (std::size_t i = 0; i < count; ++i) {
                 in >> text;
-                queries.push_back(text == "-" ? std::nullopt
-                                              : std::optional<std::string>{text == "_" ? "" : text});
+                queries.push_back(text == "-" ? std::nullopt : std::optional<std::string>{text == "_" ? "" : text});
             }
             bool result;
             switch (mode) {
@@ -65,7 +67,7 @@ int main() {
                 return 2;
             }
             std::cout << (result ? "1" : "0") << '\n';
-        } catch (const CertificatePolicyError& e) {
+        } catch (const CertificatePolicyError &e) {
             std::cout << "E " << e.source_type << ' ' << e.hresult << ' ' << hex(e.what()) << '\n';
         }
     }

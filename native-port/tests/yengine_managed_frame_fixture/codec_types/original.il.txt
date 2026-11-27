@@ -1,0 +1,32 @@
+  state[0] = default
+  numGblArrays       0
+  numGblChars        0
+  numGblFloats       0
+  numGblIntegers     0
+  numGblLists        0
+  numGblObjects      0
+  numGblRotations    0
+  numGblStrings      0
+  numGblVectors      0
+  numGblSDTClObjs    0
+  numGblSDTIntfObjs  0
+  delegate void $anondel$void()();
+
+Void default state_entry (XMRInstAbstract)
+{
+          xmrsuper    __xmrinst$0
+  0000    ldarg.0     
+  0001    castclass   FunctionExecutionReferenceInstance   (type)
+  0006    stloc       __xmrinst$0   (local)
+  0007    ldloc       __xmrinst$0   (local)
+  0008    ldfld       XMRInstAbstract:m_localsHeapUsed -> Int32   (field)
+          int         __curHeap$1
+  000D    stloc       __curHeap$1   (local)
+  000E    leave       __retlbl$0   (label)
+  0013  __retlbl$0:
+  0013    ldloc       __xmrinst$0   (local)
+  0014    ldloc       __curHeap$1   (local)
+  0015    stfld       XMRInstAbstract:m_localsHeapUsed -> Int32   (field)
+  001A    ret         
+}
+TheEnd.

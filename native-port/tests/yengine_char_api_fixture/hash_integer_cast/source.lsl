@@ -1,0 +1,1 @@
+YOption chars;YOption arrays;integer result;integer after;default{state_entry(){result=xmrHashCode((integer)'A');after=1;}}

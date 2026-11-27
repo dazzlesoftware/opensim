@@ -1,6 +1,7 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
 #include "profile_list_fixture.hpp"
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -69,19 +70,18 @@ int main() {
                         }
                     }
                     if (token == "O") {
-                        e->picks = std::make_shared<
-                            OrderedDictionary<Uuid, std::shared_ptr<UserProfilePick>, UuidHash>>();
+                        e->picks =
+                            std::make_shared<OrderedDictionary<Uuid, std::shared_ptr<UserProfilePick>, UuidHash>>();
                         e->classifiedsLists = std::make_shared<UserProfileNameList>();
-                        e->classifieds = std::make_shared<
-                            OrderedDictionary<Uuid, std::shared_ptr<UserClassifiedAdd>, UuidHash>>();
+                        e->classifieds =
+                            std::make_shared<OrderedDictionary<Uuid, std::shared_ptr<UserClassifiedAdd>, UuidHash>>();
                         e->props = std::make_shared<UserProfileProperties>();
                         e->props->UserId = Id(7);
-                        e->avatarGroups =
-                            std::make_shared<std::vector<std::shared_ptr<GroupMembershipData>>>();
+                        e->avatarGroups = std::make_shared<std::vector<std::shared_ptr<GroupMembershipData>>>();
                         e->avatarGroups->push_back(std::make_shared<GroupMembershipData>());
                         e->born = u"seed";
-                        e->membershipType = std::make_shared<std::vector<std::uint8_t>>(
-                            std::initializer_list<std::uint8_t>{1, 2});
+                        e->membershipType =
+                            std::make_shared<std::vector<std::uint8_t>>(std::initializer_list<std::uint8_t>{1, 2});
                         e->flags = 55;
                         e->ClientsWaitingProps = std::make_shared<ProfileClientSet>();
                         e->ClientsWaitingProps->insert(client);
@@ -89,7 +89,7 @@ int main() {
                     }
                     module.profile_cache().add_or_update(target, e, 300.0);
                 }
-            } catch (const std::exception& e) {
+            } catch (const std::exception &e) {
                 result = "EX:" + H(e.what());
             }
             if (!output.empty())

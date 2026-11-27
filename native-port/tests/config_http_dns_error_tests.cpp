@@ -8,12 +8,14 @@
 #include <netdb.h>
 #endif
 using namespace opensim::framework;
+
 std::u16string decode(std::string s) {
     std::u16string t;
     for (std::size_t i = 0; i < s.size(); i += 4)
         t += char16_t(std::stoul(s.substr(i, 4), nullptr, 16));
     return t;
 }
+
 std::string hex(std::u16string_view s) {
     std::string t;
     for (auto c : s)
@@ -21,7 +23,8 @@ std::string hex(std::u16string_view s) {
             t += "0123456789abcdef"[(c >> n) & 15];
     return t;
 }
-int resolver_code(const std::string& name) {
+
+int resolver_code(const std::string &name) {
 #ifdef _WIN32
     if (name == "noname")
         return WSAHOST_NOT_FOUND;
@@ -55,12 +58,13 @@ int resolver_code(const std::string& name) {
 #endif
     throw std::logic_error("unmapped DNS fixture code");
 }
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
 #if !defined(_WIN32) && !defined(__linux__)
     // The provider must keep its unverified platform dependency explicit.
     try {
         config_http_dns_error("localhost", 80, EAI_NONAME);
-    } catch (const std::logic_error&) {
+    } catch (const std::logic_error &) {
         return 0;
     }
     return 1;
@@ -81,19 +85,19 @@ int main(int argc, char** argv) {
         bool required = false;
         try {
             config_http_dns_error("localhost", 80, 0);
-        } catch (const std::logic_error&) {
+        } catch (const std::logic_error &) {
             required = true;
         }
         if (!required)
             return 1;
         try {
             std::rethrow_exception(config_http_dns_error("::1", 81, code));
-        } catch (const ConfigHttpConnectionError& e) {
+        } catch (const ConfigHttpConnectionError &e) {
             if (!e.retry_on_next_proxy || e.request_error != 1 || e.hresult != 0x80004005)
                 return 2;
             try {
                 std::rethrow_exception(e.inner);
-            } catch (const ConfigHttpSocketError& s) {
+            } catch (const ConfigHttpSocketError &s) {
                 if (s.native_error != native_code || s.socket_error != 11001)
                     return 3;
                 return 0;
@@ -116,8 +120,8 @@ int main(int argc, char** argv) {
                 if (std::string_view(argv[1]) == "--resolve") {
                     addrinfo hints{}, *addresses = nullptr;
                     hints.ai_socktype = SOCK_STREAM;
-                    int result = getaddrinfo(utf8(decode(host)).c_str(), std::to_string(port).c_str(), &hints,
-                                             &addresses);
+                    int result =
+                        getaddrinfo(utf8(decode(host)).c_str(), std::to_string(port).c_str(), &hints, &addresses);
                     if (addresses)
                         freeaddrinfo(addresses);
                     if (!result)
@@ -127,13 +131,12 @@ int main(int argc, char** argv) {
 #endif
                 return resolver_code(outcome);
             }()));
-        } catch (const ConfigHttpConnectionError& e) {
-            std::cout << e.source_type << ":" << static_cast<std::int32_t>(e.hresult) << ":"
-                      << e.request_error << ":" << (e.retry_on_next_proxy ? "RetryOnNextProxy" : "NoRetry")
-                      << ":" << hex(e.message);
+        } catch (const ConfigHttpConnectionError &e) {
+            std::cout << e.source_type << ":" << static_cast<std::int32_t>(e.hresult) << ":" << e.request_error << ":"
+                      << (e.retry_on_next_proxy ? "RetryOnNextProxy" : "NoRetry") << ":" << hex(e.message);
             try {
                 std::rethrow_exception(e.inner);
-            } catch (const ConfigHttpSocketError& s) {
+            } catch (const ConfigHttpSocketError &s) {
                 std::cout << "|" << s.source_type << ":" << static_cast<std::int32_t>(s.hresult) << ":"
                           << s.native_error << ":" << s.socket_error << ":" << hex(s.message);
             }

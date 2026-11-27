@@ -1,0 +1,1 @@
+YOption arrays;object input="invalid";vector result;integer after;default{state_entry(){result=(vector)input;after=1;}}

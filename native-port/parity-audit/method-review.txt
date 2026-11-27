@@ -1,0 +1,189 @@
+METHOD-LEVEL PARITY REVIEW - WINDOWS AND LINUX
+2026-11-24
+
+This pass validates all 770 declared ll/os overload entry points against native compilers and reviews the original implementations of all 33 rejected APIs. It also reviews two admission lifecycle stubs.
+Source-wide member extraction is an index, not a semantic completion audit. It found 27,177 method/property/constructor declarations, including 20,776 in previously unmapped files. Preprocessor/grammar errors are recorded for 16 original and 59 native files; extraction may be incomplete in those files.
+
+RESULTS
+Windows: 737 accepted calls, 33 rejected calls. Linux: identical results, no platform disagreement.
+All rejected probes report unsupported expression or undefined name. A positive llOwnerSay control passed on both.
+Inputs use parameter types from parsed original interface declarations, including every overload; no dummy host or script execution is used.
+Compilation acceptance proves entry-point acceptance only. Return values, side effects, permissions, delays, errors, host binding and persistence remain separate obligations.
+Linux original lsl_runtime.cpp snapshot SHA-256 matches current Windows source. Linked library and probe hashes are recorded in the platform summaries.
+
+CONFIRMED SCRIPT GAPS
+
+SCRIPT-primitive-setters
+llSetPrimitiveParams, llSetLinkPrimitiveParams, llSetLinkPrimitiveParamsFast, osSetPrimitiveParams
+Port SetLinkPrimParams and its rule application, link selection, permission, update and sleep boundaries. Existing native primitive query/rule parsing is groundwork; setters need live scene mutation and restart tests.
+  llSetPrimitiveParams -> OpenSim/Region/ScriptEngine/Shared/Api/Implementation/LSL_Api.cs:8995
+  Original dependencies: ScriptSleep, SetLinkPrimParams
+  llSetLinkPrimitiveParams -> OpenSim/Region/ScriptEngine/Shared/Api/Implementation/LSL_Api.cs:9002
+  Original dependencies: ScriptSleep, SetLinkPrimParams
+  llSetLinkPrimitiveParamsFast -> OpenSim/Region/ScriptEngine/Shared/Api/Implementation/LSL_Api.cs:9009
+  Original dependencies: SetLinkPrimParams
+  osSetPrimitiveParams -> OpenSim/Region/ScriptEngine/Shared/Api/Implementation/OSSL_Api.cs:3899
+  Original dependencies: CheckThreatLevel, InitLSL, m_LSL_Api.SetPrimitiveParamsEx
+
+SCRIPT-vehicles
+llSetVehicleType, llSetVehicleFloatParam, llSetVehicleVectorParam, llSetVehicleRotationParam, llSetVehicleFlags, llRemoveVehicleFlags
+Bind root-part vehicle state to physics, including deleted-group guards, type/flags and parameter-specific conversion. Verify vehicle response, updates and persistence, rather than merely accepting the calls.
+  llSetVehicleType -> OpenSim/Region/ScriptEngine/Shared/Api/Implementation/LSL_Api.cs:8140
+  Original dependencies: m_host.ParentGroup.RootPart.SetVehicleType
+  llSetVehicleFloatParam -> OpenSim/Region/ScriptEngine/Shared/Api/Implementation/LSL_Api.cs:8151
+  Original dependencies: m_host.ParentGroup.RootPart.SetVehicleFloatParam
+  llSetVehicleVectorParam -> OpenSim/Region/ScriptEngine/Shared/Api/Implementation/LSL_Api.cs:8162
+  Original dependencies: m_host.ParentGroup.RootPart.SetVehicleVectorParam
+  llSetVehicleRotationParam -> OpenSim/Region/ScriptEngine/Shared/Api/Implementation/LSL_Api.cs:8173
+  Original dependencies: m_host.ParentGroup.RootPart.SetVehicleRotationParam
+  llSetVehicleFlags -> OpenSim/Region/ScriptEngine/Shared/Api/Implementation/LSL_Api.cs:8182
+  Original dependencies: m_host.ParentGroup.RootPart.SetVehicleFlags
+  llRemoveVehicleFlags -> OpenSim/Region/ScriptEngine/Shared/Api/Implementation/LSL_Api.cs:8191
+  Original dependencies: m_host.ParentGroup.RootPart.SetVehicleFlags
+
+SCRIPT-dynamic-textures
+osSetDynamicTextureURL, osSetDynamicTextureURLBlend, osSetDynamicTextureURLBlendFace, osSetDynamicTextureData, osSetDynamicTextureDataFace, osSetDynamicTextureDataBlend, osSetDynamicTextureDataBlendFace, osGetDrawStringSize
+Provide IDynamicTextureManager rendering/measurement/URL/data integration, font and drawing semantics, asset caching and face/blend settings. Preserve threat checks, alpha conversions and unsupported update behavior.
+  osSetDynamicTextureURL -> OpenSim/Region/ScriptEngine/Shared/Api/Implementation/OSSL_Api.cs:743
+  Original dependencies: CheckThreatLevel, World.RequestModuleInterface<IDynamicTextureManager>, createdTexture.ToString, textureManager.AddDynamicTextureURL
+  osSetDynamicTextureURLBlend -> OpenSim/Region/ScriptEngine/Shared/Api/Implementation/OSSL_Api.cs:764
+  Original dependencies: CheckThreatLevel, World.RequestModuleInterface<IDynamicTextureManager>, createdTexture.ToString, textureManager.AddDynamicTextureURL
+  osSetDynamicTextureURLBlendFace -> OpenSim/Region/ScriptEngine/Shared/Api/Implementation/OSSL_Api.cs:785
+  Original dependencies: CheckThreatLevel, World.RequestModuleInterface<IDynamicTextureManager>, createdTexture.ToString, textureManager.AddDynamicTextureURL
+  osSetDynamicTextureData -> OpenSim/Region/ScriptEngine/Shared/Api/Implementation/OSSL_Api.cs:806
+  Original dependencies: osSetDynamicTextureDataFace
+  osSetDynamicTextureDataFace -> OpenSim/Region/ScriptEngine/Shared/Api/Implementation/OSSL_Api.cs:812
+  Original dependencies: CheckThreatLevel, World.RequestModuleInterface<IDynamicTextureManager>, createdTexture.ToString, textureManager.AddDynamicTextureData
+  osSetDynamicTextureDataBlend -> OpenSim/Region/ScriptEngine/Shared/Api/Implementation/OSSL_Api.cs:841
+  Original dependencies: CheckThreatLevel, World.RequestModuleInterface<IDynamicTextureManager>, createdTexture.ToString, textureManager.AddDynamicTextureData
+  osSetDynamicTextureDataBlendFace -> OpenSim/Region/ScriptEngine/Shared/Api/Implementation/OSSL_Api.cs:869
+  Original dependencies: CheckThreatLevel, World.RequestModuleInterface<IDynamicTextureManager>, createdTexture.ToString, textureManager.AddDynamicTextureData
+  osGetDrawStringSize -> OpenSim/Region/ScriptEngine/Shared/Api/Implementation/OSSL_Api.cs:1496
+  Original dependencies: CheckThreatLevel, World.RequestModuleInterface<IDynamicTextureManager>, textureManager.GetDrawStringSize
+
+SCRIPT-camera
+llSetCameraParams, llClearCameraParams
+Use the granted avatar and camera permissions, parse follow-camera rules and send viewer follow-camera property packets. Verify root/child-agent and object/permission guards. Existing obsolete-camera diagnostics do not implement these APIs.
+  llSetCameraParams -> OpenSim/Region/ScriptEngine/Shared/Api/Implementation/LSL_Api.cs:14151
+  Original dependencies: Convert.ToInt32, Convert.ToSingle, Error, World.GetScenePresence, agentID.IsZero, data[i++].ToString, objectID.IsZero, parameters.Add, presence.ControllingClient.SendSetFollowCamProperties, string.Format
+  llClearCameraParams -> OpenSim/Region/ScriptEngine/Shared/Api/Implementation/LSL_Api.cs:14277
+  Original dependencies: World.GetScenePresence, agentID.IsZero, objectID.IsZero, presence.ControllingClient.SendClearFollowCamProperties
+
+SCRIPT-aes
+osAESEncrypt, osAESEncryptTo, osAESDecrypt, osAESDecryptFrom
+Port actual Util AES helpers and their key/IV/encoding/empty/error behavior, then bind OSSL calls with real source comparisons.
+  osAESEncrypt -> OpenSim/Region/ScriptEngine/Shared/Api/Implementation/OSSL_Api.cs:6591
+  Original dependencies: OSSLShoutError, Util.AESEncrypt, plainText.AsSpan, ret.ToString, secret.AsSpan, string.IsNullOrEmpty
+  osAESEncryptTo -> OpenSim/Region/ScriptEngine/Shared/Api/Implementation/OSSL_Api.cs:6619
+  Original dependencies: OSSLShoutError, Util.AESEncryptTo, ivString.AsSpan, plainText.AsSpan, ret.ToString, secret.AsSpan, string.IsNullOrEmpty
+  osAESDecrypt -> OpenSim/Region/ScriptEngine/Shared/Api/Implementation/OSSL_Api.cs:6605
+  Original dependencies: OSSLShoutError, Util.AESDecrypt, encryptedText.AsSpan, ret.ToString, secret.AsSpan, string.IsNullOrEmpty
+  osAESDecryptFrom -> OpenSim/Region/ScriptEngine/Shared/Api/Implementation/OSSL_Api.cs:6633
+  Original dependencies: OSSLShoutError, Util.AESDecryptFrom, encryptedText.AsSpan, ivString.AsSpan, ret.ToString, secret.AsSpan, string.IsNullOrEmpty
+
+SCRIPT-groups
+osInviteToGroup, osEjectFromGroup
+Bind groups module permissions and inviter/ejector behavior through the scene. Verify actual viewer/group state rather than return values only.
+  osInviteToGroup -> OpenSim/Region/ScriptEngine/Shared/Api/Implementation/OSSL_Api.cs:4044
+  Original dependencies: CheckThreatLevel, UUID.TryParse, World.GetScenePresence, m_groupsModule.GetFullGroupPowers, m_groupsModule.InviteGroup, m_host.GroupID.Equals, m_host.GroupID.IsZero, sp.ControllingClient.IsGroupMember
+  osEjectFromGroup -> OpenSim/Region/ScriptEngine/Shared/Api/Implementation/OSSL_Api.cs:4082
+  Original dependencies: CheckThreatLevel, UUID.TryParse, m_groupsModule.EjectGroupMember, m_groupsModule.GetFullGroupPowers, m_host.GroupID.Equals, m_host.GroupID.IsZero
+
+SCRIPT-raycast
+llCastRay
+Implement original ray option/result/error/limit behavior and scene geometry/physics integration.
+  llCastRay -> OpenSim/Region/ScriptEngine/Shared/Api/Implementation/LSL_Api.cs:16290
+  Original dependencies: AvatarIntersection, GroundIntersection, Math.Sqrt, ObjectIntersection, Vector3.Distance, World.GetSceneObjectPart, World.GetScenePresence, World.RayCastFiltered, World.SupportsRayCastFiltered, a.Depth.CompareTo, dir.LengthSquared, itemID.ToString, list.Add, options.GetIntegerItem, result.Pos.ToString, results.Add, results.Sort
+
+SCRIPT-keyframed-motion
+llSetKeyframedMotion
+Implement keyframe parsing, scheduler, moving/linkset behavior, physics restrictions and stop/pause/resume controls with source-compatible errors.
+  llSetKeyframedMotion -> OpenSim/Region/ScriptEngine/Shared/Api/Implementation/LSL_Api.cs:9061
+  Original dependencies: frames.GetQuaternionItem, frames.GetStrictFloatItem, frames.GetVector3Item, group.RootPart.KeyframeMotion.Pause, group.RootPart.KeyframeMotion.SetKeyframes, group.RootPart.KeyframeMotion.Start, group.RootPart.KeyframeMotion.Stop, group.RootPart.KeyframeMotion?.Delete, keyframes.Add, keyframes.ToArray, options.GetIntegerItem
+
+SCRIPT-parameterized-rez
+llRezObjectWithParams
+Port rez-rule parsing plus inventory, asset restore, permissions, ownership, position/rotation, velocity/start parameter and error/rollback behavior.
+  llRezObjectWithParams -> OpenSim/Region/ScriptEngine/Shared/Api/Implementation/LSL_Api.cs:3360
+  Original dependencies: (pos - m_host.GetWorldPosition()).LengthSquared, Array.Empty<DetectParams>, Error, ScriptSleep, ScriptUtils.GetAssetIdFromKeyOrItemName, UUID.Random, Util.FireAndForget, Utils.osUTF8GetBytesCount, World.AddNewSceneObject, World.Permissions.BypassPermissions, World.Permissions.CanRezObject, groot.AddFlag, groot.KeyframeMotion?.Stop, groot.RemFlag, groot.SetDieAtEdge, groot.UUID.ToString, groot.UpdateAngularVelocity, lockAxis.IsNotZero, lparam.GetFloatItem, lparam.GetIntegerItem, lparam.GetQuaternionItem, lparam.GetStringItem, lparam.GetVector3Item, m_ScriptEngine.PostObjectEvent, m_SoundModule.LoopSound, m_SoundModule.SendSound, m_host.GetWorldPosition, m_host.GetWorldRotation, m_host.Inventory.GetInventoryItem, m_host.Inventory.GetSingleRezReadySceneObject, m_host.Inventory.RemoveInventoryItem, newID.ToString, pos.LengthSquared, rot.Normalize, sog.CreateScriptInstances, sog.GetGeometricCenter, sog.InvalidateEffectivePerms, sog.ResumeScripts, sog.ScheduleGroupForUpdate, soundID.IsNotZero, string.IsNullOrEmpty
+
+SCRIPT-object-teleport
+osTeleportObject
+Bind object teleport and land-owner checks, target transforms, flags and crossing behavior.
+  osTeleportObject -> OpenSim/Region/ScriptEngine/Shared/Api/Implementation/OSSL_Api.cs:4976
+  Original dependencies: CheckThreatLevel, OSSLShoutError, UUID.TryParse, World.GetSceneObjectGroup, checkAllowObjectTPbyLandOwner, sog.OwnerID.NotEqual, sog.TeleportObject
+
+SCRIPT-console
+osConsoleCommand
+Bind console dispatch only after threat and owner-console permission checks. Verify denied calls do not run commands.
+  osConsoleCommand -> OpenSim/Region/ScriptEngine/Shared/Api/Implementation/OSSL_Api.cs:897
+  Original dependencies: CheckThreatLevel, MainConsole.Instance.RunCommand, World.Permissions.CanRunConsoleCommand
+
+SCRIPT-format
+osFormatString
+Bind original format conversion and list arguments, including errors and source culture behavior.
+  osFormatString -> OpenSim/Region/ScriptEngine/Shared/Api/Implementation/OSSL_Api.cs:2671
+  Original dependencies: CheckThreatLevel, string.Format
+
+SCRIPT-godlike-rez
+llGodLikeRezObject
+Review actual original authorization/rez behavior and delegated scene APIs before implementing the compiler binding.
+  llGodLikeRezObject -> OpenSim/Region/ScriptEngine/Shared/Api/Implementation/LSL_Api.cs:17499
+  Original dependencies: Array.Empty<DetectParams>, NotImplemented, SceneObjectSerializer.FromOriginalXmlFormat, Utils.BytesToString, World.AddNewSceneObject, World.AssetService.Get, World.Permissions.IsGod, group.CreateScriptInstances, group.ResetIDs, group.ResumeScripts, group.RootPart.SetDieAtEdge, group.RootPart.UUID.ToString, group.ScheduleGroupForFullUpdate, llSay, m_ScriptEngine.PostObjectEvent
+
+CONFIRMED ADMISSION GAPS
+
+ADMISSION-transit
+in_transit(const Uuid&) unconditionally returns false.
+Source: OpenSim/Region/Framework/Scenes/Scene.cs:4058
+Native: native-port/src/region_runtime.cpp:2714
+Connect actual transfer state and verify admission during active transfer, failure, retry and cleanup on both platforms.
+
+ADMISSION-protected-child
+do_not_close_after_teleport(bool) ignores writes. Original CloseAgent consumes a renewed-child flag and refuses one stale close.
+Source: OpenSim/Region/Framework/Scenes/Scene.cs:4792
+Native: native-port/src/region_runtime.cpp:1085
+Store and consume the actual child lease state through original admission/CloseAgent lifecycle and verify refusal then subsequent valid close.
+
+CORRECTION TO THE EARLIER CANDIDATE SEARCH
+31 APIs without dispatch-name literals were candidates. Compilation found 33 actual rejected APIs, because llSetCameraParams/llClearCameraParams only occurred in deprecated-function diagnostics and thus fooled a text-only search.
+
+OTHER CANDIDATE METHODS
+method-inventory.json indexes the original members, source lines/signatures/body hashes, domain and native-definition candidates. 1,336 members have name-normalized candidates in related implementation files. These are review leads, not verified equivalents. Consolidated or differently named implementations can be missed.
+The 903 production files, 142 interfaces and 18 dependency files from the prior unmapped classification have not all received a manual contract review. Do not mark their methods absent merely because this index finds no matching definition.
+
+ETA
+This yields 13 concrete script work packages plus two confirmed lifecycle tasks. It does not close the other 17 broad subsystem work packages. A full-parity completion forecast remains unsupported until those contract reviews and dependency estimates are complete.
+An accepted-call percentage must not be used as a feature-completion percentage. No new calendar deadline is asserted.
+
+REPRODUCIBILITY
+tools/parity_compile_probe.cpp invokes compile_lsl from the actual linked native libraries. tools/review_parity_methods.py extracts interfaces and original members using tree-sitter and runs the Windows probes. probe/run-linux.py runs the same saved scripts in the Linux build image with build/source volumes read-only.
+The compiler probes do not execute scripts, contact the test server or change TestBuild accounts/data. Raw call scripts and diagnostics are retained.
+
+ADDITIONAL HOST INTEGRATION REVIEW
+
+HOST-teleport-flags
+Actor teleport_flags(uint32_t) ignores admission updates on an existing presence.
+Native: native-port/src/region_runtime.cpp:1091
+Caller: native-port/src/scene_admission.cpp:171
+Determine whether equivalent stored circuit/viewer state covers each consumer; implement remaining source-required presence updates and test repeated admission.
+
+HOST-known-seeds
+Actor adjust_known_seeds is empty on child-presence reuse.
+Native: native-port/src/region_runtime.cpp:1093
+Caller: native-port/src/scene_admission.cpp:179
+Compare current child-seed dictionaries/capability updates with ScenePresence.AdjustKnownSeeds, then test renewed child circuits and removed seeds.
+
+HOST-client-verifier
+Production user_verification_module returns null; generic verification core can call an injected verifier.
+Native: native-port/src/region_runtime.cpp:2979
+Caller: native-port/src/scene_client_verification.cpp:45
+Compare production HG verification performed elsewhere and bind the missing module/recheck behavior without double verification.
+
+HOST-presence-cleanup
+Production scene_presence returns null; generic failure cleanup waits for this adapter.
+Native: native-port/src/region_runtime.cpp:2983
+Caller: native-port/src/scene_client_verification.cpp:66
+Bind actual presence/client/session lookup where required, then exercise rejected-client cleanup and presence logout instead of only the success path.
+
+Full semantic review remains open for the other original methods. The member index is not a substitute for comparing state transitions, side effects and production callers.

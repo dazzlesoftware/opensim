@@ -6,28 +6,32 @@
 #include "opensim/framework/viewer_unicode_data.hpp"
 #include <algorithm>
 #include <stdexcept>
+
 namespace opensim::framework {
 namespace {
 using V = std::u16string_view;
+
 bool digit(char16_t c) {
     return c >= u'0' && c <= u'9';
 }
+
 bool letter(char16_t c) {
     return (c >= u'a' && c <= u'z') || (c >= u'A' && c <= u'Z');
 }
+
 bool lws(char16_t c) {
     return c == u' ' || c == u'\t' || c == u'\r' || c == u'\n';
 }
+
 int hex(char16_t c) {
-    return digit(c)                 ? c - u'0'
-           : c >= u'a' && c <= u'f' ? c - u'a' + 10
-           : c >= u'A' && c <= u'F' ? c - u'A' + 10
-                                    : -1;
+    return digit(c) ? c - u'0' : c >= u'a' && c <= u'f' ? c - u'a' + 10 : c >= u'A' && c <= u'F' ? c - u'A' + 10 : -1;
 }
+
 bool bidi(char16_t c) {
     return c == 0x200e || c == 0x200f || (c >= 0x202a && c <= 0x202e);
 }
-bool ipv4_canonical(V s, std::size_t start, std::size_t& end) {
+
+bool ipv4_canonical(V s, std::size_t start, std::size_t &end) {
     int dots = 0, num = 0;
     bool had = false, zero = false;
     while (start < end) {
@@ -59,7 +63,8 @@ bool ipv4_canonical(V s, std::size_t start, std::size_t& end) {
     end = start;
     return true;
 }
-bool ipv6(V s, std::size_t start, std::size_t& end) {
+
+bool ipv6(V s, std::size_t start, std::size_t &end) {
     int labels = 0, digits = 0;
     bool compressed = false, ipv4 = false, prefix = false, need = true;
     std::size_t part = start;
@@ -134,7 +139,8 @@ bool ipv6(V s, std::size_t start, std::size_t& end) {
     }
     return false;
 }
-bool ipv4_noncanonical(V s, std::size_t start, std::size_t& end, bool not_implicit) {
+
+bool ipv4_noncanonical(V s, std::size_t start, std::size_t &end, bool not_implicit) {
     std::uint64_t parts[4]{}, value = 0;
     int used = 0;
     bool had = false;
@@ -182,12 +188,13 @@ bool ipv4_noncanonical(V s, std::size_t start, std::size_t& end, bool not_implic
     end = i;
     return true;
 }
-bool dns(V s, std::size_t start, std::size_t& end, bool not_implicit, bool iri) {
+
+bool dns(V s, std::size_t start, std::size_t &end, bool not_implicit, bool iri) {
     auto stop = start;
     for (; stop < end; ++stop) {
         auto c = s[stop];
-        bool invalid = (!iri && c >= 160) ||
-                       (c <= 159 && !letter(c) && !digit(c) && c != u'-' && c != u'_' && c != u'.');
+        bool invalid =
+            (!iri && c >= 160) || (c <= 159 && !letter(c) && !digit(c) && c != u'-' && c != u'_' && c != u'.');
         if (invalid) {
             if (!(c == u'/' || c == u'\\' || (not_implicit && V(u":?#").find(c) != V::npos)))
                 return false;
@@ -223,13 +230,14 @@ bool dns(V s, std::size_t start, std::size_t& end, bool not_implicit, bool iri) 
     end = stop;
     return true;
 }
+
 bool char_letter(char16_t c) {
-    auto p =
-        std::lower_bound(viewer_unicode::letters.begin(), viewer_unicode::letters.end(), std::uint32_t(c),
-                         [](const auto& range, std::uint32_t value) { return range[1] < value; });
+    auto p = std::lower_bound(viewer_unicode::letters.begin(), viewer_unicode::letters.end(), std::uint32_t(c),
+                              [](const auto &range, std::uint32_t value) { return range[1] < value; });
     return p != viewer_unicode::letters.end() && (*p)[0] <= c;
 }
-bool unc(V s, std::size_t start, std::size_t& end, bool not_implicit) {
+
+bool unc(V s, std::size_t start, std::size_t &end, bool not_implicit) {
     auto stop = end;
     if (start == stop)
         return false;
@@ -282,7 +290,8 @@ bool unc(V s, std::size_t start, std::size_t& end, bool not_implicit) {
     end = stop;
     return true;
 }
-bool ipv4_authority(V s, std::size_t start, std::size_t& end, bool not_implicit) {
+
+bool ipv4_authority(V s, std::size_t start, std::size_t &end, bool not_implicit) {
     int dots = 0, num = 0;
     bool had = false, zero = false;
     while (start < end) {
@@ -314,7 +323,7 @@ bool ipv4_authority(V s, std::size_t start, std::size_t& end, bool not_implicit)
     end = start;
     return true;
 }
-}
+} // namespace
 
 ConfigUriHostNameType config_uri_check_host_name(ConfigUriText name) {
     using Type = ConfigUriHostNameType;
@@ -339,10 +348,9 @@ ConfigUriHostNameType config_uri_check_host_name(ConfigUriText name) {
     return Type::Unknown;
 }
 
-ConfigUriAuthorityResult config_uri_check_authority(std::u16string_view text, std::size_t start,
-                                                    std::size_t length, std::uint64_t flags,
-                                                    const ConfigUriSyntax& syntax,
-                                                    const ConfigUriUnicodeBackend& unicode) {
+ConfigUriAuthorityResult config_uri_check_authority(std::u16string_view text, std::size_t start, std::size_t length,
+                                                    std::uint64_t flags, const ConfigUriSyntax &syntax,
+                                                    const ConfigUriUnicodeBackend &unicode) {
     if (start > length || length > text.size())
         throw std::out_of_range("URI authority parser requires a validated slice");
     using F = ConfigUriSyntaxFlags;
@@ -502,8 +510,7 @@ ConfigUriAuthorityResult config_uri_check_authority(std::u16string_view text, st
         } else if (has(F::V1_UnknownUri)) {
             bool dots = false;
             auto host_start = idx;
-            for (i = idx; i < length && (!dots || (text[i] != u'/' && text[i] != u'?' && text[i] != u'#'));
-                 ++i) {
+            for (i = idx; i < length && (!dots || (text[i] != u'/' && text[i] != u'?' && text[i] != u'#')); ++i) {
                 if (i < idx + 2 && text[i] == u'.') {
                     dots = true;
                     continue;
@@ -527,4 +534,4 @@ ConfigUriAuthorityResult config_uri_check_authority(std::u16string_view text, st
     }
     return done(i);
 }
-}
+} // namespace opensim::framework

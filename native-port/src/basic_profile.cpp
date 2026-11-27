@@ -3,14 +3,16 @@
 #include "opensim/scene/basic_profile.hpp"
 #include <algorithm>
 #include <chrono>
+
 namespace opensim::scene {
 namespace {
-template <class T> T& required(const std::shared_ptr<T>& value) {
+template <class T> T &required(const std::shared_ptr<T> &value) {
     if (!value)
         throw std::runtime_error("Object reference not set to an instance of an object.");
     return *value;
 }
-}
+} // namespace
+
 std::vector<std::uint8_t> profile_string_bytes(std::u16string_view text) {
     if (text.empty())
         return {};
@@ -85,6 +87,7 @@ std::vector<std::uint8_t> profile_string_bytes(std::u16string_view text) {
     }
     return out;
 }
+
 std::vector<std::uint8_t> profile_string_bytes(std::u16string_view text, std::size_t maximum_length) {
     if (maximum_length <= 1)
         return {};
@@ -128,6 +131,7 @@ std::vector<std::uint8_t> profile_string_bytes(std::u16string_view text, std::si
         out.push_back(0);
     return out;
 }
+
 void BasicProfileModule::initialise(std::shared_ptr<framework::NiniConfigSourceBase> config) {
     if (required(config).configs()->at(framework::nini_writer_text(u"UserProfiles")))
         return;
@@ -135,6 +139,7 @@ void BasicProfileModule::initialise(std::shared_ptr<framework::NiniConfigSourceB
         logger_(u"[PROFILE MODULE]: Basic Profile Module enabled");
     enabled_ = true;
 }
+
 void BasicProfileModule::add_region(std::shared_ptr<BasicProfileScene> scene) {
     if (!enabled_)
         return;
@@ -146,6 +151,7 @@ void BasicProfileModule::add_region(std::shared_ptr<BasicProfileScene> scene) {
         required(scene).register_profile(std::move(self));
     }
 }
+
 void BasicProfileModule::remove_region(std::shared_ptr<BasicProfileScene> scene) {
     if (!enabled_)
         return;
@@ -154,20 +160,22 @@ void BasicProfileModule::remove_region(std::shared_ptr<BasicProfileScene> scene)
     if (i != scenes_.end())
         scenes_.erase(i);
 }
+
 std::shared_ptr<BasicProfileScene> BasicProfileModule::first_scene() const {
     std::lock_guard lock(mutex_);
     if (scenes_.empty())
-        throw std::out_of_range(
-            "Index was out of range. Must be non-negative and less than the size of the collection. (Parameter 'index')");
+        throw std::out_of_range("Index was out of range. Must be non-negative and less than the size of the "
+                                "collection. (Parameter 'index')");
     return scenes_[0];
 }
+
 void BasicProfileModule::new_client(std::shared_ptr<BasicProfileClient> client) {
     auto self = shared_from_this();
     required(client).on_properties_request(
         [self](auto sender, auto avatar) { self->request_properties(std::move(sender), avatar); });
 }
-void BasicProfileModule::request_properties(std::shared_ptr<BasicProfileClient> client,
-                                            framework::Uuid avatar) {
+
+void BasicProfileModule::request_properties(std::shared_ptr<BasicProfileClient> client, framework::Uuid avatar) {
     if (!std::dynamic_pointer_cast<BasicProfileScene>(required(client).scene()))
         return;
     auto accounts = required(first_scene()).accounts();
@@ -183,8 +191,7 @@ void BasicProfileModule::request_properties(std::shared_ptr<BasicProfileClient> 
     auto date = std::chrono::year_month_day(
         std::chrono::floor<std::chrono::days>(std::chrono::sys_seconds(std::chrono::seconds(created))));
     auto text = std::to_string(static_cast<unsigned>(date.month())) + "/" +
-                std::to_string(static_cast<unsigned>(date.day())) + "/" +
-                std::to_string(static_cast<int>(date.year()));
+                std::to_string(static_cast<unsigned>(date.day())) + "/" + std::to_string(static_cast<int>(date.year()));
     std::u16string born(text.begin(), text.end());
     AvatarProfileProperties props;
     props.avatar = avatar;
@@ -201,4 +208,4 @@ void BasicProfileModule::request_properties(std::shared_ptr<BasicProfileClient> 
     interests.languages = u"";
     required(client).send_interests(interests);
 }
-}
+} // namespace opensim::scene

@@ -9,16 +9,18 @@
 #include "opensim/framework/stream_reader_text.hpp"
 #include <httplib.h>
 #include <atomic>
+
 namespace opensim::network {
 namespace {
 Value error(std::string text) {
     return Value::object({{"Success", "False"}, {"Message", "Service request failed: " + text}});
 }
 
-}
+} // namespace
+
 Value canonical_osd_response(std::string_view body) {
     auto lower = std::string(body);
-    for (auto& c : lower)
+    for (auto &c : lower)
         if (c >= 'A' && c <= 'Z')
             c += 32;
     const bool boolean = lower == "true" || lower == "false";
@@ -29,7 +31,7 @@ Value canonical_osd_response(std::string_view body) {
             auto value = deserialize_sdk_osd_text(framework::utf16_replacing(body));
             if (value.kind == Value::Kind::Map)
                 parsed = std::move(value);
-        } catch (const std::exception&) {
+        } catch (const std::exception &) {
         }
     Value result = Value::object({});
     result.set("Success", Value(success));
@@ -38,8 +40,9 @@ Value canonical_osd_response(std::string_view body) {
     result.set("_Result", std::move(parsed));
     return result;
 }
+
 namespace {
-Value send_osd_request(const std::string& url, const Value* data, const std::string& method, bool compressed,
+Value send_osd_request(const std::string &url, const Value *data, const std::string &method, bool compressed,
                        bool keepalive, int timeout_milliseconds) {
     static std::atomic<std::uint32_t> request_number{0};
     const auto number = request_number.fetch_add(1);
@@ -84,29 +87,30 @@ Value send_osd_request(const std::string& url, const Value* data, const std::str
             return error("[499] " + httplib::to_string(response.error()));
         if (response->status < 200 || response->status >= 300) {
             const auto status = std::to_string(response->status);
-            const auto suffix = framework::trim_utf8(response->reason).empty()
-                                    ? std::string(".")
-                                    : " (" + response->reason + ").";
-            return error("[" + status + "] Response status code does not indicate success: " + status +
-                         suffix);
+            const auto suffix =
+                framework::trim_utf8(response->reason).empty() ? std::string(".") : " (" + response->reason + ").";
+            return error("[" + status + "] Response status code does not indicate success: " + status + suffix);
         }
         auto decoded = framework::decode_stream_reader_text(
-            {reinterpret_cast<const std::uint8_t*>(response->body.data()), response->body.size()});
+            {reinterpret_cast<const std::uint8_t *>(response->body.data()), response->body.size()});
         return canonical_osd_response(framework::utf8(decoded.text));
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         return error(e.what());
     }
 }
-}
-Value osd_request(const std::string& url, const Value& data, const std::string& method, bool compressed,
+} // namespace
+
+Value osd_request(const std::string &url, const Value &data, const std::string &method, bool compressed,
                   bool keepalive) {
     return send_osd_request(url, &data, method, compressed, keepalive, 30000);
 }
-Value osd_timed_request(const std::string& url, const Value& data, const std::string& method,
-                        int timeout_milliseconds, bool compressed, bool keepalive) {
+
+Value osd_timed_request(const std::string &url, const Value &data, const std::string &method, int timeout_milliseconds,
+                        bool compressed, bool keepalive) {
     return send_osd_request(url, &data, method, compressed, keepalive, timeout_milliseconds);
 }
-Value osd_json_rpc_request(const std::string& url, const Value& data, int timeout_milliseconds) {
+
+Value osd_json_rpc_request(const std::string &url, const Value &data, int timeout_milliseconds) {
     static auto requester = [] {
         auto clients = std::make_shared<WebHttpClients>(native_web_http_handler_factory());
         clients->setup(false, false, nullptr, 32);
@@ -117,14 +121,15 @@ Value osd_json_rpc_request(const std::string& url, const Value& data, int timeou
             return number.fetch_add(1, std::memory_order_relaxed);
         };
         services.debug_level = [] { return 0; };
-        services.debug = services.info = [](const auto&) {};
+        services.debug = services.info = [](const auto &) {};
         transport.bind(services);
         return OsdServiceRequester(std::move(services));
     }();
     return requester.send(framework::utf16_replacing(url), &data, u"POST", timeout_milliseconds, false, true);
 }
-Value osd_delete_request(const std::string& url, int timeout_milliseconds) {
+
+Value osd_delete_request(const std::string &url, int timeout_milliseconds) {
     return send_osd_request(url, nullptr, "DELETE", false, false, timeout_milliseconds);
 }
 
-}
+} // namespace opensim::network

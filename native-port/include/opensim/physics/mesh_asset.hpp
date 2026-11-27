@@ -27,6 +27,7 @@ enum class AssetMeshLod { Lowest, Low, Medium, High };
 
 // Warp3D requests render faces with vertex normal decoding disabled.
 std::optional<std::vector<AssetRenderFace>> decode_asset_render_mesh(std::string_view asset, AssetMeshLod lod);
-std::optional<AssetRenderFace> build_sculpt_render_face(std::span<const std::uint8_t> pixels,
-    std::uint32_t width, std::uint32_t height, std::size_t channels, std::uint8_t sculpt_type, AssetMeshLod lod);
-}
+std::optional<AssetRenderFace> build_sculpt_render_face(std::span<const std::uint8_t> pixels, std::uint32_t width,
+                                                        std::uint32_t height, std::size_t channels,
+                                                        std::uint8_t sculpt_type, AssetMeshLod lod);
+} // namespace opensim::physics

@@ -6,15 +6,17 @@
 using namespace opensim;
 using namespace server;
 using namespace network;
+
 std::string hex(std::string_view s) {
     std::string r;
-    const char* h = "0123456789abcdef";
+    const char *h = "0123456789abcdef";
     for (unsigned char c : s) {
         r += h[c >> 4];
         r += h[c & 15];
     }
     return r;
 }
+
 std::string unhex(std::string_view s) {
     std::string r;
     if (s == "-")
@@ -23,6 +25,7 @@ std::string unhex(std::string_view s) {
         r += static_cast<char>(std::stoi(std::string(s.substr(i, 2)), nullptr, 16));
     return r;
 }
+
 int main() {
     std::string row;
     while (std::getline(std::cin, row)) {
@@ -39,8 +42,7 @@ int main() {
                 if (profile & 2)
                     r.version(u"2.0");
                 if (profile & 4)
-                    r.result =
-                        std::make_shared<Value>(Value::object({{"zero", Value(0)}, {"answer", Value(42)}}));
+                    r.result = std::make_shared<Value>(Value::object({{"zero", Value(0)}, {"answer", Value(42)}}));
                 if (profile & 8) {
                     r.error->code(-3);
                     r.error->message(u"bad");
@@ -59,17 +61,12 @@ int main() {
             } else {
                 JsonRpcDispatcher::Decoder decoder;
                 if (mode == 1)
-                    decoder = [](std::string_view) -> Value {
-                        throw JsonRpcParseError("injected parse failure");
-                    };
+                    decoder = [](std::string_view) -> Value { throw JsonRpcParseError("injected parse failure"); };
                 if (mode == 2)
-                    decoder = [](std::string_view) -> Value {
-                        throw std::runtime_error("controlled decoder failure");
-                    };
+                    decoder = [](std::string_view) -> Value { throw std::runtime_error("controlled decoder failure"); };
                 JsonRpcDispatcher d(
-                    decoder, [&](std::string_view s) { log += std::string(s) + "\n"; },
-                    [&] { disposed += "D"; });
-                auto handler = [&](const Value&, std::shared_ptr<JsonRpcResponse>& r) {
+                    decoder, [&](std::string_view s) { log += std::string(s) + "\n"; }, [&] { disposed += "D"; });
+                auto handler = [&](const Value &, std::shared_ptr<JsonRpcResponse> &r) {
                     switch (profile) {
                     case 1:
                         r->result = std::make_shared<Value>(Value::object({{"answer", Value(42)}}));
@@ -112,7 +109,7 @@ int main() {
                     d.add(u"removed", {});
                     d.remove(u"removed");
                     d.add(u"again", {});
-                    for (auto& key : d.keys())
+                    for (auto &key : d.keys())
                         registered += ":" + framework::utf8(key);
                 }
                 HttpRequest request;
@@ -120,7 +117,7 @@ int main() {
                 auto r = d.handle(request);
                 output = std::to_string(r.status) + ":" + hex(r.body) + "|" + registered;
             }
-        } catch (const std::exception&) {
+        } catch (const std::exception &) {
             output = "EX";
         }
         std::cout << output << "|" << hex(log) << "|" << disposed << "\n";

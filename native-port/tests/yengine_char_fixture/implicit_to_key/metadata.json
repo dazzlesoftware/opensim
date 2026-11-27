@@ -1,0 +1,32 @@
+{
+  "accepted": true,
+  "executed": true,
+  "globals": {
+    "result": {
+      "type": "other",
+      "clr": "System.String",
+      "text": "A"
+    },
+    "value": {
+      "type": "char",
+      "clr": "System.Char",
+      "utf16": 65
+    }
+  },
+  "errors": [],
+  "exception": null,
+  "exceptionType": null,
+  "stackSize": 1000000,
+  "stackLimit": 1024,
+  "finalStackLeft": 1000000,
+  "stackSamples": [],
+  "name": "implicit_to_key",
+  "source": "YOption chars;char value;key result;default{state_entry(){value='A';result=value;}}",
+  "sha256": {
+    "original.il.txt": "270c9390e69990b7befbbbc01121129187358b86ba0d2955cc032a8160d4dc29",
+    "original.yobj": "8865d79aeac5163bc7cd13492995e72b8da77d943ca5972e69b556c03f59f97f",
+    "source.lsl": "3f3a4e45454b507b8193b3ce9c1df2720de076bd63297d82a4226911939db726",
+    "source_hash.txt": "b46a9a4ac86fdb636dafe79eb8b626c13652917c2d364467a8da3acbe9bde5db",
+    "generator_source": "d86517a13d8f4094e933279614d487a0e69d44a49f2296c4af7562bf7386d651"
+  }
+}

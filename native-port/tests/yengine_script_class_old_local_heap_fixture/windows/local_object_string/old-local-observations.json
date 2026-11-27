@@ -1,0 +1,708 @@
+[
+  {
+    "mode": "fresh_allocated",
+    "prepare_exception": null,
+    "load_exception": null,
+    "resume_exception": null,
+    "before": {
+      "heap_used": 16,
+      "heap_left": 99999984,
+      "arrays_heap_used": 16,
+      "locals_heap_used": 0,
+      "globals": {
+        "before": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "cleared": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "input": {
+          "type": "null",
+          "clr": null,
+          "value": null
+        },
+        "marker": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "nil": {
+          "type": "null",
+          "clr": null,
+          "value": null
+        },
+        "resumed": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      },
+      "object_hash": {
+        "input": {
+          "type": "null",
+          "clr": null,
+          "value": null
+        },
+        "direct_hash": null,
+        "direct_exception": {
+          "type": "System.NullReferenceException",
+          "message": "Object reference not set to an instance of an object.",
+          "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrHashCode(Object o) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 747\r\n   at FixedArrayReference.\u003C\u003Ec__DisplayClass19_1.\u003CRun\u003Eg__HashObservation|2(XMRInstance i) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-class-old-local-heap-phase38-reference\\Reference.cs:line 790"
+        },
+        "component_hashes": null,
+        "formula": null,
+        "alias_same_backing": null
+      },
+      "object_reference_pairs": [],
+      "event_code": "state_entry",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": [],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": true,
+      "running": true,
+      "detectors": [],
+      "queue": [],
+      "frames": []
+    },
+    "after": {
+      "heap_used": 16,
+      "heap_left": 99999984,
+      "arrays_heap_used": 16,
+      "locals_heap_used": 0,
+      "globals": {
+        "before": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 22
+        },
+        "cleared": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "input": {
+          "type": "script_class",
+          "clr": "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj",
+          "reference_id": 1,
+          "script_type": "integer[]",
+          "class_index": 0,
+          "rank": 1,
+          "element_type": "integer",
+          "arrays_heap_use": 16,
+          "integers": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "clr_array",
+              "clr": "System.Int32[]",
+              "reference_id": 2,
+              "element_type": "System.Int32",
+              "length": 3,
+              "items": [
+                {
+                  "type": "integer",
+                  "clr": "System.Int32",
+                  "value": 0
+                },
+                {
+                  "type": "integer",
+                  "clr": "System.Int32",
+                  "value": 0
+                },
+                {
+                  "type": "integer",
+                  "clr": "System.Int32",
+                  "value": 0
+                }
+              ]
+            }
+          ]
+        },
+        "marker": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "nil": {
+          "type": "null",
+          "clr": null,
+          "value": null
+        },
+        "resumed": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      },
+      "object_hash": {
+        "input": {
+          "type": "script_class_reference",
+          "clr": "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj",
+          "reference_id": 1
+        },
+        "direct_hash": 55467050,
+        "direct_exception": null,
+        "component_hashes": null,
+        "formula": null,
+        "alias_same_backing": null
+      },
+      "object_reference_pairs": [],
+      "event_code": "state_entry",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": [],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 1,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.String",
+            "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj",
+            "System.Int32"
+          ],
+          "slot_values": [
+            {
+              "type": "unsupported",
+              "clr": "EventHelpersInstance",
+              "value": "EventHelpersInstance"
+            },
+            {
+              "type": "string",
+              "clr": "System.String",
+              "value": "abc",
+              "utf16": [
+                97,
+                98,
+                99
+              ]
+            },
+            {
+              "type": "script_class_reference",
+              "clr": "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj",
+              "reference_id": 1
+            },
+            {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            }
+          ],
+          "wait_deadline_utc_ticks": null
+        }
+      ]
+    },
+    "completed": {
+      "heap_used": 16,
+      "heap_left": 99999984,
+      "arrays_heap_used": 16,
+      "locals_heap_used": 0,
+      "globals": {
+        "before": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 22
+        },
+        "cleared": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 10
+        },
+        "input": {
+          "type": "script_class",
+          "clr": "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj",
+          "reference_id": 1,
+          "script_type": "integer[]",
+          "class_index": 0,
+          "rank": 1,
+          "element_type": "integer",
+          "arrays_heap_use": 16,
+          "integers": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "clr_array",
+              "clr": "System.Int32[]",
+              "reference_id": 2,
+              "element_type": "System.Int32",
+              "length": 3,
+              "items": [
+                {
+                  "type": "integer",
+                  "clr": "System.Int32",
+                  "value": 0
+                },
+                {
+                  "type": "integer",
+                  "clr": "System.Int32",
+                  "value": 0
+                },
+                {
+                  "type": "integer",
+                  "clr": "System.Int32",
+                  "value": 0
+                }
+              ]
+            }
+          ]
+        },
+        "marker": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "nil": {
+          "type": "null",
+          "clr": null,
+          "value": null
+        },
+        "resumed": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 16
+        }
+      },
+      "object_hash": {
+        "input": {
+          "type": "script_class_reference",
+          "clr": "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj",
+          "reference_id": 1
+        },
+        "direct_hash": 55467050,
+        "direct_exception": null,
+        "component_hashes": null,
+        "formula": null,
+        "alias_same_backing": null
+      },
+      "object_reference_pairs": [],
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [],
+      "queue": [],
+      "frames": []
+    },
+    "before_aliases": {
+      "frame_class_aliases": 0,
+      "frame_backing_aliases": 0,
+      "own_heap": null
+    },
+    "after_aliases": {
+      "frame_class_aliases": 1,
+      "frame_backing_aliases": 0,
+      "own_heap": 16
+    },
+    "directly_called": "unchanged XMRInstAbstract.MigrateIn(BinaryReader) on target; no local-counter reset in harness"
+  },
+  {
+    "mode": "same_paused",
+    "prepare_exception": null,
+    "load_exception": null,
+    "resume_exception": null,
+    "before": {
+      "heap_used": 22,
+      "heap_left": 99999978,
+      "arrays_heap_used": 16,
+      "locals_heap_used": 6,
+      "globals": {
+        "before": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 22
+        },
+        "cleared": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "input": {
+          "type": "script_class",
+          "clr": "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj",
+          "reference_id": 1,
+          "script_type": "integer[]",
+          "class_index": 0,
+          "rank": 1,
+          "element_type": "integer",
+          "arrays_heap_use": 16,
+          "integers": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "clr_array",
+              "clr": "System.Int32[]",
+              "reference_id": 2,
+              "element_type": "System.Int32",
+              "length": 3,
+              "items": [
+                {
+                  "type": "integer",
+                  "clr": "System.Int32",
+                  "value": 0
+                },
+                {
+                  "type": "integer",
+                  "clr": "System.Int32",
+                  "value": 0
+                },
+                {
+                  "type": "integer",
+                  "clr": "System.Int32",
+                  "value": 0
+                }
+              ]
+            }
+          ]
+        },
+        "marker": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "nil": {
+          "type": "null",
+          "clr": null,
+          "value": null
+        },
+        "resumed": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      },
+      "object_hash": {
+        "input": {
+          "type": "script_class_reference",
+          "clr": "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj",
+          "reference_id": 1
+        },
+        "direct_hash": 35943562,
+        "direct_exception": null,
+        "component_hashes": null,
+        "formula": null,
+        "alias_same_backing": null
+      },
+      "object_reference_pairs": [],
+      "event_code": "state_entry",
+      "call_mode": 1,
+      "sleep_until_ticks": 639313487799225050,
+      "object_description": "",
+      "event_arguments": [],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 1,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.String",
+            "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj",
+            "System.Int32"
+          ],
+          "slot_values": [
+            {
+              "type": "unsupported",
+              "clr": "EventHelpersInstance",
+              "value": "EventHelpersInstance"
+            },
+            {
+              "type": "string",
+              "clr": "System.String",
+              "value": "abc",
+              "utf16": [
+                97,
+                98,
+                99
+              ]
+            },
+            {
+              "type": "script_class_reference",
+              "clr": "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj",
+              "reference_id": 1
+            },
+            {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            }
+          ],
+          "wait_deadline_utc_ticks": null
+        }
+      ]
+    },
+    "after": {
+      "heap_used": 22,
+      "heap_left": 99999978,
+      "arrays_heap_used": 16,
+      "locals_heap_used": 6,
+      "globals": {
+        "before": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 22
+        },
+        "cleared": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "input": {
+          "type": "script_class",
+          "clr": "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj",
+          "reference_id": 1,
+          "script_type": "integer[]",
+          "class_index": 0,
+          "rank": 1,
+          "element_type": "integer",
+          "arrays_heap_use": 16,
+          "integers": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "clr_array",
+              "clr": "System.Int32[]",
+              "reference_id": 2,
+              "element_type": "System.Int32",
+              "length": 3,
+              "items": [
+                {
+                  "type": "integer",
+                  "clr": "System.Int32",
+                  "value": 0
+                },
+                {
+                  "type": "integer",
+                  "clr": "System.Int32",
+                  "value": 0
+                },
+                {
+                  "type": "integer",
+                  "clr": "System.Int32",
+                  "value": 0
+                }
+              ]
+            }
+          ]
+        },
+        "marker": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "nil": {
+          "type": "null",
+          "clr": null,
+          "value": null
+        },
+        "resumed": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      },
+      "object_hash": {
+        "input": {
+          "type": "script_class_reference",
+          "clr": "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj",
+          "reference_id": 1
+        },
+        "direct_hash": 25747420,
+        "direct_exception": null,
+        "component_hashes": null,
+        "formula": null,
+        "alias_same_backing": null
+      },
+      "object_reference_pairs": [],
+      "event_code": "state_entry",
+      "call_mode": 1,
+      "sleep_until_ticks": 639313487799225050,
+      "object_description": "",
+      "event_arguments": [],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 1,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.String",
+            "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj",
+            "System.Int32"
+          ],
+          "slot_values": [
+            {
+              "type": "unsupported",
+              "clr": "EventHelpersInstance",
+              "value": "EventHelpersInstance"
+            },
+            {
+              "type": "string",
+              "clr": "System.String",
+              "value": "abc",
+              "utf16": [
+                97,
+                98,
+                99
+              ]
+            },
+            {
+              "type": "script_class_reference",
+              "clr": "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj",
+              "reference_id": 1
+            },
+            {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            }
+          ],
+          "wait_deadline_utc_ticks": null
+        }
+      ]
+    },
+    "completed": {
+      "heap_used": 16,
+      "heap_left": 99999984,
+      "arrays_heap_used": 16,
+      "locals_heap_used": 0,
+      "globals": {
+        "before": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 22
+        },
+        "cleared": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 16
+        },
+        "input": {
+          "type": "script_class",
+          "clr": "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj",
+          "reference_id": 1,
+          "script_type": "integer[]",
+          "class_index": 0,
+          "rank": 1,
+          "element_type": "integer",
+          "arrays_heap_use": 16,
+          "integers": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "clr_array",
+              "clr": "System.Int32[]",
+              "reference_id": 2,
+              "element_type": "System.Int32",
+              "length": 3,
+              "items": [
+                {
+                  "type": "integer",
+                  "clr": "System.Int32",
+                  "value": 0
+                },
+                {
+                  "type": "integer",
+                  "clr": "System.Int32",
+                  "value": 0
+                },
+                {
+                  "type": "integer",
+                  "clr": "System.Int32",
+                  "value": 0
+                }
+              ]
+            }
+          ]
+        },
+        "marker": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "nil": {
+          "type": "null",
+          "clr": null,
+          "value": null
+        },
+        "resumed": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 22
+        }
+      },
+      "object_hash": {
+        "input": {
+          "type": "script_class_reference",
+          "clr": "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj",
+          "reference_id": 1
+        },
+        "direct_hash": 25747420,
+        "direct_exception": null,
+        "component_hashes": null,
+        "formula": null,
+        "alias_same_backing": null
+      },
+      "object_reference_pairs": [],
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 639313487799225050,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [],
+      "queue": [],
+      "frames": []
+    },
+    "before_aliases": {
+      "frame_class_aliases": 1,
+      "frame_backing_aliases": 0,
+      "own_heap": 16
+    },
+    "after_aliases": {
+      "frame_class_aliases": 1,
+      "frame_backing_aliases": 0,
+      "own_heap": 16
+    },
+    "directly_called": "unchanged XMRInstAbstract.MigrateIn(BinaryReader) on target; no local-counter reset in harness"
+  }
+]

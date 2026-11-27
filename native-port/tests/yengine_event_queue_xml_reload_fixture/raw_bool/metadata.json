@@ -1,0 +1,23 @@
+{
+  "name": "raw_bool",
+  "input": {
+    "clr": "System.Boolean",
+    "value": "True"
+  },
+  "append_exception": null,
+  "outer_xml_exception": null,
+  "load_xml_exception": null,
+  "restore_event_queue_exception": null,
+  "restored": {
+    "clr": "System.Boolean",
+    "value": "True"
+  },
+  "strict_xml_reader_control_exception": null,
+  "strict_xml_reader_control_restored": {
+    "clr": "System.Boolean",
+    "value": "True"
+  },
+  "sha256": {
+    "serialized.xml": "2ed9e556a48b7ed677a1bc7eea73ebf943a40f32ee6a77327894b0d245fb7f11"
+  }
+}

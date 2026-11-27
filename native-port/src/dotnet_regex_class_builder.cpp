@@ -4,14 +4,17 @@
 #include "opensim/framework/text.hpp"
 #include <bit>
 #include <span>
+
 namespace opensim::framework {
 namespace {
 #include "dotnet_regex_property_data.inc"
 using Range = std::pair<char16_t, char16_t>;
+
 void swap_greater(std::span<Range> values, int i, int j) {
     if (values[i].first > values[j].first)
         std::swap(values[i], values[j]);
 }
+
 void down_heap(std::span<Range> values, int i, int n) {
     auto value = values[i - 1];
     while (i <= n / 2) {
@@ -25,6 +28,7 @@ void down_heap(std::span<Range> values, int i, int n) {
     }
     values[i - 1] = value;
 }
+
 void intro_sort(std::span<Range> values, int depth) {
     int n = static_cast<int>(values.size());
     while (n > 1) {
@@ -79,77 +83,88 @@ void intro_sort(std::span<Range> values, int depth) {
         n = left;
     }
 }
+
 char16_t at(std::u16string_view text, std::size_t index) {
     if (index >= text.size())
         throw DotnetRegexClassError("System.IndexOutOfRangeException", 0x80131508u,
                                     "Index was outside the bounds of the array.");
     return text[index];
 }
+
 std::u16string_view category_named(std::u16string_view name) {
-    for (auto& item : regex_defined_categories)
+    for (auto &item : regex_defined_categories)
         if (item.name == name)
             return item.value;
     return {};
 }
-}
+} // namespace
+
 DotnetRegexParseException::DotnetRegexParseException(std::u16string text, int position)
     : DotnetRegexClassError("System.Text.RegularExpressions.RegexParseException", 0x80070057u, utf8(text)),
-      message(std::move(text)), offset(position) {
-}
+      message(std::move(text)), offset(position) {}
+
 DotnetRegexParseException::DotnetRegexParseException(int code, std::u16string text, int position)
     : DotnetRegexParseException(std::move(text), position) {
     error = code;
 }
-std::vector<DotnetRegexClassBuilder::Range>& DotnetRegexClassBuilder::ensure_ranges() {
+
+std::vector<DotnetRegexClassBuilder::Range> &DotnetRegexClassBuilder::ensure_ranges() {
     if (!ranges_)
         ranges_.emplace();
     return *ranges_;
 }
-std::u16string& DotnetRegexClassBuilder::ensure_categories() {
+
+std::u16string &DotnetRegexClassBuilder::ensure_categories() {
     if (!categories_)
         categories_.emplace();
     return *categories_;
 }
+
 void DotnetRegexClassBuilder::add_range(char16_t first, char16_t last) {
     ensure_ranges().emplace_back(first, last);
 }
+
 void DotnetRegexClassBuilder::add_char(char16_t value) {
     add_range(value, value);
 }
+
 void DotnetRegexClassBuilder::add_ranges(std::u16string_view ranges) {
-    auto& list = ensure_ranges();
+    auto &list = ensure_ranges();
     std::size_t i = 0;
     for (; i + 1 < ranges.size(); i += 2)
         list.emplace_back(ranges[i], static_cast<char16_t>(ranges[i + 1] - 1));
     if (i < ranges.size())
         list.emplace_back(ranges[i], char16_t(65535));
 }
-void DotnetRegexClassBuilder::add_class(const DotnetRegexClassBuilder& value) {
+
+void DotnetRegexClassBuilder::add_class(const DotnetRegexClassBuilder &value) {
     if (value.ranges_ && !value.ranges_->empty()) {
         auto copy = *value.ranges_;
-        auto& list = ensure_ranges();
+        auto &list = ensure_ranges();
         list.insert(list.end(), copy.begin(), copy.end());
     }
     if (value.categories_)
         ensure_categories().append(*value.categories_);
 }
-bool DotnetRegexClassBuilder::try_add_class(const DotnetRegexClassBuilder& value) {
+
+bool DotnetRegexClassBuilder::try_add_class(const DotnetRegexClassBuilder &value) {
     if (value.can_merge() && can_merge()) {
         add_class(value);
         return true;
     }
     return false;
 }
+
 void DotnetRegexClassBuilder::add_category_from_name(std::u16string_view name, bool invert, bool insensitive,
                                                      std::u16string_view pattern, int position) {
     auto category = category_named(name);
     if (!category.empty() && name != u"__InternalRegexIgnoreCase__") {
         if (insensitive && (name == u"Ll" || name == u"Lu" || name == u"Lt"))
             category = category_named(u"__InternalRegexIgnoreCase__");
-        auto& output = ensure_categories();
+        auto &output = ensure_categories();
         for (auto c : category)
-            output.push_back(invert ? static_cast<char16_t>(-static_cast<int>(
-                                          std::bit_cast<std::int16_t>(static_cast<std::uint16_t>(c))))
+            output.push_back(invert ? static_cast<char16_t>(
+                                          -static_cast<int>(std::bit_cast<std::int16_t>(static_cast<std::uint16_t>(c))))
                                     : c);
         return;
     }
@@ -180,18 +195,19 @@ void DotnetRegexClassBuilder::add_category_from_name(std::u16string_view name, b
                                         std::u16string(name) + u"'.",
                                     position);
 }
-void DotnetRegexClassBuilder::add_case_equivalences(const DotnetRegexCultureName& culture) {
+
+void DotnetRegexClassBuilder::add_case_equivalences(const DotnetRegexCultureName &culture) {
     if (!ranges_)
         return;
     auto count = ranges_->size();
     for (std::size_t i = 0; i < count; ++i) {
         auto range = (*ranges_)[i];
         for (unsigned c = range.first; c <= range.second; ++c)
-            for (auto equivalent :
-                 dotnet_regex_case_equivalences(static_cast<char16_t>(c), culture, case_behavior_))
+            for (auto equivalent : dotnet_regex_case_equivalences(static_cast<char16_t>(c), culture, case_behavior_))
                 add_char(equivalent);
     }
 }
+
 void DotnetRegexClassBuilder::add_word(bool ecma, bool invert) {
     if (ecma) {
         std::u16string ranges = u"0:A[_`a{\u0130\u0131";
@@ -199,11 +215,12 @@ void DotnetRegexClassBuilder::add_word(bool ecma, bool invert) {
             ranges.insert(ranges.begin(), 0);
         add_ranges(ranges);
     } else {
-        auto& output = ensure_categories();
+        auto &output = ensure_categories();
         for (int c : {0, 2, 4, 5, 3, 1, 6, 9, 19, 0})
             output.push_back(static_cast<char16_t>(invert ? -c : c));
     }
 }
+
 void DotnetRegexClassBuilder::add_space(bool ecma, bool invert) {
     if (ecma) {
         std::u16string ranges = {9, 14, 32, 33};
@@ -213,6 +230,7 @@ void DotnetRegexClassBuilder::add_space(bool ecma, bool invert) {
     } else
         ensure_categories().push_back(static_cast<char16_t>(invert ? -100 : 100));
 }
+
 void DotnetRegexClassBuilder::add_digit(bool ecma, bool invert, std::u16string_view pattern, int position) {
     if (ecma) {
         std::u16string ranges = u"0:";
@@ -222,10 +240,11 @@ void DotnetRegexClassBuilder::add_digit(bool ecma, bool invert, std::u16string_v
     } else
         add_category_from_name(u"Nd", invert, false, pattern, position);
 }
+
 void DotnetRegexClassBuilder::canonicalize() {
     if (!ranges_)
         return;
-    auto& list = *ranges_;
+    auto &list = *ranges_;
     if (list.size() > 1) {
         intro_sort(list, 2 * std::bit_width(static_cast<unsigned>(list.size())));
         bool done = false;
@@ -258,8 +277,7 @@ void DotnetRegexClassBuilder::canonicalize() {
         if (list.size() == 2) {
             if (list[0].first == 0 && list[1].second == 65535 &&
                 static_cast<int>(list[0].second) < static_cast<int>(list[1].first) - 1) {
-                list[0] = {static_cast<char16_t>(list[0].second + 1),
-                           static_cast<char16_t>(list[1].first - 1)};
+                list[0] = {static_cast<char16_t>(list[0].second + 1), static_cast<char16_t>(list[1].first - 1)};
                 list.resize(1);
                 negate_ = true;
             }
@@ -275,8 +293,8 @@ void DotnetRegexClassBuilder::canonicalize() {
             }
         }
     }
-    if (!negate_ && !subtractor_ && categories_ && !categories_->empty() && list.size() == 1 &&
-        list[0].first == 0 && list[0].second == 65535)
+    if (!negate_ && !subtractor_ && categories_ && !categories_->empty() && list.size() == 1 && list[0].first == 0 &&
+        list[0].second == 65535)
         categories_->clear();
     if (negate_ || subtractor_)
         return;
@@ -293,7 +311,8 @@ void DotnetRegexClassBuilder::canonicalize() {
         categories_->clear();
     }
 }
-void DotnetRegexClassBuilder::append_to(std::u16string& output) {
+
+void DotnetRegexClassBuilder::append_to(std::u16string &output) {
     canonicalize();
     auto start = output.size();
     output.push_back(negate_ ? 1 : 0);
@@ -311,22 +330,24 @@ void DotnetRegexClassBuilder::append_to(std::u16string& output) {
     if (subtractor_)
         subtractor_->append_to(output);
 }
+
 std::u16string DotnetRegexClassBuilder::to_string_class() {
     std::u16string output;
     append_to(output);
     return output;
 }
+
 std::shared_ptr<DotnetRegexClassBuilder> DotnetRegexClassBuilder::parse(std::u16string_view input) {
     auto result = std::make_shared<DotnetRegexClassBuilder>();
     auto range_count = at(input, 1), category_count = at(input, 2);
     auto category_start = std::size_t(3) + range_count;
     auto end = category_start + category_count;
     if (range_count) {
-        auto& list = result->ensure_ranges();
+        auto &list = result->ensure_ranges();
         for (std::size_t i = 3; i < std::size_t(3) + range_count; i += 2) {
             auto first = at(input, i);
-            auto last = i + 1 < std::size_t(3) + range_count ? static_cast<char16_t>(at(input, i + 1) - 1)
-                                                             : char16_t(65535);
+            auto last =
+                i + 1 < std::size_t(3) + range_count ? static_cast<char16_t>(at(input, i + 1) - 1) : char16_t(65535);
             list.emplace_back(first, last);
         }
     }
@@ -334,14 +355,14 @@ std::shared_ptr<DotnetRegexClassBuilder> DotnetRegexClassBuilder::parse(std::u16
         result->subtractor_ = parse(input.substr(end));
     if (category_count) {
         if (category_start > input.size() || category_count > input.size() - category_start)
-            throw DotnetRegexClassError(
-                "System.ArgumentOutOfRangeException", 0x80131502u,
-                "Specified argument was out of the range of valid values. (Parameter 'start')");
+            throw DotnetRegexClassError("System.ArgumentOutOfRangeException", 0x80131502u,
+                                        "Specified argument was out of the range of valid values. (Parameter 'start')");
         result->categories_ = std::u16string(input.substr(category_start, category_count));
     }
     result->negate_ = at(input, 0) == 1;
     return result;
 }
+
 std::u16string dotnet_regex_convert_old_class(std::u16string_view ranges, std::u16string_view categories) {
     bool invert = ranges.size() >= 2 && ranges[0] == 0 && ranges[1] == 0;
     if (invert)
@@ -352,4 +373,4 @@ std::u16string dotnet_regex_convert_old_class(std::u16string_view ranges, std::u
     output += categories;
     return output;
 }
-}
+} // namespace opensim::framework

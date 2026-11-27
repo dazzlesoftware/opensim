@@ -24,6 +24,7 @@ bool sdk_sse41() {
     }();
     return supported;
 }
+
 framework::Vector3 rotate(framework::Vector3 v, framework::Quaternion q) {
     float x = q.x + q.x, y = q.y + q.y, z = q.z + q.z;
     float wx = q.w * x, wy = q.w * y, wz = q.w * z, xx = q.x * x, xy = q.x * y, xz = q.x * z, yy = q.y * y,
@@ -32,7 +33,8 @@ framework::Vector3 rotate(framework::Vector3 v, framework::Quaternion q) {
             v.x * (xy + wz) + v.y * (1.f - xx - zz) + v.z * (yz - wx),
             v.x * (xz - wy) + v.y * (yz + wx) + v.z * (1.f - xx - yy)};
 }
-void normalize(framework::Vector3& v) {
+
+void normalize(framework::Vector3 &v) {
     float squared = (v.x * v.x + v.y * v.y) + v.z * v.z;
     if (!(squared > 1.e-6f)) {
         v = {};
@@ -50,14 +52,15 @@ void normalize(framework::Vector3& v) {
         v.z *= inverse;
     }
 }
-void multiply(framework::Vector3& v, float factor) {
+
+void multiply(framework::Vector3 &v, float factor) {
     v.x *= factor;
     v.y *= factor;
     v.z *= factor;
 }
-}
-void add_new_movement(MovementState& state, framework::Vector3 relative, float additional_speed,
-                      bool breaking) {
+} // namespace
+
+void add_new_movement(MovementState &state, framework::Vector3 relative, float additional_speed, bool breaking) {
     state.delayed_stop = -1;
     auto rotation = state.rotation;
     if (!state.flying && !state.npc) {
@@ -89,6 +92,7 @@ void add_new_movement(MovementState& state, framework::Vector3 relative, float a
     state.target_velocity = state.has_physics_actor ? direction : framework::Vector3{};
     ++state.animation_updates;
 }
+
 std::uint32_t remove_ignored_controls(std::uint32_t controls, std::uint32_t ignored) {
     if (controls == 0 || ignored == 0)
         return controls;
@@ -98,6 +102,7 @@ std::uint32_t remove_ignored_controls(std::uint32_t controls, std::uint32_t igno
     ignored |= ignored << 19;
     return controls & ~ignored;
 }
+
 ControlProjection project_controls(std::uint32_t controls, std::uint32_t ignored, bool always_run,
                                    std::uint32_t previous) {
     constexpr std::uint32_t normal = 0x3fu, nudge = normal << 19;
@@ -122,4 +127,4 @@ ControlProjection project_controls(std::uint32_t controls, std::uint32_t ignored
         out.changed = true;
     return out;
 }
-}
+} // namespace opensim::scene

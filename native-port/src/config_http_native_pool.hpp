@@ -9,6 +9,7 @@
 #include <map>
 #include <mutex>
 #include <thread>
+
 namespace opensim::framework {
 class ConfigHttpNativePool {
     using Clock = std::chrono::steady_clock;
@@ -29,18 +30,19 @@ class ConfigHttpNativePool {
 
       public:
         ~Lease();
-        Lease(const Lease&) = delete;
-        Lease& operator=(const Lease&) = delete;
-        void adopt(httplib::Client&);
-        void connected(const httplib::ClientImpl::StreamHandle&);
+        Lease(const Lease &) = delete;
+        Lease &operator=(const Lease &) = delete;
+        void adopt(httplib::Client &);
+        void connected(const httplib::ClientImpl::StreamHandle &);
         std::shared_ptr<ConfigHttpSourceReceiveBuffer> source_receive_buffer();
         std::optional<std::u16string> tunnel_user_agent() const;
-        bool response_headers(const ConfigHttpResponseHead&);
-        void finish(httplib::ClientImpl::StreamHandle&&, bool reusable) noexcept;
+        bool response_headers(const ConfigHttpResponseHead &);
+        void finish(httplib::ClientImpl::StreamHandle &&, bool reusable) noexcept;
     };
+
     explicit ConfigHttpNativePool(ConfigXmlHttpPoolSettings);
     ~ConfigHttpNativePool();
-    std::shared_ptr<Lease> acquire(const std::string& host, std::uint16_t port, Clock::time_point deadline,
+    std::shared_ptr<Lease> acquire(const std::string &host, std::uint16_t port, Clock::time_point deadline,
                                    std::function<bool()> interrupted = {},
                                    std::optional<std::u16string> tunnel_user_agent = {});
 
@@ -48,4 +50,4 @@ class ConfigHttpNativePool {
     std::shared_ptr<State> state_;
     std::jthread scavenger_;
 };
-}
+} // namespace opensim::framework

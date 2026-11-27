@@ -3,6 +3,7 @@
 #include "opensim/framework/console_parser.hpp"
 #include "opensim/framework/text.hpp"
 #include <stdexcept>
+
 namespace opensim::framework {
 namespace {
 bool option(std::u16string_view word) {
@@ -15,7 +16,8 @@ bool option(std::u16string_view word) {
     }
     return true;
 }
-}
+} // namespace
+
 std::vector<std::u16string> parse_console_command(std::optional<std::u16string_view> text) {
     if (!text)
         throw std::runtime_error("Object reference not set to an instance of an object.");
@@ -56,6 +58,7 @@ std::vector<std::u16string> parse_console_command(std::optional<std::u16string_v
     }
     return result;
 }
+
 std::vector<std::string> parse_console_command_utf8(std::string_view text) {
     auto units = utf16_replacing(text);
     auto parsed = parse_console_command(std::u16string_view(units));
@@ -65,4 +68,4 @@ std::vector<std::string> parse_console_command_utf8(std::string_view text) {
         result.push_back(utf8(value));
     return result;
 }
-}
+} // namespace opensim::framework

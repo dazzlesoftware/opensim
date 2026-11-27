@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "priority": "Dependable single-region preview before exhaustive parity",
+  "platforms": [
+    "Windows",
+    "Linux"
+  ],
+  "deferredPreviewPlatform": "macOS",
+  "fullParityStillRequired": true,
+  "previewAccepted": false,
+  "protectedInstallation": {
+    "path": "G:/GitHub/SecondLife/TestBuild",
+    "preserveDatabasesAndSettings": true,
+    "owner": "97b5e5be-2203-4db1-99bf-72d132aec889"
+  },
+  "checks": [
+    {
+      "id": "fresh-account-entry",
+      "acceptance": "Create new accounts through normal entry points; login without database repairs; required folders and CreateInventoryCategory work",
+      "windows": "Isolated protocol checks pass. Both Preview First and Preview Second logged in through Firestorm 7.2.5.81788 on the isolated Windows preview",
+      "linux": "Ubuntu 24.04 native preview passes fresh CLI account, inventory-folder, XML-RPC and UDP entry checks. Both Preview accounts also log in simultaneously through real Windows Firestorm connected to Linux Docker after fixing wildcard grid-discovery advertisement"
+    },
+    {
+      "id": "automatic-appearance",
+      "acceptance": "Default clothes, appearance and baked textures are visible immediately after login without Edit Outfit",
+      "windows": "Default clothes rendered automatically on both avatars, visible from both Firestorm sessions without Edit Outfit. Protocol checks verify own wearable IDs, outfit links and all six wearable assets. Separate protocol checks now pass baked texture upload and exact retrieval by the other account",
+      "linux": "Both distinct avatars render default clothes automatically in both Windows Firestorm sessions against Linux, without Edit Outfit. Linux protocol checks also pass own wearable IDs, all six wearable assets and cross-account baked-texture upload/retrieval"
+    },
+    {
+      "id": "two-avatars",
+      "acceptance": "Two distinct accounts stay connected, see each other, and have isolated account and inventory state",
+      "windows": "Both distinct Firestorm accounts are simultaneously connected and each renders both named, clothed avatars. Second Only Preview Folder was created through Preview Second's inventory UI and is absent from Preview First's inventory search; protocol parent-folder isolation also passes",
+      "linux": "Both Windows Firestorm sessions against Linux display both distinct named clothed avatars before and after restart. The copied object is visible only in its Second owner inventory and absent from First inventory search. Linux protocol checks also verify distinct account IDs and parent-folder isolation"
+    },
+    {
+      "id": "movement",
+      "acceptance": "Both Firestorm avatars move normally and observe each other's movement",
+      "windows": "Both avatars moved through Firestorm arrow-key controls with position changes and remote avatar movement observed in the other viewer using ubODE",
+      "linux": "Verified with Windows Firestorm against Linux ubODE: user-held forward movement takes Second from about (128,128) to (133,129), and backward movement takes First from about (127,128) to (117,128). First renders Second at its displaced position; Second faces the nearest avatar and renders First at its new distant position. Human-assisted held inputs; rounded viewer coordinates"
+    },
+    {
+      "id": "building",
+      "acceptance": "Create, rez, select, move, rotate, resize and edit basic objects through Firestorm",
+      "windows": "Firestorm creates and selects a cube, renames it Preview Second Persistence Cube, sets width 1.25 m, Z position 22.5 m and Z rotation 45 degrees, and takes an inventory copy through Build > Object > Take Copy. User-assisted inventory drag rezzes a distinct new object, verified in the viewer and persisted scene. Isolated protocol take-copy test passes with Flotsam memory caching",
+      "linux": "Verified through Windows Firestorm against Linux: create/select/name cube, width 1.25 m, position Z 22.5 m, Z rotation 45 degrees, Take Copy, and human-assisted normal inventory drag-to-world. Linux persistence confirms a distinct rezzed UUID, retained original and inventory item, correct Second owner, and identical scale/quaternion. Both viewers render both objects"
+    },
+    {
+      "id": "clean-restart",
+      "acceptance": "Clean stop/start restores region objects, inventory and avatar state without repair",
+      "windows": "Both Firestorm clients log out, server exits with STOPPED, and both log back in after restart. Three viewer-created objects retain UUIDs, names, owners and positions; the copied inventory item and Second Only Preview Folder reappear in the inventory UI; both avatars render clothed automatically. Isolated protocol check additionally verifies flushing an appearance update before its delayed save",
+      "linux": "Both real Firestorm clients log out; Linux Docker server exits with STOPPED and code 0. Same volume restarts, both accounts relogin clothed and mutually visible, and both render the restored edited cube. Exact UUID/name/owner/position/scale/quaternion, inventory copy, appearance records and region cache ID survive. Second inventory displays its saved item; First search returns no item. Last avatar positions remain saved. No startup map warning Final follow-up clean restart preserves both exact cube transforms, inventory and appearance; two-account protocol check receives both restored objects and mutual avatar updates. No additional GUI Firestorm run for that final follow-up."
+    },
+    {
+      "id": "login-reliability",
+      "acceptance": "Repeated normal logins complete reliably without missing RegionHandshake",
+      "windows": "Current build passes six base connected-region runs and six --raw-fps connected-region runs, plus five logout/fresh-session/UDP-handshake cycles per account in preview_entry_network. Historical timeout is not reproduced; root cause remains unconfirmed Installed runtime additionally passes 25 fresh-session UDP handshake cycles per account. Historical root cause remains unconfirmed.",
+      "linux": "Current build passes --raw-fps connected-region check plus five logout/fresh-session/UDP-handshake cycles per account after clean restart. Both real Firestorm sessions also connect successfully Installed runtime additionally passes 25 fresh-session UDP handshake cycles per account. Historical root cause remains unconfirmed."
+    }
+  ],
+  "evidence": {
+    "freshEntryTest": "tests/preview_entry_network.py",
+    "freshEntryResults": "build-https/preview-repeated-login-network/results.json",
+    "runtimeShutdownRegression": "build-https/preview-shutdown-runtime-tests.log",
+    "admissionChecks": "build-https/preview-admission-tests.log",
+    "sqlSetupWritesInFreshEntryTest": false,
+    "realFirestormVerified": true,
+    "realFirestormPlatforms": [
+      "Windows client against Windows server",
+      "Windows client against Linux server"
+    ],
+    "realFirestormVersion": "7.2.5.81788",
+    "realFirestormServerPort": 19090,
+    "humanAssistedActions": [
+      "Build Tools panel positioning",
+      "inventory drag to world"
+    ],
+    "realFirestormData": "build-https/firestorm-live-5hq0em76",
+    "linuxEntryResults": "build-linux-preview/evidence/preview-results.json",
+    "linuxFocusedTests": "build-linux-preview/evidence/tests.log",
+    "linuxPublishedPorts": "build-linux-preview/evidence/published-port-results.json",
+    "linuxLiveFirestorm": "build-linux-preview/evidence/firestorm-live-results.json",
+    "linuxRepeatedLogin": "build-linux-preview/evidence/repeated-login-tests.log",
+    "linuxHandshake": "build-linux-preview/evidence/handshake-raw-results.json",
+    "linuxServerStartup": "build-linux-preview/evidence/live-server.log",
+    "realFirestormServerPlatforms": [
+      "Windows",
+      "Linux"
+    ],
+    "handshakeSummary": "build-linux-preview/evidence/handshake-summary.json",
+    "cppFormatting": "All 1356 first-party C++ files pass format_cpp.py; git diff --check passes",
+    "linuxTransformRestart": "build-linux-preview/evidence/transform-restart-results.json",
+    "linuxLiveServerPort": 19091,
+    "linuxRezMovement": "build-linux-preview/evidence/rez-movement-results.json",
+    "installedWindows": "build-preview-release/20261124-preview1/evidence/windows-installed-handshake/results.json",
+    "installedLinux": "build-preview-release/20261124-preview1/evidence/linux-installed-handshake/results.json",
+    "finalLinuxRestart": "build-linux-preview/evidence/final-restart-results.json",
+    "packagedLaunchers": "build-preview-release/20261124-preview1/evidence/packaged-launcher-results.json"
+  },
+  "remainingOrder": [
+    "Reproduce and diagnose historical intermittent RegionHandshake timeout; current 25-cycle checks per account and OS pass",
+    "Optional native Linux GUI Firestorm run; existing Linux acceptance uses Windows Firestorm clients against Linux server",
+    "Full 1:1 feature parity, exhaustive runtime edge cases and macOS remain deferred"
+  ],
+  "eta": {
+    "status": "Windows/Linux scoped preview packaged with disclosed unresolved historical timeout",
+    "basis": "Installed runtime fixtures, final Linux persistence and packaged launcher smoke checks pass; no defensible completion ETA for an unreproduced historical failure",
+    "nextEstimateGate": "A reproducible historical handshake failure or newly scoped parity work"
+  },
+  "startupMap": {
+    "status": "Verified on Windows and Linux",
+    "fix": "Persist source-compatible defaults on first SQLite region load; retain existing rows and cache IDs on restart",
+    "test": "preview_entry_network"
+  },
+  "packaging": {
+    "release": "20261124-preview1",
+    "testBuildModified": false,
+    "launchersVerified": true,
+    "noDotNetRuntimeRequired": true,
+    "containsQaDatabases": false
+  }
+}

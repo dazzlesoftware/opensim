@@ -1,0 +1,1 @@
+key input=NULL_KEY;integer result;integer after;default{state_entry(){result=xmrHashCode(input);after=1;}}

@@ -1,0 +1,1 @@
+float item=xmrString2Float("1.2345678901234567");string result;default{state_entry(){result=(string)item;}}

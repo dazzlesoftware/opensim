@@ -5,23 +5,26 @@ using namespace opensim;
 using namespace services;
 using namespace server;
 using namespace network;
+
 struct QueueBackend : EventQueueBackend {
     std::atomic<int32_t> draws = 40;
+
     int32_t random_next(int32_t) override {
         return draws.fetch_add(1);
     }
-    void debug(const std::string&) override {
-    }
-    void warn(const std::string&) override {
-    }
-    void error(const std::string&) override {
-    }
-    void console(const std::string&) override {
-    }
-    void add_command(CapabilityCommand) override {
-    }
+
+    void debug(const std::string &) override {}
+
+    void warn(const std::string &) override {}
+
+    void error(const std::string &) override {}
+
+    void console(const std::string &) override {}
+
+    void add_command(CapabilityCommand) override {}
 };
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     try {
         QueueBackend backend;
         auto module = std::make_shared<EventQueueModule>(backend);
@@ -40,9 +43,8 @@ int main(int argc, char** argv) {
             options.certificate = argv[1];
             options.private_key = argv[2];
         }
-        AsyncHttpServer http(options, [&](const HttpRequest& request,
-                                          std::shared_ptr<HttpResponseChannel> channel) {
-            polls.dispatch(*registry, request, channel, [&](const HttpRequest& incoming) {
+        AsyncHttpServer http(options, [&](const HttpRequest &request, std::shared_ptr<HttpResponseChannel> channel) {
+            polls.dispatch(*registry, request, channel, [&](const HttpRequest &incoming) {
                 HttpResponse response;
                 if (incoming.path == "/discover") {
                     std::shared_ptr<CapabilityPollHandler> handler;
@@ -60,22 +62,19 @@ int main(int argc, char** argv) {
                     if (incoming.body == "enable")
                         module->enable_simulator(1234, endpoint, agent, 256, 512);
                     else if (incoming.body == "teleport")
-                        module->teleport_finish(1234, 21, endpoint, 999, 8192, "http://seed/", agent, 256,
-                                                512);
+                        module->teleport_finish(1234, 21, endpoint, 999, 8192, "http://seed/", agent, 256, 512);
                     else if (incoming.body == "cross")
-                        module->cross_region(1234, {1, 2, 3}, {0, 1, 0}, endpoint, "http://seed/", agent, id,
-                                             256, 512);
+                        module->cross_region(1234, {1, 2, 3}, {0, 1, 0}, endpoint, "http://seed/", agent, id, 256, 512);
                     else if (incoming.body == "establish")
                         module->establish_communication(agent, endpoint, "http://seed/", 1234, 256, 512);
                     else if (incoming.body == "invite")
-                        module->chatterbox_invitation(id, "session", id, "hello", agent, "name", 1, 123,
-                                                      false, 0, {1, 2, 3}, 0, id, false, nullptr);
+                        module->chatterbox_invitation(id, "session", id, "hello", agent, "name", 1, 123, false, 0,
+                                                      {1, 2, 3}, 0, id, false, nullptr);
                     else if (incoming.body == "updates") {
                         std::vector<EventGroupMember> list{EventGroupMember(id)};
                         module->chatterbox_updates(id, agent, &list);
                     } else if (incoming.body == "chat-start")
-                        module->chatterbox_start(id, "session", 0, true, false, id, true, std::nullopt,
-                                                 agent);
+                        module->chatterbox_start(id, "session", 0, true, false, id, true, std::nullopt, agent);
                     else if (incoming.body == "chat-close")
                         module->chatterbox_close(agent, id, "closed");
                     else if (incoming.body == "groups") {
@@ -103,13 +102,12 @@ int main(int argc, char** argv) {
                         std::vector<std::optional<std::string>> list{"first", "<&"};
                         module->large_message(agent, id, id, "test", id, &list);
                     } else if (incoming.body == "generic-bytes") {
-                        auto bytes = std::make_shared<std::vector<uint8_t>>(
-                            std::initializer_list<uint8_t>{'r', 'a', 'w'});
+                        auto bytes =
+                            std::make_shared<std::vector<uint8_t>>(std::initializer_list<uint8_t>{'r', 'a', 'w'});
                         std::vector<PollBytes> list{bytes};
                         module->large_message_bytes(agent, id, id, "test", id, &list);
                     } else if (incoming.body == "build")
-                        module->enqueue(module->build_event("Custom", std::make_shared<Value>(int32_t(7))),
-                                        agent);
+                        module->enqueue(module->build_event("Custom", std::make_shared<Value>(int32_t(7))), agent);
                     else
                         response.status = 400;
                 } else if (incoming.path == "/register")
@@ -137,7 +135,7 @@ int main(int argc, char** argv) {
         http.stop();
         caps->deregister_handlers();
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

@@ -1,0 +1,1 @@
+integer item=7;string result;default{state_entry(){result=(string)item;}}

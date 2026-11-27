@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sstream>
 using namespace opensim::framework;
+
 int main() {
     std::array<std::shared_ptr<TextureFace>, 4> faces;
     faces[0] = std::make_shared<TextureFace>();
@@ -15,7 +16,7 @@ int main() {
         std::istringstream in(line);
         unsigned index, op, bits;
         in >> index >> op >> std::hex >> bits;
-        auto& f = *faces.at(index);
+        auto &f = *faces.at(index);
         float v = std::bit_cast<float>(static_cast<std::uint32_t>(bits));
         switch (op) {
         case 0:
@@ -61,16 +62,14 @@ int main() {
             faces[3] = faces[index]->clone();
             break;
         case 14:
-            f.texture_id(
-                Uuid(bits ? "5748decc-f629-461c-9a36-a35a221fe21f" : "00000000-0000-0000-0000-000000000000"));
+            f.texture_id(Uuid(bits ? "5748decc-f629-461c-9a36-a35a221fe21f" : "00000000-0000-0000-0000-000000000000"));
             break;
         case 15:
-            f.material_id(
-                Uuid(bits ? "5748decc-f629-461c-9a36-a35a221fe21f" : "00000000-0000-0000-0000-000000000000"));
+            f.material_id(Uuid(bits ? "5748decc-f629-461c-9a36-a35a221fe21f" : "00000000-0000-0000-0000-000000000000"));
             break;
         }
-        for (auto& face : faces) {
-            auto& x = *face;
+        for (auto &face : faces) {
+            auto &x = *face;
             auto emit = [](float n) {
                 auto b = std::bit_cast<std::uint32_t>(n);
                 if (std::isnan(n))

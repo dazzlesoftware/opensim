@@ -1,0 +1,1 @@
+YOption arrays;object a;integer result;default{state_entry(){a=xmrFixedArrayAllocF(1);xmrFixedArraySetF(a,-1,1.25);}}

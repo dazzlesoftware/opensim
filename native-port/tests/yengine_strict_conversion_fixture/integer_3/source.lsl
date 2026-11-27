@@ -1,0 +1,1 @@
+integer result;integer after;default{state_entry(){result=xmrString2Integer("+7");after=1;}}

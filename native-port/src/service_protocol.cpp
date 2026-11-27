@@ -32,6 +32,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "opensim/network/service_xml_names.hpp"
 #include <algorithm>
 #include <stdexcept>
+
 namespace opensim::network {
 namespace {
 int hex(char16_t c) {
@@ -40,6 +41,7 @@ int hex(char16_t c) {
            : c >= u'A' && c <= u'F' ? c - u'A' + 10
                                     : -1;
 }
+
 std::string decode(std::string_view input, bool allow_unicode_escape = true) {
     const auto text = framework::utf16_replacing(input);
     std::u16string result;
@@ -77,9 +79,11 @@ std::string decode(std::string_view input, bool allow_unicode_escape = true) {
     flush();
     return framework::utf8(result);
 }
+
 bool blank(std::string_view value) {
     return framework::trim_utf8(value).empty();
 }
+
 std::string escaped(std::string_view text) {
     std::u16string value;
     constexpr char16_t digits[] = u"0123456789ABCDEF";
@@ -112,8 +116,9 @@ std::string escaped(std::string_view text) {
     }
     return framework::utf8(value);
 }
-void xml_fields(std::string& out, const ServiceXmlValue& value) {
-    for (const auto& [key, child] : value.fields) {
+
+void xml_fields(std::string &out, const ServiceXmlValue &value) {
+    for (const auto &[key, child] : value.fields) {
         const auto name = service_xml_name(key);
         if (name.empty())
             throw std::invalid_argument("Empty service XML key");
@@ -134,6 +139,7 @@ void xml_fields(std::string& out, const ServiceXmlValue& value) {
         }
     }
 }
+
 std::string unbase64(std::string value) {
     std::erase_if(value, [](char c) { return c == ' ' || c == '\t' || c == '\r' || c == '\n'; });
     if (value.size() % 4)
@@ -165,10 +171,11 @@ std::string unbase64(std::string value) {
     }
     return framework::utf8(framework::utf16_replacing(result));
 }
-std::string header(const HttpRequest& request, std::string wanted, bool& found) {
-    for (const auto& [name, value] : request.headers) {
+
+std::string header(const HttpRequest &request, std::string wanted, bool &found) {
+    for (const auto &[name, value] : request.headers) {
         auto lower = name;
-        for (auto& c : lower)
+        for (auto &c : lower)
             if (c >= 'A' && c <= 'Z')
                 c = static_cast<char>(c + 32);
         if (lower == wanted) {
@@ -179,23 +186,25 @@ std::string header(const HttpRequest& request, std::string wanted, bool& found) 
     found = false;
     return {};
 }
-}
+} // namespace
+
 std::vector<std::string> Form::ordered_keys() const {
     std::vector<std::string> keys;
-    for (const auto& key : insertion_order)
+    for (const auto &key : insertion_order)
         if (contains(key) && std::find(keys.begin(), keys.end(), key) == keys.end())
             keys.push_back(key);
-    for (const auto& [key, value] : *this)
+    for (const auto &[key, value] : *this)
         if (std::find(keys.begin(), keys.end(), key) == keys.end())
             keys.push_back(key);
     return keys;
 }
+
 std::string service_xml_name(std::string_view input) {
     const auto text = framework::utf16_replacing(input);
     std::u16string result;
-    auto valid = [](char16_t c, const auto& ranges) {
-        const auto i = std::lower_bound(ranges.begin(), ranges.end(), c,
-                                        [](auto r, char16_t n) { return r.second < n; });
+    auto valid = [](char16_t c, const auto &ranges) {
+        const auto i =
+            std::lower_bound(ranges.begin(), ranges.end(), c, [](auto r, char16_t n) { return r.second < n; });
         return i != ranges.end() && i->first <= c;
     };
     auto looks_encoded = [&](std::size_t i) {
@@ -216,15 +225,13 @@ std::string service_xml_name(std::string_view input) {
     constexpr char16_t digits[] = u"0123456789ABCDEF";
     for (std::size_t i = 0; i < text.size(); ++i) {
         auto c = text[i];
-        if ((i == 0 ? valid(c, detail::xml_name_start) : valid(c, detail::xml_name_char)) &&
-            !looks_encoded(i)) {
+        if ((i == 0 ? valid(c, detail::xml_name_start) : valid(c, detail::xml_name_char)) && !looks_encoded(i)) {
             result += c;
             continue;
         }
         std::uint32_t point = c;
         int width = 4;
-        if (c >= 0xd800 && c <= 0xdbff && i + 1 < text.size() && text[i + 1] >= 0xdc00 &&
-            text[i + 1] <= 0xdfff) {
+        if (c >= 0xd800 && c <= 0xdbff && i + 1 < text.size() && text[i + 1] >= 0xdc00 && text[i + 1] <= 0xdfff) {
             point = 0x10000 + ((c - 0xd800) << 10) + (text[++i] - 0xdc00);
             width = 8;
         }
@@ -235,6 +242,7 @@ std::string service_xml_name(std::string_view input) {
     }
     return framework::utf8(result);
 }
+
 Form parse_service_form(std::string_view input) {
     Form result;
     std::size_t start = 0;
@@ -255,7 +263,7 @@ Form parse_service_form(std::string_view input) {
                     if (found == result.end()) {
                         result.insertion_order.push_back(name);
                         result[name] = std::vector<std::string>{value};
-                    } else if (auto* list = std::get_if<std::vector<std::string>>(&found->second))
+                    } else if (auto *list = std::get_if<std::vector<std::string>>(&found->second))
                         list->push_back(value);
                 }
             } else if (!result.contains(name)) {
@@ -269,9 +277,11 @@ Form parse_service_form(std::string_view input) {
     }
     return result;
 }
+
 std::string service_url_decode(std::string_view text) {
     return decode(text);
 }
+
 std::optional<ServiceRequestTarget> canonical_service_request_target(std::string_view target) {
 #ifdef _WIN32
     constexpr bool windows = true;
@@ -288,21 +298,22 @@ std::optional<ServiceRequestTarget> canonical_service_request_target(std::string
     if (!uri)
         return std::nullopt;
     return ServiceRequestTarget{
-        framework::utf8(*framework::config_generic_uri_component(
-            uri, framework::ConfigGenericUriComponent::AbsolutePath)),
-        framework::utf8(*framework::config_generic_uri_component(
-            uri, framework::ConfigGenericUriComponent::Query))};
+        framework::utf8(
+            *framework::config_generic_uri_component(uri, framework::ConfigGenericUriComponent::AbsolutePath)),
+        framework::utf8(*framework::config_generic_uri_component(uri, framework::ConfigGenericUriComponent::Query))};
 }
 
 std::string service_query_header(std::string_view query) {
     if (query.empty())
         return {};
+
     struct Field {
         std::string name;
         std::string values;
     };
+
     std::vector<Field> fields;
-    const auto compare = [](const std::string& left, const std::string& right) {
+    const auto compare = [](const std::string &left, const std::string &right) {
         return framework::ordinal_compare_ignore_case(left, right) < 0;
     };
     std::map<std::string, std::size_t, decltype(compare)> named(compare);
@@ -332,7 +343,7 @@ std::string service_query_header(std::string_view query) {
         query.remove_prefix(delimiter + 1);
     }
     std::string header;
-    for (const auto& field : fields) {
+    for (const auto &field : fields) {
         if (!field.name.empty())
             header += field.name + "=";
         header += field.values;
@@ -348,8 +359,8 @@ std::string service_url_encode(std::string_view text) {
     constexpr char digits[] = "0123456789abcdef";
     std::string result;
     for (unsigned char c : bytes) {
-        if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '!' ||
-            c == '(' || c == ')' || c == '*' || c == '-' || c == '.' || c == '_')
+        if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '!' || c == '(' ||
+            c == ')' || c == '*' || c == '-' || c == '.' || c == '_')
             result += static_cast<char>(c);
         else if (c == ' ')
             result += '+';
@@ -361,19 +372,22 @@ std::string service_url_encode(std::string_view text) {
     }
     return result;
 }
+
 ServiceXmlValue ServiceXmlValue::object(std::vector<std::pair<std::string, ServiceXmlValue>> fields) {
     ServiceXmlValue result;
     result.fields = std::move(fields);
     result.list = true;
     return result;
 }
-std::string service_xml(const ServiceXmlValue& value) {
+
+std::string service_xml(const ServiceXmlValue &value) {
     if (value.fields.empty())
         return "<?xml version=\"1.0\"?><ServerResponse />";
     std::string result = "<?xml version=\"1.0\"?><ServerResponse>";
     xml_fields(result, value);
     return result + "</ServerResponse>";
 }
+
 std::string read_service_body(std::string_view bytes) {
     auto byte = [&](std::size_t i) { return static_cast<unsigned char>(bytes[i]); };
     const bool le32 = bytes.starts_with(std::string_view("\xff\xfe\0\0", 4)),
@@ -404,8 +418,7 @@ std::string read_service_body(std::string_view bytes) {
         std::u16string decoded;
         std::size_t i = 2;
         for (; i + 1 < bytes.size(); i += 2)
-            decoded +=
-                static_cast<char16_t>(le16 ? byte(i) | (byte(i + 1) << 8) : (byte(i) << 8) | byte(i + 1));
+            decoded += static_cast<char16_t>(le16 ? byte(i) | (byte(i + 1) << 8) : (byte(i) << 8) | byte(i + 1));
         if (i < bytes.size())
             decoded += u'\ufffd';
         return framework::utf8(decoded);
@@ -424,15 +437,15 @@ std::string service_result(bool success) {
     return std::string("<?xml version=\"1.0\"?>") + newline + "<ServerResponse>" + newline + "  <result>" +
            (success ? "Success" : "Failure") + "</result>" + newline + "</ServerResponse>";
 }
-ServiceAuth::ServiceAuth(const server::IniConfig& config, const std::string& section)
-    : allow_script_requests_(config.boolean(section, "AllowllHTTPRequestIn",
-                                            config.boolean("Network", "AllowllHTTPRequestIn", false))),
-      basic_(config.get(section, "AuthType", config.get("Network", "AuthType", "None")) ==
-             "BasicHttpAuthentication"),
+
+ServiceAuth::ServiceAuth(const server::IniConfig &config, const std::string &section)
+    : allow_script_requests_(
+          config.boolean(section, "AllowllHTTPRequestIn", config.boolean("Network", "AllowllHTTPRequestIn", false))),
+      basic_(config.get(section, "AuthType", config.get("Network", "AuthType", "None")) == "BasicHttpAuthentication"),
       username_(config.get(section, "HttpAuthUsername", config.get("Network", "HttpAuthUsername"))),
-      password_(config.get(section, "HttpAuthPassword", config.get("Network", "HttpAuthPassword"))) {
-}
-bool ServiceAuth::authenticate(const HttpRequest& request, HttpResponse& response) const {
+      password_(config.get(section, "HttpAuthPassword", config.get("Network", "HttpAuthPassword"))) {}
+
+bool ServiceAuth::authenticate(const HttpRequest &request, HttpResponse &response) const {
     bool found = false;
     header(request, "x-secondlife-shard", found);
     if (found && !allow_script_requests_) {
@@ -451,8 +464,7 @@ bool ServiceAuth::authenticate(const HttpRequest& request, HttpResponse& respons
         if (first != std::string::npos) {
             const auto second = credentials.find(':', first + 1);
             if (credentials.substr(0, first) == username_ &&
-                credentials.substr(first + 1, second == std::string::npos ? second : second - first - 1) ==
-                    password_)
+                credentials.substr(first + 1, second == std::string::npos ? second : second - first - 1) == password_)
                 return true;
         }
     }
@@ -461,4 +473,4 @@ bool ServiceAuth::authenticate(const HttpRequest& request, HttpResponse& respons
     response.headers["WWW-Authenticate"] = "Basic realm = \"Asset Server\"";
     return false;
 }
-}
+} // namespace opensim::network

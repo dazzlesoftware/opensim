@@ -1,15 +1,18 @@
 #include "opensim/framework/config_http_multi_proxy_candidates.hpp"
 #include "opensim/framework/config_http_environment_proxy.hpp"
+
 namespace opensim::framework {
 namespace {
 bool separator(char16_t c) {
     return c == u';' || c == u' ' || c == u'\n' || c == u'\r' || c == u'\t';
 }
+
 struct Part {
     ConfigUriObjectPtr uri;
     std::size_t consumed;
 };
-Part part(std::u16string_view text, bool secure, const ConfigUriObjectBackend& backend) {
+
+Part part(std::u16string_view text, bool secure, const ConfigUriObjectBackend &backend) {
     const auto length = text.size();
     const int match = secure ? 1 : 2;
     while (true) {
@@ -49,7 +52,8 @@ Part part(std::u16string_view text, bool secure, const ConfigUriObjectBackend& b
     }
     return {{}, length};
 }
-}
+} // namespace
+
 ConfigHttpMultiProxyCandidates ConfigHttpMultiProxyCandidates::parse(ConfigUriText text, bool secure,
                                                                      ConfigUriObjectBackend backend) {
     ConfigHttpMultiProxyCandidates result;
@@ -64,6 +68,7 @@ ConfigHttpMultiProxyCandidates ConfigHttpMultiProxyCandidates::parse(ConfigUriTe
     }
     return result;
 }
+
 ConfigHttpMultiProxyCandidates ConfigHttpMultiProxyCandidates::lazy(ConfigUriText text, bool secure,
                                                                     ConfigUriObjectBackend backend) {
     ConfigHttpMultiProxyCandidates result;
@@ -73,6 +78,7 @@ ConfigHttpMultiProxyCandidates ConfigHttpMultiProxyCandidates::lazy(ConfigUriTex
         result.text_ = std::move(text);
     return result;
 }
+
 ConfigHttpMultiProxyCandidate ConfigHttpMultiProxyCandidates::next() {
     if (!text_) {
         if (current_ == uris_.size())
@@ -87,4 +93,4 @@ ConfigHttpMultiProxyCandidate ConfigHttpMultiProxyCandidates::next() {
     }
     return {};
 }
-}
+} // namespace opensim::framework

@@ -5,11 +5,17 @@
 #include <iostream>
 #include "opensim/framework/text.hpp"
 using namespace opensim::framework;
+
 struct Stop : std::exception {};
+
 struct Jar : ConfigXmlCookieContainer {
-    NiniWriterText header(const std::shared_ptr<ConfigXmlUri> &) override { return nini_writer_text(u""); }
+    NiniWriterText header(const std::shared_ptr<ConfigXmlUri> &) override {
+        return nini_writer_text(u"");
+    }
+
     void set(const std::shared_ptr<ConfigXmlUri> &, NiniWriterText) override {}
 };
+
 int main(int argc, char **argv) {
     if (argc != 2)
         return 20;
@@ -41,8 +47,7 @@ int main(int argc, char **argv) {
     auto backend = config_xml_native_http_backend(s);
     ConfigXmlUriObjects objects;
     auto uri = objects.wrap(native_config_uri_object_backend()->create(
-        nini_writer_text(utf16(std::string("http://127.0.0.1:") + argv[1] + "/")),
-        ConfigUriObjectKind::Absolute));
+        nini_writer_text(utf16(std::string("http://127.0.0.1:") + argv[1] + "/")), ConfigUriObjectKind::Absolute));
     auto send = [&](auto client) {
         auto bytes = client->get_stream(uri)->copy_to_memory();
         return std::string(bytes.begin(), bytes.end()) == "proxy-capture";

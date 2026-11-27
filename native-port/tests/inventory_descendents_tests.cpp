@@ -4,6 +4,7 @@
 #include <iostream>
 using namespace opensim;
 using namespace services;
+
 namespace {
 bool diagnostics_enabled = false;
 
@@ -11,6 +12,7 @@ framework::Uuid id(int n) {
     auto tail = std::to_string(n);
     return framework::Uuid("00000000-0000-0000-0000-" + std::string(12 - tail.size(), '0') + tail);
 }
+
 std::string hex(std::string_view s) {
     std::string out;
     constexpr char digits[] = "0123456789abcdef";
@@ -20,6 +22,7 @@ std::string hex(std::string_view s) {
     }
     return out;
 }
+
 std::string unhex(const std::string &s) {
     if (s == "-")
         return {};
@@ -28,6 +31,7 @@ std::string unhex(const std::string &s) {
         out += static_cast<char>(std::stoi(s.substr(i, 2), nullptr, 16));
     return out;
 }
+
 InventoryItem item(int n, int type) {
     InventoryItem value;
     value.id = id(n);
@@ -41,6 +45,7 @@ InventoryItem item(int n, int type) {
     value.flags = -1;
     return value;
 }
+
 InventoryCollection collection(framework::Uuid key, int mode) {
     InventoryCollection c;
     c.folder = (mode == 4 || mode == 5) ? framework::Uuid{} : key;
@@ -56,6 +61,7 @@ InventoryCollection collection(framework::Uuid key, int mode) {
     c.items = {item(201, 6), item(202, 24)};
     return c;
 }
+
 std::string probe(int mode, int options, const std::string &body) {
     std::string diagnostics;
     std::string trace;
@@ -74,8 +80,8 @@ std::string probe(int mode, int options, const std::string &body) {
                                                                : "E:") +
                            hex(message);
         };
-    backend.multiple_content =
-        [&](auto owner, const auto &ids) -> std::optional<InventoryDescendentsBackend::Collections> {
+    backend.multiple_content = [&](auto owner,
+                                   const auto &ids) -> std::optional<InventoryDescendentsBackend::Collections> {
         std::string call = "C" + owner.str();
         for (auto key : ids)
             call += "," + key.str();
@@ -143,22 +149,25 @@ std::string probe(int mode, int options, const std::string &body) {
     } catch (const std::exception &) {
         result = "EXCEPTION";
     }
-    return result + "|" + trace + "|" + (bad.contains(id(1)) ? "1" : "0") +
-           (bad.contains(id(2)) ? "1" : "0") + (bad.contains(id(3)) ? "1" : "0") +
-           (diagnostics_enabled ? "|" + diagnostics : "");
+    return result + "|" + trace + "|" + (bad.contains(id(1)) ? "1" : "0") + (bad.contains(id(2)) ? "1" : "0") +
+           (bad.contains(id(3)) ? "1" : "0") + (diagnostics_enabled ? "|" + diagnostics : "");
 }
+
 std::string request(int key, bool folders = true, bool items = true, int owner = 100) {
     return "<llsd><map><key>folders</key><array><map><key>folder_id</key><uuid>" + id(key).str() +
            "</uuid><key>owner_id</key><uuid>" + id(owner).str() + "</uuid><key>fetch_folders</key><boolean>" +
            (folders ? "1" : "0") + "</boolean><key>fetch_items</key><boolean>" + (items ? "1" : "0") +
            "</boolean></map></array></map></llsd>";
 }
+
 int count = 0;
+
 void check(bool value, const char *label) {
     ++count;
     if (!value)
         throw std::runtime_error(label);
 }
+
 void run() {
     check(probe(0, 0, "bad").ends_with("||000"), "malformed XML empty response");
     check(probe(0, 8, request(1)).ends_with("||000"), "null cache parse failure");
@@ -173,11 +182,11 @@ void run() {
           "library uses source library branch");
     check(probe(7, 0, request(1)).starts_with("EXCEPTION"), "extra provider rows source index failure");
 }
-}
+} // namespace
+
 int main(int argc, char **argv) {
     try {
-        if (argc == 2 &&
-            (std::string_view(argv[1]) == "--probe" || std::string_view(argv[1]) == "--probe-logs")) {
+        if (argc == 2 && (std::string_view(argv[1]) == "--probe" || std::string_view(argv[1]) == "--probe-logs")) {
             diagnostics_enabled = std::string_view(argv[1]) == "--probe-logs";
             int mode, options;
             std::string body;

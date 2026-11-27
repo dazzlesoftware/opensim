@@ -1,0 +1,50 @@
+[
+  {
+    "name": "literal_zero",
+    "source": "rotation r=<0,0,0,0>;integer truth;integer negated;integer casted;list boxed;default{state_entry(){truth=xmrRotationToBool(r);negated=!r;casted=(integer)xmrRotationToBool(r);boxed=[r,xmrRotationToBool(r)];}}"
+  },
+  {
+    "name": "literal_signed_zero",
+    "source": "rotation r=<xmrString2Float(\"-0\"),0,0,xmrString2Float(\"-0\")>;integer truth;integer negated;integer casted;list boxed;default{state_entry(){truth=xmrRotationToBool(r);negated=!r;casted=(integer)xmrRotationToBool(r);boxed=[r,xmrRotationToBool(r)];}}"
+  },
+  {
+    "name": "strict_zero",
+    "source": "rotation r=xmrString2Rotation(\"<0,0,0,0>\");integer truth;integer negated;integer casted;list boxed;default{state_entry(){truth=xmrRotationToBool(r);negated=!r;casted=(integer)xmrRotationToBool(r);boxed=[r,xmrRotationToBool(r)];}}"
+  },
+  {
+    "name": "cast_zero",
+    "source": "rotation r=(rotation)\"<0,0,0,0>\";integer truth;integer negated;integer casted;list boxed;default{state_entry(){truth=xmrRotationToBool(r);negated=!r;casted=(integer)xmrRotationToBool(r);boxed=[r,xmrRotationToBool(r)];}}"
+  },
+  {
+    "name": "mutable_zero",
+    "source": "rotation r=<0,0,0,1>;rotation copied;integer truth;integer negated;integer casted;list boxed;default{state_entry(){r.s=0;copied=r;truth=xmrRotationToBool(r);negated=!r;casted=(integer)xmrRotationToBool(r);boxed=[r,xmrRotationToBool(r)];}}"
+  },
+  {
+    "name": "mutable_signed_zero",
+    "source": "rotation r=<0,0,0,1>;rotation copied;integer truth;integer negated;integer casted;list boxed;default{state_entry(){r.x=xmrString2Float(\"-0\");r.s=xmrString2Float(\"-0\");copied=r;truth=xmrRotationToBool(r);negated=!r;casted=(integer)xmrRotationToBool(r);boxed=[r,xmrRotationToBool(r)];}}"
+  },
+  {
+    "name": "function_copy",
+    "source": "rotation r=<0,0,0,1>;rotation copied;integer truth;integer negated;integer casted;list boxed;rotation copy(rotation value){return value;}default{state_entry(){r.s=0;copied=copy(r);truth=xmrRotationToBool(r);negated=!r;casted=(integer)xmrRotationToBool(r);boxed=[r,xmrRotationToBool(r)];}}"
+  },
+  {
+    "name": "reconstruct_after_mutation",
+    "source": "rotation r=<0,0,0,1>;rotation copied;rotation rebuilt;integer copiedTruth;integer rebuiltTruth;integer truth;integer negated;integer casted;list boxed;default{state_entry(){r.s=0;copied=r;rebuilt=<r.x,r.y,r.z,r.s>;copiedTruth=xmrRotationToBool(copied);rebuiltTruth=xmrRotationToBool(rebuilt);truth=xmrRotationToBool(r);negated=!r;casted=(integer)xmrRotationToBool(r);boxed=[r,xmrRotationToBool(r)];}}"
+  },
+  {
+    "name": "list_copy",
+    "source": "rotation r=<0,0,0,1>;rotation copied;integer truth;integer negated;integer casted;list boxed;default{state_entry(){r.s=0;boxed=[r];copied=llList2Rot(boxed,0);truth=xmrRotationToBool(r);negated=!r;casted=(integer)xmrRotationToBool(r);boxed=[r,xmrRotationToBool(r)];}}"
+  },
+  {
+    "name": "global_zero_sleep",
+    "source": "rotation r=<0,0,0,1>;rotation copied;integer before;integer after;default{state_entry(){r.s=0;copied=r;before=xmrRotationToBool(r);llSleep(1.0);after=xmrRotationToBool(r);copied=r;}}"
+  },
+  {
+    "name": "local_zero_sleep",
+    "source": "rotation copied;integer before;integer after;probe(rotation value){value.s=0;before=xmrRotationToBool(value);llSleep(1.0);after=xmrRotationToBool(value);copied=value;}default{state_entry(){probe(<0,0,0,1>);}}"
+  },
+  {
+    "name": "arithmetic_zero",
+    "source": "rotation r=<0,0,0,1>;rotation copied;integer truth;integer negated;integer casted;list boxed;default{state_entry(){r.s=0;copied=r*<0,0,0,1>;truth=xmrRotationToBool(r);negated=!r;casted=(integer)xmrRotationToBool(r);boxed=[r,xmrRotationToBool(r)];}}"
+  }
+]

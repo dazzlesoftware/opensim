@@ -7,45 +7,54 @@
 #include <iomanip>
 using namespace opensim;
 using namespace services;
+
 framework::Uuid id(int n) {
     std::ostringstream out;
     out << "00000000-0000-0000-0000-" << std::hex << std::setw(12) << std::setfill('0') << n;
     return framework::Uuid(out.str());
 }
+
 struct FixturePresence : IPresenceService {
     int seed;
     bool active = false;
-    std::string& events;
-    FixturePresence(int value, std::string& trace) : seed(value), events(trace) {
-    }
-    bool login(const std::string&, const framework::Uuid&, const framework::Uuid&) override {
+    std::string &events;
+
+    FixturePresence(int value, std::string &trace) : seed(value), events(trace) {}
+
+    bool login(const std::string &, const framework::Uuid &, const framework::Uuid &) override {
         events += "presence-login;";
         active = true;
         if (seed % 5 == 2)
             throw std::runtime_error("login");
         return seed % 5 != 1;
     }
-    bool logout(const framework::Uuid&) override {
+
+    bool logout(const framework::Uuid &) override {
         events += "presence-logout;";
         if (seed == 59 || seed == 63)
             throw std::runtime_error("logout");
         active = false;
         return true;
     }
-    bool logout_region(const framework::Uuid&) override {
+
+    bool logout_region(const framework::Uuid &) override {
         return true;
     }
-    bool report(const framework::Uuid&, const framework::Uuid&) override {
+
+    bool report(const framework::Uuid &, const framework::Uuid &) override {
         return true;
     }
-    std::optional<PresenceInfo> agent(const framework::Uuid&) override {
+
+    std::optional<PresenceInfo> agent(const framework::Uuid &) override {
         return {};
     }
-    std::vector<PresenceInfo> agents(const std::vector<std::string>&) override {
+
+    std::vector<PresenceInfo> agents(const std::vector<std::string> &) override {
         return {};
     }
 };
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     try {
         const int seed = std::stoi(argv[1]);
         const auto config = server::IniConfig::load(argv[2]);
@@ -75,21 +84,19 @@ int main(int argc, char** argv) {
         LoginDependencies dependencies;
         dependencies.grid = seed % 7 ? &grid : nullptr;
         dependencies.presence = seed % 5 ? &presence : nullptr;
-        dependencies.grid_user = [&](const std::string&) -> std::optional<GridUserInfo> {
+        dependencies.grid_user = [&](const std::string &) -> std::optional<GridUserInfo> {
             events += "grid-user;";
             return info;
         };
-        dependencies.logged_out = [&](const std::string&, const framework::Uuid& session,
-                                      const framework::Uuid&, const framework::Vector3&,
-                                      const framework::Vector3&) {
+        dependencies.logged_out = [&](const std::string &, const framework::Uuid &session, const framework::Uuid &,
+                                      const framework::Vector3 &, const framework::Vector3 &) {
             events += "logout:" + session.str() + ";";
             if (info)
                 info->online = false;
             return true;
         };
         if (seed % 6)
-            dependencies.inventory =
-                [&](const framework::Uuid&) -> std::optional<std::vector<InventoryFolder>> {
+            dependencies.inventory = [&](const framework::Uuid &) -> std::optional<std::vector<InventoryFolder>> {
                 events += "inventory;";
                 if (seed % 6 == 4)
                     throw std::runtime_error("inventory");
@@ -98,24 +105,22 @@ int main(int argc, char** argv) {
                 return std::vector<InventoryFolder>(seed % 6 == 2 ? 0 : seed % 6 == 3 ? 1 : 2);
             };
         if (seed & 2)
-            dependencies.suitcase_root = [&](const framework::Uuid&) {
+            dependencies.suitcase_root = [&](const framework::Uuid &) {
                 events += "suitcase;";
                 if (seed == 7)
                     throw std::runtime_error("suitcase");
             };
-        dependencies.recover_duplicate = [&](const framework::Uuid&, const framework::Uuid&,
-                                             const GridUserInfo& value) {
+        dependencies.recover_duplicate = [&](const framework::Uuid &, const framework::Uuid &,
+                                             const GridUserInfo &value) {
             events += "recover;";
             if (seed % 3 == 2)
                 throw std::runtime_error("recover");
             if (seed % 3 == 1)
-                dependencies.logged_out(id(9).str(), {}, value.last_region, value.last_position,
-                                        value.last_look_at);
+                dependencies.logged_out(id(9).str(), {}, value.last_region, value.last_position, value.last_look_at);
             return seed % 3 == 1;
         };
         if (seed & 128)
-            dependencies.appearance =
-                [&](const framework::Uuid& user) -> std::shared_ptr<framework::AvatarAppearance> {
+            dependencies.appearance = [&](const framework::Uuid &user) -> std::shared_ptr<framework::AvatarAppearance> {
                 events += "appearance:" + user.str() + ";";
                 if (seed & 256)
                     throw std::runtime_error("appearance");
@@ -132,28 +137,28 @@ int main(int argc, char** argv) {
         std::string result;
         try {
             auto prepared = orchestrator.prepare(account, id(8), id(10), id(11), start);
-            if (auto* ready = std::get_if<PreparedLogin>(&prepared))
+            if (auto *ready = std::get_if<PreparedLogin>(&prepared))
                 result = "READY|" + ready->destination.region->id.str() + "|" +
-                         std::to_string(ready->destination.flags) + "|" +
-                         std::to_string(ready->skeleton.size()) + "|" + (ready->appearance ? "1" : "0");
+                         std::to_string(ready->destination.flags) + "|" + std::to_string(ready->skeleton.size()) + "|" +
+                         (ready->appearance ? "1" : "0");
             else {
                 const auto value = std::get<network::Value>(prepared);
                 for (auto name : {"AlreadyLoggedInProblem", "InventoryProblem", "GridProblem"})
                     if (value.get("message").as_string() == login_failure(name).get("message").as_string())
                         result = name;
             }
-        } catch (const std::exception&) {
+        } catch (const std::exception &) {
             try {
                 orchestrator.cleanup(id(10));
                 result = "InternalError";
-            } catch (const std::exception&) {
+            } catch (const std::exception &) {
                 result = "THREW";
             }
         }
         std::cout << result << '|' << events << '|' << (presence.active ? 1 : 0) << '|'
                   << (info && info->online ? 1 : 0) << '\n';
         return 0;
-    } catch (const std::exception& error) {
+    } catch (const std::exception &error) {
         std::cerr << error.what() << '\n';
         return 1;
     }

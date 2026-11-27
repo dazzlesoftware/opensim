@@ -1,0 +1,22 @@
+{
+  "name": "boxed_high",
+  "input": {
+    "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+    "value": "\uFFFD",
+    "utf16": [
+      55296
+    ]
+  },
+  "append_exception": null,
+  "outer_xml_exception": {
+    "type": "System.ArgumentException",
+    "message": "The surrogate pair (0xD800, 0xD800) is invalid. A high surrogate character (0xD800 - 0xDBFF) must always be paired with a low surrogate character (0xDC00 - 0xDFFF).",
+    "stack": "   at System.Xml.XmlTextEncoder.Write(ReadOnlySpan\u00601 text)\r\n   at System.Xml.XmlTextWriter.WriteString(String text)\r\n   at System.Xml.XmlElement.WriteElementTo(XmlWriter writer, XmlElement el)\r\n   at System.Xml.XmlDocument.WriteContentTo(XmlWriter xw)\r\n   at System.Xml.XmlNode.get_OuterXml()\r\n   at EventQueueXmlReloadReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\tests\\yengine_event_queue_xml_reload_reference.cs:line 96"
+  },
+  "load_xml_exception": null,
+  "restore_event_queue_exception": null,
+  "restored": null,
+  "strict_xml_reader_control_exception": null,
+  "strict_xml_reader_control_restored": null,
+  "sha256": {}
+}

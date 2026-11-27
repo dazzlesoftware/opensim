@@ -1,0 +1,3687 @@
+[
+  {
+    "api": "llAbs",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llAcos",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llAddToLandBanList",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llAddToLandPassList",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llAdjustSoundVolume",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llAllowInventoryDrop",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llAngleBetween",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llApplyImpulse",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llApplyRotationalImpulse",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llAsin",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llAtan2",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llAttachToAvatar",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llAttachToAvatarTemp",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llAvatarOnLinkSitTarget",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llAvatarOnSitTarget",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llAxes2Rot",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llAxisAngle2Rot",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llBase64ToInteger",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llBase64ToString",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llBreakAllLinks",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llBreakLink",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llCSV2List",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llCastRay",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "no_dispatch_literal_found_review_required"
+  },
+  {
+    "api": "llCeil",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llChar",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llClearCameraParams",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llClearLinkMedia",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llClearPrimMedia",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llCloseRemoteDataChannel",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llCloud",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llCollisionFilter",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llCollisionSound",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llCollisionSprite",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llComputeHash",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llCos",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llCreateLink",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llDeleteSubList",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llDeleteSubString",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llDerezObject",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llDetachFromAvatar",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llDetectedGrab",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llDetectedGroup",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llDetectedKey",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llDetectedLinkNumber",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llDetectedName",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llDetectedOwner",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llDetectedPos",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llDetectedRot",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llDetectedTouchBinormal",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llDetectedTouchFace",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llDetectedTouchNormal",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llDetectedTouchPos",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llDetectedTouchST",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llDetectedTouchUV",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llDetectedType",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llDetectedVel",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llDialog",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llDie",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llDumpList2String",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llEdgeOfWorld",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llEjectFromLand",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llEmail",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llEscapeURL",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llEuler2Rot",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llFabs",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llFloor",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llForceMouselook",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llFrand",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGenerateKey",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetAccel",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetAgentInfo",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetAgentLanguage",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetAgentList",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetAgentSize",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetAlpha",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetAndResetTime",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetAnimation",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetAnimationList",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetAnimationOverride",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetAttached",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetAttachedList",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetBoundingBox",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetCameraAspect",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetCameraFOV",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetCameraPos",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetCameraRot",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetCenterOfMass",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetColor",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetCreator",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetDate",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetDayLength",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetDayOffset",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetDisplayName",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetEnergy",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetEnv",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetForce",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetFreeMemory",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetFreeURLs",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetGMTclock",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetGeometricCenter",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetHTTPHeader",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetHealth",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetInventoryAcquireTime",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetInventoryCreator",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetInventoryDesc",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetInventoryKey",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetInventoryName",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetInventoryNumber",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetInventoryPermMask",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetInventoryType",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetKey",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetLandOwnerAt",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetLinkKey",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetLinkMedia",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetLinkName",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetLinkNumber",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetLinkNumberOfSides",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetLinkPrimitiveParams",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetLinkSitFlags",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetListEntryType",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetListLength",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetLocalPos",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetLocalRot",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetMass",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetMassMKS",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetMaxScaleFactor",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetMemoryLimit",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetMinScaleFactor",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetMoonDirection",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetMoonRotation",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetNextEmail",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetNotecardLine",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetNotecardLineSync",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetNumberOfNotecardLines",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetNumberOfPrims",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetNumberOfSides",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetObjectAnimationNames",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetObjectDesc",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetObjectDetails",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetObjectLinkKey",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetObjectMass",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetObjectName",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetObjectPermMask",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetObjectPrimCount",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetOmega",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetOwner",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetOwnerKey",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetParcelDetails",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetParcelFlags",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetParcelMaxPrims",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetParcelMusicURL",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetParcelPrimCount",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetParcelPrimOwners",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetPermissions",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetPermissionsKey",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetPhysicsMaterial",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetPos",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetPrimMediaParams",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetPrimitiveParams",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetRegionAgentCount",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetRegionCorner",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetRegionDayLength",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetRegionDayOffset",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetRegionFPS",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetRegionFlags",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetRegionMoonDirection",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetRegionMoonRotation",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetRegionName",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetRegionSunDirection",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetRegionSunRotation",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetRegionTimeDilation",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetRenderMaterial",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetRootPosition",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetRootRotation",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetRot",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetSPMaxMemory",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetScale",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetScriptName",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetScriptState",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetSimStats",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetSimulatorHostname",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetStartParameter",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetStartString",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetStatus",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetSubString",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetSunDirection",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetSunRotation",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetTexture",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetTextureOffset",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetTextureRot",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetTextureScale",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetTime",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetTimeOfDay",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetTimestamp",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetTorque",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetUnixTime",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetUsedMemory",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetUsername",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetVel",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetVisualParams",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGetWallclock",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGiveInventory",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGiveInventoryList",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGiveMoney",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGodLikeRezObject",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "no_dispatch_literal_found_review_required"
+  },
+  {
+    "api": "llGround",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGroundContour",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGroundNormal",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGroundRepel",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llGroundSlope",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llHMAC",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llHTTPRequest",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llHTTPResponse",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llHash",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llInsertString",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llInstantMessage",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llIntegerToBase64",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llIsFriend",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llIsLinkGLTFMaterial",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llJson2List",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llJsonGetValue",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llJsonSetValue",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llJsonValueType",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llKey2Name",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llLinear2sRGB",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llLinkAdjustSoundVolume",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llLinkParticleSystem",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llLinkPlaySound",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llLinkSetSoundQueueing",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llLinkSetSoundRadius",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llLinkSitTarget",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llLinkStopSound",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llLinksetDataAvailable",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llLinksetDataCountFound",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llLinksetDataCountKeys",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llLinksetDataDelete",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llLinksetDataDeleteFound",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llLinksetDataDeleteProtected",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llLinksetDataFindKeys",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llLinksetDataListKeys",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llLinksetDataRead",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llLinksetDataReadProtected",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llLinksetDataReset",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llLinksetDataWrite",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llLinksetDataWriteProtected",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llList2CSV",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llList2Float",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llList2Integer",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llList2Json",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llList2Key",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llList2List",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llList2ListSlice",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llList2ListStrided",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llList2Rot",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llList2String",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llList2Vector",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llListFindList",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llListFindListNext",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llListFindStrided",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llListInsertList",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llListRandomize",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llListReplaceList",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llListSort",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llListSortStrided",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llListStatistics",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llListen",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llListenControl",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llListenRemove",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llLoadURL",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llLog",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llLog10",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llLookAt",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llLoopSound",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llLoopSoundMaster",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llLoopSoundSlave",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llMD5String",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llMakeExplosion",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llMakeFire",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llMakeFountain",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llMakeSmoke",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llManageEstateAccess",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llMapBeacon",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llMapDestination",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llMessageLinked",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llMinEventDelay",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llModPow",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llModifyLand",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llMoveToTarget",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llName2Key",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llOffsetTexture",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llOpenRemoteDataChannel",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llOrd",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llOverMyLand",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llOwnerSay",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llParcelMediaCommandList",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llParcelMediaQuery",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llParseString2List",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llParseStringKeepNulls",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llParticleSystem",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llPassCollisions",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llPassTouches",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llPlaySound",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llPlaySoundSlave",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llPointAt",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llPow",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llPreloadSound",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llPushObject",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llRefreshPrimURL",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llRegionSay",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llRegionSayTo",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llReleaseCamera",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llReleaseControls",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llReleaseURL",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llRemoteDataReply",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llRemoteDataSetRegion",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llRemoteLoadScript",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llRemoteLoadScriptPin",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llRemoveFromLandBanList",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llRemoveFromLandPassList",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llRemoveInventory",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llRemoveVehicleFlags",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "no_dispatch_literal_found_review_required"
+  },
+  {
+    "api": "llReplaceSubString",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llRequestAgentData",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llRequestDisplayName",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llRequestInventoryData",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llRequestPermissions",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llRequestSecureURL",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llRequestSimulatorData",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llRequestURL",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llRequestUserKey",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llRequestUsername",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llResetAnimationOverride",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llResetLandBanList",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llResetLandPassList",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llResetOtherScript",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llResetScript",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llResetTime",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llRezAtRoot",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llRezObject",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llRezObjectWithParams",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "no_dispatch_literal_found_review_required"
+  },
+  {
+    "api": "llRot2Angle",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llRot2Axis",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llRot2Euler",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llRot2Fwd",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llRot2Left",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llRot2Up",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llRotBetween",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llRotLookAt",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llRotTarget",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llRotTargetRemove",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llRotateTexture",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llRound",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSHA1String",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSHA256String",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSameGroup",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSay",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llScaleByFactor",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llScaleTexture",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llScriptDanger",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llScriptProfiler",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSendRemoteData",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSensor",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSensorRemove",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSensorRepeat",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetAlpha",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetAngularVelocity",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetAnimationOverride",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetBuoyancy",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetCameraAtOffset",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetCameraEyeOffset",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetCameraParams",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetClickAction",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetColor",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetContentType",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetDamage",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetForce",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetForceAndTorque",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetHoverHeight",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetInventoryPermMask",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetKeyframedMotion",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "no_dispatch_literal_found_review_required"
+  },
+  {
+    "api": "llSetLinkAlpha",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetLinkCamera",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetLinkColor",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetLinkMedia",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetLinkPrimitiveParams",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "no_dispatch_literal_found_review_required"
+  },
+  {
+    "api": "llSetLinkPrimitiveParamsFast",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "no_dispatch_literal_found_review_required"
+  },
+  {
+    "api": "llSetLinkSitFlags",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetLinkTexture",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetLinkTextureAnim",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetLocalRot",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetMemoryLimit",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetObjectDesc",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetObjectName",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetObjectPermMask",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetParcelMusicURL",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetPayPrice",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetPhysicsMaterial",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetPos",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetPrimMediaParams",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetPrimURL",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetPrimitiveParams",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "no_dispatch_literal_found_review_required"
+  },
+  {
+    "api": "llSetRegionPos",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetRemoteScriptAccessPin",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetRenderMaterial",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetRot",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetScale",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetScriptState",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetSitText",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetSoundQueueing",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetSoundRadius",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetStatus",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetText",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetTexture",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetTextureAnim",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetTimerEvent",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetTorque",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetTouchText",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSetVehicleFlags",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "no_dispatch_literal_found_review_required"
+  },
+  {
+    "api": "llSetVehicleFloatParam",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "no_dispatch_literal_found_review_required"
+  },
+  {
+    "api": "llSetVehicleRotationParam",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "no_dispatch_literal_found_review_required"
+  },
+  {
+    "api": "llSetVehicleType",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "no_dispatch_literal_found_review_required"
+  },
+  {
+    "api": "llSetVehicleVectorParam",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "no_dispatch_literal_found_review_required"
+  },
+  {
+    "api": "llSetVelocity",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llShout",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSin",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSitTarget",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSleep",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSound",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSoundPreload",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSqrt",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llStartAnimation",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llStartObjectAnimation",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llStopAnimation",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llStopHover",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llStopLookAt",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llStopMoveToTarget",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llStopObjectAnimation",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llStopPointAt",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llStopSound",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llStringLength",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llStringToBase64",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llStringTrim",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llSubStringIndex",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llTakeCamera",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llTakeControls",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llTan",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llTarget",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llTargetOmega",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llTargetRemove",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llTargetedEmail",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llTeleportAgent",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llTeleportAgentGlobalCoords",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llTeleportAgentHome",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llTextBox",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llToLower",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llToUpper",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llTransferLindenDollars",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llTriggerSound",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llTriggerSoundLimited",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llUnSit",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llUnescapeURL",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llVecDist",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llVecMag",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llVecNorm",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llVolumeDetect",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llWater",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llWhisper",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llWind",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llWorldPosToHUD",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llXorBase64",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llXorBase64Strings",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "llXorBase64StringsCorrect",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osAESDecrypt",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "no_dispatch_literal_found_review_required"
+  },
+  {
+    "api": "osAESDecryptFrom",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "no_dispatch_literal_found_review_required"
+  },
+  {
+    "api": "osAESEncrypt",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "no_dispatch_literal_found_review_required"
+  },
+  {
+    "api": "osAESEncryptTo",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "no_dispatch_literal_found_review_required"
+  },
+  {
+    "api": "osAdjustSoundVolume",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osAgentSaveAppearance",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osAngleBetween",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osApproxEquals",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osAvatarName2Key",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osAvatarPlayAnimation",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osAvatarStopAnimation",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osAvatarType",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osCauseDamage",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osCauseHealing",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osCheckODE",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osClearInertia",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osClearObjectAnimations",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osCollisionSound",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osConsoleCommand",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "no_dispatch_literal_found_review_required"
+  },
+  {
+    "api": "osDetectedCountry",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osDie",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osDrawEllipse",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osDrawFilledEllipse",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osDrawFilledPolygon",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osDrawFilledRectangle",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osDrawImage",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osDrawLine",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osDrawPolygon",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osDrawRectangle",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osDrawResetTransform",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osDrawRotationTransform",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osDrawScaleTransform",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osDrawText",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osDrawTranslationTransform",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osDropAttachment",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osDropAttachmentAt",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osEjectFromGroup",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "no_dispatch_literal_found_review_required"
+  },
+  {
+    "api": "osForceAttachToAvatar",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osForceAttachToAvatarFromInventory",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osForceAttachToOtherAvatarFromInventory",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osForceBreakAllLinks",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osForceBreakLink",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osForceCreateLink",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osForceDetachFromAvatar",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osForceDropAttachment",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osForceDropAttachmentAt",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osForceOtherSit",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osFormatString",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "no_dispatch_literal_found_review_required"
+  },
+  {
+    "api": "osGetAgentCountry",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetAgentIP",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetAgents",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetApparentRegionTime",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetApparentRegionTimeString",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetApparentTime",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetApparentTimeString",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetAvatarHomeURI",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetAvatarList",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetCurrentSunHour",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetDrawStringSize",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "no_dispatch_literal_found_review_required"
+  },
+  {
+    "api": "osGetGender",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetGridCustom",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetGridGatekeeperURI",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetGridHomeURI",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetGridLoginURI",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetGridName",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetGridNick",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetHealRate",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetHealth",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetInertiaData",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetInventoryDesc",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetInventoryItemKey",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetInventoryItemKeys",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetInventoryLastOwner",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetInventoryName",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetInventoryNames",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetLastChangedEventKey",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetLinkColor",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetLinkInventoryDesc",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetLinkInventoryItemKey",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetLinkInventoryItemKeys",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetLinkInventoryKey",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetLinkInventoryKeys",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetLinkInventoryName",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetLinkInventoryNames",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetLinkNumber",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetLinkPrimitiveParams",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetLinkSitActiveRange",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetLinkStandTarget",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetMapTexture",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetNPCList",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetNotecard",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetNotecardLine",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetNumberOfAttachments",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetNumberOfNotecardLines",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetPSTWallclock",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetParcelDetails",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetParcelDwell",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetParcelID",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetParcelIDs",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetPhysicsEngineName",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetPhysicsEngineType",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetPrimCount",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetPrimitiveParams",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetRegionMapTexture",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetRegionSize",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetRegionStats",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetRezzingObject",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetScriptEngineName",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetSimulatorMemory",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetSimulatorMemoryKB",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetSimulatorVersion",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetSitActiveRange",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetSitTargetPos",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetSitTargetRot",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetSittingAvatarsCount",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetStandTarget",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetSunParam",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetTerrainHeight",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGetWindParam",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGiveLinkInventory",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osGiveLinkInventoryList",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osInviteToGroup",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "no_dispatch_literal_found_review_required"
+  },
+  {
+    "api": "osIsNotValidNumber",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osIsNpc",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osIsUUID",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osKey2Name",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osKickAvatar",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osLinkParticleSystem",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osListAsFloat",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osListAsInteger",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osListAsRotation",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osListAsString",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osListAsVector",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osListFindListNext",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osListSortInPlace",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osListSortInPlaceStrided",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osListenRegex",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osLoadedCreationDate",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osLoadedCreationID",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osLoadedCreationTime",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osLocalTeleportAgent",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osLoopSound",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osLoopSoundMaster",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osLoopSoundSlave",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osMakeNotecard",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osMatchString",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osMax",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osMessageAttachments",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osMessageObject",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osMin",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osMovePen",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osNpcCreate",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osNpcGetOwner",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osNpcGetPos",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osNpcGetRot",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osNpcLoadAppearance",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osNpcLookAt",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osNpcMoveTo",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osNpcMoveToTarget",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osNpcPlayAnimation",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osNpcRemove",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osNpcSaveAppearance",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osNpcSay",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osNpcSayTo",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osNpcSetProfileAbout",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osNpcSetProfileImage",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osNpcSetRot",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osNpcShout",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osNpcSit",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osNpcStand",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osNpcStopAnimation",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osNpcStopMoveToTarget",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osNpcTouch",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osNpcWhisper",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osOldList2ListStrided",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osOwnerSaveAppearance",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osParcelJoin",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osParcelSetDetails",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osParcelSubdivide",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osParticleSystem",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osPlaySound",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osPlaySoundSlave",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osPreloadSound",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osRegexIsMatch",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osRegionNotice",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osRegionRestart",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osRemoveLinkInventory",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osReplaceAgentEnvironment",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osReplaceParcelEnvironment",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osReplaceRegionEnvironment",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osReplaceString",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osRequestSecureURL",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osRequestURL",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osResetAllScripts",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osResetEnvironment",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osRound",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osSHA256",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osSetContentType",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osSetDynamicTextureData",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "no_dispatch_literal_found_review_required"
+  },
+  {
+    "api": "osSetDynamicTextureDataBlend",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "no_dispatch_literal_found_review_required"
+  },
+  {
+    "api": "osSetDynamicTextureDataBlendFace",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "no_dispatch_literal_found_review_required"
+  },
+  {
+    "api": "osSetDynamicTextureDataFace",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "no_dispatch_literal_found_review_required"
+  },
+  {
+    "api": "osSetDynamicTextureURL",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "no_dispatch_literal_found_review_required"
+  },
+  {
+    "api": "osSetDynamicTextureURLBlend",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "no_dispatch_literal_found_review_required"
+  },
+  {
+    "api": "osSetDynamicTextureURLBlendFace",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "no_dispatch_literal_found_review_required"
+  },
+  {
+    "api": "osSetEstateSunSettings",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osSetFontName",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osSetFontSize",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osSetHealRate",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osSetHealth",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osSetInertia",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osSetInertiaAsBox",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osSetInertiaAsCylinder",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osSetInertiaAsSphere",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osSetLinkSitActiveRange",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osSetLinkStandTarget",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osSetOwnerSpeed",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osSetParcelDetails",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osSetParcelMediaURL",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osSetParcelMusicURL",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osSetParcelSIPAddress",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osSetPenCap",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osSetPenColor",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osSetPenColour",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osSetPenSize",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osSetPrimFloatOnWater",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osSetPrimitiveParams",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "no_dispatch_literal_found_review_required"
+  },
+  {
+    "api": "osSetProjectionParams",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osSetRegionSunSettings",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osSetRegionWaterHeight",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osSetSitActiveRange",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osSetSoundRadius",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osSetSpeed",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osSetStandTarget",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osSetSunParam",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osSetTerrainHeight",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osSetTerrainTexture",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osSetTerrainTextureHeight",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osSetTerrainTextures",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osSetWindParam",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osSlerp",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osStopSound",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osStringEndsWith",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osStringIndexOf",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osStringLastIndexOf",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osStringRemove",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osStringReplace",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osStringStartsWith",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osStringSubString",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osSunGetParam",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osSunSetParam",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osTeleportAgent",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osTeleportObject",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "no_dispatch_literal_found_review_required"
+  },
+  {
+    "api": "osTeleportOwner",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osTemperature2sRGB",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osTerrainFlush",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osTerrainGetHeight",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osTerrainSetHeight",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osTriggerSound",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osTriggerSoundLimited",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osUnixTimeToTimestamp",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osVecDistSquare",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osVecMagSquare",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osVolumeDetect",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  },
+  {
+    "api": "osWindActiveModelPluginName",
+    "interface": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+    "classification": "dispatch_literal_present_requires_behavior_verification"
+  }
+]

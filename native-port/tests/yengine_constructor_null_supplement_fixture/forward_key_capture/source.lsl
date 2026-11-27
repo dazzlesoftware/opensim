@@ -1,0 +1,1 @@
+key first=read();key later;integer after;key read(){return later;}default{state_entry(){llSleep(3.0);after=1;}}

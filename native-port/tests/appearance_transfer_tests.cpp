@@ -9,25 +9,29 @@
 #include <stdexcept>
 #include <bit>
 using namespace opensim;
-void check(bool condition, const char* message) {
+
+void check(bool condition, const char *message) {
     if (!condition)
         throw std::runtime_error(message);
 }
-std::string path_text(const std::filesystem::path& path) {
+
+std::string path_text(const std::filesystem::path &path) {
     auto s = path.u8string();
     return {s.begin(), s.end()};
 }
+
 struct Files {
-    std::filesystem::path root =
-        std::filesystem::temp_directory_path() /
-        framework::utf8_path("model-transfer-試験-" + framework::Uuid::random().str());
+    std::filesystem::path root = std::filesystem::temp_directory_path() /
+                                 framework::utf8_path("model-transfer-試験-" + framework::Uuid::random().str());
     std::string inventory, accounts, avatars;
+
     Files() {
         std::filesystem::create_directory(root);
         inventory = path_text(root / "inventory.db");
         accounts = path_text(root / "accounts.db");
         avatars = path_text(root / "avatars.db");
     }
+
     ~Files() {
         std::error_code e;
         for (auto file : {"inventory.db", "accounts.db", "avatars.db"})
@@ -35,6 +39,7 @@ struct Files {
         std::filesystem::remove(root, e);
     }
 };
+
 int main() {
     try {
         Files files;
@@ -79,7 +84,9 @@ int main() {
             auto original_body = template_appearance->wearables->at(0)->at(0);
             auto outfit = inventory.for_type(model_id, 46);
             framework::Uuid body_link;
-            for (const auto& item : inventory.folder_items(model_id, outfit->id))
+            const auto outfit_items = inventory.folder_items(model_id, outfit->id);
+            check(outfit_items.has_value(), "Default model outfit items returned null");
+            for (const auto &item : *outfit_items)
                 if (item.asset_id == original_body.item)
                     body_link = item.id;
             check(!body_link.is_zero(), "Default model body outfit link exists");
@@ -122,38 +129,33 @@ int main() {
                 auto a = accounts.find(scope.str(), first, last);
                 return a ? std::make_shared<services::UserAccount>(*a) : nullptr;
             };
-            creation.store = [&](auto& a) { return accounts.store_account(a); };
-            creation.set_password = [&](auto id, auto password) {
-                return accounts.set_password(id.str(), password);
-            };
+            creation.store = [&](auto &a) { return accounts.store_account(a); };
+            creation.set_password = [&](auto id, auto password) { return accounts.set_password(id.str(), password); };
             creation.create_inventory = [&](auto id) { return inventory.create_user_inventory(id); };
             creation.default_appearance = [&](auto id) { appearance.create_defaults(id); };
             creation.model_appearance = [&](auto id, auto model) { appearance.establish(id, model); };
             services::AccountProvisioner provisioner(std::move(creation), true);
-            auto user =
-                provisioner.create({}, destination, "Copied", "Avatar", "secret", "mail", "Template Avatar");
+            auto user = provisioner.create({}, destination, "Copied", "Avatar", "secret", "mail", "Template Avatar");
             check(user != nullptr, "Full native provisioning copies a model");
             copied = avatars.get_appearance(destination);
             auto clothing = inventory.for_type(destination, 5);
             auto current = inventory.for_type(destination, 46);
-            auto clothes = inventory.folder_items(destination, clothing->id);
-            auto links = inventory.folder_items(destination, current->id);
+            auto clothes = inventory.folder_items(destination, clothing->id).value();
+            auto links = inventory.folder_items(destination, current->id).value();
             check(clothes.size() == 8 && links.size() == 8,
                   "Six wearables and two attachments copied with eight outfit links");
-            check(inventory.folder_items(destination, inventory.for_type(destination, 13)->id).empty(),
+            check(inventory.folder_items(destination, inventory.for_type(destination, 13)->id).value().empty(),
                   "All model copies go into Clothing like the source");
             for (int i = 0; i < 6; ++i) {
                 auto w = copied->wearables->at(i)->at(0);
                 auto item = inventory.item(destination, w.item);
-                check(item && item->owner == destination && item->parent == clothing->id &&
-                          item->asset_id == w.asset,
+                check(item && item->owner == destination && item->parent == clothing->id && item->asset_id == w.asset,
                       "Destination wearable uses copied inventory and original wearable asset");
-                check(w.item != template_appearance->wearables->at(i)->at(0).item,
-                      "Wearable IDs regenerated");
+                check(w.item != template_appearance->wearables->at(i)->at(0).item, "Wearable IDs regenerated");
             }
             auto attachments = copied->attachments();
             check(attachments.size() == 2, "Copied attachments retained");
-            for (const auto& a : attachments) {
+            for (const auto &a : attachments) {
                 auto item = inventory.item(destination, a.item);
                 check(item && item->owner == destination && item->creation_date == -123 &&
                           item->creator_id == object.creator_id && item->group_id == object.group_id &&
@@ -169,9 +171,9 @@ int main() {
             check(template_appearance->wearables->at(0)->at(0).item == body_link &&
                       template_appearance->attachments().front().item == object.id,
                   "Model service snapshot remains unchanged");
-            for (const auto& item : clothes) {
+            for (const auto &item : clothes) {
                 bool linked = false;
-                for (const auto& l : links)
+                for (const auto &l : links)
                     if (l.asset_id == item.id && l.asset_type == 24 && l.parent == current->id &&
                         l.current_permissions == 32768)
                         linked = true;
@@ -188,19 +190,17 @@ int main() {
             fields.data = std::make_shared<services::AvatarData::Fields>();
             (*fields.data)["Serial"] = "7";
             (*fields.data)["AvatarHeight"] = "1,2";
-            check(avatars.set_avatar(unknown, fields) &&
-                      avatars.get_avatar(unknown).data->at("AvatarHeight") == "1.2",
+            check(avatars.set_avatar(unknown, fields) && avatars.get_avatar(unknown).data->at("AvatarHeight") == "1.2",
                   "Avatar service repairs malformed comma heights");
             (*fields.data)["AvatarHeight"] = std::nullopt;
             bool failed = false;
             try {
                 avatars.set_avatar(unknown, fields);
-            } catch (const std::invalid_argument&) {
+            } catch (const std::invalid_argument &) {
                 failed = true;
             }
             auto partial = avatars.get_avatar(unknown);
-            check(failed && partial.avatar_type == 2 && partial.data->size() == 1 &&
-                      partial.data->at("Serial") == "7",
+            check(failed && partial.avatar_type == 2 && partial.data->size() == 1 && partial.data->at("Serial") == "7",
                   "Height exception preserves earlier metadata/serial writes without rollback");
             services::AvatarService::Strings names = {"custom", "AvatarType"}, values = {"text", "8"};
             check(avatars.set_items(unknown, &names, &values) && avatars.get_avatar(unknown).avatar_type == 8,
@@ -214,7 +214,7 @@ int main() {
             services::InventoryFolderStore reopened(files.inventory);
             auto actual = reopened.items({{"avatarID", destination.str()}});
             check(actual.size() == 16, "Transferred inventory survives reopening");
-            for (const auto& item : persisted) {
+            for (const auto &item : persisted) {
                 auto rows = reopened.items({{"inventoryID", item.id.str()}});
                 check(rows.size() == 1 && rows.front() == item,
                       "Every transferred metadata field survives SQLite reopening");
@@ -228,10 +228,9 @@ int main() {
             check(avatars.get_avatar(destination).data->at("VisualParams")->size() > 255,
                   "SQLite avatar visual data is not truncated to the declared VARCHAR width");
         }
-        std::cout
-            << "PASS: model transfer, SQLite inventory, next-owner permissions and account provisioning\n";
+        std::cout << "PASS: model transfer, SQLite inventory, next-owner permissions and account provisioning\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

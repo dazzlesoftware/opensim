@@ -6,30 +6,38 @@
 #include <array>
 #include <bit>
 #include <algorithm>
+
 namespace opensim::framework {
 using namespace xml_writer_resources;
+
 namespace {
 constexpr auto xmlns_uri = u"http://www.w3.org/2000/xmlns/";
 constexpr auto xml_uri = u"http://www.w3.org/XML/1998/namespace";
+
 XmlWriterCharArrayHandle default_indent_array() {
     static auto value = std::make_shared<XmlWriterCharArray>(64, u' ');
     return value;
 }
+
 XmlWriterCharArrayHandle close_tag_array() {
     static auto value = std::make_shared<XmlWriterCharArray>(u" />");
     return value;
 }
+
 XmlWriterCharArrayHandle end_tag_array() {
     static auto value = std::make_shared<XmlWriterCharArray>(u"</");
     return value;
 }
-bool empty(const XmlWriterText& s) {
+
+bool empty(const XmlWriterText &s) {
     return !s || s->empty();
 }
-bool xml(const XmlWriterText& s) {
-    return s && s->size() == 3 && ((*s)[0] == u'x' || (*s)[0] == u'X') &&
-           ((*s)[1] == u'm' || (*s)[1] == u'M') && ((*s)[2] == u'l' || (*s)[2] == u'L');
+
+bool xml(const XmlWriterText &s) {
+    return s && s->size() == 3 && ((*s)[0] == u'x' || (*s)[0] == u'X') && ((*s)[1] == u'm' || (*s)[1] == u'M') &&
+           ((*s)[2] == u'l' || (*s)[2] == u'L');
 }
+
 std::u16string format(std::u16string_view resource, std::u16string_view a, std::u16string_view b = u"") {
     std::u16string out(resource);
     for (auto pair : {std::pair{u"{0}", a}, std::pair{u"{1}", b}}) {
@@ -39,13 +47,16 @@ std::u16string format(std::u16string_view resource, std::u16string_view a, std::
     }
     return out;
 }
+
 [[noreturn]] void argument(std::u16string_view s) {
     throw XmlTextWriterError("System.ArgumentException", 0x80070057, std::u16string(s));
 }
+
 [[noreturn]] void operation(std::u16string_view s) {
     throw XmlTextWriterError("System.InvalidOperationException", 0x80131509, std::u16string(s));
 }
-void nonempty(const XmlWriterText& s, std::u16string_view parameter) {
+
+void nonempty(const XmlWriterText &s, std::u16string_view parameter) {
     auto p = std::u16string(parameter);
     if (!s)
         throw XmlTextWriterError("System.ArgumentNullException", 0x80004003,
@@ -54,10 +65,12 @@ void nonempty(const XmlWriterText& s, std::u16string_view parameter) {
         throw XmlTextWriterError("System.ArgumentException", 0x80070057,
                                  u"The value cannot be an empty string. (Parameter '" + p + u"')", p);
 }
+
 std::u16string decimal(int n) {
     auto s = std::to_string(n);
     return {s.begin(), s.end()};
 }
+
 void validate_bytes(std::optional<std::span<const std::uint8_t>> buffer, int index, int count) {
     if (!buffer)
         throw XmlTextWriterError("System.ArgumentNullException", 0x80004003,
@@ -71,8 +84,8 @@ void validate_bytes(std::optional<std::span<const std::uint8_t>> buffer, int ind
         if (value < 0) {
             auto v = decimal(value);
             throw XmlEncoderArrayError("System.ArgumentOutOfRangeException", 0x80131502,
-                                       p + u" ('" + v + u"') must be a non-negative value. (Parameter '" + p +
-                                           u"')" + newline + u"Actual value was " + v + u".",
+                                       p + u" ('" + v + u"') must be a non-negative value. (Parameter '" + p + u"')" +
+                                           newline + u"Actual value was " + v + u".",
                                        p, value);
         }
     };
@@ -82,20 +95,20 @@ void validate_bytes(std::optional<std::span<const std::uint8_t>> buffer, int ind
     if (count > available) {
         auto v = decimal(count);
         throw XmlEncoderArrayError("System.ArgumentOutOfRangeException", 0x80131502,
-                                   u"count ('" + v + u"') must be less than or equal to '" +
-                                       decimal(available) + u"'. (Parameter 'count')" + newline +
-                                       u"Actual value was " + v + u".",
+                                   u"count ('" + v + u"') must be less than or equal to '" + decimal(available) +
+                                       u"'. (Parameter 'count')" + newline + u"Actual value was " + v + u".",
                                    u"count", count);
     }
 }
+
 constexpr std::array<std::u16string_view, 10> state_names = {
-    u"Start",   u"Prolog",   u"PostDTD", u"Element", u"Attribute",
-    u"Content", u"AttrOnly", u"Epilog",  u"Error",   u"Closed"};
+    u"Start", u"Prolog", u"PostDTD", u"Element", u"Attribute", u"Content", u"AttrOnly", u"Epilog", u"Error", u"Closed"};
 constexpr std::array<std::u16string_view, 14> token_names = {
     u"PI",         u"Doctype",        u"Comment",        u"CData",        u"StartElement",
     u"EndElement", u"LongEndElement", u"StartAttribute", u"EndAttribute", u"Content",
     u"Base64",     u"RawData",        u"Whitespace",     u"Empty"};
-}
+} // namespace
+
 void NativeXmlTextWriter::Tag::init(int ns) {
     name.reset();
     default_ns.clear();
@@ -106,6 +119,7 @@ void NativeXmlTextWriter::Tag::init(int ns) {
     prefix_count = 0;
     mixed = false;
 }
+
 NativeXmlTextWriter::NativeXmlTextWriter(XmlTextWriterIo io, bool dom)
     : io_(std::move(io)), encoding_(io_.encoding()),
       encoder_([this](XmlEncoderWriteKind k, std::optional<std::u16string_view> s) {
@@ -122,25 +136,30 @@ NativeXmlTextWriter::NativeXmlTextWriter(XmlTextWriterIo io, bool dom)
       stack_(10), namespaces_(8), dom_(dom), indent_chars_(default_indent_array()) {
     stack_[0].init(-1);
 }
+
 void NativeXmlTextWriter::character(char16_t c) {
     io_.write(XmlEncoderWriteKind::Character, std::u16string_view(&c, 1));
 }
-void NativeXmlTextWriter::text(const XmlWriterText& s) {
+
+void NativeXmlTextWriter::text(const XmlWriterText &s) {
     auto stable = s;
     if (stable)
         io_.write(XmlEncoderWriteKind::String, *stable);
     else
         io_.write(XmlEncoderWriteKind::String, {});
 }
+
 void NativeXmlTextWriter::text(std::u16string_view s) {
     std::u16string stable(s);
     io_.write(XmlEncoderWriteKind::String, stable);
 }
+
 void NativeXmlTextWriter::namespaces(bool value) {
     if (state_ != State::Start)
         operation(Xml_NotInWriteState);
     use_namespaces_ = value;
 }
+
 void NativeXmlTextWriter::indentation(int value) {
     if (value < 0) {
 #ifdef _WIN32
@@ -150,18 +169,20 @@ void NativeXmlTextWriter::indentation(int value) {
 #endif
         auto v = decimal(value);
         throw XmlEncoderArrayError("System.ArgumentOutOfRangeException", 0x80131502,
-                                   u"value ('" + v + u"') must be a non-negative value. (Parameter 'value')" +
-                                       newline + u"Actual value was " + v + u".",
+                                   u"value ('" + v + u"') must be a non-negative value. (Parameter 'value')" + newline +
+                                       u"Actual value was " + v + u".",
                                    u"value", value);
     }
     indentation_ = value;
 }
+
 void NativeXmlTextWriter::quote_char(char16_t value) {
     if (value != u'"' && value != u'\'')
         argument(Xml_InvalidQuote);
     quote_ = value;
     encoder_.quote_char(value);
 }
+
 void NativeXmlTextWriter::indent_char(char16_t value) {
     if (value == u' ') {
         indent_chars_ = default_indent_array();
@@ -171,6 +192,7 @@ void NativeXmlTextWriter::indent_char(char16_t value) {
         indent_chars_ = std::make_shared<XmlWriterCharArray>(64);
     std::fill_n(indent_chars_->data(), 64, value);
 }
+
 int NativeXmlTextWriter::write_state() const {
     switch (state_) {
     case State::Start:
@@ -192,55 +214,63 @@ int NativeXmlTextWriter::write_state() const {
         return 6;
     }
 }
+
 int NativeXmlTextWriter::xml_space() const {
     for (int i = top_; i > 0; --i)
         if (stack_[i].xml_space)
             return stack_[i].xml_space;
     return 0;
 }
+
 XmlWriterText NativeXmlTextWriter::xml_lang() const {
     for (int i = top_; i > 0; --i)
         if (stack_[i].xml_lang)
             return stack_[i].xml_lang;
     return {};
 }
+
 void NativeXmlTextWriter::push_stack() {
     if (top_ == static_cast<int>(stack_.size()) - 1)
         stack_.resize(stack_.size() + 10);
     stack_[++top_].init(ns_top_);
 }
-int NativeXmlTextWriter::lookup_namespace(const std::u16string& p) const {
+
+int NativeXmlTextWriter::lookup_namespace(const std::u16string &p) const {
     for (int i = ns_top_; i >= 0; --i)
         if (namespaces_[i].prefix == p)
             return i;
     return -1;
 }
-int NativeXmlTextWriter::lookup_current(const std::u16string& p) const {
+
+int NativeXmlTextWriter::lookup_current(const std::u16string &p) const {
     for (int i = ns_top_; i > stack_[top_].previous_ns; --i)
         if (namespaces_[i].prefix == p)
             return i;
     return -1;
 }
-XmlWriterText NativeXmlTextWriter::find_prefix(const std::u16string& uri) const {
+
+XmlWriterText NativeXmlTextWriter::find_prefix(const std::u16string &uri) const {
     for (int i = ns_top_; i >= 0; --i)
         if (namespaces_[i].uri == uri && lookup_namespace(namespaces_[i].prefix) == i)
             return namespaces_[i].prefix;
     return {};
 }
+
 std::u16string NativeXmlTextWriter::generate_prefix() {
     auto n = stack_[top_].prefix_count++;
     return u"d" + decimal(top_) + u"p" + decimal(n + 1);
 }
-void NativeXmlTextWriter::verify_prefix_xml(const XmlWriterText& prefix, const std::u16string& uri) {
+
+void NativeXmlTextWriter::verify_prefix_xml(const XmlWriterText &prefix, const std::u16string &uri) {
     if (xml(prefix) && uri != xml_uri)
         argument(Xml_InvalidPrefix);
 }
-void NativeXmlTextWriter::push_namespace(const XmlWriterText& prefix, const std::u16string& uri,
-                                         bool declared) {
+
+void NativeXmlTextWriter::push_namespace(const XmlWriterText &prefix, const std::u16string &uri, bool declared) {
     if (uri == xmlns_uri)
         argument(Xml_CanNotBindToReservedNamespace);
     if (!prefix) {
-        auto& t = stack_[top_];
+        auto &t = stack_[top_];
         switch (t.default_state) {
         case NsState::Uninitialized:
         case NsState::NotDeclaredButInScope:
@@ -269,9 +299,10 @@ void NativeXmlTextWriter::push_namespace(const XmlWriterText& prefix, const std:
         namespaces_.resize(index * 2);
     namespaces_[index] = {*prefix, uri, declared};
 }
-void NativeXmlTextWriter::validate_name(const XmlWriterText& name, bool nc) {
+
+void NativeXmlTextWriter::validate_name(const XmlWriterText &name, bool nc) {
     nonempty(name, u"name");
-    auto& s = *name;
+    auto &s = *name;
     if (use_namespaces_) {
         auto n = nini_xml_parse_ncname(s);
         int colon = -1;
@@ -287,11 +318,13 @@ void NativeXmlTextWriter::validate_name(const XmlWriterText& name, bool nc) {
         return;
     argument(format(Xml_InvalidNameChars, s));
 }
-void NativeXmlTextWriter::internal_name(const XmlWriterText& name, bool nc) {
+
+void NativeXmlTextWriter::internal_name(const XmlWriterText &name, bool nc) {
     validate_name(name, nc);
     text(name);
 }
-void NativeXmlTextWriter::internal_pi(const XmlWriterText& name, const XmlWriterText& value) {
+
+void NativeXmlTextWriter::internal_pi(const XmlWriterText &name, const XmlWriterText &value) {
     text(u"<?");
     validate_name(name, false);
     text(name);
@@ -300,6 +333,7 @@ void NativeXmlTextWriter::internal_pi(const XmlWriterText& name, const XmlWriter
         encoder_.write_raw_checked(*value);
     text(u"?>");
 }
+
 void NativeXmlTextWriter::special_attribute() {
     auto value = encoder_.attribute_value();
     switch (special_) {
@@ -325,12 +359,14 @@ void NativeXmlTextWriter::special_attribute() {
         break;
     }
 }
+
 void NativeXmlTextWriter::end_attribute_quote() {
     if (special_ != Special::None)
         special_attribute();
     encoder_.end_attribute();
     character(current_quote_);
 }
+
 void NativeXmlTextWriter::end_start_tag(bool empty_tag) {
     encoder_.start_attribute(false);
     for (int i = ns_top_; i > stack_[top_].previous_ns; --i)
@@ -359,6 +395,7 @@ void NativeXmlTextWriter::end_start_tag(bool empty_tag) {
     else
         character(u'>');
 }
+
 void NativeXmlTextWriter::indent(bool before_end) {
     if (top_ == 0) {
         io_.write_line();
@@ -367,8 +404,7 @@ void NativeXmlTextWriter::indent(bool before_end) {
     if (stack_[top_].mixed)
         return;
     io_.write_line();
-    auto product =
-        static_cast<std::uint32_t>(before_end ? top_ - 1 : top_) * static_cast<std::uint32_t>(indentation_);
+    auto product = static_cast<std::uint32_t>(before_end ? top_ - 1 : top_) * static_cast<std::uint32_t>(indentation_);
     auto n = std::bit_cast<std::int32_t>(product);
     if (n <= static_cast<int>(indent_chars_->size())) {
         io_.write_array(indent_chars_, 0, n);
@@ -379,16 +415,16 @@ void NativeXmlTextWriter::indent(bool before_end) {
         n -= static_cast<int>(indent_chars_->size());
     }
 }
+
 void NativeXmlTextWriter::complete(Token token) {
     if (state_ == State::Closed)
         operation(Xml_Closed);
     if (state_ == State::Error)
         operation(format(Xml_WrongToken, token_names[static_cast<int>(token)], state_names[8]));
-    auto& table = document_ ? xml_writer_document_states : xml_writer_default_states;
+    auto &table = document_ ? xml_writer_document_states : xml_writer_default_states;
     auto next = static_cast<State>(table[static_cast<int>(token) * 8 + static_cast<int>(state_)]);
     if (next == State::Error)
-        operation(format(Xml_WrongToken, token_names[static_cast<int>(token)],
-                         state_names[static_cast<int>(state_)]));
+        operation(format(Xml_WrongToken, token_names[static_cast<int>(token)], state_names[static_cast<int>(state_)]));
     switch (token) {
     case Token::Doctype:
         if (indented_ && state_ != State::Start)
@@ -453,12 +489,14 @@ void NativeXmlTextWriter::complete(Token token) {
     state_ = next;
     last_ = token;
 }
+
 void NativeXmlTextWriter::complete_all() {
     if (flush_base64_)
         flush_encoders();
     while (top_ > 0)
         write_end_element();
 }
+
 void NativeXmlTextWriter::end_element(bool full) {
     guarded([&] {
         if (top_ <= 0)
@@ -479,6 +517,7 @@ void NativeXmlTextWriter::end_element(bool full) {
         --top_;
     });
 }
+
 void NativeXmlTextWriter::write_start_document(int standalone) {
     guarded([&] {
         if (state_ != State::Start)
@@ -506,6 +545,7 @@ void NativeXmlTextWriter::write_start_document(int standalone) {
         internal_pi(std::u16string(u"xml"), value);
     });
 }
+
 void NativeXmlTextWriter::write_end_document() {
     guarded([&] {
         complete_all();
@@ -516,6 +556,7 @@ void NativeXmlTextWriter::write_end_document() {
         last_ = Token::Empty;
     });
 }
+
 void NativeXmlTextWriter::write_doctype(XmlWriterText name, XmlWriterText public_id, XmlWriterText system_id,
                                         XmlWriterText subset) {
     guarded([&] {
@@ -547,6 +588,7 @@ void NativeXmlTextWriter::write_doctype(XmlWriterText name, XmlWriterText public
         character(u'>');
     });
 }
+
 void NativeXmlTextWriter::write_start_element(XmlWriterText prefix, XmlWriterText local, XmlWriterText uri) {
     if (dom_ && empty(uri) && !empty(prefix))
         prefix = std::u16string{};
@@ -588,8 +630,8 @@ void NativeXmlTextWriter::write_start_element(XmlWriterText prefix, XmlWriterTex
         text(local);
     });
 }
-void NativeXmlTextWriter::write_start_attribute(XmlWriterText prefix, XmlWriterText local,
-                                                XmlWriterText uri) {
+
+void NativeXmlTextWriter::write_start_attribute(XmlWriterText prefix, XmlWriterText local, XmlWriterText uri) {
     if (dom_ && empty(uri) && !empty(prefix))
         prefix = std::u16string{};
     guarded([&] {
@@ -598,8 +640,7 @@ void NativeXmlTextWriter::write_start_attribute(XmlWriterText prefix, XmlWriterT
         if (use_namespaces_) {
             if (prefix && prefix->empty())
                 prefix.reset();
-            if (uri == XmlWriterText(std::u16string(xmlns_uri)) && !prefix &&
-                local != XmlWriterText(u"xmlns"))
+            if (uri == XmlWriterText(std::u16string(xmlns_uri)) && !prefix && local != XmlWriterText(u"xmlns"))
                 prefix = u"xmlns";
             if (prefix == XmlWriterText(u"xml")) {
                 if (local == XmlWriterText(u"lang"))
@@ -661,9 +702,11 @@ void NativeXmlTextWriter::write_start_attribute(XmlWriterText prefix, XmlWriterT
         character(current_quote_);
     });
 }
+
 void NativeXmlTextWriter::write_end_attribute() {
     guarded([&] { complete(Token::EndAttribute); });
 }
+
 void NativeXmlTextWriter::write_cdata(XmlWriterText value) {
     guarded([&] {
         complete(Token::CData);
@@ -675,6 +718,7 @@ void NativeXmlTextWriter::write_cdata(XmlWriterText value) {
         text(u"]]>");
     });
 }
+
 void NativeXmlTextWriter::write_comment(XmlWriterText value) {
     guarded([&] {
         if (value && (value->find(u"--") != value->npos || value->ends_with(u'-')))
@@ -686,6 +730,7 @@ void NativeXmlTextWriter::write_comment(XmlWriterText value) {
         text(u"-->");
     });
 }
+
 void NativeXmlTextWriter::write_processing_instruction(XmlWriterText name, XmlWriterText value) {
     guarded([&] {
         if (value && value->find(u"?>") != value->npos)
@@ -696,6 +741,7 @@ void NativeXmlTextWriter::write_processing_instruction(XmlWriterText name, XmlWr
         internal_pi(name, value);
     });
 }
+
 void NativeXmlTextWriter::write_entity_ref(XmlWriterText name) {
     guarded([&] {
         validate_name(name, false);
@@ -703,18 +749,21 @@ void NativeXmlTextWriter::write_entity_ref(XmlWriterText name) {
         encoder_.write_entity_ref(*name);
     });
 }
+
 void NativeXmlTextWriter::write_char_entity(char16_t c) {
     guarded([&] {
         complete(Token::Content);
         encoder_.write_char_entity(c);
     });
 }
+
 void NativeXmlTextWriter::write_surrogate_entity(char16_t l, char16_t h) {
     guarded([&] {
         complete(Token::Content);
         encoder_.write_surrogate_entity(l, h);
     });
 }
+
 void NativeXmlTextWriter::write_whitespace(XmlWriterText value) {
     guarded([&] {
         if (!value)
@@ -725,6 +774,7 @@ void NativeXmlTextWriter::write_whitespace(XmlWriterText value) {
         encoder_.write(*value);
     });
 }
+
 void NativeXmlTextWriter::write_string(XmlWriterText value) {
     guarded([&] {
         if (!empty(value)) {
@@ -733,6 +783,7 @@ void NativeXmlTextWriter::write_string(XmlWriterText value) {
         }
     });
 }
+
 void NativeXmlTextWriter::write_raw(XmlWriterText value) {
     guarded([&] {
         complete(Token::RawData);
@@ -742,6 +793,7 @@ void NativeXmlTextWriter::write_raw(XmlWriterText value) {
             encoder_.write_raw_checked({});
     });
 }
+
 void NativeXmlTextWriter::encoder_array(XmlWriterCharArrayHandle buffer, int index, int count, bool raw) {
     encoder_arrays_.push_back({buffer, index});
     try {
@@ -755,6 +807,7 @@ void NativeXmlTextWriter::encoder_array(XmlWriterCharArrayHandle buffer, int ind
     }
     encoder_arrays_.pop_back();
 }
+
 void NativeXmlTextWriter::write_chars(std::optional<std::u16string_view> buffer, std::int32_t offset,
                                       std::int32_t count, bool raw) {
     XmlWriterCharArrayHandle owner;
@@ -762,13 +815,15 @@ void NativeXmlTextWriter::write_chars(std::optional<std::u16string_view> buffer,
         owner = std::make_shared<XmlWriterCharArray>(*buffer);
     write_chars(owner, offset, count, raw);
 }
-void NativeXmlTextWriter::write_chars(XmlWriterCharArrayHandle buffer, std::int32_t offset,
-                                      std::int32_t count, bool raw) {
+
+void NativeXmlTextWriter::write_chars(XmlWriterCharArrayHandle buffer, std::int32_t offset, std::int32_t count,
+                                      bool raw) {
     guarded([&] {
         complete(raw ? Token::RawData : Token::Content);
         encoder_array(buffer, offset, count, raw);
     });
 }
+
 int NativeXmlTextWriter::base64_chars(std::span<const std::uint8_t> bytes) {
     constexpr auto alphabet = u"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     int count = 0;
@@ -786,6 +841,7 @@ int NativeXmlTextWriter::base64_chars(std::span<const std::uint8_t> bytes) {
     }
     return count;
 }
+
 void NativeXmlTextWriter::encode_base64(std::span<const std::uint8_t> buffer, int index, int count) {
     if (leftover_count_ > 0) {
         int n = leftover_count_;
@@ -815,6 +871,7 @@ void NativeXmlTextWriter::encode_base64(std::span<const std::uint8_t> buffer, in
         index += chunk;
     }
 }
+
 void NativeXmlTextWriter::flush_encoders() {
     if (leftover_count_ > 0) {
         auto chars = base64_chars(std::span<const std::uint8_t>(leftover_).first(leftover_count_));
@@ -823,8 +880,9 @@ void NativeXmlTextWriter::flush_encoders() {
     }
     flush_base64_ = false;
 }
-void NativeXmlTextWriter::write_base64(std::optional<std::span<const std::uint8_t>> buffer,
-                                       std::int32_t index, std::int32_t count) {
+
+void NativeXmlTextWriter::write_base64(std::optional<std::span<const std::uint8_t>> buffer, std::int32_t index,
+                                       std::int32_t count) {
     guarded([&] {
         if (!flush_base64_)
             complete(Token::Base64);
@@ -835,8 +893,9 @@ void NativeXmlTextWriter::write_base64(std::optional<std::span<const std::uint8_
         encode_base64(*buffer, index, count);
     });
 }
-void NativeXmlTextWriter::write_binhex(std::optional<std::span<const std::uint8_t>> buffer,
-                                       std::int32_t index, std::int32_t count) {
+
+void NativeXmlTextWriter::write_binhex(std::optional<std::span<const std::uint8_t>> buffer, std::int32_t index,
+                                       std::int32_t count) {
     guarded([&] {
         complete(Token::Content);
         validate_bytes(buffer, index, count);
@@ -860,12 +919,14 @@ void NativeXmlTextWriter::write_binhex(std::optional<std::span<const std::uint8_
         }
     });
 }
+
 void NativeXmlTextWriter::write_name(XmlWriterText value) {
     guarded([&] {
         complete(Token::Content);
         internal_name(value, false);
     });
 }
+
 void NativeXmlTextWriter::write_nmtoken(XmlWriterText value) {
     guarded([&] {
         complete(Token::Content);
@@ -875,6 +936,7 @@ void NativeXmlTextWriter::write_nmtoken(XmlWriterText value) {
         text(value);
     });
 }
+
 void NativeXmlTextWriter::write_qualified_name(XmlWriterText local, XmlWriterText uri) {
     guarded([&] {
         complete(Token::Content);
@@ -897,6 +959,7 @@ void NativeXmlTextWriter::write_qualified_name(XmlWriterText local, XmlWriterTex
         internal_name(local, true);
     });
 }
+
 XmlWriterText NativeXmlTextWriter::lookup_prefix(XmlWriterText uri) const {
     nonempty(uri, u"ns");
     auto prefix = find_prefix(*uri);
@@ -904,6 +967,7 @@ XmlWriterText NativeXmlTextWriter::lookup_prefix(XmlWriterText uri) const {
         prefix = u"";
     return prefix;
 }
+
 void NativeXmlTextWriter::close() {
     try {
         complete_all();
@@ -912,4 +976,4 @@ void NativeXmlTextWriter::close() {
     state_ = State::Closed;
     io_.dispose();
 }
-}
+} // namespace opensim::framework

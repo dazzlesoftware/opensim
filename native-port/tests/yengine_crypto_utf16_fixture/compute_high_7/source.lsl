@@ -1,0 +1,1 @@
+string result;integer after;default{state_entry(){result=llComputeHash(llGetSubString("😀",0,0),"SHA256");after=1;}}

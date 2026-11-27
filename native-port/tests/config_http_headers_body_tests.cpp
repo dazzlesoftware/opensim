@@ -2,6 +2,7 @@
 #include <iostream>
 #include <algorithm>
 using namespace opensim::framework;
+
 void reuse_tests() {
     int scenario = 0;
     auto require = [&](bool value) {
@@ -9,8 +10,8 @@ void reuse_tests() {
             throw std::runtime_error("HTTP connection reuse framing assertion failed in scenario " +
                                      std::to_string(scenario));
     };
-    auto check = [&](ConfigHttpResponseHead head, std::string bytes, std::size_t entity_end,
-                     bool initially_complete, bool finally_complete, bool fails) {
+    auto check = [&](ConfigHttpResponseHead head, std::string bytes, std::size_t entity_end, bool initially_complete,
+                     bool finally_complete, bool fails) {
         ++scenario;
         std::size_t at = 0;
         bool transport_failed = false;
@@ -31,7 +32,7 @@ void reuse_tests() {
         try {
             while (reader.read({&byte, 1})) {
             };
-        } catch (const std::exception&) {
+        } catch (const std::exception &) {
             failed = true;
         }
         require(failed == fails && reader.completed_for_reuse() == finally_complete);
@@ -41,7 +42,7 @@ void reuse_tests() {
             bytes = std::string(at + 32, 'x');
             try {
                 reader.read({&byte, 1});
-            } catch (const std::exception&) {
+            } catch (const std::exception &) {
             }
             require(!reader.completed_for_reuse());
         }
@@ -72,6 +73,7 @@ void reuse_tests() {
     check(chunked, "X\r\n", 3, false, false, true);
     check(chunked, "0\r\nInvalid\r\n\r\n", 12, false, false, true);
 }
+
 int main() {
     auto require = [](bool v) {
         if (!v)
@@ -93,7 +95,7 @@ int main() {
                 auto n = reader.read(buffer);
                 if (!n)
                     break;
-                result.append(reinterpret_cast<char*>(buffer), n);
+                result.append(reinterpret_cast<char *>(buffer), n);
             }
             require(result == expected);
         };
@@ -112,12 +114,12 @@ int main() {
         try {
             test(length, "a", "");
             return 2;
-        } catch (const ConfigHttpHeaderError& e) {
+        } catch (const ConfigHttpHeaderError &e) {
             require(e.source_type == "System.Net.Http.HttpIOException" && e.request_error == 10);
         }
         std::cout << "PASS native HTTP XML entity stream assertions\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

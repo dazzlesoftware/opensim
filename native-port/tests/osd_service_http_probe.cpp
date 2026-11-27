@@ -10,18 +10,19 @@
 using namespace opensim;
 using namespace network;
 using Text = std::optional<std::u16string>;
-Text D(const std::string& h) {
+
+Text D(const std::string &h) {
     if (h == "-")
         return {};
     if (h == ".")
         return u"";
     std::u16string o;
     for (std::size_t i = 0; i < h.size(); i += 4)
-        o += char16_t(std::stoi(h.substr(i, 2), nullptr, 16) |
-                      (std::stoi(h.substr(i + 2, 2), nullptr, 16) << 8));
+        o += char16_t(std::stoi(h.substr(i, 2), nullptr, 16) | (std::stoi(h.substr(i + 2, 2), nullptr, 16) << 8));
     return o;
 }
-std::string H(const Text& t) {
+
+std::string H(const Text &t) {
     if (!t)
         return "-";
     if (t->empty())
@@ -34,7 +35,8 @@ std::string H(const Text& t) {
         }
     return out;
 }
-int main(int argc, char**) {
+
+int main(int argc, char **) {
     framework::ConfigXmlNativeHttpServices http;
     http.proxy = [](auto, auto) -> std::optional<framework::ConfigXmlHttpRoute> { return {}; };
     http.connect_error = framework::config_http_connect_error;
@@ -42,8 +44,7 @@ int main(int argc, char**) {
     http.read_error = framework::config_http_read_error;
     http.write_error = framework::config_http_write_error;
     http.error = [](std::string phase, int n) {
-        return std::make_exception_ptr(
-            std::runtime_error("UNMAPPED HTTP " + phase + ":" + std::to_string(n)));
+        return std::make_exception_ptr(std::runtime_error("UNMAPPED HTTP " + phase + ":" + std::to_string(n)));
     };
     std::unique_ptr<OsdServiceNativeHttp> transport;
     if (argc > 1) {
@@ -58,7 +59,7 @@ int main(int argc, char**) {
     services.request_number = [&] { return number; };
     services.set_request_number = [&](int n) { number = n; };
     services.debug_level = [&] { return level; };
-    services.debug = services.info = [&](auto& t) { logs.push_back(t); };
+    services.debug = services.info = [&](auto &t) { logs.push_back(t); };
     services.tick_count = [] { return 0; };
     services.elapsed = [](int) { return 0; };
     transport->bind(services);
@@ -76,16 +77,16 @@ int main(int argc, char**) {
             std::optional<Value> value;
             if (text)
                 value = parse_osd_json_utf16(*text);
-            auto result = requester.send(D(url), value ? &*value : nullptr, D(method), timeout,
-                                         (flags & 1) != 0, (flags & 2) != 0, (flags & 4) != 0);
+            auto result = requester.send(D(url), value ? &*value : nullptr, D(method), timeout, (flags & 1) != 0,
+                                         (flags & 2) != 0, (flags & 4) != 0);
             status = "R:" + H(framework::utf16_replacing(osd_json(result, true)));
-        } catch (const OsdServiceError& e) {
+        } catch (const OsdServiceError &e) {
             status = "E:" + e.source_type + ":" + H(e.message);
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
             status = "UNEXPECTED:" + std::string(e.what());
         }
         std::u16string trace;
-        for (auto& log : logs) {
+        for (auto &log : logs) {
             if (log.starts_with(u"[LOGHTTP]: HTTP OUT ") && log.find(u" took ") != std::u16string::npos)
                 continue;
             if (!trace.empty())

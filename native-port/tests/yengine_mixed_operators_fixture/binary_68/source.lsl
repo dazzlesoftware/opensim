@@ -1,0 +1,1 @@
+rotation left=<0,0,0,1>;string right="a";list result;default{state_entry(){result=[left!=right];}}

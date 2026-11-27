@@ -4,10 +4,12 @@
 #include "opensim/framework/agent_circuit.hpp"
 #include <string_view>
 #include "opensim/framework/invariant_case.hpp"
+
 namespace opensim::framework {
 bool viewer_char_is_letter(char16_t value);
-std::string viewer_name(const AgentCircuitData* circuit);
-inline std::string viewer_name(const AgentCircuitData& circuit) {
+std::string viewer_name(const AgentCircuitData *circuit);
+
+inline std::string viewer_name(const AgentCircuitData &circuit) {
     return viewer_name(&circuit);
 }
-}
+} // namespace opensim::framework

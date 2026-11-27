@@ -3,10 +3,12 @@
 #pragma once
 #include "opensim/framework/config_uri.hpp"
 #include <cstdint>
+
 namespace opensim::framework {
 class ConfigUriComponents;
+
 class ConfigUriObject {
-public:
+  public:
     virtual ~ConfigUriObject() = default;
     virtual bool is_absolute() const = 0;
     virtual ConfigUriText original_string() const = 0;
@@ -17,13 +19,16 @@ public:
     // relative instances return their retained parse string.
     virtual ConfigUriText to_string() const = 0;
     virtual ConfigUriText local_path() const = 0;
+
     // Optional concrete consumed HTTP components, never supplied for opaque/file URIs.
     virtual std::shared_ptr<ConfigUriComponents> http_components() const {
         return {};
     }
 };
+
 using ConfigUriObjectPtr = std::shared_ptr<const ConfigUriObject>;
 enum class ConfigUriObjectKind : std::int32_t { RelativeOrAbsolute = 0, Absolute = 1, Relative = 2 };
+
 struct ConfigUriObjectBackend {
     // new Uri(text,kind), with original typed constructor failures.
     std::function<ConfigUriObjectPtr(ConfigUriText, ConfigUriObjectKind)> create;
@@ -35,4 +40,4 @@ struct ConfigUriObjectBackend {
     // new UriBuilder(uri) { Fragment=fragment }.Uri, preserving builder semantics.
     std::function<ConfigUriObjectPtr(ConfigUriObjectPtr, ConfigUriText)> with_fragment;
 };
-}
+} // namespace opensim::framework

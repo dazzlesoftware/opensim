@@ -1,0 +1,1 @@
+vector item=<1,2,3>;rotation result;default{state_entry(){result=(rotation)item;}}

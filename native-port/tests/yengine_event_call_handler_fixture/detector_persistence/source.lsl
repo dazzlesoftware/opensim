@@ -1,0 +1,1 @@
+string before;string inside;string after;default{state_entry(){before=llDetectedName(0);xmrEventCallHandler([21,7]);after=llDetectedName(0);}touch_start(integer n){inside=llDetectedName(0);xmrEventLoadDets([1]);}}

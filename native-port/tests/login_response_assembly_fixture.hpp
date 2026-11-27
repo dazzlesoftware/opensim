@@ -1,4 +1,5 @@
 #include <limits>
+
 inline std::string construct_profile(int profile, int variant) {
     using namespace opensim::services;
     int random = 0, clocks = 0, roots = 0;
@@ -95,7 +96,7 @@ inline std::string construct_profile(int profile, int variant) {
         return LoginResponseLibrary::Folders{root, profile == 8 ? nullptr : other};
     };
     LoginResponseEnvironment env;
-    env.external_endpoint = [&](const GridRegion&) -> std::optional<RegionEndpoint> {
+    env.external_endpoint = [&](const GridRegion &) -> std::optional<RegionEndpoint> {
         events += "endpoint;";
         if (profile == 19)
             throw std::runtime_error("endpoint");
@@ -105,7 +106,7 @@ inline std::string construct_profile(int profile, int variant) {
             return {};
         return RegionEndpoint{variant & 1 ? "::1" : "203.0.113.5", 9000};
     };
-    env.server_uri = [&](const GridRegion&) -> std::optional<std::string> {
+    env.server_uri = [&](const GridRegion &) -> std::optional<std::string> {
         events += "uri;";
         if (profile == 20)
             throw std::runtime_error("uri");
@@ -121,7 +122,7 @@ inline std::string construct_profile(int profile, int variant) {
             throw std::runtime_error("local");
         return (variant & 1) == 0;
     };
-    env.find_timezone = [&](const std::string& name) -> LoginResponseEnvironment::Daylight {
+    env.find_timezone = [&](const std::string &name) -> LoginResponseEnvironment::Daylight {
         events += "find:" + name + ";";
         if (name == "null-zone")
             return {};
@@ -169,8 +170,7 @@ inline std::string construct_profile(int profile, int variant) {
         input.home = nullptr;
         break;
     case 25:
-        user.home_position = {std::numeric_limits<float>::quiet_NaN(), std::numeric_limits<float>::infinity(),
-                              1e-10f};
+        user.home_position = {std::numeric_limits<float>::quiet_NaN(), std::numeric_limits<float>::infinity(), 1e-10f};
         user.home_look_at = {-std::numeric_limits<float>::infinity(), 1e20f, -0.f};
         input.look_at = user.home_position;
         break;
@@ -254,6 +254,6 @@ inline std::string construct_profile(int profile, int variant) {
         xml = view(response->to_xml_rpc());
         llsd = view(response->to_llsd());
     }
-    return "CON|" + status + "|" + std::to_string(random) + ":" + std::to_string(clocks) + "|" + hex(events) +
-           "|" + xml + "|" + llsd;
+    return "CON|" + status + "|" + std::to_string(random) + ":" + std::to_string(clocks) + "|" + hex(events) + "|" +
+           xml + "|" + llsd;
 }

@@ -1,0 +1,1 @@
+YOption chars;integer result;char value;default{state_entry(){char a='B';char b='A';result=a*b;}}

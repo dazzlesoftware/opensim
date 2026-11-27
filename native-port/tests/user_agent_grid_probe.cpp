@@ -7,6 +7,7 @@
 #include <sstream>
 using namespace opensim;
 using network::Value;
+
 std::string Hex(std::string_view s) {
     std::string out;
     for (unsigned char c : s) {
@@ -16,37 +17,42 @@ std::string Hex(std::string_view s) {
     return out;
 }
 struct Client;
+
 struct Host {
     int scenario;
     Value calls, logs;
     std::shared_ptr<services::GridRegion> gate;
     std::shared_ptr<framework::AgentCircuitData> circuit;
-    Client* client = nullptr;
-    framework::EntityTransferContext* previous = nullptr;
-    void log(const std::u16string& t) {
+    Client *client = nullptr;
+    framework::EntityTransferContext *previous = nullptr;
+
+    void log(const std::u16string &t) {
         logs.array.emplace_back(framework::utf8(t));
         if (scenario == 6)
             throw network::NwcXmlRpcError("System.InvalidOperationException", u"log");
     }
 };
+
 struct Client : services::UserAgentServiceConnector {
     using Value = network::Value;
-    Host& h;
-    Client(std::optional<std::u16string> url, services::UserAgentConnectorServices services, Host& host)
-        : UserAgentServiceConnector(std::move(url), std::move(services)), h(host) {
-    }
+    Host &h;
+
+    Client(std::optional<std::u16string> url, services::UserAgentConnectorServices services, Host &host)
+        : UserAgentServiceConnector(std::move(url), std::move(services)), h(host) {}
+
     std::string path() {
         return agent_path();
     }
-    void pack(Value& out, const services::GridRegion* s,
-              const std::shared_ptr<framework::AgentCircuitData>& c, const services::GridRegion& d,
-              std::uint32_t f) {
+
+    void pack(Value &out, const services::GridRegion *s, const std::shared_ptr<framework::AgentCircuitData> &c,
+              const services::GridRegion &d, std::uint32_t f) {
         framework::AgentCircuitData unused;
         pack_data(out, s, c ? *c : unused, d, f);
     }
-    bool create_agent(const services::GridRegion* source, services::GridRegion& dest,
-                      const std::shared_ptr<framework::AgentCircuitData>& circuit, std::uint32_t flags,
-                      services::LoginTransferContext& context, std::string& reason) override {
+
+    bool create_agent(const services::GridRegion *source, services::GridRegion &dest,
+                      const std::shared_ptr<framework::AgentCircuitData> &circuit, std::uint32_t flags,
+                      services::LoginTransferContext &context, std::string &reason) override {
         reason = "callee";
         auto args = std::make_shared<Value>(Value::object({}));
         args->set("seed", Value(std::int32_t{7}));
@@ -79,7 +85,7 @@ struct Client : services::UserAgentServiceConnector {
             next->set_server_uri("https://SECOND/Case");
             next->external_host = "SecondGate";
             next->http_port = 54321;
-            auto borrowed = std::shared_ptr<services::GridRegion>(&dest, [](auto*) {});
+            auto borrowed = std::shared_ptr<services::GridRegion>(&dest, [](auto *) {});
             std::string ignored;
             login_agent_to_grid_owned(source, circuit, next, borrowed, false, ignored);
         }
@@ -88,6 +94,7 @@ struct Client : services::UserAgentServiceConnector {
         return h.scenario != 1;
     }
 };
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -115,8 +122,7 @@ int main() {
         gate->x = 300;
         gate->y = 400;
         gate->http_port = 9001;
-        gate->external_host =
-            (profile & 64) ? std::optional<std::string>{} : std::optional<std::string>{"GATE.host"};
+        gate->external_host = (profile & 64) ? std::optional<std::string>{} : std::optional<std::string>{"GATE.host"};
         gate->raw_server_uri =
             (profile & 32) ? std::optional<std::string>{} : std::optional<std::string>{"https://GATE/Case"};
         auto dest = std::make_shared<services::GridRegion>();
@@ -134,16 +140,15 @@ int main() {
         s.client = [](int) -> std::shared_ptr<network::XmlRpcRequesterClient> {
             throw std::logic_error("XML-RPC outside grid fixture");
         };
-        s.debug = s.error = s.warn = [&](auto& t) { h.log(t); };
+        s.debug = s.error = s.warn = [&](auto &t) { h.log(t); };
         std::unique_ptr<Client> client;
         try {
-            client = std::make_unique<Client>(
-                (profile & 128) ? u"relative" : u"HTTPS://HOME/Case?TOKEN=Secret", s, h);
+            client = std::make_unique<Client>((profile & 128) ? u"relative" : u"HTTPS://HOME/Case?TOKEN=Secret", s, h);
             h.client = client.get();
             auto destination = (profile & 2) ? nullptr : dest;
-            bool value = client->login_agent_to_grid_owned(
-                (profile & 1) ? nullptr : source.get(), circuit, h.gate, destination,
-                h.scenario == 4 ? false : (profile & 16) == 0, reason);
+            bool value =
+                client->login_agent_to_grid_owned((profile & 1) ? nullptr : source.get(), circuit, h.gate, destination,
+                                                  h.scenario == 4 ? false : (profile & 16) == 0, reason);
             status = value ? "1" : "0";
             if (h.scenario == 5 && !(profile & 2)) {
                 if (h.gate)
@@ -154,15 +159,15 @@ int main() {
                 after = Value::object({});
                 client->pack(after, (profile & 1) ? nullptr : source.get(), circuit, *dest, 0xffffffffu);
             }
-        } catch (const network::NwcXmlRpcError& e) {
+        } catch (const network::NwcXmlRpcError &e) {
             status = "E:" + e.source_type + ":" + framework::utf8(e.message);
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
             status = "UNEXPECTED:" + std::string(e.what());
         }
-        for (auto& call : h.calls.array) {
+        for (auto &call : h.calls.array) {
             Value keys;
             keys.kind = Value::Kind::Array;
-            for (auto& key : call.get("args").ordered_keys())
+            for (auto &key : call.get("args").ordered_keys())
                 keys.array.emplace_back(key);
             call.set("keys", std::move(keys));
         }

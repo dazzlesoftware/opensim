@@ -1,0 +1,1 @@
+float value=123456789012345678901234567890.12345;integer done;default{state_entry(){done=1;}}

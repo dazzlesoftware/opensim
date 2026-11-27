@@ -1,0 +1,1 @@
+key item=(key)"<1,2,3>";key result;default{state_entry(){result=(key)item;}}

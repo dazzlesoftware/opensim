@@ -7,11 +7,13 @@
 #include <algorithm>
 using namespace opensim::network;
 namespace f = opensim::framework;
+
 struct Proxy : f::ConfigXmlProxy {
     int id;
-    explicit Proxy(int value) : id(value) {
-    }
+
+    explicit Proxy(int value) : id(value) {}
 };
+
 std::string hex(std::u16string_view text) {
     if (text.empty())
         return "-";
@@ -21,6 +23,7 @@ std::string hex(std::u16string_view text) {
         out << std::setw(4) << unsigned(c);
     return out.str();
 }
+
 int main() {
     WebHttpClients clients(native_web_http_handler_factory({}));
     std::map<int, std::shared_ptr<Proxy>> proxies;
@@ -42,13 +45,13 @@ int main() {
             std::cout << "-";
             return;
         }
-        auto& s = handler->settings();
+        auto &s = handler->settings();
         std::cout << id(handler) << '/' << s.allow_auto_redirect << '/' << s.max_automatic_redirections << '/'
-                  << s.automatic_decompression << '/' << s.pool.connect_timeout.count() << '/'
-                  << s.pre_authenticate << '/' << s.use_cookies << '/' << s.pool.max_connections_per_server
-                  << '/' << s.pool.idle_timeout.count() << '/' << s.pool.lifetime.count() << '/'
-                  << s.enabled_ssl_protocols << '/' << s.certificate_revocation_mode << '/' << s.use_proxy
-                  << '/' << (s.proxy ? std::dynamic_pointer_cast<Proxy>(s.proxy)->id : 0);
+                  << s.automatic_decompression << '/' << s.pool.connect_timeout.count() << '/' << s.pre_authenticate
+                  << '/' << s.use_cookies << '/' << s.pool.max_connections_per_server << '/'
+                  << s.pool.idle_timeout.count() << '/' << s.pool.lifetime.count() << '/' << s.enabled_ssl_protocols
+                  << '/' << s.certificate_revocation_mode << '/' << s.use_proxy << '/'
+                  << (s.proxy ? std::dynamic_pointer_cast<Proxy>(s.proxy)->id : 0);
     };
     for (std::string line; std::getline(std::cin, line);) {
         std::istringstream input(line);
@@ -69,8 +72,8 @@ int main() {
                                    : clients.get_new_global_client(timeout, maximum);
                 wrappers[++next_client] = client;
                 std::cout << "G:" << next_client << ':' << id(client->handler()) << ':'
-                          << client->timeout_milliseconds() << ':' << client->maximum_response_buffer_size()
-                          << ':' << client->expect_continue();
+                          << client->timeout_milliseconds() << ':' << client->maximum_response_buffer_size() << ':'
+                          << client->expect_continue();
             } else if (op == 'D') {
                 int client;
                 input >> client;
@@ -89,15 +92,12 @@ int main() {
                 input >> flags;
                 auto handler = clients.shared_handler.load(), no = clients.shared_no_redirect_handler.load();
                 std::cout << "P:"
-                          << (handler ? (handler->settings().accepts_certificate_errors(flags) ? "1" : "0")
-                                      : "-")
-                          << ':'
-                          << (no ? (no->settings().accepts_certificate_errors(flags) ? "1" : "0") : "-");
+                          << (handler ? (handler->settings().accepts_certificate_errors(flags) ? "1" : "0") : "-")
+                          << ':' << (no ? (no->settings().accepts_certificate_errors(flags) ? "1" : "0") : "-");
             }
-        } catch (const f::ConfigXmlHttpError& e) {
-            std::cout << "E:" << e.source_type << ':' << std::hex << e.hresult << std::dec << ':'
-                      << hex(e.message);
-        } catch (const std::exception& e) {
+        } catch (const f::ConfigXmlHttpError &e) {
+            std::cout << "E:" << e.source_type << ':' << std::hex << e.hresult << std::dec << ':' << hex(e.message);
+        } catch (const std::exception &e) {
             std::cerr << line << ":" << e.what() << '\n';
             return 1;
         }

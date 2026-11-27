@@ -14,14 +14,17 @@
 #include <chrono>
 #include <iomanip>
 #include <sstream>
+
 namespace opensim::network {
 namespace {
 using namespace framework;
+
 std::u16string trim(std::u16string value) {
     auto first = std::find_if_not(value.begin(), value.end(), unicode_whitespace);
     auto last = std::find_if_not(value.rbegin(), value.rend(), unicode_whitespace).base();
     return first < last ? std::u16string(first, last) : std::u16string{};
 }
+
 AssetDateTime date(std::u16string text) {
     AssetDateTime value;
     if (try_parse_invariant_datetime(std::u16string_view(trim(std::move(text))), value,
@@ -29,19 +32,23 @@ AssetDateTime date(std::u16string text) {
         return value;
     return AssetDateTime(621355968000000000LL, 0);
 }
+
 class Parser {
     std::shared_ptr<NativeNiniXmlReader> reader_;
-    const NiniXmlReadToken& token() const {
+
+    const NiniXmlReadToken &token() const {
         return reader_->token();
     }
+
     bool read() {
         return reader_->read();
     }
+
     void skip() {
-        while (token().node_type == 8 || token().node_type == 13 || token().node_type == 14 ||
-               token().node_type == 17)
+        while (token().node_type == 8 || token().node_type == 13 || token().node_type == 14 || token().node_type == 17)
             read();
     }
+
     std::u16string read_string() {
         if (reader_->read_state() != NiniXmlReadState::Interactive)
             return {};
@@ -52,14 +59,14 @@ class Parser {
                 throw std::runtime_error("Invalid ReadString cursor");
         }
         std::u16string value;
-        while (token().node_type == 3 || token().node_type == 4 || token().node_type == 13 ||
-               token().node_type == 14) {
+        while (token().node_type == 3 || token().node_type == 4 || token().node_type == 13 || token().node_type == 14) {
             value += token().value;
             if (!read())
                 break;
         }
         return value;
     }
+
     Value container(bool map) {
         Value result;
         result.kind = map ? Value::Kind::Map : Value::Kind::Array;
@@ -88,6 +95,7 @@ class Parser {
         }
         return result;
     }
+
     Value element() {
         skip();
         if (token().node_type != 1)
@@ -102,10 +110,10 @@ class Parser {
             if (empty)
                 return result;
             skip();
-        } else if (name == u"boolean" || name == u"integer" || name == u"real" || name == u"uuid" ||
-                   name == u"date" || name == u"string" || name == u"binary" || name == u"uri") {
+        } else if (name == u"boolean" || name == u"integer" || name == u"real" || name == u"uuid" || name == u"date" ||
+                   name == u"string" || name == u"binary" || name == u"uri") {
             if (name == u"binary" && !empty)
-                for (const auto& attribute : token().attributes)
+                for (const auto &attribute : token().attributes)
                     if (attribute.name == u"encoding" && attribute.value != u"base64")
                         throw std::runtime_error("Unsupported binary encoding");
             std::u16string value;
@@ -120,7 +128,7 @@ class Parser {
                 std::int32_t number = 0;
                 try {
                     number = invariant_convert_to_int32(trim(std::move(value)));
-                } catch (const InvariantNumberError&) {
+                } catch (const InvariantNumberError &) {
                 }
                 result = Value(number);
             } else if (name == u"real") {
@@ -144,8 +152,8 @@ class Parser {
                 result.text = id.str();
             } else if (name == u"date") {
                 result.kind = Value::Kind::Date;
-                result.sdk_date = std::make_shared<const AssetDateTime>(
-                    empty ? AssetDateTime(621355968000000000LL, 0) : date(std::move(value)));
+                result.sdk_date = std::make_shared<const AssetDateTime>(empty ? AssetDateTime(621355968000000000LL, 0)
+                                                                              : date(std::move(value)));
             } else if (name == u"string") {
                 result = Value(utf8(value));
                 result.sdk_string = std::make_shared<const std::u16string>(std::move(value));
@@ -179,15 +187,17 @@ class Parser {
         auto settings = NiniXmlReaderSettings::legacy_document();
         settings.dtd_processing = NiniXmlDtdProcessing::Ignore;
         settings.validating_reader_compatibility = false;
-        reader_ = NativeNiniXmlReader::from_bytes(
-            {reinterpret_cast<const std::uint8_t*>(bytes.data()), bytes.size()}, settings);
+        reader_ = NativeNiniXmlReader::from_bytes({reinterpret_cast<const std::uint8_t *>(bytes.data()), bytes.size()},
+                                                  settings);
     }
+
     explicit Parser(std::u16string_view text) {
         auto settings = NiniXmlReaderSettings::legacy_document();
         settings.dtd_processing = NiniXmlDtdProcessing::Ignore;
         settings.validating_reader_compatibility = false;
         reader_ = NativeNiniXmlReader::from_text(nini_writer_text(std::u16string(text)), settings);
     }
+
     Value parse() {
         read();
         skip();
@@ -195,15 +205,15 @@ class Parser {
         return element();
     }
 };
-}
+} // namespace
+
 // The SDK dictionary stores UTF16 keys, including lone character-reference
 // surrogates accepted by legacy XmlTextReader. Use lossless WTF8 internally.
 std::string sdk_map_key_bytes(std::u16string_view value) {
     std::string result;
     for (std::size_t i = 0; i < value.size(); ++i) {
         std::uint32_t c = value[i];
-        if (c >= 0xd800 && c <= 0xdbff && i + 1 < value.size() && value[i + 1] >= 0xdc00 &&
-            value[i + 1] <= 0xdfff)
+        if (c >= 0xd800 && c <= 0xdbff && i + 1 < value.size() && value[i + 1] >= 0xdc00 && value[i + 1] <= 0xdfff)
             c = 0x10000 + ((c - 0xd800) << 10) + (value[++i] - 0xdc00);
         if (c < 0x80)
             result += static_cast<char>(c);
@@ -223,6 +233,7 @@ std::string sdk_map_key_bytes(std::u16string_view value) {
     }
     return result;
 }
+
 std::u16string sdk_map_key_utf16(std::string_view value) {
     std::u16string result;
     for (std::size_t i = 0; i < value.size();) {
@@ -253,14 +264,16 @@ std::u16string sdk_map_key_utf16(std::string_view value) {
     }
     return result;
 }
-std::u16string osd_string_utf16(const Value& input) {
-    const auto& value = input.view();
+
+std::u16string osd_string_utf16(const Value &input) {
+    const auto &value = input.view();
     if (value.kind == Value::Kind::String && value.sdk_string)
         return *value.sdk_string;
     if (value.kind == Value::Kind::Uri && value.sdk_uri)
         return *(value.sdk_uri->is_absolute() ? value.sdk_uri->absolute_uri() : value.sdk_uri->to_string());
     return framework::utf16_replacing(osd_string(value));
 }
+
 Value deserialize_sdk_llsd_xml_text(std::u16string_view text) {
     try {
         return Parser(text).parse();
@@ -268,6 +281,7 @@ Value deserialize_sdk_llsd_xml_text(std::u16string_view text) {
         return {};
     }
 }
+
 Value deserialize_sdk_llsd_xml(std::string_view bytes) {
     try {
         return Parser(bytes).parse();
@@ -275,4 +289,4 @@ Value deserialize_sdk_llsd_xml(std::string_view bytes) {
         return {};
     }
 }
-}
+} // namespace opensim::network

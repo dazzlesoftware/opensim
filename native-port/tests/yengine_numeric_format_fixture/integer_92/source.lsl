@@ -1,0 +1,1 @@
+string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer("-2147483648"),"G0");after=1;}}

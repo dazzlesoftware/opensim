@@ -25,8 +25,11 @@ IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+#include "opensim/framework/text.hpp"
+#include "opensim/framework/invariant_number_parse.hpp"
 #include "opensim/network/rpc.hpp"
 #include "opensim/network/osd_value.hpp"
+#include "opensim/network/nwc_xml_rpc.hpp"
 #include "opensim/framework/identity.hpp"
 #include <pugixml.hpp>
 #include <charconv>
@@ -39,8 +42,8 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdexcept>
 
 namespace opensim::network {
-const Value& Value::view() const {
-    const Value* value = this;
+const Value &Value::view() const {
+    const Value *value = this;
     for (unsigned depth = 0; value->reference; ++depth) {
         if (depth == 128)
             throw std::invalid_argument("Cyclic value reference");
@@ -50,7 +53,8 @@ const Value& Value::view() const {
         throw std::runtime_error("Object reference not set to an instance of an object.");
     return *value;
 }
-Value Value::alias(const std::shared_ptr<Value>& value) {
+
+Value Value::alias(const std::shared_ptr<Value> &value) {
     Value result;
     if (value) {
         result.kind = value->kind;
@@ -58,23 +62,26 @@ Value Value::alias(const std::shared_ptr<Value>& value) {
     }
     return result;
 }
+
 Value Value::object(std::map<std::string, Value> fields) {
     Value result;
     result.kind = Kind::Map;
     result.map = std::move(fields);
     return result;
 }
+
 void Value::set(std::string key, Value value) {
     if (kind == Kind::NullReference)
         view();
     if (reference) {
-        const_cast<Value&>(view()).set(std::move(key), std::move(value));
+        const_cast<Value &>(view()).set(std::move(key), std::move(value));
         return;
     }
     if (!map.contains(key))
         map_order.push_back(key);
     map[std::move(key)] = std::move(value);
 }
+
 std::vector<std::string> Value::ordered_keys() const {
     if (kind == Kind::NullReference)
         view();
@@ -84,14 +91,15 @@ std::vector<std::string> Value::ordered_keys() const {
     keys.reserve(map.size());
     std::unordered_set<std::string_view> seen;
     seen.reserve(map.size());
-    for (auto& key : map_order)
+    for (auto &key : map_order)
         if (map.contains(key) && seen.insert(key).second)
             keys.push_back(key);
-    for (auto& [key, value] : map)
+    for (auto &[key, value] : map)
         if (seen.insert(key).second)
             keys.push_back(key);
     return keys;
 }
+
 std::string Value::as_string() const {
     if (kind == Kind::NullReference)
         view();
@@ -115,6 +123,7 @@ std::string Value::as_string() const {
     }
     return text;
 }
+
 bool Value::contains(std::string_view name) const {
     if (kind == Kind::NullReference)
         view();
@@ -122,7 +131,8 @@ bool Value::contains(std::string_view name) const {
         return view().contains(name);
     return map.find(std::string(name)) != map.end();
 }
-const Value& Value::get(std::string_view name) const {
+
+const Value &Value::get(std::string_view name) const {
     if (kind == Kind::NullReference)
         view();
     if (reference)
@@ -131,14 +141,16 @@ const Value& Value::get(std::string_view name) const {
     auto found = map.find(std::string(name));
     return found == map.end() ? empty : found->second;
 }
+
 namespace {
 using Kind = Value::Kind;
+
 pugi::xml_document document(std::string_view bytes) {
     if (bytes.find('\0') != std::string_view::npos)
         throw std::invalid_argument("NUL in XML input");
     pugi::xml_document doc;
-    auto parsed = doc.load_buffer(bytes.data(), bytes.size(), pugi::parse_default | pugi::parse_doctype,
-                                  pugi::encoding_utf8);
+    auto parsed =
+        doc.load_buffer(bytes.data(), bytes.size(), pugi::parse_default | pugi::parse_doctype, pugi::encoding_utf8);
     if (!parsed)
         throw std::invalid_argument("Malformed XML");
     int roots = 0;
@@ -152,6 +164,7 @@ pugi::xml_document document(std::string_view bytes) {
         throw std::invalid_argument("Expected a single XML document element");
     return doc;
 }
+
 std::int32_t integer(std::string_view value) {
     std::int32_t number = 0;
     const auto parsed = std::from_chars(value.data(), value.data() + value.size(), number);
@@ -159,17 +172,51 @@ std::int32_t integer(std::string_view value) {
         throw std::invalid_argument("Invalid RPC integer");
     return number;
 }
+
 pugi::xml_node element(pugi::xml_node parent) {
     for (auto child : parent.children())
         if (child.type() == pugi::node_element)
             return child;
     return {};
 }
+
 void depth_check(unsigned depth) {
     if (depth > 64)
         throw std::invalid_argument("RPC nesting limit exceeded");
 }
-Value decode(pugi::xml_node node, bool llsd, unsigned depth) {
+
+const char *nwc_last_text(pugi::xml_node node) {
+    const char *result = nullptr;
+    for (auto child : node.children()) {
+        if (child.type() == pugi::node_pcdata)
+            result = child.value();
+    }
+    return result;
+}
+
+Value nwc_string_value(pugi::xml_node node) {
+    const auto text = nwc_last_text(node);
+    return text ? Value(text) : Value{};
+}
+
+bool self_closing(pugi::xml_node node, std::string_view xml) {
+    const auto offset = static_cast<std::size_t>(node.offset_debug());
+    char quote = '\0';
+    for (auto i = offset; i < xml.size(); ++i) {
+        const auto ch = xml[i];
+        if (quote != '\0') {
+            if (ch == quote)
+                quote = '\0';
+        } else if (ch == '\'' || ch == '"') {
+            quote = ch;
+        } else if (ch == '>') {
+            return i > offset && xml[i - 1] == '/';
+        }
+    }
+    return false;
+}
+
+Value decode(pugi::xml_node node, bool llsd, unsigned depth, std::string_view xml = {}) {
     depth_check(depth);
     if (!node)
         throw std::invalid_argument("Missing RPC value");
@@ -178,15 +225,22 @@ Value decode(pugi::xml_node node, bool llsd, unsigned depth) {
             throw std::invalid_argument("Expected XML-RPC value");
         auto typed = element(node);
         if (!typed)
-            return Value(node.child_value());
+            return nwc_string_value(node);
         if (typed.next_sibling()) {
             for (auto sibling = typed.next_sibling(); sibling; sibling = sibling.next_sibling())
                 if (sibling.type() == pugi::node_element)
                     throw std::invalid_argument("Multiple XML-RPC value types");
         }
         node = typed;
+        // XmlTextReader emits no end-element event for a self-closing element.
+        if (!node.first_child() && self_closing(node, xml))
+            return {};
     }
     const std::string_view tag = node.name();
+    const auto scalar_text = [&] {
+        const auto text = llsd ? node.child_value() : nwc_last_text(node);
+        return std::string_view(text ? text : "");
+    };
     Value result;
     if (tag == "struct" || tag == "map") {
         result.kind = Kind::Map;
@@ -210,26 +264,42 @@ Value decode(pugi::xml_node node, bool llsd, unsigned depth) {
                     continue;
                 if (std::string_view(member.name()) != "member" || !member.child("name"))
                     throw std::invalid_argument("Invalid XML-RPC struct");
-                result.set(member.child_value("name"), decode(member.child("value"), false, depth + 1));
+                const auto name = nwc_string_value(member.child("name"));
+                if (name.kind != Kind::String)
+                    throw std::invalid_argument("Missing XML-RPC struct member name");
+                if (result.contains(name.text))
+                    throw std::invalid_argument("Duplicate XML-RPC struct member");
+                result.set(name.text, decode(member.child("value"), false, depth + 1, xml));
             }
     } else if (tag == "array") {
         result.kind = Kind::Array;
-        auto values = llsd ? node : node.child("data");
-        if (!values)
-            throw std::invalid_argument("Missing XML-RPC array data");
-        for (auto child : values.children())
-            if (child.type() == pugi::node_element)
-                result.array.push_back(decode(child, llsd, depth + 1));
+        for (auto child : node.children()) {
+            if (child.type() != pugi::node_element)
+                continue;
+            if (llsd) {
+                result.array.push_back(decode(child, true, depth + 1));
+            } else if (std::string_view(child.name()) == "data") {
+                for (auto value : child.children("value"))
+                    if (!self_closing(value, xml))
+                        result.array.push_back(decode(value, false, depth + 1, xml));
+            } else if (std::string_view(child.name()) == "value" && !self_closing(child, xml)) {
+                result.array.push_back(decode(child, false, depth + 1, xml));
+            }
+        }
     } else if (tag == "string") {
-        // The repository's Nwc.XmlRpc reader represents an empty typed string
-        // as null. LLSD retains it as an empty string.
-        if (llsd || node.child_value()[0] != '\0')
-            result = Value(node.child_value());
+        result = llsd ? Value(node.child_value()) : nwc_string_value(node);
     } else if (tag == "int" || tag == "i4" || tag == "integer") {
-        result = Value(integer(node.child_value()));
+        result = Value(llsd ? integer(node.child_value())
+                            : framework::invariant_convert_to_int32(framework::utf16_replacing(scalar_text())));
     } else if (tag == "boolean") {
-        const std::string_view text = node.child_value();
-        if (text == "1" || text == "true")
+        const auto text = scalar_text();
+        if (!llsd) {
+            const auto number = framework::invariant_convert_to_int32(framework::utf16_replacing(text));
+            if (number < -32768 || number > 32767)
+                throw std::invalid_argument("RPC boolean is outside the signed 16-bit range");
+            // Nwc leaves other numeric values as the original text.
+            result = number == 0 || number == 1 ? Value(number == 1) : Value(std::string(text));
+        } else if (text == "1" || text == "true")
             result = Value(true);
         else if (text == "0" || text == "false" || text.empty())
             result = Value(false);
@@ -237,11 +307,15 @@ Value decode(pugi::xml_node node, bool llsd, unsigned depth) {
             throw std::invalid_argument("Invalid RPC boolean");
     } else if (tag == "double" || tag == "real") {
         result.kind = Kind::Real;
-        std::istringstream input(node.child_value());
-        input.imbue(std::locale::classic());
-        input >> result.real;
-        if (!input || !input.eof())
-            throw std::invalid_argument("Invalid RPC real");
+        if (llsd) {
+            std::istringstream input(node.child_value());
+            input.imbue(std::locale::classic());
+            input >> result.real;
+            if (!input || !input.eof())
+                throw std::invalid_argument("Invalid RPC real");
+        } else {
+            result.real = framework::invariant_convert_to_double(framework::utf16_replacing(scalar_text()));
+        }
     } else if (tag == "uuid") {
         result.kind = Kind::Uuid;
         result.text = node.child_value();
@@ -250,26 +324,36 @@ Value decode(pugi::xml_node node, bool llsd, unsigned depth) {
         result.text = framework::normalize_uuid(result.text);
     } else if (tag == "base64" || tag == "binary") {
         result.kind = Kind::Binary;
-        result.text = node.child_value();
+        result.text = scalar_text();
+        if (!llsd && tag == "base64")
+            result.binary_data = osd_binary(result);
     } else if (tag == "dateTime.iso8601" || tag == "date") {
-        result.kind = Kind::Date;
-        result.text = node.child_value();
+        if (!llsd && tag == "dateTime.iso8601")
+            result = *parse_nwc_xml_rpc_date(framework::utf16_replacing(scalar_text()));
+        else
+            result.kind = Kind::Date;
+        result.text = scalar_text();
     } else if (tag == "uri") {
         result.kind = Kind::Uri;
         result.text = node.child_value();
-    } else if (tag != "nil" && tag != "undef")
-        throw std::invalid_argument("Unknown RPC value type");
+    } else if (tag != "nil" && tag != "undef") {
+        if (llsd)
+            throw std::invalid_argument("Unknown RPC value type");
+        // Nwc falls back to the text inside unrecognized value tags.
+        result = nwc_string_value(node);
+    }
     return result;
 }
-void encode(pugi::xml_node parent, const Value& input, bool llsd, unsigned depth = 0) {
-    const auto& value = input.view();
+
+void encode(pugi::xml_node parent, const Value &input, bool llsd, unsigned depth = 0) {
+    const auto &value = input.view();
     depth_check(depth);
     if (!llsd)
         parent = parent.append_child("value");
     if (value.kind == Kind::Map) {
         auto map = parent.append_child(llsd ? "map" : "struct");
-        for (const auto& key : value.ordered_keys()) {
-            const auto& child = value.map.at(key);
+        for (const auto &key : value.ordered_keys()) {
+            const auto &child = value.map.at(key);
             auto container = map;
             if (llsd)
                 map.append_child("key").text().set(key.c_str());
@@ -283,10 +367,10 @@ void encode(pugi::xml_node parent, const Value& input, bool llsd, unsigned depth
         auto array = parent.append_child("array");
         if (!llsd)
             array = array.append_child("data");
-        for (const auto& item : value.array)
+        for (const auto &item : value.array)
             encode(array, item, llsd, depth + 1);
     } else {
-        const char* name = "string";
+        const char *name = "string";
         switch (value.kind) {
         case Kind::Undefined:
             name = llsd ? "undef" : "nil";
@@ -326,9 +410,8 @@ void encode(pugi::xml_node parent, const Value& input, bool llsd, unsigned depth
             for (int at = 0; at < 8; at += 3) {
                 std::uint32_t group = 0;
                 for (int j = 0; j < 3; ++j)
-                    group =
-                        (group << 8) |
-                        (at + j < 8 ? static_cast<std::uint32_t>((bits >> (56 - (at + j) * 8)) & 255) : 0u);
+                    group = (group << 8) |
+                            (at + j < 8 ? static_cast<std::uint32_t>((bits >> (56 - (at + j) * 8)) & 255) : 0u);
                 encoded += alphabet[(group >> 18) & 63];
                 encoded += alphabet[(group >> 12) & 63];
                 encoded += at + 1 < 8 ? alphabet[(group >> 6) & 63] : '=';
@@ -337,15 +420,19 @@ void encode(pugi::xml_node parent, const Value& input, bool llsd, unsigned depth
             node.text().set(encoded.c_str());
         } else if (value.kind == Kind::Boolean)
             node.text().set(value.boolean ? "1" : "0");
+        else if (!llsd && value.kind == Kind::Date && !value.text.empty())
+            node.text().set(value.text.c_str());
         else if (value.kind != Kind::Undefined)
             node.text().set(value.as_string().c_str());
     }
 }
-std::string save(const pugi::xml_document& doc) {
+
+std::string save(const pugi::xml_document &doc) {
     std::ostringstream out;
     doc.save(out, "", pugi::format_raw | pugi::format_no_declaration, pugi::encoding_utf8);
     return out.str();
 }
+
 std::string json_escape(std::string_view input) {
     std::string result = "\"";
     const char hex[] = "0123456789abcdef";
@@ -362,18 +449,31 @@ std::string json_escape(std::string_view input) {
     }
     return result + '"';
 }
-}
+} // namespace
+
 RpcCall parse_xml_rpc(std::string_view bytes) {
     auto doc = document(bytes);
     auto root = doc.document_element();
     if (std::string_view(root.name()) != "methodCall" || !root.child("methodName"))
         throw std::invalid_argument("Expected XML-RPC methodCall");
     RpcCall call;
-    call.method = root.child_value("methodName");
-    for (auto param : root.child("params").children("param"))
-        call.parameters.push_back(decode(param.child("value"), false, 0));
+    for (auto method : root.children("methodName")) {
+        if (const auto text = nwc_last_text(method))
+            call.method = text;
+    }
+    for (auto params : root.children("params")) {
+        for (auto param : params.children("param")) {
+            if (!param.first_child() && self_closing(param, bytes))
+                continue;
+            Value value;
+            for (auto element : param.children("value"))
+                value = decode(element, false, 0, bytes);
+            call.parameters.push_back(std::move(value));
+        }
+    }
     return call;
 }
+
 Value parse_llsd_xml(std::string_view bytes) {
     auto doc = document(bytes);
     auto root = doc.document_element();
@@ -385,15 +485,17 @@ Value parse_llsd_xml(std::string_view bytes) {
             throw std::invalid_argument("Multiple LLSD roots");
     return decode(value, true, 0);
 }
-std::string xml_rpc_request(const RpcCall& call) {
+
+std::string xml_rpc_request(const RpcCall &call) {
     pugi::xml_document doc;
     auto root = doc.append_child("methodCall");
     root.append_child("methodName").text().set(call.method.c_str());
     auto parameters = root.append_child("params");
-    for (const auto& value : call.parameters)
+    for (const auto &value : call.parameters)
         encode(parameters.append_child("param"), value, false);
     return save(doc);
 }
+
 Value parse_xml_rpc_response(std::string_view bytes) {
     auto doc = document(bytes);
     const auto root = doc.document_element();
@@ -402,28 +504,32 @@ Value parse_xml_rpc_response(std::string_view bytes) {
     const auto value = root.child("params").child("param").child("value");
     if (!value)
         throw std::invalid_argument("Missing XML-RPC response value");
-    return decode(value, false, 0);
+    return decode(value, false, 0, bytes);
 }
-std::string xml_rpc_response(const Value& value) {
+
+std::string xml_rpc_response(const Value &value) {
     pugi::xml_document doc;
     encode(doc.append_child("methodResponse").append_child("params").append_child("param"), value, false);
     return save(doc);
 }
-std::string xml_rpc_fault(std::int32_t code, const std::string& message) {
+
+std::string xml_rpc_fault(std::int32_t code, const std::string &message) {
     pugi::xml_document doc;
     encode(doc.append_child("methodResponse").append_child("fault"),
            Value::object({{"faultCode", Value(code)}, {"faultString", Value(message)}}), false);
     return save(doc);
 }
-std::string llsd_xml(const Value& value) {
+
+std::string llsd_xml(const Value &value) {
     pugi::xml_document doc;
     encode(doc.append_child("llsd"), value, true);
     return save(doc);
 }
-std::string grid_info_xml(const std::map<std::string, std::string>& info) {
+
+std::string grid_info_xml(const std::map<std::string, std::string> &info) {
     pugi::xml_document doc;
     auto root = doc.append_child("gridinfo");
-    for (const auto& [key, value] : info) {
+    for (const auto &[key, value] : info) {
         if (key.empty() ||
             key.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.-") !=
                 std::string::npos ||
@@ -433,13 +539,17 @@ std::string grid_info_xml(const std::map<std::string, std::string>& info) {
     }
     return save(doc);
 }
-std::string json_strings(const std::map<std::string, std::string>& fields) {
+
+std::string json_strings(const std::map<std::string, std::string> &fields) {
     std::string result = "{";
-    for (const auto& [key, value] : fields) {
+    for (const auto &[key, value] : fields) {
         if (result.size() > 1)
             result += ',';
         result += json_escape(key) + ':' + json_escape(value);
     }
     return result + '}';
 }
-}
+} // namespace opensim::network
+
+#include "opensim/framework/invariant_number_parse.hpp"
+#include "opensim/framework/text.hpp"

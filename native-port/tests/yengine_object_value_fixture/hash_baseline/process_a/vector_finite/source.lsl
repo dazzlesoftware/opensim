@@ -1,0 +1,1 @@
+YOption arrays;vector input=<1.25,-2.5,3.75>;integer result;integer after;default{state_entry(){result=xmrHashCode((object)input);after=1;}}

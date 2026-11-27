@@ -4,16 +4,18 @@
 #include <condition_variable>
 #include <thread>
 #include <algorithm>
+
 namespace opensim::server {
 namespace {
 class RuntimeWatcher final : public PollWatcher {
   public:
     explicit RuntimeWatcher(std::function<void()> callback)
-        : thread_([callback = std::move(callback)] { callback(); }) {
-    }
+        : thread_([callback = std::move(callback)] { callback(); }) {}
+
     ~RuntimeWatcher() override {
         join();
     }
+
     void join() override {
         if (thread_.joinable()) {
             if (thread_.get_id() == std::this_thread::get_id())
@@ -25,6 +27,7 @@ class RuntimeWatcher final : public PollWatcher {
   private:
     std::thread thread_;
 };
+
 class RuntimeEngine final : public PollJobEngine {
     struct State {
         PollManagerBackend::Worker worker;
@@ -36,6 +39,7 @@ class RuntimeEngine final : public PollJobEngine {
         std::size_t active = 0;
         bool running = true;
         bool cancelled = false;
+
         State(PollManagerBackend::Worker callback, PollRuntimeBackend::Error log, std::int32_t wait,
               std::int32_t workers)
             : worker(std::move(callback)), error(std::move(log)), hold(wait),
@@ -43,6 +47,7 @@ class RuntimeEngine final : public PollJobEngine {
             running = bool(worker);
         }
     };
+
     struct Thread {
         std::thread thread;
         std::shared_ptr<std::atomic<bool>> done;
@@ -51,12 +56,13 @@ class RuntimeEngine final : public PollJobEngine {
   public:
     RuntimeEngine(PollManagerBackend::Worker worker, std::int32_t hold, std::int32_t concurrency,
                   PollRuntimeBackend::Error error)
-        : state_(std::make_shared<State>(std::move(worker), std::move(error), hold, concurrency)) {
-    }
+        : state_(std::make_shared<State>(std::move(worker), std::move(error), hold, concurrency)) {}
+
     ~RuntimeEngine() override {
         dispose();
         join();
     }
+
     void enqueue(PollRequestPtr request) override {
         auto state = state_;
         std::lock_guard lock(state->mutex);
@@ -71,8 +77,7 @@ class RuntimeEngine final : public PollJobEngine {
             } else
                 ++i;
         }
-        if (state->active < static_cast<std::size_t>(state->concurrency) &&
-            state->active < state->jobs.size()) {
+        if (state->active < static_cast<std::size_t>(state->concurrency) && state->active < state->jobs.size()) {
             threads_.reserve(threads_.size() + 1);
             auto done = std::make_shared<std::atomic<bool>>(false);
             ++state->active;
@@ -89,11 +94,13 @@ class RuntimeEngine final : public PollJobEngine {
         }
         state->available.notify_one();
     }
+
     std::size_t count() const override {
         auto state = state_;
         std::lock_guard lock(state->mutex);
         return state->jobs.size();
     }
+
     void cancel() override {
         auto state = state_;
         std::lock_guard lock(state->mutex);
@@ -103,6 +110,7 @@ class RuntimeEngine final : public PollJobEngine {
         state->cancelled = true;
         state->available.notify_all();
     }
+
     void dispose() override {
         auto state = state_;
         {
@@ -125,8 +133,9 @@ class RuntimeEngine final : public PollJobEngine {
         state->jobs.clear();
         state->worker = {};
     }
+
     void join() override {
-        for (auto& entry : threads_)
+        for (auto &entry : threads_)
             if (entry.thread.joinable()) {
                 // A worker can release its own final owner after source Dispose.
                 if (entry.thread.get_id() == std::this_thread::get_id())
@@ -137,7 +146,7 @@ class RuntimeEngine final : public PollJobEngine {
     }
 
   private:
-    static void run(const std::shared_ptr<State>& state) {
+    static void run(const std::shared_ptr<State> &state) {
         for (;;) {
             PollRequestPtr request;
             PollManagerBackend::Worker worker;
@@ -167,7 +176,7 @@ class RuntimeEngine final : public PollJobEngine {
             try {
                 if (worker)
                     worker(std::move(request));
-            } catch (const std::exception& e) {
+            } catch (const std::exception &e) {
                 if (state->error)
                     try {
                         state->error(e);
@@ -176,29 +185,35 @@ class RuntimeEngine final : public PollJobEngine {
             }
         }
     }
+
     std::shared_ptr<State> state_;
     std::vector<Thread> threads_;
 };
-}
+} // namespace
+
 PollRuntimeBackend::PollRuntimeBackend(Error error, std::function<void()> watchdog)
-    : error_(std::move(error)), watchdog_(std::move(watchdog)) {
-}
+    : error_(std::move(error)), watchdog_(std::move(watchdog)) {}
+
 void PollRuntimeBackend::sleep(std::int32_t milliseconds) {
     std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
 }
+
 void PollRuntimeBackend::watchdog_update() {
     if (watchdog_)
         watchdog_();
 }
-void PollRuntimeBackend::error(const std::exception& error) {
+
+void PollRuntimeBackend::error(const std::exception &error) {
     if (error_)
         error_(error);
 }
-std::shared_ptr<PollJobEngine> PollRuntimeBackend::make_pool(Worker worker, const std::string&,
-                                                             std::int32_t hold, std::int32_t concurrency) {
+
+std::shared_ptr<PollJobEngine> PollRuntimeBackend::make_pool(Worker worker, const std::string &, std::int32_t hold,
+                                                             std::int32_t concurrency) {
     return std::make_shared<RuntimeEngine>(std::move(worker), hold, concurrency, error_);
 }
+
 std::shared_ptr<PollWatcher> PollRuntimeBackend::start_watcher(std::function<void()> watcher) {
     return std::make_shared<RuntimeWatcher>(std::move(watcher));
 }
-}
+} // namespace opensim::server

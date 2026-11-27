@@ -29,10 +29,12 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 #include <stdexcept>
 using opensim::framework::HttpUri;
-void check(bool value, const char* message) {
+
+void check(bool value, const char *message) {
     if (!value)
         throw std::runtime_error(message);
 }
+
 int main() {
     try {
         HttpUri empty(std::nullopt);
@@ -53,18 +55,17 @@ int main() {
               "URI host classifier differs from host-only parser");
         HttpUri left("http://host:443/a?x=1"), right("https://host/a?x=2");
         check(left.equals(right) && left.compare(right) == 0, "identity ignores scheme and query");
-        check(!HttpUri("http://host/A").equals(HttpUri("http://host/a")),
-              "path identity remains case-sensitive");
+        check(!HttpUri("http://host/A").equals(HttpUri("http://host/a")), "path identity remains case-sensitive");
         HttpUri parsed("http://host/a");
-        check(parsed.resolve_dns([](const auto&) -> std::optional<std::string> { return "203.0.113.7"; }) &&
+        check(parsed.resolve_dns([](const auto &) -> std::optional<std::string> { return "203.0.113.7"; }) &&
                   parsed.resolved() && !parsed.ip,
               "source ResolveDNS flag/IP asymmetry");
         HttpUri resolved("http://host/a", true,
-                         [](const auto&) -> std::optional<std::string> { return "203.0.113.7"; });
+                         [](const auto &) -> std::optional<std::string> { return "203.0.113.7"; });
         check(resolved.resolved() && resolved.ip == "203.0.113.7", "constructor resolution assigns IP");
         std::cout << "PASS: HTTP URI canonicalization and state\n";
         return 0;
-    } catch (const std::exception& error) {
+    } catch (const std::exception &error) {
         std::cerr << error.what() << '\n';
         return 1;
     }

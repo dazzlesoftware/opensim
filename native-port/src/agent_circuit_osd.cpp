@@ -7,23 +7,27 @@
 #include <cmath>
 #include <limits>
 #include "opensim/framework/integer_text.hpp"
+
 namespace opensim::framework {
 namespace {
 using network::Value;
-Value uuid(const Uuid& id) {
+
+Value uuid(const Uuid &id) {
     Value v(id.str());
     v.kind = Value::Kind::Uuid;
     return v;
 }
-Value text(const std::optional<std::string>& s) {
+
+Value text(const std::optional<std::string> &s) {
     return Value(s.value_or(""));
 }
-std::string object_text(const std::any& value) {
+
+std::string object_text(const std::any &value) {
     if (!value.has_value() || value.type() == typeid(std::nullptr_t))
         return {};
     if (auto p = std::any_cast<std::string>(&value))
         return *p;
-    if (auto p = std::any_cast<const char*>(&value))
+    if (auto p = std::any_cast<const char *>(&value))
         return *p ? *p : "";
     if (auto p = std::any_cast<bool>(&value))
         return *p ? "True" : "False";
@@ -56,7 +60,7 @@ std::string object_text(const std::any& value) {
         v.kind = Value::Kind::Real;
         v.real = *p;
         auto text = network::osd_string(v);
-        for (auto& c : text)
+        for (auto &c : text)
             if (c == 'e')
                 c = 'E';
         return text;
@@ -69,11 +73,13 @@ std::string object_text(const std::any& value) {
         return p->text();
     throw std::invalid_argument("Service URL object requires a native ToString adapter");
 }
-}
-std::string service_url_object_text(const std::any& value) {
+} // namespace
+
+std::string service_url_object_text(const std::any &value) {
     return object_text(value);
 }
-network::Value AgentCircuitData::pack(EntityTransferContext* context) {
+
+network::Value AgentCircuitData::pack(EntityTransferContext *context) {
     auto data = Value::object({});
     data.set("agent_id", uuid(agent_id));
     data.set("base_folder", uuid(base_folder));
@@ -81,9 +87,8 @@ network::Value AgentCircuitData::pack(EntityTransferContext* context) {
     if (children_cap_seeds && !children_cap_seeds->empty()) {
         Value seeds;
         seeds.kind = Value::Kind::Array;
-        for (auto& [handle, seed] : *children_cap_seeds)
-            seeds.array.push_back(
-                Value::object({{"handle", Value(std::to_string(handle))}, {"seed", text(seed)}}));
+        for (auto &[handle, seed] : *children_cap_seeds)
+            seeds.array.push_back(Value::object({{"handle", Value(std::to_string(handle))}, {"seed", text(seed)}}));
         data.set("children_seeds", seeds);
     }
     data.set("child", Value(child));
@@ -129,15 +134,16 @@ network::Value AgentCircuitData::pack(EntityTransferContext* context) {
     }
     return data;
 }
-void AgentCircuitData::unpack(const network::Value& data) {
+
+void AgentCircuitData::unpack(const network::Value &data) {
     verified_foreign_login = false;
     if (data.kind != Value::Kind::Map)
         throw std::invalid_argument("Circuit requires an OSD map");
-    auto id = [&](const char* key, Uuid& v) {
+    auto id = [&](const char *key, Uuid &v) {
         if (data.contains(key))
             v = network::osd_uuid(data.get(key));
     };
-    auto str = [&](const char* key, auto& v) {
+    auto str = [&](const char *key, auto &v) {
         if (data.contains(key))
             v = network::osd_string(data.get(key));
     };
@@ -145,8 +151,8 @@ void AgentCircuitData::unpack(const network::Value& data) {
     id("base_folder", base_folder);
     str("caps_path", caps_path);
     children_cap_seeds = std::make_shared<ChildrenSeeds>();
-    if (auto& seeds = data.get("children_seeds"); seeds.kind == Value::Kind::Array)
-        for (auto& pair : seeds.array)
+    if (auto &seeds = data.get("children_seeds"); seeds.kind == Value::Kind::Array)
+        for (auto &pair : seeds.array)
             if (pair.kind == Value::Kind::Map) {
                 std::uint64_t handle = 0;
                 if (pair.contains("handle") &&
@@ -183,15 +189,15 @@ void AgentCircuitData::unpack(const network::Value& data) {
             appearance->serial = network::osd_integer(data.get("appearance_serial"));
         if (data.get("packed_appearance").kind == Value::Kind::Map)
             appearance->unpack(&data.get("packed_appearance"));
-    } catch (const std::exception&) {
+    } catch (const std::exception &) {
     }
     service_urls = std::make_shared<ServiceUrls>();
-    if (auto& modern = data.get("serviceurls"); modern.kind == Value::Kind::Map) {
-        for (auto& key : modern.ordered_keys())
+    if (auto &modern = data.get("serviceurls"); modern.kind == Value::Kind::Map) {
+        for (auto &key : modern.ordered_keys())
             (*service_urls)[key] = network::osd_string(modern.get(key));
-    } else if (auto& old = data.get("service_urls"); old.kind == Value::Kind::Array) {
+    } else if (auto &old = data.get("service_urls"); old.kind == Value::Kind::Array) {
         for (std::size_t i = 0; i + 1 < old.array.size(); i += 2)
             (*service_urls)[network::osd_string(old.array[i])] = network::osd_string(old.array[i + 1]);
     }
 }
-}
+} // namespace opensim::framework

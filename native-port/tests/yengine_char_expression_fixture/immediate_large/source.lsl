@@ -1,0 +1,1 @@
+YOption chars;integer result;char value;default{state_entry(){result=(integer)(char)65537;}}

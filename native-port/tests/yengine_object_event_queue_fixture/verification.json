@@ -1,0 +1,29 @@
+{
+  "passed": true,
+  "generator_sha256": "94fbaf9c939eac122e2fb36c948fba365aa33eff54e2e5e8030920a42106d725",
+  "processes": [
+    {
+      "directory": "process_a",
+      "metadata_sha256": "a3474d27816896fb428d49ba75330b1f3a4d85e653432c944d36489d1a317cea",
+      "cases": 8,
+      "accepted": 8,
+      "captures": 8,
+      "migrated": 8,
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64"
+    },
+    {
+      "directory": "linux_process",
+      "metadata_sha256": "bc3be191c476e51ea3557add43d1a158d19167a196ed749e50ead8bbab66485d",
+      "cases": 8,
+      "accepted": 8,
+      "captures": 8,
+      "migrated": 8,
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64"
+    }
+  ],
+  "contract": "XML independently reconstructs nonempty raw String and SDK String fields per occurrence; EMPTY is actual String.Empty singleton shared with literal/global; SDK-nullString fields become EMPTY; queued raw boxed value/list aliases split independently from binary globals. Internal same-live refs remain exact; no content interning shortcut for nonempty strings.",
+  "scope": "Actual arrays-gated Object Enqueue/realSleep/private production migration plus serialized EventQueue text->NEWDOM->RestoreEventQueue; exact per-object/underlyingStringfield reference pairs and source comparison flags. No native changes; full parity not claimed.",
+  "full_parity_claim": false
+}

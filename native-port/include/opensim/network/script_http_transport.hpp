@@ -28,23 +28,22 @@ struct ScriptHttpReply {
 using ScriptHttpAttempt = std::variant<std::monostate, ScriptHttpReply, framework::ConfigUriObjectPtr>;
 
 class ScriptHttpTransport {
-public:
+  public:
     ScriptHttpTransport(std::shared_ptr<const framework::OutboundUrlFilter> filter,
                         WebHttpClients::HandlerFactory handlers, std::int32_t timeout_ms = 30000,
-                        std::int32_t maximum_connections = 8,
-                        std::shared_ptr<framework::ConfigXmlProxy> proxy = {});
+                        std::int32_t maximum_connections = 8, std::shared_ptr<framework::ConfigXmlProxy> proxy = {});
 
     // Initial URL validation runs at submission. Redirect targets are filtered on the worker.
-    std::optional<ScriptHttpReply> send(const ScriptHttpRequest& request,
-                                        const std::function<bool()>& cancelled = {}) const;
-    ScriptHttpAttempt send_attempt(const ScriptHttpRequest& request, unsigned redirects,
-                                   const std::function<bool()>& cancelled = {}) const;
+    std::optional<ScriptHttpReply> send(const ScriptHttpRequest &request,
+                                        const std::function<bool()> &cancelled = {}) const;
+    ScriptHttpAttempt send_attempt(const ScriptHttpRequest &request, unsigned redirects,
+                                   const std::function<bool()> &cancelled = {}) const;
 
-private:
+  private:
     std::shared_ptr<const framework::OutboundUrlFilter> filter_;
     std::shared_ptr<framework::ConfigUriObjectBackend> uris_;
     std::shared_ptr<WebHttpClient> verified_;
     std::shared_ptr<WebHttpClient> unverified_;
 };
 
-}
+} // namespace opensim::network

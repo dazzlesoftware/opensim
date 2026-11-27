@@ -1,0 +1,94 @@
+[
+  {
+    "name": "key_null",
+    "method": "xmrKeyToBool",
+    "source_representable": false,
+    "input": {
+      "type": "null",
+      "clr": null,
+      "value": null
+    },
+    "result": {
+      "type": "boolean",
+      "clr": "System.Boolean",
+      "value": true
+    },
+    "exception": null
+  },
+  {
+    "name": "string_null",
+    "method": "xmrStringToBool",
+    "source_representable": false,
+    "input": {
+      "type": "null",
+      "clr": null,
+      "value": null
+    },
+    "result": null,
+    "exception": {
+      "type": "System.NullReferenceException",
+      "message": "Object reference not set to an instance of an object.",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.TypeCast.StringToBool(String x) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\MMRScriptTypeCast.cs:line 796\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrStringToBool(String x) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1416\r\n   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)\r\n   at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span\u00601 copyOfArgs, BindingFlags invokeAttr)"
+    }
+  },
+  {
+    "name": "list_null",
+    "method": "xmrListToBool",
+    "source_representable": false,
+    "input": {
+      "type": "null",
+      "clr": null,
+      "value": null
+    },
+    "result": null,
+    "exception": {
+      "type": "System.NullReferenceException",
+      "message": "Object reference not set to an instance of an object.",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.TypeCast.ListToBool(list x) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\MMRScriptTypeCast.cs:line 824\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrListToBool(list x) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1428\r\n   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)\r\n   at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span\u00601 copyOfArgs, BindingFlags invokeAttr)"
+    }
+  },
+  {
+    "name": "list_raw_boolean",
+    "method": "xmrListToBool",
+    "source_representable": false,
+    "input": {
+      "type": "list",
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+      "value": [
+        {
+          "type": "boolean",
+          "clr": "System.Boolean",
+          "value": true
+        }
+      ]
+    },
+    "result": {
+      "type": "boolean",
+      "clr": "System.Boolean",
+      "value": true
+    },
+    "exception": null
+  },
+  {
+    "name": "list_null_element",
+    "method": "xmrListToBool",
+    "source_representable": false,
+    "input": {
+      "type": "list",
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+      "value": [
+        {
+          "type": "null",
+          "clr": null,
+          "value": null
+        }
+      ]
+    },
+    "result": {
+      "type": "boolean",
+      "clr": "System.Boolean",
+      "value": true
+    },
+    "exception": null
+  }
+]

@@ -1,0 +1,1 @@
+string result;integer after;default{state_entry(){result=llComputeHash("😀","sha512");after=1;}}

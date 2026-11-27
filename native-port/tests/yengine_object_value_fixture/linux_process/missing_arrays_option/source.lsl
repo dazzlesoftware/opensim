@@ -1,0 +1,1 @@
+object input;default{state_entry(){}}

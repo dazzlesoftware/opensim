@@ -1,0 +1,1 @@
+string banner="漢";integer result;integer count;integer inner(){count++;return llAbs(-7);}default{state_entry(){result=inner();}}

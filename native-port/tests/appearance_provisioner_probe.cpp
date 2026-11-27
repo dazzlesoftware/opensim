@@ -5,11 +5,13 @@
 #include <bit>
 using namespace opensim;
 using Id = framework::Uuid;
+
 Id id(int n) {
     std::ostringstream s;
     s << "00000000-0000-0000-0000-" << std::hex << std::setw(12) << std::setfill('0') << n;
     return Id(s.str());
 }
+
 std::string hex(std::string_view s) {
     constexpr char d[] = "0123456789abcdef";
     std::string r;
@@ -19,19 +21,21 @@ std::string hex(std::string_view s) {
     }
     return r;
 }
-std::string item_text(const services::InventoryItem& a) {
-    return a.id.str() + "," + a.owner.str() + "," + a.asset_id.str() + "," + std::to_string(a.asset_type) +
-           "," + a.name + "," + a.description + "," + std::to_string(a.inventory_type) + "," + a.creator_id +
-           "," + std::to_string(static_cast<std::uint32_t>(a.next_permissions)) + "," +
+
+std::string item_text(const services::InventoryItem &a) {
+    return a.id.str() + "," + a.owner.str() + "," + a.asset_id.str() + "," + std::to_string(a.asset_type) + "," +
+           a.name + "," + a.description + "," + std::to_string(a.inventory_type) + "," + a.creator_id + "," +
+           std::to_string(static_cast<std::uint32_t>(a.next_permissions)) + "," +
            std::to_string(static_cast<std::uint32_t>(a.current_permissions)) + "," +
            std::to_string(static_cast<std::uint32_t>(a.base_permissions)) + "," +
            std::to_string(static_cast<std::uint32_t>(a.everyone_permissions)) + "," +
            std::to_string(static_cast<std::uint32_t>(a.group_permissions)) + "," + a.group_id.str() + "," +
-           std::to_string(a.group_owned) + "," + std::to_string(a.sale_price) + "," +
-           std::to_string(a.sale_type) + "," + std::to_string(static_cast<std::uint32_t>(a.flags)) + "," +
-           std::to_string(a.creation_date) + "," + a.parent.str();
+           std::to_string(a.group_owned) + "," + std::to_string(a.sale_price) + "," + std::to_string(a.sale_type) +
+           "," + std::to_string(static_cast<std::uint32_t>(a.flags)) + "," + std::to_string(a.creation_date) + "," +
+           a.parent.str();
 }
-std::string appearance_text(framework::AvatarAppearance& a) {
+
+std::string appearance_text(framework::AvatarAppearance &a) {
     std::string s = std::to_string(a.serial) + ":";
     for (auto b : *a.visual_params)
         s += std::to_string(b) + ",";
@@ -56,11 +60,12 @@ std::string appearance_text(framework::AvatarAppearance& a) {
         }
     s += ':';
     for (auto attachment : a.attachments())
-        s += std::to_string(attachment.point) + "," + attachment.item.str() + "," + attachment.asset.str() +
-             ";";
+        s += std::to_string(attachment.point) + "," + attachment.item.str() + "," + attachment.asset.str() + ";";
     return s;
 }
+
 #include "appearance_transfer_fixture.hpp"
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -146,8 +151,8 @@ int main() {
                 return root;
             };
             ops.add_folder = [&](auto folder) {
-                trace += "addfolder:" + folder->id.str() + ":" + folder->owner.str() + ":" + folder->name +
-                         ":" + std::to_string(folder->type) + ":" + folder->parent.str() + ":" +
+                trace += "addfolder:" + folder->id.str() + ":" + folder->owner.str() + ":" + folder->name + ":" +
+                         std::to_string(folder->type) + ":" + folder->parent.str() + ":" +
                          std::to_string(folder->version) + ";";
                 bool result = touch();
                 if (mutation == 9)
@@ -187,8 +192,7 @@ int main() {
                 return 100 + clock;
             });
         const std::vector<std::string> models = {
-            "First Last", " First Last", "First  Last",          "First",
-            "",           " ",           "First\tLast",          "First\xc2\xa0Last",
+            "First Last", " First Last", "First  Last",          "First", "", " ", "First\tLast", "First\xc2\xa0Last",
             "試験 😀",    "First\nLast", "First\xe2\x80\x8bLast"};
         std::string status = "OK";
         try {
@@ -197,15 +201,15 @@ int main() {
             else if (link >= 3)
                 service.establish(id(7), models.at(link - 3));
             else if (link)
-                service.create_outfit_link(link == 1 ? 18 : -1, link == 1 ? 5 : 0xffffffffu, "Link 試験 <&>",
-                                           id(7), id(8), id(9));
+                service.create_outfit_link(link == 1 ? 18 : -1, link == 1 ? 5 : 0xffffffffu, "Link 試験 <&>", id(7),
+                                           id(8), id(9));
             else
                 service.create_defaults(id(7));
         } catch (...) {
             status = "EX";
         }
         std::string final;
-        for (auto& item : items)
+        for (auto &item : items)
             final += item_text(*item) + ";";
         std::cout << status << '|' << hex(trace) << '|' << hex(final);
         if (transfer)

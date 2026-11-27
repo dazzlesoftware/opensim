@@ -5,16 +5,19 @@
 using namespace opensim;
 using namespace scene;
 using Item = TaskInventoryRegistry::Item;
+
 namespace {
 framework::Uuid id(int n) {
     auto t = std::to_string(n);
     return framework::Uuid("11223344-5566-7788-99aa-" + std::string(12 - t.size(), '0') + t);
 }
+
 std::string row(const Item &i) {
     return i->item_id.str() + ":" + i->name.value_or("NULL") + ":" + std::to_string(i->inventory_type) + ":" +
-           i->asset_id.str() + ":" + i->owner_id.str() + ":" + i->group_id.str() + ":" + i->parent_id.str() +
-           ":" + std::to_string(i->group_permissions);
+           i->asset_id.str() + ":" + i->owner_id.str() + ":" + i->group_id.str() + ":" + i->parent_id.str() + ":" +
+           std::to_string(i->group_permissions);
 }
+
 Item make(int n, std::optional<std::string> name, int type) {
     auto i = std::make_shared<framework::TaskInventoryItem>([] { return 111; });
     i->item_id = id(n);
@@ -24,14 +27,13 @@ Item make(int n, std::optional<std::string> name, int type) {
     i->owner_id = id(9);
     return i;
 }
+
 std::string probe(int mode) {
     std::string trace, out;
     auto add = [&](std::string s) { trace += "/" + s; };
     TaskInventoryRegistryHooks hooks;
     hooks.part = [] { return TaskInventoryPart{id(10), id(11), 123}; };
-    hooks.changed = [&](auto mask, auto item) {
-        add("C" + std::to_string(mask) + (item ? ":" + item->str() : ""));
-    };
+    hooks.changed = [&](auto mask, auto item) { add("C" + std::to_string(mask) + (item ? ":" + item->str() : "")); };
     hooks.aggregate_permissions = [&] { add("A"); };
     hooks.deep_permissions = [&] { add("D"); };
     hooks.clear_scripted = [&] { add("X"); };
@@ -42,8 +44,8 @@ std::string probe(int mode) {
     TaskInventoryRegistry registry(std::move(hooks));
     registry.serial((mode & 128) ? 0xffffffffu : 0);
     auto snapshot = [&] {
-        std::string s = std::to_string(registry.serial()) + ":" + (registry.inventory_changed() ? "1" : "0") +
-                        ":" + (registry.has_script_dictionary() ? "1" : "0");
+        std::string s = std::to_string(registry.serial()) + ":" + (registry.inventory_changed() ? "1" : "0") + ":" +
+                        (registry.has_script_dictionary() ? "1" : "0");
         for (auto &i : registry.items())
             s += "[" + row(i) + "]";
         s += "S";
@@ -111,7 +113,8 @@ std::string probe(int mode) {
     step([&] { return registry.remove(id(99)); });
     return out;
 }
-}
+} // namespace
+
 int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string_view(argv[1]) == "--probe") {

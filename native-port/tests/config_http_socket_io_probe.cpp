@@ -8,6 +8,7 @@
 #include <cerrno>
 #endif
 using namespace opensim::framework;
+
 namespace {
 std::string hex(std::u16string_view text) {
     std::ostringstream out;
@@ -16,19 +17,20 @@ std::string hex(std::u16string_view text) {
         out << std::setw(4) << unsigned(c);
     return out.str();
 }
+
 void dump(std::exception_ptr error) {
     try {
         std::rethrow_exception(error);
-    } catch (const ConfigHttpReadError& e) {
-        std::cout << e.source_type << ';' << hex(e.message) << ';' << e.hresult << ';' << e.request_error
-                  << ";-1;-1|";
+    } catch (const ConfigHttpReadError &e) {
+        std::cout << e.source_type << ';' << hex(e.message) << ';' << e.hresult << ';' << e.request_error << ";-1;-1|";
         dump(e.inner);
-    } catch (const ConfigHttpSocketError& e) {
-        std::cout << e.source_type << ';' << hex(e.message) << ';' << e.hresult << ";-1;" << e.native_error
-                  << ';' << e.socket_error;
+    } catch (const ConfigHttpSocketError &e) {
+        std::cout << e.source_type << ';' << hex(e.message) << ';' << e.hresult << ";-1;" << e.native_error << ';'
+                  << e.socket_error;
     }
 }
-}
+} // namespace
+
 int main() {
     const int native[] = {
 #ifdef _WIN32
@@ -43,8 +45,7 @@ int main() {
     while (std::cin >> index >> write >> headers) {
         if (index < 0 || index >= 10)
             return 2;
-        dump(write ? config_http_write_error(native[index])
-                   : config_http_read_error(headers != 0, native[index]));
+        dump(write ? config_http_write_error(native[index]) : config_http_read_error(headers != 0, native[index]));
         std::cout << '\n';
     }
 }

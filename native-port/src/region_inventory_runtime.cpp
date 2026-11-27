@@ -5,6 +5,7 @@
 #include <chrono>
 #include <mutex>
 #include <stdexcept>
+
 namespace opensim::services {
 struct RegionInventoryRuntime::State {
     using Clock = std::chrono::steady_clock;
@@ -16,9 +17,11 @@ struct RegionInventoryRuntime::State {
     Clock::time_point next_purge;
     std::string url, library_url;
     bool subscribed = false, stopped = false;
+
     SceneDelegateIdentity identity() const {
         return {this, "FetchInventory2.RegisterCaps"};
     }
+
     void register_caps(framework::Uuid agent, const std::shared_ptr<Caps> &caps) {
         std::lock_guard lock(mutex);
         if (stopped)
@@ -27,17 +30,16 @@ struct RegionInventoryRuntime::State {
             throw std::invalid_argument("Null inventory Caps");
         if (url == "localhost") {
             auto core = std::make_shared<FetchInventory2Core>(agent, provider);
-            caps->register_simple("FetchInventory2",
-                                  std::make_shared<FetchInventory2Route>(
-                                      "/" + framework::Uuid::random().str(), std::move(core), bad));
+            caps->register_simple("FetchInventory2", std::make_shared<FetchInventory2Route>(
+                                                         "/" + framework::Uuid::random().str(), std::move(core), bad));
         }
         if (library_url == "localhost") {
             auto core = std::make_shared<FetchLibrary2Core>(agent, library);
-            caps->register_simple("FetchLib2",
-                                  std::make_shared<FetchLibrary2Route>("/" + framework::Uuid::random().str(),
-                                                                       std::move(core), bad));
+            caps->register_simple("FetchLib2", std::make_shared<FetchLibrary2Route>(
+                                                   "/" + framework::Uuid::random().str(), std::move(core), bad));
         }
     }
+
     void stop() {
         std::lock_guard lock(mutex);
         if (stopped)
@@ -49,6 +51,7 @@ struct RegionInventoryRuntime::State {
         }
     }
 };
+
 RegionInventoryRuntime::RegionInventoryRuntime(const server::IniConfig &config,
                                                std::shared_ptr<SceneCapabilityEvents> events,
                                                FetchInventory2Core::GetMultipleItems provider,
@@ -79,15 +82,18 @@ RegionInventoryRuntime::RegionInventoryRuntime(const server::IniConfig &config,
                                           }});
     state_->subscribed = true;
 }
+
 RegionInventoryRuntime::~RegionInventoryRuntime() {
     try {
         stop();
     } catch (...) {
     }
 }
+
 void RegionInventoryRuntime::stop() {
     state_->stop();
 }
+
 void RegionInventoryRuntime::poll() {
     std::lock_guard lock(state_->mutex);
     if (state_->stopped || !state_->bad)
@@ -98,4 +104,4 @@ void RegionInventoryRuntime::poll() {
         state_->next_purge = now + std::chrono::milliseconds(30000);
     }
 }
-}
+} // namespace opensim::services

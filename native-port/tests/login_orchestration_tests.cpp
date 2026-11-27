@@ -9,59 +9,60 @@
 #include <stdexcept>
 using namespace opensim;
 using namespace services;
-void check(bool value, const char* message) {
+
+void check(bool value, const char *message) {
     if (!value)
         throw std::runtime_error(message);
 }
+
 struct CompletionAdmission : ISimulationLogin {
-    std::vector<std::string>& events;
+    std::vector<std::string> &events;
     bool allow = true;
     std::shared_ptr<framework::AgentCircuitData> admitted;
-    explicit CompletionAdmission(std::vector<std::string>& e) : events(e) {
-    }
-    bool query_access(GridRegion&, const framework::Uuid&, const std::optional<std::string>&, bool,
-                      const framework::Vector3&, std::vector<framework::Uuid>&, LoginTransferContext&,
-                      std::string& reason) override {
+
+    explicit CompletionAdmission(std::vector<std::string> &e) : events(e) {}
+
+    bool query_access(GridRegion &, const framework::Uuid &, const std::optional<std::string> &, bool,
+                      const framework::Vector3 &, std::vector<framework::Uuid> &, LoginTransferContext &,
+                      std::string &reason) override {
         events.push_back("query");
         reason = "denied";
         return allow;
     }
-    bool create_agent(const GridRegion*, GridRegion&,
-                      const std::shared_ptr<framework::AgentCircuitData>& circuit, std::uint32_t,
-                      LoginTransferContext&, std::string& reason) override {
+
+    bool create_agent(const GridRegion *, GridRegion &, const std::shared_ptr<framework::AgentCircuitData> &circuit,
+                      std::uint32_t, LoginTransferContext &, std::string &reason) override {
         events.push_back("create");
         admitted = circuit;
         reason = "";
         return true;
     }
 };
+
 int main() {
     try {
         server::IniConfig config;
         const auto message = duplicate_login_message({}, framework::Uuid::random(), 0xffffffffu, "key<&>");
-        const auto call =
-            network::parse_xml_rpc(network::xml_rpc_request({"grid_instant_message", {message}}));
+        const auto call = network::parse_xml_rpc(network::xml_rpc_request({"grid_instant_message", {message}}));
         check(call.method == "grid_instant_message" && call.parameters.size() == 1 &&
                   call.parameters[0].get("timestamp").as_string() == "4294967295" &&
                   call.parameters[0].get("message_key").as_string() == "key<&>",
               "kick request serialization retains uint timestamp and escaped key");
-        check(!duplicate_login_message({}, {}, 0, "").contains("message_key"),
-              "empty IM message key omitted");
-        const auto rpc_result = network::parse_xml_rpc_response(
-            network::xml_rpc_response(network::Value::object({{"success", "TRUE"}})));
+        check(!duplicate_login_message({}, {}, 0, "").contains("message_key"), "empty IM message key omitted");
+        const auto rpc_result =
+            network::parse_xml_rpc_response(network::xml_rpc_response(network::Value::object({{"success", "TRUE"}})));
         check(rpc_result.get("success").as_string() == "TRUE", "XML-RPC delivery response decoding");
         bool fault = false;
         try {
             network::parse_xml_rpc_response(network::xml_rpc_fault(42, "failure"));
-        } catch (const std::invalid_argument&) {
+        } catch (const std::invalid_argument &) {
             fault = true;
         }
         check(fault, "XML-RPC fault is not a delivery success");
         AccountStore accounts(":memory:", ":memory:", true);
         auto id = accounts.create_user("Native", "Resident", "secret", framework::ZeroUuid, 200);
         auto account = *accounts.find(framework::ZeroUuid, "Native", "Resident");
-        const framework::Uuid user(id), session = framework::Uuid::random(),
-                                        secure = framework::Uuid::random();
+        const framework::Uuid user(id), session = framework::Uuid::random(), secure = framework::Uuid::random();
         InventoryFolderStore inventory_store(":memory:", true);
         InventoryService inventory(inventory_store);
         SqliteGridUserStore user_store(":memory:", true);
@@ -83,16 +84,14 @@ int main() {
         LoginDependencies dependencies;
         dependencies.grid = &grid;
         dependencies.presence = &presence;
-        dependencies.grid_user = [&](const std::string& value) { return users.info(value); };
-        dependencies.inventory = [&](const framework::Uuid& value) { return inventory.skeleton(value); };
-        dependencies.logged_out = [&](const std::string& value, const framework::Uuid& s,
-                                      const framework::Uuid& r, const framework::Vector3& p,
-                                      const framework::Vector3& l) {
-            return users.logged_out(value, s, r, p, l);
-        };
+        dependencies.grid_user = [&](const std::string &value) { return users.info(value); };
+        dependencies.inventory = [&](const framework::Uuid &value) { return inventory.skeleton(value); };
+        dependencies.logged_out = [&](const std::string &value, const framework::Uuid &s, const framework::Uuid &r,
+                                      const framework::Vector3 &p,
+                                      const framework::Vector3 &l) { return users.logged_out(value, s, r, p, l); };
         auto appearance = std::make_shared<framework::AvatarAppearance>();
         int appearance_calls = 0;
-        dependencies.appearance = [&](const framework::Uuid& id) {
+        dependencies.appearance = [&](const framework::Uuid &id) {
             check(id == user && !presence.agents({id.str()}).empty(),
                   "appearance lookup follows inventory and presence");
             ++appearance_calls;
@@ -110,11 +109,10 @@ int main() {
         users.set_home(id, region.id, {128, 128, 30}, {0, 1, 0});
         prepared = orchestrator.prepare(account, {}, session, secure, "home");
         check(std::holds_alternative<PreparedLogin>(prepared), "prepare connected login");
-        const auto& ready = std::get<PreparedLogin>(prepared);
+        const auto &ready = std::get<PreparedLogin>(prepared);
         check(ready.appearance == appearance && appearance_calls == 1,
               "prepared login retains service appearance reference");
-        check(ready.destination.region->id == region.id && !ready.skeleton.empty() &&
-                  (ready.destination.flags & 512),
+        check(ready.destination.region->id == region.id && !ready.skeleton.empty() && (ready.destination.flags & 512),
               "home inventory and godlike flag");
         check(presence.agent(session).has_value() && !users.info(id)->online,
               "presence exists before admission without marking grid user online");
@@ -123,7 +121,7 @@ int main() {
         bool threw = false;
         try {
             orchestrator.prepare(account, {}, session, secure, "");
-        } catch (const std::exception&) {
+        } catch (const std::exception &) {
             threw = true;
             orchestrator.cleanup(session);
         }
@@ -131,8 +129,7 @@ int main() {
         users.set_last_position(id, {}, framework::Uuid::random(), {1, 2, 3}, {0, 1, 0});
         users.logged_in(id);
         prepared = orchestrator.prepare(account, {}, session, secure, "home");
-        check(std::get<network::Value>(prepared).get("reason").as_string() == "presence" &&
-                  !users.info(id)->online,
+        check(std::get<network::Value>(prepared).get("reason").as_string() == "presence" && !users.info(id)->online,
               "duplicate login with vanished region logs out grid user");
         LoginService login(accounts, config);
         login.set_orchestrator(&orchestrator);
@@ -160,32 +157,37 @@ int main() {
         CompletionAdmission admission(events);
         AgentLauncher launcher(&grid, &admission, nullptr, nullptr, {}, [] { return 123456u; });
         LoginAgentFactory factory(
-            LoginAgentFactory::Config{}, std::nullopt, [&](auto& a) { return accounts.store_account(a); },
+            LoginAgentFactory::Config{}, std::nullopt, [&](auto &a) { return accounts.store_account(a); },
             [] { return "native-seed"; });
         LoginCompletionDependencies completion_dependencies;
         completion_dependencies.launcher = &launcher;
         completion_dependencies.factory = &factory;
         int fail = 0;
-        completion_dependencies.logged_in = [&](const std::string& id) -> std::optional<GridUserInfo> {
+        completion_dependencies.logged_in = [&](const std::string &id) -> std::optional<GridUserInfo> {
             events.push_back("online");
             if (fail == 1)
                 throw std::runtime_error("grid-user failure");
             return users.logged_in(id);
         };
         completion_dependencies.friends =
-            [&](const framework::Uuid&) -> std::optional<std::vector<std::shared_ptr<LoginFriendInfo>>> {
+            [&](const framework::Uuid &) -> std::optional<std::vector<std::shared_ptr<LoginFriendInfo>>> {
             events.push_back("friends");
             if (fail == 2)
                 throw std::runtime_error("friends failure");
             return std::vector<std::shared_ptr<LoginFriendInfo>>{};
         };
         completion_dependencies.gestures =
-            [&](const framework::Uuid& id) -> std::optional<std::vector<std::shared_ptr<InventoryItem>>> {
+            [&](const framework::Uuid &id) -> std::optional<std::vector<std::shared_ptr<InventoryItem>>> {
             events.push_back("gestures");
             if (fail == 3)
                 throw std::runtime_error("gesture failure");
+            if (fail == 4)
+                return std::nullopt;
             std::vector<std::shared_ptr<InventoryItem>> result;
-            for (auto& item : inventory.active_gestures(id))
+            const auto gestures = inventory.active_gestures(id);
+            if (!gestures)
+                return std::nullopt;
+            for (auto &item : *gestures)
                 result.push_back(std::make_shared<InventoryItem>(item));
             return result;
         };
@@ -237,8 +239,8 @@ int main() {
         clear_login();
         request.llsd = true;
         auto llsd = login.login(request);
-        check(llsd.get("login").as_string() == "true" &&
-                  llsd.get("agent_id").kind == network::Value::Kind::Uuid && !llsd.contains("http_port"),
+        check(llsd.get("login").as_string() == "true" && llsd.get("agent_id").kind == network::Value::Kind::Uuid &&
+                  !llsd.contains("http_port"),
               "LLSD completion uses source protocol-specific response");
         request.llsd = false;
         clear_login();
@@ -273,9 +275,16 @@ int main() {
         }
         fail = 0;
         clear_login();
+        fail = 4;
+        auto null_gestures = login.login(request);
+        check(null_gestures.get("login").as_string() == "true" && null_gestures.get("gestures").array.empty() &&
+                  users.info(id)->online && presence.agent(admission.admitted->session_id).has_value(),
+              "Null gesture service result must preserve successful login with an empty wire array");
+        fail = 0;
+        clear_login();
         std::cout << "PASS: connected login preparation, completion and failure rollback\n";
         return 0;
-    } catch (const std::exception& error) {
+    } catch (const std::exception &error) {
         std::cerr << error.what() << '\n';
         return 1;
     }

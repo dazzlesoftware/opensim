@@ -1,8 +1,9 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/framework/prim_geometry.hpp"
+
 namespace opensim::framework {
-PrimType get_prim_type(const PrimGeometry& s, bool ignore) noexcept {
+PrimType get_prim_type(const PrimGeometry &s, bool ignore) noexcept {
     if (s.sculpt_entry && !ignore)
         return PrimType::Sculpt;
     const auto profile = s.profile_curve & 7;
@@ -28,7 +29,8 @@ PrimType get_prim_type(const PrimGeometry& s, bool ignore) noexcept {
     }
     return PrimType::Box;
 }
-int get_number_of_sides(const PrimGeometry& s) noexcept {
+
+int get_number_of_sides(const PrimGeometry &s) noexcept {
     if (s.sculpt_entry) {
         if (s.sculpt_type != 5)
             return 1;
@@ -37,16 +39,13 @@ int get_number_of_sides(const PrimGeometry& s) noexcept {
     }
     const auto type = get_prim_type(s, true);
     const bool profile_cut = s.profile_begin > 0 || s.profile_end > 0;
-    const bool path_cut =
-        s.path_begin > 0 || s.path_end > 0 || s.path_skew != 0 || s.path_twist_begin != s.path_twist;
-    const bool curved_cut = path_cut || s.path_taper_x != 0 || s.path_taper_y != 0 ||
-                            s.path_revolutions > 0 || s.path_radius_offset != 0;
-    const auto square_cut = [&] {
-        return profile_cut ? 2 - s.profile_begin / 12500 - s.profile_end / 12500 : 0;
-    };
+    const bool path_cut = s.path_begin > 0 || s.path_end > 0 || s.path_skew != 0 || s.path_twist_begin != s.path_twist;
+    const bool curved_cut =
+        path_cut || s.path_taper_x != 0 || s.path_taper_y != 0 || s.path_revolutions > 0 || s.path_radius_offset != 0;
+    const auto square_cut = [&] { return profile_cut ? 2 - s.profile_begin / 12500 - s.profile_end / 12500 : 0; };
     const auto triangle_cut = [&] {
-        return profile_cut ? 2 - (s.profile_begin >= 16667) - (s.profile_begin >= 33333) -
-                                 (s.profile_end >= 16667) - (s.profile_end >= 33333)
+        return profile_cut ? 2 - (s.profile_begin >= 16667) - (s.profile_begin >= 33333) - (s.profile_end >= 16667) -
+                                 (s.profile_end >= 33333)
                            : 0;
     };
     int result = 0;
@@ -77,4 +76,4 @@ int get_number_of_sides(const PrimGeometry& s) noexcept {
     }
     return result + (s.profile_hollow > 0 ? 1 : 0);
 }
-}
+} // namespace opensim::framework

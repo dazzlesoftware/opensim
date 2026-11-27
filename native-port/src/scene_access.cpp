@@ -4,17 +4,20 @@
 #include <algorithm>
 #include <bit>
 #include <stdexcept>
+
 namespace opensim::services {
 using framework::Uuid;
+
 namespace {
-AccessEstate& estate(AccessRegion& region) {
+AccessEstate &estate(AccessRegion &region) {
     if (!region.estate)
         throw std::invalid_argument("Null estate settings");
     return *region.estate;
 }
-}
-bool SceneAccess::query_access(const Uuid& agent, const std::optional<std::string>&, bool teleport,
-                               const framework::Vector3& position, std::vector<Uuid>*, std::string& reason) {
+} // namespace
+
+bool SceneAccess::query_access(const Uuid &agent, const std::optional<std::string> &, bool teleport,
+                               const framework::Vector3 &position, std::vector<Uuid> *, std::string &reason) {
     reason.clear();
     if (backend_.is_god(agent))
         return true;
@@ -32,14 +35,14 @@ bool SceneAccess::query_access(const Uuid& agent, const std::optional<std::strin
     try {
         if (!authorize_user(circuit, false, reason))
             return false;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         reason = "Error authorizing agent: " + std::string(e.what());
         return false;
     }
     return check_land_position_access(agent, teleport, true, true, position, reason);
 }
-bool SceneAccess::authorize_user(std::shared_ptr<framework::AgentCircuitData> agent, bool bypass,
-                                 std::string& reason) {
+
+bool SceneAccess::authorize_user(std::shared_ptr<framework::AgentCircuitData> agent, bool bypass, std::string &reason) {
     reason.clear();
     if (!agent)
         throw std::invalid_argument("Null agent circuit");
@@ -49,8 +52,7 @@ bool SceneAccess::authorize_user(std::shared_ptr<framework::AgentCircuitData> ag
         return true;
     if (backend_.is_god(agent->agent_id))
         return true;
-    if (backend_.has_authorization_service() &&
-        !backend_.authorize_region(agent, backend_.region().id, reason))
+    if (backend_.has_authorization_service() && !backend_.authorize_region(agent, backend_.region().id, reason))
         return false;
     if (!bypass) {
         if (!backend_.region().estate)
@@ -72,13 +74,12 @@ bool SceneAccess::authorize_user(std::shared_ptr<framework::AgentCircuitData> ag
                 auto memberships = backend_.memberships(agent->agent_id);
                 if (memberships && !memberships->empty()) {
                     std::vector<Uuid> ids;
-                    for (const auto& membership : *memberships) {
+                    for (const auto &membership : *memberships) {
                         if (!membership)
-                            throw std::invalid_argument(
-                                "Object reference not set to an instance of an object.");
+                            throw std::invalid_argument("Object reference not set to an instance of an object.");
                         ids.push_back(*membership);
                     }
-                    for (const auto& group : *groups)
+                    for (const auto &group : *groups)
                         if (std::find(ids.begin(), ids.end(), group) != ids.end()) {
                             access = true;
                             break;
@@ -94,7 +95,8 @@ bool SceneAccess::authorize_user(std::shared_ptr<framework::AgentCircuitData> ag
     }
     return true;
 }
-bool SceneAccess::test_land_restrictions(const Uuid& agent, std::string& reason, float& x, float& y) {
+
+bool SceneAccess::test_land_restrictions(const Uuid &agent, std::string &reason, float &x, float &y) {
     if (x < 0)
         x = 0;
     else if (x >= static_cast<float>(backend_.region().size_x))
@@ -127,8 +129,9 @@ bool SceneAccess::test_land_restrictions(const Uuid& agent, std::string& reason,
     reason.clear();
     return true;
 }
-bool SceneAccess::check_land_position_access(const Uuid& agent, bool not_crossing, bool check_telehub, bool,
-                                             const framework::Vector3& position, std::string& reason) {
+
+bool SceneAccess::check_land_position_access(const Uuid &agent, bool not_crossing, bool check_telehub, bool,
+                                             const framework::Vector3 &position, std::string &reason) {
     reason.clear();
     if (backend_.is_god(agent))
         return true;
@@ -157,7 +160,7 @@ bool SceneAccess::check_land_position_access(const Uuid& agent, bool not_crossin
                     }
                 } else {
                     auto rotation = hub->rotation();
-                    for (const auto& point : points) {
+                    for (const auto &point : points) {
                         if (!point)
                             throw std::invalid_argument("Null spawn point");
                         auto location = point->location(origin, rotation);
@@ -199,4 +202,4 @@ bool SceneAccess::check_land_position_access(const Uuid& agent, bool not_crossin
     }
     return true;
 }
-}
+} // namespace opensim::services

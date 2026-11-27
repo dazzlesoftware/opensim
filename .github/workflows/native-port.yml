@@ -13,6 +13,10 @@ on:
       - 'OpenSim/Region/Framework/Interfaces/ISimulatorFeaturesModule.cs'
       - 'OpenSim/Region/Framework/Scenes/**'
       - 'OpenSim/Region/CoreModules/Framework/Caps/**'
+      - 'OpenSim/Region/CoreModules/Framework/Search/**'
+      - 'OpenSim/Region/CoreModules/Framework/UserManagement/**'
+      - 'OpenSim/Region/CoreModules/Avatar/Groups/**'
+      - 'OpenSim/Addons/Groups/**'
       - 'OpenSim/Region/CoreModules/World/Estate/**'
       - 'OpenSim/Region/CoreModules/World/Region/RestartModule.cs'
       - 'OpenSim/Region/CoreModules/Agent/Xfer/**'
@@ -91,6 +95,10 @@ on:
       - 'OpenSim/Region/Framework/Interfaces/ISimulatorFeaturesModule.cs'
       - 'OpenSim/Region/Framework/Scenes/**'
       - 'OpenSim/Region/CoreModules/Framework/Caps/**'
+      - 'OpenSim/Region/CoreModules/Framework/Search/**'
+      - 'OpenSim/Region/CoreModules/Framework/UserManagement/**'
+      - 'OpenSim/Region/CoreModules/Avatar/Groups/**'
+      - 'OpenSim/Addons/Groups/**'
       - 'OpenSim/Region/CoreModules/World/Estate/**'
       - 'OpenSim/Region/CoreModules/World/Region/RestartModule.cs'
       - 'OpenSim/Region/CoreModules/Agent/Xfer/**'
@@ -168,6 +176,12 @@ jobs:
         with:
           # Runtime 8.0.31 is the pinned compatibility oracle, never a production dependency.
           dotnet-version: '8.0.425'
+      - name: Verify pinned .NET reference runtime
+        shell: bash
+        run: |
+          runtimes="$(dotnet --list-runtimes)"
+          printf '%s\n' "$runtimes"
+          grep -q '^Microsoft\.NETCore\.App 8\.0\.31 ' <<< "$runtimes"
       - name: Generate original Robust projects on Windows
         if: runner.os == 'Windows'
         shell: cmd
@@ -227,12 +241,13 @@ jobs:
         if: runner.os == 'macOS'
         shell: bash
         run: |
-          architecture="$(uname -m)"
           for library in bin/lib64/libubode.dylib bin/lib64/libopenjpeg-dotnet.dylib; do
-            if ! lipo "$library" -verify_arch "$architecture"; then
-              echo "::error file=$library::Missing macOS architecture $architecture"
-              exit 1
-            fi
+            for architecture in arm64 x86_64; do
+              if ! lipo "$library" -verify_arch "$architecture"; then
+                echo "::error file=$library::Missing macOS architecture $architecture"
+                exit 1
+              fi
+            done
           done
       - name: Configure macOS with disposable SQL fixtures
         if: runner.os == 'macOS'
@@ -277,10 +292,20 @@ jobs:
           for name, scenario in restart_tests.items():
               if scenario not in tests.get(name, []):
                   raise SystemExit(f"{name} is missing its region restart scenario {scenario}")
+          viewer_tests = {
+              "parcel_ownership_network": "--force-owner",
+              "viewer_basic_group_network": "--basic-group-names",
+              "viewer_name_management_disabled_network": "--disable-user-management",
+              "hypergrid_local_group_directory_network": "--hypergrid-groups",
+              "hypergrid_remote_group_directory_network": "--hypergrid-groups",
+          }
+          for name, scenario in viewer_tests.items():
+              if scenario not in tests.get(name, []):
+                  raise SystemExit(f"{name} is missing its viewer scenario {scenario}")
           PY
       - name: Test native behavior and compare original C#
         run: ctest --test-dir native-port/build -C Release -j2 --output-on-failure --output-junit ctest-results.xml
-      - name: Require macOS platform trust comparison to pass
+      - name: Require macOS simulator and protocol tests to pass
         if: runner.os == 'macOS'
         shell: bash
         run: |
@@ -288,12 +313,33 @@ jobs:
           import xml.etree.ElementTree as ET
 
           report = ET.parse("native-port/build/ctest-results.xml")
-          name = "web_http_platform_trust_source_parity"
-          result = report.find(f".//testcase[@name='{name}']")
-          if result is None or result.get("status") != "run" or any(
-              result.find(tag) is not None for tag in ("skipped", "failure", "error")
-          ):
-              raise SystemExit(f"macOS requires a passing result for {name}")
+          required = (
+              "web_http_platform_trust_source_parity",
+              "time_zone_runtime_parity",
+              "login_orchestration_network",
+              "server_http_network",
+              "remote_authentication_network",
+              "simulation_body_source_parity",
+              "native_startup_network",
+              "native_installed_startup_network",
+              "connected_region_network",
+              "connected_region_remote_data_network",
+              "web_region_config_network",
+              "os_parcel_landing_network",
+              "parcel_ownership_network",
+              "viewer_basic_group_network",
+              "viewer_name_management_disabled_network",
+              "hypergrid_local_group_directory_network",
+              "hypergrid_remote_group_directory_network",
+              "avatar_blocked_flight_crossing_network",
+              "native_hypergrid_return_network",
+          )
+          for name in required:
+              result = report.find(f".//testcase[@name='{name}']")
+              if result is None or result.get("status") != "run" or any(
+                  result.find(tag) is not None for tag in ("skipped", "failure", "error")
+              ):
+                  raise SystemExit(f"macOS requires a passing result for {name}")
           PY
       - name: Retain native compatibility results
         if: always()
@@ -404,7 +450,9 @@ jobs:
           python-version: '3.x'
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: '8.0.425'
+      - name: Verify pinned .NET reference runtime
+        run: dotnet --list-runtimes | grep -F 'Microsoft.NETCore.App 8.0.31 '
       - run: sudo apt-get update && sudo apt-get install -y libjpeg-dev libpng-dev libicu-dev libfreetype-dev fonts-liberation
       - run: cmake -S native-port -B native-port/build -DCMAKE_BUILD_TYPE=Debug -DOPENSIM_SANITIZERS=ON -DOPENSIM_DIFFERENTIAL_TESTS=ON -DOPENSIM_REQUIRE_TLS=ON
       - run: cmake --build native-port/build --parallel
@@ -419,7 +467,13 @@ jobs:
           python-version: '3.x'
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: '8.0.425'
+      - name: Verify pinned .NET reference runtime
+        shell: pwsh
+        run: |
+          if (-not (dotnet --list-runtimes | Select-String -SimpleMatch 'Microsoft.NETCore.App 8.0.31 ')) {
+            throw 'The .NET reference runtime 8.0.31 is missing'
+          }
       - name: Configure TLS and gzip through pinned vcpkg manifest
         shell: pwsh
         run: cmake -S native-port -B native-port/build -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DOPENSIM_REQUIRE_TLS=ON -DOPENSIM_DIFFERENTIAL_TESTS=ON -DVCPKG_MANIFEST_FEATURES=offline-im-sql -DOPENSIM_REQUIRE_OFFLINE_IM_SQL=ON

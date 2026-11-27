@@ -7,56 +7,65 @@
 #include <iostream>
 #include <sstream>
 using namespace opensim;
+
 std::string hex(std::string_view s) {
     std::string out;
-    const char* h = "0123456789abcdef";
+    const char *h = "0123456789abcdef";
     for (unsigned char c : s) {
         out += h[c >> 4];
         out += h[c & 15];
     }
     return out;
 }
-std::string decode(const std::string& s) {
+
+std::string decode(const std::string &s) {
     std::string out;
     for (std::size_t i = 0; i < s.size(); i += 2)
         out += static_cast<char>(std::stoi(s.substr(i, 2), nullptr, 16));
     return out;
 }
-std::optional<std::string> opt(const network::Value& v) {
+
+std::optional<std::string> opt(const network::Value &v) {
     return v.kind == network::Value::Kind::Undefined ? std::nullopt
                                                      : std::optional<std::string>(network::osd_string(v));
 }
+
 struct Service : services::ISimulationAgentLifecycle, services::ISimulationLogin {
-    bool query_access(services::GridRegion&, const framework::Uuid&, const std::optional<std::string>&, bool,
-                      const framework::Vector3&, std::vector<framework::Uuid>&,
-                      framework::EntityTransferContext&, std::string&) override {
+    bool query_access(services::GridRegion &, const framework::Uuid &, const std::optional<std::string> &, bool,
+                      const framework::Vector3 &, std::vector<framework::Uuid> &, framework::EntityTransferContext &,
+                      std::string &) override {
         throw std::runtime_error("unused");
     }
-    bool create_agent(const services::GridRegion*, services::GridRegion&,
-                      const std::shared_ptr<framework::AgentCircuitData>&, std::uint32_t,
-                      framework::EntityTransferContext&, std::string&) override {
+
+    bool create_agent(const services::GridRegion *, services::GridRegion &,
+                      const std::shared_ptr<framework::AgentCircuitData> &, std::uint32_t,
+                      framework::EntityTransferContext &, std::string &) override {
         throw std::runtime_error("unused");
     }
+
     int profile;
     std::string trace;
-    explicit Service(int p) : profile(p) {
-    }
-    bool record(char op, const framework::Uuid& region, const framework::Uuid& agent,
-                const std::optional<std::string>& auth) {
-        trace += std::string(1, op) + ":" + region.str() + ":" + agent.str() + ":" +
-                 (auth ? hex(*auth) : "-") + ";";
+
+    explicit Service(int p) : profile(p) {}
+
+    bool record(char op, const framework::Uuid &region, const framework::Uuid &agent,
+                const std::optional<std::string> &auth) {
+        trace += std::string(1, op) + ":" + region.str() + ":" + agent.str() + ":" + (auth ? hex(*auth) : "-") + ";";
         if (profile & 2)
             throw std::runtime_error("callback");
         return !(profile & 1);
     }
-    bool release_agent(const framework::Uuid& r, const framework::Uuid& a, const std::string& uri) override {
+
+    bool release_agent(const framework::Uuid &r, const framework::Uuid &a, const std::string &uri) override {
         return record('r', r, a, uri);
     }
-    bool close_agent(services::GridRegion& r, const framework::Uuid& a,
-                     const std::optional<std::string>& auth) override {
+
+    bool close_agent(services::GridRegion &r, const framework::Uuid &a,
+                     const std::optional<std::string> &auth) override {
         return record('c', r.id, a, auth);
     }
 };
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -76,7 +85,7 @@ int main() {
         response.content_type = "before-type";
         try {
             server::AgentDeleteHandler handler(profile & 4 ? nullptr : service,
-                                               [&](std::function<void()> task, const std::string& c) {
+                                               [&](std::function<void()> task, const std::string &c) {
                                                    context = c;
                                                    if (profile & 16)
                                                        throw std::runtime_error("dispatch");
@@ -97,24 +106,22 @@ int main() {
                 access.process_admission(request, response);
             } else
                 handler.delete_agent(response, framework::Uuid(network::osd_string(args.get("agent"))),
-                                     opt(args.get("action")),
-                                     framework::Uuid(network::osd_string(args.get("region"))),
+                                     opt(args.get("action")), framework::Uuid(network::osd_string(args.get("region"))),
                                      opt(args.get("auth")),
                                      profile & 32 ? std::nullopt : std::optional<std::string>("192.0.2.1"));
-        } catch (const std::exception&) {
+        } catch (const std::exception &) {
             failed = true;
         }
         auto before = service->trace;
         auto count = tasks.size();
-        std::cout << failed << "|" << response.status << "|" << response.keep_alive << "|"
-                  << hex(response.body) << "|" << hex(response.content_type) << "|" << hex(before) << "|";
-        for (auto& task : tasks)
+        std::cout << failed << "|" << response.status << "|" << response.keep_alive << "|" << hex(response.body) << "|"
+                  << hex(response.content_type) << "|" << hex(before) << "|";
+        for (auto &task : tasks)
             try {
                 task();
-            } catch (const std::exception&) {
+            } catch (const std::exception &) {
                 callback_failed = true;
             }
-        std::cout << hex(service->trace) << "|" << callback_failed << "|" << hex(context) << "|" << count
-                  << "\n";
+        std::cout << hex(service->trace) << "|" << callback_failed << "|" << hex(context) << "|" << count << "\n";
     }
 }

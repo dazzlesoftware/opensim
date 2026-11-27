@@ -1,0 +1,1 @@
+string result;integer after;default{state_entry(){result=llXorBase64Strings("QQ=="+llGetSubString("😀",0,0),"AA==");after=1;}}

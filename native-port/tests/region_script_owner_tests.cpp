@@ -8,13 +8,15 @@
 using namespace opensim;
 using namespace scene;
 using namespace services;
+
 int main() {
     try {
         NullPresenceStore store;
         PresenceService presence(store);
         RegionPolicies policies;
-        policies.access = [](auto, const auto&, auto&) { return true; };
-        policies.authorize = [](const auto&, auto&) { return true; };
+        policies.background_admission = false;
+        policies.access = [](auto, const auto &, auto &) { return true; };
+        policies.authorize = [](const auto &, auto &) { return true; };
         policies.script_delay_factor = .25f;
         GridRegion region;
         region.id = framework::Uuid::random();
@@ -27,34 +29,37 @@ int main() {
         NullRegionStore grid_store;
         GridService grid(grid_store, grid_config, [] { return 1700000000; });
         const std::string linked_id = "10c9db03-0ee7-4e0c-9ad8-401ef9516758";
-        const std::function<network::ServiceXmlValue(const OrderedRegionFields&)> grid_request =
-            [&](const OrderedRegionFields& request) {
-            using Xml = network::ServiceXmlValue;
-            const RegionFields fields(request.begin(), request.end());
-            if (fields.at("METHOD") == "get_region_flags") {
-                if (fields.at("REGIONID") != linked_id)
-                    throw std::runtime_error("Unexpected flags lookup");
-                return Xml::object({{"result", std::to_string(RegionFlags::Hyperlink)}});
-            }
-            if (fields.at("METHOD") != "get_region_by_name")
-                throw std::runtime_error("Unexpected grid method");
-            if (fields.at("NAME") != "Linked Region")
-                return Xml::object({{"result", "null"}});
-            const auto handle = (std::uint64_t{300000} << 32) | 400000u;
-            return Xml::object({{"result", Xml::object({
-                {"uuid", linked_id}, {"regionName", "Linked Region"}, {"locX", "261376"},
-                {"locY", "262400"}, {"access", "21"}, {"regionSecret", std::to_string(handle)}})}});
-        };
+        const std::function<network::ServiceXmlValue(const OrderedRegionFields &)> grid_request =
+            [&](const OrderedRegionFields &request) {
+                using Xml = network::ServiceXmlValue;
+                const RegionFields fields(request.begin(), request.end());
+                if (fields.at("METHOD") == "get_region_flags") {
+                    if (fields.at("REGIONID") != linked_id)
+                        throw std::runtime_error("Unexpected flags lookup");
+                    return Xml::object({{"result", std::to_string(RegionFlags::Hyperlink)}});
+                }
+                if (fields.at("METHOD") != "get_region_by_name")
+                    throw std::runtime_error("Unexpected grid method");
+                if (fields.at("NAME") != "Linked Region")
+                    return Xml::object({{"result", "null"}});
+                const auto handle = (std::uint64_t{300000} << 32) | 400000u;
+                return Xml::object({{"result", Xml::object({{"uuid", linked_id},
+                                                            {"regionName", "Linked Region"},
+                                                            {"locX", "261376"},
+                                                            {"locY", "262400"},
+                                                            {"access", "21"},
+                                                            {"regionSecret", std::to_string(handle)}})}});
+            };
         policies.script_grid_region = make_script_grid_lookup(grid, region.scope, grid_request);
         const auto make_asset = [](std::int8_t type, std::string_view text) {
-            auto asset = std::make_shared<framework::AssetBase>(framework::Uuid::random(), "fixture", type,
-                                                                std::nullopt);
+            auto asset =
+                std::make_shared<framework::AssetBase>(framework::Uuid::random(), "fixture", type, std::nullopt);
             asset->data = std::make_shared<std::vector<std::uint8_t>>(text.begin(), text.end());
             return asset;
         };
         const auto landmark_handle = (std::uint64_t{256256} << 32) | 255488u;
-        const auto landmark = make_asset(3, generate_inventory_landmark(
-            region.id, {12.5f, 9.25f, 42.f}, landmark_handle).text.value());
+        const auto landmark =
+            make_asset(3, generate_inventory_landmark(region.id, {12.5f, 9.25f, 42.f}, landmark_handle).text.value());
         const auto program = make_asset(10, R"LSL(
             key found;
             key missing;
@@ -135,13 +140,13 @@ int main() {
             return account;
         };
         RegionRuntime runtime(region, presence, std::move(policies));
-        runtime.start(std::make_shared<server::RegistryCapabilityListener>(
-            server::CapabilityListenerInfo{false, 19009, 0, {}}));
+        runtime.start(
+            std::make_shared<server::RegistryCapabilityListener>(server::CapabilityListenerInfo{false, 19009, 0, {}}));
         const auto owner = framework::Uuid::random();
         const auto prim = runtime.world().add(SceneObject::primitive(owner, {128.f, 128.f, 25.f}));
         if (!prim)
             throw std::runtime_error("Could not add the landmark test prim");
-        const auto make_item = [&](const auto& asset, std::string name) {
+        const auto make_item = [&](const auto &asset, std::string name) {
             auto entry = std::make_shared<framework::TaskInventoryItem>();
             entry->item_id = framework::Uuid::random();
             entry->asset_id = asset->full_id();
@@ -160,14 +165,14 @@ int main() {
                 state->floating_text == "Agent and simulator data resolved")
                 break;
             if (std::chrono::steady_clock::now() >= landmark_deadline)
-                throw std::runtime_error("Landmark, agent and simulator data replies did not reach the restored script");
+                throw std::runtime_error(
+                    "Landmark, agent and simulator data replies did not reach the restored script");
             std::this_thread::sleep_for(std::chrono::milliseconds(5));
         }
-        auto agent = framework::Uuid::random(), item = framework::Uuid::random(),
-             object = framework::Uuid::random();
+        auto agent = framework::Uuid::random(), item = framework::Uuid::random(), object = framework::Uuid::random();
         std::vector<std::uint8_t> bytes{'d', 'e', 'f', 'a', 'u', 'l', 't'};
-        auto operation = std::async(
-            std::launch::async, [&] { return runtime.update_task_script(agent, item, object, true, bytes); });
+        auto operation = std::async(std::launch::async,
+                                    [&] { return runtime.update_task_script(agent, item, object, true, bytes); });
         auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(3);
         while (operation.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready &&
                std::chrono::steady_clock::now() < deadline) {
@@ -184,27 +189,26 @@ int main() {
                 try {
                     runtime.update_task_script(agent, item, object, true, bytes);
                     return false;
-                } catch (const std::exception&) {
+                } catch (const std::exception &) {
                     return true;
                 }
             }));
         runtime.quiesce_script_updates();
-        for (auto& task : pending)
+        for (auto &task : pending)
             if (task.wait_for(std::chrono::seconds(3)) != std::future_status::ready || !task.get())
                 throw std::runtime_error("Quiesce stranded or accepted a pending script update");
         bool rejected = false;
         try {
             runtime.update_task_script(agent, item, object, true, bytes);
-        } catch (const std::exception&) {
+        } catch (const std::exception &) {
             rejected = true;
         }
         if (!rejected)
             throw std::runtime_error("Quiesced owner accepted an update");
         runtime.stop();
-        std::cout
-            << "PASS: real owner-thread dispatch,16 concurrent cancellations and post-quiesce rejection\n";
+        std::cout << "PASS: real owner-thread dispatch,16 concurrent cancellations and post-quiesce rejection\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

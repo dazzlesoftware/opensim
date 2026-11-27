@@ -1,0 +1,218 @@
+{
+  "originalRoute": "XMRInstCtor.cs382-384 new XmlDocument().LoadXml(xml), then LoadScriptState -\u003E RestoreEventQueue; strict XmlReader is separate control",
+  "controlScope": "Actual private original serialization/restore of backend CLR inputs; no invented LSL source types",
+  "generatorSha256": "65d7597673cf0f0e6a73c3ea4542cfa32a752b81ca19c718acf96e6489d0301c",
+  "assemblySha256": "0c13369b667d52dbcf2659543bd02f73d015fff97fa270e23b70238ee2851821",
+  "originalAssemblySha256": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+  "runtime": ".NET 8.0.34",
+  "architecture": "X64",
+  "originalCaptureSha256": "775f1d83bd4610f788891269ea9ea08b1f79cf4bf3b44300d926f49c8a277cbd",
+  "originalCtorSha256": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+  "cases": [
+    {
+      "name": "nan_payload42_signed_zero",
+      "input": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+        "bits": [
+          "7ff8000000000042",
+          "0000000000000000",
+          "8000000000000000",
+          "8000000000000000"
+        ],
+        "text": "\u003CNaN, 0.000000, -0.000000, -0.000000\u003E"
+      },
+      "append_exception": null,
+      "outer_xml_exception": null,
+      "load_xml_exception": null,
+      "restore_event_queue_exception": null,
+      "restored": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+        "bits": [
+          "fff8000000000000",
+          "0000000000000000",
+          "8000000000000000",
+          "8000000000000000"
+        ],
+        "text": "\u003CNaN, 0.000000, -0.000000, -0.000000\u003E"
+      },
+      "strict_xml_reader_control_exception": null,
+      "strict_xml_reader_control_restored": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+        "bits": [
+          "fff8000000000000",
+          "0000000000000000",
+          "8000000000000000",
+          "8000000000000000"
+        ],
+        "text": "\u003CNaN, 0.000000, -0.000000, -0.000000\u003E"
+      },
+      "sha256": {
+        "serialized.xml": "43190facb8552d31b2a302d6ee2c4cb3ab96d389dcfe63076319b9a6399dea55"
+      }
+    },
+    {
+      "name": "signed_zero_fixture_r",
+      "input": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+        "bits": [
+          "8000000000000000",
+          "0000000000000000",
+          "8000000000000000",
+          "8000000000000000"
+        ],
+        "text": "\u003C-0.000000, 0.000000, -0.000000, -0.000000\u003E"
+      },
+      "append_exception": null,
+      "outer_xml_exception": null,
+      "load_xml_exception": null,
+      "restore_event_queue_exception": null,
+      "restored": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+        "bits": [
+          "8000000000000000",
+          "0000000000000000",
+          "8000000000000000",
+          "8000000000000000"
+        ],
+        "text": "\u003C-0.000000, 0.000000, -0.000000, -0.000000\u003E"
+      },
+      "strict_xml_reader_control_exception": null,
+      "strict_xml_reader_control_restored": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+        "bits": [
+          "8000000000000000",
+          "0000000000000000",
+          "8000000000000000",
+          "8000000000000000"
+        ],
+        "text": "\u003C-0.000000, 0.000000, -0.000000, -0.000000\u003E"
+      },
+      "sha256": {
+        "serialized.xml": "8d5fd30d0378b9c341fe0e26101a03b0d39578a8e10adab852454175c6bc425b"
+      }
+    },
+    {
+      "name": "signed_zero_fixture_copied",
+      "input": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+        "bits": [
+          "8000000000000000",
+          "0000000000000000",
+          "8000000000000000",
+          "8000000000000000"
+        ],
+        "text": "\u003C-0.000000, 0.000000, -0.000000, -0.000000\u003E"
+      },
+      "append_exception": null,
+      "outer_xml_exception": null,
+      "load_xml_exception": null,
+      "restore_event_queue_exception": null,
+      "restored": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+        "bits": [
+          "8000000000000000",
+          "0000000000000000",
+          "8000000000000000",
+          "8000000000000000"
+        ],
+        "text": "\u003C-0.000000, 0.000000, -0.000000, -0.000000\u003E"
+      },
+      "strict_xml_reader_control_exception": null,
+      "strict_xml_reader_control_restored": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+        "bits": [
+          "8000000000000000",
+          "0000000000000000",
+          "8000000000000000",
+          "8000000000000000"
+        ],
+        "text": "\u003C-0.000000, 0.000000, -0.000000, -0.000000\u003E"
+      },
+      "sha256": {
+        "serialized.xml": "8d5fd30d0378b9c341fe0e26101a03b0d39578a8e10adab852454175c6bc425b"
+      }
+    },
+    {
+      "name": "all_positive_zero",
+      "input": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+        "bits": [
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000"
+        ],
+        "text": "\u003C0.000000, 0.000000, 0.000000, 0.000000\u003E"
+      },
+      "append_exception": null,
+      "outer_xml_exception": null,
+      "load_xml_exception": null,
+      "restore_event_queue_exception": null,
+      "restored": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+        "bits": [
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000"
+        ],
+        "text": "\u003C0.000000, 0.000000, 0.000000, 0.000000\u003E"
+      },
+      "strict_xml_reader_control_exception": null,
+      "strict_xml_reader_control_restored": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+        "bits": [
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000"
+        ],
+        "text": "\u003C0.000000, 0.000000, 0.000000, 0.000000\u003E"
+      },
+      "sha256": {
+        "serialized.xml": "eea211bd1634a57d92fdf593a4d53b74c37d149a35b99983bda38d5b382bf919"
+      }
+    },
+    {
+      "name": "nonzero_signed_control",
+      "input": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+        "bits": [
+          "8000000000000000",
+          "3ff0000000000000",
+          "8000000000000000",
+          "8000000000000000"
+        ],
+        "text": "\u003C-0.000000, 1.000000, -0.000000, -0.000000\u003E"
+      },
+      "append_exception": null,
+      "outer_xml_exception": null,
+      "load_xml_exception": null,
+      "restore_event_queue_exception": null,
+      "restored": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+        "bits": [
+          "8000000000000000",
+          "3ff0000000000000",
+          "8000000000000000",
+          "8000000000000000"
+        ],
+        "text": "\u003C-0.000000, 1.000000, -0.000000, -0.000000\u003E"
+      },
+      "strict_xml_reader_control_exception": null,
+      "strict_xml_reader_control_restored": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+        "bits": [
+          "8000000000000000",
+          "3ff0000000000000",
+          "8000000000000000",
+          "8000000000000000"
+        ],
+        "text": "\u003C-0.000000, 1.000000, -0.000000, -0.000000\u003E"
+      },
+      "sha256": {
+        "serialized.xml": "a8ed4e805a77ea50b982038b72631c586e0fc9762fd195506790f45d62933b4f"
+      }
+    }
+  ]
+}

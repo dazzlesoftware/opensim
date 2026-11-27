@@ -8,20 +8,21 @@
 #include <sstream>
 #include <vector>
 using namespace opensim::framework;
+
 namespace {
-NiniWriterText decode(const std::string& token) {
+NiniWriterText decode(const std::string &token) {
     if (token == "-")
         return {};
     std::u16string value;
     if (token != ".")
         for (std::size_t i = 0; i < token.size(); i += 4) {
-            auto lo = std::stoul(token.substr(i, 2), nullptr, 16),
-                 hi = std::stoul(token.substr(i + 2, 2), nullptr, 16);
+            auto lo = std::stoul(token.substr(i, 2), nullptr, 16), hi = std::stoul(token.substr(i + 2, 2), nullptr, 16);
             value.push_back(static_cast<char16_t>(lo | (hi << 8)));
         }
     return nini_writer_text(value);
 }
-std::string hex(const std::u16string& value) {
+
+std::string hex(const std::u16string &value) {
     if (value.empty())
         return ".";
     std::string out;
@@ -32,13 +33,16 @@ std::string hex(const std::u16string& value) {
         }
     return out;
 }
-std::string hex(const NiniWriterText& value) {
+
+std::string hex(const NiniWriterText &value) {
     return value ? hex(*value) : "-";
 }
-std::u16string value(const NiniWriterText& text) {
+
+std::u16string value(const NiniWriterText &text) {
     return text ? *text : std::u16string{};
 }
-std::vector<std::string> split(const std::string& text, char delimiter) {
+
+std::vector<std::string> split(const std::string &text, char delimiter) {
     std::vector<std::string> out;
     std::size_t start = 0;
     for (;;) {
@@ -49,75 +53,91 @@ std::vector<std::string> split(const std::string& text, char delimiter) {
         start = end + 1;
     }
 }
-std::string error(const NiniWriterError& e) {
-    return std::string(e.source_type()) + ":" + std::to_string(std::bit_cast<std::uint32_t>(e.hresult())) +
-           ":" + hex(e.message) + ":" + hex(nini_writer_text(e.parameter));
+
+std::string error(const NiniWriterError &e) {
+    return std::string(e.source_type()) + ":" + std::to_string(std::bit_cast<std::uint32_t>(e.hresult())) + ":" +
+           hex(e.message) + ":" + hex(nini_writer_text(e.parameter));
 }
 struct Probe;
+
 struct Stream final : NiniWriterStream {
-    Probe& p;
+    Probe &p;
     bool closed = false;
-    explicit Stream(Probe& owner) : p(owner) {
-    }
+
+    explicit Stream(Probe &owner) : p(owner) {}
+
     void close() override;
 };
+
 struct Sink {
-    Probe& p;
+    Probe &p;
     bool closed = false;
     NiniWriterText returned = nini_writer_text(u"writer"), newline;
     std::u16string buffer;
     std::vector<NiniWriterText> seen;
-    explicit Sink(Probe&);
-    void write(const NiniWriterText&);
+    explicit Sink(Probe &);
+    void write(const NiniWriterText &);
     void flush();
     void close();
     NiniWriterText to_string();
     void line(NiniWriterText);
     NiniWriterText line();
 };
+
 struct Writer final : NiniTextWriter {
     Sink sink;
-    explicit Writer(Probe& p) : sink(p) {
-    }
-    void write(const NiniWriterText& t) override {
+
+    explicit Writer(Probe &p) : sink(p) {}
+
+    void write(const NiniWriterText &t) override {
         sink.write(t);
     }
+
     void flush() override {
         sink.flush();
     }
+
     void close() override {
         sink.close();
     }
+
     NiniWriterText to_string() override {
         return sink.to_string();
     }
 };
+
 struct StreamWriter final : NiniStreamWriter {
     Sink sink;
-    StreamWriter(Probe& p, std::shared_ptr<Stream> stream) : NiniStreamWriter(stream), sink(p) {
-    }
-    void write(const NiniWriterText& t) override {
+
+    StreamWriter(Probe &p, std::shared_ptr<Stream> stream) : NiniStreamWriter(stream), sink(p) {}
+
+    void write(const NiniWriterText &t) override {
         sink.write(t);
     }
+
     void flush() override {
         sink.flush();
     }
+
     void close() override {
         sink.close();
     }
+
     NiniWriterText to_string() override {
         return sink.to_string();
     }
 };
+
 struct Exposed final : NiniWriter {
     using NiniWriter::dispose;
-    Probe& p;
-    Exposed(Probe& owner, std::shared_ptr<NiniTextWriter> writer) : NiniWriter(std::move(writer)), p(owner) {
-    }
+    Probe &p;
+
+    Exposed(Probe &owner, std::shared_ptr<NiniTextWriter> writer) : NiniWriter(std::move(writer)), p(owner) {}
 
   protected:
     void dispose(bool) override;
 };
+
 struct Probe {
     int point = 0, nth = 1, hit = 0, override_mode = 0;
     std::vector<std::string> trace;
@@ -125,29 +145,30 @@ struct Probe {
     std::shared_ptr<NiniTextWriter> backend;
     std::shared_ptr<NiniStringWriter> real;
     std::shared_ptr<std::u16string> external;
-    Sink* sink = nullptr;
+    Sink *sink = nullptr;
     std::unique_ptr<Exposed> writer;
     std::string saved = "-";
-    void event(int p, const std::string& text) {
+
+    void event(int p, const std::string &text) {
         trace.push_back(text);
         if (point == p && ++hit == nth)
             throw NiniWriterError(NiniWriterError::Kind::Other, u"fault");
     }
+
     std::string snapshot() {
         auto buffer = real ? *real->buffer() : sink ? sink->buffer : std::u16string{};
-        return std::to_string(static_cast<int>(writer->state())) + "," +
-               std::to_string(writer->indentation()) + "," + (writer->use_value_quotes() ? "1" : "0") + "," +
-               std::to_string(writer->comment_delimiter()) + "," +
+        return std::to_string(static_cast<int>(writer->state())) + "," + std::to_string(writer->indentation()) + "," +
+               (writer->use_value_quotes() ? "1" : "0") + "," + std::to_string(writer->comment_delimiter()) + "," +
                std::to_string(writer->assign_delimiter()) + "," + (writer->disposed() ? "1" : "0") + "," +
                (writer->base_stream() == stream && stream ? "1" : "0") + "," +
-               (sink ? (sink->closed ? "1" : "0") : "-") + "," +
-               (stream ? (stream->closed ? "1" : "0") : "-") + "," + hex(buffer) + "," +
-               (real ? (real->buffer() == external ? "1" : "0") : "-") + "," +
+               (sink ? (sink->closed ? "1" : "0") : "-") + "," + (stream ? (stream->closed ? "1" : "0") : "-") + "," +
+               hex(buffer) + "," + (real ? (real->buffer() == external ? "1" : "0") : "-") + "," +
                (sink   ? hex(sink->newline)
                 : real ? hex(real->new_line())
                        : "-");
     }
-    std::string run(const std::string& line) {
+
+    std::string run(const std::string &line) {
         std::istringstream in(line);
         int kind;
         std::string ops;
@@ -172,7 +193,7 @@ struct Probe {
         }
         writer = std::make_unique<Exposed>(*this, backend);
         std::string output;
-        for (auto& token : split(ops, ',')) {
+        for (auto &token : split(ops, ',')) {
             auto parts = split(token, ':');
             auto op = parts[0];
             std::string result = op;
@@ -242,7 +263,7 @@ struct Probe {
                     result = saved;
                 else
                     throw std::runtime_error("operation");
-            } catch (const NiniWriterError& e) {
+            } catch (const NiniWriterError &e) {
                 saved = error(e);
                 result = "EX:" + saved;
             }
@@ -259,18 +280,21 @@ struct Probe {
         return output;
     }
 };
+
 void Stream::close() {
     p.event(5, "S");
     closed = true;
 }
-Sink::Sink(Probe& owner) : p(owner) {
+
+Sink::Sink(Probe &owner) : p(owner) {
 #ifdef _WIN32
     newline = nini_writer_text(u"\r\n");
 #else
     newline = nini_writer_text(u"\n");
 #endif
 }
-void Sink::write(const NiniWriterText& text) {
+
+void Sink::write(const NiniWriterText &text) {
     auto pos = std::find(seen.begin(), seen.end(), text);
     std::size_t id;
     if (pos == seen.end()) {
@@ -284,17 +308,21 @@ void Sink::write(const NiniWriterText& text) {
     if (text)
         buffer += *text;
 }
+
 void Sink::flush() {
     p.event(2, "F");
 }
+
 void Sink::close() {
     p.event(3, "C");
     closed = true;
 }
+
 NiniWriterText Sink::to_string() {
     p.event(4, "T");
     return returned;
 }
+
 void Sink::line(NiniWriterText text) {
     p.event(8, "NS:" + hex(text));
 #ifdef _WIN32
@@ -303,10 +331,12 @@ void Sink::line(NiniWriterText text) {
     newline = text ? text : nini_writer_text(u"\n");
 #endif
 }
+
 NiniWriterText Sink::line() {
     p.event(7, "NG");
     return newline;
 }
+
 void Exposed::dispose(bool disposing) {
     p.event(6, disposing ? "H1" : "H0");
     if (p.override_mode != 1)
@@ -314,13 +344,14 @@ void Exposed::dispose(bool disposing) {
     if (p.override_mode == 2)
         throw NiniWriterError(NiniWriterError::Kind::Other, u"after");
 }
+
 void constructors() {
     Probe p;
     auto stream = std::make_shared<Stream>(p);
     auto path = nini_writer_text(u"borrowed-path");
     std::vector<int> calls;
     NiniWriterFactory factory;
-    factory.open_file = [&](const NiniWriterText& received, std::int32_t mode, std::int32_t access,
+    factory.open_file = [&](const NiniWriterText &received, std::int32_t mode, std::int32_t access,
                             std::int32_t share) {
         if (received != path || mode != 2 || access != 2 || share != 0)
             throw std::runtime_error("FileStream argument identity/options");
@@ -348,7 +379,7 @@ void constructors() {
             throw std::runtime_error("Direct stream constructor");
         w.dispose();
     }
-    factory.open_file = [&](const NiniWriterText&, std::int32_t, std::int32_t,
+    factory.open_file = [&](const NiniWriterText &, std::int32_t, std::int32_t,
                             std::int32_t) -> std::shared_ptr<NiniWriterStream> {
         calls.push_back(3);
         throw NiniWriterError(NiniWriterError::Kind::Other, u"open fault");
@@ -357,12 +388,11 @@ void constructors() {
     try {
         NiniWriter w(path, factory);
         throw std::runtime_error("Missing file fault");
-    } catch (const NiniWriterError& e) {
+    } catch (const NiniWriterError &e) {
         if (e.message != u"open fault" || calls != std::vector<int>{3})
             throw;
     }
-    factory.stream_writer =
-        [&](std::shared_ptr<NiniWriterStream> received) -> std::shared_ptr<NiniStreamWriter> {
+    factory.stream_writer = [&](std::shared_ptr<NiniWriterStream> received) -> std::shared_ptr<NiniStreamWriter> {
         if (received)
             throw std::runtime_error("Null stream changed");
         throw NiniWriterError(NiniWriterError::Kind::Other, u"stream fault");
@@ -370,14 +400,14 @@ void constructors() {
     try {
         NiniWriter w(std::shared_ptr<NiniWriterStream>{}, factory);
         throw std::runtime_error("Missing stream fault");
-    } catch (const NiniWriterError& e) {
+    } catch (const NiniWriterError &e) {
         if (e.message != u"stream fault")
             throw;
     }
     try {
         NiniStringWriter w(std::shared_ptr<std::u16string>{});
         throw std::runtime_error("Missing null StringBuilder fault");
-    } catch (const NiniWriterError& e) {
+    } catch (const NiniWriterError &e) {
         if (e.kind != NiniWriterError::Kind::ArgumentNull || e.parameter != u"sb")
             throw;
     }
@@ -394,8 +424,9 @@ void constructors() {
     }
 }
 
-}
-int main(int argc, char** argv) {
+} // namespace
+
+int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string_view(argv[1]) == "--probe") {
             std::string line;
@@ -419,7 +450,7 @@ int main(int argc, char** argv) {
             throw std::runtime_error("Borrowed StringBuilder mutation");
         std::cout << "PASS: Nini writer raw UTF16/state/borrowed string buffer\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

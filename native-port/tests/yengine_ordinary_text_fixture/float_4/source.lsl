@@ -1,0 +1,1 @@
+float item=xmrString2Float("-Infinity");string result;default{state_entry(){result=(string)item;}}

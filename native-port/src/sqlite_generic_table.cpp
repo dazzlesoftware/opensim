@@ -10,31 +10,35 @@
 #include <charconv>
 #include <cmath>
 #include <limits>
+
 namespace opensim::services {
 namespace {
-std::string raw_text(sqlite3_stmt* s, int i) {
+std::string raw_text(sqlite3_stmt *s, int i) {
     auto p = sqlite3_column_text(s, i);
     if (!p)
         return {};
-    return framework::utf8(framework::utf16_replacing(
-        std::string_view(reinterpret_cast<const char*>(p), sqlite3_column_bytes(s, i))));
+    return framework::utf8(
+        framework::utf16_replacing(std::string_view(reinterpret_cast<const char *>(p), sqlite3_column_bytes(s, i))));
 }
-std::string declaration(sqlite3_stmt* s, int i) {
+
+std::string declaration(sqlite3_stmt *s, int i) {
     auto p = sqlite3_column_decltype(s, i);
     std::string type = p ? p : "";
     if (auto at = type.find('('); at != type.npos)
         type.resize(at);
     type = framework::trim_utf8(type);
-    for (auto& c : type)
+    for (auto &c : type)
         if (c >= 'a' && c <= 'z')
             c -= 32;
     return type;
 }
-bool one_of(const std::string& value, std::initializer_list<const char*> values) {
+
+bool one_of(const std::string &value, std::initializer_list<const char *> values) {
     return std::any_of(values.begin(), values.end(), [&](auto s) { return value == s; });
 }
 enum class CellKind { Null, String, Integer, Unsigned, Real, Boolean, Blob };
-CellKind kind(sqlite3_stmt* s, int i) {
+
+CellKind kind(sqlite3_stmt *s, int i) {
     if (sqlite3_column_type(s, i) == SQLITE_NULL)
         return CellKind::Null;
     auto type = declaration(s, i);
@@ -98,7 +102,8 @@ CellKind kind(sqlite3_stmt* s, int i) {
         return CellKind::Null;
     }
 }
-bool boolean(sqlite3_stmt* s, int i) {
+
+bool boolean(sqlite3_stmt *s, int i) {
     switch (sqlite3_column_type(s, i)) {
     case SQLITE_INTEGER:
         return sqlite3_column_int64(s, i) != 0;
@@ -110,7 +115,8 @@ bool boolean(sqlite3_stmt* s, int i) {
         throw std::invalid_argument("Invalid SQLite Boolean value");
     }
 }
-std::int64_t integer(sqlite3_stmt* s, int i) {
+
+std::int64_t integer(sqlite3_stmt *s, int i) {
     auto type = declaration(s, i);
     if (one_of(type, {"INT", "INT32", "INTEGER32", "MEDIUMINT"}))
         return sqlite3_column_int(s, i);
@@ -126,6 +132,7 @@ std::int64_t integer(sqlite3_stmt* s, int i) {
         return static_cast<std::uint32_t>(sqlite3_column_int(s, i));
     return sqlite3_column_int64(s, i);
 }
+
 template <class Float> std::string real_text(Float value) {
     if (std::isinf(value))
         return std::signbit(value) ? "-Infinity" : "Infinity";
@@ -155,52 +162,60 @@ template <class Float> std::string real_text(Float value) {
     s[at] = 'E';
     return s;
 }
-void bind(sqlite3_stmt* s, const SqliteTableParameters& parameters) {
+
+void bind(sqlite3_stmt *s, const SqliteTableParameters &parameters) {
     std::map<std::string, std::optional<std::string>> values;
-    for (auto& [key, value] : parameters)
+    for (auto &[key, value] : parameters)
         values[key] = value;
     for (int i = 1; i <= sqlite3_bind_parameter_count(s); ++i) {
         auto name = sqlite3_bind_parameter_name(s, i);
         if (!name || !values.contains(name))
             throw std::invalid_argument("Insufficient SQLite parameters");
-        auto& v = values.at(name);
+        auto &v = values.at(name);
         int result = v ? sqlite3_bind_text(s, i, v->data(), static_cast<int>(v->size()), SQLITE_TRANSIENT)
                        : sqlite3_bind_null(s, i);
         if (result != SQLITE_OK)
             throw std::runtime_error(sqlite3_errmsg(sqlite3_db_handle(s)));
     }
 }
+
 struct Statement {
-    sqlite3_stmt* value = nullptr;
+    sqlite3_stmt *value = nullptr;
+
     ~Statement() {
         if (value)
             sqlite3_finalize(value);
     }
 };
-std::shared_ptr<SqliteDatabase> connection(const SqliteTableOperations::Connection& callback) {
+
+std::shared_ptr<SqliteDatabase> connection(const SqliteTableOperations::Connection &callback) {
     auto db = callback ? callback() : nullptr;
     if (!db || !db->handle())
         throw std::runtime_error("SQLite table connection is not open");
     return db;
 }
-}
-int SqliteRow::column(const std::string& name) const {
+} // namespace
+
+int SqliteRow::column(const std::string &name) const {
     for (int i = 0; i < sqlite3_column_count(statement_); ++i)
         if (framework::ordinal_equals_ignore_case(name, sqlite3_column_name(statement_, i)))
             return i;
     throw std::out_of_range("Missing SQLite row column: " + name);
 }
+
 std::string SqliteRow::string_value(int i) const {
     if (kind(statement_, i) != CellKind::String)
         throw std::invalid_argument("SQLite value is not a string");
     return raw_text(statement_, i);
 }
+
 std::string SqliteRow::blob_value(int i) const {
     if (sqlite3_column_type(statement_, i) != SQLITE_BLOB)
         throw std::invalid_argument("SQLite value is not a blob");
-    const auto data = static_cast<const char*>(sqlite3_column_blob(statement_, i));
+    const auto data = static_cast<const char *>(sqlite3_column_blob(statement_, i));
     return data ? std::string(data, sqlite3_column_bytes(statement_, i)) : std::string{};
 }
+
 std::string SqliteRow::value_text(int i) const {
     switch (kind(statement_, i)) {
     case CellKind::Null:
@@ -222,6 +237,7 @@ std::string SqliteRow::value_text(int i) const {
     }
     throw std::runtime_error("Unknown SQLite value type");
 }
+
 std::int32_t SqliteRow::int32_value(int i) const {
     auto type = kind(statement_, i);
     if (type == CellKind::Null || type == CellKind::Blob)
@@ -242,17 +258,17 @@ std::int32_t SqliteRow::int32_value(int i) const {
         return boolean(statement_, i) ? 1 : 0;
     long double value =
         type == CellKind::Real
-            ? std::nearbyint(
-                  declaration(statement_, i) == "SINGLE"
-                      ? static_cast<double>(static_cast<float>(sqlite3_column_double(statement_, i)))
-                      : sqlite3_column_double(statement_, i))
+            ? std::nearbyint(declaration(statement_, i) == "SINGLE"
+                                 ? static_cast<double>(static_cast<float>(sqlite3_column_double(statement_, i)))
+                                 : sqlite3_column_double(statement_, i))
             : static_cast<long double>(integer(statement_, i));
     if (!std::isfinite(value) || value < INT32_MIN || value > INT32_MAX)
         throw std::out_of_range("SQLite integer overflow");
     return static_cast<int32_t>(value);
 }
-std::string SqliteTableOperations::where(const SqliteTableStrings& fields, const SqliteTableStrings& keys,
-                                         SqliteTableParameters& parameters) {
+
+std::string SqliteTableOperations::where(const SqliteTableStrings &fields, const SqliteTableStrings &keys,
+                                         SqliteTableParameters &parameters) {
     std::string result;
     for (size_t i = 0; i < fields.size(); ++i) {
         auto name = fields[i].value_or("");
@@ -263,9 +279,10 @@ std::string SqliteTableOperations::where(const SqliteTableStrings& fields, const
     }
     return result;
 }
+
 void SqliteTableOperations::query(
-    const std::string& sql, const SqliteTableParameters& parameters, const std::vector<std::string>& fields,
-    const std::function<void(const SqliteRow&, const std::vector<std::string>&)>& consume) {
+    const std::string &sql, const SqliteTableParameters &parameters, const std::vector<std::string> &fields,
+    const std::function<void(const SqliteRow &, const std::vector<std::string> &)> &consume) {
     auto db = connection(connection_);
     std::lock_guard lock(db->mutex());
     Statement s;
@@ -292,14 +309,15 @@ void SqliteTableOperations::query(
         consume(SqliteRow(s.value), *query_->columns);
     }
 }
-int SqliteTableOperations::execute(const std::string& sql, const SqliteTableParameters& parameters) {
+
+int SqliteTableOperations::execute(const std::string &sql, const SqliteTableParameters &parameters) {
     auto db = connection(connection_);
     std::lock_guard lock(db->mutex());
-    const char* at = sql.c_str();
+    const char *at = sql.c_str();
     int affected = 0;
     while (*at) {
         Statement s;
-        const char* tail = nullptr;
+        const char *tail = nullptr;
         if (sqlite3_prepare_v2(db->handle(), at, -1, &s.value, &tail) != SQLITE_OK)
             throw std::runtime_error(sqlite3_errmsg(db->handle()));
         if (tail == at)
@@ -320,4 +338,4 @@ int SqliteTableOperations::execute(const std::string& sql, const SqliteTablePara
     }
     return affected;
 }
-}
+} // namespace opensim::services

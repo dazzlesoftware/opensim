@@ -1,0 +1,1 @@
+string n;integer result;integer after;default{state_entry(){n=llComputeHash("payload","unsupported");result=xmrStringCompare(n,n);after=1;}}

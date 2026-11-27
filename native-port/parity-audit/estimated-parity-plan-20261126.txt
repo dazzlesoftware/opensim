@@ -1,0 +1,119 @@
+WINDOWS/LINUX FULL PARITY - TASK ESTIMATE AND CURRENT REVIEW
+26 November 2026
+
+The full semantic review is NOT finished. This forecast explicitly budgets its remaining discovery work rather than pretending the member index is proof of behavior.
+Estimates are engineering judgement on remaining acceptance tasks. They are not measured delivery rates and are not a commitment. The current x64 build targets are assumed. macOS is excluded.
+
+PLANNING SCENARIO
+Two effective independent engineering workstreams: 24-36 weeks, 2027-05-13 to 2027-08-05, assuming stable scope and capacity.
+Agent count alone does not prove that capacity. One effective workstream roughly doubles elapsed time.
+Weighted three-point effort with 20 percent reserve: 280.6 engineering days.
+No implementation task is closed merely because an API compiles.
+
+REMAINING TASKS (optimistic / most likely / pessimistic engineering days)
+
+WP-01 Admission and lifecycle
+2 / 4 / 9 days
+Transit and lease stubs are now implemented, with postPreviewFollowup source/runtime evidence. Remaining lifecycle and fresh-viewer obligations remain.
+Remaining: Finish production admission/child/circuit/capability failure paths, teardown concurrency and repeated-login recovery on both servers; retain historical unexplained-fixture risk.
+
+WP-02 Scripting dispatch coverage
+12 / 22 / 40 days
+Actual compile_lsl probe: 770 overloads, 745 accepted, 25 rejected on both Windows/Linux. Original rejected-method bodies and dependencies inspected previously.
+Remaining: Implement remaining 25 rejected APIs, grouped by primitive setters, vehicle backend, raycast, dynamic texture manager, camera, groups and rez. Validate original permission, delay, error and persistence behavior.
+
+WP-03 YEngine and script persistence
+15 / 30 / 60 days
+Latest Object, String/Key, event/rotation/detector persistence milestones are recorded. Remaining language surfaces are explicitly listed in objectValueLanguageWork.
+Remaining: Review all remaining YEngine language constructs and runtime producers; close classes/interfaces/delegates/exceptions/array, reference identity, heap, event ordering and checkpoint compatibility gaps.
+
+WP-04 Scene and geometry
+7 / 12 / 25 days
+Source/required-scope review; whole-method semantic closure not established.
+Remaining: Complete linkset/object/shape operations and source-compatible update, permission, lifecycle and serialization behavior beyond preview.
+
+WP-05 Physics
+8 / 15 / 30 days
+Source/required-scope review; bounded ubODE preview is verified, full physics alternatives and behavior are not.
+Remaining: Close physics actor/mesh/ray/vehicle and contacts/settings gaps with region interaction tests, including Windows/Linux backend execution.
+
+WP-06 Land, estates and terrain
+5 / 9 / 18 days
+Source/required-scope review; bounded brushes/estate paths do not close full module surface.
+Remaining: Complete land, estate, parcel, terrain and environment administration and persistence with permissions/source/real viewer coverage.
+
+WP-07 Appearance and attachments
+4 / 8 / 16 days
+Latest motion attachment and persistence evidence supplements the initial preview; fresh visual rerun still needed.
+Remaining: Complete attachment, animation, appearance/baking/provider/culling and cross-region failure behavior; verify latest runtime in real Firestorm.
+
+WP-08 Inventory and offers
+5 / 10 / 20 days
+Source/required-scope review; preview folder/copy/rez paths pass.
+Remaining: Finish all inventory item/folder/task transfer, offer/accept/decline, permissions, upload and cross-grid behavior across restart.
+
+WP-09 Asset service and cache
+4 / 8 / 16 days
+Scope review includes later implemented file cache; old blanket missing claims must not inflate estimate.
+Remaining: Close remaining asset backends/codecs/cache maintenance/cleanup/provider/migration/error paths.
+
+WP-10 Profiles, groups, friends, messaging and economy
+8 / 16 / 32 days
+Advanced/profile/optional source obligations remain open; discovery estimate is included.
+Remaining: Complete groups, advanced profiles, messaging/offline/friend/economy module features and real viewer service interoperability.
+
+WP-11 Crossings and federation
+5 / 10 / 24 days
+Recent V1/V2/native/original-peer work credited; postPreviewFollowup lists remaining failed-return and module timing cases.
+Remaining: Complete remaining AgentData and original-peer/HG/native multi-region travel and rollback, especially rapid return/logout and attachment/controller timing.
+
+WP-12 Storage providers
+5 / 10 / 22 days
+Provider-specific tests cover subsets. Inventory gaps are not silently marked complete.
+Remaining: Audit required provider methods, migrations, legacy data and connection configurations across bundled SQLite/MySQL/PostgreSQL services.
+
+WP-13 HTTP, TLS and proxies
+4 / 8 / 18 days
+Certificate component checkpoints credited; remaining full-host/consumed-policy obligations included.
+Remaining: Finish shared production sender and consumed HTTP/TLS/proxy/auth/cancellation/stream lifecycle semantics on both platforms.
+
+WP-14 Configuration and deployment
+3 / 6 / 14 days
+Native build already works. This estimates remaining feature-level lifecycle coverage, not a C# build-tool rewrite.
+Remaining: Close executable/configuration/module/console startup and management behavior; identify native replacements for bundled extension functionality.
+
+WP-15 Archives, backups and tools
+5 / 10 / 22 days
+Preview clean restart is already verified. Archive interoperability remains separately open.
+Remaining: Implement/verify archive import/export, backup/restore, format/version compatibility and admin/tool workflows separately from SQLite restart.
+
+WP-16 Optional modules and external dependencies
+10 / 20 / 45 days
+All tracked files are classified, but 27,177-member index is not a completed semantic review. Parser-error files require manual handling.
+Remaining: Review unmapped optional/bundled sources method-by-method, identify native equivalents and implement confirmed uncovered functionality. Inventory ignored/external dependencies and expose scope additions.
+
+WP-17 Windows/Linux acceptance matrix
+8 / 15 / 30 days
+Automated 16-check runs passed in this turn on Windows and Linux. Visual/soak/original-peer/full parity acceptance still pending.
+Remaining: Run fresh original-peer and Firestorm end-to-end acceptance, Windows/Linux storage/restart/network/soak and packaging gates; fix newly found integration regressions.
+
+METHOD REVIEW STATUS
+770 script overloads re-probed through current native compilers: 745 accepted and 25 rejected on both platforms.
+Previously confirmed AES, formatting, console, motion and object-teleport compiler gaps are now accepted; compilation alone does not close their behavioral parity.
+All original source members are indexed (27,177 declarations), but whole-program contract review is open. Parser errors occur in 16 C# and 59 C++ files and are carried as explicit review obligations.
+27,177 declarations must not be multiplied into an engineering estimate: many are tests, metadata, DTOs, interfaces or consolidated implementations.
+Known admission transit/lease gaps have implementation and recorded verification now; historical fixture root cause remains unresolved.
+
+TEST BUILD
+Windows latest binary staged independently in G:/GitHub/SecondLife/TestBuild/Builds/20261126-review.
+Server running at http://127.0.0.1:19126/. Accounts Preview First and Preview Second, initial password preview-password.
+Start-Test.bat restarts this isolated instance. It uses separate data and config.
+Windows and Linux fresh automated test runs passed 16 checks each, 5 login cycles/account, 2 endpoint recovery cycles/account and 2 handshake losses.
+Initial Windows check requested a missing optional viewer helper and failed to launch it. The rerun used the supported Python viewer path and passed. The initial interactive port was occupied; the running server uses 19126.
+Fresh real Firestorm visual acceptance of this exact snapshot remains pending.
+
+REESTIMATION GATES
+1. Finish the remaining language and optional/module semantic discovery and turn all confirmed holes into bounded tasks.
+2. Record actual effort/elapsed capacity for the next several closed work packages.
+3. Run mixed native/original-peer and real Firestorm acceptance; estimate each discovered failure separately.
+4. Recompute forecast from that actual closure rate, dependencies and new scope.

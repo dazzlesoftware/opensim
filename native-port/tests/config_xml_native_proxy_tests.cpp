@@ -6,17 +6,21 @@
 #include "opensim/framework/text.hpp"
 #include <iostream>
 using namespace opensim::framework;
+
 struct Stop : std::exception {};
+
 struct Credential : ConfigXmlCredentials {
     int id;
-    explicit Credential(int value) : id(value) {
-    }
+
+    explicit Credential(int value) : id(value) {}
 };
+
 struct Proxy : ConfigHttpProxy {
     std::string mode;
     ConfigUriObjectPtr uri;
     std::shared_ptr<ConfigXmlCredentials> value;
     mutable int getters = 0, bypass = 0, get = 0;
+
     std::shared_ptr<ConfigXmlCredentials> credentials() const override {
         ++getters;
         if (mode == "cthrow")
@@ -27,15 +31,18 @@ struct Proxy : ConfigHttpProxy {
             return config_http_default_network_credentials();
         return mode == "null" ? nullptr : value;
     }
+
     void credentials(std::shared_ptr<ConfigXmlCredentials> c) override {
         value = std::move(c);
     }
+
     bool is_bypassed(ConfigUriObjectPtr) const override {
         ++bypass;
         if (mode == "bthrow")
             throw Stop{};
         return mode == "bypass" || mode == "bypass-default" || mode == "bypass-alternate";
     }
+
     ConfigUriObjectPtr get_proxy(ConfigUriObjectPtr) const override {
         ++get;
         if (mode == "gthrow")
@@ -43,45 +50,53 @@ struct Proxy : ConfigHttpProxy {
         return mode == "noproxy" ? nullptr : uri;
     }
 };
+
 struct State {
     std::string endpoint;
     std::shared_ptr<ConfigXmlCredentials> captured;
     bool defaults = false;
 };
+
 struct ObservePlan : ConfigXmlHttpProxyRoutePlan {
     std::shared_ptr<ConfigXmlHttpProxyRoutePlan> inner;
-    State& state;
-    ObservePlan(std::shared_ptr<ConfigXmlHttpProxyRoutePlan> p, State& s) : inner(std::move(p)), state(s) {
-    }
+    State &state;
+
+    ObservePlan(std::shared_ptr<ConfigXmlHttpProxyRoutePlan> p, State &s) : inner(std::move(p)), state(s) {}
+
     std::optional<ConfigXmlHttpRoute> current() override {
         auto route = inner->current();
-        if (route &&
-            (route->credentials != state.captured || route->default_credentials_used != state.defaults))
+        if (route && (route->credentials != state.captured || route->default_credentials_used != state.defaults))
             throw std::logic_error("lost captured credential");
         state.endpoint = route ? route->host + ":" + std::to_string(route->port) : "destination.example:8123";
         throw Stop{};
     }
+
     bool advance() override {
         return inner->advance();
     }
 };
+
 struct Observe : ConfigXmlHttpProxyProvider {
     std::shared_ptr<ConfigXmlHttpProxyProvider> inner;
-    State& state;
-    Observe(std::shared_ptr<ConfigXmlHttpProxyProvider> p, State& s) : inner(std::move(p)), state(s) {
-    }
+    State &state;
+
+    Observe(std::shared_ptr<ConfigXmlHttpProxyProvider> p, State &s) : inner(std::move(p)), state(s) {}
+
     std::shared_ptr<ConfigXmlCredentials> credentials() const override {
         return inner->credentials();
     }
+
     bool default_credentials_used() const override {
         return inner->default_credentials_used();
     }
-    std::shared_ptr<ConfigXmlHttpProxyRoutePlan> routes(const std::shared_ptr<ConfigXmlUri>& uri) override {
+
+    std::shared_ptr<ConfigXmlHttpProxyRoutePlan> routes(const std::shared_ptr<ConfigXmlUri> &uri) override {
         state.captured = inner->credentials();
         state.defaults = inner->default_credentials_used();
         return std::make_shared<ObservePlan>(inner->routes(uri), state);
     }
 };
+
 std::string hex(std::u16string_view s) {
     std::string t;
     for (auto c : s)
@@ -89,12 +104,14 @@ std::string hex(std::u16string_view s) {
             t += "0123456789abcdef"[(c >> n) & 15];
     return t;
 }
-int id(const std::shared_ptr<ConfigXmlCredentials>& value) {
+
+int id(const std::shared_ptr<ConfigXmlCredentials> &value) {
     if (value == config_http_default_network_credentials())
         return -1;
     auto tag = std::dynamic_pointer_cast<Credential>(value);
     return tag ? tag->id : 0;
 }
+
 int main() {
     auto uris = *native_config_uri_object_backend();
     std::string mode;
@@ -115,8 +132,7 @@ int main() {
                                               : mode == "ftp"    ? u"ftp://proxy-a.example:8080/"
                                                                  : u"http://proxy-a.example:8080/"),
                              ConfigUriObjectKind::RelativeOrAbsolute);
-        b->uri =
-            uris.create(nini_writer_text(u"http://proxy-b.example:8081/"), ConfigUriObjectKind::Absolute);
+        b->uri = uris.create(nini_writer_text(u"http://proxy-b.example:8081/"), ConfigUriObjectKind::Absolute);
         auto selector = std::make_shared<ConfigHttpDefaultProxy>(ConfigHttpDefaultProxyOptions{});
         selector->set(a);
         ConfigXmlNativeHttpServices services;
@@ -134,21 +150,21 @@ int main() {
         auto specific = backend.new_handler();
         specific->proxy(c);
         auto explicit_client = backend.new_client(specific);
-        auto target = objects.wrap(uris.create(nini_writer_text(u"http://destination.example:8123/path"),
-                                               ConfigUriObjectKind::Absolute));
+        auto target = objects.wrap(
+            uris.create(nini_writer_text(u"http://destination.example:8123/path"), ConfigUriObjectKind::Absolute));
         auto send = [&](auto use) {
             state = {};
             std::string error;
             try {
                 use->get_stream(target);
-            } catch (const Stop&) {
+            } catch (const Stop &) {
                 error = "Stop";
-            } catch (const ConfigUriComponentsError& e) {
-                error = e.source_type + ":" + std::to_string(static_cast<std::int32_t>(e.hresult)) + ":" +
-                        hex(e.message);
+            } catch (const ConfigUriComponentsError &e) {
+                error =
+                    e.source_type + ":" + std::to_string(static_cast<std::int32_t>(e.hresult)) + ":" + hex(e.message);
             }
-            std::cout << (state.endpoint.empty() ? "E:" + error : "P:" + state.endpoint) << ":C"
-                      << id(state.captured) << ":F" << state.defaults << "|";
+            std::cout << (state.endpoint.empty() ? "E:" + error : "P:" + state.endpoint) << ":C" << id(state.captured)
+                      << ":F" << state.defaults << "|";
         };
         send(client);
         a->value = cb;
@@ -156,7 +172,7 @@ int main() {
         send(client);
         send(dormant);
         send(explicit_client);
-        std::cout << a->getters << "," << b->getters << "," << c->getters << ":" << a->bypass << ","
-                  << b->bypass << "," << c->bypass << ":" << a->get << "," << b->get << "," << c->get << "\n";
+        std::cout << a->getters << "," << b->getters << "," << c->getters << ":" << a->bypass << "," << b->bypass << ","
+                  << c->bypass << ":" << a->get << "," << b->get << "," << c->get << "\n";
     }
 }

@@ -1,0 +1,19 @@
+{
+  "name": "raw_null",
+  "input": {
+    "clr": null,
+    "value": null
+  },
+  "append_exception": {
+    "type": "System.NullReferenceException",
+    "message": "Object reference not set to an instance of an object.",
+    "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstance.GetXMLObject(XmlDocument doc, Object o, String tag) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstCapture.cs:line 334\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstance.AppendXMLObjectArray(XmlDocument doc, XmlNode parent, Object[] array, String tag) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstCapture.cs:line 310\r\n   at InvokeStub_XMRInstance.AppendXMLObjectArray(Object, Span\u00601)\r\n   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)"
+  },
+  "outer_xml_exception": null,
+  "load_xml_exception": null,
+  "restore_event_queue_exception": null,
+  "restored": null,
+  "strict_xml_reader_control_exception": null,
+  "strict_xml_reader_control_restored": null,
+  "sha256": {}
+}

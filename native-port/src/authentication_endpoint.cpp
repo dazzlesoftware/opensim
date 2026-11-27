@@ -2,15 +2,18 @@
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/server/authentication_endpoint.hpp"
 #include "opensim/services/user_account.hpp"
+
 namespace opensim::server {
 using namespace network;
+
 namespace {
-std::string text(const FormValue& value) {
+std::string text(const FormValue &value) {
     if (auto p = std::get_if<std::string>(&value))
         return *p;
     return "System.Collections.Generic.List`1[System.String]";
 }
-std::string result(bool success, const std::optional<std::string>& token = {}) {
+
+std::string result(bool success, const std::optional<std::string> &token = {}) {
     auto xml = service_result(success);
     auto at = xml.find("<result>");
     xml.replace(at, 8, "<Result>");
@@ -42,8 +45,9 @@ std::string result(bool success, const std::optional<std::string>& token = {}) {
     }
     return xml;
 }
-}
-HttpResponse AuthenticationEndpoint::handle(const HttpRequest& request) {
+} // namespace
+
+HttpResponse AuthenticationEndpoint::handle(const HttpRequest &request) {
     HttpResponse response;
     response.content_type = "application/xml";
     response.headers["Cache-Control"] = "no-store";
@@ -92,7 +96,7 @@ HttpResponse AuthenticationEndpoint::handle(const HttpRequest& request) {
         auto info = operations_.get_info(principal);
         if (info) {
             auto value = ServiceXmlValue::object({});
-            for (auto& [key, item] : info->to_key_value_pairs())
+            for (auto &[key, item] : info->to_key_value_pairs())
                 if (item.has_value())
                     value.fields.push_back({key, framework::service_url_object_text(item)});
             response.body = service_xml(ServiceXmlValue::object({{"result", std::move(value)}}));
@@ -100,7 +104,7 @@ HttpResponse AuthenticationEndpoint::handle(const HttpRequest& request) {
     } else if (method == "setauthinfo" && allow_set_) {
         auto info = operations_.get_info(principal);
         if (info) {
-            auto set = [&](const char* name, auto& out) {
+            auto set = [&](const char *name, auto &out) {
                 if (fields.contains(name))
                     out = text(fields.at(name));
             };
@@ -113,4 +117,4 @@ HttpResponse AuthenticationEndpoint::handle(const HttpRequest& request) {
     }
     return response;
 }
-}
+} // namespace opensim::server

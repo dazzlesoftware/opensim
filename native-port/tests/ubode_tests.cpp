@@ -16,19 +16,19 @@
 #include <atomic>
 #include <stdexcept>
 using namespace opensim;
-static void check(bool b, const char* text) {
+
+static void check(bool b, const char *text) {
     if (!b)
         throw std::runtime_error(text);
 }
+
 static void check_mesh_asset_decoder(bool render_only = false) {
     using network::Value;
     const auto binary = [](std::initializer_list<std::uint8_t> bytes) {
         return network::osd_from_binary(std::make_shared<std::vector<std::uint8_t>>(bytes));
     };
-    auto submesh = Value::object({
-        {"Position", binary({0, 0, 0, 0, 0, 0, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 0, 0})},
-        {"TriangleList", binary({0, 0, 1, 0, 2, 0})}
-    });
+    auto submesh = Value::object({{"Position", binary({0, 0, 0, 0, 0, 0, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 0, 0})},
+                                  {"TriangleList", binary({0, 0, 1, 0, 2, 0})}});
     const auto vec = [](int x, int y, int z) {
         Value value;
         value.kind = Value::Kind::Array;
@@ -40,7 +40,7 @@ static void check_mesh_asset_decoder(bool render_only = false) {
     Value contents;
     contents.kind = Value::Kind::Array;
     contents.array = {submesh, Value::object({{"NoGeometry", Value(true)}}), scaled};
-    const auto asset = [](const Value& data, std::string_view section, int offset) {
+    const auto asset = [](const Value &data, std::string_view section, int offset) {
         const auto compressed = network::serialize_zipped_llsd_binary(data);
         std::string header = "<?llsd/binary?>\n";
         const auto number = [&](std::uint32_t value) {
@@ -92,22 +92,20 @@ static void check_mesh_asset_decoder(bool render_only = false) {
 
         const auto mesh_id = framework::Uuid("7e0b2a75-0b6a-4aae-8f6a-0ea69823e5aa");
         auto part = scene::SceneObject::primitive({}, {4.f, 4.f, 20.f}, {4.f, 4.f, 2.f});
-        const auto mesh_shape = framework::PrimitiveBaseShapeCore::create_mesh(2, mesh_id, [](const std::string&) {});
+        const auto mesh_shape = framework::PrimitiveBaseShapeCore::create_mesh(2, mesh_id, [](const std::string &) {});
         part.extra_params = mesh_shape.extra_params();
         part.shape.path_curve = 32;
         framework::TextureEntry textures(framework::TextureEntry::white_texture);
         textures.get_face(0)->color({0.f, 1.f, 0.f, 1.f});
         part.texture_entry = textures.bytes();
         scene::WarpMapRaster raster(8, 8);
-        scene::draw_warp_prims(raster, std::span(&part, 1), {}, false, -100.f, 4086.f,
-                              [&](framework::Uuid id) {
-                                  check(id == mesh_id, "Warp3D requests the mesh asset UUID");
-                                  auto result = std::make_shared<framework::AssetBase>();
-                                  result->data = std::make_shared<std::vector<std::uint8_t>>(
-                                      render_asset.begin(), render_asset.end());
-                                  return result;
-                              });
-        const auto& pixels = raster.image().pixels;
+        scene::draw_warp_prims(raster, std::span(&part, 1), {}, false, -100.f, 4086.f, [&](framework::Uuid id) {
+            check(id == mesh_id, "Warp3D requests the mesh asset UUID");
+            auto result = std::make_shared<framework::AssetBase>();
+            result->data = std::make_shared<std::vector<std::uint8_t>>(render_asset.begin(), render_asset.end());
+            return result;
+        });
+        const auto &pixels = raster.image().pixels;
         const scene::MapColor green{0, 255, 0};
         const auto offset = (5 * 8 + 3) * 3;
         check(std::equal(green.begin(), green.end(), pixels.begin() + offset),
@@ -117,7 +115,7 @@ static void check_mesh_asset_decoder(bool render_only = false) {
         for (unsigned y = 0; y < 4; ++y) {
             for (unsigned x = 0; x < 4; ++x) {
                 sculpt.pixels.insert(sculpt.pixels.end(),
-                    {static_cast<std::uint8_t>(x * 85), static_cast<std::uint8_t>(y * 85), 128});
+                                     {static_cast<std::uint8_t>(x * 85), static_cast<std::uint8_t>(y * 85), 128});
             }
         }
         const auto sculpt_face = [&](std::uint8_t type) {
@@ -135,33 +133,33 @@ static void check_mesh_asset_decoder(bool render_only = false) {
                   plane->texcoords.back() == std::array{1.f, 1.f},
               "sculpt plane matches managed topology, normals, and texture coordinates");
         check(sphere && sphere->geometry.vertices.size() == 30 &&
-                  sphere->geometry.vertices[0] == sphere->geometry.vertices[4] &&
-                  torus && torus->geometry.vertices.size() == 25 &&
-                  torus->geometry.vertices[0] == torus->geometry.vertices[20] &&
-                  cylinder && cylinder->geometry.vertices.size() == 20 &&
+                  sphere->geometry.vertices[0] == sphere->geometry.vertices[4] && torus &&
+                  torus->geometry.vertices.size() == 25 &&
+                  torus->geometry.vertices[0] == torus->geometry.vertices[20] && cylinder &&
+                  cylinder->geometry.vertices.size() == 20 &&
                   cylinder->geometry.vertices[0] == cylinder->geometry.vertices[4],
               "sculpt sphere, torus, and cylinder close the managed poles and seams");
-        check(mirrored && mirrored->geometry.vertices.front().x == .5f &&
-                  mirrored->geometry.indices[1] == 5,
+        check(mirrored && mirrored->geometry.vertices.front().x == .5f && mirrored->geometry.indices[1] == 5,
               "sculpt mirror reflects X and reverses winding");
-        const auto low = physics::build_sculpt_render_face(
-            std::vector<std::uint8_t>(64 * 64 * 3), 64, 64, 3, 3, physics::AssetMeshLod::Lowest);
+        const auto low = physics::build_sculpt_render_face(std::vector<std::uint8_t>(64 * 64 * 3), 64, 64, 3, 3,
+                                                           physics::AssetMeshLod::Lowest);
         check(low && low->geometry.vertices.size() == 81 && low->geometry.indices.size() == 384,
               "sculpt map subsamples to the managed low-detail grid");
-        check(!physics::build_sculpt_render_face(std::vector<std::uint8_t>(17 * 17 * 3),
-                  17, 17, 3, 3, physics::AssetMeshLod::Lowest),
+        check(!physics::build_sculpt_render_face(std::vector<std::uint8_t>(17 * 17 * 3), 17, 17, 3, 3,
+                                                 physics::AssetMeshLod::Lowest),
               "sculpt maps that overrun the managed sampling grid are rejected");
 
-        auto sculpt_shape = framework::PrimitiveBaseShapeCore::create_mesh(1, mesh_id, [](const std::string&) {});
+        auto sculpt_shape = framework::PrimitiveBaseShapeCore::create_mesh(1, mesh_id, [](const std::string &) {});
         sculpt_shape.set_sculpt_properties(3 | 0x40, mesh_id);
         part.extra_params = sculpt_shape.extra_params();
         scene::WarpMapRaster sculpt_raster(8, 8);
-        scene::draw_warp_prims(sculpt_raster, std::span(&part, 1),
-                              [&](const auto& id) {
-                                  check(id == mesh_id, "Warp3D requests the sculpt map UUID");
-                                  return sculpt;
-                              }, false, -100.f, 4086.f,
-                              [](auto) { return std::shared_ptr<framework::AssetBase>{}; });
+        scene::draw_warp_prims(
+            sculpt_raster, std::span(&part, 1),
+            [&](const auto &id) {
+                check(id == mesh_id, "Warp3D requests the sculpt map UUID");
+                return sculpt;
+            },
+            false, -100.f, 4086.f, [](auto) { return std::shared_ptr<framework::AssetBase>{}; });
         check(std::equal(green.begin(), green.end(), sculpt_raster.image().pixels.begin() + offset),
               "Warp3D draws geometry decoded from a sculpt bitmap");
         return;
@@ -182,15 +180,12 @@ static void check_mesh_asset_decoder(bool render_only = false) {
     check(!physics::decode_asset_physics_mesh(asset(contents, "physics_mesh", 7)),
           "out-of-range submesh index rejected");
 
-    auto hulls = Value::object({
-        {"HullList", binary({4})},
-        {"Positions", binary({0, 0, 0, 0, 0, 0, 255, 255, 0, 0, 0, 0,
-                              0, 0, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255})},
-        {"BoundingVerts", binary({0, 0, 0, 0, 0, 0, 255, 255, 0, 0, 0, 0,
-                                  255, 255, 255, 255, 0, 0, 0, 0, 255, 255, 0, 0,
-                                  0, 0, 0, 0, 255, 255, 255, 255, 0, 0, 255, 255,
-                                  255, 255, 255, 255, 255, 255, 0, 0, 255, 255, 255, 255})}
-    });
+    auto hulls = Value::object(
+        {{"HullList", binary({4})},
+         {"Positions", binary({0, 0, 0, 0, 0, 0, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255})},
+         {"BoundingVerts", binary({0, 0, 0,   0,   0,   0,   255, 255, 0,   0,   0, 0, 255, 255, 255, 255,
+                                   0, 0, 0,   0,   255, 255, 0,   0,   0,   0,   0, 0, 255, 255, 255, 255,
+                                   0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 255, 255, 255, 255})}});
     const auto convex_asset = asset(hulls, "physics_convex", 7);
     const auto decomposition = physics::decode_asset_physics_mesh(convex_asset);
     const auto bounding_hull = physics::decode_asset_physics_mesh(convex_asset, true);
@@ -199,14 +194,17 @@ static void check_mesh_asset_decoder(bool render_only = false) {
     check(bounding_hull && bounding_hull->vertices.size() == 8 && bounding_hull->indices.size() == 36,
           "convex mode triangulates the bounding cube");
 }
+
 static std::string h(float f) {
     std::ostringstream s;
     s << std::hex << std::bit_cast<std::uint32_t>(f);
     return s.str();
 }
+
 static std::string v(framework::Vector3 a) {
     return h(a.x) + "," + h(a.y) + "," + h(a.z);
 }
+
 static framework::Quaternion orientation(int profile) {
     switch (profile) {
     case 0:
@@ -227,10 +225,12 @@ static framework::Quaternion orientation(int profile) {
         return {-.3f, .4f, -.5f, -.6f};
     }
 }
+
 static std::string q(framework::Quaternion a) {
     return h(a.x) + "," + h(a.y) + "," + h(a.z) + "," + h(a.w);
 }
-static void probe(const std::filesystem::path& path, int mode) {
+
+static void probe(const std::filesystem::path &path, int mode) {
     scene::Terrain terrain(256, 256);
     for (int y = 0; y < 256; y++)
         for (int x = 0; x < 256; x++)
@@ -242,7 +242,7 @@ static void probe(const std::filesystem::path& path, int mode) {
         if ((mode & 1024) && (i == 10 || i == 11 || i == 90)) {
             try {
                 world.set_orientation(orientation((mode >> 11) & 7));
-            } catch (const std::invalid_argument&) {
+            } catch (const std::invalid_argument &) {
                 rejected = true;
             }
         }
@@ -264,13 +264,14 @@ static void probe(const std::filesystem::path& path, int mode) {
         }
         world.step();
         auto s = world.snapshot();
-        std::cout << v(s.position) << "|" << v(s.velocity) << "|" << v(s.acceleration) << "|"
-                  << v(s.body_position) << "|" << v(s.body_velocity) << "|" << v(s.controller_force) << "|"
-                  << s.colliding << s.colliding_ground << "|" << q(s.orientation) << "|"
-                  << q(s.body_orientation) << "|" << rejected << "\n";
+        std::cout << v(s.position) << "|" << v(s.velocity) << "|" << v(s.acceleration) << "|" << v(s.body_position)
+                  << "|" << v(s.body_velocity) << "|" << v(s.controller_force) << "|" << s.colliding
+                  << s.colliding_ground << "|" << q(s.orientation) << "|" << q(s.body_orientation) << "|" << rejected
+                  << "\n";
     }
 }
-static void check_dynamic_boxes(const std::filesystem::path& path) {
+
+static void check_dynamic_boxes(const std::filesystem::path &path) {
     scene::Terrain terrain;
     terrain.clear_land();
     physics::UbodeWorld world(path, terrain);
@@ -297,16 +298,15 @@ static void check_dynamic_boxes(const std::filesystem::path& path) {
     world.step(150);
     const auto updated = world.body_state(upper);
     if (std::abs(updated.position.z - 18.5f) >= .05f)
-        std::cerr << "Box after terrain edit: " << updated.position.x << ", "
-                  << updated.position.y << ", " << updated.position.z << '\n';
-    check(std::abs(updated.position.z - 18.5f) < .05f,
-          "removed box and terrain edits affect existing bodies");
+        std::cerr << "Box after terrain edit: " << updated.position.x << ", " << updated.position.y << ", "
+                  << updated.position.z << '\n';
+    check(std::abs(updated.position.z - 18.5f) < .05f, "removed box and terrain edits affect existing bodies");
     const auto after_removal = world.top_colliders();
     check(after_removal.size() == 1 && after_removal.front() == std::pair{upper, 1.f},
           "top colliders omit removed bodies and reset each step");
 }
 
-static void check_sphere_contacts(const std::filesystem::path& path) {
+static void check_sphere_contacts(const std::filesystem::path &path) {
     scene::Terrain terrain;
     terrain.clear_land();
     physics::UbodeWorld world(path, terrain);
@@ -325,44 +325,37 @@ static void check_sphere_contacts(const std::filesystem::path& path) {
     state.position = {128, 128, 25};
     world.add_dynamic_linkset(falling, {&sphere, 1}, state);
     world.step(100);
-    check(std::abs(world.body_state(falling).position.z - 23.1f) < .04f,
-          "sphere contacts the top of a static sphere");
+    check(std::abs(world.body_state(falling).position.z - 23.1f) < .04f, "sphere contacts the top of a static sphere");
 }
 
-static void check_cylinder_mesh(const std::filesystem::path& path) {
+static void check_cylinder_mesh(const std::filesystem::path &path) {
     scene::Terrain terrain;
     terrain.clear_land();
     physics::UbodeWorld world(path, terrain);
     const framework::Uuid cylinder("88f8f560-a0e4-4e08-bc88-c8592dc9a713");
     const framework::Uuid falling("88f8f560-a0e4-4e08-bc88-c8592dc9a714");
-    world.add_static_prim(cylinder, framework::PrimType::Cylinder, {2, 2, 1}, {128, 128, 23},
-                          {0, 0, 0, 1}, 24);
+    world.add_static_prim(cylinder, framework::PrimType::Cylinder, {2, 2, 1}, {128, 128, 23}, {0, 0, 0, 1}, 24);
     physics::UbodeBodyState state;
     state.position = {128, 128, 26};
     world.add_dynamic_box(falling, {.2f, .2f, .2f}, 1.f, state);
     world.step(120);
-    check(std::abs(world.body_state(falling).position.z - 23.6f) < .05f,
-          "box rests on the upper cylinder cap");
+    check(std::abs(world.body_state(falling).position.z - 23.6f) < .05f, "box rests on the upper cylinder cap");
     world.remove_box(cylinder);
-    world.add_static_prim(cylinder, framework::PrimType::Cylinder, {2, 2, 1}, {128, 128, 23},
-                          {0, 0, 0, 1}, 24, .5f);
+    world.add_static_prim(cylinder, framework::PrimType::Cylinder, {2, 2, 1}, {128, 128, 23}, {0, 0, 0, 1}, 24, .5f);
     world.step(120);
-    check(std::abs(world.body_state(falling).position.z - 21.1f) < .05f,
-          "box falls through the cylinder opening");
+    check(std::abs(world.body_state(falling).position.z - 21.1f) < .05f, "box falls through the cylinder opening");
     world.remove_box(falling);
     physics::UbodeBodyState inside;
     inside.position = {128, 128, 23};
     inside.velocity = {4, 0, 0};
     world.add_dynamic_box(falling, {.2f, .2f, .2f}, 1.f, inside);
     world.step(12);
-    check(world.body_state(falling).position.x < 128.48f,
-          "the inner wall blocks lateral motion through the cylinder");
+    check(world.body_state(falling).position.x < 128.48f, "the inner wall blocks lateral motion through the cylinder");
     world.remove_box(falling);
     state.position.x = 128.75f;
     world.add_dynamic_box(falling, {.2f, .2f, .2f}, 1.f, state);
     world.step(120);
-    check(std::abs(world.body_state(falling).position.z - 23.6f) < .05f,
-          "box rests on the hollow cylinder rim");
+    check(std::abs(world.body_state(falling).position.z - 23.6f) < .05f, "box rests on the hollow cylinder rim");
     world.remove_box(cylinder);
     world.step(120);
     check(std::abs(world.body_state(falling).position.z - 21.1f) < .05f,
@@ -376,15 +369,15 @@ static void check_cylinder_mesh(const std::filesystem::path& path) {
           "dynamic elliptical cylinder rests on terrain");
 }
 
-static void check_linear_path_mesh(const std::filesystem::path& path) {
+static void check_linear_path_mesh(const std::filesystem::path &path) {
     scene::Terrain terrain;
     terrain.clear_land();
     physics::UbodeWorld world(path, terrain);
     const framework::Uuid platform("88f8f560-a0e4-4e08-bc88-c8592dc9a717");
     const framework::Uuid falling("88f8f560-a0e4-4e08-bc88-c8592dc9a718");
     const framework::LinearPrimPath extrusion{.25f, .75f, .5f, .5f, .5f, 0.f};
-    world.add_static_prim(platform, framework::PrimType::Box, {2, 2, 2}, {128, 128, 23},
-                          {0, 0, 0, 1}, 4, 0.f, extrusion);
+    world.add_static_prim(platform, framework::PrimType::Box, {2, 2, 2}, {128, 128, 23}, {0, 0, 0, 1}, 4, 0.f,
+                          extrusion);
     physics::UbodeBodyState state;
     state.position = {129.15f, 128, 26};
     world.add_dynamic_box(falling, {.2f, .2f, .2f}, 1.f, state);
@@ -395,15 +388,13 @@ static void check_linear_path_mesh(const std::filesystem::path& path) {
     state.position = {128.75f, 128.85f, 26};
     world.add_dynamic_box(falling, {.2f, .2f, .2f}, 1.f, state);
     world.step(120);
-    check(world.body_state(falling).position.z < 23.3f,
-          "taper leaves the outer edge of the unscaled cap clear");
+    check(world.body_state(falling).position.z < 23.3f, "taper leaves the outer edge of the unscaled cap clear");
 
     world.remove_box(platform);
     world.remove_box(falling);
     framework::LinearPrimPath twisted;
     twisted.twist_end = .78539816f;
-    world.add_static_prim(platform, framework::PrimType::Box, {2, 2, 2}, {128, 128, 23},
-                          {0, 0, 0, 1}, 4, 0.f, twisted);
+    world.add_static_prim(platform, framework::PrimType::Box, {2, 2, 2}, {128, 128, 23}, {0, 0, 0, 1}, 4, 0.f, twisted);
     state.position = {129.2f, 128, 26};
     world.add_dynamic_box(falling, {.2f, .2f, .2f}, 1.f, state);
     world.step(120);
@@ -414,13 +405,12 @@ static void check_linear_path_mesh(const std::filesystem::path& path) {
     world.remove_box(falling);
     framework::LinearPrimPath cut;
     cut.profile_end = .5f;
-    world.add_static_prim(platform, framework::PrimType::Cylinder, {2, 2, 1}, {128, 128, 23},
-                          {0, 0, 0, 1}, 24, .25f, cut);
+    world.add_static_prim(platform, framework::PrimType::Cylinder, {2, 2, 1}, {128, 128, 23}, {0, 0, 0, 1}, 24, .25f,
+                          cut);
     state.position = {128, 127.4f, 25};
     world.add_dynamic_box(falling, {.2f, .2f, .2f}, 1.f, state);
     world.step(120);
-    check(std::abs(world.body_state(falling).position.z - 21.1f) < .05f,
-          "the removed profile sector is clear");
+    check(std::abs(world.body_state(falling).position.z - 21.1f) < .05f, "the removed profile sector is clear");
     world.remove_box(falling);
     state.position.y = 128.6f;
     world.add_dynamic_box(falling, {.2f, .2f, .2f}, 1.f, state);
@@ -436,14 +426,13 @@ static void check_linear_path_mesh(const std::filesystem::path& path) {
           "the exposed profile edge blocks entry into the remaining cylinder");
 }
 
-static void check_polygon_prims(const std::filesystem::path& path) {
+static void check_polygon_prims(const std::filesystem::path &path) {
     scene::Terrain terrain;
     terrain.clear_land();
     physics::UbodeWorld world(path, terrain);
     const framework::Uuid platform("88f8f560-a0e4-4e08-bc88-c8592dc9a719");
     const framework::Uuid falling("88f8f560-a0e4-4e08-bc88-c8592dc9a71a");
-    world.add_static_prim(platform, framework::PrimType::Prism, {2, 2, 1}, {128, 128, 23},
-                          {0, 0, 0, 1}, 3);
+    world.add_static_prim(platform, framework::PrimType::Prism, {2, 2, 1}, {128, 128, 23}, {0, 0, 0, 1}, 3);
     physics::UbodeBodyState state;
     state.position = {128.65f, 128.6f, 25};
     world.add_dynamic_box(falling, {.2f, .2f, .2f}, 1.f, state);
@@ -454,13 +443,11 @@ static void check_polygon_prims(const std::filesystem::path& path) {
     state.position.y = 128.f;
     world.add_dynamic_box(falling, {.2f, .2f, .2f}, 1.f, state);
     world.step(120);
-    check(std::abs(world.body_state(falling).position.z - 23.6f) < .05f,
-          "box rests on the triangular cap");
+    check(std::abs(world.body_state(falling).position.z - 23.6f) < .05f, "box rests on the triangular cap");
 
     world.remove_box(platform);
     world.remove_box(falling);
-    world.add_static_prim(platform, framework::PrimType::Prism, {2, 2, 1}, {128, 128, 23},
-                          {0, 0, 0, 1}, 3, .5f);
+    world.add_static_prim(platform, framework::PrimType::Prism, {2, 2, 1}, {128, 128, 23}, {0, 0, 0, 1}, 3, .5f);
     state.position = {128, 128, 25};
     world.add_dynamic_box(falling, {.1f, .1f, .1f}, 1.f, state);
     world.step(120);
@@ -469,20 +456,17 @@ static void check_polygon_prims(const std::filesystem::path& path) {
 
     world.remove_box(platform);
     world.remove_box(falling);
-    world.add_static_prim(platform, framework::PrimType::Box, {2, 2, 1}, {128, 128, 23},
-                          {0, 0, 0, 1}, 4, .5f);
+    world.add_static_prim(platform, framework::PrimType::Box, {2, 2, 1}, {128, 128, 23}, {0, 0, 0, 1}, 4, .5f);
     state.position = {128, 128, 25};
     world.add_dynamic_box(falling, {.2f, .2f, .2f}, 1.f, state);
     world.step(120);
-    check(std::abs(world.body_state(falling).position.z - 21.1f) < .05f,
-          "box falls through a matching square hollow");
+    check(std::abs(world.body_state(falling).position.z - 21.1f) < .05f, "box falls through a matching square hollow");
 
     world.remove_box(platform);
     world.remove_box(falling);
     framework::LinearPrimPath mixed;
     mixed.hollow_segments = 24;
-    world.add_static_prim(platform, framework::PrimType::Box, {2, 2, 1}, {128, 128, 23},
-                          {0, 0, 0, 1}, 4, .9f, mixed);
+    world.add_static_prim(platform, framework::PrimType::Box, {2, 2, 1}, {128, 128, 23}, {0, 0, 0, 1}, 4, .9f, mixed);
     state.position = {128.55f, 128.55f, 25};
     world.add_dynamic_box(falling, {.1f, .1f, .1f}, 1.f, state);
     world.step(120);
@@ -498,8 +482,7 @@ static void check_polygon_prims(const std::filesystem::path& path) {
     world.remove_box(platform);
     world.remove_box(falling);
     mixed.hollow_segments = 3;
-    world.add_static_prim(platform, framework::PrimType::Box, {2, 2, 1}, {128, 128, 23},
-                          {0, 0, 0, 1}, 4, .75f, mixed);
+    world.add_static_prim(platform, framework::PrimType::Box, {2, 2, 1}, {128, 128, 23}, {0, 0, 0, 1}, 4, .75f, mixed);
     state.position = {128, 128, 25};
     world.add_dynamic_box(falling, {.1f, .1f, .1f}, 1.f, state);
     world.step(120);
@@ -509,8 +492,8 @@ static void check_polygon_prims(const std::filesystem::path& path) {
     world.remove_box(platform);
     world.remove_box(falling);
     mixed.hollow_segments = 4;
-    world.add_static_prim(platform, framework::PrimType::Cylinder, {2, 2, 1}, {128, 128, 23},
-                          {0, 0, 0, 1}, 24, .5f, mixed);
+    world.add_static_prim(platform, framework::PrimType::Cylinder, {2, 2, 1}, {128, 128, 23}, {0, 0, 0, 1}, 24, .5f,
+                          mixed);
     state.position = {128.55f, 128, 25};
     world.add_dynamic_box(falling, {.1f, .1f, .1f}, 1.f, state);
     world.step(120);
@@ -524,7 +507,7 @@ static void check_polygon_prims(const std::filesystem::path& path) {
           "the cylinder cap supports a box outside its square opening");
 }
 
-static void check_ring_mesh(const std::filesystem::path& path) {
+static void check_ring_mesh(const std::filesystem::path &path) {
     scene::Terrain terrain;
     terrain.clear_land();
     physics::UbodeWorld world(path, terrain);
@@ -533,14 +516,12 @@ static void check_ring_mesh(const std::filesystem::path& path) {
     framework::LinearPrimPath sweep;
     sweep.hole_y = .25f;
     const framework::Quaternion horizontal{0, -.70710678f, 0, .70710678f};
-    world.add_static_prim(platform, framework::PrimType::Torus, {1, 2, 2}, {128, 128, 23},
-                          horizontal, 24, 0.f, sweep);
+    world.add_static_prim(platform, framework::PrimType::Torus, {1, 2, 2}, {128, 128, 23}, horizontal, 24, 0.f, sweep);
     physics::UbodeBodyState state;
     state.position = {128, 128, 25};
     world.add_dynamic_box(falling, {.2f, .2f, .2f}, 1.f, state);
     world.step(120);
-    check(std::abs(world.body_state(falling).position.z - 21.1f) < .05f,
-          "box falls through the center of a torus");
+    check(std::abs(world.body_state(falling).position.z - 21.1f) < .05f, "box falls through the center of a torus");
     world.remove_box(falling);
     state.position.y = 128.75f;
     world.add_dynamic_box(falling, {.2f, .2f, .2f}, 1.f, state);
@@ -550,12 +531,10 @@ static void check_ring_mesh(const std::filesystem::path& path) {
         const auto sample = world.body_state(falling);
         contacted_torus |= std::abs(sample.position.z - 23.6f) < .08f && sample.velocity.z > -.5f;
     }
-    check(contacted_torus,
-          "the torus sweep supports a box above the ring");
+    check(contacted_torus, "the torus sweep supports a box above the ring");
     world.remove_box(platform);
     world.remove_box(falling);
-    world.add_static_prim(platform, framework::PrimType::Ring, {1, 2, 2}, {128, 128, 23},
-                          horizontal, 3, 0.f, sweep);
+    world.add_static_prim(platform, framework::PrimType::Ring, {1, 2, 2}, {128, 128, 23}, horizontal, 3, 0.f, sweep);
     world.add_dynamic_box(falling, {.2f, .2f, .2f}, 1.f, state);
     world.step(120);
     check(std::abs(world.body_state(falling).position.z - 23.35f) < .05f,
@@ -563,8 +542,7 @@ static void check_ring_mesh(const std::filesystem::path& path) {
     world.remove_box(platform);
     world.remove_box(falling);
     sweep.end = .5f;
-    world.add_static_prim(platform, framework::PrimType::Tube, {1, 2, 2}, {128, 128, 23},
-                          horizontal, 4, 0.f, sweep);
+    world.add_static_prim(platform, framework::PrimType::Tube, {1, 2, 2}, {128, 128, 23}, horizontal, 4, 0.f, sweep);
     state.position = {128.75f, 128, 25};
     world.add_dynamic_box(falling, {.2f, .2f, .2f}, 1.f, state);
     world.step(120);
@@ -575,16 +553,14 @@ static void check_ring_mesh(const std::filesystem::path& path) {
     state.velocity = {-4, 0, 0};
     world.add_dynamic_box(falling, {.2f, .2f, .2f}, 1.f, state);
     world.step(12);
-    check(world.body_state(falling).position.x > 128.f,
-          "a curved path cut exposes a collidable end cap");
+    check(world.body_state(falling).position.x > 128.f, "a curved path cut exposes a collidable end cap");
     world.remove_box(platform);
     world.remove_box(falling);
     sweep = {};
     sweep.hole_x = .5f;
     sweep.hole_y = .25f;
     sweep.twist_begin = sweep.twist_end = 1.57079633f;
-    world.add_static_prim(platform, framework::PrimType::Tube, {1, 2, 2}, {128, 128, 23},
-                          horizontal, 4, 0.f, sweep);
+    world.add_static_prim(platform, framework::PrimType::Tube, {1, 2, 2}, {128, 128, 23}, horizontal, 4, 0.f, sweep);
     state.position = {128, 128.75f, 25};
     state.velocity = {};
     world.add_dynamic_box(falling, {.2f, .2f, .2f}, 1.f, state);
@@ -597,8 +573,7 @@ static void check_ring_mesh(const std::filesystem::path& path) {
     sweep.hole_y = .25f;
     sweep.end = .5f;
     sweep.radius_offset = 1.f;
-    world.add_static_prim(platform, framework::PrimType::Tube, {1, 2, 2}, {128, 128, 23},
-                          horizontal, 4, 0.f, sweep);
+    world.add_static_prim(platform, framework::PrimType::Tube, {1, 2, 2}, {128, 128, 23}, horizontal, 4, 0.f, sweep);
     state.position = {127.06f, 128, 25};
     world.add_dynamic_box(falling, {.1f, .1f, .1f}, 1.f, state);
     world.step(120);
@@ -615,8 +590,7 @@ static void check_ring_mesh(const std::filesystem::path& path) {
     sweep = {};
     sweep.hole_y = .25f;
     sweep.shear_y = .8f;
-    world.add_static_prim(platform, framework::PrimType::Tube, {1, 2, 2}, {128, 128, 23},
-                          horizontal, 4, 0.f, sweep);
+    world.add_static_prim(platform, framework::PrimType::Tube, {1, 2, 2}, {128, 128, 23}, horizontal, 4, 0.f, sweep);
     state.position = {127.462f, 128.9f, 23.7f};
     world.add_dynamic_box(falling, {.05f, .05f, .05f}, 1.f, state);
     world.step(120);
@@ -629,8 +603,7 @@ static void check_ring_mesh(const std::filesystem::path& path) {
     sweep.hole_y = .25f;
     sweep.skew = .5f;
     sweep.revolutions = 2.5f;
-    world.add_static_prim(platform, framework::PrimType::Tube, {1, 2, 2}, {128, 128, 23},
-                          horizontal, 4, 0.f, sweep);
+    world.add_static_prim(platform, framework::PrimType::Tube, {1, 2, 2}, {128, 128, 23}, horizontal, 4, 0.f, sweep);
     state.position = {127.25f, 128, 24};
     world.add_dynamic_box(falling, {.1f, .1f, .1f}, 1.f, state);
     world.step(120);
@@ -641,8 +614,7 @@ static void check_ring_mesh(const std::filesystem::path& path) {
     sweep = {};
     sweep.hole_y = .25f;
     sweep.profile_end = .25f;
-    world.add_static_prim(platform, framework::PrimType::Tube, {1, 2, 2}, {128, 128, 23},
-                          horizontal, 4, 0.f, sweep);
+    world.add_static_prim(platform, framework::PrimType::Tube, {1, 2, 2}, {128, 128, 23}, horizontal, 4, 0.f, sweep);
     state.position = {128, 128.55f, 24};
     world.add_dynamic_box(falling, {.1f, .1f, .1f}, 1.f, state);
     world.step(120);
@@ -663,8 +635,7 @@ static void check_ring_mesh(const std::filesystem::path& path) {
     sweep = {};
     sweep.hole_y = .25f;
     sweep.end = .5f;
-    world.add_static_prim(platform, framework::PrimType::Tube, {1, 2, 2}, {128, 128, 23},
-                          horizontal, 4, .8f, sweep);
+    world.add_static_prim(platform, framework::PrimType::Tube, {1, 2, 2}, {128, 128, 23}, horizontal, 4, .8f, sweep);
     state.position = {128.3f, 128.75f, 23};
     state.velocity = {-5, 0, 0};
     world.add_dynamic_box(falling, {.1f, .1f, .1f}, 1.f, state);
@@ -683,24 +654,19 @@ static void check_ring_mesh(const std::filesystem::path& path) {
         std::uint8_t exterior, interior;
         float rim_height;
     };
+
     const MixedHollow mixed_profiles[] = {
-        {framework::PrimType::Tube, 4, 24, 23.45f},
-        {framework::PrimType::Tube, 4, 3, 23.45f},
-        {framework::PrimType::Ring, 3, 24, 23.23f},
-        {framework::PrimType::Ring, 3, 4, 23.23f},
-        {framework::PrimType::Torus, 24, 4, 23.45f},
-        {framework::PrimType::Torus, 24, 3, 23.45f}
-    };
-    for (const auto& mixed : mixed_profiles) {
+        {framework::PrimType::Tube, 4, 24, 23.45f},  {framework::PrimType::Tube, 4, 3, 23.45f},
+        {framework::PrimType::Ring, 3, 24, 23.23f},  {framework::PrimType::Ring, 3, 4, 23.23f},
+        {framework::PrimType::Torus, 24, 4, 23.45f}, {framework::PrimType::Torus, 24, 3, 23.45f}};
+    for (const auto &mixed : mixed_profiles) {
         sweep.hollow_segments = mixed.interior;
-        world.add_static_prim(platform, mixed.type, {1, 2, 2}, {128, 128, 23},
-                              horizontal, mixed.exterior, .45f, sweep);
+        world.add_static_prim(platform, mixed.type, {1, 2, 2}, {128, 128, 23}, horizontal, mixed.exterior, .45f, sweep);
         state.position = {128.22f, 128.75f, 23};
         state.velocity = {-4, 0, 0};
         world.add_dynamic_box(falling, {.06f, .06f, .06f}, 1.f, state);
         world.step(5);
-        check(world.body_state(falling).position.x < 127.9f,
-              "a mixed curved hollow leaves the cut-end bore open");
+        check(world.body_state(falling).position.x < 127.9f, "a mixed curved hollow leaves the cut-end bore open");
         world.remove_box(falling);
 
         state.position.x = 128.2f;
@@ -710,22 +676,20 @@ static void check_ring_mesh(const std::filesystem::path& path) {
         world.step(5);
         const auto rim = world.body_state(falling);
         if (rim.position.x <= 127.95f)
-            throw std::runtime_error("Missing mixed curved rim contact for " +
-                                     std::to_string(mixed.exterior) + "/" + std::to_string(mixed.interior) +
-                                     " at x=" + std::to_string(rim.position.x));
+            throw std::runtime_error("Missing mixed curved rim contact for " + std::to_string(mixed.exterior) + "/" +
+                                     std::to_string(mixed.interior) + " at x=" + std::to_string(rim.position.x));
         world.remove_box(falling);
         world.remove_box(platform);
     }
 }
 
-static void check_ellipsoid_mesh(const std::filesystem::path& path) {
+static void check_ellipsoid_mesh(const std::filesystem::path &path) {
     scene::Terrain terrain;
     terrain.clear_land();
     physics::UbodeWorld world(path, terrain);
     const framework::Uuid ellipsoid("88f8f560-a0e4-4e08-bc88-c8592dc9a715");
     const framework::Uuid falling("88f8f560-a0e4-4e08-bc88-c8592dc9a716");
-    world.add_static_prim(ellipsoid, framework::PrimType::Sphere, {4, 2, 1}, {128, 128, 23},
-                          {0, 0, 0, 1}, 24);
+    world.add_static_prim(ellipsoid, framework::PrimType::Sphere, {4, 2, 1}, {128, 128, 23}, {0, 0, 0, 1}, 24);
     physics::UbodeBodyState state;
     state.position = {129.8f, 128.8f, 26};
     world.add_dynamic_box(falling, {.2f, .2f, .2f}, 1.f, state);
@@ -746,14 +710,12 @@ static void check_ellipsoid_mesh(const std::filesystem::path& path) {
     check(contacted_top, "falling box contacts the ellipsoid's flattened top");
 }
 
-static void check_compound_box_motion(const std::filesystem::path& path) {
+static void check_compound_box_motion(const std::filesystem::path &path) {
     scene::Terrain terrain;
     physics::UbodeWorld world(path, terrain);
     const framework::Uuid id("88f8f560-a0e4-4e08-bc88-c8592dc9a710");
-    const physics::UbodePrimPart parts[] = {
-        {{1, 1, 1}, {0, 0, 0}, {0, 0, 0, 1}, 1},
-        {{1, 2, 1}, {2, 0, 0}, {0, 0, .70710678f, .70710678f}, 3}
-    };
+    const physics::UbodePrimPart parts[] = {{{1, 1, 1}, {0, 0, 0}, {0, 0, 0, 1}, 1},
+                                            {{1, 2, 1}, {2, 0, 0}, {0, 0, .70710678f, .70710678f}, 3}};
     physics::UbodeBodyState initial;
     initial.position = {128, 128, 30};
     initial.rotation = {0, 0, .70710678f, .70710678f};
@@ -768,8 +730,8 @@ static void check_compound_box_motion(const std::filesystem::path& path) {
           "compound root rotates around its offset center of mass");
 
     physics::UbodePrimForces forces;
-    forces.inertia_override = framework::PrimInertiaOverride{
-        12.f, {.5f, 0, 0}, {4, 5, 6}, {0, 0, .382683432f, .923879533f}};
+    forces.inertia_override =
+        framework::PrimInertiaOverride{12.f, {.5f, 0, 0}, {4, 5, 6}, {0, 0, .382683432f, .923879533f}};
     const auto pending = world.inertia_data(id, forces.inertia_override);
     const auto previous = world.inertia_data(id);
     check(pending && pending->mass == 12.f && previous && previous->mass == 4.f,
@@ -782,12 +744,11 @@ static void check_compound_box_motion(const std::filesystem::path& path) {
               applied->diagonal == pending->diagonal && applied->products == pending->products,
           "the pending tensor matches the tensor installed on the solver body");
     const auto center = world.mass_properties(id);
-    check(center && std::abs(center->center.x - 128.f) < .001f &&
-              std::abs(center->center.y - 128.5f) < .001f,
+    check(center && std::abs(center->center.x - 128.f) < .001f && std::abs(center->center.y - 128.5f) < .001f,
           "the solver body uses the override's rotated center of mass");
 }
 
-static void check_rotation_axis_locks(const std::filesystem::path& path) {
+static void check_rotation_axis_locks(const std::filesystem::path &path) {
     scene::Terrain terrain;
     physics::UbodeWorld world(path, terrain);
     const auto id = framework::Uuid::random();
@@ -816,8 +777,8 @@ static void check_rotation_axis_locks(const std::filesystem::path& path) {
           "rotate the existing body and reanchor its lock");
     const auto rotated = world.body_state(id);
     check(std::abs(rotated.position.x - unlocked.position.x) < .001f &&
-          std::abs(rotated.position.y - unlocked.position.y) < .001f &&
-          std::abs(rotated.position.z - unlocked.position.z) < .001f,
+              std::abs(rotated.position.y - unlocked.position.y) < .001f &&
+              std::abs(rotated.position.z - unlocked.position.z) < .001f,
           "rotation preserves the prim origin with an offset center of mass");
     check(rotated.rotation == upright && rotated.velocity == unlocked.velocity,
           "rotating a live body applies its pose and preserves linear velocity");
@@ -827,7 +788,7 @@ static void check_rotation_axis_locks(const std::filesystem::path& path) {
           "the motor follows the new local axis after rotation");
 }
 
-static void check_asset_mesh_centroid(const std::filesystem::path& path) {
+static void check_asset_mesh_centroid(const std::filesystem::path &path) {
     scene::Terrain terrain;
     physics::UbodeWorld world(path, terrain);
     const framework::Uuid id("88f8f560-a0e4-4e08-bc88-c8592dc9a71d");
@@ -841,6 +802,19 @@ static void check_asset_mesh_centroid(const std::filesystem::path& path) {
     state.position = {128, 128, 30};
     state.angular_velocity = {0, 0, 2};
     world.add_dynamic_linkset(id, {&part, 1}, state);
+    const auto box = framework::Uuid::random();
+    world.add_dynamic_box(box, {1, 1, 1}, 2.f, state);
+    check(world.prim_physics_cost(box, box) == 0.1f, "box collider has the base physics cost");
+    world.remove_box(box);
+    const auto scaled_mesh = framework::Uuid::random();
+    auto scaled_part = part;
+    scaled_part.size = {20, 20, 20};
+    world.add_dynamic_linkset(scaled_mesh, {&scaled_part, 1}, state);
+    const auto mesh_cost = world.prim_physics_cost(scaled_mesh, scaled_mesh);
+    const float expected_cost = (0.0013f * 6.0f) * (125.0f * (1.33f * 0.2f));
+    check(mesh_cost && std::abs(*mesh_cost - expected_cost) < 1e-6f,
+          "mesh collider cost uses indexed geometry and ignores degenerate triangles");
+    world.remove_box(scaled_mesh);
     check(world.body_state(id).position == state.position, "asset body starts at its prim origin");
     world.step(15);
     const auto moved = world.body_state(id);
@@ -848,28 +822,26 @@ static void check_asset_mesh_centroid(const std::filesystem::path& path) {
           "asset prim rotates around its indexed geometry centroid");
 }
 
-static void check_prim_contact_materials(const std::filesystem::path& path) {
+static void check_prim_contact_materials(const std::filesystem::path &path) {
     struct Motion {
         float peak_upward_speed;
         float final_horizontal_speed;
     };
+
     scene::Terrain terrain;
     terrain.clear_land();
-    const auto run = [&](framework::PrimContactMaterial material,
-                         const physics::UbodeBodyState& initial) {
+    const auto run = [&](framework::PrimContactMaterial material, const physics::UbodeBodyState &initial) {
         physics::UbodeWorld world(path, terrain);
         const auto platform = framework::Uuid::random();
         const auto moving = framework::Uuid::random();
-        world.add_static_prim(platform, framework::PrimType::Box, {20, 20, 1},
-                              {128, 128, 23}, {0, 0, 0, 1}, 0, 0.f, {}, {}, {0.f, 0.f});
+        world.add_static_prim(platform, framework::PrimType::Box, {20, 20, 1}, {128, 128, 23}, {0, 0, 0, 1}, 0, 0.f, {},
+                              {}, {0.f, 0.f});
         const physics::UbodeColliderProperties platform_properties{{1.f, 1.f}};
         check(world.update_collider_properties(platform, {&platform_properties, 1}), "update a static collider");
 
         // The child hits the platform first. The root has a different material.
-        physics::UbodePrimPart parts[] = {
-            {{1, 1, 1}, {0, 0, 2}, {0, 0, 0, 1}, 1.f},
-            {{1, 1, 1}, {}, {0, 0, 0, 1}, 1.f}
-        };
+        physics::UbodePrimPart parts[] = {{{1, 1, 1}, {0, 0, 2}, {0, 0, 0, 1}, 1.f},
+                                          {{1, 1, 1}, {}, {0, 0, 0, 1}, 1.f}};
         parts[0].contact_material = {0.f, 0.f};
         parts[1].contact_material = {0.f, 0.f};
         // Hold the linkset upright so the friction measurement isolates sliding from tipping.
@@ -892,8 +864,7 @@ static void check_prim_contact_materials(const std::filesystem::path& path) {
     falling.velocity = {0, 0, -8};
     const auto inelastic = run({0.f, 0.f}, falling);
     const auto elastic = run({0.f, 1.f}, falling);
-    check(elastic.peak_upward_speed > inelastic.peak_upward_speed + 3.f,
-          "prim restitution affects rebound speed");
+    check(elastic.peak_upward_speed > inelastic.peak_upward_speed + 3.f, "prim restitution affects rebound speed");
 
     physics::UbodeBodyState sliding;
     sliding.position = {128, 128, 24};
@@ -904,7 +875,7 @@ static void check_prim_contact_materials(const std::filesystem::path& path) {
           "prim friction slows tangential motion");
 }
 
-static void check_prim_look_at_updates(const std::filesystem::path& path) {
+static void check_prim_look_at_updates(const std::filesystem::path &path) {
     scene::Terrain terrain;
     physics::UbodeWorld world(path, terrain);
     const auto id = framework::Uuid::random();
@@ -916,8 +887,7 @@ static void check_prim_look_at_updates(const std::filesystem::path& path) {
     forces.look_at = {{0, 0, .70710678f, .70710678f}, 1.f};
     world.add_dynamic_linkset(id, {&part, 1}, state, forces);
     world.step();
-    check(world.body_state(id).angular_velocity == framework::Vector3{},
-          "look-at waits for a scene update");
+    check(world.body_state(id).angular_velocity == framework::Vector3{}, "look-at waits for a scene update");
     world.update_prim_look_at();
     const float first_speed = world.body_state(id).angular_velocity.z;
     check(first_speed > 4.f, "look-at scene update sets angular velocity");
@@ -927,9 +897,20 @@ static void check_prim_look_at_updates(const std::filesystem::path& path) {
     world.update_prim_look_at();
     check(world.body_state(id).angular_velocity.z < integrated_speed * .9f,
           "the next scene update recomputes the angular command");
+    forces.look_at.enabled = false;
+    const auto current = world.body_state(id).position;
+    forces.move_target = {{current.x + 2.f, current.y, current.z}, 1.f};
+    check(world.update_body_motion(id, std::nullopt, framework::Vector3{}, framework::Vector3{}, forces),
+          "crossing recovery can stop motion without dropping controller parameters");
+    world.update_prim_look_at();
+    check(world.body_state(id).angular_velocity == framework::Vector3{},
+          "disabled angular look-at does not restart its preserved target");
+    world.step();
+    check(world.body_state(id).velocity.x > 0.f,
+          "the preserved linear move-to target remains active after angular look-at stops");
 }
 
-static void check_prim_water_hover(const std::filesystem::path& path) {
+static void check_prim_water_hover(const std::filesystem::path &path) {
     scene::Terrain terrain;
     terrain.clear_land();
     physics::UbodeWorld world(path, terrain);
@@ -947,7 +928,7 @@ static void check_prim_water_hover(const std::filesystem::path& path) {
           "prim hover uses water when it is above terrain");
 }
 
-static void check_prim_impulses(const std::filesystem::path& path) {
+static void check_prim_impulses(const std::filesystem::path &path) {
     scene::Terrain terrain;
     terrain.clear_land();
     physics::UbodeWorld world(path, terrain);
@@ -962,8 +943,7 @@ static void check_prim_impulses(const std::filesystem::path& path) {
     world.apply_prim_impulse(id, {0, 0, 1}, true);
     world.step();
     const auto first = world.body_state(id);
-    check(std::abs(first.velocity.x - 2.f) < .02f &&
-              std::abs(first.angular_velocity.z - 3.f) < .03f,
+    check(std::abs(first.velocity.x - 2.f) < .02f && std::abs(first.angular_velocity.z - 3.f) < .03f,
           "prim impulses change linear and angular momentum");
     world.step();
     const auto second = world.body_state(id);
@@ -978,7 +958,7 @@ static void check_prim_impulses(const std::filesystem::path& path) {
     check(avatar.snapshot().body_velocity.x > 1.f, "avatar push applies momentum");
 }
 
-static void check_avatar_buoyancy(const std::filesystem::path& path) {
+static void check_avatar_buoyancy(const std::filesystem::path &path) {
     scene::Terrain terrain;
     terrain.clear_land();
     physics::UbodeWorld avatar(path, terrain);
@@ -993,11 +973,10 @@ static void check_avatar_buoyancy(const std::filesystem::path& path) {
     avatar.remove_avatar();
     avatar.add_avatar(start, size);
     avatar.step(20);
-    check(avatar.snapshot().body_position.z < start.z - .3f,
-          "a recreated avatar actor starts with normal gravity");
+    check(avatar.snapshot().body_position.z < start.z - .3f, "a recreated avatar actor starts with normal gravity");
 }
 
-static void check_avatar_contact_planes(const std::filesystem::path& path) {
+static void check_avatar_contact_planes(const std::filesystem::path &path) {
     scene::Terrain terrain;
     terrain.clear_land();
     for (const bool upper_first : {false, true}) {
@@ -1012,24 +991,25 @@ static void check_avatar_contact_planes(const std::filesystem::path& path) {
         const physics::PrimCollisionActor second_actor{framework::Uuid::random(), 2};
         first.add_avatar(upper_first ? upper : lower, size, true, first_actor);
         second.add_avatar(upper_first ? lower : upper, size, true, second_actor);
-        physics::UbodeWorld* peers[] = {&second};
+        physics::UbodeWorld *peers[] = {&second};
         first.step_with(peers, 5);
         const auto reports = first.take_prim_collision_reports();
-        check(std::ranges::any_of(reports, [&](const auto& report) {
-            return report.avatar_contacts.contains({first_actor, second_actor}) &&
-                   report.avatar_contacts.contains({second_actor, first_actor});
-        }), "avatar collision reports both recipients");
+        check(std::ranges::any_of(reports,
+                                  [&](const auto &report) {
+                                      return report.avatar_contacts.contains({first_actor, second_actor}) &&
+                                             report.avatar_contacts.contains({second_actor, first_actor});
+                                  }),
+              "avatar collision reports both recipients");
         const auto top = (upper_first ? first : second).snapshot();
         const auto bottom = (upper_first ? second : first).snapshot();
-        check(top.collision_plane[2] > .99f && top.collision_plane[3] > lower.z &&
-                  top.collision_plane[3] < upper.z,
+        check(top.collision_plane[2] > .99f && top.collision_plane[3] > lower.z && top.collision_plane[3] < upper.z,
               "upper avatar reports the contact plane under its feet");
         check(bottom.collision_plane == std::array<float, 4>{0, 0, 0, 1},
               "lower avatar has no foot contact from the same collision");
     }
 }
 
-static void check_avatar_box_contacts(const std::filesystem::path& path) {
+static void check_avatar_box_contacts(const std::filesystem::path &path) {
     scene::Terrain terrain;
     terrain.clear_land();
     physics::UbodeWorld world(path, terrain);
@@ -1039,11 +1019,10 @@ static void check_avatar_box_contacts(const std::filesystem::path& path) {
     avatar.add_avatar({128, 128, 27}, {.45f, .6f, 1.9f});
     check(avatar.snapshot().collision_plane == std::array<float, 4>{0, 0, 0, 1},
           "airborne avatar starts with the default collision plane");
-    physics::UbodeWorld* peers[] = {&avatar};
+    physics::UbodeWorld *peers[] = {&avatar};
     world.step_with(peers, 120);
     const auto standing = avatar.snapshot();
-    check(std::abs(standing.body_position.z - 24.45f) < .05f && standing.colliding &&
-              !standing.colliding_ground,
+    check(std::abs(standing.body_position.z - 24.45f) < .05f && standing.colliding && !standing.colliding_ground,
           "avatar stands on the box with an object contact");
     check(standing.collision_plane[2] > .99f && std::abs(standing.collision_plane[3] - 23.5f) < .05f,
           "avatar collision plane follows the platform top");
@@ -1054,9 +1033,9 @@ static void check_avatar_box_contacts(const std::filesystem::path& path) {
           "avatar falls to terrain when a supporting box is removed");
     if (!(on_terrain.collision_plane[2] > .99f &&
           std::abs(on_terrain.collision_plane[3] - terrain.height_at(128, 128)) < .05f))
-        throw std::runtime_error("Expected a terrain collision plane, got Z=" +
-                                 std::to_string(on_terrain.collision_plane[2]) + " D=" +
-                                 std::to_string(on_terrain.collision_plane[3]));
+        throw std::runtime_error(
+            "Expected a terrain collision plane, got Z=" + std::to_string(on_terrain.collision_plane[2]) +
+            " D=" + std::to_string(on_terrain.collision_plane[3]));
 
     avatar.remove_avatar();
     avatar.add_avatar({128, 128, 26}, {.45f, .6f, 1.9f});
@@ -1069,7 +1048,7 @@ static void check_avatar_box_contacts(const std::filesystem::path& path) {
           "moving box transfers momentum to the avatar");
 }
 
-static void check_avatar_volume_detect(const std::filesystem::path& path) {
+static void check_avatar_volume_detect(const std::filesystem::path &path) {
     scene::Terrain terrain;
     terrain.clear_land();
     physics::UbodeWorldOptions options;
@@ -1077,8 +1056,7 @@ static void check_avatar_volume_detect(const std::filesystem::path& path) {
     physics::UbodeWorld world(path, terrain, options);
     const auto sensor = framework::Uuid::random();
     const physics::PrimCollisionActor avatar{framework::Uuid::random(), 1};
-    world.add_static_prim(sensor, framework::PrimType::Box, {4, 4, 1}, {128, 128, 23},
-                          {0, 0, 0, 1});
+    world.add_static_prim(sensor, framework::PrimType::Box, {4, 4, 1}, {128, 128, 23}, {0, 0, 0, 1});
     world.add_avatar({128, 128, 27}, {.45f, .6f, 1.9f}, false, avatar);
     world.step(120);
     check(world.snapshot().body_position.z > 24.f, "solid collider supports the avatar");
@@ -1089,9 +1067,8 @@ static void check_avatar_volume_detect(const std::filesystem::path& path) {
     world.step(120);
 
     const auto reports = world.take_prim_collision_reports();
-    check(std::ranges::any_of(reports, [&](const auto& report) {
-        return report.objects.contains({sensor, avatar});
-    }), "volume detector reports an avatar crossing it");
+    check(std::ranges::any_of(reports, [&](const auto &report) { return report.objects.contains({sensor, avatar}); }),
+          "volume detector reports an avatar crossing it");
     const auto on_terrain = world.snapshot();
     check(on_terrain.body_position.z < 22.1f && on_terrain.colliding_ground,
           "volume detector allows the avatar to fall to terrain");
@@ -1113,7 +1090,7 @@ static void check_avatar_volume_detect(const std::filesystem::path& path) {
     check(world.body_state(moving).velocity.x > 2.f, "switching collision mode preserves a pending impulse");
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
     try {
         check(argc >= 2, "explicit library path argument required");
         if (std::string_view(argv[1]) == "--render-mesh") {
@@ -1161,7 +1138,7 @@ int main(int argc, char** argv) {
                     failed = true;
                 }
             });
-        for (auto& thread : workers)
+        for (auto &thread : workers)
             thread.join();
         check(!failed, "concurrent global init/refcount/thread data");
         physics::UbodeWorld world(path, terrain);
@@ -1186,7 +1163,7 @@ int main(int argc, char** argv) {
         bool second = false;
         try {
             world.add_avatar({1, 2, 23}, {.45f, .6f, 1.9f});
-        } catch (const std::logic_error&) {
+        } catch (const std::logic_error &) {
             second = true;
         }
         check(second, "single avatar profile");
@@ -1194,7 +1171,7 @@ int main(int argc, char** argv) {
         std::thread other([&] {
             try {
                 world.snapshot();
-            } catch (const std::logic_error&) {
+            } catch (const std::logic_error &) {
                 wrong_thread = true;
             }
         });
@@ -1217,19 +1194,17 @@ int main(int argc, char** argv) {
         auto before_jump = world.snapshot();
         world.avatar_jump();
         world.step(5);
-        check(world.snapshot().body_position.z > before_jump.body_position.z + .3f,
-              "actual source AvatarJump impulse");
+        check(world.snapshot().body_position.z > before_jump.body_position.z + .3f, "actual source AvatarJump impulse");
         world.set_orientation({.1f, .2f, .3f, .4f});
         auto rotated = world.snapshot();
         check(rotated.orientation.x > 0 && rotated.body_orientation.x == 0 && rotated.body_orientation.y == 0,
               "source full normalized orientation and native yaw");
         world.set_orientation({0, 0, 0, 0});
-        check(world.snapshot().orientation == framework::Quaternion{0, 0, 0, 1},
-              "source zero normalization identity");
+        check(world.snapshot().orientation == framework::Quaternion{0, 0, 0, 1}, "source zero normalization identity");
         bool invalid_yaw = false;
         try {
             world.set_orientation({1, 0, 0, 0});
-        } catch (const std::invalid_argument&) {
+        } catch (const std::invalid_argument &) {
             invalid_yaw = true;
         }
         check(invalid_yaw && world.snapshot().orientation == framework::Quaternion{0, 0, 0, 1},
@@ -1246,13 +1221,12 @@ int main(int argc, char** argv) {
         check(std::abs(peer.avatar_mass() - 1.863f) < .0001f, "appearance resize updates avatar mass");
         const auto after_resize = peer.snapshot();
         check(std::abs(after_resize.body_position.z - before_resize.body_position.z - .2f) < .0001f &&
-                  after_resize.flying == before_resize.flying &&
-                  after_resize.orientation == before_resize.orientation,
+                  after_resize.flying == before_resize.flying && after_resize.orientation == before_resize.orientation,
               "live resize preserves feet position, flight, and orientation");
         peer.resize_avatar({.45f, .6f, 1.9f});
         host->set_target_velocity({4, 0, 0});
         peer.set_target_velocity({0, 4, 0});
-        physics::UbodeWorld* peers[] = {&peer};
+        physics::UbodeWorld *peers[] = {&peer};
         host->step_with(peers, 100);
         check(host->snapshot().position.x > 130 && peer.snapshot().position.y > 142,
               "shared world updates both avatar controllers in the same step");
@@ -1272,7 +1246,7 @@ int main(int argc, char** argv) {
         physics::UbodeWorld second_avatar(first);
         first.add_avatar({128, 128, 25}, {.45f, .6f, 1.9f}, true);
         second_avatar.add_avatar({128.1f, 128, 25}, {.45f, .6f, 1.9f}, true);
-        physics::UbodeWorld* collision_peers[] = {&second_avatar};
+        physics::UbodeWorld *collision_peers[] = {&second_avatar};
         first.step_with(collision_peers, 10);
         check(second_avatar.snapshot().body_position.x - first.snapshot().body_position.x > .2f,
               "shared solver separates overlapping avatar capsules");
@@ -1282,14 +1256,13 @@ int main(int argc, char** argv) {
         physics::UbodeWorld water_host(path, terrain, {.0909f, 35.f});
         physics::UbodeWorld water_avatar(water_host);
         physics::UbodeWorld ground_avatar(path, terrain, {.0909f, 35.f});
-        for (auto* avatar : {&water_avatar, &ground_avatar})
+        for (auto *avatar : {&water_avatar, &ground_avatar})
             avatar->add_avatar({128, 128, 30}, {.45f, .6f, 1.9f}, true);
         water_avatar.set_hover(3.f, 1.f, physics::HoverReference::GroundAndWater, true);
         ground_avatar.set_hover(3.f, 1.f, physics::HoverReference::Ground, true);
         water_avatar.step(10);
         ground_avatar.step(10);
-        check(water_avatar.snapshot().body_position.z > 30.f &&
-                  ground_avatar.snapshot().body_position.z < 30.f,
+        check(water_avatar.snapshot().body_position.z > 30.f && ground_avatar.snapshot().body_position.z < 30.f,
               "water-relative hover uses the configured level inherited by a peer controller");
         water_host.set_water_height(5.f);
         water_avatar.remove_avatar();
@@ -1298,7 +1271,7 @@ int main(int argc, char** argv) {
         water_avatar.step(10);
         check(water_avatar.snapshot().body_position.z < 30.f,
               "an existing peer controller uses the updated water level");
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << "\n";
         return 1;
     }

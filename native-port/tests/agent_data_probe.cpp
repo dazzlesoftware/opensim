@@ -10,61 +10,72 @@
 #include <iostream>
 #include <sstream>
 using namespace opensim;
-using network::Value;
 using framework::AgentData;
+using network::Value;
+
 std::string hex(std::string_view s) {
     std::string out;
-    const char* h = "0123456789abcdef";
+    const char *h = "0123456789abcdef";
     for (unsigned char c : s) {
         out += h[c >> 4];
         out += h[c & 15];
     }
     return out;
 }
-std::string decode(const std::string& s) {
+
+std::string decode(const std::string &s) {
     std::string out;
     for (std::size_t i = 0; i < s.size(); i += 2)
         out += static_cast<char>(std::stoi(s.substr(i, 2), nullptr, 16));
     return out;
 }
+
 framework::Uuid id(int n) {
     return framework::Uuid("00000000-0000-0000-0000-00000000000" + std::to_string(n));
 }
+
 std::string bits(float n) {
     std::ostringstream s;
     s << std::hex << std::setw(8) << std::setfill('0')
       << (std::isnan(n) ? 0x7fc00000u : std::bit_cast<std::uint32_t>(n));
     return s.str();
 }
+
 std::string vector(framework::Vector3 v) {
     return bits(v.x) + "," + bits(v.y) + "," + bits(v.z);
 }
+
 std::string quaternion(framework::Quaternion v) {
     return bits(v.x) + "," + bits(v.y) + "," + bits(v.z) + "," + bits(v.w);
 }
-std::string optional(const std::optional<std::string>& s) {
+
+std::string optional(const std::optional<std::string> &s) {
     return s ? hex(*s) : "-";
 }
+
 struct Context {
-    AgentData* owner = nullptr;
-    Value* command = nullptr;
+    AgentData *owner = nullptr;
+    Value *command = nullptr;
     std::string trace;
     int next = 0;
     bool mutated = false;
-    void log(const std::string& action, int index, const std::string& text = "") {
+
+    void log(const std::string &action, int index, const std::string &text = "") {
         trace += action + std::to_string(index) + ":" + hex(text) + ";";
         if (network::osd_string(command->get("failure")) == action &&
             network::osd_integer(command->get("fail_index")) == index)
             throw std::runtime_error("controlled scene failure");
     }
 };
+
 struct Object : framework::AgentTransferObject {
-    Context& ctx;
+    Context &ctx;
     int index;
     std::string xml, extra = "initial-extra";
     bool changed = false;
-    Object(Context& c, int i, std::string x) : ctx(c), index(i), xml(std::move(x)) {
-    }
+
+    Object(Context &c, int i, std::string x) : ctx(c), index(i), xml(std::move(x)) {}
+
     std::string to_xml2() override {
         ctx.log("xml", index);
         auto mode = network::osd_string(ctx.command->get("mutation"));
@@ -73,8 +84,8 @@ struct Object : framework::AgentTransferObject {
             if (mode == "add")
                 ctx.owner->attachment_objects->push_back(std::make_shared<Object>(ctx, 9, "new"));
             else if (mode == "replace")
-                ctx.owner->attachment_objects = std::make_shared<
-                    framework::TransferList<std::shared_ptr<framework::AgentTransferObject>>>();
+                ctx.owner->attachment_objects =
+                    std::make_shared<framework::TransferList<std::shared_ptr<framework::AgentTransferObject>>>();
             else if (mode == "set_same")
                 ctx.owner->attachment_objects->set(0, ctx.owner->attachment_objects->get(0));
             else if (mode == "agent")
@@ -82,28 +93,34 @@ struct Object : framework::AgentTransferObject {
         }
         return xml;
     }
+
     std::string extra_to_xml_string() override {
         ctx.log("extra-to", index);
         return extra;
     }
-    void extra_from_xml_string(const std::string& value) override {
+
+    void extra_from_xml_string(const std::string &value) override {
         ctx.log("extra-from", index, value);
         extra = value;
     }
+
     bool has_group_changed() const override {
         ctx.log("modified-get", index);
         return changed;
     }
+
     void has_group_changed(bool value) override {
         ctx.log("modified-set", index, value ? "1" : "0");
         changed = value;
     }
 };
+
 struct Scene : framework::AgentTransferScene {
-    Context& ctx;
-    explicit Scene(Context& c) : ctx(c) {
-    }
-    std::shared_ptr<framework::AgentTransferObject> deserialize_object(const std::string& xml) override {
+    Context &ctx;
+
+    explicit Scene(Context &c) : ctx(c) {}
+
+    std::shared_ptr<framework::AgentTransferObject> deserialize_object(const std::string &xml) override {
         const int index = ctx.next++;
         ctx.log("deserialize", index, xml);
         if (network::osd_boolean(ctx.command->get("scene_returns_null")))
@@ -111,7 +128,8 @@ struct Scene : framework::AgentTransferScene {
         return std::make_shared<Object>(ctx, index, xml);
     }
 };
-void initialize(AgentData& p, Context& ctx) {
+
+void initialize(AgentData &p, Context &ctx) {
     p.agent_id = id(7);
     p.region_id = id(9);
     p.session_id = id(8);
@@ -154,12 +172,10 @@ void initialize(AgentData& p, Context& ctx) {
     p.parent_part = id(3);
     p.sit_offset = {21, 22, 23};
     p.controllers = std::make_shared<std::vector<std::shared_ptr<framework::ControllerData>>>();
-    p.controllers->push_back(
-        std::make_shared<framework::ControllerData>(id(7), id(8), 0xffffffffu, 0x80000000u));
+    p.controllers->push_back(std::make_shared<framework::ControllerData>(id(7), id(8), 0xffffffffu, 0x80000000u));
     p.callback_uri = "oldcb";
     p.new_callback_uri = "oldnew";
-    p.attachment_objects =
-        std::make_shared<framework::TransferList<std::shared_ptr<framework::AgentTransferObject>>>();
+    p.attachment_objects = std::make_shared<framework::TransferList<std::shared_ptr<framework::AgentTransferObject>>>();
     p.attachment_objects->push_back(std::make_shared<Object>(ctx, 0, "<old/>"));
     p.attachment_objects->push_back(std::make_shared<Object>(ctx, 1, "<old2/>"));
     p.attachment_object_states = std::make_shared<framework::TransferList<std::optional<std::string>>>();
@@ -171,7 +187,8 @@ void initialize(AgentData& p, Context& ctx) {
     p.cached_friends_online->push_back(id(7));
     p.cached_friends_online->push_back({});
 }
-std::string state(AgentData& p, framework::EntityTransferContext* context) {
+
+std::string state(AgentData &p, framework::EntityTransferContext *context) {
     std::string out;
     out += p.agent_id.str() + "|";
     out += p.region_id.str() + "|";
@@ -218,22 +235,22 @@ std::string state(AgentData& p, framework::EntityTransferContext* context) {
     if (!p.children_cap_seeds)
         out += '-';
     else
-        for (auto& [h, s] : *p.children_cap_seeds)
+        for (auto &[h, s] : *p.children_cap_seeds)
             out += std::to_string(h) + ":" + optional(s) + ";";
     out += '|';
-    auto animation = [](const std::shared_ptr<framework::Animation>& a) {
+    auto animation = [](const std::shared_ptr<framework::Animation> &a) {
         return a ? hex(network::osd_json(a->pack(), true)) : "-";
     };
     if (!p.animations)
         out += '-';
     else
-        for (auto& a : *p.animations)
+        for (auto &a : *p.animations)
             out += animation(a) + ";";
     out += "|" + animation(p.default_animation) + "|" + animation(p.animation_state) + "|";
     if (!p.movement_animation_overrides)
         out += '-';
     else
-        for (auto& [key, id] : *p.movement_animation_overrides)
+        for (auto &[key, id] : *p.movement_animation_overrides)
             out += hex(key) + ":" + id.str() + ";";
     out += '|';
     if (!p.appearance)
@@ -248,7 +265,7 @@ std::string state(AgentData& p, framework::EntityTransferContext* context) {
     if (!p.controllers)
         out += '-';
     else
-        for (auto& c : *p.controllers)
+        for (auto &c : *p.controllers)
             out += (c ? hex(network::osd_json(c->pack(), true)) : "-") + ";";
     out += '|';
     if (!p.attachment_objects)
@@ -256,24 +273,25 @@ std::string state(AgentData& p, framework::EntityTransferContext* context) {
     else
         for (auto so : *p.attachment_objects) {
             auto object = std::dynamic_pointer_cast<Object>(so);
-            out += object ? std::to_string(object->index) + ":" + hex(object->xml) + ":" +
-                                hex(object->extra) + ":" + std::to_string(object->changed) + ";"
+            out += object ? std::to_string(object->index) + ":" + hex(object->xml) + ":" + hex(object->extra) + ":" +
+                                std::to_string(object->changed) + ";"
                           : "-;";
         }
     out += '|';
     if (!p.attachment_object_states)
         out += '-';
     else
-        for (auto& s : *p.attachment_object_states)
+        for (auto &s : *p.attachment_object_states)
             out += optional(s) + ";";
     out += '|';
     if (!p.cached_friends_online)
         out += '-';
     else
-        for (auto& id : *p.cached_friends_online)
+        for (auto &id : *p.cached_friends_online)
             out += id.str() + ";";
     return out;
 }
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -286,7 +304,7 @@ int main() {
         if (profile & 32)
             p = std::make_unique<framework::CompleteAgentData>();
         else if (profile & 16)
-            p = std::make_unique<AgentData>(static_cast<const AgentData::LegacyTable*>(nullptr));
+            p = std::make_unique<AgentData>(static_cast<const AgentData::LegacyTable *>(nullptr));
         else
             p = std::make_unique<AgentData>();
         ctx.owner = p.get();
@@ -301,22 +319,20 @@ int main() {
             p->movement_animation_overrides.reset();
         bool unpack_failed = false, pack_failed = false;
         std::string packed;
-        framework::IAgentData* view = p.get();
+        framework::IAgentData *view = p.get();
         try {
             if (!network::osd_boolean(command.get("skip_unpack"))) {
                 if (network::osd_boolean(command.get("null_map"))) {
                     Value invalid;
                     view->unpack(invalid, &scene, context_ptr);
                 } else
-                    view->unpack(data, network::osd_boolean(command.get("null_scene")) ? nullptr : &scene,
-                                 context_ptr);
+                    view->unpack(data, network::osd_boolean(command.get("null_scene")) ? nullptr : &scene, context_ptr);
             }
             if (command.contains("look"))
                 p->set_look_at(framework::parse_sdk_vector3(network::osd_string(command.get("look"))));
             if (command.contains("interface_id"))
                 view->agent_uuid(network::osd_uuid(command.get("interface_id")));
-            if ((profile & 4) && data.contains("god_data") &&
-                data.get("god_data").view().kind == Value::Kind::Map) {
+            if ((profile & 4) && data.contains("god_data") && data.get("god_data").view().kind == Value::Kind::Map) {
                 data.map.at("god_data").set("ViewerUiIsGod", Value(true));
                 data.map.at("god_data").set("after", "source");
             }
@@ -328,8 +344,7 @@ int main() {
             if (mode == "null")
                 p->attachment_object_states.reset();
             else if (mode == "empty")
-                p->attachment_object_states =
-                    std::make_shared<framework::TransferList<std::optional<std::string>>>();
+                p->attachment_object_states = std::make_shared<framework::TransferList<std::optional<std::string>>>();
             else if (mode == "null_object" && p->attachment_objects && !p->attachment_objects->empty())
                 p->attachment_objects->set(0, {});
         }
@@ -347,8 +362,7 @@ int main() {
         }
         std::ostringstream dump;
         p->dump(dump);
-        std::cout << unpack_failed << "|" << pack_failed << "|" << hex(packed) << "|"
-                  << hex(state(*p, context_ptr)) << "|" << hex(ctx.trace) << "|" << hex(dump.str()) << "|"
-                  << view->agent_uuid().str() << "\n";
+        std::cout << unpack_failed << "|" << pack_failed << "|" << hex(packed) << "|" << hex(state(*p, context_ptr))
+                  << "|" << hex(ctx.trace) << "|" << hex(dump.str()) << "|" << view->agent_uuid().str() << "\n";
     }
 }

@@ -1,0 +1,1 @@
+rotation item=<xmrString2Float("1.2345678901234567"),xmrString2Float("999999999999999.5"),xmrString2Float("1e20"),xmrString2Float("-0")>;string result;default{state_entry(){result=(string)item;}}

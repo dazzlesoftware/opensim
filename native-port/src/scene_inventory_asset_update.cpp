@@ -4,30 +4,30 @@
 #include "opensim/framework/animation_set.hpp"
 #include <bit>
 #include <stdexcept>
+
 namespace opensim::scene {
-std::shared_ptr<framework::AssetBase>
-create_scene_inventory_asset(const std::optional<std::string> &name,
-                             const std::optional<std::string> &description, std::int8_t type,
-                             framework::AssetBytes data, framework::Uuid creator) {
+std::shared_ptr<framework::AssetBase> create_scene_inventory_asset(const std::optional<std::string> &name,
+                                                                   const std::optional<std::string> &description,
+                                                                   std::int8_t type, framework::AssetBytes data,
+                                                                   framework::Uuid creator) {
     auto asset = std::make_shared<framework::AssetBase>(framework::Uuid::random(), name, type, creator.str());
     asset->description(description);
     asset->data = data ? std::move(data) : std::make_shared<std::vector<std::uint8_t>>(1);
     return asset;
 }
-SceneInventoryAssetController::SceneInventoryAssetController(SceneInventoryAssetBackend b)
-    : backend_(std::move(b)) {
+
+SceneInventoryAssetController::SceneInventoryAssetController(SceneInventoryAssetBackend b) : backend_(std::move(b)) {
     if (!backend_.presence || !backend_.inventory_access || !backend_.part || !backend_.edit_inventory ||
         !backend_.edit_notecard || !backend_.asset_permissions || !backend_.create_asset || !backend_.store)
         throw std::invalid_argument("Incomplete scene inventory asset backend");
 }
+
 framework::Uuid SceneInventoryAssetController::update(framework::Uuid avatar, framework::Uuid key,
-                                                      framework::Uuid object,
-                                                      framework::AssetBytes data) const {
+                                                      framework::Uuid object, framework::AssetBytes data) const {
     auto presence = backend_.presence(avatar);
     if (!presence) {
         if (backend_.error)
-            backend_.error("[CapsUpdateItemAsset]: Avatar " + avatar.str() +
-                           " cannot be found to update item asset");
+            backend_.error("[CapsUpdateItemAsset]: Avatar " + avatar.str() + " cannot be found to update item asset");
         return {};
     }
     auto client = [&] {
@@ -42,8 +42,7 @@ framework::Uuid SceneInventoryAssetController::update(framework::Uuid avatar, fr
     auto part = backend_.part(object);
     if (!part || part->group_deleted()) {
         if (backend_.error)
-            backend_.error("[CapsUpdateItemAsset]: Object " + object.str() +
-                           " cannot be found to update item asset");
+            backend_.error("[CapsUpdateItemAsset]: Object " + object.str() + " cannot be found to update item asset");
         return {};
     }
     auto item = part->item(key);
@@ -78,8 +77,7 @@ framework::Uuid SceneInventoryAssetController::update(framework::Uuid avatar, fr
             return (mask & 0xa000) == 0xa000 ? static_cast<std::uint32_t>(mask) : 0u;
         });
         if (result == 0) {
-            alert("Not enought permissions on asset(s) referenced by animation set '{0}', update failed",
-                  true);
+            alert("Not enought permissions on asset(s) referenced by animation set '{0}', update failed", true);
             return {};
         }
         break;
@@ -118,4 +116,4 @@ framework::Uuid SceneInventoryAssetController::update(framework::Uuid avatar, fr
     part->update(item);
     return asset->full_id();
 }
-}
+} // namespace opensim::scene

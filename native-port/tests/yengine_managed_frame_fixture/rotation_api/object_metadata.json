@@ -1,0 +1,4282 @@
+{
+  "source_hash": "4E42CB080D2754F5C049B9B753A3D6C0",
+  "compiled_version": -11,
+  "states": [
+    "default"
+  ],
+  "global_names": {
+    "iarRotations": {
+      "0": "result"
+    },
+    "iarIntegers": {
+      "0": "count"
+    }
+  },
+  "methods": [
+    {
+      "name": "$globalvarinit()",
+      "return_type": "void",
+      "return_clr_type": "System.Void",
+      "parameters": [
+        {
+          "name": "$xmrthis",
+          "type": "xmrsuper",
+          "clr_type": "FunctionExecutionReferenceInstance"
+        }
+      ],
+      "locals": [],
+      "labels": [
+        {
+          "number": 0,
+          "name": "__retlbl",
+          "offset": 77
+        }
+      ],
+      "records": [
+        {
+          "offset": 0,
+          "opcode": "ldarg.0",
+          "opcode_value": 2,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "",
+            "line": 0,
+            "column": 0
+          }
+        },
+        {
+          "offset": 1,
+          "opcode": "ldfld",
+          "opcode_value": 123,
+          "operand_kind": "field",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract:glblVars",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 9
+          }
+        },
+        {
+          "offset": 6,
+          "opcode": "ldfld",
+          "opcode_value": 123,
+          "operand_kind": "field",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays:iarRotations",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 9
+          }
+        },
+        {
+          "offset": 11,
+          "opcode": "ldc.i4.0",
+          "opcode_value": 22,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 9
+          }
+        },
+        {
+          "offset": 12,
+          "opcode": "ldc.r8",
+          "opcode_value": 35,
+          "operand_kind": "double",
+          "operand": 0,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 9
+          }
+        },
+        {
+          "offset": 21,
+          "opcode": "ldc.r8",
+          "opcode_value": 35,
+          "operand_kind": "double",
+          "operand": 0,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 9
+          }
+        },
+        {
+          "offset": 30,
+          "opcode": "ldc.r8",
+          "opcode_value": 35,
+          "operand_kind": "double",
+          "operand": 0,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 9
+          }
+        },
+        {
+          "offset": 39,
+          "opcode": "ldc.r8",
+          "opcode_value": 35,
+          "operand_kind": "double",
+          "operand": 1,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 9
+          }
+        },
+        {
+          "offset": 48,
+          "opcode": "newobj",
+          "opcode_value": 115,
+          "operand_kind": "constructor",
+          "operand": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 9
+          }
+        },
+        {
+          "offset": 53,
+          "opcode": "stelem",
+          "opcode_value": 164,
+          "operand_kind": "type",
+          "operand": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 9
+          }
+        },
+        {
+          "offset": 58,
+          "opcode": "ldarg.0",
+          "opcode_value": 2,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 9
+          }
+        },
+        {
+          "offset": 59,
+          "opcode": "ldfld",
+          "opcode_value": 123,
+          "operand_kind": "field",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract:glblVars",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 24
+          }
+        },
+        {
+          "offset": 64,
+          "opcode": "ldfld",
+          "opcode_value": 123,
+          "operand_kind": "field",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays:iarIntegers",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 24
+          }
+        },
+        {
+          "offset": 69,
+          "opcode": "ldc.i4.0",
+          "opcode_value": 22,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 24
+          }
+        },
+        {
+          "offset": 70,
+          "opcode": "ldc.i4.0",
+          "opcode_value": 22,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 24
+          }
+        },
+        {
+          "offset": 71,
+          "opcode": "stelem.i4",
+          "opcode_value": 158,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 24
+          }
+        },
+        {
+          "offset": 72,
+          "opcode": "leave",
+          "opcode_value": 221,
+          "operand_kind": "label",
+          "operand": 0,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 0
+          }
+        },
+        {
+          "offset": 77,
+          "opcode": "ret",
+          "opcode_value": 42,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 0
+          }
+        }
+      ],
+      "source_locations": [
+        {
+          "offset": 0,
+          "file": "",
+          "line": 0,
+          "column": 0
+        },
+        {
+          "offset": 1,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 9
+        },
+        {
+          "offset": 6,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 9
+        },
+        {
+          "offset": 11,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 9
+        },
+        {
+          "offset": 12,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 9
+        },
+        {
+          "offset": 21,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 9
+        },
+        {
+          "offset": 30,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 9
+        },
+        {
+          "offset": 39,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 9
+        },
+        {
+          "offset": 48,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 9
+        },
+        {
+          "offset": 53,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 9
+        },
+        {
+          "offset": 58,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 9
+        },
+        {
+          "offset": 59,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 24
+        },
+        {
+          "offset": 64,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 24
+        },
+        {
+          "offset": 69,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 24
+        },
+        {
+          "offset": 70,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 24
+        },
+        {
+          "offset": 71,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 24
+        },
+        {
+          "offset": 72,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 0
+        },
+        {
+          "offset": 77,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 0
+        }
+      ],
+      "call_labels": [],
+      "saved_slots": []
+    },
+    {
+      "name": "inner()",
+      "return_type": "lslrot",
+      "return_clr_type": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+      "parameters": [
+        {
+          "name": "$xmrthis",
+          "type": "xmrsuper",
+          "clr_type": "FunctionExecutionReferenceInstance"
+        }
+      ],
+      "locals": [
+        {
+          "number": 0,
+          "name": "__curHeap",
+          "type": "int",
+          "clr_type": "System.Int32"
+        },
+        {
+          "number": 1,
+          "name": "__retval",
+          "type": "lslrot",
+          "clr_type": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion"
+        },
+        {
+          "number": 2,
+          "name": "__mainCallNo",
+          "type": "int",
+          "clr_type": "System.Int32"
+        },
+        {
+          "number": 4,
+          "name": "tmp$2",
+          "type": "lslrot",
+          "clr_type": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion"
+        },
+        {
+          "number": 5,
+          "name": "__restObjArray",
+          "type": "object[]",
+          "clr_type": "System.Object[]"
+        }
+      ],
+      "labels": [
+        {
+          "number": 0,
+          "name": "__retlbl",
+          "offset": 238
+        },
+        {
+          "number": 1,
+          "name": "__cmRestore",
+          "offset": 116
+        },
+        {
+          "number": 2,
+          "name": "__call_0_0",
+          "offset": 38
+        },
+        {
+          "number": 3,
+          "name": "__call_1_1",
+          "offset": 103
+        },
+        {
+          "number": 4,
+          "name": "__endFin",
+          "offset": 236
+        }
+      ],
+      "records": [
+        {
+          "offset": 0,
+          "opcode": "ldarg.0",
+          "opcode_value": 2,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 0
+          }
+        },
+        {
+          "offset": 1,
+          "opcode": "ldfld",
+          "opcode_value": 123,
+          "operand_kind": "field",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract:m_localsHeapUsed",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 6,
+          "opcode": "stloc",
+          "opcode_value": -498,
+          "operand_kind": "local",
+          "operand": 0,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 7,
+          "opcode": "ldc.i4.m1",
+          "opcode_value": 21,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 8,
+          "opcode": "stloc",
+          "opcode_value": -498,
+          "operand_kind": "local",
+          "operand": 2,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 9,
+          "opcode": "ldarg.0",
+          "opcode_value": 2,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 10,
+          "opcode": "dup",
+          "opcode_value": 37,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 11,
+          "opcode": "ldfld",
+          "opcode_value": 123,
+          "operand_kind": "field",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract:m_StackLeft",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 16,
+          "opcode": "ldc.i4.s",
+          "opcode_value": 31,
+          "operand_kind": "integer",
+          "operand": 64,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 18,
+          "opcode": "sub",
+          "opcode_value": 89,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 19,
+          "opcode": "stfld",
+          "opcode_value": 125,
+          "operand_kind": "field",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract:m_StackLeft",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 24,
+          "opcode": "nop",
+          "opcode_value": 0,
+          "operand_kind": "exception",
+          "operand": "begin",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 24,
+          "opcode": "ldarg.0",
+          "opcode_value": 2,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 25,
+          "opcode": "ldfld",
+          "opcode_value": 123,
+          "operand_kind": "field",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract:callMode",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 30,
+          "opcode": "ldc.i4.0",
+          "opcode_value": 22,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 31,
+          "opcode": "bne.un",
+          "opcode_value": 64,
+          "operand_kind": "label",
+          "operand": 1,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 36,
+          "opcode": "ldc.i4.0",
+          "opcode_value": 22,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 37,
+          "opcode": "stloc",
+          "opcode_value": -498,
+          "operand_kind": "local",
+          "operand": 2,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 38,
+          "opcode": "ldarg.0",
+          "opcode_value": 2,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 39,
+          "opcode": "call",
+          "opcode_value": 40,
+          "operand_kind": "method",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract:CheckRunStack",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 44,
+          "opcode": "ldarg.0",
+          "opcode_value": 2,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 45,
+          "opcode": "ldfld",
+          "opcode_value": 123,
+          "operand_kind": "field",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract:glblVars",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 47
+          }
+        },
+        {
+          "offset": 50,
+          "opcode": "ldfld",
+          "opcode_value": 123,
+          "operand_kind": "field",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays:iarIntegers",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 47
+          }
+        },
+        {
+          "offset": 55,
+          "opcode": "ldc.i4.0",
+          "opcode_value": 22,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 47
+          }
+        },
+        {
+          "offset": 56,
+          "opcode": "ldarg.0",
+          "opcode_value": 2,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 47
+          }
+        },
+        {
+          "offset": 57,
+          "opcode": "ldfld",
+          "opcode_value": 123,
+          "operand_kind": "field",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract:glblVars",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 47
+          }
+        },
+        {
+          "offset": 62,
+          "opcode": "ldfld",
+          "opcode_value": 123,
+          "operand_kind": "field",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays:iarIntegers",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 47
+          }
+        },
+        {
+          "offset": 67,
+          "opcode": "ldc.i4.0",
+          "opcode_value": 22,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 47
+          }
+        },
+        {
+          "offset": 68,
+          "opcode": "ldelem.i4",
+          "opcode_value": 148,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 47
+          }
+        },
+        {
+          "offset": 69,
+          "opcode": "ldc.i4.1",
+          "opcode_value": 23,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 52
+          }
+        },
+        {
+          "offset": 70,
+          "opcode": "add",
+          "opcode_value": 88,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 52
+          }
+        },
+        {
+          "offset": 71,
+          "opcode": "stelem.i4",
+          "opcode_value": 158,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 47
+          }
+        },
+        {
+          "offset": 72,
+          "opcode": "ldarg.0",
+          "opcode_value": 2,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 47
+          }
+        },
+        {
+          "offset": 73,
+          "opcode": "ldc.i4.1",
+          "opcode_value": 23,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 74
+          }
+        },
+        {
+          "offset": 74,
+          "opcode": "conv.r8",
+          "opcode_value": 108,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 74
+          }
+        },
+        {
+          "offset": 75,
+          "opcode": "ldc.i4.0",
+          "opcode_value": 22,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 74
+          }
+        },
+        {
+          "offset": 76,
+          "opcode": "conv.r8",
+          "opcode_value": 108,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 74
+          }
+        },
+        {
+          "offset": 77,
+          "opcode": "ldc.i4.0",
+          "opcode_value": 22,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 74
+          }
+        },
+        {
+          "offset": 78,
+          "opcode": "conv.r8",
+          "opcode_value": 108,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 74
+          }
+        },
+        {
+          "offset": 79,
+          "opcode": "newobj",
+          "opcode_value": 115,
+          "operand_kind": "constructor",
+          "operand": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 74
+          }
+        },
+        {
+          "offset": 84,
+          "opcode": "ldc.i4.0",
+          "opcode_value": 22,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 74
+          }
+        },
+        {
+          "offset": 85,
+          "opcode": "conv.r8",
+          "opcode_value": 108,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 74
+          }
+        },
+        {
+          "offset": 86,
+          "opcode": "ldc.i4.1",
+          "opcode_value": 23,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 74
+          }
+        },
+        {
+          "offset": 87,
+          "opcode": "conv.r8",
+          "opcode_value": 108,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 74
+          }
+        },
+        {
+          "offset": 88,
+          "opcode": "ldc.i4.0",
+          "opcode_value": 22,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 74
+          }
+        },
+        {
+          "offset": 89,
+          "opcode": "conv.r8",
+          "opcode_value": 108,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 74
+          }
+        },
+        {
+          "offset": 90,
+          "opcode": "newobj",
+          "opcode_value": 115,
+          "operand_kind": "constructor",
+          "operand": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 74
+          }
+        },
+        {
+          "offset": 95,
+          "opcode": "call",
+          "opcode_value": 40,
+          "operand_kind": "method",
+          "operand": "OpenSim.Region.ScriptEngine.Shared.ScriptBase.ScriptBaseClass:llRotBetween",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 74
+          }
+        },
+        {
+          "offset": 100,
+          "opcode": "stloc",
+          "opcode_value": -498,
+          "operand_kind": "local",
+          "operand": 4,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 74
+          }
+        },
+        {
+          "offset": 101,
+          "opcode": "ldc.i4.1",
+          "opcode_value": 23,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 74
+          }
+        },
+        {
+          "offset": 102,
+          "opcode": "stloc",
+          "opcode_value": -498,
+          "operand_kind": "local",
+          "operand": 2,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 74
+          }
+        },
+        {
+          "offset": 103,
+          "opcode": "ldarg.0",
+          "opcode_value": 2,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 74
+          }
+        },
+        {
+          "offset": 104,
+          "opcode": "call",
+          "opcode_value": 40,
+          "operand_kind": "method",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract:CheckRunQuick",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 74
+          }
+        },
+        {
+          "offset": 109,
+          "opcode": "ldloc",
+          "opcode_value": -500,
+          "operand_kind": "local",
+          "operand": 4,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 74
+          }
+        },
+        {
+          "offset": 110,
+          "opcode": "stloc",
+          "opcode_value": -498,
+          "operand_kind": "local",
+          "operand": 1,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 55
+          }
+        },
+        {
+          "offset": 111,
+          "opcode": "leave",
+          "opcode_value": 221,
+          "operand_kind": "label",
+          "operand": 0,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 55
+          }
+        },
+        {
+          "offset": 116,
+          "opcode": "ldarg.0",
+          "opcode_value": 2,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 55
+          }
+        },
+        {
+          "offset": 117,
+          "opcode": "ldstr",
+          "opcode_value": 114,
+          "operand_kind": "string",
+          "operand": "inner()",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 122,
+          "opcode": "ldloca",
+          "opcode_value": -499,
+          "operand_kind": "local",
+          "operand": 2,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 124,
+          "opcode": "call",
+          "opcode_value": 40,
+          "operand_kind": "method",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract:RestoreStackFrame",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 129,
+          "opcode": "stloc",
+          "opcode_value": -498,
+          "operand_kind": "local",
+          "operand": 5,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 131,
+          "opcode": "ldloc",
+          "opcode_value": -500,
+          "operand_kind": "local",
+          "operand": 5,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 133,
+          "opcode": "ldc.i4.0",
+          "opcode_value": 22,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 134,
+          "opcode": "ldelem.ref",
+          "opcode_value": 154,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 135,
+          "opcode": "unbox.any",
+          "opcode_value": 165,
+          "operand_kind": "type",
+          "operand": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 140,
+          "opcode": "stloc",
+          "opcode_value": -498,
+          "operand_kind": "local",
+          "operand": 4,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 141,
+          "opcode": "ldloc",
+          "opcode_value": -500,
+          "operand_kind": "local",
+          "operand": 5,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 143,
+          "opcode": "ldc.i4.1",
+          "opcode_value": 23,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 144,
+          "opcode": "ldelem.ref",
+          "opcode_value": 154,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 145,
+          "opcode": "unbox.any",
+          "opcode_value": 165,
+          "operand_kind": "type",
+          "operand": "System.Int32",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 150,
+          "opcode": "stloc",
+          "opcode_value": -498,
+          "operand_kind": "local",
+          "operand": 0,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 151,
+          "opcode": "ldloc",
+          "opcode_value": -500,
+          "operand_kind": "local",
+          "operand": 2,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 152,
+          "opcode": "switch",
+          "opcode_value": 69,
+          "operand_kind": "labels",
+          "operand": [
+            2,
+            3
+          ],
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 165,
+          "opcode": "ldloc",
+          "opcode_value": -500,
+          "operand_kind": "local",
+          "operand": 2,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 166,
+          "opcode": "newobj",
+          "opcode_value": 115,
+          "operand_kind": "constructor",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.ScriptBadCallNoException",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 171,
+          "opcode": "throw",
+          "opcode_value": 122,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 172,
+          "opcode": "nop",
+          "opcode_value": 0,
+          "operand_kind": "exception",
+          "operand": "finally",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 177,
+          "opcode": "ldarg.0",
+          "opcode_value": 2,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 178,
+          "opcode": "dup",
+          "opcode_value": 37,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 179,
+          "opcode": "ldfld",
+          "opcode_value": 123,
+          "operand_kind": "field",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract:m_StackLeft",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 184,
+          "opcode": "ldc.i4.s",
+          "opcode_value": 31,
+          "operand_kind": "integer",
+          "operand": 64,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 186,
+          "opcode": "add",
+          "opcode_value": 88,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 187,
+          "opcode": "stfld",
+          "opcode_value": 125,
+          "operand_kind": "field",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract:m_StackLeft",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 192,
+          "opcode": "ldarg.0",
+          "opcode_value": 2,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 193,
+          "opcode": "ldfld",
+          "opcode_value": 123,
+          "operand_kind": "field",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract:callMode",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 198,
+          "opcode": "ldc.i4.1",
+          "opcode_value": 23,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 199,
+          "opcode": "bne.un",
+          "opcode_value": 64,
+          "operand_kind": "label",
+          "operand": 4,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 204,
+          "opcode": "ldarg.0",
+          "opcode_value": 2,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 205,
+          "opcode": "ldstr",
+          "opcode_value": 114,
+          "operand_kind": "string",
+          "operand": "inner()",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 210,
+          "opcode": "ldloc",
+          "opcode_value": -500,
+          "operand_kind": "local",
+          "operand": 2,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 211,
+          "opcode": "ldc.i4.2",
+          "opcode_value": 24,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 212,
+          "opcode": "call",
+          "opcode_value": 40,
+          "operand_kind": "method",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract:CaptureStackFrame",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 217,
+          "opcode": "dup",
+          "opcode_value": 37,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 218,
+          "opcode": "ldc.i4.0",
+          "opcode_value": 22,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 219,
+          "opcode": "ldloc",
+          "opcode_value": -500,
+          "operand_kind": "local",
+          "operand": 4,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 220,
+          "opcode": "box",
+          "opcode_value": 140,
+          "operand_kind": "type",
+          "operand": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 225,
+          "opcode": "stelem.ref",
+          "opcode_value": 162,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 226,
+          "opcode": "dup",
+          "opcode_value": 37,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 227,
+          "opcode": "ldc.i4.1",
+          "opcode_value": 23,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 228,
+          "opcode": "ldloc",
+          "opcode_value": -500,
+          "operand_kind": "local",
+          "operand": 0,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 229,
+          "opcode": "box",
+          "opcode_value": 140,
+          "operand_kind": "type",
+          "operand": "System.Int32",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 234,
+          "opcode": "stelem.ref",
+          "opcode_value": 162,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 235,
+          "opcode": "pop",
+          "opcode_value": 38,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 236,
+          "opcode": "endfinally",
+          "opcode_value": 220,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 237,
+          "opcode": "nop",
+          "opcode_value": 0,
+          "operand_kind": "exception",
+          "operand": "end",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 238,
+          "opcode": "ldarg.0",
+          "opcode_value": 2,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 239,
+          "opcode": "ldloc",
+          "opcode_value": -500,
+          "operand_kind": "local",
+          "operand": 0,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 240,
+          "opcode": "stfld",
+          "opcode_value": 125,
+          "operand_kind": "field",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract:m_localsHeapUsed",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 245,
+          "opcode": "ldloc",
+          "opcode_value": -500,
+          "operand_kind": "local",
+          "operand": 1,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "offset": 246,
+          "opcode": "ret",
+          "opcode_value": 42,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        }
+      ],
+      "source_locations": [
+        {
+          "offset": 0,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 0
+        },
+        {
+          "offset": 1,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 6,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 7,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 8,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 9,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 10,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 11,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 16,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 18,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 19,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 24,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 25,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 30,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 31,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 36,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 37,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 38,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 39,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 44,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 45,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 47
+        },
+        {
+          "offset": 50,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 47
+        },
+        {
+          "offset": 55,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 47
+        },
+        {
+          "offset": 56,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 47
+        },
+        {
+          "offset": 57,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 47
+        },
+        {
+          "offset": 62,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 47
+        },
+        {
+          "offset": 67,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 47
+        },
+        {
+          "offset": 68,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 47
+        },
+        {
+          "offset": 69,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 52
+        },
+        {
+          "offset": 70,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 52
+        },
+        {
+          "offset": 71,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 47
+        },
+        {
+          "offset": 72,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 47
+        },
+        {
+          "offset": 73,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 74
+        },
+        {
+          "offset": 74,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 74
+        },
+        {
+          "offset": 75,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 74
+        },
+        {
+          "offset": 76,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 74
+        },
+        {
+          "offset": 77,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 74
+        },
+        {
+          "offset": 78,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 74
+        },
+        {
+          "offset": 79,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 74
+        },
+        {
+          "offset": 84,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 74
+        },
+        {
+          "offset": 85,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 74
+        },
+        {
+          "offset": 86,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 74
+        },
+        {
+          "offset": 87,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 74
+        },
+        {
+          "offset": 88,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 74
+        },
+        {
+          "offset": 89,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 74
+        },
+        {
+          "offset": 90,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 74
+        },
+        {
+          "offset": 95,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 74
+        },
+        {
+          "offset": 100,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 74
+        },
+        {
+          "offset": 101,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 74
+        },
+        {
+          "offset": 102,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 74
+        },
+        {
+          "offset": 103,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 74
+        },
+        {
+          "offset": 104,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 74
+        },
+        {
+          "offset": 109,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 74
+        },
+        {
+          "offset": 110,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 55
+        },
+        {
+          "offset": 111,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 55
+        },
+        {
+          "offset": 116,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 55
+        },
+        {
+          "offset": 117,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 122,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 124,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 129,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 131,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 133,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 134,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 135,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 140,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 141,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 143,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 144,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 145,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 150,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 151,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 152,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 165,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 166,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 171,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 177,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 178,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 179,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 184,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 186,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 187,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 192,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 193,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 198,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 199,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 204,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 205,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 210,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 211,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 212,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 217,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 218,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 219,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 220,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 225,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 226,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 227,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 228,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 229,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 234,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 235,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 236,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 238,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 239,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 240,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 245,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        },
+        {
+          "offset": 246,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 39
+        }
+      ],
+      "call_labels": [
+        {
+          "call_no": 0,
+          "label": {
+            "number": 2,
+            "name": "__call_0_0",
+            "offset": 38
+          },
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 39
+          }
+        },
+        {
+          "call_no": 1,
+          "label": {
+            "number": 3,
+            "name": "__call_1_1",
+            "offset": 103
+          },
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 74
+          }
+        }
+      ],
+      "saved_slots": [
+        {
+          "index": 0,
+          "capture_record_begin": 92,
+          "capture_record_end": 96,
+          "storage_kind": "local",
+          "storage_number": 4,
+          "name": "tmp$2",
+          "type": "lslrot",
+          "clr_type": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion"
+        },
+        {
+          "index": 1,
+          "capture_record_begin": 97,
+          "capture_record_end": 101,
+          "storage_kind": "local",
+          "storage_number": 0,
+          "name": "__curHeap",
+          "type": "int",
+          "clr_type": "System.Int32"
+        }
+      ]
+    },
+    {
+      "name": "default state_entry",
+      "return_type": "void",
+      "return_clr_type": "System.Void",
+      "parameters": [
+        {
+          "name": "$xmrthis",
+          "type": "xmrinst",
+          "clr_type": "OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract"
+        }
+      ],
+      "locals": [
+        {
+          "number": 0,
+          "name": "__xmrinst",
+          "type": "xmrsuper",
+          "clr_type": "FunctionExecutionReferenceInstance"
+        },
+        {
+          "number": 1,
+          "name": "__curHeap",
+          "type": "int",
+          "clr_type": "System.Int32"
+        },
+        {
+          "number": 2,
+          "name": "__mainCallNo",
+          "type": "int",
+          "clr_type": "System.Int32"
+        },
+        {
+          "number": 3,
+          "name": "tmp$3",
+          "type": "lslrot",
+          "clr_type": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion"
+        },
+        {
+          "number": 4,
+          "name": "__restObjArray",
+          "type": "object[]",
+          "clr_type": "System.Object[]"
+        }
+      ],
+      "labels": [
+        {
+          "number": 0,
+          "name": "__retlbl",
+          "offset": 224
+        },
+        {
+          "number": 1,
+          "name": "__cmRestore",
+          "offset": 107
+        },
+        {
+          "number": 2,
+          "name": "__skipGblInit",
+          "offset": 67
+        },
+        {
+          "number": 3,
+          "name": "__call_0_0",
+          "offset": 69
+        },
+        {
+          "number": 4,
+          "name": "__call_1_1",
+          "offset": 77
+        },
+        {
+          "number": 5,
+          "name": "__endFin",
+          "offset": 222
+        }
+      ],
+      "records": [
+        {
+          "offset": 0,
+          "opcode": "ldarg.0",
+          "opcode_value": 2,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 1,
+          "opcode": "castclass",
+          "opcode_value": 116,
+          "operand_kind": "type",
+          "operand": "FunctionExecutionReferenceInstance",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 6,
+          "opcode": "stloc",
+          "opcode_value": -498,
+          "operand_kind": "local",
+          "operand": 0,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 7,
+          "opcode": "ldloc",
+          "opcode_value": -500,
+          "operand_kind": "local",
+          "operand": 0,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 8,
+          "opcode": "ldfld",
+          "opcode_value": 123,
+          "operand_kind": "field",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract:m_localsHeapUsed",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 13,
+          "opcode": "stloc",
+          "opcode_value": -498,
+          "operand_kind": "local",
+          "operand": 1,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 14,
+          "opcode": "ldc.i4.m1",
+          "opcode_value": 21,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 15,
+          "opcode": "stloc",
+          "opcode_value": -498,
+          "operand_kind": "local",
+          "operand": 2,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 16,
+          "opcode": "ldloc",
+          "opcode_value": -500,
+          "operand_kind": "local",
+          "operand": 0,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 17,
+          "opcode": "dup",
+          "opcode_value": 37,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 18,
+          "opcode": "ldfld",
+          "opcode_value": 123,
+          "operand_kind": "field",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract:m_StackLeft",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 23,
+          "opcode": "ldc.i4.s",
+          "opcode_value": 31,
+          "operand_kind": "integer",
+          "operand": 64,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 25,
+          "opcode": "sub",
+          "opcode_value": 89,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 26,
+          "opcode": "stfld",
+          "opcode_value": 125,
+          "operand_kind": "field",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract:m_StackLeft",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 31,
+          "opcode": "nop",
+          "opcode_value": 0,
+          "operand_kind": "exception",
+          "operand": "begin",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 31,
+          "opcode": "ldloc",
+          "opcode_value": -500,
+          "operand_kind": "local",
+          "operand": 0,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 32,
+          "opcode": "ldfld",
+          "opcode_value": 123,
+          "operand_kind": "field",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract:callMode",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 37,
+          "opcode": "ldc.i4.0",
+          "opcode_value": 22,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 38,
+          "opcode": "bne.un",
+          "opcode_value": 64,
+          "operand_kind": "label",
+          "operand": 1,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 43,
+          "opcode": "ldloc",
+          "opcode_value": -500,
+          "operand_kind": "local",
+          "operand": 0,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 44,
+          "opcode": "ldfld",
+          "opcode_value": 123,
+          "operand_kind": "field",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract:doGblInit",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 49,
+          "opcode": "brfalse",
+          "opcode_value": 57,
+          "operand_kind": "label",
+          "operand": 2,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 54,
+          "opcode": "ldloc",
+          "opcode_value": -500,
+          "operand_kind": "local",
+          "operand": 0,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 55,
+          "opcode": "call",
+          "opcode_value": 40,
+          "operand_kind": "method",
+          "operand": "\u003Cscript\u003E:$globalvarinit()",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 0
+          }
+        },
+        {
+          "offset": 60,
+          "opcode": "ldloc",
+          "opcode_value": -500,
+          "operand_kind": "local",
+          "operand": 0,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 0
+          }
+        },
+        {
+          "offset": 61,
+          "opcode": "ldc.i4.0",
+          "opcode_value": 22,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 62,
+          "opcode": "stfld",
+          "opcode_value": 125,
+          "operand_kind": "field",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract:doGblInit",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 67,
+          "opcode": "ldc.i4.0",
+          "opcode_value": 22,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 68,
+          "opcode": "stloc",
+          "opcode_value": -498,
+          "operand_kind": "local",
+          "operand": 2,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 69,
+          "opcode": "ldloc",
+          "opcode_value": -500,
+          "operand_kind": "local",
+          "operand": 0,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 70,
+          "opcode": "call",
+          "opcode_value": 40,
+          "operand_kind": "method",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract:CheckRunStack",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 75,
+          "opcode": "ldc.i4.1",
+          "opcode_value": 23,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 127
+          }
+        },
+        {
+          "offset": 76,
+          "opcode": "stloc",
+          "opcode_value": -498,
+          "operand_kind": "local",
+          "operand": 2,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 127
+          }
+        },
+        {
+          "offset": 77,
+          "opcode": "ldloc",
+          "opcode_value": -500,
+          "operand_kind": "local",
+          "operand": 0,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 127
+          }
+        },
+        {
+          "offset": 78,
+          "opcode": "call",
+          "opcode_value": 40,
+          "operand_kind": "method",
+          "operand": "\u003Cscript\u003E:inner()",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 127
+          }
+        },
+        {
+          "offset": 83,
+          "opcode": "stloc",
+          "opcode_value": -498,
+          "operand_kind": "local",
+          "operand": 3,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 127
+          }
+        },
+        {
+          "offset": 84,
+          "opcode": "ldloc",
+          "opcode_value": -500,
+          "operand_kind": "local",
+          "operand": 0,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 127
+          }
+        },
+        {
+          "offset": 85,
+          "opcode": "ldfld",
+          "opcode_value": 123,
+          "operand_kind": "field",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract:glblVars",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 115
+          }
+        },
+        {
+          "offset": 90,
+          "opcode": "ldfld",
+          "opcode_value": 123,
+          "operand_kind": "field",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays:iarRotations",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 115
+          }
+        },
+        {
+          "offset": 95,
+          "opcode": "ldc.i4.0",
+          "opcode_value": 22,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 115
+          }
+        },
+        {
+          "offset": 96,
+          "opcode": "ldloc",
+          "opcode_value": -500,
+          "operand_kind": "local",
+          "operand": 3,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 127
+          }
+        },
+        {
+          "offset": 97,
+          "opcode": "stelem",
+          "opcode_value": 164,
+          "operand_kind": "type",
+          "operand": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 115
+          }
+        },
+        {
+          "offset": 102,
+          "opcode": "leave",
+          "opcode_value": 221,
+          "operand_kind": "label",
+          "operand": 0,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 107,
+          "opcode": "ldloc",
+          "opcode_value": -500,
+          "operand_kind": "local",
+          "operand": 0,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 108,
+          "opcode": "ldstr",
+          "opcode_value": 114,
+          "operand_kind": "string",
+          "operand": "default state_entry",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 113,
+          "opcode": "ldloca",
+          "opcode_value": -499,
+          "operand_kind": "local",
+          "operand": 2,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 115,
+          "opcode": "call",
+          "opcode_value": 40,
+          "operand_kind": "method",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract:RestoreStackFrame",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 120,
+          "opcode": "stloc",
+          "opcode_value": -498,
+          "operand_kind": "local",
+          "operand": 4,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 122,
+          "opcode": "ldloc",
+          "opcode_value": -500,
+          "operand_kind": "local",
+          "operand": 4,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 124,
+          "opcode": "ldc.i4.0",
+          "opcode_value": 22,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 125,
+          "opcode": "ldelem.ref",
+          "opcode_value": 154,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 126,
+          "opcode": "castclass",
+          "opcode_value": 116,
+          "operand_kind": "type",
+          "operand": "FunctionExecutionReferenceInstance",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 131,
+          "opcode": "stloc",
+          "opcode_value": -498,
+          "operand_kind": "local",
+          "operand": 0,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 132,
+          "opcode": "ldloc",
+          "opcode_value": -500,
+          "operand_kind": "local",
+          "operand": 4,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 134,
+          "opcode": "ldc.i4.1",
+          "opcode_value": 23,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 135,
+          "opcode": "ldelem.ref",
+          "opcode_value": 154,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 136,
+          "opcode": "unbox.any",
+          "opcode_value": 165,
+          "operand_kind": "type",
+          "operand": "System.Int32",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 141,
+          "opcode": "stloc",
+          "opcode_value": -498,
+          "operand_kind": "local",
+          "operand": 1,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 142,
+          "opcode": "ldloc",
+          "opcode_value": -500,
+          "operand_kind": "local",
+          "operand": 2,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 143,
+          "opcode": "switch",
+          "opcode_value": 69,
+          "operand_kind": "labels",
+          "operand": [
+            3,
+            4
+          ],
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 156,
+          "opcode": "ldloc",
+          "opcode_value": -500,
+          "operand_kind": "local",
+          "operand": 2,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 157,
+          "opcode": "newobj",
+          "opcode_value": 115,
+          "operand_kind": "constructor",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.ScriptBadCallNoException",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 162,
+          "opcode": "throw",
+          "opcode_value": 122,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 163,
+          "opcode": "nop",
+          "opcode_value": 0,
+          "operand_kind": "exception",
+          "operand": "finally",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 168,
+          "opcode": "ldloc",
+          "opcode_value": -500,
+          "operand_kind": "local",
+          "operand": 0,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 169,
+          "opcode": "dup",
+          "opcode_value": 37,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 170,
+          "opcode": "ldfld",
+          "opcode_value": 123,
+          "operand_kind": "field",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract:m_StackLeft",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 175,
+          "opcode": "ldc.i4.s",
+          "opcode_value": 31,
+          "operand_kind": "integer",
+          "operand": 64,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 177,
+          "opcode": "add",
+          "opcode_value": 88,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 178,
+          "opcode": "stfld",
+          "opcode_value": 125,
+          "operand_kind": "field",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract:m_StackLeft",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 183,
+          "opcode": "ldloc",
+          "opcode_value": -500,
+          "operand_kind": "local",
+          "operand": 0,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 184,
+          "opcode": "ldfld",
+          "opcode_value": 123,
+          "operand_kind": "field",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract:callMode",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 189,
+          "opcode": "ldc.i4.1",
+          "opcode_value": 23,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 190,
+          "opcode": "bne.un",
+          "opcode_value": 64,
+          "operand_kind": "label",
+          "operand": 5,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 195,
+          "opcode": "ldloc",
+          "opcode_value": -500,
+          "operand_kind": "local",
+          "operand": 0,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 196,
+          "opcode": "ldstr",
+          "opcode_value": 114,
+          "operand_kind": "string",
+          "operand": "default state_entry",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 201,
+          "opcode": "ldloc",
+          "opcode_value": -500,
+          "operand_kind": "local",
+          "operand": 2,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 202,
+          "opcode": "ldc.i4.2",
+          "opcode_value": 24,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 203,
+          "opcode": "call",
+          "opcode_value": 40,
+          "operand_kind": "method",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract:CaptureStackFrame",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 208,
+          "opcode": "dup",
+          "opcode_value": 37,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 209,
+          "opcode": "ldc.i4.0",
+          "opcode_value": 22,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 210,
+          "opcode": "ldloc",
+          "opcode_value": -500,
+          "operand_kind": "local",
+          "operand": 0,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 211,
+          "opcode": "stelem.ref",
+          "opcode_value": 162,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 212,
+          "opcode": "dup",
+          "opcode_value": 37,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 213,
+          "opcode": "ldc.i4.1",
+          "opcode_value": 23,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 214,
+          "opcode": "ldloc",
+          "opcode_value": -500,
+          "operand_kind": "local",
+          "operand": 1,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 215,
+          "opcode": "box",
+          "opcode_value": 140,
+          "operand_kind": "type",
+          "operand": "System.Int32",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 220,
+          "opcode": "stelem.ref",
+          "opcode_value": 162,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 221,
+          "opcode": "pop",
+          "opcode_value": 38,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 222,
+          "opcode": "endfinally",
+          "opcode_value": 220,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 223,
+          "opcode": "nop",
+          "opcode_value": 0,
+          "operand_kind": "exception",
+          "operand": "end",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 224,
+          "opcode": "ldloc",
+          "opcode_value": -500,
+          "operand_kind": "local",
+          "operand": 0,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 225,
+          "opcode": "ldloc",
+          "opcode_value": -500,
+          "operand_kind": "local",
+          "operand": 1,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 226,
+          "opcode": "stfld",
+          "opcode_value": 125,
+          "operand_kind": "field",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract:m_localsHeapUsed",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "offset": 231,
+          "opcode": "ret",
+          "opcode_value": 42,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        }
+      ],
+      "source_locations": [
+        {
+          "offset": 0,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 1,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 6,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 7,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 8,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 13,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 14,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 15,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 16,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 17,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 18,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 23,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 25,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 26,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 31,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 32,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 37,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 38,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 43,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 44,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 49,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 54,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 55,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 0
+        },
+        {
+          "offset": 60,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 0
+        },
+        {
+          "offset": 61,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 62,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 67,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 68,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 69,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 70,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 75,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 127
+        },
+        {
+          "offset": 76,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 127
+        },
+        {
+          "offset": 77,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 127
+        },
+        {
+          "offset": 78,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 127
+        },
+        {
+          "offset": 83,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 127
+        },
+        {
+          "offset": 84,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 127
+        },
+        {
+          "offset": 85,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 115
+        },
+        {
+          "offset": 90,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 115
+        },
+        {
+          "offset": 95,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 115
+        },
+        {
+          "offset": 96,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 127
+        },
+        {
+          "offset": 97,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 115
+        },
+        {
+          "offset": 102,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 107,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 108,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 113,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 115,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 120,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 122,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 124,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 125,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 126,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 131,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 132,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 134,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 135,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 136,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 141,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 142,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 143,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 156,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 157,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 162,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 168,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 169,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 170,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 175,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 177,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 178,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 183,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 184,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 189,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 190,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 195,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 196,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 201,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 202,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 203,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 208,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 209,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 210,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 211,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 212,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 213,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 214,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 215,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 220,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 221,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 222,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 224,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 225,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 226,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        },
+        {
+          "offset": 231,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 101
+        }
+      ],
+      "call_labels": [
+        {
+          "call_no": 0,
+          "label": {
+            "number": 3,
+            "name": "__call_0_0",
+            "offset": 69
+          },
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 101
+          }
+        },
+        {
+          "call_no": 1,
+          "label": {
+            "number": 4,
+            "name": "__call_1_1",
+            "offset": 77
+          },
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 127
+          }
+        }
+      ],
+      "saved_slots": [
+        {
+          "index": 0,
+          "capture_record_begin": 79,
+          "capture_record_end": 82,
+          "storage_kind": "local",
+          "storage_number": 0,
+          "name": "__xmrinst",
+          "type": "xmrsuper",
+          "clr_type": "FunctionExecutionReferenceInstance"
+        },
+        {
+          "index": 1,
+          "capture_record_begin": 83,
+          "capture_record_end": 87,
+          "storage_kind": "local",
+          "storage_number": 1,
+          "name": "__curHeap",
+          "type": "int",
+          "clr_type": "System.Int32"
+        }
+      ]
+    }
+  ]
+}

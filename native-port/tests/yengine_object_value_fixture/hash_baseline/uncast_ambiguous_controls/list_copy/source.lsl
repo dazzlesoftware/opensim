@@ -1,0 +1,1 @@
+list input=[1,2];list alias;integer first_hash;integer alias_hash;integer result;integer same_hash;default{state_entry(){alias=input+[];first_hash=xmrHashCode(input);alias_hash=xmrHashCode(alias);result=xmrHashCode(input);same_hash=(first_hash==alias_hash);}}

@@ -3,8 +3,9 @@
 #include <iostream>
 #include <sstream>
 using namespace opensim::framework;
+
 namespace {
-std::optional<std::u16string> decode(const std::string& s) {
+std::optional<std::u16string> decode(const std::string &s) {
     if (s == "-")
         return {};
     std::u16string out;
@@ -14,7 +15,8 @@ std::optional<std::u16string> decode(const std::string& s) {
                                          (std::stoul(s.substr(i + 2, 2), nullptr, 16) << 8));
     return out;
 }
-std::string hex(const std::u16string& s) {
+
+std::string hex(const std::u16string &s) {
     if (s.empty())
         return ".";
     std::string out;
@@ -25,12 +27,14 @@ std::string hex(const std::u16string& s) {
         }
     return out;
 }
-void require(bool value, const char* message) {
+
+void require(bool value, const char *message) {
     if (!value)
         throw std::runtime_error(message);
 }
-}
-int main(int argc, char** argv) {
+} // namespace
+
+int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string(argv[1]) == "--probe") {
             for (std::string row; std::getline(std::cin, row);) {
@@ -46,13 +50,11 @@ int main(int argc, char** argv) {
                     else if (op == 1)
                         result = std::to_string(invariant_convert_to_int64(value));
                     else if (op == 2)
-                        result =
-                            std::to_string(std::bit_cast<std::uint32_t>(invariant_convert_to_single(value)));
+                        result = std::to_string(std::bit_cast<std::uint32_t>(invariant_convert_to_single(value)));
                     else
-                        result =
-                            std::to_string(std::bit_cast<std::uint64_t>(invariant_convert_to_double(value)));
+                        result = std::to_string(std::bit_cast<std::uint64_t>(invariant_convert_to_double(value)));
                     std::cout << "V:" << result << '\n';
-                } catch (const InvariantNumberError& e) {
+                } catch (const InvariantNumberError &e) {
                     std::cout << "EX:"
                               << (e.kind == InvariantNumberError::Kind::Format ? "System.FormatException:"
                                                                                : "System.OverflowException:")
@@ -66,17 +68,15 @@ int main(int argc, char** argv) {
         require(invariant_convert_to_int32({}) == 0, "Convert null");
         require(invariant_convert_to_int64(u"-9223372036854775808") == INT64_MIN, "Int64 minimum");
         require(invariant_convert_to_int32(std::u16string(u"42 \0\0", 5)) == 42, "Trailing source NULs");
-        require(std::bit_cast<std::uint32_t>(
-                    invariant_convert_to_single(u"1.0000000596046447753906250000001")) == 0x3f800001,
+        require(std::bit_cast<std::uint32_t>(invariant_convert_to_single(u"1.0000000596046447753906250000001")) ==
+                    0x3f800001,
                 "Direct Single midpoint rounding");
-        require(std::bit_cast<std::uint64_t>(invariant_convert_to_double(u"-0e999999999999")) ==
-                    0x8000000000000000ull,
+        require(std::bit_cast<std::uint64_t>(invariant_convert_to_double(u"-0e999999999999")) == 0x8000000000000000ull,
                 "Signed zero and saturated exponent");
-        require(std::bit_cast<std::uint32_t>(invariant_convert_to_single(u"NaN")) == 0xffc00000,
-                "Source NaN bits");
+        require(std::bit_cast<std::uint32_t>(invariant_convert_to_single(u"NaN")) == 0xffc00000, "Source NaN bits");
         std::cout << "PASS invariant numeric conversion\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

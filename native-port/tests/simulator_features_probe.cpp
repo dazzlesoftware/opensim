@@ -5,6 +5,7 @@
 #include "opensim/framework/nini_config_invariant.hpp"
 using namespace opensim;
 using namespace services;
+
 std::string hex(std::string_view value) {
     std::string out;
     for (unsigned char c : value) {
@@ -13,10 +14,12 @@ std::string hex(std::string_view value) {
     }
     return out;
 }
-std::string hex(const server::PollBytes& value) {
-    return value ? hex(std::string_view(reinterpret_cast<const char*>(value->data()), value->size())) : "-";
+
+std::string hex(const server::PollBytes &value) {
+    return value ? hex(std::string_view(reinterpret_cast<const char *>(value->data()), value->size())) : "-";
 }
-std::string dump(const FeatureData& value) {
+
+std::string dump(const FeatureData &value) {
     if (!value)
         return "-";
     try {
@@ -25,24 +28,29 @@ std::string dump(const FeatureData& value) {
         return "EX";
     }
 }
+
 namespace opensim::services {
 struct SimulatorFeaturesProbe {
-    static FeatureData root(SimulatorFeaturesModule& m) {
+    static FeatureData root(SimulatorFeaturesModule &m) {
         return m.features_;
     }
-    static std::string flags(SimulatorFeaturesModule& m) {
+
+    static std::string flags(SimulatorFeaturesModule &m) {
         return std::to_string(m.export_) + std::to_string(m.do_syntax_);
     }
 };
-}
+} // namespace opensim::services
+
 struct Context {
     int profile = 0, reads = 0, random = 0;
     std::string failure, trace;
-    void log(const std::string& text) {
+
+    void log(const std::string &text) {
         trace += text + ";";
         if (text == failure)
             throw std::runtime_error(text);
     }
+
     std::optional<std::string> text() const {
         switch ((profile % 8 + profile / 104) % 8) {
         case 0:
@@ -63,6 +71,7 @@ struct Context {
             return "a\r\nb";
         }
     }
+
     std::optional<std::string> key() const {
         switch ((profile / 13) % 8) {
         case 0:
@@ -84,7 +93,8 @@ struct Context {
         }
     }
 };
-FeatureData make_value(Context& c) {
+
+FeatureData make_value(Context &c) {
     using V = network::Value;
     switch (c.profile % 13) {
     case 0:
@@ -136,12 +146,14 @@ FeatureData make_value(Context& c) {
     }
     }
 }
+
 std::string syntax_text(int p) {
     switch (p % 6) {
     case 0:
         return "";
     case 1:
-        return " 01234567-89ab-cdef-0123-456789abcdef \r\n <!--skip--> \n<map>\n \t \n<string>syntax</string>\r</map>\n";
+        return " 01234567-89ab-cdef-0123-456789abcdef \r\n <!--skip--> \n<map>\n \t "
+               "\n<string>syntax</string>\r</map>\n";
     case 2:
         return "invalid\npayload";
     case 3:
@@ -152,12 +164,14 @@ std::string syntax_text(int p) {
         return "01234567-89ab-cdef-0123-456789abcdef\n";
     }
 }
+
 struct Reader : SimulatorSyntaxReader {
-    Context& c;
+    Context &c;
     std::string text;
     size_t at = 0;
-    Reader(Context& x) : c(x), text(syntax_text(x.profile / 4)) {
-    }
+
+    Reader(Context &x) : c(x), text(syntax_text(x.profile / 4)) {}
+
     std::optional<std::string> read_line() override {
         c.log("read" + std::to_string(c.reads++));
         if (at == text.size())
@@ -174,20 +188,24 @@ struct Reader : SimulatorSyntaxReader {
         }
         return result;
     }
+
     void dispose() override {
         c.log("dispose");
     }
 };
+
 struct Backend : SimulatorFeaturesBackend {
-    Context& c;
-    explicit Backend(Context& v) : c(v) {
-    }
+    Context &c;
+
+    explicit Backend(Context &v) : c(v) {}
+
     bool syntax_exists() override {
         if (c.profile >= 1000)
             return SimulatorFeaturesBackend::syntax_exists();
         c.log("exists");
         return (c.profile / 4) % 6 != 0;
     }
+
     std::shared_ptr<SimulatorSyntaxReader> open_syntax() override {
         if (c.profile >= 1000)
             return SimulatorFeaturesBackend::open_syntax();
@@ -195,72 +213,83 @@ struct Backend : SimulatorFeaturesBackend {
         c.reads = 0;
         return std::make_shared<Reader>(c);
     }
+
     framework::Uuid random_uuid() override {
         c.log("random");
         auto digits = std::to_string(++c.random);
         auto id = std::string("00000000-0000-0000-0000-") + std::string(12 - digits.size(), '0') + digits;
         return framework::Uuid(id);
     }
-    void error(const std::string& text) override {
+
+    void error(const std::string &text) override {
         c.log("error:" + hex(text));
         if (c.failure == "log")
             throw std::runtime_error("log");
     }
-    void warn(const std::string& text) override {
+
+    void warn(const std::string &text) override {
         c.log("warn:" + hex(text));
     }
 };
+
 struct GridInfo : SimulatorGridInfo {
-    Context& c;
-    explicit GridInfo(Context& x) : c(x) {
-    }
-    void set(const std::string& key, const std::optional<std::string>& value) override {
+    Context &c;
+
+    explicit GridInfo(Context &x) : c(x) {}
+
+    void set(const std::string &key, const std::optional<std::string> &value) override {
         c.log("grid:" + key + ":" + (value ? hex(*value) : "-"));
         if (c.failure == "grid")
             throw std::runtime_error("grid");
     }
+
     void aliases(std::vector<std::string> values) override {
         std::string out = "aliases:";
-        for (auto& v : values)
+        for (auto &v : values)
             out += hex(v) + ",";
         c.log(out);
         if (c.failure == "grid")
             throw std::runtime_error("grid");
     }
 };
+
 struct Scene : SimulatorFeaturesScene {
-    Context& c;
+    Context &c;
     std::string label;
     SceneCapabilityEvents ev;
     int registered = 0;
-    explicit Scene(Context& x, std::string l)
-        : c(x), label(std::move(l)), ev([&](const auto&, const auto&) { c.log("event-error"); }) {
-    }
-    SceneCapabilityEvents& events() override {
+
+    explicit Scene(Context &x, std::string l)
+        : c(x), label(std::move(l)), ev([&](const auto &, const auto &) { c.log("event-error"); }) {}
+
+    SceneCapabilityEvents &events() override {
         return ev;
     }
-    void register_module(SimulatorFeaturesModule*) override {
+
+    void register_module(SimulatorFeaturesModule *) override {
         c.log("register:" + label);
         ++registered;
     }
+
     std::shared_ptr<SimulatorGridInfo> grid_info() override {
         c.log("grid-info:" + label);
         return std::make_shared<GridInfo>(c);
     }
+
     std::shared_ptr<SimulatorGridExtras> extra_features() override {
         c.log("extras:" + label);
         auto fields = std::make_shared<SimulatorGridExtras>();
         switch (c.profile % 10) {
         case 1:
-            for (auto [key, value] : std::initializer_list<std::pair<const char*, const char*>>{
-                     {"GridName", "grid"},
-                     {"GridNick", "nick"},
-                     {"GridURL", "uri"},
-                     {"GridURLAlias", "one,,two"},
-                     {"search-server-url", "search"},
-                     {"destination-guide-url", "guide"},
-                     {"currency-base-uri", "ignored"},
-                     {"Custom", "text"}})
+            for (auto [key, value] :
+                 std::initializer_list<std::pair<const char *, const char *>>{{"GridName", "grid"},
+                                                                              {"GridNick", "nick"},
+                                                                              {"GridURL", "uri"},
+                                                                              {"GridURLAlias", "one,,two"},
+                                                                              {"search-server-url", "search"},
+                                                                              {"destination-guide-url", "guide"},
+                                                                              {"currency-base-uri", "ignored"},
+                                                                              {"Custom", "text"}})
                 (*fields)[key] = std::string(value);
             break;
         case 2:
@@ -296,42 +325,45 @@ struct Scene : SimulatorFeaturesScene {
         return fields;
     }
 };
-std::u16string cfg_raw(const std::string& text) {
+
+std::u16string cfg_raw(const std::string &text) {
     std::u16string out;
     if (text != "-")
         for (std::size_t i = 0; i < text.size(); i += 4)
             out += static_cast<char16_t>(std::stoi(text.substr(i, 4), nullptr, 16));
     return out;
 }
-std::string cfg_hex(const std::u16string& text) {
+
+std::string cfg_hex(const std::u16string &text) {
     std::string out;
     for (auto c : text)
         for (int n : {12, 8, 4, 0})
             out += "0123456789abcdef"[(c >> n) & 15];
     return out.empty() ? "-" : out;
 }
-std::string cfg_error(const std::exception& e) {
-    auto show = [](const char* type, std::uint32_t code, const std::optional<std::u16string>& p,
-                   const std::u16string& message) {
+
+std::string cfg_error(const std::exception &e) {
+    auto show = [](const char *type, std::uint32_t code, const std::optional<std::u16string> &p,
+                   const std::u16string &message) {
         return std::string("E:") + type + ":" + std::to_string(code) + ":" + (p ? cfg_hex(*p) : "~") + ":" +
                cfg_hex(message);
     };
-    if (auto p = dynamic_cast<const framework::NiniConfigError*>(&e))
+    if (auto p = dynamic_cast<const framework::NiniConfigError *>(&e))
         return show(p->source_type(), p->hresult(), p->parameter, p->message);
-    if (auto p = dynamic_cast<const framework::NiniDocumentError*>(&e))
+    if (auto p = dynamic_cast<const framework::NiniDocumentError *>(&e))
         return show(p->source_type(), p->hresult(), p->parameter, p->message);
-    if (auto p = dynamic_cast<const framework::NiniReaderError*>(&e))
+    if (auto p = dynamic_cast<const framework::NiniReaderError *>(&e))
         return show(p->source_type(), p->hresult(), {}, p->message_utf16());
-    if (dynamic_cast<const EventQueueNullReference*>(&e))
+    if (dynamic_cast<const EventQueueNullReference *>(&e))
         return show("System.NullReferenceException", 0x80004003u, {},
                     u"Object reference not set to an instance of an object.");
     return "X:" + hex(e.what());
 }
-std::string cfg_flow(const std::string& line) {
+
+std::string cfg_flow(const std::string &line) {
     Context c;
     auto backend = std::make_shared<Backend>(c);
-    auto module =
-        std::make_shared<SimulatorFeaturesModule>(backend, std::make_shared<SimulatorSyntaxState>());
+    auto module = std::make_shared<SimulatorFeaturesModule>(backend, std::make_shared<SimulatorSyntaxState>());
     std::istringstream in(line);
     int aliases;
     in >> aliases;
@@ -343,8 +375,8 @@ std::string cfg_flow(const std::string& line) {
             if (encoded == "~")
                 module->initialise(nullptr);
             else {
-                auto arena = std::make_shared<framework::NiniConfigArena>(
-                    framework::native_nini_invariant_config_backend());
+                auto arena =
+                    std::make_shared<framework::NiniConfigArena>(framework::native_nini_invariant_config_backend());
                 auto source = arena->create_ini_source(framework::nini_string_reader(cfg_raw(encoded)));
                 auto add = [](auto owner) {
                     for (auto name : {u"On", u"Yes"})
@@ -355,8 +387,7 @@ std::string cfg_flow(const std::string& line) {
                 if (aliases == 1)
                     add(source->alias());
                 if (aliases == 2) {
-                    auto argv =
-                        arena->create_source(framework::nini_writer_text(u"Nini.Config.ArgvConfigSource"));
+                    auto argv = arena->create_source(framework::nini_writer_text(u"Nini.Config.ArgvConfigSource"));
                     add(argv->alias());
                     source->merge(argv);
                 }
@@ -369,14 +400,15 @@ std::string cfg_flow(const std::string& line) {
                 module->initialise(&config);
             }
             result += "OK";
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
             result += cfg_error(e);
         }
         result += ':' + SimulatorFeaturesProbe::flags(*module);
     }
     return result + "|" + hex(c.trace);
 }
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     if (argc > 1 && std::string(argv[1]) == "--config-probe") {
         for (std::string line; std::getline(std::cin, line);)
             std::cout << cfg_flow(line) << '\n';
@@ -392,11 +424,10 @@ int main(int argc, char** argv) {
         auto syntax = std::make_shared<SimulatorSyntaxState>();
         auto module = std::make_shared<SimulatorFeaturesModule>(backend, syntax);
         auto a = std::make_shared<Scene>(c, "A"), b = std::make_shared<Scene>(c, "B");
-        auto registry =
-            std::make_shared<server::RegistryCapabilityListener>(server::CapabilityListenerInfo{});
-        auto caps = std::make_shared<Caps>(registry, "host", 0, "seed",
-                                           framework::Uuid("00000000-0000-0000-0000-000000000007"), "Region",
-                                           [registry] { return registry; });
+        auto registry = std::make_shared<server::RegistryCapabilityListener>(server::CapabilityListenerInfo{});
+        auto caps =
+            std::make_shared<Caps>(registry, "host", 0, "seed", framework::Uuid("00000000-0000-0000-0000-000000000007"),
+                                   "Region", [registry] { return registry; });
         if (c.profile & 2)
             caps->flags = Caps::TPBR;
         auto original = make_value(c);
@@ -477,11 +508,9 @@ int main(int argc, char** argv) {
                 case 'm':
                     if (saved) {
                         if (saved->scalar.kind == network::Value::Kind::Map)
-                            saved->map["nested"] =
-                                SimulatorFeatureValue::from_value(network::Value(int32_t(8)));
+                            saved->map["nested"] = SimulatorFeatureValue::from_value(network::Value(int32_t(8)));
                         else if (saved->scalar.kind == network::Value::Kind::Array)
-                            saved->array.push_back(
-                                SimulatorFeatureValue::from_value(network::Value("changed")));
+                            saved->array.push_back(SimulatorFeatureValue::from_value(network::Value("changed")));
                         else if (saved->scalar.kind == network::Value::Kind::Binary)
                             (*network::osd_binary(saved->scalar))[0] = 17;
                     }
@@ -491,29 +520,29 @@ int main(int argc, char** argv) {
                 case '3':
                 case '4': {
                     int id = op - '0';
-                    module->on_request.add(
-                        {{&target, std::to_string(id)}, [&, id](auto, FeatureData& copy) {
-                             c.log("callback" + std::to_string(id));
-                             if (id == 1) {
-                                 if (!copy)
-                                     throw EventQueueNullReference();
-                                 copy->map["Added"] = SimulatorFeatureValue::from_value(network::Value(true));
-                             }
-                             if (id == 2) {
-                                 copy = SimulatorFeatureValue::object();
-                                 copy->map["Replacement"] =
-                                     SimulatorFeatureValue::from_value(network::Value(int32_t(1)));
-                             }
-                             if (id == 3) {
-                                 if (!copy)
-                                     throw EventQueueNullReference();
-                                 copy->map["Partial"] =
-                                     SimulatorFeatureValue::from_value(network::Value(true));
-                                 throw std::runtime_error("callback");
-                             }
-                             if (id == 4)
-                                 copy = nullptr;
-                         }});
+                    module->on_request.add({{&target, std::to_string(id)}, [&, id](auto, FeatureData &copy) {
+                                                c.log("callback" + std::to_string(id));
+                                                if (id == 1) {
+                                                    if (!copy)
+                                                        throw EventQueueNullReference();
+                                                    copy->map["Added"] =
+                                                        SimulatorFeatureValue::from_value(network::Value(true));
+                                                }
+                                                if (id == 2) {
+                                                    copy = SimulatorFeatureValue::object();
+                                                    copy->map["Replacement"] =
+                                                        SimulatorFeatureValue::from_value(network::Value(int32_t(1)));
+                                                }
+                                                if (id == 3) {
+                                                    if (!copy)
+                                                        throw EventQueueNullReference();
+                                                    copy->map["Partial"] =
+                                                        SimulatorFeatureValue::from_value(network::Value(true));
+                                                    throw std::runtime_error("callback");
+                                                }
+                                                if (id == 4)
+                                                    copy = nullptr;
+                                            }});
                     break;
                 }
                 case 'H':
@@ -551,13 +580,12 @@ int main(int argc, char** argv) {
                     break;
                 }
                 case 'x':
-                    module->add_feature("Raw", SimulatorFeatureValue::raw_xml(
-                                                   "<map><key>raw</key><integer>7</integer></map>"));
+                    module->add_feature(
+                        "Raw", SimulatorFeatureValue::raw_xml("<map><key>raw</key><integer>7</integer></map>"));
                     break;
                 case 'z':
-                    module->add_feature("Utf8",
-                                        SimulatorFeatureValue::utf8(std::make_shared<std::vector<uint8_t>>(
-                                            std::initializer_list<uint8_t>{'t', 'e', 'x', 't'})));
+                    module->add_feature("Utf8", SimulatorFeatureValue::utf8(std::make_shared<std::vector<uint8_t>>(
+                                                    std::initializer_list<uint8_t>{'t', 'e', 'x', 't'})));
                     break;
                 case 'O':
                     module->close();
@@ -570,16 +598,15 @@ int main(int argc, char** argv) {
             output += result + ",";
         }
         std::vector<std::string> paths;
-        for (auto& [name, path] : caps->handlers().local_paths())
+        for (auto &[name, path] : caps->handlers().local_paths())
             paths.push_back(name + ":" + path.value_or(""));
         std::sort(paths.begin(), paths.end());
         std::string routes;
-        for (auto& path : paths)
+        for (auto &path : paths)
             routes += path + ",";
         std::cout << output << "|" << dump(SimulatorFeaturesProbe::root(*module)) << "|"
-                  << SimulatorFeaturesProbe::flags(*module) << "|" << syntax->id.str() << ":"
-                  << hex(syntax->xml) << "|" << a->registered << ":"
-                  << a->ev.on_register_caps.snapshot().size() << ":" << b->registered << ":"
+                  << SimulatorFeaturesProbe::flags(*module) << "|" << syntax->id.str() << ":" << hex(syntax->xml) << "|"
+                  << a->registered << ":" << a->ev.on_register_caps.snapshot().size() << ":" << b->registered << ":"
                   << b->ev.on_register_caps.snapshot().size() << "|" << routes << "|" << hex(c.trace) << '\n';
         caps->dispose();
     }

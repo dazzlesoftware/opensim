@@ -3,6 +3,7 @@
 #include "osd_fixture_value.hpp"
 #include <iostream>
 using namespace opensim;
+
 std::string hex(std::string_view s) {
     constexpr char d[] = "0123456789abcdef";
     std::string r;
@@ -12,7 +13,8 @@ std::string hex(std::string_view s) {
     }
     return r;
 }
-services::UserAccount account(const framework::Uuid& id) {
+
+services::UserAccount account(const framework::Uuid &id) {
     services::UserAccount a(id);
     a.first_name = "First";
     a.last_name = "Last";
@@ -23,7 +25,8 @@ services::UserAccount account(const framework::Uuid& id) {
     (*a.service_urls)["url"] = std::string("http://host/a;b*c");
     return a;
 }
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     try {
         auto config = server::IniConfig::load(framework::utf8_path(argv[1]));
         std::string line;
@@ -63,30 +66,28 @@ int main(int argc, char** argv) {
             ops.multi = [&](auto scope, auto ids) {
                 trace += "multi:" + scope.str() + ":";
                 server::AccountOperations::Accounts r;
-                for (const auto& raw : ids) {
+                for (const auto &raw : ids) {
                     trace += raw + ",";
                     framework::Uuid id;
                     framework::try_parse_sdk_uuid(raw, id);
-                    r.push_back(id == seven ? server::AccountOperations::Account(account(seven))
-                                            : std::nullopt);
+                    r.push_back(id == seven ? server::AccountOperations::Account(account(seven)) : std::nullopt);
                 }
                 trace += ';';
                 return r;
             };
-            ops.store = [&](auto& a) {
-                auto nullable = [](const auto& s) { return s.value_or("_"); };
-                trace += "store:" + nullable(a.first_name) + ":" + nullable(a.last_name) + ":" +
-                         nullable(a.email) + ":" + std::to_string(a.created) + ":" +
-                         std::to_string(a.user_level) + ":" + std::to_string(a.user_flags) + ":" +
-                         nullable(a.user_title) + ";";
+            ops.store = [&](auto &a) {
+                auto nullable = [](const auto &s) { return s.value_or("_"); };
+                trace += "store:" + nullable(a.first_name) + ":" + nullable(a.last_name) + ":" + nullable(a.email) +
+                         ":" + std::to_string(a.created) + ":" + std::to_string(a.user_level) + ":" +
+                         std::to_string(a.user_flags) + ":" + nullable(a.user_title) + ";";
                 if (a.user_level == -98)
                     throw std::runtime_error("store");
                 return a.user_level != -99;
             };
             ops.create = [&](auto scope, auto id, auto first, auto last, auto password, auto email,
                              auto model) -> server::AccountOperations::Account {
-                trace += "create:" + scope.str() + ":" + id.str() + ":" + first + ":" + last + ":" +
-                         password + ":" + email + ":" + model + ";";
+                trace += "create:" + scope.str() + ":" + id.str() + ":" + first + ":" + last + ":" + password + ":" +
+                         email + ":" + model + ";";
                 if (password == "throw")
                     throw std::runtime_error("create");
                 if (password == "fail")
@@ -99,7 +100,7 @@ int main(int argc, char** argv) {
             std::cout << hex(response.body) << '|' << hex(trace) << '\n';
         }
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what();
         return 1;
     }

@@ -1,6 +1,7 @@
 // Copyright (c) .NET Foundation and Contributors.
 // Port of .NET Runtime v8.0.31 RegexCaseEquivalences; MIT third_party/dotnet_collation/LICENSE.
 #include "opensim/framework/dotnet_regex_case.hpp"
+
 namespace opensim::framework {
 namespace {
 #include "dotnet_regex_case_data.inc"
@@ -8,8 +9,9 @@ constexpr char16_t invariant_i[] = {u'I', u'i'};
 constexpr char16_t non_turkish_i[] = {u'I', u'i', u'\u0130'};
 constexpr char16_t turkish_upper_i[] = {u'I', u'\u0131'};
 constexpr char16_t turkish_lower_i[] = {u'i', u'\u0130'};
-}
-DotnetRegexCaseBehavior dotnet_regex_case_behavior(const DotnetRegexCultureName& get_name) {
+} // namespace
+
+DotnetRegexCaseBehavior dotnet_regex_case_behavior(const DotnetRegexCultureName &get_name) {
     if (get_name().empty())
         return DotnetRegexCaseBehavior::Invariant;
     const auto name = get_name();
@@ -18,14 +20,14 @@ DotnetRegexCaseBehavior dotnet_regex_case_behavior(const DotnetRegexCultureName&
         return DotnetRegexCaseBehavior::Turkish;
     return DotnetRegexCaseBehavior::NonTurkish;
 }
-std::span<const char16_t> dotnet_regex_case_equivalences(char16_t c, const DotnetRegexCultureName& name,
-                                                         DotnetRegexCaseBehavior& behavior) {
+
+std::span<const char16_t> dotnet_regex_case_equivalences(char16_t c, const DotnetRegexCultureName &name,
+                                                         DotnetRegexCaseBehavior &behavior) {
     if (c == u'I' || c == u'i' || c == u'\u0130' || c == u'\u0131') {
         if (behavior == DotnetRegexCaseBehavior::NotSet)
             behavior = dotnet_regex_case_behavior(name);
         if (behavior == DotnetRegexCaseBehavior::Invariant)
-            return c == u'I' || c == u'i' ? std::span<const char16_t>(invariant_i)
-                                          : std::span<const char16_t>{};
+            return c == u'I' || c == u'i' ? std::span<const char16_t>(invariant_i) : std::span<const char16_t>{};
         if (behavior == DotnetRegexCaseBehavior::NonTurkish)
             return c == u'\u0131' ? std::span<const char16_t>{} : std::span<const char16_t>(non_turkish_i);
         if (behavior == DotnetRegexCaseBehavior::Turkish)
@@ -41,4 +43,4 @@ std::span<const char16_t> dotnet_regex_case_equivalences(char16_t c, const Dotne
         return {};
     return {EquivalenceCasingValues + (entry & 0x1fff), static_cast<std::size_t>((entry >> 13) & 7)};
 }
-}
+} // namespace opensim::framework

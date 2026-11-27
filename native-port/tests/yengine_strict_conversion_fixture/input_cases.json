@@ -1,0 +1,602 @@
+[
+  {
+    "name": "integer_0",
+    "method": "xmrString2Integer",
+    "input": "",
+    "source": "integer result;integer after;default{state_entry(){result=xmrString2Integer(\"\");after=1;}}"
+  },
+  {
+    "name": "integer_1",
+    "method": "xmrString2Integer",
+    "input": "0",
+    "source": "integer result;integer after;default{state_entry(){result=xmrString2Integer(\"0\");after=1;}}"
+  },
+  {
+    "name": "integer_2",
+    "method": "xmrString2Integer",
+    "input": "-0",
+    "source": "integer result;integer after;default{state_entry(){result=xmrString2Integer(\"-0\");after=1;}}"
+  },
+  {
+    "name": "integer_3",
+    "method": "xmrString2Integer",
+    "input": "+7",
+    "source": "integer result;integer after;default{state_entry(){result=xmrString2Integer(\"+7\");after=1;}}"
+  },
+  {
+    "name": "integer_4",
+    "method": "xmrString2Integer",
+    "input": " 42 ",
+    "source": "integer result;integer after;default{state_entry(){result=xmrString2Integer(\" 42 \");after=1;}}"
+  },
+  {
+    "name": "integer_5",
+    "method": "xmrString2Integer",
+    "input": "\u00a042\u202f",
+    "source": "integer result;integer after;default{state_entry(){result=xmrString2Integer(\"\u00a042\u202f\");after=1;}}"
+  },
+  {
+    "name": "integer_6",
+    "method": "xmrString2Integer",
+    "input": "\u200b42\u200b",
+    "source": "integer result;integer after;default{state_entry(){result=xmrString2Integer(\"\u200b42\u200b\");after=1;}}"
+  },
+  {
+    "name": "integer_7",
+    "method": "xmrString2Integer",
+    "input": "\ufeff42",
+    "source": "integer result;integer after;default{state_entry(){result=xmrString2Integer(\"\ufeff42\");after=1;}}"
+  },
+  {
+    "name": "integer_8",
+    "method": "xmrString2Integer",
+    "input": "0xFFFFFFFF",
+    "source": "integer result;integer after;default{state_entry(){result=xmrString2Integer(\"0xFFFFFFFF\");after=1;}}"
+  },
+  {
+    "name": "integer_9",
+    "method": "xmrString2Integer",
+    "input": "0x80000000",
+    "source": "integer result;integer after;default{state_entry(){result=xmrString2Integer(\"0x80000000\");after=1;}}"
+  },
+  {
+    "name": "integer_10",
+    "method": "xmrString2Integer",
+    "input": "0X7fffffff",
+    "source": "integer result;integer after;default{state_entry(){result=xmrString2Integer(\"0X7fffffff\");after=1;}}"
+  },
+  {
+    "name": "integer_11",
+    "method": "xmrString2Integer",
+    "input": "-0x1",
+    "source": "integer result;integer after;default{state_entry(){result=xmrString2Integer(\"-0x1\");after=1;}}"
+  },
+  {
+    "name": "integer_12",
+    "method": "xmrString2Integer",
+    "input": "+0x1",
+    "source": "integer result;integer after;default{state_entry(){result=xmrString2Integer(\"+0x1\");after=1;}}"
+  },
+  {
+    "name": "integer_13",
+    "method": "xmrString2Integer",
+    "input": "0x-1",
+    "source": "integer result;integer after;default{state_entry(){result=xmrString2Integer(\"0x-1\");after=1;}}"
+  },
+  {
+    "name": "integer_14",
+    "method": "xmrString2Integer",
+    "input": "0x+1",
+    "source": "integer result;integer after;default{state_entry(){result=xmrString2Integer(\"0x+1\");after=1;}}"
+  },
+  {
+    "name": "integer_15",
+    "method": "xmrString2Integer",
+    "input": "0x 1",
+    "source": "integer result;integer after;default{state_entry(){result=xmrString2Integer(\"0x 1\");after=1;}}"
+  },
+  {
+    "name": "integer_16",
+    "method": "xmrString2Integer",
+    "input": "0x1 ",
+    "source": "integer result;integer after;default{state_entry(){result=xmrString2Integer(\"0x1 \");after=1;}}"
+  },
+  {
+    "name": "integer_17",
+    "method": "xmrString2Integer",
+    "input": "0x",
+    "source": "integer result;integer after;default{state_entry(){result=xmrString2Integer(\"0x\");after=1;}}"
+  },
+  {
+    "name": "integer_18",
+    "method": "xmrString2Integer",
+    "input": "2147483647",
+    "source": "integer result;integer after;default{state_entry(){result=xmrString2Integer(\"2147483647\");after=1;}}"
+  },
+  {
+    "name": "integer_19",
+    "method": "xmrString2Integer",
+    "input": "2147483648",
+    "source": "integer result;integer after;default{state_entry(){result=xmrString2Integer(\"2147483648\");after=1;}}"
+  },
+  {
+    "name": "integer_20",
+    "method": "xmrString2Integer",
+    "input": "-2147483648",
+    "source": "integer result;integer after;default{state_entry(){result=xmrString2Integer(\"-2147483648\");after=1;}}"
+  },
+  {
+    "name": "integer_21",
+    "method": "xmrString2Integer",
+    "input": "-2147483649",
+    "source": "integer result;integer after;default{state_entry(){result=xmrString2Integer(\"-2147483649\");after=1;}}"
+  },
+  {
+    "name": "integer_22",
+    "method": "xmrString2Integer",
+    "input": "1,234",
+    "source": "integer result;integer after;default{state_entry(){result=xmrString2Integer(\"1,234\");after=1;}}"
+  },
+  {
+    "name": "integer_23",
+    "method": "xmrString2Integer",
+    "input": "1_2",
+    "source": "integer result;integer after;default{state_entry(){result=xmrString2Integer(\"1_2\");after=1;}}"
+  },
+  {
+    "name": "integer_24",
+    "method": "xmrString2Integer",
+    "input": "1.0",
+    "source": "integer result;integer after;default{state_entry(){result=xmrString2Integer(\"1.0\");after=1;}}"
+  },
+  {
+    "name": "integer_25",
+    "method": "xmrString2Integer",
+    "input": "1e2",
+    "source": "integer result;integer after;default{state_entry(){result=xmrString2Integer(\"1e2\");after=1;}}"
+  },
+  {
+    "name": "integer_26",
+    "method": "xmrString2Integer",
+    "input": "12junk",
+    "source": "integer result;integer after;default{state_entry(){result=xmrString2Integer(\"12junk\");after=1;}}"
+  },
+  {
+    "name": "integer_27",
+    "method": "xmrString2Integer",
+    "input": "\u0661\u0662",
+    "source": "integer result;integer after;default{state_entry(){result=xmrString2Integer(\"\u0661\u0662\");after=1;}}"
+  },
+  {
+    "name": "integer_28",
+    "method": "xmrString2Integer",
+    "input": "\uff11\uff12",
+    "source": "integer result;integer after;default{state_entry(){result=xmrString2Integer(\"\uff11\uff12\");after=1;}}"
+  },
+  {
+    "name": "integer_29",
+    "method": "xmrString2Integer",
+    "input": "42\u0000",
+    "source": "integer result;integer after;default{state_entry(){result=xmrString2Integer(\"42\u0000\");after=1;}}"
+  },
+  {
+    "name": "integer_30",
+    "method": "xmrString2Integer",
+    "input": "42\u0000\u0000",
+    "source": "integer result;integer after;default{state_entry(){result=xmrString2Integer(\"42\u0000\u0000\");after=1;}}"
+  },
+  {
+    "name": "integer_31",
+    "method": "xmrString2Integer",
+    "input": "\u200342\u2003",
+    "source": "integer result;integer after;default{state_entry(){result=xmrString2Integer(\"\u200342\u2003\");after=1;}}"
+  },
+  {
+    "name": "float_0",
+    "method": "xmrString2Float",
+    "input": "",
+    "source": "float result;integer after;default{state_entry(){result=xmrString2Float(\"\");after=1;}}"
+  },
+  {
+    "name": "float_1",
+    "method": "xmrString2Float",
+    "input": "0",
+    "source": "float result;integer after;default{state_entry(){result=xmrString2Float(\"0\");after=1;}}"
+  },
+  {
+    "name": "float_2",
+    "method": "xmrString2Float",
+    "input": "-0",
+    "source": "float result;integer after;default{state_entry(){result=xmrString2Float(\"-0\");after=1;}}"
+  },
+  {
+    "name": "float_3",
+    "method": "xmrString2Float",
+    "input": "+0",
+    "source": "float result;integer after;default{state_entry(){result=xmrString2Float(\"+0\");after=1;}}"
+  },
+  {
+    "name": "float_4",
+    "method": "xmrString2Float",
+    "input": "1.25",
+    "source": "float result;integer after;default{state_entry(){result=xmrString2Float(\"1.25\");after=1;}}"
+  },
+  {
+    "name": "float_5",
+    "method": "xmrString2Float",
+    "input": "\u00a01.25\u202f",
+    "source": "float result;integer after;default{state_entry(){result=xmrString2Float(\"\u00a01.25\u202f\");after=1;}}"
+  },
+  {
+    "name": "float_6",
+    "method": "xmrString2Float",
+    "input": "\u20031.5\u2003",
+    "source": "float result;integer after;default{state_entry(){result=xmrString2Float(\"\u20031.5\u2003\");after=1;}}"
+  },
+  {
+    "name": "float_7",
+    "method": "xmrString2Float",
+    "input": "\u200b1\u200b",
+    "source": "float result;integer after;default{state_entry(){result=xmrString2Float(\"\u200b1\u200b\");after=1;}}"
+  },
+  {
+    "name": "float_8",
+    "method": "xmrString2Float",
+    "input": "0x10",
+    "source": "float result;integer after;default{state_entry(){result=xmrString2Float(\"0x10\");after=1;}}"
+  },
+  {
+    "name": "float_9",
+    "method": "xmrString2Float",
+    "input": "1,234.5",
+    "source": "float result;integer after;default{state_entry(){result=xmrString2Float(\"1,234.5\");after=1;}}"
+  },
+  {
+    "name": "float_10",
+    "method": "xmrString2Float",
+    "input": "1,2,3",
+    "source": "float result;integer after;default{state_entry(){result=xmrString2Float(\"1,2,3\");after=1;}}"
+  },
+  {
+    "name": "float_11",
+    "method": "xmrString2Float",
+    "input": "1,,2",
+    "source": "float result;integer after;default{state_entry(){result=xmrString2Float(\"1,,2\");after=1;}}"
+  },
+  {
+    "name": "float_12",
+    "method": "xmrString2Float",
+    "input": "1,",
+    "source": "float result;integer after;default{state_entry(){result=xmrString2Float(\"1,\");after=1;}}"
+  },
+  {
+    "name": "float_13",
+    "method": "xmrString2Float",
+    "input": "1,234e2",
+    "source": "float result;integer after;default{state_entry(){result=xmrString2Float(\"1,234e2\");after=1;}}"
+  },
+  {
+    "name": "float_14",
+    "method": "xmrString2Float",
+    "input": "1.25junk",
+    "source": "float result;integer after;default{state_entry(){result=xmrString2Float(\"1.25junk\");after=1;}}"
+  },
+  {
+    "name": "float_15",
+    "method": "xmrString2Float",
+    "input": "1e309",
+    "source": "float result;integer after;default{state_entry(){result=xmrString2Float(\"1e309\");after=1;}}"
+  },
+  {
+    "name": "float_16",
+    "method": "xmrString2Float",
+    "input": "-1e309",
+    "source": "float result;integer after;default{state_entry(){result=xmrString2Float(\"-1e309\");after=1;}}"
+  },
+  {
+    "name": "float_17",
+    "method": "xmrString2Float",
+    "input": "1e-400",
+    "source": "float result;integer after;default{state_entry(){result=xmrString2Float(\"1e-400\");after=1;}}"
+  },
+  {
+    "name": "float_18",
+    "method": "xmrString2Float",
+    "input": "-1e-400",
+    "source": "float result;integer after;default{state_entry(){result=xmrString2Float(\"-1e-400\");after=1;}}"
+  },
+  {
+    "name": "float_19",
+    "method": "xmrString2Float",
+    "input": "NaN",
+    "source": "float result;integer after;default{state_entry(){result=xmrString2Float(\"NaN\");after=1;}}"
+  },
+  {
+    "name": "float_20",
+    "method": "xmrString2Float",
+    "input": "nan",
+    "source": "float result;integer after;default{state_entry(){result=xmrString2Float(\"nan\");after=1;}}"
+  },
+  {
+    "name": "float_21",
+    "method": "xmrString2Float",
+    "input": "NAN",
+    "source": "float result;integer after;default{state_entry(){result=xmrString2Float(\"NAN\");after=1;}}"
+  },
+  {
+    "name": "float_22",
+    "method": "xmrString2Float",
+    "input": "+NaN",
+    "source": "float result;integer after;default{state_entry(){result=xmrString2Float(\"+NaN\");after=1;}}"
+  },
+  {
+    "name": "float_23",
+    "method": "xmrString2Float",
+    "input": "-NaN",
+    "source": "float result;integer after;default{state_entry(){result=xmrString2Float(\"-NaN\");after=1;}}"
+  },
+  {
+    "name": "float_24",
+    "method": "xmrString2Float",
+    "input": "Infinity",
+    "source": "float result;integer after;default{state_entry(){result=xmrString2Float(\"Infinity\");after=1;}}"
+  },
+  {
+    "name": "float_25",
+    "method": "xmrString2Float",
+    "input": "infinity",
+    "source": "float result;integer after;default{state_entry(){result=xmrString2Float(\"infinity\");after=1;}}"
+  },
+  {
+    "name": "float_26",
+    "method": "xmrString2Float",
+    "input": "+Infinity",
+    "source": "float result;integer after;default{state_entry(){result=xmrString2Float(\"+Infinity\");after=1;}}"
+  },
+  {
+    "name": "float_27",
+    "method": "xmrString2Float",
+    "input": "-Infinity",
+    "source": "float result;integer after;default{state_entry(){result=xmrString2Float(\"-Infinity\");after=1;}}"
+  },
+  {
+    "name": "float_28",
+    "method": "xmrString2Float",
+    "input": "\u221e",
+    "source": "float result;integer after;default{state_entry(){result=xmrString2Float(\"\u221e\");after=1;}}"
+  },
+  {
+    "name": "float_29",
+    "method": "xmrString2Float",
+    "input": "1e+2",
+    "source": "float result;integer after;default{state_entry(){result=xmrString2Float(\"1e+2\");after=1;}}"
+  },
+  {
+    "name": "float_30",
+    "method": "xmrString2Float",
+    "input": "1E-2",
+    "source": "float result;integer after;default{state_entry(){result=xmrString2Float(\"1E-2\");after=1;}}"
+  },
+  {
+    "name": "float_31",
+    "method": "xmrString2Float",
+    "input": " 1 \t ",
+    "source": "float result;integer after;default{state_entry(){result=xmrString2Float(\" 1 \\t \");after=1;}}"
+  },
+  {
+    "name": "float_32",
+    "method": "xmrString2Float",
+    "input": "1\u00a0",
+    "source": "float result;integer after;default{state_entry(){result=xmrString2Float(\"1\u00a0\");after=1;}}"
+  },
+  {
+    "name": "float_33",
+    "method": "xmrString2Float",
+    "input": "\u0661\u0662",
+    "source": "float result;integer after;default{state_entry(){result=xmrString2Float(\"\u0661\u0662\");after=1;}}"
+  },
+  {
+    "name": "float_34",
+    "method": "xmrString2Float",
+    "input": "1\u0000",
+    "source": "float result;integer after;default{state_entry(){result=xmrString2Float(\"1\u0000\");after=1;}}"
+  },
+  {
+    "name": "float_35",
+    "method": "xmrString2Float",
+    "input": "1\u0000junk",
+    "source": "float result;integer after;default{state_entry(){result=xmrString2Float(\"1\u0000junk\");after=1;}}"
+  },
+  {
+    "name": "float_36",
+    "method": "xmrString2Float",
+    "input": "1.2.3",
+    "source": "float result;integer after;default{state_entry(){result=xmrString2Float(\"1.2.3\");after=1;}}"
+  },
+  {
+    "name": "vector_0",
+    "method": "xmrString2Vector",
+    "input": "<1,2,3>",
+    "source": "vector result;integer after;default{state_entry(){result=xmrString2Vector(\"<1,2,3>\");after=1;}}"
+  },
+  {
+    "name": "vector_1",
+    "method": "xmrString2Vector",
+    "input": " <1,2,3> ",
+    "source": "vector result;integer after;default{state_entry(){result=xmrString2Vector(\" <1,2,3> \");after=1;}}"
+  },
+  {
+    "name": "vector_2",
+    "method": "xmrString2Vector",
+    "input": "\u00a0<1,2,3>\u202f",
+    "source": "vector result;integer after;default{state_entry(){result=xmrString2Vector(\"\u00a0<1,2,3>\u202f\");after=1;}}"
+  },
+  {
+    "name": "vector_3",
+    "method": "xmrString2Vector",
+    "input": "<NaN,Infinity,-0>",
+    "source": "vector result;integer after;default{state_entry(){result=xmrString2Vector(\"<NaN,Infinity,-0>\");after=1;}}"
+  },
+  {
+    "name": "vector_4",
+    "method": "xmrString2Vector",
+    "input": "<1e309,1e-400,-1e-400>",
+    "source": "vector result;integer after;default{state_entry(){result=xmrString2Vector(\"<1e309,1e-400,-1e-400>\");after=1;}}"
+  },
+  {
+    "name": "vector_5",
+    "method": "xmrString2Vector",
+    "input": "<1,2>",
+    "source": "vector result;integer after;default{state_entry(){result=xmrString2Vector(\"<1,2>\");after=1;}}"
+  },
+  {
+    "name": "vector_6",
+    "method": "xmrString2Vector",
+    "input": "<1,2,3,4>",
+    "source": "vector result;integer after;default{state_entry(){result=xmrString2Vector(\"<1,2,3,4>\");after=1;}}"
+  },
+  {
+    "name": "vector_7",
+    "method": "xmrString2Vector",
+    "input": "<1,,3>",
+    "source": "vector result;integer after;default{state_entry(){result=xmrString2Vector(\"<1,,3>\");after=1;}}"
+  },
+  {
+    "name": "vector_8",
+    "method": "xmrString2Vector",
+    "input": "<1,2,3,>",
+    "source": "vector result;integer after;default{state_entry(){result=xmrString2Vector(\"<1,2,3,>\");after=1;}}"
+  },
+  {
+    "name": "vector_9",
+    "method": "xmrString2Vector",
+    "input": "1,2,3",
+    "source": "vector result;integer after;default{state_entry(){result=xmrString2Vector(\"1,2,3\");after=1;}}"
+  },
+  {
+    "name": "vector_10",
+    "method": "xmrString2Vector",
+    "input": "<1;2;3>",
+    "source": "vector result;integer after;default{state_entry(){result=xmrString2Vector(\"<1;2;3>\");after=1;}}"
+  },
+  {
+    "name": "vector_11",
+    "method": "xmrString2Vector",
+    "input": "<1,2,3>junk",
+    "source": "vector result;integer after;default{state_entry(){result=xmrString2Vector(\"<1,2,3>junk\");after=1;}}"
+  },
+  {
+    "name": "vector_12",
+    "method": "xmrString2Vector",
+    "input": "<<1,2,3>>",
+    "source": "vector result;integer after;default{state_entry(){result=xmrString2Vector(\"<<1,2,3>>\");after=1;}}"
+  },
+  {
+    "name": "vector_13",
+    "method": "xmrString2Vector",
+    "input": "<1,2,3\u00a0>",
+    "source": "vector result;integer after;default{state_entry(){result=xmrString2Vector(\"<1,2,3\u00a0>\");after=1;}}"
+  },
+  {
+    "name": "vector_14",
+    "method": "xmrString2Vector",
+    "input": "< 1 , 2 , 3 >",
+    "source": "vector result;integer after;default{state_entry(){result=xmrString2Vector(\"< 1 , 2 , 3 >\");after=1;}}"
+  },
+  {
+    "name": "vector_15",
+    "method": "xmrString2Vector",
+    "input": "<1,234,5,6>",
+    "source": "vector result;integer after;default{state_entry(){result=xmrString2Vector(\"<1,234,5,6>\");after=1;}}"
+  },
+  {
+    "name": "rotation_0",
+    "method": "xmrString2Rotation",
+    "input": "<1,2,3,4>",
+    "source": "rotation result;integer after;default{state_entry(){result=xmrString2Rotation(\"<1,2,3,4>\");after=1;}}"
+  },
+  {
+    "name": "rotation_1",
+    "method": "xmrString2Rotation",
+    "input": " <1,2,3,4> ",
+    "source": "rotation result;integer after;default{state_entry(){result=xmrString2Rotation(\" <1,2,3,4> \");after=1;}}"
+  },
+  {
+    "name": "rotation_2",
+    "method": "xmrString2Rotation",
+    "input": "\u00a0<1,2,3,4>\u202f",
+    "source": "rotation result;integer after;default{state_entry(){result=xmrString2Rotation(\"\u00a0<1,2,3,4>\u202f\");after=1;}}"
+  },
+  {
+    "name": "rotation_3",
+    "method": "xmrString2Rotation",
+    "input": "<NaN,Infinity,-0,1>",
+    "source": "rotation result;integer after;default{state_entry(){result=xmrString2Rotation(\"<NaN,Infinity,-0,1>\");after=1;}}"
+  },
+  {
+    "name": "rotation_4",
+    "method": "xmrString2Rotation",
+    "input": "<1e309,1e-400,-1e-400,-Infinity>",
+    "source": "rotation result;integer after;default{state_entry(){result=xmrString2Rotation(\"<1e309,1e-400,-1e-400,-Infinity>\");after=1;}}"
+  },
+  {
+    "name": "rotation_5",
+    "method": "xmrString2Rotation",
+    "input": "<1,2,3>",
+    "source": "rotation result;integer after;default{state_entry(){result=xmrString2Rotation(\"<1,2,3>\");after=1;}}"
+  },
+  {
+    "name": "rotation_6",
+    "method": "xmrString2Rotation",
+    "input": "<1,2,3,4,5>",
+    "source": "rotation result;integer after;default{state_entry(){result=xmrString2Rotation(\"<1,2,3,4,5>\");after=1;}}"
+  },
+  {
+    "name": "rotation_7",
+    "method": "xmrString2Rotation",
+    "input": "<1,,3,4>",
+    "source": "rotation result;integer after;default{state_entry(){result=xmrString2Rotation(\"<1,,3,4>\");after=1;}}"
+  },
+  {
+    "name": "rotation_8",
+    "method": "xmrString2Rotation",
+    "input": "<1,2,3,4,>",
+    "source": "rotation result;integer after;default{state_entry(){result=xmrString2Rotation(\"<1,2,3,4,>\");after=1;}}"
+  },
+  {
+    "name": "rotation_9",
+    "method": "xmrString2Rotation",
+    "input": "1,2,3,4",
+    "source": "rotation result;integer after;default{state_entry(){result=xmrString2Rotation(\"1,2,3,4\");after=1;}}"
+  },
+  {
+    "name": "rotation_10",
+    "method": "xmrString2Rotation",
+    "input": "<1;2;3;4>",
+    "source": "rotation result;integer after;default{state_entry(){result=xmrString2Rotation(\"<1;2;3;4>\");after=1;}}"
+  },
+  {
+    "name": "rotation_11",
+    "method": "xmrString2Rotation",
+    "input": "<1,2,3,4>junk",
+    "source": "rotation result;integer after;default{state_entry(){result=xmrString2Rotation(\"<1,2,3,4>junk\");after=1;}}"
+  },
+  {
+    "name": "rotation_12",
+    "method": "xmrString2Rotation",
+    "input": "<<1,2,3,4>>",
+    "source": "rotation result;integer after;default{state_entry(){result=xmrString2Rotation(\"<<1,2,3,4>>\");after=1;}}"
+  },
+  {
+    "name": "rotation_13",
+    "method": "xmrString2Rotation",
+    "input": "<1,2,3,4\u00a0>",
+    "source": "rotation result;integer after;default{state_entry(){result=xmrString2Rotation(\"<1,2,3,4\u00a0>\");after=1;}}"
+  },
+  {
+    "name": "rotation_14",
+    "method": "xmrString2Rotation",
+    "input": "< 1 , 2 , 3 , 4 >",
+    "source": "rotation result;integer after;default{state_entry(){result=xmrString2Rotation(\"< 1 , 2 , 3 , 4 >\");after=1;}}"
+  }
+]

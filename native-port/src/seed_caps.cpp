@@ -3,12 +3,12 @@
 #include "opensim/server/seed_caps.hpp"
 #include <stdexcept>
 #include <unordered_set>
+
 namespace opensim::server {
 void SeedCapsHandler::process_request(const network::HttpRequest &request, network::HttpResponse &response) {
     auto region = backend_.region_name();
     auto agent = backend_.caps().agent_id();
-    backend_.debug("[CAPS]: Received SEED caps request in " + region.value_or("") + " for agent " +
-                   agent.str());
+    backend_.debug("[CAPS]: Received SEED caps request in " + region.value_or("") + " for agent " + agent.str());
     if (request.method != "POST" || request.content_type != "application/llsd+xml") {
         response.status = 404;
         return;
@@ -79,4 +79,4 @@ void SeedCapsHandler::process_request(const network::HttpRequest &request, netwo
     response.status = 200;
     backend_.caps().flags |= services::Caps::SentSeeds;
 }
-}
+} // namespace opensim::server

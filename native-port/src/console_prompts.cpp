@@ -3,6 +3,7 @@
 #include "opensim/framework/console_prompts.hpp"
 #include "opensim/framework/text.hpp"
 #include <iostream>
+
 namespace opensim::framework {
 namespace {
 const std::u16string &require(const ConsolePrompts::Text &value) {
@@ -10,6 +11,7 @@ const std::u16string &require(const ConsolePrompts::Text &value) {
         throw ConsolePromptNullError();
     return *value;
 }
+
 std::u16string label(const ConsolePrompts::Text &text, const ConsolePrompts::Text &fallback, bool brackets) {
     auto result = text.value_or(u"");
     if (brackets) {
@@ -21,13 +23,15 @@ std::u16string label(const ConsolePrompts::Text &text, const ConsolePrompts::Tex
     result += u": ";
     return result;
 }
+
 std::u16string rejection(char16_t character) {
     std::u16string result = u"The character \"";
     result += character;
     result += u"\" is not permitted.";
     return result;
 }
-}
+} // namespace
+
 ConsolePrompts::ConsolePrompts(Input input, Diagnostic diagnostic)
     : input_(std::move(input)), diagnostic_(std::move(diagnostic)) {
     if (!input_)
@@ -35,15 +39,18 @@ ConsolePrompts::ConsolePrompts(Input input, Diagnostic diagnostic)
     if (!diagnostic_)
         diagnostic_ = [](const auto &value) { std::cout << utf8(value) << '\n' << std::flush; };
 }
+
 ConsolePrompts::Text ConsolePrompts::prompt(Text text) const {
     return input_(label(text, {}, false), false, true);
 }
+
 ConsolePrompts::Text ConsolePrompts::prompt_default(Text text, Text fallback) const {
     auto value = input_(label(text, fallback, true), false, true);
     if (require(value).empty())
         value = fallback;
     return value;
 }
+
 ConsolePrompts::Text ConsolePrompts::prompt_excluding(Text text, Excluded excluded) const {
     while (true) {
         auto value = prompt(text);
@@ -60,6 +67,7 @@ ConsolePrompts::Text ConsolePrompts::prompt_excluding(Text text, Excluded exclud
             return value;
     }
 }
+
 ConsolePrompts::Text ConsolePrompts::prompt_default_excluding(Text text, Text fallback, Excluded excluded,
                                                               bool echo) const {
     while (true) {
@@ -78,6 +86,7 @@ ConsolePrompts::Text ConsolePrompts::prompt_default_excluding(Text text, Text fa
             return value;
     }
 }
+
 ConsolePrompts::Text ConsolePrompts::prompt_options(Text text, Text fallback, Options options) const {
     if (!options)
         throw ConsolePromptNullError();
@@ -96,4 +105,4 @@ ConsolePrompts::Text ConsolePrompts::prompt_options(Text text, Text fallback, Op
     }
     return value;
 }
-}
+} // namespace opensim::framework

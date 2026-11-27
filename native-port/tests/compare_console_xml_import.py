@@ -2,8 +2,14 @@
 # BSD license: native-port/LICENSE.txt.
 """Original Commands.FromXml, nullable metadata, partial trees and re-export."""
 
+import argparse
+import hashlib
+import json
+import random
+import subprocess
+import xml.etree.ElementTree as ET
 from pathlib import Path
-import argparse, subprocess, json, hashlib, random, itertools, xml.etree.ElementTree as ET
+
 from compare_inventory_asset_caps import extract
 
 p = argparse.ArgumentParser()
@@ -16,20 +22,181 @@ work = a.work.resolve()
 work.mkdir(parents=True, exist_ok=True)
 path = root / 'OpenSim/Framework/Console/CommandConsole.cs'
 source = path.read_bytes().decode('utf-8-sig')
-code = r"""using System;using System.Collections.Generic;using System.Text.RegularExpressions;using System.Xml;using System.Linq;
-public interface ICommands {} public delegate void CommandDelegate(string module,string[] words);
+code = r"""using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading;
+using System.Xml;
+
+public interface ICommands {}
+public delegate void CommandDelegate(string module, string[] words);
+
 PARSER
 COMMANDS
-class Program {
-static string Decode(string value)=>new string(Enumerable.Range(0,value.Length/4).Select(i=>(char)Convert.ToUInt16(value.Substring(i*4,4),16)).ToArray());
-static string Encode(string value)=>value==null?"-":string.Concat(value.Select(c=>((int)c).ToString("x4")));
-static string List(IEnumerable<string> values)=>string.Concat(values.Select(value=>"|"+Encode(value)));
-static void Tree(XmlNode node,System.Text.StringBuilder output){output.Append("|"+(int)node.NodeType+":"+Encode(node.Name)+":"+Encode(node.Value)+":"+(node is XmlElement element?(element.IsEmpty?"1":"0"):"-")+":"+(node.Attributes?.Count??0)+":"+node.ChildNodes.Count);if(node.Attributes!=null)foreach(XmlNode attribute in node.Attributes)Tree(attribute,output);foreach(XmlNode child in node.ChildNodes)Tree(child,output);}
-static void Rewrite(XmlNode node){if(node==null)return;if(node.Value=="~NULL~")node.Value=null;else if(node.Value!=null&&node.Value.Contains("~NUL~"))node.Value=node.Value.Replace("~NUL~","\0");foreach(XmlNode child in node.ChildNodes)Rewrite(child);}
-static void Main(){System.Threading.Thread.CurrentThread.CurrentCulture=System.Globalization.CultureInfo.InvariantCulture;string row;while((row=Console.ReadLine())!=null){int tab=row.IndexOf('\t'),flags=int.Parse(row.Substring(0,tab));var input=row.Substring(tab+1);var commands=new Commands();var events=new List<string>();CommandDelegate old=(module,words)=>events.Add("old:"+Encode(module)+List(words)),imported=(module,words)=>events.Add("new:"+Encode(module)+List(words));foreach(var name in new[]{"help","quit","old","old nested","help oldchild","quit oldchild"}){if(name=="help"&&(flags&1)!=0)continue;if(name=="quit"&&(flags&2)!=0)continue;commands.AddCommand("Original",false,name,name+" usage","Original long","",old);}for(int attempt=0;attempt<2;attempt++){string status;var document=new XmlDocument();XmlElement root=null;try{if(input!="-"){document.LoadXml(Decode(input));root=document.DocumentElement;Rewrite(root);}status="LOADOK";}catch(Exception){status="LOADEX";}if(status=="LOADOK")try{commands.FromXml(root,(flags&16)!=0?null:imported);status="OK";}catch(Exception){status="FROMEX";}var output=new System.Text.StringBuilder(status);
-foreach(var query in new[]{"help","quit","old","run","run value","run nested","a","missing",""}){events.Clear();var words=Parser.Parse(query);try{bool has=commands.HasCommand(query);var result=commands.Resolve(words);output.Append(";Q:"+(has?"1":"0")+":"+(Object.ReferenceEquals(result,words)?"1":"0")+List(words)+":"+List(events));}catch(Exception){output.Append(";QEX"+List(words)+":"+List(events));}}
-foreach(var query in new[]{new[]{"help","all"},new[]{"help","Original"},new[]{"help","New"},new[]{"help","run"},new[]{"help","run","nested"}})try{output.Append(";H"+List(commands.GetHelp(query)));}catch(Exception){output.Append(";HEX");}
-try{output.Append(";N"+List(commands.FindNextOption(Array.Empty<string>(),false)));}catch(Exception){output.Append(";NEX");}try{var exported=commands.GetXml(new XmlDocument());output.Append(";X");Tree(exported,output);}catch(Exception){output.Append(";XEX");}Console.Write(output.ToString()+(attempt==0?"~":"\n"));}}}
+
+class Program
+{
+    static string Decode(string value)
+    {
+        return new string(Enumerable.Range(0, value.Length / 4)
+            .Select(i => (char)Convert.ToUInt16(value.Substring(i * 4, 4), 16))
+            .ToArray());
+    }
+
+    static string Encode(string value)
+    {
+        return value == null ? "-" : string.Concat(value.Select(c => ((int)c).ToString("x4")));
+    }
+
+    static string List(IEnumerable<string> values)
+    {
+        return string.Concat(values.Select(value => "|" + Encode(value)));
+    }
+
+    static void Tree(XmlNode node, StringBuilder output)
+    {
+        string empty = "-";
+        if (node is XmlElement element)
+            empty = element.IsEmpty ? "1" : "0";
+
+        output.Append("|" + (int)node.NodeType + ":" + Encode(node.Name) + ":" + Encode(node.Value)
+            + ":" + empty + ":" + (node.Attributes?.Count ?? 0) + ":" + node.ChildNodes.Count);
+        if (node.Attributes != null)
+            foreach (XmlNode attribute in node.Attributes)
+                Tree(attribute, output);
+        foreach (XmlNode child in node.ChildNodes)
+            Tree(child, output);
+    }
+
+    static void Rewrite(XmlNode node)
+    {
+        if (node == null)
+            return;
+        if (node.Value == "~NULL~")
+            node.Value = null;
+        else if (node.Value != null && node.Value.Contains("~NUL~"))
+            node.Value = node.Value.Replace("~NUL~", "\0");
+        foreach (XmlNode child in node.ChildNodes)
+            Rewrite(child);
+    }
+
+    static void Main()
+    {
+        Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+        string row;
+        while ((row = Console.ReadLine()) != null)
+        {
+            int tab = row.IndexOf('\t');
+            int flags = int.Parse(row.Substring(0, tab));
+            string input = row.Substring(tab + 1);
+            var commands = new Commands();
+            var events = new List<string>();
+            CommandDelegate original = (module, words) => events.Add("old:" + Encode(module) + List(words));
+            CommandDelegate imported = (module, words) => events.Add("new:" + Encode(module) + List(words));
+            foreach (var name in new[] { "help", "quit", "old", "old nested", "help oldchild", "quit oldchild" })
+            {
+                if (name == "help" && (flags & 1) != 0)
+                    continue;
+                if (name == "quit" && (flags & 2) != 0)
+                    continue;
+                commands.AddCommand("Original", false, name, name + " usage", "Original long", "", original);
+            }
+
+            for (int attempt = 0; attempt < 2; attempt++)
+            {
+                string status;
+                var document = new XmlDocument();
+                XmlElement root = null;
+                try
+                {
+                    if (input != "-")
+                    {
+                        document.LoadXml(Decode(input));
+                        root = document.DocumentElement;
+                        Rewrite(root);
+                    }
+                    status = "LOADOK";
+                }
+                catch (Exception)
+                {
+                    status = "LOADEX";
+                }
+
+                if (status == "LOADOK")
+                {
+                    try
+                    {
+                        commands.FromXml(root, (flags & 16) != 0 ? null : imported);
+                        status = "OK";
+                    }
+                    catch (Exception)
+                    {
+                        status = "FROMEX";
+                    }
+                }
+
+                var output = new StringBuilder(status);
+                foreach (var query in new[] { "help", "quit", "old", "run", "run value", "run nested", "a", "missing", "" })
+                {
+                    events.Clear();
+                    var words = Parser.Parse(query);
+                    try
+                    {
+                        bool has = commands.HasCommand(query);
+                        var result = commands.Resolve(words);
+                        output.Append(";Q:" + (has ? "1" : "0") + ":"
+                            + (Object.ReferenceEquals(result, words) ? "1" : "0") + List(words) + ":" + List(events));
+                    }
+                    catch (Exception)
+                    {
+                        output.Append(";QEX" + List(words) + ":" + List(events));
+                    }
+                }
+
+                foreach (var query in new[]
+                {
+                    new[] { "help", "all" },
+                    new[] { "help", "Original" },
+                    new[] { "help", "New" },
+                    new[] { "help", "run" },
+                    new[] { "help", "run", "nested" }
+                })
+                {
+                    try
+                    {
+                        output.Append(";H" + List(commands.GetHelp(query)));
+                    }
+                    catch (Exception)
+                    {
+                        output.Append(";HEX");
+                    }
+                }
+
+                try
+                {
+                    output.Append(";N" + List(commands.FindNextOption(Array.Empty<string>(), false)));
+                }
+                catch (Exception)
+                {
+                    output.Append(";NEX");
+                }
+                try
+                {
+                    var exported = commands.GetXml(new XmlDocument());
+                    output.Append(";X");
+                    Tree(exported, output);
+                }
+                catch (Exception)
+                {
+                    output.Append(";XEX");
+                }
+                Console.Write(output.ToString() + (attempt == 0 ? "~" : "\n"));
+            }
+        }
+    }
 }
 """.replace(
     'PARSER', extract(source, 'public class Parser')

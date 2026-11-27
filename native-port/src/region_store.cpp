@@ -32,30 +32,36 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <mutex>
 #include <unordered_map>
 #include <stdexcept>
+
 namespace opensim::services {
 namespace {
 std::string lower(std::string_view value) {
     return framework::utf8(framework::invariant_lower_utf16(framework::utf16(value)));
 }
+
 std::int32_t add(std::int32_t a, std::int32_t b) {
     return std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(a) + static_cast<std::uint32_t>(b));
 }
-const std::string& name(const RegionData& row) {
+
+const std::string &name(const RegionData &row) {
     if (!row.name)
         throw std::invalid_argument("Null region name");
     return *row.name;
 }
-}
+} // namespace
+
 struct NullRegionStore::State {
     struct Slot {
         framework::Uuid key;
         std::shared_ptr<RegionData> row;
     };
+
     std::recursive_mutex mutex;
     std::vector<Slot> slots;
     std::vector<std::size_t> free;
     std::unordered_map<framework::Uuid, std::size_t, framework::UuidHash> index;
 };
+
 std::shared_ptr<NullRegionStore::State> NullRegionStore::singleton(bool create) {
     static std::mutex mutex;
     static std::shared_ptr<State> value;
@@ -64,32 +70,37 @@ std::shared_ptr<NullRegionStore::State> NullRegionStore::singleton(bool create) 
         value = std::make_shared<State>();
     return value;
 }
-NullRegionStore::NullRegionStore(const std::string& connection) {
+
+NullRegionStore::NullRegionStore(const std::string &connection) {
     state_ = connection == "!static" ? std::make_shared<State>() : singleton(true);
 }
-std::shared_ptr<RegionData> NullRegionStore::get(const framework::Uuid& id, const framework::Uuid&) {
+
+std::shared_ptr<RegionData> NullRegionStore::get(const framework::Uuid &id, const framework::Uuid &) {
     std::lock_guard lock(state_->mutex);
     const auto found = state_->index.find(id);
     return found == state_->index.end() ? nullptr : state_->slots[found->second].row;
 }
-std::shared_ptr<RegionData> NullRegionStore::at(std::int32_t x, std::int32_t y, const framework::Uuid&) {
+
+std::shared_ptr<RegionData> NullRegionStore::at(std::int32_t x, std::int32_t y, const framework::Uuid &) {
     std::lock_guard lock(state_->mutex);
-    for (const auto& slot : state_->slots)
+    for (const auto &slot : state_->slots)
         if (slot.row) {
-            const auto& row = *slot.row;
+            const auto &row = *slot.row;
             if (x >= row.x && x < add(row.x, row.size_x) && y >= row.y && y < add(row.y, row.size_y))
                 return slot.row;
         }
     return nullptr;
 }
-std::shared_ptr<RegionData> NullRegionStore::specific(const std::string& wanted, const framework::Uuid&) {
+
+std::shared_ptr<RegionData> NullRegionStore::specific(const std::string &wanted, const framework::Uuid &) {
     std::lock_guard lock(state_->mutex);
-    for (const auto& slot : state_->slots)
+    for (const auto &slot : state_->slots)
         if (slot.row && framework::invariant_equals_ignore_case(name(*slot.row), wanted))
             return slot.row;
     return nullptr;
 }
-std::optional<RegionRows> NullRegionStore::find(const std::string& pattern, const framework::Uuid&) {
+
+std::optional<RegionRows> NullRegionStore::find(const std::string &pattern, const framework::Uuid &) {
     auto clean = lower(pattern);
     bool prefix = false, suffix = false;
     if (clean == "%") {
@@ -109,31 +120,32 @@ std::optional<RegionRows> NullRegionStore::find(const std::string& pattern, cons
     }
     std::lock_guard lock(state_->mutex);
     RegionRows result;
-    for (const auto& slot : state_->slots)
+    for (const auto &slot : state_->slots)
         if (slot.row) {
             const auto value = lower(name(*slot.row));
             if (prefix && suffix ? value.find(clean) != std::string::npos
                 : suffix         ? framework::invariant_starts_with(value, clean)
-                : prefix         ? framework::invariant_ends_with_utf16(framework::utf16(value),
-                                                                       framework::utf16(clean))
-                                 : value == clean)
+                : prefix ? framework::invariant_ends_with_utf16(framework::utf16(value), framework::utf16(clean))
+                         : value == clean)
                 result.push_back(slot.row);
         }
     return result.empty() ? std::nullopt : std::optional{result};
 }
+
 RegionRows NullRegionStore::range(std::int32_t x1, std::int32_t y1, std::int32_t x2, std::int32_t y2,
-                                  const framework::Uuid&) {
+                                  const framework::Uuid &) {
     std::lock_guard lock(state_->mutex);
     RegionRows result;
-    for (const auto& slot : state_->slots)
+    for (const auto &slot : state_->slots)
         if (slot.row) {
-            const auto& row = *slot.row;
+            const auto &row = *slot.row;
             if (add(row.x, row.size_x) > x1 && row.x <= x2 && add(row.y, row.size_x) > y1 && row.y <= y2)
                 result.push_back(slot.row);
         }
     return result;
 }
-RegionRows NullRegionStore::with_flags(std::int32_t flags, const framework::Uuid&) {
+
+RegionRows NullRegionStore::with_flags(std::int32_t flags, const framework::Uuid &) {
     // The original private flags query always delegates to Instance, even for
     // !static stores. Preserve both that alias and the absent-instance failure.
     const auto shared = singleton();
@@ -141,12 +153,13 @@ RegionRows NullRegionStore::with_flags(std::int32_t flags, const framework::Uuid
         throw std::runtime_error("Null region singleton");
     std::lock_guard lock(shared->mutex);
     RegionRows result;
-    for (const auto& slot : shared->slots)
+    for (const auto &slot : shared->slots)
         if (slot.row && (parse_region_integer(slot.row->data.at("flags")) & flags) != 0)
             result.push_back(slot.row);
     return result;
 }
-bool NullRegionStore::store(const std::shared_ptr<RegionData>& row) {
+
+bool NullRegionStore::store(const std::shared_ptr<RegionData> &row) {
     if (!row)
         throw std::invalid_argument("Missing region data");
     std::lock_guard lock(state_->mutex);
@@ -167,7 +180,8 @@ bool NullRegionStore::store(const std::shared_ptr<RegionData>& row) {
     }
     return true;
 }
-bool NullRegionStore::set(const framework::Uuid& id, const std::string& item, const std::string& value) {
+
+bool NullRegionStore::set(const framework::Uuid &id, const std::string &item, const std::string &value) {
     std::lock_guard lock(state_->mutex);
     auto row = get(id, {});
     if (!row)
@@ -175,7 +189,8 @@ bool NullRegionStore::set(const framework::Uuid& id, const std::string& item, co
     row->data[item] = value;
     return true;
 }
-bool NullRegionStore::erase(const framework::Uuid& id) {
+
+bool NullRegionStore::erase(const framework::Uuid &id) {
     std::lock_guard lock(state_->mutex);
     const auto found = state_->index.find(id);
     if (found == state_->index.end())
@@ -185,4 +200,4 @@ bool NullRegionStore::erase(const framework::Uuid& id) {
     state_->index.erase(found);
     return true;
 }
-}
+} // namespace opensim::services

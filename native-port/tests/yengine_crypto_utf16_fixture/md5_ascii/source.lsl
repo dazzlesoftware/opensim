@@ -1,0 +1,1 @@
+string result;integer after;default{state_entry(){result=llMD5String("Abc",0);after=1;}}

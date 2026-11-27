@@ -1,0 +1,324 @@
+[
+  {
+    "name": "integer_0",
+    "kind": "Integer",
+    "value": "-2147483648",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Integer(\"-2147483648\"));after=1;}}"
+  },
+  {
+    "name": "integer_1",
+    "kind": "Integer",
+    "value": "-2147483647",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Integer(\"-2147483647\"));after=1;}}"
+  },
+  {
+    "name": "integer_2",
+    "kind": "Integer",
+    "value": "-65536",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Integer(\"-65536\"));after=1;}}"
+  },
+  {
+    "name": "integer_3",
+    "kind": "Integer",
+    "value": "-255",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Integer(\"-255\"));after=1;}}"
+  },
+  {
+    "name": "integer_4",
+    "kind": "Integer",
+    "value": "-1",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Integer(\"-1\"));after=1;}}"
+  },
+  {
+    "name": "integer_5",
+    "kind": "Integer",
+    "value": "0",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Integer(\"0\"));after=1;}}"
+  },
+  {
+    "name": "integer_6",
+    "kind": "Integer",
+    "value": "1",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Integer(\"1\"));after=1;}}"
+  },
+  {
+    "name": "integer_7",
+    "kind": "Integer",
+    "value": "2",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Integer(\"2\"));after=1;}}"
+  },
+  {
+    "name": "integer_8",
+    "kind": "Integer",
+    "value": "255",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Integer(\"255\"));after=1;}}"
+  },
+  {
+    "name": "integer_9",
+    "kind": "Integer",
+    "value": "65536",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Integer(\"65536\"));after=1;}}"
+  },
+  {
+    "name": "integer_10",
+    "kind": "Integer",
+    "value": "1073741824",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Integer(\"1073741824\"));after=1;}}"
+  },
+  {
+    "name": "integer_11",
+    "kind": "Integer",
+    "value": "2147483646",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Integer(\"2147483646\"));after=1;}}"
+  },
+  {
+    "name": "integer_12",
+    "kind": "Integer",
+    "value": "2147483647",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Integer(\"2147483647\"));after=1;}}"
+  },
+  {
+    "name": "integer_13",
+    "kind": "Integer",
+    "value": "0xFFFFFFFF",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Integer(\"0xFFFFFFFF\"));after=1;}}"
+  },
+  {
+    "name": "integer_14",
+    "kind": "Integer",
+    "value": "0x80000000",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Integer(\"0x80000000\"));after=1;}}"
+  },
+  {
+    "name": "integer_15",
+    "kind": "Integer",
+    "value": "0x7fffffff",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Integer(\"0x7fffffff\"));after=1;}}"
+  },
+  {
+    "name": "float_0",
+    "kind": "Float",
+    "value": "0",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Float(\"0\"));after=1;}}"
+  },
+  {
+    "name": "float_1",
+    "kind": "Float",
+    "value": "-0",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Float(\"-0\"));after=1;}}"
+  },
+  {
+    "name": "float_2",
+    "kind": "Float",
+    "value": "1",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Float(\"1\"));after=1;}}"
+  },
+  {
+    "name": "float_3",
+    "kind": "Float",
+    "value": "-1",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Float(\"-1\"));after=1;}}"
+  },
+  {
+    "name": "float_4",
+    "kind": "Float",
+    "value": "1.25",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Float(\"1.25\"));after=1;}}"
+  },
+  {
+    "name": "float_5",
+    "kind": "Float",
+    "value": "-1.25",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Float(\"-1.25\"));after=1;}}"
+  },
+  {
+    "name": "float_6",
+    "kind": "Float",
+    "value": "2147483647",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Float(\"2147483647\"));after=1;}}"
+  },
+  {
+    "name": "float_7",
+    "kind": "Float",
+    "value": "-2147483648",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Float(\"-2147483648\"));after=1;}}"
+  },
+  {
+    "name": "float_8",
+    "kind": "Float",
+    "value": "4294967295",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Float(\"4294967295\"));after=1;}}"
+  },
+  {
+    "name": "float_9",
+    "kind": "Float",
+    "value": "9007199254740991",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Float(\"9007199254740991\"));after=1;}}"
+  },
+  {
+    "name": "float_10",
+    "kind": "Float",
+    "value": "9007199254740992",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Float(\"9007199254740992\"));after=1;}}"
+  },
+  {
+    "name": "float_11",
+    "kind": "Float",
+    "value": "NaN",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Float(\"NaN\"));after=1;}}"
+  },
+  {
+    "name": "float_12",
+    "kind": "Float",
+    "value": "nan",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Float(\"nan\"));after=1;}}"
+  },
+  {
+    "name": "float_13",
+    "kind": "Float",
+    "value": "-NaN",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Float(\"-NaN\"));after=1;}}"
+  },
+  {
+    "name": "float_14",
+    "kind": "Float",
+    "value": "+NaN",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Float(\"+NaN\"));after=1;}}"
+  },
+  {
+    "name": "float_15",
+    "kind": "Float",
+    "value": "Infinity",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Float(\"Infinity\"));after=1;}}"
+  },
+  {
+    "name": "float_16",
+    "kind": "Float",
+    "value": "-Infinity",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Float(\"-Infinity\"));after=1;}}"
+  },
+  {
+    "name": "float_17",
+    "kind": "Float",
+    "value": "5e-324",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Float(\"5e-324\"));after=1;}}"
+  },
+  {
+    "name": "float_18",
+    "kind": "Float",
+    "value": "-5e-324",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Float(\"-5e-324\"));after=1;}}"
+  },
+  {
+    "name": "float_19",
+    "kind": "Float",
+    "value": "1e-300",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Float(\"1e-300\"));after=1;}}"
+  },
+  {
+    "name": "float_20",
+    "kind": "Float",
+    "value": "1e300",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Float(\"1e300\"));after=1;}}"
+  },
+  {
+    "name": "float_21",
+    "kind": "Float",
+    "value": "1.7976931348623157E+308",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Float(\"1.7976931348623157E+308\"));after=1;}}"
+  },
+  {
+    "name": "float_22",
+    "kind": "Float",
+    "value": "-1.7976931348623157E+308",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Float(\"-1.7976931348623157E+308\"));after=1;}}"
+  },
+  {
+    "name": "float_23",
+    "kind": "Float",
+    "value": "1.0000000000000002",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Float(\"1.0000000000000002\"));after=1;}}"
+  },
+  {
+    "name": "float_24",
+    "kind": "Float",
+    "value": "2.2250738585072014E-308",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Float(\"2.2250738585072014E-308\"));after=1;}}"
+  },
+  {
+    "name": "float_25",
+    "kind": "Float",
+    "value": "1e309",
+    "coverage_group": "typed_numeric",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Float(\"1e309\"));after=1;}}"
+  },
+  {
+    "name": "literal_integer",
+    "kind": "Integer",
+    "value": "1",
+    "coverage_group": "overload_selection",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(1);after=1;}}"
+  },
+  {
+    "name": "literal_float",
+    "kind": "Float",
+    "value": "1",
+    "coverage_group": "overload_selection",
+    "source": "integer result;integer after;default{state_entry(){result=xmrHashCode(1.0);after=1;}}"
+  },
+  {
+    "name": "cast_float",
+    "kind": "Float",
+    "value": "1",
+    "coverage_group": "overload_selection",
+    "source": "integer value=1;integer result;integer after;default{state_entry(){result=xmrHashCode((float)value);after=1;}}"
+  },
+  {
+    "name": "cast_integer",
+    "kind": "Integer",
+    "value": "1",
+    "coverage_group": "overload_selection",
+    "source": "float value=1.0;integer result;integer after;default{state_entry(){result=xmrHashCode((integer)value);after=1;}}"
+  }
+]

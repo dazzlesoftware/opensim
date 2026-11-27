@@ -9,12 +9,15 @@
 #include <climits>
 #include <ctime>
 #include <set>
+
 namespace opensim::framework {
 namespace {
 [[noreturn]] void crypto() {
     throw ConfigHttpLinuxCertificateError();
 }
+
 using Cert = std::unique_ptr<X509, decltype(&X509_free)>;
+
 Cert decode(std::span<const std::uint8_t> der) {
     if (der.empty() || der.size() > LONG_MAX)
         crypto();
@@ -24,7 +27,8 @@ Cert decode(std::span<const std::uint8_t> der) {
         crypto();
     return value;
 }
-CertificateDer encode(X509* cert) {
+
+CertificateDer encode(X509 *cert) {
     auto count = i2d_X509(cert, nullptr);
     if (count <= 0)
         crypto();
@@ -34,7 +38,8 @@ CertificateDer encode(X509* cert) {
         crypto();
     return result;
 }
-CertificateDer name_der(X509_NAME* name) {
+
+CertificateDer name_der(X509_NAME *name) {
     auto count = i2d_X509_NAME(name, nullptr);
     if (count <= 0)
         crypto();
@@ -44,36 +49,44 @@ CertificateDer name_der(X509_NAME* name) {
         crypto();
     return result;
 }
-bool self_issued(X509* cert) {
+
+bool self_issued(X509 *cert) {
     return name_der(X509_get_subject_name(cert)) == name_der(X509_get_issuer_name(cert));
 }
+
 bool incomplete(int code) {
-    return code == X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT ||
-           code == X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY;
+    return code == X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT || code == X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY;
 }
+
 struct Stack {
     STACK_OF(X509) * value;
+
     explicit Stack(STACK_OF(X509) * data) : value(data) {
         if (!value)
             crypto();
     }
-    Stack() : Stack(sk_X509_new_null()) {
-    }
-    Stack(const Stack&) = delete;
-    Stack& operator=(const Stack&) = delete;
+
+    Stack() : Stack(sk_X509_new_null()) {}
+
+    Stack(const Stack &) = delete;
+    Stack &operator=(const Stack &) = delete;
+
     ~Stack() {
         sk_X509_pop_free(value, X509_free);
     }
+
     void add(Cert cert) {
         if (!sk_X509_push(value, cert.get()))
             crypto();
         cert.release();
     }
+
     void clear() {
         while (auto cert = sk_X509_pop(value))
             X509_free(cert);
     }
 };
+
 std::uint32_t status(int code) {
     switch (code) {
     case X509_V_OK:
@@ -138,19 +151,23 @@ std::uint32_t status(int code) {
         crypto();
     }
 }
-void unique(std::vector<std::uint32_t>& values, std::uint32_t value) {
+
+void unique(std::vector<std::uint32_t> &values, std::uint32_t value) {
     if (std::find(values.begin(), values.end(), value) == values.end())
         values.push_back(value);
 }
-bool contains(const std::vector<std::uint32_t>& values, std::uint32_t value) {
+
+bool contains(const std::vector<std::uint32_t> &values, std::uint32_t value) {
     return std::find(values.begin(), values.end(), value) != values.end();
 }
-void remove(std::vector<std::uint32_t>& values, std::uint32_t value) {
+
+void remove(std::vector<std::uint32_t> &values, std::uint32_t value) {
     auto at = std::find(values.begin(), values.end(), value);
     if (at != values.end())
         values.erase(at);
 }
-CertificatePolicyData policy_data(X509* cert) {
+
+CertificatePolicyData policy_data(X509 *cert) {
     CertificatePolicyData result;
     for (int i = 0; i < X509_get_ext_count(cert); ++i) {
         auto ext = X509_get_ext(cert, i);
@@ -164,7 +181,7 @@ CertificatePolicyData policy_data(X509* cert) {
         if (OBJ_obj2txt(oid.data(), static_cast<int>(oid.size()), object, 1) != count)
             crypto();
         oid.resize(count);
-        CertificatePolicyData::Bytes* target = nullptr;
+        CertificatePolicyData::Bytes *target = nullptr;
         if (oid == "1.3.6.1.4.1.311.21.10")
             target = &result.application_cert_policies;
         else if (oid == "2.5.29.32")
@@ -192,18 +209,19 @@ CertificatePolicyData policy_data(X509* cert) {
     }
     return result;
 }
+
 struct WorkingErrors {
     std::vector<std::set<int>> codes;
     std::exception_ptr failure;
 };
-int collect(int ok, X509_STORE_CTX* context) noexcept {
+
+int collect(int ok, X509_STORE_CTX *context) noexcept {
     if (ok)
         return ok;
-    auto errors = static_cast<WorkingErrors*>(X509_STORE_CTX_get_app_data(context));
+    auto errors = static_cast<WorkingErrors *>(X509_STORE_CTX_get_app_data(context));
     try {
         auto code = X509_STORE_CTX_get_error(context);
-        if (code != X509_V_OK && code != X509_V_ERR_CRL_NOT_YET_VALID &&
-            code != X509_V_ERR_DIFFERENT_CRL_SCOPE) {
+        if (code != X509_V_OK && code != X509_V_ERR_CRL_NOT_YET_VALID && code != X509_V_ERR_DIFFERENT_CRL_SCOPE) {
             auto depth = X509_STORE_CTX_get_error_depth(context);
             if (depth < 0)
                 crypto();
@@ -217,32 +235,33 @@ int collect(int ok, X509_STORE_CTX* context) noexcept {
         return -1;
     }
 }
-}
+} // namespace
+
 struct ConfigHttpLinuxCertificateChain::State {
     Cert leaf;
     std::unique_ptr<X509_STORE, decltype(&X509_STORE_free)> store{X509_STORE_new(), X509_STORE_free};
     Stack untrusted;
-    std::unique_ptr<X509_STORE_CTX, decltype(&X509_STORE_CTX_free)> context{X509_STORE_CTX_new(),
-                                                                            X509_STORE_CTX_free};
+    std::unique_ptr<X509_STORE_CTX, decltype(&X509_STORE_CTX_free)> context{X509_STORE_CTX_new(), X509_STORE_CTX_free};
     ConfigHttpLinuxCertificatePolicy policy;
-    std::vector<X509*> added_issuers;
+    std::vector<X509 *> added_issuers;
     bool found = false, finished = false;
     int error = 0;
-    State(std::span<const std::uint8_t> der, const ConfigHttpLinuxCertificateStores& stores,
+
+    State(std::span<const std::uint8_t> der, const ConfigHttpLinuxCertificateStores &stores,
           ConfigHttpLinuxCertificatePolicy options)
         : leaf(decode(der)), policy(std::move(options)) {
         ERR_clear_error();
         if (!store || !context)
             crypto();
-        auto trust = [&](const CertificateDer& item) {
+        auto trust = [&](const CertificateDer &item) {
             auto cert = decode(item);
             if (!X509_STORE_add_cert(store.get(), cert.get()))
                 crypto();
         };
-        for (const auto& item : stores.user_intermediates)
+        for (const auto &item : stores.user_intermediates)
             untrusted.add(decode(item));
         if (policy.custom_roots) {
-            for (const auto& item : *policy.custom_roots) {
+            for (const auto &item : *policy.custom_roots) {
                 auto cert = decode(item);
                 if (self_issued(cert.get())) {
                     if (!X509_STORE_add_cert(store.get(), cert.get()))
@@ -251,14 +270,15 @@ struct ConfigHttpLinuxCertificateChain::State {
                     untrusted.add(std::move(cert));
             }
         } else
-            for (const auto& item : stores.trusted)
+            for (const auto &item : stores.trusted)
                 trust(item);
-        for (const auto& item : stores.system_intermediates)
+        for (const auto &item : stores.system_intermediates)
             untrusted.add(decode(item));
         auto when = policy.verification_unix_seconds.value_or(static_cast<std::int64_t>(std::time(nullptr)));
         X509_VERIFY_PARAM_set_time(X509_STORE_get0_param(store.get()), static_cast<time_t>(when));
         reset();
     }
+
     void reset() {
         ERR_clear_error();
         X509_STORE_CTX_cleanup(context.get());
@@ -266,6 +286,7 @@ struct ConfigHttpLinuxCertificateChain::State {
             crypto();
         X509_STORE_CTX_set_flags(context.get(), X509_V_FLAG_CHECK_SS_SIGNATURE);
     }
+
     int verify() {
         ERR_clear_error();
         auto value = X509_verify_cert(context.get());
@@ -275,28 +296,31 @@ struct ConfigHttpLinuxCertificateChain::State {
         return error;
     }
 };
-ConfigHttpLinuxCertificateChain::ConfigHttpLinuxCertificateChain(
-    std::span<const std::uint8_t> der, const ConfigHttpLinuxCertificateStores& stores,
-    ConfigHttpLinuxCertificatePolicy policy)
-    : state_(std::make_unique<State>(der, stores, std::move(policy))) {
-}
+
+ConfigHttpLinuxCertificateChain::ConfigHttpLinuxCertificateChain(std::span<const std::uint8_t> der,
+                                                                 const ConfigHttpLinuxCertificateStores &stores,
+                                                                 ConfigHttpLinuxCertificatePolicy policy)
+    : state_(std::make_unique<State>(der, stores, std::move(policy))) {}
+
 ConfigHttpLinuxCertificateChain::~ConfigHttpLinuxCertificateChain() = default;
-int ConfigHttpLinuxCertificateChain::find_first(const std::vector<CertificateDer>& extra) {
-    auto& s = *state_;
+
+int ConfigHttpLinuxCertificateChain::find_first(const std::vector<CertificateDer> &extra) {
+    auto &s = *state_;
     if (s.found || s.finished)
         throw std::logic_error("Certificate path already evaluated");
     s.found = true;
     s.verify();
     if (incomplete(s.error) && !extra.empty()) {
-        for (const auto& item : extra)
+        for (const auto &item : extra)
             s.untrusted.add(decode(item));
         s.reset();
         s.verify();
     }
     return s.error;
 }
+
 std::optional<CertificateDer> ConfigHttpLinuxCertificateChain::missing_issuer_child() const {
-    const auto& s = *state_;
+    const auto &s = *state_;
     if (!s.found || s.finished || !incomplete(s.error))
         return {};
     auto cert = X509_STORE_CTX_get_current_cert(s.context.get());
@@ -304,45 +328,49 @@ std::optional<CertificateDer> ConfigHttpLinuxCertificateChain::missing_issuer_ch
         crypto();
     return encode(cert);
 }
+
 std::uintptr_t ConfigHttpLinuxCertificateChain::missing_issuer_identity() const {
-    const auto& s = *state_;
+    const auto &s = *state_;
     if (!s.found || s.finished || !incomplete(s.error))
         return 0;
     return reinterpret_cast<std::uintptr_t>(X509_STORE_CTX_get_current_cert(s.context.get()));
 }
+
 int ConfigHttpLinuxCertificateChain::add_issuer(std::span<const std::uint8_t> der) {
-    auto& s = *state_;
+    auto &s = *state_;
     if (!s.found || s.finished || !incomplete(s.error))
         throw std::logic_error("Certificate path has no missing issuer");
     auto cert = decode(der);
-    auto* identity = cert.get();
+    auto *identity = cert.get();
     s.untrusted.add(std::move(cert));
     s.added_issuers.push_back(identity);
     s.reset();
     return s.verify();
 }
+
 int ConfigHttpLinuxCertificateChain::add_issuer_aux(std::span<const std::uint8_t> bytes) {
-    auto& s = *state_;
+    auto &s = *state_;
     if (!s.found || s.finished || !incomplete(s.error))
         throw std::logic_error("Certificate path has no missing issuer");
     if (bytes.empty() || bytes.size() > LONG_MAX)
         crypto();
-    auto* at = bytes.data();
+    auto *at = bytes.data();
     Cert cert(d2i_X509_AUX(nullptr, &at, static_cast<long>(bytes.size())), X509_free);
     if (!cert)
         crypto();
-    auto* identity = cert.get();
+    auto *identity = cert.get();
     s.untrusted.add(std::move(cert));
     s.added_issuers.push_back(identity);
     s.reset();
     return s.verify();
 }
+
 std::vector<std::size_t> ConfigHttpLinuxCertificateChain::selected_added_issuers() const {
-    const auto& s = *state_;
+    const auto &s = *state_;
     if (!s.found || s.finished)
         throw std::logic_error("Certificate path is not ready");
     std::vector<std::size_t> result;
-    auto* chain = X509_STORE_CTX_get0_chain(s.context.get());
+    auto *chain = X509_STORE_CTX_get0_chain(s.context.get());
     if (!chain)
         crypto();
     for (std::size_t i = 0; i < s.added_issuers.size(); ++i)
@@ -353,11 +381,13 @@ std::vector<std::size_t> ConfigHttpLinuxCertificateChain::selected_added_issuers
             }
     return result;
 }
+
 std::size_t ConfigHttpLinuxCertificateChain::issuer_addition_count() const {
     return state_->added_issuers.size();
 }
+
 ConfigHttpLinuxCertificateResult ConfigHttpLinuxCertificateChain::finish(std::u16string_view host) {
-    auto& s = *state_;
+    auto &s = *state_;
     if (!s.found || s.finished)
         throw std::logic_error("Certificate path is not ready");
     s.finished = true;
@@ -420,7 +450,7 @@ ConfigHttpLinuxCertificateResult ConfigHttpLinuxCertificateChain::finish(std::u1
         if (!policy.matches_application_policies(s.policy.application_policies) ||
             !policy.matches_certificate_policies(s.policy.certificate_policies)) {
             unique(result.status, 16);
-            for (auto& element : result.elements)
+            for (auto &element : result.elements)
                 unique(element.status, 16);
         }
     }
@@ -430,11 +460,12 @@ ConfigHttpLinuxCertificateResult ConfigHttpLinuxCertificateChain::finish(std::u1
         result.errors |= 2;
     return result;
 }
-ConfigHttpLinuxCertificateResult
-config_http_linux_certificate_errors(std::span<const std::uint8_t> leaf,
-                                     const std::vector<CertificateDer>& extra,
-                                     const ConfigHttpLinuxCertificateStores& stores, std::u16string_view host,
-                                     ConfigHttpLinuxCertificatePolicy policy) {
+
+ConfigHttpLinuxCertificateResult config_http_linux_certificate_errors(std::span<const std::uint8_t> leaf,
+                                                                      const std::vector<CertificateDer> &extra,
+                                                                      const ConfigHttpLinuxCertificateStores &stores,
+                                                                      std::u16string_view host,
+                                                                      ConfigHttpLinuxCertificatePolicy policy) {
     if (leaf.empty()) {
         ConfigHttpLinuxCertificateResult result;
         result.errors = 1;
@@ -444,4 +475,4 @@ config_http_linux_certificate_errors(std::span<const std::uint8_t> leaf,
     chain.find_first(extra);
     return chain.finish(host);
 }
-}
+} // namespace opensim::framework

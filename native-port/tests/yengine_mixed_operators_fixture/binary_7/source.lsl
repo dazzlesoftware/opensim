@@ -1,0 +1,1 @@
+string left="a";key right=(key)"bad";list result;default{state_entry(){result=[left+right];}}

@@ -8,6 +8,7 @@
 using namespace opensim;
 using namespace services;
 using network::Value;
+
 std::string hex(std::string_view s) {
     std::string out;
     for (unsigned char c : s) {
@@ -16,12 +17,14 @@ std::string hex(std::string_view s) {
     }
     return out;
 }
+
 std::string unhex(std::string_view s) {
     std::string out;
     for (size_t i = 0; i < s.size(); i += 2)
         out += char(std::stoi(std::string(s.substr(i, 2)), nullptr, 16));
     return out;
 }
+
 std::string scalar(sqlite3 *db, const char *sql) {
     sqlite3_stmt *q = nullptr;
     if (sqlite3_prepare_v2(db, sql, -1, &q, nullptr) != SQLITE_OK) {
@@ -37,15 +40,15 @@ std::string scalar(sqlite3 *db, const char *sql) {
     sqlite3_finalize(q);
     return out;
 }
+
 std::string snapshot(sqlite3 *db) {
-    return hex(scalar(
-               db,
-               "SELECT coalesce(group_concat(name||':'||quote(version),'|'),'') FROM (SELECT name,version FROM migrations ORDER BY name,version)")) +
+    return hex(scalar(db, "SELECT coalesce(group_concat(name||':'||quote(version),'|'),'') FROM (SELECT name,version "
+                          "FROM migrations ORDER BY name,version)")) +
            ":" +
-           hex(scalar(
-               db,
-               "SELECT coalesce(group_concat(name||':'||type,'|'),'') FROM (SELECT name,type FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY name,type)"));
+           hex(scalar(db, "SELECT coalesce(group_concat(name||':'||type,'|'),'') FROM (SELECT name,type FROM "
+                          "sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY name,type)"));
 }
+
 int main(int argc, char **argv) {
     if (argc != 2)
         return 2;
@@ -87,17 +90,15 @@ int main(int argc, char **argv) {
                     plugin.initialise(connection);
                 } else if (kind == "get") {
                     auto asset = plugin.get(id);
-                    result =
-                        !asset ? "N"
-                               : asset->id() + ":" + asset->name().value_or("") + ":" +
-                                     (asset->data ? hex(std::string(asset->data->begin(), asset->data->end()))
-                                                  : "N");
+                    result = !asset
+                                 ? "N"
+                                 : asset->id() + ":" + asset->name().value_or("") + ":" +
+                                       (asset->data ? hex(std::string(asset->data->begin(), asset->data->end())) : "N");
                 } else if (kind == "store") {
                     auto asset = std::make_shared<framework::AssetBase>();
                     asset->full_id(id);
                     asset->name("asset");
-                    asset->data =
-                        std::make_shared<std::vector<uint8_t>>(std::initializer_list<uint8_t>{1, 2});
+                    asset->data = std::make_shared<std::vector<uint8_t>>(std::initializer_list<uint8_t>{1, 2});
                     result = plugin.store(asset) ? "1" : "0";
                 } else if (kind == "exists") {
                     result = "";

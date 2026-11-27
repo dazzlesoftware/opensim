@@ -8,57 +8,63 @@
 #include <thread>
 using namespace opensim;
 using namespace services;
+
 namespace {
 int checks = 0;
-void check(bool value, const char* label) {
+
+void check(bool value, const char *label) {
     ++checks;
     if (!value)
         throw std::runtime_error(label);
 }
+
 struct Backend final : SceneCapabilityBackend {
     std::shared_ptr<server::RegistryCapabilityListener> registry;
-    explicit Backend(std::shared_ptr<server::RegistryCapabilityListener> r) : registry(std::move(r)) {
-    }
+
+    explicit Backend(std::shared_ptr<server::RegistryCapabilityListener> r) : registry(std::move(r)) {}
+
     std::string scene_name() const override {
         return "Script scene";
     }
+
     std::optional<std::string> region_name() const override {
         return "Scripts";
     }
+
     std::optional<std::string> external_host() const override {
         return "127.0.0.1";
     }
+
     std::shared_ptr<CapabilityRuntimeListener> listener() const override {
         return registry;
     }
-    bool check_client(framework::Uuid, const network::HttpRequest&) override {
+
+    bool check_client(framework::Uuid, const network::HttpRequest &) override {
         return true;
     }
-    void debug(const std::string&) override {
-    }
-    void warn(const std::string&) override {
-    }
-    void error(const std::string&) override {
-    }
-    void console(const std::string&) override {
-    }
-    void add_command(CapabilityCommand) override {
-    }
+
+    void debug(const std::string &) override {}
+
+    void warn(const std::string &) override {}
+
+    void error(const std::string &) override {}
+
+    void console(const std::string &) override {}
+
+    void add_command(CapabilityCommand) override {}
 };
+
 void run(bool expiry) {
-    auto registry = std::make_shared<server::RegistryCapabilityListener>(
-        server::CapabilityListenerInfo{false, 19007, 0, {}});
+    auto registry =
+        std::make_shared<server::RegistryCapabilityListener>(server::CapabilityListenerInfo{false, 19007, 0, {}});
     SceneCapabilities scene(std::make_shared<Backend>(registry));
     auto before = scene.events().on_register_caps.snapshot().size();
-    auto agent = framework::Uuid::random(), object = framework::Uuid::random(),
-         item = framework::Uuid::random();
+    auto agent = framework::Uuid::random(), object = framework::Uuid::random(), item = framework::Uuid::random();
     int updates = 0;
     RegionScriptTaskBackend backend;
     backend.object_exists = [&](auto id) { return id == object; };
     backend.can_edit_inventory = [&](auto id, auto who) { return id == object && who == agent; };
-    backend.can_edit_script = [&](auto key, auto id, auto who) {
-        return key == item && id == object && who == agent;
-    };
+    backend.can_edit_script = [&](auto key, auto id, auto who) { return key == item && id == object && who == agent; };
     backend.update = [&](auto who, auto key, auto id, bool running, auto bytes) {
         check(who == agent && key == item && id == object && running, "captured task update identity");
         check(std::string(bytes.begin(), bytes.end()) == "actual script", "actual upload bytes forwarded");
@@ -77,10 +83,8 @@ void run(bool expiry) {
     auto caps = std::dynamic_pointer_cast<Caps>(scene.capabilities().get_caps_for_user(55));
     check(bool(caps), "real caps created");
     auto paths = caps->local_paths();
-    check(paths.contains("UpdateScriptTask") && paths.contains("UpdateScriptTaskInventory"),
-          "both aliases advertised");
-    check(paths.at("UpdateScriptTask") == paths.at("UpdateScriptTaskInventory"),
-          "aliases share source handler path");
+    check(paths.contains("UpdateScriptTask") && paths.contains("UpdateScriptTaskInventory"), "both aliases advertised");
+    check(paths.at("UpdateScriptTask") == paths.at("UpdateScriptTaskInventory"), "aliases share source handler path");
     std::shared_ptr<server::CapabilitySimpleHandler> initial;
     check(registry->routes.try_simple(paths.at("UpdateScriptTask"), initial), "initial handler registered");
     network::HttpRequest request;
@@ -130,8 +134,7 @@ void run(bool expiry) {
         runtime.stop();
         check(runtime.pending_uploads() == 0, "stop retires outstanding upload");
         std::shared_ptr<server::CapabilitySimpleHandler> missing;
-        check(!registry->routes.try_simple(abandoned.first, missing) &&
-                  abandoned.second->handle(binary).status == 404,
+        check(!registry->routes.try_simple(abandoned.first, missing) && abandoned.second->handle(binary).status == 404,
               "stop removes real route and invalidates retained handler");
     }
     runtime.stop();
@@ -140,13 +143,14 @@ void run(bool expiry) {
     check(registry->routes.simple_keys().empty() && registry->routes.poll_keys().empty(),
           "caps and runtime release all routes");
 }
-}
-int main(int argc, char** argv) {
+} // namespace
+
+int main(int argc, char **argv) {
     try {
         run(argc > 1 && std::string_view(argv[1]) == "--expiry");
         std::cout << "PASS: " << checks << " script task registration/upload/lifetime checks\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

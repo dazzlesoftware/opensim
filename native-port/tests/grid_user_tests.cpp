@@ -32,15 +32,18 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 using namespace opensim::services;
 using namespace opensim::framework;
+
 namespace {
 int failures = 0;
-void check(bool value, const char* name) {
+
+void check(bool value, const char *name) {
     if (!value) {
         ++failures;
         std::cerr << "FAIL: " << name << '\n';
     }
 }
-void tests(const std::string& path) {
+
+void tests(const std::string &path) {
     const auto user = Uuid::random().str();
     const auto region = Uuid::random(), home = Uuid::random();
     double now = 0;
@@ -60,8 +63,7 @@ void tests(const std::string& path) {
         ++unix_seconds;
         check(service.set_last_position(user, Uuid::random(), region, look, position),
               "last position persists with ignored session argument");
-        check(service.logged_out(user, Uuid::random(), region, position, look),
-              "logout persists location and time");
+        check(service.logged_out(user, Uuid::random(), region, position, look), "logout persists location and time");
         info = *service.info(user);
         check(!info.online && info.logout == unix_seconds && info.last_region == region &&
                   info.last_position == position,
@@ -108,18 +110,17 @@ void tests(const std::string& path) {
           "vector parser source prefix/suffix behavior");
     check(!parse_vector3("1,2,3", value) && value == Vector3{}, "vector parser minimum-length rule");
     check(vector3_string({.1f, 1e9f, -0.f}) == "<0.1, 1E+09, -0>", "vector general format and signed zero");
-    check(truncate_utf16(std::string(35, 'a') + "\xf0\x9f\x98\x80", 36) ==
-              std::string(35, 'a') + "\xef\xbf\xbd",
+    check(truncate_utf16(std::string(35, 'a') + "\xf0\x9f\x98\x80", 36) == std::string(35, 'a') + "\xef\xbf\xbd",
           "UTF-16 prefix boundary");
 }
-}
+} // namespace
+
 int main() {
     const auto path =
-        (std::filesystem::temp_directory_path() / ("opensim-grid-user-" + Uuid::random().str() + ".db"))
-            .string();
+        (std::filesystem::temp_directory_path() / ("opensim-grid-user-" + Uuid::random().str() + ".db")).string();
     try {
         tests(path);
-    } catch (const std::exception& error) {
+    } catch (const std::exception &error) {
         std::cerr << error.what() << '\n';
         std::filesystem::remove(path);
         return 1;

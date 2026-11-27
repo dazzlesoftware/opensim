@@ -1,0 +1,1 @@
+list returned;default{state_entry(){xmrEventEnqueue([21,xmrStringToBool("x")]);returned=xmrEventDequeue(0.0,2097152,0,0,0);}touch_start(integer n){}}

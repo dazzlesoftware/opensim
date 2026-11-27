@@ -4,11 +4,14 @@
 #include <iostream>
 #include <sstream>
 using namespace opensim::framework;
+
 namespace {
 using T = NiniWriterText;
+
 T t(std::u16string s) {
     return std::make_shared<const std::u16string>(std::move(s));
 }
+
 T dec(std::string s) {
     if (s == "null")
         return {};
@@ -19,29 +22,29 @@ T dec(std::string s) {
         x += char16_t(std::stoul(s.substr(i, 4), nullptr, 16));
     return t(x);
 }
+
 std::string enc(T s) {
     if (!s)
         return "null";
     if (s->empty())
         return "-";
-    const char* h = "0123456789abcdef";
+    const char *h = "0123456789abcdef";
     std::string x;
     for (auto c : *s)
         for (int i = 12; i >= 0; i -= 4)
             x += h[(c >> i) & 15];
     return x;
 }
+
 struct Exit : std::runtime_error {
-    Exit() : runtime_error("exit:1") {
-    }
+    Exit() : runtime_error("exit:1") {}
 };
+
 std::shared_ptr<NiniConfigBackend> fixture_backend() {
     auto b = std::make_shared<NiniConfigBackend>();
     b->capture_number_format = [] {
         auto f = std::make_shared<NiniNumberFormat>();
-        f->to_int32 = [](T) -> std::int32_t {
-            throw std::logic_error("Unexpected fixture integer conversion");
-        };
+        f->to_int32 = [](T) -> std::int32_t { throw std::logic_error("Unexpected fixture integer conversion"); };
         f->to_int64 = [](T) -> std::int64_t { throw std::logic_error("Unexpected fixture long conversion"); };
         f->to_single = [](T) -> float { throw std::logic_error("Unexpected fixture float conversion"); };
         f->to_double = [](T) -> double { throw std::logic_error("Unexpected fixture double conversion"); };
@@ -51,7 +54,7 @@ std::shared_ptr<NiniConfigBackend> fixture_backend() {
         auto x = std::make_shared<NiniInsensitiveTable>();
         x->equal = [](T a, T b) {
             auto lower = [](std::u16string s) {
-                for (auto& c : s)
+                for (auto &c : s)
                     if (c >= u'A' && c <= u'Z')
                         c += 32;
                 return s;
@@ -62,7 +65,7 @@ std::shared_ptr<NiniConfigBackend> fixture_backend() {
     };
     b->lower_current = [](T p) {
         auto s = *p;
-        for (auto& c : s)
+        for (auto &c : s)
             if (c >= u'A' && c <= u'Z')
                 c += 32;
         return t(s);
@@ -76,6 +79,7 @@ std::shared_ptr<NiniConfigBackend> fixture_backend() {
     b->stream_reader = b->document.stream_reader;
     return b;
 }
+
 struct Row {
     std::vector<std::string> trace;
     std::string fault;
@@ -84,6 +88,7 @@ struct Row {
     std::shared_ptr<NiniConfigArena> arena = std::make_shared<NiniConfigArena>(fixture_backend());
     std::shared_ptr<RegionConfigurationBackend> backend;
     std::shared_ptr<RegionConfigurationLoader> loader;
+
     void event(std::string name, std::vector<T> args = {}) {
         auto s = name + ":";
         for (std::size_t i = 0; i < args.size(); ++i) {
@@ -98,10 +103,11 @@ struct Row {
         if (name == fault && ++hit == nth)
             throw NiniConfigError(NiniConfigError::Kind::InvalidOperation, u"provider fault");
     }
+
     Row() {
-        backend = std::make_shared<RegionConfigurationBackend>(native_local_region_configuration_backend(
-            arena, std::make_shared<RegionApplicationConfigurationState>()));
-        auto& b = *backend;
+        backend = std::make_shared<RegionConfigurationBackend>(
+            native_local_region_configuration_backend(arena, std::make_shared<RegionApplicationConfigurationState>()));
+        auto &b = *backend;
         b.application->ini_file_path = nullptr;
         b.config_directory = [this] {
             event("configdir");
@@ -119,8 +125,7 @@ struct Row {
                 return f(a);
             };
         }
-        for (auto pair :
-             {std::pair{"fileexists", &b.file_exists}, std::pair{"direxists", &b.directory_exists}}) {
+        for (auto pair : {std::pair{"fileexists", &b.file_exists}, std::pair{"direxists", &b.directory_exists}}) {
             auto f = *pair.second;
             *pair.second = [this, f, n = pair.first](T a) {
                 event(n, {a});
@@ -138,7 +143,7 @@ struct Row {
             if (!s)
                 return false;
             auto v = *s;
-            for (auto& c : v)
+            for (auto &c : v)
                 if (c >= u'A' && c <= u'Z')
                     c += 32;
             return v.starts_with(u"http://") || v.starts_with(u"https://");
@@ -165,15 +170,15 @@ struct Row {
         };
         b.load_network_info = [this](auto, auto) { event("networkload"); };
         b.log = [this](RegionLoaderLogLevel level, T f, std::vector<T> args, RegionLoaderLogCall call) {
-            static const char16_t* names[] = {u"Info", u"Warn", u"Error", u"Fatal"};
+            static const char16_t *names[] = {u"Info", u"Warn", u"Error", u"Fatal"};
             std::string x;
             for (std::size_t i = 0; i < args.size(); ++i) {
                 if (i)
                     x += ',';
                 x += enc(args[i]);
             }
-            event("log", {t(call == RegionLoaderLogCall::Format ? u"Format" : u"Message"),
-                          t(names[int(level)]), f, t(utf16_replacing(x))});
+            event("log", {t(call == RegionLoaderLogCall::Format ? u"Format" : u"Message"), t(names[int(level)]), f,
+                          t(utf16_replacing(x))});
         };
         b.exit = [this](int n) {
             trace.push_back("exit:" + std::to_string(n));
@@ -182,14 +187,15 @@ struct Row {
         b.exception_message = [](std::exception_ptr p) {
             try {
                 std::rethrow_exception(p);
-            } catch (const NiniConfigError& e) {
+            } catch (const NiniConfigError &e) {
                 return t(e.message);
-            } catch (const std::exception& e) {
+            } catch (const std::exception &e) {
                 return t(utf16_replacing(e.what()));
             }
         };
         loader = std::make_shared<RegionConfigurationLoader>(backend);
     }
+
     std::string snapshot() {
         std::string out = enc(loader->ini_file_path()) + "/";
         if (auto s = loader->config_settings())
@@ -203,23 +209,25 @@ struct Row {
             for (auto e = c->source->configs()->get_enumerator(); e.move_next();) {
                 auto cfg = std::dynamic_pointer_cast<NiniConfig>(e.current());
                 out += enc(cfg->name()) + '[';
-                for (auto& key : cfg->get_keys())
+                for (auto &key : cfg->get_keys())
                     out += enc(key) + '=' + enc(cfg->get(key)) + ',';
                 out += ']';
             }
         return out;
     }
 };
-std::string error(const std::string& type, T msg, std::uint32_t hr, T param = {}) {
+
+std::string error(const std::string &type, T msg, std::uint32_t hr, T param = {}) {
     return type + ":" + enc(msg) + ":" + std::to_string(hr) + ":" + enc(param);
 }
-}
-int main(int argc, char**) {
+} // namespace
+
+int main(int argc, char **) {
     if (argc == 1) {
         bool rejected = false;
         try {
             RegionConfigurationLoader bad(nullptr);
-        } catch (const std::invalid_argument&) {
+        } catch (const std::invalid_argument &) {
             rejected = true;
         }
         if (!rejected)
@@ -231,7 +239,7 @@ int main(int argc, char**) {
         bool null_before_load = false;
         try {
             row.loader->read_config_settings();
-        } catch (const NiniConfigError& e) {
+        } catch (const NiniConfigError &e) {
             null_before_load = e.kind == NiniConfigError::Kind::NullReference && e.hresult() == 0x80004003u;
         }
         if (!null_before_load)
@@ -270,8 +278,7 @@ int main(int argc, char**) {
             auto source = r.arena->create_ini_source(nini_string_reader(*dec(argv)));
             if (mode == "R")
                 result = r.loader->read_config(
-                             std::make_shared<RegionLoaderConfigSource>(RegionLoaderConfigSource{source}),
-                             dec(list))
+                             std::make_shared<RegionLoaderConfigSource>(RegionLoaderConfigSource{source}), dec(list))
                              ? "1"
                              : "0";
             else if (mode == "I") {
@@ -286,8 +293,8 @@ int main(int argc, char**) {
                             paths.push_back(t(items.substr(start, n - start)));
                         start = n + 1;
                     }
-                r.loader->add_includes(
-                    std::make_shared<RegionLoaderConfigSource>(RegionLoaderConfigSource{source}), paths);
+                r.loader->add_includes(std::make_shared<RegionLoaderConfigSource>(RegionLoaderConfigSource{source}),
+                                       paths);
                 result = "";
                 for (std::size_t i = 0; i < paths.size(); ++i) {
                     if (i)
@@ -300,25 +307,23 @@ int main(int argc, char**) {
                 r.loader->load_config_settings(source, {}, settings, network);
                 if (mode == "T") {
                     r.loader = std::make_shared<RegionConfigurationLoader>(r.backend);
-                    r.loader->load_config_settings(r.arena->create_ini_source(nini_string_reader(*dec(list))),
-                                                   {}, settings, network);
+                    r.loader->load_config_settings(r.arena->create_ini_source(nini_string_reader(*dec(list))), {},
+                                                   settings, network);
                 }
             }
-        } catch (const Exit&) {
+        } catch (const Exit &) {
             result = error("Shim.ExitException", t(u"exit:1"), 0x80131500u);
-        } catch (const NiniConfigError& e) {
-            result =
-                error(e.source_type(), t(e.message), e.hresult(), e.parameter ? t(*e.parameter) : nullptr);
-        } catch (const NiniStreamError& e) {
+        } catch (const NiniConfigError &e) {
+            result = error(e.source_type(), t(e.message), e.hresult(), e.parameter ? t(*e.parameter) : nullptr);
+        } catch (const NiniStreamError &e) {
             result = error(e.source_type, t(e.message), e.hresult, e.parameter ? t(*e.parameter) : nullptr);
-        } catch (const NiniReaderError& e) {
+        } catch (const NiniReaderError &e) {
             result = error(e.source_type(), t(e.message_utf16()), e.hresult());
-        } catch (const NiniDocumentError& e) {
-            result =
-                error(e.source_type(), t(e.message), e.hresult(), e.parameter ? t(*e.parameter) : nullptr);
-        } catch (const DirectoryEntriesError& e) {
+        } catch (const NiniDocumentError &e) {
+            result = error(e.source_type(), t(e.message), e.hresult(), e.parameter ? t(*e.parameter) : nullptr);
+        } catch (const DirectoryEntriesError &e) {
             result = error(e.source_type, t(e.message), e.hresult, e.parameter ? t(*e.parameter) : nullptr);
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
             std::cerr << e.what() << '\n';
             return 1;
         }

@@ -3,14 +3,15 @@
 #include "opensim/services/library_inventory_caps.hpp"
 #include "opensim/network/osd_value.hpp"
 #include <stdexcept>
+
 namespace opensim::services {
 FetchLibrary2Core::FetchLibrary2Core(framework::Uuid agent, std::optional<LibraryItemBackend> library)
     : agent_(agent), library_(std::move(library)) {
     if (library_ && (!library_->root_owner || !library_->get_items))
         throw std::invalid_argument("Library inventory service requires actual root and item provider");
 }
-network::HttpResponse FetchLibrary2Core::handle(const network::Value &input,
-                                                InventoryBadRequests *bad) const {
+
+network::HttpResponse FetchLibrary2Core::handle(const network::Value &input, InventoryBadRequests *bad) const {
     network::HttpResponse response;
     response.content_type = "text/html;charset=UTF-8";
     if (!bad || !library_ || agent_.is_zero()) {
@@ -47,6 +48,7 @@ network::HttpResponse FetchLibrary2Core::handle(const network::Value &input,
     response.body += "</map></llsd>";
     return response;
 }
+
 FetchLibrary2Route::FetchLibrary2Route(std::string path, std::shared_ptr<FetchLibrary2Core> core,
                                        std::shared_ptr<InventoryBadRequests> bad, Deserialize deserialize)
     : path_(std::move(path)), core_(std::move(core)), bad_(std::move(bad)),
@@ -54,6 +56,7 @@ FetchLibrary2Route::FetchLibrary2Route(std::string path, std::shared_ptr<FetchLi
     if (!core_)
         throw std::invalid_argument("Null library capability core");
 }
+
 network::HttpResponse FetchLibrary2Route::handle(const network::HttpRequest &request) {
     ++requests_received;
     network::HttpResponse response;
@@ -80,4 +83,4 @@ network::HttpResponse FetchLibrary2Route::handle(const network::HttpRequest &req
     ++requests_handled;
     return response;
 }
-}
+} // namespace opensim::services

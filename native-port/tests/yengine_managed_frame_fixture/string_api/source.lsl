@@ -1,0 +1,1 @@
+string result;integer count;string inner(){count++;return llGetTimestamp();}default{state_entry(){result=inner();}}

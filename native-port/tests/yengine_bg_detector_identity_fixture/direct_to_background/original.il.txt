@@ -1,0 +1,1308 @@
+  state[0] = default
+  numGblArrays       0
+  numGblChars        0
+  numGblFloats       0
+  numGblIntegers     6
+  numGblLists        10
+  numGblObjects      0
+  numGblRotations    0
+  numGblStrings      0
+  numGblVectors      0
+  numGblSDTClObjs    0
+  numGblSDTIntfObjs  0
+  before = iarLists[0]
+  replacement = iarLists[1]
+  after = iarLists[2]
+  inner_before = iarLists[3]
+  inner_replacement = iarLists[4]
+  inner_after = iarLists[5]
+  result = iarLists[6]
+  returned = iarLists[7]
+  inner_result = iarLists[8]
+  inner_returned = iarLists[9]
+  entries = iarIntegers[0]
+  background = iarIntegers[1]
+  inner_entries = iarIntegers[2]
+  resumed = iarIntegers[3]
+  complete = iarIntegers[4]
+  caller_after = iarIntegers[5]
+  delegate void $anondel$void()();
+
+Void $globalvarinit() (EventHelpersInstance)
+{
+          lsllist     tmp$1$0
+          lsllist     tmp$2$1
+          lsllist     tmp$3$2
+          lsllist     tmp$4$3
+          lsllist     tmp$5$4
+          lsllist     tmp$6$5
+          lsllist     tmp$7$6
+          lsllist     tmp$8$7
+          lsllist     tmp$9$8
+          lsllist     tmp$10$9
+  0000    ldc.i4.0    
+  0001    newarr      Object   (type)
+  0006    newobj      list:(Object[])
+  000B    stloc       tmp$1$0   (local)
+  000C    ldarg.0     
+  000D    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0012    ldc.i4.0    
+  0013    ldloc       tmp$1$0   (local)
+  0014    call        XMRInstArrays:PopList(Int32,list) -> Void
+  0019    ldc.i4.0    
+  001A    newarr      Object   (type)
+  001F    newobj      list:(Object[])
+  0024    stloc       tmp$2$1   (local)
+  0025    ldarg.0     
+  0026    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  002B    ldc.i4.1    
+  002C    ldloc       tmp$2$1   (local)
+  002D    call        XMRInstArrays:PopList(Int32,list) -> Void
+  0032    ldc.i4.0    
+  0033    newarr      Object   (type)
+  0038    newobj      list:(Object[])
+  003D    stloc       tmp$3$2   (local)
+  003E    ldarg.0     
+  003F    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0044    ldc.i4.2    
+  0045    ldloc       tmp$3$2   (local)
+  0046    call        XMRInstArrays:PopList(Int32,list) -> Void
+  004B    ldc.i4.0    
+  004C    newarr      Object   (type)
+  0051    newobj      list:(Object[])
+  0056    stloc       tmp$4$3   (local)
+  0057    ldarg.0     
+  0058    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  005D    ldc.i4.3    
+  005E    ldloc       tmp$4$3   (local)
+  005F    call        XMRInstArrays:PopList(Int32,list) -> Void
+  0064    ldc.i4.0    
+  0065    newarr      Object   (type)
+  006A    newobj      list:(Object[])
+  006F    stloc       tmp$5$4   (local)
+  0071    ldarg.0     
+  0072    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0077    ldc.i4.4    
+  0078    ldloc       tmp$5$4   (local)
+  007A    call        XMRInstArrays:PopList(Int32,list) -> Void
+  007F    ldc.i4.0    
+  0080    newarr      Object   (type)
+  0085    newobj      list:(Object[])
+  008A    stloc       tmp$6$5   (local)
+  008C    ldarg.0     
+  008D    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0092    ldc.i4.5    
+  0093    ldloc       tmp$6$5   (local)
+  0095    call        XMRInstArrays:PopList(Int32,list) -> Void
+  009A    ldc.i4.0    
+  009B    newarr      Object   (type)
+  00A0    newobj      list:(Object[])
+  00A5    stloc       tmp$7$6   (local)
+  00A7    ldarg.0     
+  00A8    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  00AD    ldc.i4.6    
+  00AE    ldloc       tmp$7$6   (local)
+  00B0    call        XMRInstArrays:PopList(Int32,list) -> Void
+  00B5    ldc.i4.0    
+  00B6    newarr      Object   (type)
+  00BB    newobj      list:(Object[])
+  00C0    stloc       tmp$8$7   (local)
+  00C2    ldarg.0     
+  00C3    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  00C8    ldc.i4.7    
+  00C9    ldloc       tmp$8$7   (local)
+  00CB    call        XMRInstArrays:PopList(Int32,list) -> Void
+  00D0    ldc.i4.0    
+  00D1    newarr      Object   (type)
+  00D6    newobj      list:(Object[])
+  00DB    stloc       tmp$9$8   (local)
+  00DD    ldarg.0     
+  00DE    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  00E3    ldc.i4.8    
+  00E4    ldloc       tmp$9$8   (local)
+  00E6    call        XMRInstArrays:PopList(Int32,list) -> Void
+  00EB    ldc.i4.0    
+  00EC    newarr      Object   (type)
+  00F1    newobj      list:(Object[])
+  00F6    stloc       tmp$10$9   (local)
+  00F8    ldarg.0     
+  00F9    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  00FE    ldc.i4.s    9   (int)
+  0100    ldloc       tmp$10$9   (local)
+  0102    call        XMRInstArrays:PopList(Int32,list) -> Void
+  0107    ldarg.0     
+  0108    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  010D    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  0112    ldc.i4.0    
+  0113    ldc.i4.0    
+  0114    stelem.i4   
+  0115    ldarg.0     
+  0116    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  011B    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  0120    ldc.i4.1    
+  0121    ldc.i4.0    
+  0122    stelem.i4   
+  0123    ldarg.0     
+  0124    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0129    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  012E    ldc.i4.2    
+  012F    ldc.i4.0    
+  0130    stelem.i4   
+  0131    ldarg.0     
+  0132    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0137    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  013C    ldc.i4.3    
+  013D    ldc.i4.0    
+  013E    stelem.i4   
+  013F    ldarg.0     
+  0140    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0145    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  014A    ldc.i4.4    
+  014B    ldc.i4.0    
+  014C    stelem.i4   
+  014D    ldarg.0     
+  014E    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0153    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  0158    ldc.i4.5    
+  0159    ldc.i4.0    
+  015A    stelem.i4   
+  015B    leave       __retlbl$0   (label)
+  0160  __retlbl$0:
+  0160    ret         
+}
+
+Void default listen (XMRInstAbstract)
+{
+          xmrsuper    __xmrinst$0
+  0000    ldarg.0     
+  0001    castclass   EventHelpersInstance   (type)
+  0006    stloc       __xmrinst$0   (local)
+  0007    ldloc       __xmrinst$0   (local)
+  0008    ldfld       XMRInstAbstract:m_localsHeapUsed -> Int32   (field)
+          int         __curHeap$1
+  000D    stloc       __curHeap$1   (local)
+          int         c$2
+          htstring    n$3
+  000E    ldloc       __xmrinst$0   (local)
+  000F    newobj      HeapTrackerString:(XMRInstAbstract)
+  0014    stloc       n$3   (local)
+          string      id$4
+          htstring    message$5
+  0015    ldloc       __xmrinst$0   (local)
+  0016    newobj      HeapTrackerString:(XMRInstAbstract)
+  001B    stloc       message$5   (local)
+  001D    ldloc       __xmrinst$0   (local)
+  001E    ldfld       XMRInstAbstract:ehArgs -> Object[]   (field)
+  0023    ldc.i4.0    
+  0024    ldelem      Object   (type)
+  0029    call        TypeCast:EHArgUnwrapInteger(Object) -> Int32
+  002E    stloc       c$2   (local)
+  002F    ldloc       n$3   (local)
+  0030    ldloc       __xmrinst$0   (local)
+  0031    ldfld       XMRInstAbstract:ehArgs -> Object[]   (field)
+  0036    ldc.i4.1    
+  0037    ldelem      Object   (type)
+  003C    call        TypeCast:EHArgUnwrapString(Object) -> String
+  0041    call        HeapTrackerString:Save(String) -> Void
+  0046    ldloc       __xmrinst$0   (local)
+  0047    ldfld       XMRInstAbstract:ehArgs -> Object[]   (field)
+  004C    ldc.i4.2    
+  004D    ldelem      Object   (type)
+  0052    call        TypeCast:EHArgUnwrapString(Object) -> String
+  0057    stloc       id$4   (local)
+  0059    ldloc       message$5   (local)
+  005B    ldloc       __xmrinst$0   (local)
+  005C    ldfld       XMRInstAbstract:ehArgs -> Object[]   (field)
+  0061    ldc.i4.3    
+  0062    ldelem      Object   (type)
+  0067    call        TypeCast:EHArgUnwrapString(Object) -> String
+  006C    call        HeapTrackerString:Save(String) -> Void
+  0071    leave       __retlbl$0   (label)
+  0076  __retlbl$0:
+  0076    ldloc       __xmrinst$0   (local)
+  0077    ldloc       __curHeap$1   (local)
+  0078    stfld       XMRInstAbstract:m_localsHeapUsed -> Int32   (field)
+  007D    ret         
+}
+
+Void default touch (XMRInstAbstract)
+{
+          xmrsuper    __xmrinst$0
+  0000    ldarg.0     
+  0001    castclass   EventHelpersInstance   (type)
+  0006    stloc       __xmrinst$0   (local)
+  0007    ldloc       __xmrinst$0   (local)
+  0008    ldfld       XMRInstAbstract:m_localsHeapUsed -> Int32   (field)
+          int         __curHeap$1
+  000D    stloc       __curHeap$1   (local)
+          int         n$2
+          int         __mainCallNo$3
+  000E    ldc.i4.m1   
+  000F    stloc       __mainCallNo$3   (local)
+  0010    ldloc       __xmrinst$0   (local)
+  0011    dup         
+  0012    ldfld       XMRInstAbstract:m_StackLeft -> Int32   (field)
+  0017    ldc.i4.s    68   (int)
+  0019    sub         
+  001A    stfld       XMRInstAbstract:m_StackLeft -> Int32   (field)
+  001F   BeginExceptionBlock
+  001F    ldloc       __xmrinst$0   (local)
+  0020    ldfld       XMRInstAbstract:callMode -> Int32   (field)
+  0025    ldc.i4.0    
+  0026    bne.un      __cmRestore$1   (label)
+  002B    ldloc       __xmrinst$0   (local)
+  002C    ldfld       XMRInstAbstract:ehArgs -> Object[]   (field)
+  0031    ldc.i4.0    
+  0032    ldelem      Object   (type)
+  0037    call        TypeCast:EHArgUnwrapInteger(Object) -> Int32
+  003C    stloc       n$2   (local)
+          lsllist     tmp$12$5
+          lsllist     tmp$13$6
+          lsllist     tmp$14$7
+          lsllist     tmp$15$8
+  003D    ldc.i4.0    
+  003E    stloc       __mainCallNo$3   (local)
+  003F  __call_0_0$2:
+  003F    ldloc       __xmrinst$0   (local)
+  0040    call        XMRInstAbstract:CheckRunStack() -> Void
+  0045    ldloc       __xmrinst$0   (local)
+  0046    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  004B    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  0050    ldc.i4.2    
+  0051    ldloc       __xmrinst$0   (local)
+  0052    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0057    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  005C    ldc.i4.2    
+  005D    ldelem.i4   
+  005E    ldc.i4.1    
+  005F    add         
+  0060    stelem.i4   
+  0061    ldloc       __xmrinst$0   (local)
+  0062    callvirt    XMRInstAbstract:xmrEventSaveDets() -> list
+  0067    stloc       tmp$12$5   (local)
+  0069    ldloc       __xmrinst$0   (local)
+  006A    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  006F    ldc.i4.3    
+  0070    ldloc       tmp$12$5   (local)
+  0072    call        XMRInstArrays:PopList(Int32,list) -> Void
+  0077    ldc.i4.s    17   (int)
+  0079    newarr      Object   (type)
+  007E    dup         
+  007F    ldc.i4.0    
+  0080    ldc.i4.1    
+  0081    newobj      LSLInteger:(Int32)
+  0086    box         LSLInteger   (type)
+  008B    stelem      Object   (type)
+  0090    dup         
+  0091    ldc.i4.1    
+  0092    ldstr       "11111111-2222-3333-4444-555555555555"   (string)
+  0097    newobj      LSLString:(String)
+  009C    box         LSLString   (type)
+  00A1    stelem      Object   (type)
+  00A6    dup         
+  00A7    ldc.i4.2    
+  00A8    ldc.r8      110.123456789   (double)
+  00B1    ldc.r8      111.234567891   (double)
+  00BA    ldc.r8      112.34567891200001   (double)
+  00C3    newobj      Vector3:(Double,Double,Double)
+  00C8    box         Vector3   (type)
+  00CD    stelem      Object   (type)
+  00D2    dup         
+  00D3    ldc.i4.3    
+  00D4    ldc.i4.7    
+  00D5    newobj      LSLInteger:(Int32)
+  00DA    box         LSLInteger   (type)
+  00DF    stelem      Object   (type)
+  00E4    dup         
+  00E5    ldc.i4.4    
+  00E6    ldstr       "22222222-3333-4444-5555-666666666666"   (string)
+  00EB    newobj      LSLString:(String)
+  00F0    box         LSLString   (type)
+  00F5    stelem      Object   (type)
+  00FA    dup         
+  00FB    ldc.i4.5    
+  00FC    ldstr       "inner replacement detector"   (string)
+  0101    newobj      LSLString:(String)
+  0106    box         LSLString   (type)
+  010B    stelem      Object   (type)
+  0110    dup         
+  0111    ldc.i4.6    
+  0112    ldstr       "33333333-4444-5555-6666-777777777777"   (string)
+  0117    newobj      LSLString:(String)
+  011C    box         LSLString   (type)
+  0121    stelem      Object   (type)
+  0126    dup         
+  0127    ldc.i4.7    
+  0128    ldc.r8      120.123456789   (double)
+  0131    ldc.r8      121.234567891   (double)
+  013A    ldc.r8      122.34567891200001   (double)
+  0143    newobj      Vector3:(Double,Double,Double)
+  0148    box         Vector3   (type)
+  014D    stelem      Object   (type)
+  0152    dup         
+  0153    ldc.i4.8    
+  0154    ldc.r8      0.25   (double)
+  015D    ldc.r8      0.375   (double)
+  0166    ldc.r8      0.5   (double)
+  016F    ldc.r8      0.625   (double)
+  0178    newobj      Quaternion:(Double,Double,Double,Double)
+  017D    box         Quaternion   (type)
+  0182    stelem      Object   (type)
+  0187    dup         
+  0188    ldc.i4.s    9   (int)
+  018A    ldc.i4.s    11   (int)
+  018C    newobj      LSLInteger:(Int32)
+  0191    box         LSLInteger   (type)
+  0196    stelem      Object   (type)
+  019B    dup         
+  019C    ldc.i4.s    10   (int)
+  019E    ldc.r8      130.123456789   (double)
+  01A7    ldc.r8      131.234567891   (double)
+  01B0    ldc.r8      132.345678912   (double)
+  01B9    newobj      Vector3:(Double,Double,Double)
+  01BE    box         Vector3   (type)
+  01C3    stelem      Object   (type)
+  01C8    dup         
+  01C9    ldc.i4.s    11   (int)
+  01CB    ldc.r8      140.123456789   (double)
+  01D4    ldc.r8      141.234567891   (double)
+  01DD    ldc.r8      142.345678912   (double)
+  01E6    newobj      Vector3:(Double,Double,Double)
+  01EB    box         Vector3   (type)
+  01F0    stelem      Object   (type)
+  01F5    dup         
+  01F6    ldc.i4.s    12   (int)
+  01F8    ldc.r8      143.123456789   (double)
+  0201    ldc.r8      144.234567891   (double)
+  020A    ldc.r8      145.345678912   (double)
+  0213    newobj      Vector3:(Double,Double,Double)
+  0218    box         Vector3   (type)
+  021D    stelem      Object   (type)
+  0222    dup         
+  0223    ldc.i4.s    13   (int)
+  0225    ldc.r8      146.123456789   (double)
+  022E    ldc.r8      147.234567891   (double)
+  0237    ldc.r8      148.345678912   (double)
+  0240    newobj      Vector3:(Double,Double,Double)
+  0245    box         Vector3   (type)
+  024A    stelem      Object   (type)
+  024F    dup         
+  0250    ldc.i4.s    14   (int)
+  0252    ldc.r8      149.123456789   (double)
+  025B    ldc.r8      150.234567891   (double)
+  0264    ldc.r8      151.345678912   (double)
+  026D    newobj      Vector3:(Double,Double,Double)
+  0272    box         Vector3   (type)
+  0277    stelem      Object   (type)
+  027C    dup         
+  027D    ldc.i4.s    15   (int)
+  027F    ldc.r8      152.123456789   (double)
+  0288    ldc.r8      153.234567891   (double)
+  0291    ldc.r8      154.345678912   (double)
+  029A    newobj      Vector3:(Double,Double,Double)
+  029F    box         Vector3   (type)
+  02A4    stelem      Object   (type)
+  02A9    dup         
+  02AA    ldc.i4.s    16   (int)
+  02AC    ldc.i4.s    13   (int)
+  02AE    newobj      LSLInteger:(Int32)
+  02B3    box         LSLInteger   (type)
+  02B8    stelem      Object   (type)
+  02BD    newobj      list:(Object[])
+  02C2    stloc       tmp$13$6   (local)
+  02C4    ldloc       __xmrinst$0   (local)
+  02C5    ldloc       tmp$13$6   (local)
+  02C7    callvirt    XMRInstAbstract:xmrEventLoadDets(list) -> Void
+  02CC    ldloc       __xmrinst$0   (local)
+  02CD    callvirt    XMRInstAbstract:xmrEventSaveDets() -> list
+  02D2    stloc       tmp$14$7   (local)
+  02D4    ldloc       __xmrinst$0   (local)
+  02D5    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  02DA    ldc.i4.4    
+  02DB    ldloc       tmp$14$7   (local)
+  02DD    call        XMRInstArrays:PopList(Int32,list) -> Void
+  02E2    ldloc       __xmrinst$0   (local)
+  02E3    ldc.r8      1   (double)
+  02EC    call        ScriptBaseClass:llSleep(Double) -> Void
+  02F1    ldc.i4.1    
+  02F2    stloc       __mainCallNo$3   (local)
+  02F3  __call_1_1$3:
+  02F3    ldloc       __xmrinst$0   (local)
+  02F4    call        XMRInstAbstract:CheckRunQuick() -> Void
+  02F9    ldloc       __xmrinst$0   (local)
+  02FA    callvirt    XMRInstAbstract:xmrEventSaveDets() -> list
+  02FF    stloc       tmp$15$8   (local)
+  0301    ldloc       __xmrinst$0   (local)
+  0302    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0307    ldc.i4.5    
+  0308    ldloc       tmp$15$8   (local)
+  030A    call        XMRInstArrays:PopList(Int32,list) -> Void
+  030F    ldloc       __xmrinst$0   (local)
+  0310    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0315    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  031A    ldc.i4.3    
+  031B    ldloc       __xmrinst$0   (local)
+  031C    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0321    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  0326    ldc.i4.3    
+  0327    ldelem.i4   
+  0328    ldc.i4.1    
+  0329    add         
+  032A    stelem.i4   
+  032B    leave       __retlbl$0   (label)
+  0330  __cmRestore$1:
+          object[]    __restObjArray$10
+  0330    ldloc       __xmrinst$0   (local)
+  0331    ldstr       "default touch"   (string)
+  0336    ldloca      __mainCallNo$3   (local)
+  0338    call        XMRInstAbstract:RestoreStackFrame(String,Int32&) -> Object[]
+  033D    stloc       __restObjArray$10   (local)
+  033F    ldloc       __restObjArray$10   (local)
+  0341    ldc.i4.0    
+  0342    ldelem.ref  
+  0343    castclass   EventHelpersInstance   (type)
+  0348    stloc       __xmrinst$0   (local)
+  0349    ldloc       __restObjArray$10   (local)
+  034B    ldc.i4.1    
+  034C    ldelem.ref  
+  034D    unbox.any   Int32   (type)
+  0352    stloc       __curHeap$1   (local)
+  0353    ldloc       __mainCallNo$3   (local)
+  0354    switch      __call_0_0$2
+                     ,__call_1_1$3
+  0361    ldloc       __mainCallNo$3   (local)
+  0362    newobj      ScriptBadCallNoException:(Int32)
+  0367    throw       
+  0368   BeginFinallyBlock
+  036D    ldloc       __xmrinst$0   (local)
+  036E    dup         
+  036F    ldfld       XMRInstAbstract:m_StackLeft -> Int32   (field)
+  0374    ldc.i4.s    68   (int)
+  0376    add         
+  0377    stfld       XMRInstAbstract:m_StackLeft -> Int32   (field)
+  037C    ldloc       __xmrinst$0   (local)
+  037D    ldfld       XMRInstAbstract:callMode -> Int32   (field)
+  0382    ldc.i4.1    
+  0383    bne.un      __endFin$4   (label)
+  0388    ldloc       __xmrinst$0   (local)
+  0389    ldstr       "default touch"   (string)
+  038E    ldloc       __mainCallNo$3   (local)
+  038F    ldc.i4.3    
+  0390    call        XMRInstAbstract:CaptureStackFrame(String,Int32,Int32) -> Object[]
+  0395    dup         
+  0396    ldc.i4.0    
+  0397    ldloc       __xmrinst$0   (local)
+  0398    stelem.ref  
+  0399    dup         
+  039A    ldc.i4.1    
+  039B    ldloc       __curHeap$1   (local)
+  039C    box         Int32   (type)
+  03A1    stelem.ref  
+  03A2    pop         
+  03A3  __endFin$4:
+  03A3    endfinally  
+  03A4   EndExceptionBlock
+  03A5  __retlbl$0:
+  03A5    ldloc       __xmrinst$0   (local)
+  03A6    ldloc       __curHeap$1   (local)
+  03A7    stfld       XMRInstAbstract:m_localsHeapUsed -> Int32   (field)
+  03AC    ret         
+}
+
+Void default touch_start (XMRInstAbstract)
+{
+          xmrsuper    __xmrinst$0
+  0000    ldarg.0     
+  0001    castclass   EventHelpersInstance   (type)
+  0006    stloc       __xmrinst$0   (local)
+  0007    ldloc       __xmrinst$0   (local)
+  0008    ldfld       XMRInstAbstract:m_localsHeapUsed -> Int32   (field)
+          int         __curHeap$1
+  000D    stloc       __curHeap$1   (local)
+          int         n$2
+          int         __mainCallNo$3
+  000E    ldc.i4.m1   
+  000F    stloc       __mainCallNo$3   (local)
+  0010    ldloc       __xmrinst$0   (local)
+  0011    dup         
+  0012    ldfld       XMRInstAbstract:m_StackLeft -> Int32   (field)
+  0017    ldc.i4.s    68   (int)
+  0019    sub         
+  001A    stfld       XMRInstAbstract:m_StackLeft -> Int32   (field)
+  001F   BeginExceptionBlock
+  001F    ldloc       __xmrinst$0   (local)
+  0020    ldfld       XMRInstAbstract:callMode -> Int32   (field)
+  0025    ldc.i4.0    
+  0026    bne.un      __cmRestore$1   (label)
+  002B    ldloc       __xmrinst$0   (local)
+  002C    ldfld       XMRInstAbstract:ehArgs -> Object[]   (field)
+  0031    ldc.i4.0    
+  0032    ldelem      Object   (type)
+  0037    call        TypeCast:EHArgUnwrapInteger(Object) -> Int32
+  003C    stloc       n$2   (local)
+          lsllist     tmp$18$5
+          lsllist     tmp$19$6
+          lsllist     tmp$20$7
+          lsllist     tmp$21$8
+          lsllist     tmp$22$9
+          lslrot      tmp$23$10
+          lsllist     tmp$24$11
+          lsllist     tmp$25$12
+          lsllist     tmp$26$13
+          lsllist     tmp$27$14
+  003D    ldc.i4.0    
+  003E    stloc       __mainCallNo$3   (local)
+  003F  __call_0_0$2:
+  003F    ldloc       __xmrinst$0   (local)
+  0040    call        XMRInstAbstract:CheckRunStack() -> Void
+  0045    ldloc       __xmrinst$0   (local)
+  0046    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  004B    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  0050    ldc.i4.1    
+  0051    ldloc       __xmrinst$0   (local)
+  0052    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0057    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  005C    ldc.i4.1    
+  005D    ldelem.i4   
+  005E    ldc.i4.1    
+  005F    add         
+  0060    stelem.i4   
+  0061    ldloc       __xmrinst$0   (local)
+  0062    callvirt    XMRInstAbstract:xmrEventSaveDets() -> list
+  0067    stloc       tmp$18$5   (local)
+  0069    ldloc       __xmrinst$0   (local)
+  006A    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  006F    ldc.i4.0    
+  0070    ldloc       tmp$18$5   (local)
+  0072    call        XMRInstArrays:PopList(Int32,list) -> Void
+  0077    ldc.i4.s    17   (int)
+  0079    newarr      Object   (type)
+  007E    dup         
+  007F    ldc.i4.0    
+  0080    ldc.i4.1    
+  0081    newobj      LSLInteger:(Int32)
+  0086    box         LSLInteger   (type)
+  008B    stelem      Object   (type)
+  0090    dup         
+  0091    ldc.i4.1    
+  0092    ldstr       "11111111-2222-3333-4444-555555555555"   (string)
+  0097    newobj      LSLString:(String)
+  009C    box         LSLString   (type)
+  00A1    stelem      Object   (type)
+  00A6    dup         
+  00A7    ldc.i4.2    
+  00A8    ldc.r8      10.123456789   (double)
+  00B1    ldc.r8      11.234567891   (double)
+  00BA    ldc.r8      12.345678912   (double)
+  00C3    newobj      Vector3:(Double,Double,Double)
+  00C8    box         Vector3   (type)
+  00CD    stelem      Object   (type)
+  00D2    dup         
+  00D3    ldc.i4.3    
+  00D4    ldc.i4.7    
+  00D5    newobj      LSLInteger:(Int32)
+  00DA    box         LSLInteger   (type)
+  00DF    stelem      Object   (type)
+  00E4    dup         
+  00E5    ldc.i4.4    
+  00E6    ldstr       "22222222-3333-4444-5555-666666666666"   (string)
+  00EB    newobj      LSLString:(String)
+  00F0    box         LSLString   (type)
+  00F5    stelem      Object   (type)
+  00FA    dup         
+  00FB    ldc.i4.5    
+  00FC    ldstr       "inner selected binary detector"   (string)
+  0101    newobj      LSLString:(String)
+  0106    box         LSLString   (type)
+  010B    stelem      Object   (type)
+  0110    dup         
+  0111    ldc.i4.6    
+  0112    ldstr       "33333333-4444-5555-6666-777777777777"   (string)
+  0117    newobj      LSLString:(String)
+  011C    box         LSLString   (type)
+  0121    stelem      Object   (type)
+  0126    dup         
+  0127    ldc.i4.7    
+  0128    ldc.r8      20.123456789000002   (double)
+  0131    ldc.r8      21.234567890999998   (double)
+  013A    ldc.r8      22.345678911999997   (double)
+  0143    newobj      Vector3:(Double,Double,Double)
+  0148    box         Vector3   (type)
+  014D    stelem      Object   (type)
+  0152    dup         
+  0153    ldc.i4.8    
+  0154    ldc.r8      0.123456789   (double)
+  015D    ldc.r8      -0.987654321   (double)
+  0166    ldc.r8      0.333333333   (double)
+  016F    ldc.r8      -4.9E-07   (double)
+  0178    newobj      Quaternion:(Double,Double,Double,Double)
+  017D    box         Quaternion   (type)
+  0182    stelem      Object   (type)
+  0187    dup         
+  0188    ldc.i4.s    9   (int)
+  018A    ldc.i4.s    11   (int)
+  018C    newobj      LSLInteger:(Int32)
+  0191    box         LSLInteger   (type)
+  0196    stelem      Object   (type)
+  019B    dup         
+  019C    ldc.i4.s    10   (int)
+  019E    ldc.r8      30.123456789000002   (double)
+  01A7    ldc.r8      31.234567890999998   (double)
+  01B0    ldc.r8      32.345678912   (double)
+  01B9    newobj      Vector3:(Double,Double,Double)
+  01BE    box         Vector3   (type)
+  01C3    stelem      Object   (type)
+  01C8    dup         
+  01C9    ldc.i4.s    11   (int)
+  01CB    ldc.r8      40.123456789   (double)
+  01D4    ldc.r8      41.234567891   (double)
+  01DD    ldc.r8      42.345678912   (double)
+  01E6    newobj      Vector3:(Double,Double,Double)
+  01EB    box         Vector3   (type)
+  01F0    stelem      Object   (type)
+  01F5    dup         
+  01F6    ldc.i4.s    12   (int)
+  01F8    ldc.r8      43.123456788999995   (double)
+  0201    ldc.r8      44.234567891000005   (double)
+  020A    ldc.r8      45.345678912   (double)
+  0213    newobj      Vector3:(Double,Double,Double)
+  0218    box         Vector3   (type)
+  021D    stelem      Object   (type)
+  0222    dup         
+  0223    ldc.i4.s    13   (int)
+  0225    ldc.r8      46.123456788999995   (double)
+  022E    ldc.r8      47.234567891000005   (double)
+  0237    ldc.r8      48.345678912   (double)
+  0240    newobj      Vector3:(Double,Double,Double)
+  0245    box         Vector3   (type)
+  024A    stelem      Object   (type)
+  024F    dup         
+  0250    ldc.i4.s    14   (int)
+  0252    ldc.r8      49.123456788999995   (double)
+  025B    ldc.r8      50.234567891000005   (double)
+  0264    ldc.r8      51.345678912   (double)
+  026D    newobj      Vector3:(Double,Double,Double)
+  0272    box         Vector3   (type)
+  0277    stelem      Object   (type)
+  027C    dup         
+  027D    ldc.i4.s    15   (int)
+  027F    ldc.r8      52.123456788999995   (double)
+  0288    ldc.r8      53.234567891000005   (double)
+  0291    ldc.r8      54.345678912   (double)
+  029A    newobj      Vector3:(Double,Double,Double)
+  029F    box         Vector3   (type)
+  02A4    stelem      Object   (type)
+  02A9    dup         
+  02AA    ldc.i4.s    16   (int)
+  02AC    ldc.i4.s    13   (int)
+  02AE    newobj      LSLInteger:(Int32)
+  02B3    box         LSLInteger   (type)
+  02B8    stelem      Object   (type)
+  02BD    newobj      list:(Object[])
+  02C2    stloc       tmp$19$6   (local)
+  02C4    ldloc       __xmrinst$0   (local)
+  02C5    ldloc       tmp$19$6   (local)
+  02C7    callvirt    XMRInstAbstract:xmrEventLoadDets(list) -> Void
+  02CC    ldc.i4.2    
+  02CD    newarr      Object   (type)
+  02D2    dup         
+  02D3    ldc.i4.0    
+  02D4    ldc.i4.3    
+  02D5    newobj      LSLInteger:(Int32)
+  02DA    box         LSLInteger   (type)
+  02DF    stelem      Object   (type)
+  02E4    dup         
+  02E5    ldc.i4.1    
+  02E6    ldc.i4.5    
+  02E7    newobj      LSLInteger:(Int32)
+  02EC    box         LSLInteger   (type)
+  02F1    stelem      Object   (type)
+  02F6    newobj      list:(Object[])
+  02FB    stloc       tmp$20$7   (local)
+  02FD    ldloc       __xmrinst$0   (local)
+  02FE    ldloc       tmp$20$7   (local)
+  0300    callvirt    XMRInstAbstract:xmrEventEnqueue(list) -> Void
+  0305    ldc.i4.s    17   (int)
+  0307    newarr      Object   (type)
+  030C    dup         
+  030D    ldc.i4.0    
+  030E    ldc.i4.1    
+  030F    newobj      LSLInteger:(Int32)
+  0314    box         LSLInteger   (type)
+  0319    stelem      Object   (type)
+  031E    dup         
+  031F    ldc.i4.1    
+  0320    ldstr       "11111111-2222-3333-4444-555555555555"   (string)
+  0325    newobj      LSLString:(String)
+  032A    box         LSLString   (type)
+  032F    stelem      Object   (type)
+  0334    dup         
+  0335    ldc.i4.2    
+  0336    ldc.r8      310.123456789   (double)
+  033F    ldc.r8      311.234567891   (double)
+  0348    ldc.r8      312.345678912   (double)
+  0351    newobj      Vector3:(Double,Double,Double)
+  0356    box         Vector3   (type)
+  035B    stelem      Object   (type)
+  0360    dup         
+  0361    ldc.i4.3    
+  0362    ldc.i4.7    
+  0363    newobj      LSLInteger:(Int32)
+  0368    box         LSLInteger   (type)
+  036D    stelem      Object   (type)
+  0372    dup         
+  0373    ldc.i4.4    
+  0374    ldstr       "22222222-3333-4444-5555-666666666666"   (string)
+  0379    newobj      LSLString:(String)
+  037E    box         LSLString   (type)
+  0383    stelem      Object   (type)
+  0388    dup         
+  0389    ldc.i4.5    
+  038A    ldstr       "inner queued XML detector"   (string)
+  038F    newobj      LSLString:(String)
+  0394    box         LSLString   (type)
+  0399    stelem      Object   (type)
+  039E    dup         
+  039F    ldc.i4.6    
+  03A0    ldstr       "33333333-4444-5555-6666-777777777777"   (string)
+  03A5    newobj      LSLString:(String)
+  03AA    box         LSLString   (type)
+  03AF    stelem      Object   (type)
+  03B4    dup         
+  03B5    ldc.i4.7    
+  03B6    ldc.r8      320.123456789   (double)
+  03BF    ldc.r8      321.234567891   (double)
+  03C8    ldc.r8      322.345678912   (double)
+  03D1    newobj      Vector3:(Double,Double,Double)
+  03D6    box         Vector3   (type)
+  03DB    stelem      Object   (type)
+  03E0    dup         
+  03E1    ldc.i4.8    
+  03E2    ldc.r8      0.123456789   (double)
+  03EB    ldc.r8      -0.987654321   (double)
+  03F4    ldc.r8      0.333333333   (double)
+  03FD    ldc.r8      -4.9E-07   (double)
+  0406    newobj      Quaternion:(Double,Double,Double,Double)
+  040B    box         Quaternion   (type)
+  0410    stelem      Object   (type)
+  0415    dup         
+  0416    ldc.i4.s    9   (int)
+  0418    ldc.i4.s    11   (int)
+  041A    newobj      LSLInteger:(Int32)
+  041F    box         LSLInteger   (type)
+  0424    stelem      Object   (type)
+  0429    dup         
+  042A    ldc.i4.s    10   (int)
+  042C    ldc.r8      330.123456789   (double)
+  0435    ldc.r8      331.234567891   (double)
+  043E    ldc.r8      332.345678912   (double)
+  0447    newobj      Vector3:(Double,Double,Double)
+  044C    box         Vector3   (type)
+  0451    stelem      Object   (type)
+  0456    dup         
+  0457    ldc.i4.s    11   (int)
+  0459    ldc.r8      340.123456789   (double)
+  0462    ldc.r8      341.234567891   (double)
+  046B    ldc.r8      342.345678912   (double)
+  0474    newobj      Vector3:(Double,Double,Double)
+  0479    box         Vector3   (type)
+  047E    stelem      Object   (type)
+  0483    dup         
+  0484    ldc.i4.s    12   (int)
+  0486    ldc.r8      343.123456789   (double)
+  048F    ldc.r8      344.234567891   (double)
+  0498    ldc.r8      345.345678912   (double)
+  04A1    newobj      Vector3:(Double,Double,Double)
+  04A6    box         Vector3   (type)
+  04AB    stelem      Object   (type)
+  04B0    dup         
+  04B1    ldc.i4.s    13   (int)
+  04B3    ldc.r8      346.123456789   (double)
+  04BC    ldc.r8      347.234567891   (double)
+  04C5    ldc.r8      348.345678912   (double)
+  04CE    newobj      Vector3:(Double,Double,Double)
+  04D3    box         Vector3   (type)
+  04D8    stelem      Object   (type)
+  04DD    dup         
+  04DE    ldc.i4.s    14   (int)
+  04E0    ldc.r8      349.123456789   (double)
+  04E9    ldc.r8      350.234567891   (double)
+  04F2    ldc.r8      351.345678912   (double)
+  04FB    newobj      Vector3:(Double,Double,Double)
+  0500    box         Vector3   (type)
+  0505    stelem      Object   (type)
+  050A    dup         
+  050B    ldc.i4.s    15   (int)
+  050D    ldc.r8      352.123456789   (double)
+  0516    ldc.r8      353.234567891   (double)
+  051F    ldc.r8      354.345678912   (double)
+  0528    newobj      Vector3:(Double,Double,Double)
+  052D    box         Vector3   (type)
+  0532    stelem      Object   (type)
+  0537    dup         
+  0538    ldc.i4.s    16   (int)
+  053A    ldc.i4.s    13   (int)
+  053C    newobj      LSLInteger:(Int32)
+  0541    box         LSLInteger   (type)
+  0546    stelem      Object   (type)
+  054B    newobj      list:(Object[])
+  0550    stloc       tmp$21$8   (local)
+  0552    ldloc       __xmrinst$0   (local)
+  0553    ldloc       tmp$21$8   (local)
+  0555    callvirt    XMRInstAbstract:xmrEventLoadDets(list) -> Void
+  055A    ldc.i4.5    
+  055B    newarr      Object   (type)
+  0560    dup         
+  0561    ldc.i4.0    
+  0562    ldc.i4.s    15   (int)
+  0564    newobj      LSLInteger:(Int32)
+  0569    box         LSLInteger   (type)
+  056E    stelem      Object   (type)
+  0573    dup         
+  0574    ldc.i4.1    
+  0575    ldc.i4.s    77   (int)
+  0577    newobj      LSLInteger:(Int32)
+  057C    box         LSLInteger   (type)
+  0581    stelem      Object   (type)
+  0586    dup         
+  0587    ldc.i4.2    
+  0588    ldstr       "name"   (string)
+  058D    newobj      LSLString:(String)
+  0592    box         LSLString   (type)
+  0597    stelem      Object   (type)
+  059C    dup         
+  059D    ldc.i4.3    
+  059E    ldstr       "33333333-4444-5555-6666-777777777777"   (string)
+  05A3    newobj      LSLString:(String)
+  05A8    box         LSLString   (type)
+  05AD    stelem      Object   (type)
+  05B2    dup         
+  05B3    ldc.i4.4    
+  05B4    ldstr       "message"   (string)
+  05B9    newobj      LSLString:(String)
+  05BE    box         LSLString   (type)
+  05C3    stelem      Object   (type)
+  05C8    newobj      list:(Object[])
+  05CD    stloc       tmp$22$9   (local)
+  05CF    ldloc       __xmrinst$0   (local)
+  05D0    ldloc       tmp$22$9   (local)
+  05D2    callvirt    XMRInstAbstract:xmrEventEnqueue(list) -> Void
+  05D7    ldstr       "<0,0,0,0>"   (string)
+  05DC    newobj      Quaternion:(String)
+  05E1    stloc       tmp$23$10   (local)
+  05E3    ldc.i4.s    17   (int)
+  05E5    newarr      Object   (type)
+  05EA    dup         
+  05EB    ldc.i4.0    
+  05EC    ldc.i4.1    
+  05ED    newobj      LSLInteger:(Int32)
+  05F2    box         LSLInteger   (type)
+  05F7    stelem      Object   (type)
+  05FC    dup         
+  05FD    ldc.i4.1    
+  05FE    ldstr       "11111111-2222-3333-4444-555555555555"   (string)
+  0603    newobj      LSLString:(String)
+  0608    box         LSLString   (type)
+  060D    stelem      Object   (type)
+  0612    dup         
+  0613    ldc.i4.2    
+  0614    ldc.r8      210.12345678900002   (double)
+  061D    ldc.r8      211.23456789099998   (double)
+  0626    ldc.r8      212.345678912   (double)
+  062F    newobj      Vector3:(Double,Double,Double)
+  0634    box         Vector3   (type)
+  0639    stelem      Object   (type)
+  063E    dup         
+  063F    ldc.i4.3    
+  0640    ldc.i4.7    
+  0641    newobj      LSLInteger:(Int32)
+  0646    box         LSLInteger   (type)
+  064B    stelem      Object   (type)
+  0650    dup         
+  0651    ldc.i4.4    
+  0652    ldstr       "22222222-3333-4444-5555-666666666666"   (string)
+  0657    newobj      LSLString:(String)
+  065C    box         LSLString   (type)
+  0661    stelem      Object   (type)
+  0666    dup         
+  0667    ldc.i4.5    
+  0668    ldstr       "direct XML detector"   (string)
+  066D    newobj      LSLString:(String)
+  0672    box         LSLString   (type)
+  0677    stelem      Object   (type)
+  067C    dup         
+  067D    ldc.i4.6    
+  067E    ldstr       "33333333-4444-5555-6666-777777777777"   (string)
+  0683    newobj      LSLString:(String)
+  0688    box         LSLString   (type)
+  068D    stelem      Object   (type)
+  0692    dup         
+  0693    ldc.i4.7    
+  0694    ldc.r8      220.12345678900002   (double)
+  069D    ldc.r8      221.23456789099998   (double)
+  06A6    ldc.r8      222.345678912   (double)
+  06AF    newobj      Vector3:(Double,Double,Double)
+  06B4    box         Vector3   (type)
+  06B9    stelem      Object   (type)
+  06BE    dup         
+  06BF    ldc.i4.8    
+  06C0    ldloc       tmp$23$10   (local)
+  06C2    box         Quaternion   (type)
+  06C7    stelem      Object   (type)
+  06CC    dup         
+  06CD    ldc.i4.s    9   (int)
+  06CF    ldc.i4.s    11   (int)
+  06D1    newobj      LSLInteger:(Int32)
+  06D6    box         LSLInteger   (type)
+  06DB    stelem      Object   (type)
+  06E0    dup         
+  06E1    ldc.i4.s    10   (int)
+  06E3    ldc.r8      230.12345678900002   (double)
+  06EC    ldc.r8      231.23456789099998   (double)
+  06F5    ldc.r8      232.345678912   (double)
+  06FE    newobj      Vector3:(Double,Double,Double)
+  0703    box         Vector3   (type)
+  0708    stelem      Object   (type)
+  070D    dup         
+  070E    ldc.i4.s    11   (int)
+  0710    ldc.r8      240.12345678900002   (double)
+  0719    ldc.r8      241.23456789099998   (double)
+  0722    ldc.r8      242.345678912   (double)
+  072B    newobj      Vector3:(Double,Double,Double)
+  0730    box         Vector3   (type)
+  0735    stelem      Object   (type)
+  073A    dup         
+  073B    ldc.i4.s    12   (int)
+  073D    ldc.r8      243.12345678900002   (double)
+  0746    ldc.r8      244.23456789099998   (double)
+  074F    ldc.r8      245.345678912   (double)
+  0758    newobj      Vector3:(Double,Double,Double)
+  075D    box         Vector3   (type)
+  0762    stelem      Object   (type)
+  0767    dup         
+  0768    ldc.i4.s    13   (int)
+  076A    ldc.r8      246.12345678900002   (double)
+  0773    ldc.r8      247.23456789099998   (double)
+  077C    ldc.r8      248.345678912   (double)
+  0785    newobj      Vector3:(Double,Double,Double)
+  078A    box         Vector3   (type)
+  078F    stelem      Object   (type)
+  0794    dup         
+  0795    ldc.i4.s    14   (int)
+  0797    ldc.r8      249.12345678900002   (double)
+  07A0    ldc.r8      250.23456789099998   (double)
+  07A9    ldc.r8      251.345678912   (double)
+  07B2    newobj      Vector3:(Double,Double,Double)
+  07B7    box         Vector3   (type)
+  07BC    stelem      Object   (type)
+  07C1    dup         
+  07C2    ldc.i4.s    15   (int)
+  07C4    ldc.r8      252.12345678900002   (double)
+  07CD    ldc.r8      253.23456789099998   (double)
+  07D6    ldc.r8      254.345678912   (double)
+  07DF    newobj      Vector3:(Double,Double,Double)
+  07E4    box         Vector3   (type)
+  07E9    stelem      Object   (type)
+  07EE    dup         
+  07EF    ldc.i4.s    16   (int)
+  07F1    ldc.i4.s    13   (int)
+  07F3    newobj      LSLInteger:(Int32)
+  07F8    box         LSLInteger   (type)
+  07FD    stelem      Object   (type)
+  0802    newobj      list:(Object[])
+  0807    stloc       tmp$24$11   (local)
+  0809    ldloc       __xmrinst$0   (local)
+  080A    ldloc       tmp$24$11   (local)
+  080C    callvirt    XMRInstAbstract:xmrEventLoadDets(list) -> Void
+  0811    ldloc       __xmrinst$0   (local)
+  0812    callvirt    XMRInstAbstract:xmrEventSaveDets() -> list
+  0817    stloc       tmp$25$12   (local)
+  0819    ldloc       __xmrinst$0   (local)
+  081A    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  081F    ldc.i4.1    
+  0820    ldloc       tmp$25$12   (local)
+  0822    call        XMRInstArrays:PopList(Int32,list) -> Void
+  0827    ldc.i4.1    
+  0828    stloc       __mainCallNo$3   (local)
+  0829  __call_1_1$3:
+  0829    ldloc       __xmrinst$0   (local)
+  082A    ldc.r8      600   (double)
+  0833    ldc.i4      32768   (int)
+  0838    ldc.i4.0    
+  0839    ldc.i4.8    
+  083A    ldc.i4.0    
+  083B    callvirt    XMRInstAbstract:xmrEventDequeue(Double,Int32,Int32,Int32,Int32) -> list
+  0840    stloc       tmp$26$13   (local)
+  0842    ldloc       __xmrinst$0   (local)
+  0843    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0848    ldc.i4.8    
+  0849    ldloc       tmp$26$13   (local)
+  084B    call        XMRInstArrays:PopList(Int32,list) -> Void
+  0850    ldloc       __xmrinst$0   (local)
+  0851    callvirt    XMRInstAbstract:xmrEventSaveDets() -> list
+  0856    stloc       tmp$27$14   (local)
+  0858    ldloc       __xmrinst$0   (local)
+  0859    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  085E    ldc.i4.7    
+  085F    ldloc       tmp$27$14   (local)
+  0861    call        XMRInstArrays:PopList(Int32,list) -> Void
+  0866    ldloc       __xmrinst$0   (local)
+  0867    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  086C    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  0871    ldc.i4.4    
+  0872    ldc.i4.1    
+  0873    stelem.i4   
+  0874    leave       __retlbl$0   (label)
+  0879  __cmRestore$1:
+          object[]    __restObjArray$15
+  0879    ldloc       __xmrinst$0   (local)
+  087A    ldstr       "default touch_start"   (string)
+  087F    ldloca      __mainCallNo$3   (local)
+  0881    call        XMRInstAbstract:RestoreStackFrame(String,Int32&) -> Object[]
+  0886    stloc       __restObjArray$15   (local)
+  0888    ldloc       __restObjArray$15   (local)
+  088A    ldc.i4.0    
+  088B    ldelem.ref  
+  088C    castclass   EventHelpersInstance   (type)
+  0891    stloc       __xmrinst$0   (local)
+  0892    ldloc       __restObjArray$15   (local)
+  0894    ldc.i4.1    
+  0895    ldelem.ref  
+  0896    unbox.any   Int32   (type)
+  089B    stloc       __curHeap$1   (local)
+  089C    ldloc       __mainCallNo$3   (local)
+  089D    switch      __call_0_0$2
+                     ,__call_1_1$3
+  08AA    ldloc       __mainCallNo$3   (local)
+  08AB    newobj      ScriptBadCallNoException:(Int32)
+  08B0    throw       
+  08B1   BeginFinallyBlock
+  08B6    ldloc       __xmrinst$0   (local)
+  08B7    dup         
+  08B8    ldfld       XMRInstAbstract:m_StackLeft -> Int32   (field)
+  08BD    ldc.i4.s    68   (int)
+  08BF    add         
+  08C0    stfld       XMRInstAbstract:m_StackLeft -> Int32   (field)
+  08C5    ldloc       __xmrinst$0   (local)
+  08C6    ldfld       XMRInstAbstract:callMode -> Int32   (field)
+  08CB    ldc.i4.1    
+  08CC    bne.un      __endFin$4   (label)
+  08D1    ldloc       __xmrinst$0   (local)
+  08D2    ldstr       "default touch_start"   (string)
+  08D7    ldloc       __mainCallNo$3   (local)
+  08D8    ldc.i4.3    
+  08D9    call        XMRInstAbstract:CaptureStackFrame(String,Int32,Int32) -> Object[]
+  08DE    dup         
+  08DF    ldc.i4.0    
+  08E0    ldloc       __xmrinst$0   (local)
+  08E1    stelem.ref  
+  08E2    dup         
+  08E3    ldc.i4.1    
+  08E4    ldloc       __curHeap$1   (local)
+  08E5    box         Int32   (type)
+  08EA    stelem.ref  
+  08EB    pop         
+  08EC  __endFin$4:
+  08EC    endfinally  
+  08ED   EndExceptionBlock
+  08EE  __retlbl$0:
+  08EE    ldloc       __xmrinst$0   (local)
+  08EF    ldloc       __curHeap$1   (local)
+  08F0    stfld       XMRInstAbstract:m_localsHeapUsed -> Int32   (field)
+  08F5    ret         
+}
+
+Void default state_entry (XMRInstAbstract)
+{
+          xmrsuper    __xmrinst$0
+  0000    ldarg.0     
+  0001    castclass   EventHelpersInstance   (type)
+  0006    stloc       __xmrinst$0   (local)
+  0007    ldloc       __xmrinst$0   (local)
+  0008    ldfld       XMRInstAbstract:m_localsHeapUsed -> Int32   (field)
+          int         __curHeap$1
+  000D    stloc       __curHeap$1   (local)
+          lslrot      tmp$29$3
+          lsllist     tmp$30$4
+          lsllist     tmp$31$5
+  000E    ldloc       __xmrinst$0   (local)
+  000F    ldfld       XMRInstAbstract:doGblInit -> Boolean   (field)
+  0014    brfalse     __skipGblInit$1   (label)
+  0019    ldloc       __xmrinst$0   (local)
+  001A    call        $globalvarinit()(EventHelpersInstance) -> Void
+  001F    ldloc       __xmrinst$0   (local)
+  0020    ldc.i4.0    
+  0021    stfld       XMRInstAbstract:doGblInit -> Boolean   (field)
+  0026  __skipGblInit$1:
+  0026    ldloc       __xmrinst$0   (local)
+  0027    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  002C    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  0031    ldc.i4.0    
+  0032    ldloc       __xmrinst$0   (local)
+  0033    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0038    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  003D    ldc.i4.0    
+  003E    ldelem.i4   
+  003F    ldc.i4.1    
+  0040    add         
+  0041    stelem.i4   
+  0042    ldstr       "<0,0,0,0>"   (string)
+  0047    newobj      Quaternion:(String)
+  004C    stloc       tmp$29$3   (local)
+  004D    ldc.i4.s    17   (int)
+  004F    newarr      Object   (type)
+  0054    dup         
+  0055    ldc.i4.0    
+  0056    ldc.i4.1    
+  0057    newobj      LSLInteger:(Int32)
+  005C    box         LSLInteger   (type)
+  0061    stelem      Object   (type)
+  0066    dup         
+  0067    ldc.i4.1    
+  0068    ldstr       "11111111-2222-3333-4444-555555555555"   (string)
+  006D    newobj      LSLString:(String)
+  0072    box         LSLString   (type)
+  0077    stelem      Object   (type)
+  007C    dup         
+  007D    ldc.i4.2    
+  007E    ldc.r8      200.12345678900002   (double)
+  0087    ldc.r8      201.23456789099998   (double)
+  0090    ldc.r8      202.345678912   (double)
+  0099    newobj      Vector3:(Double,Double,Double)
+  009E    box         Vector3   (type)
+  00A3    stelem      Object   (type)
+  00A8    dup         
+  00A9    ldc.i4.3    
+  00AA    ldc.i4.7    
+  00AB    newobj      LSLInteger:(Int32)
+  00B0    box         LSLInteger   (type)
+  00B5    stelem      Object   (type)
+  00BA    dup         
+  00BB    ldc.i4.4    
+  00BC    ldstr       "22222222-3333-4444-5555-666666666666"   (string)
+  00C1    newobj      LSLString:(String)
+  00C6    box         LSLString   (type)
+  00CB    stelem      Object   (type)
+  00D0    dup         
+  00D1    ldc.i4.5    
+  00D2    ldstr       "root XML detector"   (string)
+  00D7    newobj      LSLString:(String)
+  00DC    box         LSLString   (type)
+  00E1    stelem      Object   (type)
+  00E6    dup         
+  00E7    ldc.i4.6    
+  00E8    ldstr       "33333333-4444-5555-6666-777777777777"   (string)
+  00ED    newobj      LSLString:(String)
+  00F2    box         LSLString   (type)
+  00F7    stelem      Object   (type)
+  00FC    dup         
+  00FD    ldc.i4.7    
+  00FE    ldc.r8      210.12345678900002   (double)
+  0107    ldc.r8      211.23456789099998   (double)
+  0110    ldc.r8      212.345678912   (double)
+  0119    newobj      Vector3:(Double,Double,Double)
+  011E    box         Vector3   (type)
+  0123    stelem      Object   (type)
+  0128    dup         
+  0129    ldc.i4.8    
+  012A    ldloc       tmp$29$3   (local)
+  012B    box         Quaternion   (type)
+  0130    stelem      Object   (type)
+  0135    dup         
+  0136    ldc.i4.s    9   (int)
+  0138    ldc.i4.s    11   (int)
+  013A    newobj      LSLInteger:(Int32)
+  013F    box         LSLInteger   (type)
+  0144    stelem      Object   (type)
+  0149    dup         
+  014A    ldc.i4.s    10   (int)
+  014C    ldc.r8      220.12345678900002   (double)
+  0155    ldc.r8      221.23456789099998   (double)
+  015E    ldc.r8      222.345678912   (double)
+  0167    newobj      Vector3:(Double,Double,Double)
+  016C    box         Vector3   (type)
+  0171    stelem      Object   (type)
+  0176    dup         
+  0177    ldc.i4.s    11   (int)
+  0179    ldc.r8      230.12345678900002   (double)
+  0182    ldc.r8      231.23456789099998   (double)
+  018B    ldc.r8      232.345678912   (double)
+  0194    newobj      Vector3:(Double,Double,Double)
+  0199    box         Vector3   (type)
+  019E    stelem      Object   (type)
+  01A3    dup         
+  01A4    ldc.i4.s    12   (int)
+  01A6    ldc.r8      233.12345678900002   (double)
+  01AF    ldc.r8      234.23456789099998   (double)
+  01B8    ldc.r8      235.345678912   (double)
+  01C1    newobj      Vector3:(Double,Double,Double)
+  01C6    box         Vector3   (type)
+  01CB    stelem      Object   (type)
+  01D0    dup         
+  01D1    ldc.i4.s    13   (int)
+  01D3    ldc.r8      236.12345678900002   (double)
+  01DC    ldc.r8      237.23456789099998   (double)
+  01E5    ldc.r8      238.345678912   (double)
+  01EE    newobj      Vector3:(Double,Double,Double)
+  01F3    box         Vector3   (type)
+  01F8    stelem      Object   (type)
+  01FD    dup         
+  01FE    ldc.i4.s    14   (int)
+  0200    ldc.r8      239.12345678900002   (double)
+  0209    ldc.r8      240.23456789099998   (double)
+  0212    ldc.r8      241.345678912   (double)
+  021B    newobj      Vector3:(Double,Double,Double)
+  0220    box         Vector3   (type)
+  0225    stelem      Object   (type)
+  022A    dup         
+  022B    ldc.i4.s    15   (int)
+  022D    ldc.r8      242.12345678900002   (double)
+  0236    ldc.r8      243.23456789099998   (double)
+  023F    ldc.r8      244.345678912   (double)
+  0248    newobj      Vector3:(Double,Double,Double)
+  024D    box         Vector3   (type)
+  0252    stelem      Object   (type)
+  0257    dup         
+  0258    ldc.i4.s    16   (int)
+  025A    ldc.i4.s    13   (int)
+  025C    newobj      LSLInteger:(Int32)
+  0261    box         LSLInteger   (type)
+  0266    stelem      Object   (type)
+  026B    newobj      list:(Object[])
+  0270    stloc       tmp$30$4   (local)
+  0271    ldloc       __xmrinst$0   (local)
+  0272    ldloc       tmp$30$4   (local)
+  0273    callvirt    XMRInstAbstract:xmrEventLoadDets(list) -> Void
+  0278    ldc.i4.2    
+  0279    newarr      Object   (type)
+  027E    dup         
+  027F    ldc.i4.0    
+  0280    ldc.i4.s    21   (int)
+  0282    newobj      LSLInteger:(Int32)
+  0287    box         LSLInteger   (type)
+  028C    stelem      Object   (type)
+  0291    dup         
+  0292    ldc.i4.1    
+  0293    ldc.i4.7    
+  0294    newobj      LSLInteger:(Int32)
+  0299    box         LSLInteger   (type)
+  029E    stelem      Object   (type)
+  02A3    newobj      list:(Object[])
+  02A8    stloc       tmp$31$5   (local)
+  02AA    ldloc       __xmrinst$0   (local)
+  02AB    ldloc       tmp$31$5   (local)
+  02AD    call        XMRInstAbstract:xmrEventCallHandler(list) -> Void
+  02B2    ldloc       __xmrinst$0   (local)
+  02B3    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  02B8    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  02BD    ldc.i4.5    
+  02BE    ldc.i4.1    
+  02BF    stelem.i4   
+  02C0    leave       __retlbl$0   (label)
+  02C5  __retlbl$0:
+  02C5    ldloc       __xmrinst$0   (local)
+  02C6    ldloc       __curHeap$1   (local)
+  02C7    stfld       XMRInstAbstract:m_localsHeapUsed -> Int32   (field)
+  02CC    ret         
+}
+TheEnd.

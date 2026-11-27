@@ -3,16 +3,17 @@
 #include "opensim/services/login_orchestration.hpp"
 #include "opensim/services/login_service.hpp"
 #include <stdexcept>
+
 namespace opensim::services {
-LoginOrchestrator::LoginOrchestrator(LoginDependencies dependencies, const server::IniConfig& config)
+LoginOrchestrator::LoginOrchestrator(LoginDependencies dependencies, const server::IniConfig &config)
     : dependencies_(std::move(dependencies)),
       require_inventory_(config.boolean("LoginService", "RequireInventory", true)),
       allow_duplicates_(config.boolean("PresenceService", "AllowDuplicatePresences", false)),
       fallback_to_any_(config.boolean("LoginService", "AllowLoginFallbackToAnyRegion", true)) {}
+
 std::variant<network::Value, PreparedLogin>
-LoginOrchestrator::prepare(const UserAccount& account, const framework::Uuid& scope,
-                           const framework::Uuid& session, const framework::Uuid& secure_session,
-                           const std::optional<std::string>& start) {
+LoginOrchestrator::prepare(const UserAccount &account, const framework::Uuid &scope, const framework::Uuid &session,
+                           const framework::Uuid &secure_session, const std::optional<std::string> &start) {
     const auto user = framework::Uuid(account.principal_id);
     if (!dependencies_.grid_user)
         throw std::runtime_error("Grid-user service unavailable");
@@ -48,8 +49,7 @@ LoginOrchestrator::prepare(const UserAccount& account, const framework::Uuid& sc
         throw std::runtime_error("Null inventory skeleton");
     if (skeleton->empty())
         return login_failure("InventoryProblem");
-    if (dependencies_.presence &&
-        !dependencies_.presence->login(account.principal_id, session, secure_session))
+    if (dependencies_.presence && !dependencies_.presence->login(account.principal_id, session, secure_session))
         return login_failure("GridProblem");
     std::optional<GridRegion> home;
     if (info) {
@@ -85,13 +85,15 @@ LoginOrchestrator::prepare(const UserAccount& account, const framework::Uuid& sc
     result.appearance = std::move(appearance);
     return result;
 }
-void LoginOrchestrator::abort(const framework::Uuid& session) {
+
+void LoginOrchestrator::abort(const framework::Uuid &session) {
     if (!dependencies_.presence)
         throw std::runtime_error("Presence service unavailable during login rollback");
     dependencies_.presence->logout(session);
 }
-void LoginOrchestrator::cleanup(const framework::Uuid& session) {
+
+void LoginOrchestrator::cleanup(const framework::Uuid &session) {
     if (dependencies_.presence)
         dependencies_.presence->logout(session);
 }
-}
+} // namespace opensim::services

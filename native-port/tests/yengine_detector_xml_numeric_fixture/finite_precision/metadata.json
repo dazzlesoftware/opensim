@@ -1,0 +1,2653 @@
+{
+  "name": "finite_precision",
+  "accepted": true,
+  "diagnostics": [],
+  "compile_exception": null,
+  "source_hash": "A3B8A3C9559D835DB37A7C3DD0277C75",
+  "compiled_version": -11,
+  "suspended": true,
+  "migrated": true,
+  "production_write_exception": null,
+  "permissive_write_exception": null,
+  "permissive_control_resume": {
+    "globals": {
+      "after": {
+        "type": "rotation",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+        "value": [
+          {
+            "clr": "System.Double",
+            "value": 0.123457,
+            "bits": "3fbf9ae0c1765775",
+            "text": "0.123457"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654,
+            "bits": "bfef9adc8fb86f48",
+            "text": "-0.987654"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333,
+            "bits": "3fd55553ef6b5d46",
+            "text": "0.333333"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0,
+            "bits": "8000000000000000",
+            "text": "-0"
+          }
+        ]
+      },
+      "before": {
+        "type": "rotation",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+        "value": [
+          {
+            "clr": "System.Double",
+            "value": 0.123456789,
+            "bits": "3fbf9add3739635f",
+            "text": "0.123456789"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654321,
+            "bits": "bfef9add3c0e56b8",
+            "text": "-0.987654321"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333333,
+            "bits": "3fd5555554f9b516",
+            "text": "0.333333333"
+          },
+          {
+            "clr": "System.Double",
+            "value": -4.9E-07,
+            "bits": "bea07111652d2b5c",
+            "text": "-4.9E-07"
+          }
+        ]
+      },
+      "calls": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 1
+      }
+    },
+    "event_code": "None",
+    "call_mode": 0,
+    "sleep_until_ticks": 0,
+    "object_description": "",
+    "event_arguments": null,
+    "state_index": 0,
+    "new_state_index": -1,
+    "initialize_globals": false,
+    "running": true,
+    "detectors": [
+      {
+        "key": "11111111-2222-3333-4444-555555555555",
+        "owner": "22222222-3333-4444-5555-666666666666",
+        "group": "33333333-4444-5555-6666-777777777777",
+        "name": "original rich detector 3",
+        "link_number": 5,
+        "type": 11,
+        "grab": [
+          {
+            "clr": "System.Double",
+            "value": 0.123457,
+            "bits": "3fbf9ae0c1765775",
+            "text": "0.123457"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654,
+            "bits": "bfef9adc8fb86f48",
+            "text": "-0.987654"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333,
+            "bits": "3fd55553ef6b5d46",
+            "text": "0.333333"
+          }
+        ],
+        "position": [
+          {
+            "clr": "System.Double",
+            "value": 0.333333,
+            "bits": "3fd55553ef6b5d46",
+            "text": "0.333333"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.123457,
+            "bits": "3fbf9ae0c1765775",
+            "text": "0.123457"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654,
+            "bits": "bfef9adc8fb86f48",
+            "text": "-0.987654"
+          }
+        ],
+        "rotation": [
+          {
+            "clr": "System.Double",
+            "value": 0.123457,
+            "bits": "3fbf9ae0c1765775",
+            "text": "0.123457"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654,
+            "bits": "bfef9adc8fb86f48",
+            "text": "-0.987654"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333,
+            "bits": "3fd55553ef6b5d46",
+            "text": "0.333333"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0,
+            "bits": "8000000000000000",
+            "text": "-0"
+          }
+        ],
+        "velocity": [
+          {
+            "clr": "System.Double",
+            "value": -0.987654,
+            "bits": "bfef9adc8fb86f48",
+            "text": "-0.987654"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333,
+            "bits": "3fd55553ef6b5d46",
+            "text": "0.333333"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.123457,
+            "bits": "3fbf9ae0c1765775",
+            "text": "0.123457"
+          }
+        ],
+        "touch_st": [
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_normal": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_binormal": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_pos": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_uv": [
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_face": -1
+      }
+    ],
+    "queue": [
+      {
+        "name": "touch_start",
+        "arguments": [
+          {
+            "type": "integer",
+            "clr": "System.Int32",
+            "value": 9
+          }
+        ],
+        "detectors": [
+          {
+            "key": "11111111-2222-3333-4444-555555555555",
+            "owner": "22222222-3333-4444-5555-666666666666",
+            "group": "33333333-4444-5555-6666-777777777777",
+            "name": "original rich detector 3",
+            "link_number": 5,
+            "type": 11,
+            "grab": [
+              {
+                "clr": "System.Double",
+                "value": 0.123457,
+                "bits": "3fbf9ae0c1765775",
+                "text": "0.123457"
+              },
+              {
+                "clr": "System.Double",
+                "value": -0.987654,
+                "bits": "bfef9adc8fb86f48",
+                "text": "-0.987654"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.333333,
+                "bits": "3fd55553ef6b5d46",
+                "text": "0.333333"
+              }
+            ],
+            "position": [
+              {
+                "clr": "System.Double",
+                "value": 0.333333,
+                "bits": "3fd55553ef6b5d46",
+                "text": "0.333333"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.123457,
+                "bits": "3fbf9ae0c1765775",
+                "text": "0.123457"
+              },
+              {
+                "clr": "System.Double",
+                "value": -0.987654,
+                "bits": "bfef9adc8fb86f48",
+                "text": "-0.987654"
+              }
+            ],
+            "rotation": [
+              {
+                "clr": "System.Double",
+                "value": 0.123457,
+                "bits": "3fbf9ae0c1765775",
+                "text": "0.123457"
+              },
+              {
+                "clr": "System.Double",
+                "value": -0.987654,
+                "bits": "bfef9adc8fb86f48",
+                "text": "-0.987654"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.333333,
+                "bits": "3fd55553ef6b5d46",
+                "text": "0.333333"
+              },
+              {
+                "clr": "System.Double",
+                "value": -0,
+                "bits": "8000000000000000",
+                "text": "-0"
+              }
+            ],
+            "velocity": [
+              {
+                "clr": "System.Double",
+                "value": -0.987654,
+                "bits": "bfef9adc8fb86f48",
+                "text": "-0.987654"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.333333,
+                "bits": "3fd55553ef6b5d46",
+                "text": "0.333333"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.123457,
+                "bits": "3fbf9ae0c1765775",
+                "text": "0.123457"
+              }
+            ],
+            "touch_st": [
+              {
+                "clr": "System.Double",
+                "value": -1,
+                "bits": "bff0000000000000",
+                "text": "-1"
+              },
+              {
+                "clr": "System.Double",
+                "value": -1,
+                "bits": "bff0000000000000",
+                "text": "-1"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              }
+            ],
+            "touch_normal": [
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              }
+            ],
+            "touch_binormal": [
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              }
+            ],
+            "touch_pos": [
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              }
+            ],
+            "touch_uv": [
+              {
+                "clr": "System.Double",
+                "value": -1,
+                "bits": "bff0000000000000",
+                "text": "-1"
+              },
+              {
+                "clr": "System.Double",
+                "value": -1,
+                "bits": "bff0000000000000",
+                "text": "-1"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              }
+            ],
+            "touch_face": -1
+          }
+        ]
+      }
+    ],
+    "frames": []
+  },
+  "permissive_control_resume_exception": null,
+  "production_writer": "Unchanged private XMRInstance.MigrateOutEventHandler(Stream): new BinaryWriter(stream)",
+  "initial_exception": null,
+  "live_cycles": [],
+  "migrated_cycles": [],
+  "prefix_resume": null,
+  "live_resume_exception": null,
+  "live_resume": {
+    "globals": {
+      "after": {
+        "type": "rotation",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+        "value": [
+          {
+            "clr": "System.Double",
+            "value": 0.123456789,
+            "bits": "3fbf9add3739635f",
+            "text": "0.123456789"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654321,
+            "bits": "bfef9add3c0e56b8",
+            "text": "-0.987654321"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333333,
+            "bits": "3fd5555554f9b516",
+            "text": "0.333333333"
+          },
+          {
+            "clr": "System.Double",
+            "value": -4.9E-07,
+            "bits": "bea07111652d2b5c",
+            "text": "-4.9E-07"
+          }
+        ]
+      },
+      "before": {
+        "type": "rotation",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+        "value": [
+          {
+            "clr": "System.Double",
+            "value": 0.123456789,
+            "bits": "3fbf9add3739635f",
+            "text": "0.123456789"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654321,
+            "bits": "bfef9add3c0e56b8",
+            "text": "-0.987654321"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333333,
+            "bits": "3fd5555554f9b516",
+            "text": "0.333333333"
+          },
+          {
+            "clr": "System.Double",
+            "value": -4.9E-07,
+            "bits": "bea07111652d2b5c",
+            "text": "-4.9E-07"
+          }
+        ]
+      },
+      "calls": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 1
+      }
+    },
+    "event_code": "None",
+    "call_mode": 0,
+    "sleep_until_ticks": 639313036648467147,
+    "object_description": "",
+    "event_arguments": null,
+    "state_index": 0,
+    "new_state_index": -1,
+    "initialize_globals": false,
+    "running": true,
+    "detectors": [
+      {
+        "key": "11111111-2222-3333-4444-555555555555",
+        "owner": "22222222-3333-4444-5555-666666666666",
+        "group": "33333333-4444-5555-6666-777777777777",
+        "name": "original rich detector 3",
+        "link_number": 5,
+        "type": 11,
+        "grab": [
+          {
+            "clr": "System.Double",
+            "value": 0.123456789,
+            "bits": "3fbf9add3739635f",
+            "text": "0.123456789"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654321,
+            "bits": "bfef9add3c0e56b8",
+            "text": "-0.987654321"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333333,
+            "bits": "3fd5555554f9b516",
+            "text": "0.333333333"
+          }
+        ],
+        "position": [
+          {
+            "clr": "System.Double",
+            "value": 0.333333333,
+            "bits": "3fd5555554f9b516",
+            "text": "0.333333333"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.123456789,
+            "bits": "3fbf9add3739635f",
+            "text": "0.123456789"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654321,
+            "bits": "bfef9add3c0e56b8",
+            "text": "-0.987654321"
+          }
+        ],
+        "rotation": [
+          {
+            "clr": "System.Double",
+            "value": 0.123456789,
+            "bits": "3fbf9add3739635f",
+            "text": "0.123456789"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654321,
+            "bits": "bfef9add3c0e56b8",
+            "text": "-0.987654321"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333333,
+            "bits": "3fd5555554f9b516",
+            "text": "0.333333333"
+          },
+          {
+            "clr": "System.Double",
+            "value": -4.9E-07,
+            "bits": "bea07111652d2b5c",
+            "text": "-4.9E-07"
+          }
+        ],
+        "velocity": [
+          {
+            "clr": "System.Double",
+            "value": -0.987654321,
+            "bits": "bfef9add3c0e56b8",
+            "text": "-0.987654321"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333333,
+            "bits": "3fd5555554f9b516",
+            "text": "0.333333333"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.123456789,
+            "bits": "3fbf9add3739635f",
+            "text": "0.123456789"
+          }
+        ],
+        "touch_st": [
+          {
+            "clr": "System.Double",
+            "value": 0.123456789,
+            "bits": "3fbf9add3739635f",
+            "text": "0.123456789"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654321,
+            "bits": "bfef9add3c0e56b8",
+            "text": "-0.987654321"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333333,
+            "bits": "3fd5555554f9b516",
+            "text": "0.333333333"
+          }
+        ],
+        "touch_normal": [
+          {
+            "clr": "System.Double",
+            "value": 0.123456789,
+            "bits": "3fbf9add3739635f",
+            "text": "0.123456789"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654321,
+            "bits": "bfef9add3c0e56b8",
+            "text": "-0.987654321"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333333,
+            "bits": "3fd5555554f9b516",
+            "text": "0.333333333"
+          }
+        ],
+        "touch_binormal": [
+          {
+            "clr": "System.Double",
+            "value": 0.123456789,
+            "bits": "3fbf9add3739635f",
+            "text": "0.123456789"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654321,
+            "bits": "bfef9add3c0e56b8",
+            "text": "-0.987654321"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333333,
+            "bits": "3fd5555554f9b516",
+            "text": "0.333333333"
+          }
+        ],
+        "touch_pos": [
+          {
+            "clr": "System.Double",
+            "value": 0.123456789,
+            "bits": "3fbf9add3739635f",
+            "text": "0.123456789"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654321,
+            "bits": "bfef9add3c0e56b8",
+            "text": "-0.987654321"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333333,
+            "bits": "3fd5555554f9b516",
+            "text": "0.333333333"
+          }
+        ],
+        "touch_uv": [
+          {
+            "clr": "System.Double",
+            "value": 0.123456789,
+            "bits": "3fbf9add3739635f",
+            "text": "0.123456789"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654321,
+            "bits": "bfef9add3c0e56b8",
+            "text": "-0.987654321"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333333,
+            "bits": "3fd5555554f9b516",
+            "text": "0.333333333"
+          }
+        ],
+        "touch_face": 6
+      }
+    ],
+    "queue": [
+      {
+        "name": "touch_start",
+        "arguments": [
+          {
+            "type": "integer",
+            "clr": "System.Int32",
+            "value": 9
+          }
+        ],
+        "detectors": [
+          {
+            "key": "11111111-2222-3333-4444-555555555555",
+            "owner": "22222222-3333-4444-5555-666666666666",
+            "group": "33333333-4444-5555-6666-777777777777",
+            "name": "original rich detector 3",
+            "link_number": 5,
+            "type": 11,
+            "grab": [
+              {
+                "clr": "System.Double",
+                "value": 0.123456789,
+                "bits": "3fbf9add3739635f",
+                "text": "0.123456789"
+              },
+              {
+                "clr": "System.Double",
+                "value": -0.987654321,
+                "bits": "bfef9add3c0e56b8",
+                "text": "-0.987654321"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.333333333,
+                "bits": "3fd5555554f9b516",
+                "text": "0.333333333"
+              }
+            ],
+            "position": [
+              {
+                "clr": "System.Double",
+                "value": 0.333333333,
+                "bits": "3fd5555554f9b516",
+                "text": "0.333333333"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.123456789,
+                "bits": "3fbf9add3739635f",
+                "text": "0.123456789"
+              },
+              {
+                "clr": "System.Double",
+                "value": -0.987654321,
+                "bits": "bfef9add3c0e56b8",
+                "text": "-0.987654321"
+              }
+            ],
+            "rotation": [
+              {
+                "clr": "System.Double",
+                "value": 0.123456789,
+                "bits": "3fbf9add3739635f",
+                "text": "0.123456789"
+              },
+              {
+                "clr": "System.Double",
+                "value": -0.987654321,
+                "bits": "bfef9add3c0e56b8",
+                "text": "-0.987654321"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.333333333,
+                "bits": "3fd5555554f9b516",
+                "text": "0.333333333"
+              },
+              {
+                "clr": "System.Double",
+                "value": -4.9E-07,
+                "bits": "bea07111652d2b5c",
+                "text": "-4.9E-07"
+              }
+            ],
+            "velocity": [
+              {
+                "clr": "System.Double",
+                "value": -0.987654321,
+                "bits": "bfef9add3c0e56b8",
+                "text": "-0.987654321"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.333333333,
+                "bits": "3fd5555554f9b516",
+                "text": "0.333333333"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.123456789,
+                "bits": "3fbf9add3739635f",
+                "text": "0.123456789"
+              }
+            ],
+            "touch_st": [
+              {
+                "clr": "System.Double",
+                "value": 0.123456789,
+                "bits": "3fbf9add3739635f",
+                "text": "0.123456789"
+              },
+              {
+                "clr": "System.Double",
+                "value": -0.987654321,
+                "bits": "bfef9add3c0e56b8",
+                "text": "-0.987654321"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.333333333,
+                "bits": "3fd5555554f9b516",
+                "text": "0.333333333"
+              }
+            ],
+            "touch_normal": [
+              {
+                "clr": "System.Double",
+                "value": 0.123456789,
+                "bits": "3fbf9add3739635f",
+                "text": "0.123456789"
+              },
+              {
+                "clr": "System.Double",
+                "value": -0.987654321,
+                "bits": "bfef9add3c0e56b8",
+                "text": "-0.987654321"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.333333333,
+                "bits": "3fd5555554f9b516",
+                "text": "0.333333333"
+              }
+            ],
+            "touch_binormal": [
+              {
+                "clr": "System.Double",
+                "value": 0.123456789,
+                "bits": "3fbf9add3739635f",
+                "text": "0.123456789"
+              },
+              {
+                "clr": "System.Double",
+                "value": -0.987654321,
+                "bits": "bfef9add3c0e56b8",
+                "text": "-0.987654321"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.333333333,
+                "bits": "3fd5555554f9b516",
+                "text": "0.333333333"
+              }
+            ],
+            "touch_pos": [
+              {
+                "clr": "System.Double",
+                "value": 0.123456789,
+                "bits": "3fbf9add3739635f",
+                "text": "0.123456789"
+              },
+              {
+                "clr": "System.Double",
+                "value": -0.987654321,
+                "bits": "bfef9add3c0e56b8",
+                "text": "-0.987654321"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.333333333,
+                "bits": "3fd5555554f9b516",
+                "text": "0.333333333"
+              }
+            ],
+            "touch_uv": [
+              {
+                "clr": "System.Double",
+                "value": 0.123456789,
+                "bits": "3fbf9add3739635f",
+                "text": "0.123456789"
+              },
+              {
+                "clr": "System.Double",
+                "value": -0.987654321,
+                "bits": "bfef9add3c0e56b8",
+                "text": "-0.987654321"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.333333333,
+                "bits": "3fd5555554f9b516",
+                "text": "0.333333333"
+              }
+            ],
+            "touch_face": 6
+          }
+        ]
+      }
+    ],
+    "frames": []
+  },
+  "direct_reset_scheduler_boundary": false,
+  "initial": {
+    "globals": {
+      "after": {
+        "type": "rotation",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+        "value": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 1,
+            "bits": "3ff0000000000000",
+            "text": "1"
+          }
+        ]
+      },
+      "before": {
+        "type": "rotation",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+        "value": [
+          {
+            "clr": "System.Double",
+            "value": 0.123456789,
+            "bits": "3fbf9add3739635f",
+            "text": "0.123456789"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654321,
+            "bits": "bfef9add3c0e56b8",
+            "text": "-0.987654321"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333333,
+            "bits": "3fd5555554f9b516",
+            "text": "0.333333333"
+          },
+          {
+            "clr": "System.Double",
+            "value": -4.9E-07,
+            "bits": "bea07111652d2b5c",
+            "text": "-4.9E-07"
+          }
+        ]
+      },
+      "calls": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 1
+      }
+    },
+    "event_code": "state_entry",
+    "call_mode": 1,
+    "sleep_until_ticks": 639313036648467147,
+    "object_description": "",
+    "event_arguments": [],
+    "state_index": 0,
+    "new_state_index": -1,
+    "initialize_globals": false,
+    "running": true,
+    "detectors": [
+      {
+        "key": "11111111-2222-3333-4444-555555555555",
+        "owner": "22222222-3333-4444-5555-666666666666",
+        "group": "33333333-4444-5555-6666-777777777777",
+        "name": "original rich detector 3",
+        "link_number": 5,
+        "type": 11,
+        "grab": [
+          {
+            "clr": "System.Double",
+            "value": 0.123456789,
+            "bits": "3fbf9add3739635f",
+            "text": "0.123456789"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654321,
+            "bits": "bfef9add3c0e56b8",
+            "text": "-0.987654321"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333333,
+            "bits": "3fd5555554f9b516",
+            "text": "0.333333333"
+          }
+        ],
+        "position": [
+          {
+            "clr": "System.Double",
+            "value": 0.333333333,
+            "bits": "3fd5555554f9b516",
+            "text": "0.333333333"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.123456789,
+            "bits": "3fbf9add3739635f",
+            "text": "0.123456789"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654321,
+            "bits": "bfef9add3c0e56b8",
+            "text": "-0.987654321"
+          }
+        ],
+        "rotation": [
+          {
+            "clr": "System.Double",
+            "value": 0.123456789,
+            "bits": "3fbf9add3739635f",
+            "text": "0.123456789"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654321,
+            "bits": "bfef9add3c0e56b8",
+            "text": "-0.987654321"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333333,
+            "bits": "3fd5555554f9b516",
+            "text": "0.333333333"
+          },
+          {
+            "clr": "System.Double",
+            "value": -4.9E-07,
+            "bits": "bea07111652d2b5c",
+            "text": "-4.9E-07"
+          }
+        ],
+        "velocity": [
+          {
+            "clr": "System.Double",
+            "value": -0.987654321,
+            "bits": "bfef9add3c0e56b8",
+            "text": "-0.987654321"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333333,
+            "bits": "3fd5555554f9b516",
+            "text": "0.333333333"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.123456789,
+            "bits": "3fbf9add3739635f",
+            "text": "0.123456789"
+          }
+        ],
+        "touch_st": [
+          {
+            "clr": "System.Double",
+            "value": 0.123456789,
+            "bits": "3fbf9add3739635f",
+            "text": "0.123456789"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654321,
+            "bits": "bfef9add3c0e56b8",
+            "text": "-0.987654321"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333333,
+            "bits": "3fd5555554f9b516",
+            "text": "0.333333333"
+          }
+        ],
+        "touch_normal": [
+          {
+            "clr": "System.Double",
+            "value": 0.123456789,
+            "bits": "3fbf9add3739635f",
+            "text": "0.123456789"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654321,
+            "bits": "bfef9add3c0e56b8",
+            "text": "-0.987654321"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333333,
+            "bits": "3fd5555554f9b516",
+            "text": "0.333333333"
+          }
+        ],
+        "touch_binormal": [
+          {
+            "clr": "System.Double",
+            "value": 0.123456789,
+            "bits": "3fbf9add3739635f",
+            "text": "0.123456789"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654321,
+            "bits": "bfef9add3c0e56b8",
+            "text": "-0.987654321"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333333,
+            "bits": "3fd5555554f9b516",
+            "text": "0.333333333"
+          }
+        ],
+        "touch_pos": [
+          {
+            "clr": "System.Double",
+            "value": 0.123456789,
+            "bits": "3fbf9add3739635f",
+            "text": "0.123456789"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654321,
+            "bits": "bfef9add3c0e56b8",
+            "text": "-0.987654321"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333333,
+            "bits": "3fd5555554f9b516",
+            "text": "0.333333333"
+          }
+        ],
+        "touch_uv": [
+          {
+            "clr": "System.Double",
+            "value": 0.123456789,
+            "bits": "3fbf9add3739635f",
+            "text": "0.123456789"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654321,
+            "bits": "bfef9add3c0e56b8",
+            "text": "-0.987654321"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333333,
+            "bits": "3fd5555554f9b516",
+            "text": "0.333333333"
+          }
+        ],
+        "touch_face": 6
+      }
+    ],
+    "queue": [
+      {
+        "name": "touch_start",
+        "arguments": [
+          {
+            "type": "integer",
+            "clr": "System.Int32",
+            "value": 9
+          }
+        ],
+        "detectors": [
+          {
+            "key": "11111111-2222-3333-4444-555555555555",
+            "owner": "22222222-3333-4444-5555-666666666666",
+            "group": "33333333-4444-5555-6666-777777777777",
+            "name": "original rich detector 3",
+            "link_number": 5,
+            "type": 11,
+            "grab": [
+              {
+                "clr": "System.Double",
+                "value": 0.123456789,
+                "bits": "3fbf9add3739635f",
+                "text": "0.123456789"
+              },
+              {
+                "clr": "System.Double",
+                "value": -0.987654321,
+                "bits": "bfef9add3c0e56b8",
+                "text": "-0.987654321"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.333333333,
+                "bits": "3fd5555554f9b516",
+                "text": "0.333333333"
+              }
+            ],
+            "position": [
+              {
+                "clr": "System.Double",
+                "value": 0.333333333,
+                "bits": "3fd5555554f9b516",
+                "text": "0.333333333"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.123456789,
+                "bits": "3fbf9add3739635f",
+                "text": "0.123456789"
+              },
+              {
+                "clr": "System.Double",
+                "value": -0.987654321,
+                "bits": "bfef9add3c0e56b8",
+                "text": "-0.987654321"
+              }
+            ],
+            "rotation": [
+              {
+                "clr": "System.Double",
+                "value": 0.123456789,
+                "bits": "3fbf9add3739635f",
+                "text": "0.123456789"
+              },
+              {
+                "clr": "System.Double",
+                "value": -0.987654321,
+                "bits": "bfef9add3c0e56b8",
+                "text": "-0.987654321"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.333333333,
+                "bits": "3fd5555554f9b516",
+                "text": "0.333333333"
+              },
+              {
+                "clr": "System.Double",
+                "value": -4.9E-07,
+                "bits": "bea07111652d2b5c",
+                "text": "-4.9E-07"
+              }
+            ],
+            "velocity": [
+              {
+                "clr": "System.Double",
+                "value": -0.987654321,
+                "bits": "bfef9add3c0e56b8",
+                "text": "-0.987654321"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.333333333,
+                "bits": "3fd5555554f9b516",
+                "text": "0.333333333"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.123456789,
+                "bits": "3fbf9add3739635f",
+                "text": "0.123456789"
+              }
+            ],
+            "touch_st": [
+              {
+                "clr": "System.Double",
+                "value": 0.123456789,
+                "bits": "3fbf9add3739635f",
+                "text": "0.123456789"
+              },
+              {
+                "clr": "System.Double",
+                "value": -0.987654321,
+                "bits": "bfef9add3c0e56b8",
+                "text": "-0.987654321"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.333333333,
+                "bits": "3fd5555554f9b516",
+                "text": "0.333333333"
+              }
+            ],
+            "touch_normal": [
+              {
+                "clr": "System.Double",
+                "value": 0.123456789,
+                "bits": "3fbf9add3739635f",
+                "text": "0.123456789"
+              },
+              {
+                "clr": "System.Double",
+                "value": -0.987654321,
+                "bits": "bfef9add3c0e56b8",
+                "text": "-0.987654321"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.333333333,
+                "bits": "3fd5555554f9b516",
+                "text": "0.333333333"
+              }
+            ],
+            "touch_binormal": [
+              {
+                "clr": "System.Double",
+                "value": 0.123456789,
+                "bits": "3fbf9add3739635f",
+                "text": "0.123456789"
+              },
+              {
+                "clr": "System.Double",
+                "value": -0.987654321,
+                "bits": "bfef9add3c0e56b8",
+                "text": "-0.987654321"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.333333333,
+                "bits": "3fd5555554f9b516",
+                "text": "0.333333333"
+              }
+            ],
+            "touch_pos": [
+              {
+                "clr": "System.Double",
+                "value": 0.123456789,
+                "bits": "3fbf9add3739635f",
+                "text": "0.123456789"
+              },
+              {
+                "clr": "System.Double",
+                "value": -0.987654321,
+                "bits": "bfef9add3c0e56b8",
+                "text": "-0.987654321"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.333333333,
+                "bits": "3fd5555554f9b516",
+                "text": "0.333333333"
+              }
+            ],
+            "touch_uv": [
+              {
+                "clr": "System.Double",
+                "value": 0.123456789,
+                "bits": "3fbf9add3739635f",
+                "text": "0.123456789"
+              },
+              {
+                "clr": "System.Double",
+                "value": -0.987654321,
+                "bits": "bfef9add3c0e56b8",
+                "text": "-0.987654321"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.333333333,
+                "bits": "3fd5555554f9b516",
+                "text": "0.333333333"
+              }
+            ],
+            "touch_face": 6
+          }
+        ]
+      }
+    ],
+    "frames": [
+      {
+        "function": "default state_entry",
+        "call_no": 2,
+        "slots": 4,
+        "slot_types": [
+          "EventHelpersInstance",
+          "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "System.Int32"
+        ],
+        "slot_values": [
+          {
+            "type": "unsupported",
+            "clr": "EventHelpersInstance",
+            "value": "EventHelpersInstance"
+          },
+          {
+            "type": "rotation",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+            "value": [
+              {
+                "clr": "System.Double",
+                "value": 0.123456789,
+                "bits": "3fbf9add3739635f",
+                "text": "0.123456789"
+              },
+              {
+                "clr": "System.Double",
+                "value": -0.987654321,
+                "bits": "bfef9add3c0e56b8",
+                "text": "-0.987654321"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.333333333,
+                "bits": "3fd5555554f9b516",
+                "text": "0.333333333"
+              },
+              {
+                "clr": "System.Double",
+                "value": -4.9E-07,
+                "bits": "bea07111652d2b5c",
+                "text": "-4.9E-07"
+              }
+            ]
+          },
+          {
+            "type": "rotation",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+            "value": [
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              }
+            ]
+          },
+          {
+            "type": "integer",
+            "clr": "System.Int32",
+            "value": 0
+          }
+        ]
+      }
+    ]
+  },
+  "after_followup": null,
+  "after_load": {
+    "globals": {
+      "after": {
+        "type": "rotation",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+        "value": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 1,
+            "bits": "3ff0000000000000",
+            "text": "1"
+          }
+        ]
+      },
+      "before": {
+        "type": "rotation",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+        "value": [
+          {
+            "clr": "System.Double",
+            "value": 0.123456789,
+            "bits": "3fbf9add3739635f",
+            "text": "0.123456789"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654321,
+            "bits": "bfef9add3c0e56b8",
+            "text": "-0.987654321"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333333,
+            "bits": "3fd5555554f9b516",
+            "text": "0.333333333"
+          },
+          {
+            "clr": "System.Double",
+            "value": -4.9E-07,
+            "bits": "bea07111652d2b5c",
+            "text": "-4.9E-07"
+          }
+        ]
+      },
+      "calls": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 1
+      }
+    },
+    "event_code": "state_entry",
+    "call_mode": 0,
+    "sleep_until_ticks": 0,
+    "object_description": "",
+    "event_arguments": [],
+    "state_index": 0,
+    "new_state_index": -1,
+    "initialize_globals": false,
+    "running": true,
+    "detectors": [
+      {
+        "key": "11111111-2222-3333-4444-555555555555",
+        "owner": "22222222-3333-4444-5555-666666666666",
+        "group": "33333333-4444-5555-6666-777777777777",
+        "name": "original rich detector 3",
+        "link_number": 5,
+        "type": 11,
+        "grab": [
+          {
+            "clr": "System.Double",
+            "value": 0.123457,
+            "bits": "3fbf9ae0c1765775",
+            "text": "0.123457"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654,
+            "bits": "bfef9adc8fb86f48",
+            "text": "-0.987654"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333,
+            "bits": "3fd55553ef6b5d46",
+            "text": "0.333333"
+          }
+        ],
+        "position": [
+          {
+            "clr": "System.Double",
+            "value": 0.333333,
+            "bits": "3fd55553ef6b5d46",
+            "text": "0.333333"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.123457,
+            "bits": "3fbf9ae0c1765775",
+            "text": "0.123457"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654,
+            "bits": "bfef9adc8fb86f48",
+            "text": "-0.987654"
+          }
+        ],
+        "rotation": [
+          {
+            "clr": "System.Double",
+            "value": 0.123457,
+            "bits": "3fbf9ae0c1765775",
+            "text": "0.123457"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654,
+            "bits": "bfef9adc8fb86f48",
+            "text": "-0.987654"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333,
+            "bits": "3fd55553ef6b5d46",
+            "text": "0.333333"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0,
+            "bits": "8000000000000000",
+            "text": "-0"
+          }
+        ],
+        "velocity": [
+          {
+            "clr": "System.Double",
+            "value": -0.987654,
+            "bits": "bfef9adc8fb86f48",
+            "text": "-0.987654"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333,
+            "bits": "3fd55553ef6b5d46",
+            "text": "0.333333"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.123457,
+            "bits": "3fbf9ae0c1765775",
+            "text": "0.123457"
+          }
+        ],
+        "touch_st": [
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_normal": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_binormal": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_pos": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_uv": [
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_face": -1
+      }
+    ],
+    "queue": [
+      {
+        "name": "touch_start",
+        "arguments": [
+          {
+            "type": "integer",
+            "clr": "System.Int32",
+            "value": 9
+          }
+        ],
+        "detectors": [
+          {
+            "key": "11111111-2222-3333-4444-555555555555",
+            "owner": "22222222-3333-4444-5555-666666666666",
+            "group": "33333333-4444-5555-6666-777777777777",
+            "name": "original rich detector 3",
+            "link_number": 5,
+            "type": 11,
+            "grab": [
+              {
+                "clr": "System.Double",
+                "value": 0.123457,
+                "bits": "3fbf9ae0c1765775",
+                "text": "0.123457"
+              },
+              {
+                "clr": "System.Double",
+                "value": -0.987654,
+                "bits": "bfef9adc8fb86f48",
+                "text": "-0.987654"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.333333,
+                "bits": "3fd55553ef6b5d46",
+                "text": "0.333333"
+              }
+            ],
+            "position": [
+              {
+                "clr": "System.Double",
+                "value": 0.333333,
+                "bits": "3fd55553ef6b5d46",
+                "text": "0.333333"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.123457,
+                "bits": "3fbf9ae0c1765775",
+                "text": "0.123457"
+              },
+              {
+                "clr": "System.Double",
+                "value": -0.987654,
+                "bits": "bfef9adc8fb86f48",
+                "text": "-0.987654"
+              }
+            ],
+            "rotation": [
+              {
+                "clr": "System.Double",
+                "value": 0.123457,
+                "bits": "3fbf9ae0c1765775",
+                "text": "0.123457"
+              },
+              {
+                "clr": "System.Double",
+                "value": -0.987654,
+                "bits": "bfef9adc8fb86f48",
+                "text": "-0.987654"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.333333,
+                "bits": "3fd55553ef6b5d46",
+                "text": "0.333333"
+              },
+              {
+                "clr": "System.Double",
+                "value": -0,
+                "bits": "8000000000000000",
+                "text": "-0"
+              }
+            ],
+            "velocity": [
+              {
+                "clr": "System.Double",
+                "value": -0.987654,
+                "bits": "bfef9adc8fb86f48",
+                "text": "-0.987654"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.333333,
+                "bits": "3fd55553ef6b5d46",
+                "text": "0.333333"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.123457,
+                "bits": "3fbf9ae0c1765775",
+                "text": "0.123457"
+              }
+            ],
+            "touch_st": [
+              {
+                "clr": "System.Double",
+                "value": -1,
+                "bits": "bff0000000000000",
+                "text": "-1"
+              },
+              {
+                "clr": "System.Double",
+                "value": -1,
+                "bits": "bff0000000000000",
+                "text": "-1"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              }
+            ],
+            "touch_normal": [
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              }
+            ],
+            "touch_binormal": [
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              }
+            ],
+            "touch_pos": [
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              }
+            ],
+            "touch_uv": [
+              {
+                "clr": "System.Double",
+                "value": -1,
+                "bits": "bff0000000000000",
+                "text": "-1"
+              },
+              {
+                "clr": "System.Double",
+                "value": -1,
+                "bits": "bff0000000000000",
+                "text": "-1"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              }
+            ],
+            "touch_face": -1
+          }
+        ]
+      }
+    ],
+    "frames": [
+      {
+        "function": "default state_entry",
+        "call_no": 2,
+        "slots": 4,
+        "slot_types": [
+          "EventHelpersInstance",
+          "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+          "System.Int32"
+        ],
+        "slot_values": [
+          {
+            "type": "unsupported",
+            "clr": "EventHelpersInstance",
+            "value": "EventHelpersInstance"
+          },
+          {
+            "type": "rotation",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+            "value": [
+              {
+                "clr": "System.Double",
+                "value": 0.123456789,
+                "bits": "3fbf9add3739635f",
+                "text": "0.123456789"
+              },
+              {
+                "clr": "System.Double",
+                "value": -0.987654321,
+                "bits": "bfef9add3c0e56b8",
+                "text": "-0.987654321"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.333333333,
+                "bits": "3fd5555554f9b516",
+                "text": "0.333333333"
+              },
+              {
+                "clr": "System.Double",
+                "value": -4.9E-07,
+                "bits": "bea07111652d2b5c",
+                "text": "-4.9E-07"
+              }
+            ]
+          },
+          {
+            "type": "rotation",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+            "value": [
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              },
+              {
+                "clr": "System.Double",
+                "value": 1,
+                "bits": "3ff0000000000000",
+                "text": "1"
+              }
+            ]
+          },
+          {
+            "type": "integer",
+            "clr": "System.Int32",
+            "value": 0
+          }
+        ]
+      }
+    ]
+  },
+  "after_stop": null,
+  "after_restart_wait": null,
+  "resume_exception": null,
+  "final": {
+    "globals": {
+      "after": {
+        "type": "rotation",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+        "value": [
+          {
+            "clr": "System.Double",
+            "value": 0.123457,
+            "bits": "3fbf9ae0c1765775",
+            "text": "0.123457"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654,
+            "bits": "bfef9adc8fb86f48",
+            "text": "-0.987654"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333,
+            "bits": "3fd55553ef6b5d46",
+            "text": "0.333333"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0,
+            "bits": "8000000000000000",
+            "text": "-0"
+          }
+        ]
+      },
+      "before": {
+        "type": "rotation",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+        "value": [
+          {
+            "clr": "System.Double",
+            "value": 0.123456789,
+            "bits": "3fbf9add3739635f",
+            "text": "0.123456789"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654321,
+            "bits": "bfef9add3c0e56b8",
+            "text": "-0.987654321"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333333,
+            "bits": "3fd5555554f9b516",
+            "text": "0.333333333"
+          },
+          {
+            "clr": "System.Double",
+            "value": -4.9E-07,
+            "bits": "bea07111652d2b5c",
+            "text": "-4.9E-07"
+          }
+        ]
+      },
+      "calls": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 1
+      }
+    },
+    "event_code": "None",
+    "call_mode": 0,
+    "sleep_until_ticks": 0,
+    "object_description": "",
+    "event_arguments": null,
+    "state_index": 0,
+    "new_state_index": -1,
+    "initialize_globals": false,
+    "running": true,
+    "detectors": [
+      {
+        "key": "11111111-2222-3333-4444-555555555555",
+        "owner": "22222222-3333-4444-5555-666666666666",
+        "group": "33333333-4444-5555-6666-777777777777",
+        "name": "original rich detector 3",
+        "link_number": 5,
+        "type": 11,
+        "grab": [
+          {
+            "clr": "System.Double",
+            "value": 0.123457,
+            "bits": "3fbf9ae0c1765775",
+            "text": "0.123457"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654,
+            "bits": "bfef9adc8fb86f48",
+            "text": "-0.987654"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333,
+            "bits": "3fd55553ef6b5d46",
+            "text": "0.333333"
+          }
+        ],
+        "position": [
+          {
+            "clr": "System.Double",
+            "value": 0.333333,
+            "bits": "3fd55553ef6b5d46",
+            "text": "0.333333"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.123457,
+            "bits": "3fbf9ae0c1765775",
+            "text": "0.123457"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654,
+            "bits": "bfef9adc8fb86f48",
+            "text": "-0.987654"
+          }
+        ],
+        "rotation": [
+          {
+            "clr": "System.Double",
+            "value": 0.123457,
+            "bits": "3fbf9ae0c1765775",
+            "text": "0.123457"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654,
+            "bits": "bfef9adc8fb86f48",
+            "text": "-0.987654"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333,
+            "bits": "3fd55553ef6b5d46",
+            "text": "0.333333"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0,
+            "bits": "8000000000000000",
+            "text": "-0"
+          }
+        ],
+        "velocity": [
+          {
+            "clr": "System.Double",
+            "value": -0.987654,
+            "bits": "bfef9adc8fb86f48",
+            "text": "-0.987654"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333,
+            "bits": "3fd55553ef6b5d46",
+            "text": "0.333333"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.123457,
+            "bits": "3fbf9ae0c1765775",
+            "text": "0.123457"
+          }
+        ],
+        "touch_st": [
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_normal": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_binormal": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_pos": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_uv": [
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_face": -1
+      }
+    ],
+    "queue": [
+      {
+        "name": "touch_start",
+        "arguments": [
+          {
+            "type": "integer",
+            "clr": "System.Int32",
+            "value": 9
+          }
+        ],
+        "detectors": [
+          {
+            "key": "11111111-2222-3333-4444-555555555555",
+            "owner": "22222222-3333-4444-5555-666666666666",
+            "group": "33333333-4444-5555-6666-777777777777",
+            "name": "original rich detector 3",
+            "link_number": 5,
+            "type": 11,
+            "grab": [
+              {
+                "clr": "System.Double",
+                "value": 0.123457,
+                "bits": "3fbf9ae0c1765775",
+                "text": "0.123457"
+              },
+              {
+                "clr": "System.Double",
+                "value": -0.987654,
+                "bits": "bfef9adc8fb86f48",
+                "text": "-0.987654"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.333333,
+                "bits": "3fd55553ef6b5d46",
+                "text": "0.333333"
+              }
+            ],
+            "position": [
+              {
+                "clr": "System.Double",
+                "value": 0.333333,
+                "bits": "3fd55553ef6b5d46",
+                "text": "0.333333"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.123457,
+                "bits": "3fbf9ae0c1765775",
+                "text": "0.123457"
+              },
+              {
+                "clr": "System.Double",
+                "value": -0.987654,
+                "bits": "bfef9adc8fb86f48",
+                "text": "-0.987654"
+              }
+            ],
+            "rotation": [
+              {
+                "clr": "System.Double",
+                "value": 0.123457,
+                "bits": "3fbf9ae0c1765775",
+                "text": "0.123457"
+              },
+              {
+                "clr": "System.Double",
+                "value": -0.987654,
+                "bits": "bfef9adc8fb86f48",
+                "text": "-0.987654"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.333333,
+                "bits": "3fd55553ef6b5d46",
+                "text": "0.333333"
+              },
+              {
+                "clr": "System.Double",
+                "value": -0,
+                "bits": "8000000000000000",
+                "text": "-0"
+              }
+            ],
+            "velocity": [
+              {
+                "clr": "System.Double",
+                "value": -0.987654,
+                "bits": "bfef9adc8fb86f48",
+                "text": "-0.987654"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.333333,
+                "bits": "3fd55553ef6b5d46",
+                "text": "0.333333"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.123457,
+                "bits": "3fbf9ae0c1765775",
+                "text": "0.123457"
+              }
+            ],
+            "touch_st": [
+              {
+                "clr": "System.Double",
+                "value": -1,
+                "bits": "bff0000000000000",
+                "text": "-1"
+              },
+              {
+                "clr": "System.Double",
+                "value": -1,
+                "bits": "bff0000000000000",
+                "text": "-1"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              }
+            ],
+            "touch_normal": [
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              }
+            ],
+            "touch_binormal": [
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              }
+            ],
+            "touch_pos": [
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              }
+            ],
+            "touch_uv": [
+              {
+                "clr": "System.Double",
+                "value": -1,
+                "bits": "bff0000000000000",
+                "text": "-1"
+              },
+              {
+                "clr": "System.Double",
+                "value": -1,
+                "bits": "bff0000000000000",
+                "text": "-1"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0,
+                "bits": "0000000000000000",
+                "text": "0"
+              }
+            ],
+            "touch_face": -1
+          }
+        ]
+      }
+    ],
+    "frames": []
+  },
+  "incomplete_scene_resource_boundary": false,
+  "scheduler_guard_boundary": false,
+  "stop_scheduler_context": null,
+  "methodology": "Actual unchanged original CodeGen/real SDK numeric detector field mutation and StartEx/base CheckRunWork captures real llSleep; component IEEE bits are recorded before and after SAME-instance live resume and actual production migration. Actual private production MigrateOutEventHandler and private AppendXMLDetectArray/RestoreDetectParams are invoked unchanged; active and queued detector XML is recorded and restored separately, matching the production ScriptState envelope. Exact detector component IEEE bits are captured before JSON encoding. Encoder exceptions are recorded, not bypassed. Explicit Encoding.UTF8 writer is separately named permissive control, not production parity. Live ResumeEx and successful byte imports are measured independently; CLR string utf16 arrays precede JSON replacement.",
+  "sha256": {
+    "cache_key.txt": "1a7694c87e024d395e6229c93455fd255f1f2dfc6429be391ca36c50e9b2c355",
+    "detect-array.xml": "413fa5d6027121008ee58154e1bd13c804a0cf961e0402a02303b3f7f993bbe2",
+    "event-queue.xml": "af8116389ce738d5476abf785f1216d22f7ff3b1109e3339d5f1c544a3bbe790",
+    "original.il.txt": "61ffcb4fa7de241188bda67e4627c3a5cd53ffd6aed4db49ea58cc315e76f9bb",
+    "original.yobj": "b2486172daaebb13eb9bace0040688adedb9cc0557497df7835f3b2d2f6993a2",
+    "permissive-control.bin": "a3addde436fea1661a0cc0367cc6e9c5a081a65f03f7cbe45c4a37e26ce367d0",
+    "snapshot.bin": "a3addde436fea1661a0cc0367cc6e9c5a081a65f03f7cbe45c4a37e26ce367d0",
+    "source.lsl": "32b951360a664fb1ea4c7c23ee8c409466a030d7670b7cafb69671d5598eb0d1",
+    "generator_source": "1eda266faa585488b13207796df0d9dc617d0b5dfce94944a8babb16aca008be",
+    "generator_assembly": "50fa13f0053b9158e03abc7371e9bd6dde9a974416b7cc0d91b6e950226d1528",
+    "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+    "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+    "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+    "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+    "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+    "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+    "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+    "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+    "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+    "original_source_XMRInstCapture.cs": "775f1d83bd4610f788891269ea9ea08b1f79cf4bf3b44300d926f49c8a277cbd",
+    "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+    "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+    "original_source_Helpers.cs": "96b7c3090cdded9c12e986bc538705272eae4c0fc12f01deab8f0f1bb94c7bcf",
+    "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+    "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+    "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+    "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+    "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+    "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+    "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+  }
+}

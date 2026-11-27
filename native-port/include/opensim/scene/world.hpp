@@ -2,6 +2,7 @@
 // BSD license: native-port/LICENSE.txt.
 #pragma once
 #include "opensim/scene/terrain.hpp"
+#include "opensim/scene/object_teleport_motion.hpp"
 #include "opensim/framework/uuid.hpp"
 #include "opensim/framework/quaternion_text.hpp"
 #include "opensim/framework/prim_geometry.hpp"
@@ -15,6 +16,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+
 namespace opensim::scene {
 struct PrimShape {
     int face_count() const;
@@ -24,11 +26,13 @@ struct PrimShape {
     std::int8_t path_twist = 0, path_twist_begin = 0, path_radius_offset = 0, path_taper_x = 0, path_taper_y = 0,
                 path_skew = 0;
 };
+
 struct PrimPhysicsProperties {
     std::uint8_t shape = 0;
     float density = 1000.f, friction = .6f, restitution = .5f, gravity = 1.f;
-    bool operator==(const PrimPhysicsProperties&) const = default;
+    bool operator==(const PrimPhysicsProperties &) const = default;
 };
+
 inline constexpr std::uint32_t prim_flag_volume_detect = 1u << 14;
 
 struct PhysicalPrimPart {
@@ -45,8 +49,10 @@ struct PhysicalPrimPart {
     framework::Uuid id;
     bool volume_detect = false;
     bool phantom = false;
-    bool operator==(const PhysicalPrimPart&) const = default;
+    std::uint32_t local_id = 0;
+    bool operator==(const PhysicalPrimPart &) const = default;
 };
+
 struct PhysicalPrim {
     framework::Uuid id;
     framework::Vector3 position, scale, velocity, angular_velocity, acceleration;
@@ -72,11 +78,19 @@ struct PhysicalPrim {
     std::uint8_t rotation_axis_locks = 0;
     std::optional<framework::PrimInertiaOverride> inertia_override;
     bool phantom = false;
-    bool operator==(const PhysicalPrim&) const = default;
+    // UUID reuse must not reuse a previous scene part's physics actor/results.
+    std::uint32_t local_id = 0;
+    bool selected = false, edited_after_selection = false;
+    std::uint64_t selection_generation = 0;
+    bool linear_after_selection = false, angular_after_selection = false;
+    std::uint64_t linear_command = 0, angular_command = 0;
+    bool operator==(const PhysicalPrim &) const = default;
 };
+
 // Single-root object projection for the scene owner. Full linked parts,
 // permissions/effects, physics, inventory/scripts and storage are not implied.
 inline constexpr std::uint8_t grass_pcode = 95;
+
 inline constexpr bool is_vegetation(std::uint8_t pcode) {
     return pcode == grass_pcode || pcode == 111 || pcode == 255;
 }
@@ -86,8 +100,10 @@ struct SceneObject {
     framework::Uuid id, owner, creator, group, rezzer, last_owner;
     std::uint32_t local_id = 0, parent_id = 0, flags = 0;
     std::uint64_t link_order = 0, link_membership_order = 0;
+    std::uint64_t transform_history_generation = 0;
     std::string name = "Object", description, touch_name, sit_name;
     std::string floating_text, media_url;
+    std::string creator_data;
     // OpenSimulator stores the per-face media list as an OSMedia XML value.
     std::string face_media_xml;
     std::uint32_t text_argb = 0;
@@ -117,12 +133,16 @@ struct SceneObject {
     framework::Quaternion sit_target_orientation{0, 0, 0, 1};
     std::uint8_t material = 3;
     std::array<std::int32_t, 5> pay_prices{-2, -2, -2, -2, -2};
-    std::uint32_t base_mask = 0x9e000, owner_mask = 0x9e000, group_mask = 0, everyone_mask = 0,
-                  next_mask = 0x82000, category = 0;
+    std::uint32_t base_mask = 0x9e000, owner_mask = 0x9e000, group_mask = 0, everyone_mask = 0, next_mask = 0x82000,
+                  category = 0;
     framework::Uuid from_inventory_item;
     framework::Uuid from_inventory_folder;
     framework::Uuid attachment_source_asset;
     framework::Vector3 saved_attachment_position;
+    // SceneObjectPart.GroupPosition storage is separate from an attachment's offset.
+    std::optional<framework::Vector3> attached_group_position;
+    // Imported root OffsetPosition is independent from GroupPosition and AttachedPos.
+    std::optional<framework::Vector3> root_offset_position;
     std::uint8_t last_attachment_point = 0;
 
     framework::Vector3 position, scale{.5f, .5f, .5f}, velocity, angular_velocity, acceleration;
@@ -142,8 +162,12 @@ struct SceneObject {
     std::vector<std::uint8_t> material_overrides;
     // The original OpenSimulator linkset-data binary payload belongs to the root.
     std::vector<std::uint8_t> linkset_data;
+    // Serialized original KeyframeMotion; consumed by the scene owner on load.
+    std::vector<std::uint8_t> keyframed_motion;
     std::string dynamic_attributes_xml;
-    std::optional<std::int32_t> empty_linkset_data_limit;
+    // Live accounting is separate from the serialized records, whose limit is normalized on import.
+    std::optional<std::int32_t> linkset_data_limit;
+    std::optional<std::int32_t> linkset_data_free;
     std::optional<std::string> rez_start_string;
     bool is_attachment = false, attached_to_backup = false, changed = false, inventory_empty = true;
     bool die_at_edge = false;
@@ -154,7 +178,11 @@ struct SceneObject {
     static SceneObject primitive(framework::Uuid owner, framework::Vector3 position,
                                  framework::Vector3 scale = {.5f, .5f, .5f});
 };
+
+std::uint8_t default_physics_shape(const SceneObject &object);
+
 enum class WorldEventKind { Added, Updated, Removed, TerseUpdated, MaterialsUpdated, AnimationsUpdated };
+
 struct LandPrimGroup {
     framework::Uuid owner, group;
     framework::Vector3 position;
@@ -162,40 +190,72 @@ struct LandPrimGroup {
     std::int32_t prims;
     bool selected;
 };
+
+struct ObjectTeleportWorldGroup {
+    SceneObject root;
+    bool selected = false;
+};
+
 struct WorldEvent {
     WorldEventKind kind;
     SceneObject object;
     std::uint64_t sequence = 0;
     std::int32_t script_changes = 0;
+    bool suppress_viewer_kill = false;
 };
+
 class World {
-public:
+  public:
     explicit World(framework::Uuid region = {}, std::uint32_t width = 256, std::uint32_t height = 256,
                    std::uint32_t last_local_id = 720000);
     void clamp_inserted_prim_sizes(float minimum, float maximum);
+
     framework::Uuid region_id() const {
         return region_;
     }
-    Terrain& terrain() {
+
+    Terrain &terrain() {
         return terrain_;
     }
-    const Terrain& terrain() const {
+
+    const Terrain &terrain() const {
         return terrain_;
     }
+
     // Shared with avatar IDs. SceneBase uses unchecked Interlocked.Increment;
     // uint32 wrap, including zero, is deliberate source behavior.
     std::uint32_t allocate_local_id();
     std::optional<SceneObject> add(SceneObject object, bool attach_to_backup = true, bool send_update = true);
     bool add_crossing_linkset(std::vector<SceneObject> parts, std::uint32_t wearer_local_id = 0);
-    bool drop_attachment(framework::Uuid root, std::uint32_t wearer_local_id, framework::Vector3 position);
+    bool drop_attachment(framework::Uuid root, std::uint32_t wearer_local_id, framework::Vector3 position,
+                         framework::Quaternion rotation = {0, 0, 0, 1});
     bool attach_from_ground(framework::Uuid root, std::uint32_t wearer_local_id, std::uint8_t point,
                             framework::Vector3 offset, framework::Uuid item, framework::Uuid folder,
                             framework::Uuid asset);
     std::optional<SceneObject> object(framework::Uuid id) const;
     std::optional<SceneObject> object(std::uint32_t local_id) const;
+    // UUID lookup follows SceneGraph.GetSceneObjectGroup: child UUIDs do not
+    // resolve to their parent. Selection includes every part of the linkset.
+    std::optional<ObjectTeleportWorldGroup> teleport_group(framework::Uuid id) const;
+    std::optional<ObjectTeleportMotion> store_teleport_motion(const SceneObject &expected,
+                                                              const ObjectTeleportMotion &motion);
+    std::optional<ObjectTeleportMotion> store_crossing_teleport_motion(const SceneObject &expected,
+                                                                       const ObjectTeleportMotion &motion);
+    bool finish_object_teleport(const SceneObject &expected, framework::Vector3 position);
+    // SceneObjectPart property writes used by keyframed motion. These are
+    // independent of physical-actor-only LSL velocity commands and broadcasts.
+    bool store_keyframed_properties(const SceneObject &expected, std::optional<framework::Quaternion> rotation,
+                                    std::optional<framework::Vector3> velocity,
+                                    std::optional<framework::Vector3> angular_velocity);
+    bool schedule_keyframed_terse(const SceneObject &expected);
+    bool store_keyframed_position(const SceneObject &expected, framework::Vector3 position);
+    std::optional<framework::Vector3> keyframed_group_position(const SceneObject &expected) const;
     std::vector<SceneObject> objects() const;
+    std::vector<SceneObject> take_keyframed_motion_restores();
+    bool clear_keyframed_motion(const SceneObject &expected);
     std::vector<PhysicalPrim> collision_prims() const;
-    bool apply_physical_prim_motion(const PhysicalPrim& expected, const PhysicalPrim& motion);
+    bool apply_physical_prim_motion(const PhysicalPrim &expected, const PhysicalPrim &motion);
+    bool apply_physics_selection_stop(PhysicalPrim &expected);
     std::vector<LandPrimGroup> land_prim_groups(bool include_temporary = false) const;
     std::vector<SceneObject> attachments(std::uint32_t parent) const;
     std::int32_t link_number(framework::Uuid id) const;
@@ -211,6 +271,9 @@ public:
                          std::optional<framework::Quaternion> rotation, std::optional<framework::Vector3> scale,
                          bool preserve_children = false);
     bool update_object_text(framework::Uuid id, bool description, std::string value);
+    bool update_object_text_utf16(framework::Uuid id, bool description, std::u16string_view value);
+    // VM bridge: value already contains the exact SDK getter bytes, including NUL padding.
+    bool update_object_text_normalized(framework::Uuid id, bool description, std::string value);
     bool update_click_action(framework::Uuid id, std::uint8_t action, bool broadcast = false);
     void set_searchable(framework::Uuid id, bool searchable);
     void set_pass_touches(framework::Uuid id, bool pass);
@@ -229,43 +292,50 @@ public:
     void set_allowed_drop(framework::Uuid id, bool allowed);
     void set_script_access_pin(framework::Uuid id, std::int32_t pin);
     bool update_shape(framework::Uuid id, PrimShape shape);
-    bool update_texture(framework::Uuid id, const std::vector<std::uint8_t>& bytes);
-    void set_texture_animation(framework::Uuid id, const std::vector<std::uint8_t>& bytes);
-    void set_particle_system(framework::Uuid id, std::vector<std::uint8_t> bytes,
-                             std::optional<float> timed_age = {},
+    bool update_texture(framework::Uuid id, const std::vector<std::uint8_t> &bytes);
+    void set_texture_animation(framework::Uuid id, const std::vector<std::uint8_t> &bytes);
+    void set_particle_system(framework::Uuid id, std::vector<std::uint8_t> bytes, std::optional<float> timed_age = {},
                              std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now());
     void expire_particle_systems(std::chrono::steady_clock::time_point now);
-    bool update_face_media(const SceneObject& previous, std::string xml, std::string version,
+    bool update_face_media(const SceneObject &previous, std::string xml, std::string version,
                            std::vector<std::uint8_t> textures);
     std::optional<std::uint8_t> update_material(framework::Uuid id, std::uint8_t material);
-    void update_extra_param(framework::Uuid id, std::uint16_t type, bool enabled,
-                            const std::vector<std::uint8_t>& data);
-    bool set_render_materials(const SceneObject& previous, std::vector<std::uint8_t> extra_params,
+    void update_extra_param(framework::Uuid id, std::uint16_t type, bool enabled, const std::vector<std::uint8_t> &data,
+                            bool skip_unchanged = false);
+    bool set_render_materials(const SceneObject &previous, std::vector<std::uint8_t> extra_params,
                               std::vector<std::uint8_t> overrides, std::int32_t script_changes = 0);
-    bool set_legacy_material_textures(const SceneObject& previous, std::vector<std::uint8_t> textures,
+    bool set_legacy_material_textures(const SceneObject &previous, std::vector<std::uint8_t> textures,
                                       bool publish_update = true);
     bool set_dynamic_attributes(framework::Uuid id, std::string_view expected, std::string xml);
     bool set_object_animations(framework::Uuid id, std::vector<std::uint8_t> animations);
     void set_floating_text(framework::Uuid id, std::string text, std::uint32_t argb);
     void set_interaction_label(framework::Uuid id, bool sit, std::string text);
-    void set_looped_sound(framework::Uuid id, framework::Uuid asset, float gain, float radius,
-                          std::uint8_t sync_flags);
+    void set_looped_sound(framework::Uuid id, framework::Uuid asset, float gain, float radius, std::uint8_t sync_flags);
     void set_sound_radius(framework::Uuid id, float radius);
     void set_sound_queueing(framework::Uuid id, bool queue);
     void set_collision_sound(framework::Uuid id, framework::Uuid asset, float volume,
                              bool default_volume_override = false);
-    void set_pay_prices(framework::Uuid id, const std::array<std::int32_t, 5>& prices);
+    void set_pay_prices(framework::Uuid id, const std::array<std::int32_t, 5> &prices);
     std::optional<SceneObject> prepare_attached_sound(framework::Uuid id, float default_radius);
     bool set_selected(framework::Uuid id, bool selected);
-    bool update_angular_velocity(framework::Uuid id, framework::Vector3 angular_velocity,
-                                 bool full_refresh = false);
+    bool part_selected(framework::Uuid id) const;
+    std::optional<std::pair<std::uint64_t, bool>> physics_selection_state(framework::Uuid id) const;
+    // SceneObjectGroup.IsSelected assignment leaves individual part flags intact.
+    bool set_group_selected(const SceneObject &expected, bool selected);
+    bool update_angular_velocity(framework::Uuid id, framework::Vector3 angular_velocity, bool full_refresh = false);
     bool update_motion(framework::Uuid id, framework::Vector3 velocity, framework::Vector3 angular_velocity,
                        framework::Vector3 acceleration);
     bool remove(framework::Uuid id, bool send_update = true);
+    // Keep internal removal events and cleanup, suppressing only viewer kills
+    // for ordinary crossings. Teleport's unseated path uses non-silent removal.
+    bool remove_crossing_group(framework::Uuid id, bool silent);
     bool derez_script_object(framework::Uuid source, framework::Uuid target, bool temporary,
                              std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now());
     void publish_added_linkset(framework::Uuid root);
+    bool restore_rejected_crossing(framework::Uuid root);
     void schedule_linkset_update(framework::Uuid root, std::int32_t script_changes);
+    std::vector<framework::Uuid> assign_linkset_group(framework::Uuid part, framework::Uuid owner,
+                                                      framework::Uuid group);
     bool delink_child(framework::Uuid id, framework::Uuid expected_root, bool notify_remaining = true);
     bool delink_root(framework::Uuid id, bool membership_order = false);
     void set_group_flags(framework::Uuid root, bool physical, bool temporary, bool phantom,
@@ -274,14 +344,14 @@ public:
     void set_linkset_damage(framework::Uuid part, float damage);
     bool set_script_permission_mask(framework::Uuid id, std::int32_t selector, std::int32_t value);
     bool set_sale_info(framework::Uuid root, std::uint8_t type, std::int32_t price);
-    bool set_linkset_data(framework::Uuid root, std::vector<std::uint8_t> data,
-                          std::optional<std::int32_t> empty_limit = {});
-    bool transfer_temporary_attachment(const SceneObject& expected, framework::Uuid owner, framework::Uuid group,
+    bool set_linkset_data(framework::Uuid root, std::vector<std::uint8_t> data, std::optional<std::int32_t> limit = {},
+                          std::optional<std::int32_t> free = {});
+    bool transfer_temporary_attachment(const SceneObject &expected, framework::Uuid owner, framework::Uuid group,
                                        bool apply_next_permissions);
-    bool sell_original(const SceneObject& expected, framework::Uuid owner, framework::Uuid group,
+    bool sell_original(const SceneObject &expected, framework::Uuid owner, framework::Uuid group,
                        bool apply_next_permissions, bool propagate_permissions, bool included_with_parcel);
     std::optional<PrimPhysicsProperties> update_extra_physics(framework::Uuid id, PrimPhysicsProperties requested,
-                                                            bool update_shape = true);
+                                                              bool update_shape = true);
     void set_prim_buoyancy(framework::Uuid id, float buoyancy);
     void set_rotation_axes(framework::Uuid id, std::uint8_t axes, bool enabled);
     void set_prim_inertia(framework::Uuid id, std::optional<framework::PrimInertiaOverride> inertia);
@@ -303,17 +373,19 @@ public:
                              std::optional<std::uint32_t> script_local_flags = {});
     std::vector<WorldEvent> drain_events();
 
-private:
+  private:
     std::optional<SceneObject> add_unlocked(SceneObject object, bool attach_to_backup, bool send_update);
-    bool remove_unlocked(framework::Uuid id, bool send_update = true);
-    void mark_linkset_changed_unlocked(SceneObject& part);
-    SceneObject snapshot_unlocked(const SceneObject& part, std::chrono::steady_clock::time_point now) const;
+    bool remove_unlocked(framework::Uuid id, bool send_update = true, bool suppress_viewer_kill = false);
+    void mark_linkset_changed_unlocked(SceneObject &part);
+    bool update_object_text_normalized_unlocked(SceneObject &object, bool description, std::string value);
+    SceneObject snapshot_unlocked(const SceneObject &part, std::chrono::steady_clock::time_point now) const;
     bool particles_expired_unlocked(framework::Uuid id, std::chrono::steady_clock::time_point now) const;
     framework::Uuid linkset_root_id_unlocked(framework::Uuid id) const;
     std::map<framework::Uuid, std::chrono::steady_clock::time_point> temporary_expiry_;
     std::map<framework::Uuid, std::chrono::duration<double>> particle_expiry_;
     std::uint64_t assign_link_membership_unlocked(framework::Uuid root);
-    void event_unlocked(WorldEventKind kind, const SceneObject& object, std::int32_t script_changes = 0);
+    void event_unlocked(WorldEventKind kind, const SceneObject &object, std::int32_t script_changes = 0,
+                        bool suppress_viewer_kill = false);
     framework::Uuid region_;
     Terrain terrain_;
     std::atomic<std::uint32_t> last_local_id_;
@@ -324,7 +396,22 @@ private:
     std::map<std::uint32_t, framework::Uuid> by_local_;
     std::map<framework::Uuid, std::vector<std::uint64_t>> free_link_memberships_;
     std::set<framework::Uuid> selected_;
+    std::set<framework::Uuid> group_selected_;
+
+    struct PhysicsSelection {
+        std::uint64_t generation = 0, linear = 0, angular = 0;
+        std::uint64_t selection_linear = 0, selection_angular = 0;
+        std::uint64_t group_pose_at_selection = 0;
+        std::map<framework::Uuid, std::uint64_t> geometry_at_selection;
+    };
+
+    std::map<framework::Uuid, PhysicsSelection> physics_selection_;
+    std::map<framework::Uuid, std::uint64_t> physics_geometry_revision_;
+    std::map<framework::Uuid, std::uint64_t> physics_group_pose_revision_;
+    void record_physics_selection_unlocked(framework::Uuid root);
+    void note_physics_edit_unlocked(framework::Uuid id);
+    void note_physics_group_pose_unlocked(framework::Uuid root);
     std::vector<WorldEvent> events_;
     std::uint64_t sequence_ = 0, link_sequence_ = 0;
 };
-}
+} // namespace opensim::scene

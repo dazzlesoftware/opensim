@@ -32,19 +32,22 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 #include <sstream>
 using namespace opensim;
+
 std::string hex(std::string_view text) {
     std::ostringstream out;
     for (unsigned char c : text)
         out << std::hex << std::setfill('0') << std::setw(2) << static_cast<int>(c);
     return out.str();
 }
-std::string unhex(const std::string& text) {
+
+std::string unhex(const std::string &text) {
     std::string result;
     for (std::size_t i = 0; i < text.size(); i += 2)
         result.push_back(static_cast<char>(std::stoi(text.substr(i, 2), nullptr, 16)));
     return result;
 }
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     try {
         const auto config = server::IniConfig::load(framework::utf8_path(argv[1]));
         std::string line;
@@ -56,8 +59,7 @@ int main(int argc, char** argv) {
             services::GridUserService service(store, [] { return 1700000000; }, cache);
             const std::string user = "00000000-0000-0000-0000-000000000001";
             service.logged_in(user);
-            service.set_home(user, framework::Uuid("00000000-0000-0000-0000-000000000003"), {128, 64, 70},
-                             {});
+            service.set_home(user, framework::Uuid("00000000-0000-0000-0000-000000000003"), {128, 64, 70}, {});
             auto edge = std::make_shared<services::GridUserData>();
             edge->user_id = "00000000-0000-0000-0000-000000000002";
             (*edge->data)["Login"] = "-2147483648";
@@ -74,15 +76,15 @@ int main(int argc, char** argv) {
                 const auto auth = response.headers.find("WWW-Authenticate");
                 request.body = "METHOD=getgriduserinfo&UserID=" + user;
                 const auto snapshot = endpoint.handle(request);
-                std::cout << response.status << '|' << hex(response.body) << '|' << hex(response.content_type)
-                          << '|' << (auth == response.headers.end() ? "" : hex(auth->second)) << '|'
-                          << hex(snapshot.body) << '\n';
-            } catch (const std::invalid_argument&) {
+                std::cout << response.status << '|' << hex(response.body) << '|' << hex(response.content_type) << '|'
+                          << (auth == response.headers.end() ? "" : hex(auth->second)) << '|' << hex(snapshot.body)
+                          << '\n';
+            } catch (const std::invalid_argument &) {
                 std::cout << "BASE64_FORMAT_ERROR\n";
             }
         }
         return 0;
-    } catch (const std::exception& error) {
+    } catch (const std::exception &error) {
         std::cerr << error.what() << '\n';
         return 1;
     }

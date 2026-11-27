@@ -3,14 +3,17 @@
 #include "profile_list_fixture.hpp"
 #include "opensim/framework/vector_text.hpp"
 #include <bit>
+
 namespace {
 ProfileText position;
 std::shared_ptr<server::JsonRpcMembers> last;
+
 std::string Bits(float f) {
     std::ostringstream s;
     s << std::hex << std::setfill('0') << std::setw(8) << std::bit_cast<std::uint32_t>(f);
     return s.str();
 }
+
 std::shared_ptr<UserClassifiedAdd> Fill(Uuid query) {
     auto a = std::make_shared<UserClassifiedAdd>();
     a->ClassifiedId = query;
@@ -30,7 +33,8 @@ std::shared_ptr<UserClassifiedAdd> Fill(Uuid query) {
     a->Price = INT_MIN;
     return a;
 }
-std::string Ad(const std::shared_ptr<server::JsonRpcMembers>& value) {
+
+std::string Ad(const std::shared_ptr<server::JsonRpcMembers> &value) {
     if (!value)
         return "N";
     auto a = std::dynamic_pointer_cast<UserClassifiedAdd>(value);
@@ -42,26 +46,29 @@ std::string Ad(const std::shared_ptr<server::JsonRpcMembers>& value) {
            a->SnapshotId.str() + ":" + T(a->SimName) + ":" + T(a->GlobalPos) + ":" + T(a->ParcelName) + ":" +
            std::to_string(a->Flags) + ":" + std::to_string(a->Price);
 }
+
 struct InfoClient : Client {
-    void send_classified_info(const AvatarClassifiedInfo& a) override {
-        trace += "detail:" + a.classified.str() + ":" + a.creator.str() + ":" + std::to_string(a.created) +
-                 ":" + std::to_string(a.expires) + ":" + std::to_string(a.category) + ":" + T(a.name) + ":" +
+    void send_classified_info(const AvatarClassifiedInfo &a) override {
+        trace += "detail:" + a.classified.str() + ":" + a.creator.str() + ":" + std::to_string(a.created) + ":" +
+                 std::to_string(a.expires) + ":" + std::to_string(a.category) + ":" + T(a.name) + ":" +
                  T(a.description) + ":" + a.parcel.str() + ":" + std::to_string(a.parent_estate) + ":" +
                  a.snapshot.str() + ":" + T(a.sim_name) + ":" + Bits(a.global_position[0]) + ":" +
-                 Bits(a.global_position[1]) + ":" + Bits(a.global_position[2]) + ":" + T(a.parcel_name) +
-                 ":" + std::to_string(a.flags) + ":" + std::to_string(a.price) + ";";
+                 Bits(a.global_position[1]) + ":" + Bits(a.global_position[2]) + ":" + T(a.parcel_name) + ":" +
+                 std::to_string(a.flags) + ":" + std::to_string(a.price) + ";";
         Fail(268435456, "details");
     }
 };
+
 struct InfoContext : PicksContext {
-    void get_foreign_image(Uuid image, const ProfileText& url, bool local) override {
+    void get_foreign_image(Uuid image, const ProfileText &url, bool local) override {
         if (flags & (4194304 | 67108864))
             throw std::runtime_error("Object reference not set to an instance of an object.");
         trace += "asset:" + image.str() + ":" + T(url) + ":" + (local ? "1" : "0") + ";";
         Fail(134217728, "asset");
     }
-    bool request_object(std::shared_ptr<server::JsonRpcMembers>& data, const ProfileText& method,
-                        const ProfileText& url, const ProfileText& id) override {
+
+    bool request_object(std::shared_ptr<server::JsonRpcMembers> &data, const ProfileText &method,
+                        const ProfileText &url, const ProfileText &id) override {
         Uuid guid;
         trace += "ad-rpc:" + utf8(method.value_or(u"")) + ":" + T(url) + ":" + Ad(data) + ":" +
                  (id && try_parse_sdk_uuid(*id, guid) && !guid.is_zero() ? "1" : "0") + ";";
@@ -98,7 +105,8 @@ struct InfoContext : PicksContext {
         return mode != 2 && mode != 4 && mode != 9;
     }
 };
-std::string InfoState(UserProfileRequests& m) {
+
+std::string InfoState(UserProfileRequests &m) {
     auto one = [&](Uuid id) {
         std::shared_ptr<UserProfileCacheEntry> e;
         m.profile_cache().try_get_value(id, e);
@@ -109,7 +117,7 @@ std::string InfoState(UserProfileRequests& m) {
                     DumpList(e->picksList) + ":" + DumpList(e->classifiedsLists) + ":";
         std::string rows;
         if (e->classifieds)
-            for (auto& pair : *e->classifieds) {
+            for (auto &pair : *e->classifieds) {
                 if (!rows.empty())
                     rows += ',';
                 auto identity = Identity(pair.second);
@@ -119,12 +127,12 @@ std::string InfoState(UserProfileRequests& m) {
     };
     auto a = one(Id(1)), b = one(Id(2));
     std::string owners, counts;
-    for (auto& p : m.classified_owners()) {
+    for (auto &p : m.classified_owners()) {
         if (!owners.empty())
             owners += ',';
         owners += p.first.str() + "=" + p.second.str();
     }
-    for (auto& p : m.classified_interests()) {
+    for (auto &p : m.classified_interests()) {
         if (!counts.empty())
             counts += ',';
         counts += p.first.str() + "=" + std::to_string(p.second);
@@ -132,7 +140,7 @@ std::string InfoState(UserProfileRequests& m) {
     auto identity = Identity(last);
     return a + ";" + b + ";" + owners + ";" + counts + ";" + identity + ":" + Ad(last);
 }
-}
+} // namespace
 #ifndef OPENSIM_PROFILE_DETAIL_NO_MAIN
 int main() {
     std::string line;
@@ -206,8 +214,8 @@ int main() {
                     (*e->picksList)[Id(7)] = u"other";
                     e->classifiedsLists = std::make_shared<UserProfileNameList>();
                     (*e->classifiedsLists)[Id(8)] = u"seed list";
-                    e->classifieds = std::make_shared<
-                        OrderedDictionary<Uuid, std::shared_ptr<UserClassifiedAdd>, UuidHash>>();
+                    e->classifieds =
+                        std::make_shared<OrderedDictionary<Uuid, std::shared_ptr<UserClassifiedAdd>, UuidHash>>();
                     auto seed = Fill(query);
                     if (token == "D")
                         seed->GlobalPos = u"bad";
@@ -218,7 +226,7 @@ int main() {
                         m.classified_interests()[query] = 1;
                     }
                 }
-            } catch (const std::exception& e) {
+            } catch (const std::exception &e) {
                 result = "EX:" + H(e.what());
             }
             if (!output.empty())

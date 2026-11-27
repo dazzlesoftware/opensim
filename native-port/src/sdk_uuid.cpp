@@ -20,6 +20,7 @@ bool sse42() {
     return false;
 #endif
 }
+
 // SDK UUID(string) consumes a prefix, unlike TryParse. The hyphenated SSE path
 // reads UTF-16 low bytes and uses signed byte comparisons; retain both quirks.
 Uuid construct_sdk_uuid(std::u16string_view text) {
@@ -69,7 +70,8 @@ Uuid construct_sdk_uuid(std::u16string_view text) {
                                              (simd && i % 2 ? high[i - 1] >> 4 : 0));
     return Uuid::from_bytes(bytes);
 }
-bool try_parse_sdk_uuid(std::u16string_view text, Uuid& result) {
+
+bool try_parse_sdk_uuid(std::u16string_view text, Uuid &result) {
     result = {};
     while (text.starts_with(u' '))
         text.remove_prefix(1);
@@ -80,8 +82,8 @@ bool try_parse_sdk_uuid(std::u16string_view text, Uuid& result) {
     try {
         result = construct_sdk_uuid(text);
         return true;
-    } catch (const std::invalid_argument&) {
+    } catch (const std::invalid_argument &) {
         return false;
     }
 }
-}
+} // namespace opensim::framework

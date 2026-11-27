@@ -8,23 +8,25 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+
 namespace opensim::services {
 class FlotsamEntriesDisposed final : public std::runtime_error {
-public:
+  public:
     FlotsamEntriesDisposed() : runtime_error("Object reference not set to an instance of an object.") {}
 };
+
 // Used ExpiringKey/ExpiringCacheOS surface. Each actual container captures its
 // own constructor epoch. Checks/reads never purge. Clear preserves epoch;
 // Dispose cancels timers and preserves values/count but invalidates lock-using
 // operations. An armed background worker owns State, never a raw wrapper.
 class FlotsamKeyEntries {
-public:
+  public:
     using Clock = std::function<double()>;
     explicit FlotsamKeyEntries(std::int32_t check_ms, Clock = {}, bool background = true);
     ~FlotsamKeyEntries();
-    void add(const std::string&, std::int32_t ttl);
-    bool contains(const std::string&) const;
-    bool remove(const std::string&);
+    void add(const std::string &, std::int32_t ttl);
+    bool contains(const std::string &) const;
+    bool remove(const std::string &);
     void clear();
     void pump();
     void dispose();
@@ -33,19 +35,20 @@ public:
     std::int32_t check_period() const;
     std::optional<double> next_due() const;
 
-private:
+  private:
     struct State;
     std::shared_ptr<State> state_;
 };
+
 class FlotsamAssetEntries {
-public:
+  public:
     using Asset = std::shared_ptr<framework::AssetBase>;
     using Clock = std::function<double()>;
     explicit FlotsamAssetEntries(std::int32_t check_ms, Clock = {}, bool background = true);
     ~FlotsamAssetEntries();
-    void add(const std::string&, Asset, std::int32_t ttl);
-    bool try_get(const std::string&, Asset&) const;
-    bool remove(const std::string&);
+    void add(const std::string &, Asset, std::int32_t ttl);
+    bool try_get(const std::string &, Asset &) const;
+    bool remove(const std::string &);
     void clear();
     void pump();
     void dispose();
@@ -54,8 +57,8 @@ public:
     std::int32_t check_period() const;
     std::optional<double> next_due() const;
 
-private:
+  private:
     struct State;
     std::shared_ptr<State> state_;
 };
-}
+} // namespace opensim::services

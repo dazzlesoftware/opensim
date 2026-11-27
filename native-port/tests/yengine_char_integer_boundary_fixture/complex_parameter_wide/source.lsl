@@ -1,0 +1,1 @@
+YOption chars;integer input=65536;integer result;integer after;integer echo(integer value){while(FALSE){}return value;}default{state_entry(){result=echo((char)input);after=1;}}

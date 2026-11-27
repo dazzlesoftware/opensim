@@ -5,31 +5,36 @@
 #include <bit>
 #include <stdexcept>
 #include <unordered_set>
+
 namespace opensim::scene {
 namespace {
-void increment(std::int32_t& value) {
+void increment(std::int32_t &value) {
     value = std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(value) + 1u);
 }
-}
+} // namespace
+
 UuidGatherer::UuidGatherer(std::shared_ptr<UuidGathererBackend> b, std::shared_ptr<UuidGathererState> s)
     : backend_(std::move(b)), state_(std::move(s)) {
     if (!state_ || !backend_ || !backend_->get_asset || !backend_->wearable || !backend_->gesture ||
-        !backend_->notecard || !backend_->embedded || !backend_->material || !backend_->object ||
-        !backend_->error || !backend_->debug)
+        !backend_->notecard || !backend_->embedded || !backend_->material || !backend_->object || !backend_->error ||
+        !backend_->debug)
         throw std::invalid_argument("UuidGatherer requires complete inspection and service dependencies");
 }
+
 bool UuidGatherer::skipped(Uuid id) {
     static const std::unordered_set<Uuid, framework::UuidHash> ids{
 #include "uuid_gatherer_skip.inc"
     };
     return ids.contains(id);
 }
+
 void UuidGatherer::record_failure(Uuid id) {
     if (state_->uncertain.contains(id))
         increment(possible_not_asset_count);
     else
         increment(error_count);
 }
+
 bool UuidGatherer::add_gathered(Uuid id, std::int8_t type) {
     if (id.is_zero() || skipped(id))
         return false;
@@ -42,6 +47,7 @@ bool UuidGatherer::add_gathered(Uuid id, std::int8_t type) {
     state_->gathered[id] = type;
     return true;
 }
+
 bool UuidGatherer::add_for_inspection(Uuid id) {
     if (id.is_zero() || skipped(id))
         return false;
@@ -54,6 +60,7 @@ bool UuidGatherer::add_for_inspection(Uuid id) {
     queue_.push_back(id);
     return true;
 }
+
 void UuidGatherer::add_for_inspection(Uuid id, std::int8_t type) {
     if (id.is_zero())
         return;
@@ -86,6 +93,7 @@ void UuidGatherer::add_for_inspection(Uuid id, std::int8_t type) {
         throw;
     }
 }
+
 bool UuidGatherer::gather_next() {
     if (complete())
         return false;
@@ -94,6 +102,7 @@ bool UuidGatherer::gather_next() {
     get_asset_uuids(id);
     return !complete();
 }
+
 bool UuidGatherer::gather_all(bool report) {
     if (complete())
         return false;
@@ -114,6 +123,7 @@ bool UuidGatherer::gather_all(bool report) {
     }
     return true;
 }
+
 void UuidGatherer::get_asset_uuids(Uuid id) {
     if (id.is_zero())
         return;
@@ -126,7 +136,7 @@ void UuidGatherer::get_asset_uuids(Uuid id) {
     Asset asset;
     try {
         asset = backend_->get_asset(id);
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         if (verbose_)
             backend_->error("[UUID GATHERER]: Failed to get asset " + id.str() + " : " + e.what());
         increment(error_count);
@@ -175,21 +185,22 @@ void UuidGatherer::get_asset_uuids(Uuid id) {
         default:
             break;
         }
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         if (verbose_)
-            backend_->error("[UUID GATHERER]: Failed to gather uuids for asset with id " + id.str() +
-                            " type " + std::to_string(type) + ": " + e.what());
+            backend_->error("[UUID GATHERER]: Failed to gather uuids for asset with id " + id.str() + " type " +
+                            std::to_string(type) + ": " + e.what());
         state_->gathered.erase(id);
         increment(error_count);
         state_->failed.add(id);
     }
 }
+
 void UuidGatherer::inspect_embedded(std::span<const std::uint8_t> data) {
     std::int64_t index = 8, length = static_cast<std::int64_t>(data.size());
     while (index < length - 28) {
         if (data[static_cast<std::size_t>(index)] == '-') {
             Uuid id;
-            auto p = reinterpret_cast<const char*>(data.data() + index - 8);
+            auto p = reinterpret_cast<const char *>(data.data() + index - 8);
             if (framework::try_parse_sdk_uuid(std::string_view(p, 36), id)) {
                 if (!id.is_zero()) {
                     state_->uncertain.add(id);
@@ -202,6 +213,7 @@ void UuidGatherer::inspect_embedded(std::span<const std::uint8_t> data) {
             ++index;
     }
 }
+
 void UuidGatherer::inspect_embedded(std::u16string_view data) {
     if (data.size() < 36)
         return;
@@ -226,4 +238,4 @@ void UuidGatherer::inspect_embedded(std::u16string_view data) {
             ++index;
     }
 }
-}
+} // namespace opensim::scene

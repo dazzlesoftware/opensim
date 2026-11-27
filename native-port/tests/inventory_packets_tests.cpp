@@ -5,11 +5,13 @@
 using namespace opensim;
 using namespace scene;
 using namespace services;
+
 namespace {
 framework::Uuid id(int n) {
     auto s = std::to_string(n);
     return framework::Uuid("11223344-5566-7788-99aa-" + std::string(12 - s.size(), '0') + s);
 }
+
 InventoryItem sample(int n, int seed, int mode) {
     InventoryItem i;
     i.id = id(100 + n);
@@ -46,6 +48,7 @@ InventoryItem sample(int n, int seed, int mode) {
         i.description = "\xe2\x80\x83\t";
     return i;
 }
+
 std::string hex(std::span<const std::uint8_t> bytes) {
     std::string out;
     constexpr char d[] = "0123456789abcdef";
@@ -55,6 +58,7 @@ std::string hex(std::span<const std::uint8_t> bytes) {
     }
     return out;
 }
+
 std::string probe(int kind, int seed, int ni, int nf, int mode, int flags) {
     std::vector<std::optional<InventoryItem>> items;
     std::vector<std::optional<InventoryFolder>> folders;
@@ -75,9 +79,8 @@ std::string probe(int kind, int seed, int ni, int nf, int mode, int flags) {
         emitted += ':';
         emitted += hex(network::lludp::encode_packet(packet));
         emitted += ':';
-        auto datagrams = split
-                             ? network::lludp::encode_packets(packet)
-                             : std::vector<std::vector<std::uint8_t>>{network::lludp::encode_packet(packet)};
+        auto datagrams = split ? network::lludp::encode_packets(packet)
+                               : std::vector<std::vector<std::uint8_t>>{network::lludp::encode_packet(packet)};
         for (std::size_t n = 0; n < datagrams.size(); ++n) {
             if (n)
                 emitted += ',';
@@ -89,8 +92,7 @@ std::string probe(int kind, int seed, int ni, int nf, int mode, int flags) {
         if (kind == 0)
             inventory_item_details(id(1), items, sink);
         else
-            inventory_folder_details(id(1), id(3), id(2), items, folders, -seed, ni + nf, flags & 1,
-                                     flags & 2, sink);
+            inventory_folder_details(id(1), id(3), id(2), items, folders, -seed, ni + nf, flags & 1, flags & 2, sink);
     } catch (const InventoryPacketNullError &) {
         result = "NULL";
     } catch (const std::exception &) {
@@ -98,19 +100,21 @@ std::string probe(int kind, int seed, int ni, int nf, int mode, int flags) {
     }
     return result + emitted;
 }
+
 int checks = 0;
+
 void check(bool value, const char *label) {
     ++checks;
     if (!value)
         throw std::runtime_error(label);
 }
+
 void run() {
     check(probe(0, 0, 0, 0, 0, 3) == "OK", "empty item details emits nothing");
     check(probe(0, 1, 1, 0, 0, 3).starts_with("OK|1:"), "single item uses source automatic splitting");
     check(probe(0, 1, 2, 0, 0, 3) == "NULL", "source final batch null blocks preserved");
     check(probe(0, 1, 11, 0, 0, 3).starts_with("OK|1:"), "source eleven item complete batches");
-    check(probe(0, 1, 12, 0, 0, 3).starts_with("NULL|1:"),
-          "source partial emission before invalid remainder");
+    check(probe(0, 1, 12, 0, 0, 3).starts_with("NULL|1:"), "source partial emission before invalid remainder");
     check(probe(1, 1, 0, 0, 0, 3).starts_with("OK|0:"), "empty folder sentinel packet");
     check(probe(1, 1, 6, 7, 0, 0).starts_with("OK|0:"), "both fetch flags false sends empty sentinel");
     check(probe(1, 1, 6, 7, 0, 3).starts_with("OK|0:"), "folder batching uses manual splitting");
@@ -119,33 +123,57 @@ void run() {
     child.id = id(11);
     child.parent = folder.id;
     std::vector<network::lludp::Packet> updates;
-    inventory_bulk_folder(id(1), folder, [&](framework::Uuid requested) {
-        services::InventoryCollection content;
-        if (requested == folder.id) {
-            content.folders.push_back(child);
-            for (int i = 0; i < 6; ++i) {
-                services::InventoryItem item;
-                item.id = id(20 + i);
-                item.parent = folder.id;
-                content.items.push_back(item);
+    inventory_bulk_folder(
+        id(1), folder,
+        [&](framework::Uuid requested) {
+            services::InventoryCollection content;
+            if (requested == folder.id) {
+                content.folders.push_back(child);
+                for (int i = 0; i < 6; ++i) {
+                    services::InventoryItem item;
+                    item.id = id(20 + i);
+                    item.parent = folder.id;
+                    content.items.push_back(item);
+                }
             }
-        }
-        return content;
-    }, [&](auto packet, bool split) {
-        check(split && packet.zerocoded, "bulk folder uses zero-coded split-capable packets");
-        updates.push_back(std::move(packet));
-    });
+            return content;
+        },
+        [&](auto packet, bool split) {
+            check(split && packet.zerocoded, "bulk folder uses zero-coded split-capable packets");
+            updates.push_back(std::move(packet));
+        });
     check(updates.size() == 3, "bulk folder emits two item batches and a trailing empty child");
-    check(updates[0].blocks.at("ItemData").size() == 5 &&
-              updates[1].blocks.at("ItemData").size() == 1 &&
+    check(updates[0].blocks.at("ItemData").size() == 5 && updates[1].blocks.at("ItemData").size() == 1 &&
               updates[2].blocks.at("ItemData").empty(),
           "bulk folder groups at most five items per packet");
     check(updates[0].block("ItemData").at("ItemID") == network::lludp::FieldValue{id(25)} &&
               updates[2].block("FolderData").at("FolderID") == network::lludp::FieldValue{child.id} &&
               updates[0].block("AgentData").at("TransactionID") == updates[2].block("AgentData").at("TransactionID"),
           "bulk folder preserves reverse item order and one transaction ID");
+    for (const bool null_root : {true, false}) {
+        int emitted = 0;
+        bool failed = false;
+        try {
+            inventory_bulk_folder(
+                id(1), folder,
+                [&](framework::Uuid requested) -> std::optional<InventoryCollection> {
+                    if (null_root || requested == child.id)
+                        return std::nullopt;
+                    InventoryCollection content;
+                    content.folders.push_back(child);
+                    content.items.push_back(sample(0, 1, 0));
+                    return content;
+                },
+                [&](auto, bool) { ++emitted; });
+        } catch (const InventoryPacketNullError &) {
+            failed = true;
+        }
+        check(failed && emitted == (null_root ? 0 : 1),
+              "null bulk content must fail while retaining only packets already sent");
+    }
 }
-}
+} // namespace
+
 int main(int argc, char **argv) {
     try {
         if (argc == 2 && std::string_view(argv[1]) == "--probe") {

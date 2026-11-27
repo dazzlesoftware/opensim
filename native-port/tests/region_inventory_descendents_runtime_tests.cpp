@@ -12,17 +12,21 @@
 #include <thread>
 using namespace opensim;
 using namespace services;
+
 namespace {
 int checks = 0;
+
 void check(bool value, const char *text) {
     ++checks;
     if (!value)
         throw std::runtime_error(text);
 }
+
 framework::Uuid id(int n) {
     auto tail = std::to_string(n);
     return framework::Uuid("00000000-0000-0000-0000-" + std::string(12 - tail.size(), '0') + tail);
 }
+
 template <class F> void until(F condition) {
     auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(3);
     while (!condition()) {
@@ -31,73 +35,101 @@ template <class F> void until(F condition) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 }
+
 struct Backend final : SceneCapabilityBackend {
     std::shared_ptr<server::RegistryCapabilityListener> registry;
+
     explicit Backend(std::shared_ptr<server::RegistryCapabilityListener> r) : registry(std::move(r)) {}
+
     std::string scene_name() const override {
         return "Descendents scene";
     }
+
     std::optional<std::string> region_name() const override {
         return "Descendents region";
     }
+
     std::optional<std::string> external_host() const override {
         return "127.0.0.1";
     }
+
     std::shared_ptr<CapabilityRuntimeListener> listener() const override {
         return registry;
     }
+
     bool check_client(framework::Uuid, const network::HttpRequest &) override {
         return true;
     }
+
     void debug(const std::string &) override {}
+
     void warn(const std::string &) override {}
+
     void error(const std::string &) override {}
+
     void console(const std::string &) override {}
+
     void add_command(CapabilityCommand) override {}
 };
+
 struct Channel final : network::HttpResponseChannel {
     bool can_send() const override {
         return true;
     }
+
     bool is_sending() const override {
         return false;
     }
+
     bool is_closed() const override {
         return false;
     }
+
     bool complete(network::HttpResponse) override {
         return false;
     }
+
     bool complete_raw(network::RawHttpResponse) override {
         return false;
     }
+
     int requests_remaining() const override {
         return 20;
     }
+
     int idle_timeout_ms() const override {
         return 30000;
     }
+
     void idle_timeout_ms(int) override {}
+
     bool send_chunk(std::shared_ptr<const std::vector<std::uint8_t>>, std::size_t, std::size_t,
                     std::function<void()>) override {
         return false;
     }
+
     void finish_response(bool) override {}
+
     void on_disconnect(std::function<void()>) override {}
+
     void cancel() override {}
 };
+
 struct ConfigFile {
     std::filesystem::path path =
         std::filesystem::temp_directory_path() / ("opensim-desc-" + framework::Uuid::random().str() + ".ini");
+
     explicit ConfigFile(const std::string &url) {
         std::ofstream file(path);
         file << "[ClientStack.LindenCaps]\nCap_FetchInventoryDescendents2=" << url << '\n';
     }
+
     ~ConfigFile() {
         std::error_code error;
         std::filesystem::remove(path, error);
     }
 };
+
 std::shared_ptr<Caps> create(SceneCapabilities &scene, int code) {
     auto circuit = std::make_shared<framework::AgentCircuitData>();
     circuit->agent_id = id(code);
@@ -108,19 +140,21 @@ std::shared_ptr<Caps> create(SceneCapabilities &scene, int code) {
     scene.capabilities().activate_caps(code);
     return std::dynamic_pointer_cast<Caps>(scene.capabilities().get_caps_for_user(code));
 }
+
 network::HttpRequest request(int key) {
     network::HttpRequest r;
     r.method = "POST";
     r.response_channel = std::make_shared<Channel>();
-    r.body =
-        "<llsd><map><key>folders</key><array><map><key>folder_id</key><uuid>" + id(key).str() +
-        "</uuid><key>owner_id</key><uuid>" + id(100).str() +
-        "</uuid><key>fetch_items</key><boolean>1</boolean><key>fetch_folders</key><boolean>1</boolean></map></array></map></llsd>";
+    r.body = "<llsd><map><key>folders</key><array><map><key>folder_id</key><uuid>" + id(key).str() +
+             "</uuid><key>owner_id</key><uuid>" + id(100).str() +
+             "</uuid><key>fetch_items</key><boolean>1</boolean><key>fetch_folders</key><boolean>1</boolean></map></"
+             "array></map></llsd>";
     return r;
 }
+
 void run() {
-    auto registry = std::make_shared<server::RegistryCapabilityListener>(
-        server::CapabilityListenerInfo{false, 19005, 0, {}});
+    auto registry =
+        std::make_shared<server::RegistryCapabilityListener>(server::CapabilityListenerInfo{false, 19005, 0, {}});
     SceneCapabilities scene(std::make_shared<Backend>(registry));
     auto before = scene.events().on_register_caps.snapshot().size();
     ConfigFile file("localhost");
@@ -133,8 +167,8 @@ void run() {
     std::atomic<int> provider_calls = 0, errors = 0;
     std::atomic<bool> shutting = false, throw_provider = false;
     InventoryDescendentsBackend backend;
-    backend.multiple_content =
-        [&](auto owner, const auto &ids) -> std::optional<InventoryDescendentsBackend::Collections> {
+    backend.multiple_content = [&](auto owner,
+                                   const auto &ids) -> std::optional<InventoryDescendentsBackend::Collections> {
         ++provider_calls;
         if (throw_provider)
             throw std::runtime_error("inventory provider failure");
@@ -154,19 +188,18 @@ void run() {
         return InventoryDescendentsBackend::Collections{c};
     };
     backend.folder = [](auto, auto) -> std::optional<InventoryFolder> { return {}; };
-    backend.multiple_items = [](auto, const auto &) -> std::optional<FetchInventory2Core::Items> {
-        return {};
-    };
+    backend.multiple_items = [](auto, const auto &) -> std::optional<FetchInventory2Core::Items> { return {}; };
     backend.log = [&](auto category) {
         if (category == "inventory-worker-error")
             ++errors;
     };
-    RegionInventoryDescendentsRuntime runtime(config, scene.shared_events(), backend,
-                                              [&] { return shutting.load(); });
+    RegionInventoryDescendentsRuntime runtime(config, scene.shared_events(), backend, [&] { return shutting.load(); });
+
     struct Unblock {
         std::mutex &mutex;
         std::condition_variable &changed;
         bool &release;
+
         ~Unblock() {
             {
                 std::lock_guard lock(mutex);
@@ -175,6 +208,7 @@ void run() {
             changed.notify_all();
         }
     } unblock{mutex, changed, release};
+
     auto caps = create(scene, 123);
     std::shared_ptr<CapabilityPollHandler> poll;
     check(caps->try_get_poll("FetchInventoryDescendents2", poll), "source local poll capability registered");
@@ -245,8 +279,7 @@ void run() {
     poll->request(id(6), request(6));
     until([&] { return runtime.queued_requests() == 0; });
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    check(!poll->has_events(id(6), {}) && runtime.processed_requests() == 5,
-          "scene shutdown suppresses processing");
+    check(!poll->has_events(id(6), {}) && runtime.processed_requests() == 5, "scene shutdown suppresses processing");
     shutting = false;
     throw_provider = true;
     poll->request(id(8), request(8));
@@ -289,8 +322,7 @@ void run() {
     std::shared_ptr<CapabilityPollHandler> absent;
     check(!fresh->try_get_poll("FetchInventoryDescendents2", absent), "new caps after stop omit inventory");
     scene.shutdown();
-    check(registry->routes.poll_keys().empty() && registry->routes.simple_keys().empty(),
-          "caps owner releases routes");
+    check(registry->routes.poll_keys().empty() && registry->routes.simple_keys().empty(), "caps owner releases routes");
     check(errors == 1, "only injected provider failure reported");
     bool invalid = false;
     try {
@@ -301,13 +333,12 @@ void run() {
     check(invalid && scene.events().on_register_caps.snapshot().empty(),
           "failed enabled constructor leaves no delegate");
     for (const auto &url : {std::string{}, std::string("https://inventory.invalid/")}) {
-        auto other_registry = std::make_shared<server::RegistryCapabilityListener>(
-            server::CapabilityListenerInfo{false, 19006, 0, {}});
+        auto other_registry =
+            std::make_shared<server::RegistryCapabilityListener>(server::CapabilityListenerInfo{false, 19006, 0, {}});
         SceneCapabilities other(std::make_shared<Backend>(other_registry));
         ConfigFile other_file(url);
-        RegionInventoryDescendentsRuntime other_runtime(
-            server::IniConfig::load(other_file.path), other.shared_events(),
-            url.empty() ? InventoryDescendentsBackend{} : backend);
+        RegionInventoryDescendentsRuntime other_runtime(server::IniConfig::load(other_file.path), other.shared_events(),
+                                                        url.empty() ? InventoryDescendentsBackend{} : backend);
         auto other_caps = create(other, 125);
         check(!other_caps->try_get_poll("FetchInventoryDescendents2", absent),
               "disabled/external config has no local poll");
@@ -317,7 +348,8 @@ void run() {
         other.shutdown();
     }
 }
-}
+} // namespace
+
 int main() {
     try {
         run();

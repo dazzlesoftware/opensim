@@ -1,0 +1,21 @@
+{
+  "accepted": false,
+  "executed": false,
+  "globals": {},
+  "errors": [
+    "op not defined: char + char"
+  ],
+  "exception": null,
+  "exceptionType": null,
+  "stackSize": 1000000,
+  "stackLimit": 1024,
+  "finalStackLeft": null,
+  "stackSamples": [],
+  "name": "variables_add",
+  "source": "YOption chars;integer result;char value;default{state_entry(){char a='B';char b='A';result=a+b;}}",
+  "sha256": {
+    "source.lsl": "5f19c4b1f310b8e2d1542e5eeb3e584378d88a2d46df08e3751696f0624bebc3",
+    "source_hash.txt": "bb5fbb245296837cf49d722b1f1a0a00e059aebe29ca2842e65a02fdba2c77c8",
+    "generator_source": "7673d801dbf8417561ec385e5286206a754c6c479cb723b7ca2535509236e6c4"
+  }
+}

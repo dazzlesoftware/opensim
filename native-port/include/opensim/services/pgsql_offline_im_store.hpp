@@ -7,14 +7,15 @@
 
 namespace opensim::services {
 class PgsqlOfflineImStore {
-public:
-    PgsqlOfflineImStore(const std::string& connection, const std::string& realm);
+  public:
+    PgsqlOfflineImStore(const std::string &connection, const std::string &realm);
     ~PgsqlOfflineImStore();
-    bool store(framework::Uuid recipient, const network::ServiceXmlValue& message, int limit);
+    bool store(framework::Uuid recipient, const network::ServiceXmlValue &message, int limit);
     std::vector<network::ServiceXmlValue> drain(framework::Uuid recipient);
     void erase(framework::Uuid recipient);
-private:
+
+  private:
     struct State;
     std::unique_ptr<State> state_;
 };
-}
+} // namespace opensim::services

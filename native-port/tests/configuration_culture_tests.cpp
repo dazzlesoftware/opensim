@@ -1,19 +1,19 @@
 #include "opensim/framework/configuration_culture.hpp"
 #include <iostream>
 using namespace opensim::framework;
-int main(int argc, char**) {
+
+int main(int argc, char **) {
     if (argc == 1) {
         auto text = [](std::u16string s) { return std::make_shared<const std::u16string>(std::move(s)); };
         if (!startup_invariant_configuration_include_key(text(u"Include-file")) ||
             startup_invariant_configuration_include_key(text(u"include-file")) ||
-            !startup_invariant_configuration_include_key(
-                text(std::u16string(u"In") + char16_t(0) + u"clude-file")) ||
+            !startup_invariant_configuration_include_key(text(std::u16string(u"In") + char16_t(0) + u"clude-file")) ||
             startup_invariant_configuration_include_key(text(u"Include-\u0300")))
             return 1;
         try {
             startup_invariant_configuration_include_key(nullptr);
             return 1;
-        } catch (const ConfigurationCultureNullError& e) {
+        } catch (const ConfigurationCultureNullError &e) {
             if (e.hresult() != 0x80004003u)
                 return 1;
         }
@@ -34,7 +34,7 @@ int main(int argc, char**) {
         }
         try {
             std::cout << startup_invariant_configuration_include_key(text) << '\n';
-        } catch (const ConfigurationCultureNullError& e) {
+        } catch (const ConfigurationCultureNullError &e) {
             std::cout << e.source_type() << ":" << e.hresult() << ":" << e.what() << '\n';
         }
     }

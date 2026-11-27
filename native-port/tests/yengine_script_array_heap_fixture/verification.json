@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "fullParityVerified": false,
+  "nativeParityVerified": false,
+  "scope": "Actual unchanged original generatedinteger-array heap/global/local/instance ledgers, public backing mutations, live/migrated resume onWindows/Linuxx64",
+  "forcedGc": false,
+  "gcCauseClaimed": false,
+  "generatorSha256": "d91af42c91e2a93818ddc431a7fa3135b2bd5bd017fd8ac715241f75ed080017",
+  "generatorAssemblySha256": "41c2adaa7e3a82860c49ce2dd4ad62ff06f55c894e94145f5d300c5aac1a2853",
+  "platforms": {
+    "windows": {
+      "metadataSha256": "fd7324fbd7333ac01bad304a36f0b174ac350d166e290cbd0c4e9c906b9db789",
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "cases": [
+        {
+          "name": "heap_wrapper_alias",
+          "sourceSha256": "93af397d7a47c3273aa7e7a768bb804d34e18e7efa4df8c466fb265d26481ddd",
+          "snapshotSha256": "3461d9abf4d2535e8fed8f1a881bf10226ae97e2195ca633b426dcb59b2a706e",
+          "metadataSha256": "445673b56fb4d4640dd9e1e1ee861d4d7a93121113d7d5980d0239d261cdd93a",
+          "snapshotBytes": 297,
+          "initialHeapUsed": 32,
+          "classOwnHeapUse": 16,
+          "liveClearHeapObservation": 32,
+          "migratedClearHeapObservation": 32
+        },
+        {
+          "name": "heap_backing_replace_wrong",
+          "sourceSha256": "79c39d380ee2b47906bcd19ed18951d06ea6f17a6efad8783ec40cc8607121fc",
+          "snapshotSha256": "8a7899564aff4923045016dc213c955d332937d34b62e0f5b7c3372ecfcf50c7",
+          "metadataSha256": "d426c1952ee6fb31d61331bcdce45ba04376981158b4db57c01eea9b3a49146a",
+          "snapshotBytes": 308,
+          "initialHeapUsed": 56,
+          "classOwnHeapUse": 14,
+          "liveClearHeapObservation": 56,
+          "migratedClearHeapObservation": 56
+        },
+        {
+          "name": "heap_local_backing_sleep",
+          "sourceSha256": "620f169ac3463c455beb6873e40c0319aac20e6c9a59f5423ccdd40b3649905e",
+          "snapshotSha256": "1b78fdf43d515fd250bcb3f4c0575a7f494eb686711701a7ca73814b953226f6",
+          "metadataSha256": "1d535686ebfbe4b2ac062821326544591915984df5af35f4d6a987c455f62934",
+          "snapshotBytes": 297,
+          "initialHeapUsed": 44,
+          "classOwnHeapUse": 20,
+          "liveClearHeapObservation": 28,
+          "migratedClearHeapObservation": 12
+        },
+        {
+          "name": "heap_zero_backing",
+          "sourceSha256": "4eb69eaf776b443b6f4dd07ad06e6be06240d901d5da70f5556b70f4d9288166",
+          "snapshotSha256": "45619cb83bb1b0f945f60afdd040537e622db94317e4a284dce5ef0d628ec140",
+          "metadataSha256": "99f65c64ca9881aae001aee137fe518feb7b9dc87541723bb453c423c89acc8c",
+          "snapshotBytes": 282,
+          "initialHeapUsed": 36,
+          "classOwnHeapUse": 4,
+          "liveClearHeapObservation": 36,
+          "migratedClearHeapObservation": 36
+        }
+      ]
+    },
+    "linux": {
+      "metadataSha256": "1f7ca49e286aaa921bb7221368931d2e3e94898148eb92f20cbf2a2681eabdb4",
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "cases": [
+        {
+          "name": "heap_wrapper_alias",
+          "sourceSha256": "93af397d7a47c3273aa7e7a768bb804d34e18e7efa4df8c466fb265d26481ddd",
+          "snapshotSha256": "3461d9abf4d2535e8fed8f1a881bf10226ae97e2195ca633b426dcb59b2a706e",
+          "metadataSha256": "7c236d4960a227adc8e2493c8b224aea410915c162f55fe9ab02a9dc59031b9f",
+          "snapshotBytes": 297,
+          "initialHeapUsed": 32,
+          "classOwnHeapUse": 16,
+          "liveClearHeapObservation": 32,
+          "migratedClearHeapObservation": 32
+        },
+        {
+          "name": "heap_backing_replace_wrong",
+          "sourceSha256": "79c39d380ee2b47906bcd19ed18951d06ea6f17a6efad8783ec40cc8607121fc",
+          "snapshotSha256": "8a7899564aff4923045016dc213c955d332937d34b62e0f5b7c3372ecfcf50c7",
+          "metadataSha256": "8ee3da56d3b07860b0af46fe33f4ec4cd3c5077b6542e9c0cd6933a70d8ef823",
+          "snapshotBytes": 308,
+          "initialHeapUsed": 56,
+          "classOwnHeapUse": 14,
+          "liveClearHeapObservation": 56,
+          "migratedClearHeapObservation": 56
+        },
+        {
+          "name": "heap_local_backing_sleep",
+          "sourceSha256": "620f169ac3463c455beb6873e40c0319aac20e6c9a59f5423ccdd40b3649905e",
+          "snapshotSha256": "1b78fdf43d515fd250bcb3f4c0575a7f494eb686711701a7ca73814b953226f6",
+          "metadataSha256": "73a2553b34a72d038ab0cbd51ed64fff60ef87c3c11d9b0178871ca836564289",
+          "snapshotBytes": 297,
+          "initialHeapUsed": 44,
+          "classOwnHeapUse": 20,
+          "liveClearHeapObservation": 28,
+          "migratedClearHeapObservation": 12
+        },
+        {
+          "name": "heap_zero_backing",
+          "sourceSha256": "4eb69eaf776b443b6f4dd07ad06e6be06240d901d5da70f5556b70f4d9288166",
+          "snapshotSha256": "45619cb83bb1b0f945f60afdd040537e622db94317e4a284dce5ef0d628ec140",
+          "metadataSha256": "c5730201f57184022702e59474461c8dc4bc4d624efbbd17fa7c715f878052eb",
+          "snapshotBytes": 282,
+          "initialHeapUsed": 36,
+          "classOwnHeapUse": 4,
+          "liveClearHeapObservation": 36,
+          "migratedClearHeapObservation": 36
+        }
+      ]
+    }
+  },
+  "originalSourceSha256": {
+    "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+    "OpenSim/Region/ScriptEngine/YEngine/XMRHeapTracker.cs": "c04982ce71c32699438ad3e9aa5821a7262fe8ba65e6684db02171dec0489ef3",
+    "OpenSim/Region/ScriptEngine/YEngine/XMRSDTypeClObj.cs": "526bcaa0bac500bdce6bc0ada35eb22f1bef5d4f645f71f73ea0113ed8e9811c",
+    "OpenSim/Region/ScriptEngine/YEngine/MMRScriptReduce.cs": "7830d49846c4050ec71af9b3e16c8b281a4b775b7842497f99a29787511c3c9d"
+  },
+  "findings": [
+    "Wrapper and instance storage are not added to xmrHeapUsed: it sums locals plus global arrays only; class instVars retain a separate arraysHeapUse.",
+    "Instance totals observed16/14/20/4bytes; global raw I[5] adds20bytes, wrapper aliases and len0 stores add0.",
+    "Local raw backing adds16locals live, external import resets locals0; clear yields live28 versus migrated12, normalreturn restores28.",
+    "Wrong public obj String persists then Get raises InvalidCastException.",
+    "Zero raw backing becomes null on external import while wrapper and own4byte dimension allocation remain.",
+    "No GC forced; clearing wrapper roots does not establish a GC lifecycle conclusion."
+  ],
+  "observerHistory": "Initial observer returned live dimension arrays; preserved pre-observer-copy outputs/source. Corrected helper copies dimension arrays with ToArray before recording; original backend unchanged.",
+  "verifierSha256": "c9f6e057fed7bc26012d049367c0ec3e43eaa0637cd6609339be550889742530"
+}

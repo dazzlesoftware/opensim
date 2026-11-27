@@ -34,29 +34,32 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <limits>
 #include <thread>
 using namespace opensim::network;
+
 namespace {
 int failures = 0;
-void check(bool okay, const char* name) {
+
+void check(bool okay, const char *name) {
     if (!okay) {
         std::cerr << "FAIL: " << name << '\n';
         ++failures;
     }
 }
-template <class F> bool throws(F&& call) {
+
+template <class F> bool throws(F &&call) {
     try {
         call();
-    } catch (const std::exception&) {
+    } catch (const std::exception &) {
         return true;
     }
     return false;
 }
+
 void history_tests() {
     IncomingPacketHistoryCollection history(4);
     check(history.try_enqueue(1) && history.try_enqueue(2) && history.try_enqueue(3),
           "history accepts initial packets");
     check(!history.try_enqueue(1), "history suppresses duplicates");
-    check(history.try_enqueue(4) && history.try_enqueue(1),
-          "history evicts after capacity minus one packets");
+    check(history.try_enqueue(4) && history.try_enqueue(1), "history evicts after capacity minus one packets");
     IncomingPacketHistoryCollection one(1);
     check(one.try_enqueue(0) && one.try_enqueue(0), "capacity one retains source empty-history behavior");
     IncomingPacketHistoryCollection empty(0);
@@ -66,12 +69,13 @@ void history_tests() {
     check(wrap.try_enqueue(0xffffffffu) && wrap.try_enqueue(0) && !wrap.try_enqueue(0xffffffffu),
           "sequence wrap and duplicate identity");
 }
+
 void unacked_tests() {
     auto client = std::make_shared<UdpClientAccounting>();
     int acks = 0, expired = 0, freed = 0, now = 1000;
     client->acknowledge_packets = [&](int n) { acks += n; };
     client->expire_packets = [&](int n) { expired += n; };
-    UnackedPacketCollection packets([&] { return now; }, [&](const auto&) { ++freed; });
+    UnackedPacketCollection packets([&] { return now; }, [&](const auto &) { ++freed; });
     auto make = [&](std::uint32_t sequence, int length, int sent) {
         auto p = std::make_shared<OutgoingPacket>();
         p->client = client;
@@ -94,10 +98,8 @@ void unacked_tests() {
     now = 1100;
     check(packets.get_expired_packets(100).has_value() && expired == 2, "restamped resend can expire again");
     packets.acknowledge(10, 1100, true);
-    check(packets.count() == 0 && client->unacked_bytes == 100,
-          "ACK effects deferred until queue processing");
-    check(!packets.get_expired_packets(0) && !first->buffer && client->unacked_bytes == 0 && acks == 1 &&
-              freed == 1,
+    check(packets.count() == 0 && client->unacked_bytes == 100, "ACK effects deferred until queue processing");
+    check(!packets.get_expired_packets(0) && !first->buffer && client->unacked_bytes == 0 && acks == 1 && freed == 1,
           "ACK releases buffer and updates flow accounting");
     check(packets.oldest() == 10, "oldest remains stale when collection becomes empty");
     packets.acknowledge(999, 1100, false);
@@ -107,33 +109,30 @@ void unacked_tests() {
     packets.remove(20);
     packets.add(second);
     packets.get_expired_packets(1000);
-    check(packets.count() == 1 && second->buffer != nullptr,
-          "pending removes are processed before pending adds");
+    check(packets.count() == 1 && second->buffer != nullptr, "pending removes are processed before pending adds");
     packets.remove(20);
     packets.get_expired_packets(1000);
-    check(!second->buffer && acks == 1 && client->unacked_bytes == 0,
-          "explicit removal releases without ACK feedback");
+    check(!second->buffer && acks == 1 && client->unacked_bytes == 0, "explicit removal releases without ACK feedback");
     auto high = make(0xffffffffu, 1, 1000), low = make(0, 1, 1000);
     packets.add(high);
     packets.add(low);
     packets.get_expired_packets(1000);
     check(packets.oldest() == 0, "oldest follows unsigned sorted key ordering after wrap");
     packets.clear();
-    check(packets.oldest() == 0 && throws([&] { packets.count(); }),
-          "clear closes queue objects like source teardown");
+    check(packets.oldest() == 0 && throws([&] { packets.count(); }), "clear closes queue objects like source teardown");
 }
-void socket_tests(const std::string& address) {
+
+void socket_tests(const std::string &address) {
     std::mutex mutex;
     std::condition_variable changed;
     std::vector<std::vector<std::uint8_t>> replies;
-    UdpSocket* receiver = nullptr;
-    UdpSocket server({address, 0, 0, 128},
-                     [&](const UdpEndpoint& source, std::span<const std::uint8_t> bytes) {
-                         receiver->send_to(source, bytes);
-                     });
+    UdpSocket *receiver = nullptr;
+    UdpSocket server({address, 0, 0, 128}, [&](const UdpEndpoint &source, std::span<const std::uint8_t> bytes) {
+        receiver->send_to(source, bytes);
+    });
     receiver = &server;
     const auto bound = server.start();
-    UdpSocket client({address, 0, 0, 65507}, [&](const UdpEndpoint&, std::span<const std::uint8_t> bytes) {
+    UdpSocket client({address, 0, 0, 65507}, [&](const UdpEndpoint &, std::span<const std::uint8_t> bytes) {
         std::lock_guard lock(mutex);
         replies.emplace_back(bytes.begin(), bytes.end());
         changed.notify_all();
@@ -147,7 +146,7 @@ void socket_tests(const std::string& address) {
               "UDP datagram receives echo");
         check(!replies.empty() && replies.front() == first, "UDP datagram boundaries and data");
     }
-    UdpSocket duplicate({address, bound.port, 0, 128}, [](const auto&, auto) {});
+    UdpSocket duplicate({address, bound.port, 0, 128}, [](const auto &, auto) {});
     check(throws([&] { duplicate.start(); }), "duplicate UDP bind rejected");
     client.send_to(bound, std::vector<std::uint8_t>(129));
     client.send_to(bound, std::vector<std::uint8_t>{5});
@@ -156,8 +155,7 @@ void socket_tests(const std::string& address) {
         check(changed.wait_for(lock, std::chrono::seconds(2), [&] { return replies.size() >= 2; }),
               "UDP continues after oversized datagram");
     }
-    check(server.statistics().oversized == 1 && server.statistics().received == 3,
-          "UDP oversized receive accounting");
+    check(server.statistics().oversized == 1 && server.statistics().received == 3, "UDP oversized receive accounting");
     check(!server.send_to(bound, std::vector<std::uint8_t>(129)), "UDP outgoing datagram limit");
     const auto before = std::chrono::steady_clock::now();
     client.stop();
@@ -165,18 +163,19 @@ void socket_tests(const std::string& address) {
     check(std::chrono::steady_clock::now() - before < std::chrono::seconds(1) && !server.is_running(),
           "UDP stop joins idle receive loop promptly");
     check(!server.send_to(bound, first), "stopped UDP socket rejects sends");
-    UdpSocket rebound({address, bound.port, 0, 128}, [](const auto&, auto) {});
+    UdpSocket rebound({address, bound.port, 0, 128}, [](const auto &, auto) {});
     rebound.start();
     rebound.stop();
 }
-}
+} // namespace
+
 int main() {
     try {
         history_tests();
         unacked_tests();
         socket_tests("127.0.0.1");
         socket_tests("::1");
-    } catch (const std::exception& error) {
+    } catch (const std::exception &error) {
         std::cerr << error.what() << '\n';
         return 1;
     }

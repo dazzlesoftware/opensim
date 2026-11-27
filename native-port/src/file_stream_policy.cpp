@@ -2,18 +2,21 @@
 // See third_party/dotnet_collation/LICENSE.
 #include "opensim/framework/file_stream_policy.hpp"
 #include <mutex>
+
 namespace opensim::framework {
 namespace {
 struct Policy {
     std::mutex mutex;
     std::optional<bool> value, switch_value;
 };
-Policy& policy() {
+
+Policy &policy() {
     static Policy value;
     return value;
 }
-}
-bool file_stream_boolean_config_value(const RuntimeEnvironmentText& text) noexcept {
+} // namespace
+
+bool file_stream_boolean_config_value(const RuntimeEnvironmentText &text) noexcept {
     if (!text)
         return false;
     if (*text == u"1")
@@ -30,25 +33,26 @@ bool file_stream_boolean_config_value(const RuntimeEnvironmentText& text) noexce
     }
     return true;
 }
+
 void set_file_stream_disable_locking_switch(bool value) {
-    auto& state = policy();
+    auto &state = policy();
     std::lock_guard lock(state.mutex);
     state.switch_value = value;
 }
+
 bool file_stream_disable_locking(std::optional<bool> value) {
     if (value)
         return *value;
-    auto& state = policy();
+    auto &state = policy();
     std::lock_guard lock(state.mutex);
     if (!state.value) {
         if (state.switch_value)
             state.value = *state.switch_value;
         else {
-            static const auto name =
-                std::make_shared<const std::u16string>(u"DOTNET_SYSTEM_IO_DISABLEFILELOCKING");
+            static const auto name = std::make_shared<const std::u16string>(u"DOTNET_SYSTEM_IO_DISABLEFILELOCKING");
             state.value = file_stream_boolean_config_value(runtime_environment_get(name));
         }
     }
     return *state.value;
 }
-}
+} // namespace opensim::framework

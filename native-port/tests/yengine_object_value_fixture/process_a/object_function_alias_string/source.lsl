@@ -1,0 +1,1 @@
+YOption arrays;object input=(object)"text";object alias;integer result;object echo(object argument){return argument;}default{state_entry(){alias=echo(input);result=(input==alias);}}

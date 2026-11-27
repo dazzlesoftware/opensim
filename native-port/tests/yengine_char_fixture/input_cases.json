@@ -1,0 +1,226 @@
+[
+  {
+    "name": "missing_option",
+    "source": "char value;integer result;default{state_entry(){value='A';}}"
+  },
+  {
+    "name": "default",
+    "source": "YOption chars;char value;integer result;default{state_entry(){result=(integer)value;}}"
+  },
+  {
+    "name": "literal_ascii",
+    "source": "YOption chars;char value;integer result;default{state_entry(){value='A';result=(integer)value;}}"
+  },
+  {
+    "name": "literal_nul",
+    "source": "YOption chars;char value;integer result;default{state_entry(){value='\\0';result=(integer)value;}}"
+  },
+  {
+    "name": "literal_newline",
+    "source": "YOption chars;char value;integer result;default{state_entry(){value='\\n';result=(integer)value;}}"
+  },
+  {
+    "name": "literal_tab",
+    "source": "YOption chars;char value;integer result;default{state_entry(){value='\\t';result=(integer)value;}}"
+  },
+  {
+    "name": "literal_quote",
+    "source": "YOption chars;char value;integer result;default{state_entry(){value='\\'';result=(integer)value;}}"
+  },
+  {
+    "name": "literal_backslash",
+    "source": "YOption chars;char value;integer result;default{state_entry(){value='\\\\';result=(integer)value;}}"
+  },
+  {
+    "name": "literal_bmp",
+    "source": "YOption chars;char value;integer result;default{state_entry(){value='é';result=(integer)value;}}"
+  },
+  {
+    "name": "literal_unicode_escape",
+    "source": "YOption chars;char value;integer result;default{state_entry(){value='\\u0041';result=(integer)value;}}"
+  },
+  {
+    "name": "literal_hex_escape",
+    "source": "YOption chars;char value;integer result;default{state_entry(){value='\\x41';result=(integer)value;}}"
+  },
+  {
+    "name": "literal_supplementary",
+    "source": "YOption chars;char value;integer result;default{state_entry(){value='😀';result=(integer)value;}}"
+  },
+  {
+    "name": "literal_empty",
+    "source": "YOption chars;char value;integer result;default{state_entry(){value='';result=(integer)value;}}"
+  },
+  {
+    "name": "literal_multiple",
+    "source": "YOption chars;char value;integer result;default{state_entry(){value='ab';result=(integer)value;}}"
+  },
+  {
+    "name": "cast_from_integer",
+    "source": "YOption chars;char value;integer result;default{state_entry(){value=(char)(65);result=(integer)value;}}"
+  },
+  {
+    "name": "implicit_from_integer",
+    "source": "YOption chars;char value;integer result;default{state_entry(){value=65;result=(integer)value;}}"
+  },
+  {
+    "name": "cast_from_float",
+    "source": "YOption chars;char value;integer result;default{state_entry(){value=(char)(65.5);result=(integer)value;}}"
+  },
+  {
+    "name": "implicit_from_float",
+    "source": "YOption chars;char value;integer result;default{state_entry(){value=65.5;result=(integer)value;}}"
+  },
+  {
+    "name": "cast_from_string",
+    "source": "YOption chars;char value;integer result;default{state_entry(){value=(char)(\"A\");result=(integer)value;}}"
+  },
+  {
+    "name": "implicit_from_string",
+    "source": "YOption chars;char value;integer result;default{state_entry(){value=\"A\";result=(integer)value;}}"
+  },
+  {
+    "name": "cast_from_key",
+    "source": "YOption chars;char value;integer result;default{state_entry(){value=(char)((key)\"A\");result=(integer)value;}}"
+  },
+  {
+    "name": "implicit_from_key",
+    "source": "YOption chars;char value;integer result;default{state_entry(){value=(key)\"A\";result=(integer)value;}}"
+  },
+  {
+    "name": "cast_from_list",
+    "source": "YOption chars;char value;integer result;default{state_entry(){value=(char)([65]);result=(integer)value;}}"
+  },
+  {
+    "name": "implicit_from_list",
+    "source": "YOption chars;char value;integer result;default{state_entry(){value=[65];result=(integer)value;}}"
+  },
+  {
+    "name": "cast_from_char",
+    "source": "YOption chars;char value;integer result;default{state_entry(){value=(char)('A');result=(integer)value;}}"
+  },
+  {
+    "name": "implicit_from_char",
+    "source": "YOption chars;char value;integer result;default{state_entry(){value='A';result=(integer)value;}}"
+  },
+  {
+    "name": "cast_to_integer",
+    "source": "YOption chars;char value;integer result;default{state_entry(){value='A';result=(integer)value;}}"
+  },
+  {
+    "name": "implicit_to_integer",
+    "source": "YOption chars;char value;integer result;default{state_entry(){value='A';result=value;}}"
+  },
+  {
+    "name": "cast_to_float",
+    "source": "YOption chars;char value;float result;default{state_entry(){value='A';result=(float)value;}}"
+  },
+  {
+    "name": "implicit_to_float",
+    "source": "YOption chars;char value;float result;default{state_entry(){value='A';result=value;}}"
+  },
+  {
+    "name": "cast_to_string",
+    "source": "YOption chars;char value;string result;default{state_entry(){value='A';result=(string)value;}}"
+  },
+  {
+    "name": "implicit_to_string",
+    "source": "YOption chars;char value;string result;default{state_entry(){value='A';result=value;}}"
+  },
+  {
+    "name": "cast_to_key",
+    "source": "YOption chars;char value;key result;default{state_entry(){value='A';result=(key)value;}}"
+  },
+  {
+    "name": "implicit_to_key",
+    "source": "YOption chars;char value;key result;default{state_entry(){value='A';result=value;}}"
+  },
+  {
+    "name": "cast_to_list",
+    "source": "YOption chars;char value;list result;default{state_entry(){value='A';result=(list)value;}}"
+  },
+  {
+    "name": "implicit_to_list",
+    "source": "YOption chars;char value;list result;default{state_entry(){value='A';result=value;}}"
+  },
+  {
+    "name": "cast_to_char",
+    "source": "YOption chars;char value;char result;default{state_entry(){value='A';result=(char)value;}}"
+  },
+  {
+    "name": "implicit_to_char",
+    "source": "YOption chars;char value;char result;default{state_entry(){value='A';result=value;}}"
+  },
+  {
+    "name": "add_int",
+    "source": "YOption chars;YOption advflowctl;char value;integer result;default{state_entry(){value='A';result=value+1;}}"
+  },
+  {
+    "name": "int_add",
+    "source": "YOption chars;YOption advflowctl;char value;integer result;default{state_entry(){value='A';result=1+value;}}"
+  },
+  {
+    "name": "subtract",
+    "source": "YOption chars;YOption advflowctl;char value;integer result;default{state_entry(){result='B'-'A';}}"
+  },
+  {
+    "name": "multiply",
+    "source": "YOption chars;YOption advflowctl;char value;integer result;default{state_entry(){result='A'*2;}}"
+  },
+  {
+    "name": "equal",
+    "source": "YOption chars;YOption advflowctl;char value;integer result;default{state_entry(){result='A'=='A';}}"
+  },
+  {
+    "name": "less",
+    "source": "YOption chars;YOption advflowctl;char value;integer result;default{state_entry(){result='A'<'B';}}"
+  },
+  {
+    "name": "not",
+    "source": "YOption chars;YOption advflowctl;char value;integer result;default{state_entry(){result=!'A';}}"
+  },
+  {
+    "name": "if",
+    "source": "YOption chars;YOption advflowctl;char value;integer result;default{state_entry(){if('A')result=1;}}"
+  },
+  {
+    "name": "increment",
+    "source": "YOption chars;YOption advflowctl;char value;integer result;default{state_entry(){value='A';value++;result=(integer)value;}}"
+  },
+  {
+    "name": "string_index",
+    "source": "YOption chars;YOption advflowctl;char value;integer result;default{state_entry(){string s=\"AB\";value=s[1];result=(integer)value;}}"
+  },
+  {
+    "name": "char_index",
+    "source": "YOption chars;YOption advflowctl;char value;integer result;default{state_entry(){value=\"AB\"[1];result=(integer)value;}}"
+  },
+  {
+    "name": "switch",
+    "source": "YOption chars;YOption advflowctl;char value;integer result;default{state_entry(){switch('A'){case 'A':result=1;break;}}}"
+  },
+  {
+    "name": "list_boxing",
+    "source": "YOption chars;list result;default{state_entry(){result=['A', (char)0];}}"
+  },
+  {
+    "name": "function",
+    "source": "YOption chars;char value;integer result;char echo(char x){return x;}default{state_entry(){value=echo('A');result=(integer)value;}}"
+  },
+  {
+    "name": "int_wrap",
+    "source": "YOption chars;char value;integer result;default{state_entry(){value=(char)65537;result=(integer)value;}}"
+  },
+  {
+    "name": "negative_wrap",
+    "source": "YOption chars;char value;integer result;default{state_entry(){value=(char)-1;result=(integer)value;}}"
+  },
+  {
+    "name": "surrogate",
+    "source": "YOption chars;char value;integer result;default{state_entry(){value=(char)55296;result=(integer)value;}}"
+  },
+  {
+    "name": "max",
+    "source": "YOption chars;char value;integer result;default{state_entry(){value=(char)65535;result=(integer)value;}}"
+  }
+]

@@ -2,7 +2,8 @@
 #include <iostream>
 #include <sstream>
 using namespace opensim::framework;
-std::vector<std::string> split(const std::string& text, char separator) {
+
+std::vector<std::string> split(const std::string &text, char separator) {
     std::vector<std::string> parts;
     std::istringstream in(text);
     std::string s;
@@ -10,7 +11,8 @@ std::vector<std::string> split(const std::string& text, char separator) {
         parts.push_back(s);
     return parts;
 }
-std::string hex(const XmlWriterText& s) {
+
+std::string hex(const XmlWriterText &s) {
     if (!s)
         return "~";
     if (s->empty())
@@ -21,7 +23,8 @@ std::string hex(const XmlWriterText& s) {
             out += "0123456789abcdef"[(c >> shift) & 15];
     return out;
 }
-XmlWriterText decode(const std::string& s) {
+
+XmlWriterText decode(const std::string &s) {
     if (s == "~")
         return {};
     std::u16string out;
@@ -30,28 +33,31 @@ XmlWriterText decode(const std::string& s) {
             out += static_cast<char16_t>(std::stoul(s.substr(i, 4), nullptr, 16));
     return out;
 }
-std::string error(const std::string& type, unsigned code, const std::u16string& message,
-                  const XmlWriterText& parameter = {}, std::optional<int> actual = {}) {
+
+std::string error(const std::string &type, unsigned code, const std::u16string &message,
+                  const XmlWriterText &parameter = {}, std::optional<int> actual = {}) {
     std::ostringstream h;
     h << std::hex << code;
     return type + ":" + h.str() + ":" + hex(message) + ":" + hex(parameter) + ":" +
            (actual ? std::to_string(*actual) : "~");
 }
+
 std::string current_error() {
     try {
         throw;
-    } catch (const XmlTextWriterError& e) {
+    } catch (const XmlTextWriterError &e) {
         return error(e.source_type, e.hresult, e.message, e.parameter);
-    } catch (const XmlEncoderError& e) {
+    } catch (const XmlEncoderError &e) {
         return error(e.source_type, e.hresult, e.message);
-    } catch (const XmlEncoderArrayError& e) {
+    } catch (const XmlEncoderArrayError &e) {
         return error(e.source_type, e.hresult, e.message, e.parameter, e.actual_value);
-    } catch (const std::runtime_error&) {
+    } catch (const std::runtime_error &) {
         return error("System.IO.IOException", 0x80131620, u"injected writer failure");
     }
 }
-std::string execute(NativeXmlTextWriter& w, XmlWriterText& encoding_name,
-                    XmlWriterCharArrayHandle& last_array, const std::string& command) {
+
+std::string execute(NativeXmlTextWriter &w, XmlWriterText &encoding_name, XmlWriterCharArrayHandle &last_array,
+                    const std::string &command) {
     auto p = split(command, ',');
     auto s = [&](int i) { return decode(p[i]); };
     auto n = [&](int i) { return std::stoi(p[i]); };
@@ -146,13 +152,14 @@ std::string execute(NativeXmlTextWriter& w, XmlWriterText& encoding_name,
         w.close();
     return "~";
 }
-std::string state(const NativeXmlTextWriter& w) {
-    return std::to_string(w.write_state()) + "," + std::to_string(w.xml_space()) + "," + hex(w.xml_lang()) +
-           "," + (w.namespaces() ? "1" : "0") + "," + std::to_string(w.formatting()) + "," +
-           std::to_string(w.indentation()) + "," + std::to_string(w.indent_char()) + "," +
-           std::to_string(w.quote_char());
+
+std::string state(const NativeXmlTextWriter &w) {
+    return std::to_string(w.write_state()) + "," + std::to_string(w.xml_space()) + "," + hex(w.xml_lang()) + "," +
+           (w.namespaces() ? "1" : "0") + "," + std::to_string(w.formatting()) + "," + std::to_string(w.indentation()) +
+           "," + std::to_string(w.indent_char()) + "," + std::to_string(w.quote_char());
 }
-int main(int argc, char**) {
+
+int main(int argc, char **) {
     if (argc == 1) {
         std::u16string output;
         int flushes = 0, closes = 0;
@@ -181,8 +188,8 @@ int main(int argc, char**) {
         writer.write_end_attribute();
         writer.write_end_element();
         writer.flush();
-        if (output != u"<?xml version=\"1.0\" encoding=\"utf-16\"?><root a=\"&lt;&amp;&quot;\" />" ||
-            flushes != 1 || closes != 0 || writer.write_state() != 4)
+        if (output != u"<?xml version=\"1.0\" encoding=\"utf-16\"?><root a=\"&lt;&amp;&quot;\" />" || flushes != 1 ||
+            closes != 0 || writer.write_state() != 4)
             throw std::runtime_error("XML writer escaping/state/flush ownership unit failed");
         writer.close();
         if (closes != 1 || writer.write_state() != 5)
@@ -200,7 +207,7 @@ int main(int argc, char**) {
         std::vector<XmlWriterCharArrayHandle> arrays;
         std::unique_ptr<NativeXmlTextWriter> w;
         std::vector<std::string> calls, snapshots;
-        auto emit = [&](const std::string& kind, const XmlWriterText& value = std::nullopt) {
+        auto emit = [&](const std::string &kind, const XmlWriterText &value = std::nullopt) {
             calls.push_back(kind + ":" + hex(value));
             int index = static_cast<int>(calls.size());
             if (index == reenter) {
@@ -228,8 +235,8 @@ int main(int argc, char**) {
         auto range = [&](XmlWriterCharArrayHandle value, int index, int count) {
             int id = remember(value);
             if (array_mode == 2) {
-                emit("Z" + std::to_string(id) + ":" + std::to_string(value->size()) + ":" +
-                     std::to_string(index) + ":" + std::to_string(count));
+                emit("Z" + std::to_string(id) + ":" + std::to_string(value->size()) + ":" + std::to_string(index) +
+                     ":" + std::to_string(count));
                 return;
             }
             if (count < 0) {
@@ -242,8 +249,8 @@ int main(int argc, char**) {
 #endif
                 throw XmlEncoderArrayError("System.ArgumentOutOfRangeException", 0x80131502,
                                            u"length ('" + number +
-                                               u"') must be a non-negative value. (Parameter 'length')" +
-                                               newline + u"Actual value was " + number + u".",
+                                               u"') must be a non-negative value. (Parameter 'length')" + newline +
+                                               u"Actual value was " + number + u".",
                                            u"length", count);
             }
             auto contents = std::u16string(value->view().substr(index, count));
@@ -283,8 +290,7 @@ int main(int argc, char**) {
                 return;
             }
             int id = remember(value);
-            emit("H" + std::to_string(id) + ":" + std::to_string(value->size()),
-                 std::u16string(value->view()));
+            emit("H" + std::to_string(id) + ":" + std::to_string(value->size()), std::u16string(value->view()));
         };
         try {
             w = std::make_unique<NativeXmlTextWriter>(io, header[1] == "1");

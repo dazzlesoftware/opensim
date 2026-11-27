@@ -1,0 +1,1 @@
+YOption chars;string h;string l;string text;integer result;default{state_entry(){h=llGetSubString("😀",0,0);l=llGetSubString("😀",1,1);result=h==l;text=l;}}

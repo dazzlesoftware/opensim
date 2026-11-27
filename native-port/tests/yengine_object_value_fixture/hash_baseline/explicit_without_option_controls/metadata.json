@@ -1,0 +1,138 @@
+[
+  {
+    "name": "list_alias",
+    "accepted": false,
+    "diagnostics": [
+      "invalid operator"
+    ],
+    "compile_exception": null
+  },
+  {
+    "name": "list_copy",
+    "accepted": false,
+    "diagnostics": [
+      "invalid operator"
+    ],
+    "compile_exception": null
+  },
+  {
+    "name": "list_sleep",
+    "accepted": false,
+    "diagnostics": [
+      "invalid operator"
+    ],
+    "compile_exception": null
+  },
+  {
+    "name": "null_list",
+    "accepted": false,
+    "diagnostics": [
+      "invalid operator"
+    ],
+    "compile_exception": null
+  },
+  {
+    "name": "rotation_finite",
+    "accepted": false,
+    "diagnostics": [
+      "invalid operator"
+    ],
+    "compile_exception": null
+  },
+  {
+    "name": "rotation_identity",
+    "accepted": false,
+    "diagnostics": [
+      "invalid operator"
+    ],
+    "compile_exception": null
+  },
+  {
+    "name": "rotation_nan_infinity",
+    "accepted": false,
+    "diagnostics": [
+      "invalid operator"
+    ],
+    "compile_exception": null
+  },
+  {
+    "name": "rotation_raw_zero",
+    "accepted": false,
+    "diagnostics": [
+      "invalid operator"
+    ],
+    "compile_exception": null
+  },
+  {
+    "name": "rotation_signed_zero",
+    "accepted": false,
+    "diagnostics": [
+      "invalid operator"
+    ],
+    "compile_exception": null
+  },
+  {
+    "name": "rotation_sleep",
+    "accepted": false,
+    "diagnostics": [
+      "invalid operator"
+    ],
+    "compile_exception": null
+  },
+  {
+    "name": "vector_argument_effect",
+    "accepted": false,
+    "diagnostics": [
+      "invalid operator"
+    ],
+    "compile_exception": null
+  },
+  {
+    "name": "vector_finite",
+    "accepted": false,
+    "diagnostics": [
+      "invalid operator"
+    ],
+    "compile_exception": null
+  },
+  {
+    "name": "vector_nan_infinity",
+    "accepted": false,
+    "diagnostics": [
+      "invalid operator"
+    ],
+    "compile_exception": null
+  },
+  {
+    "name": "vector_signed_zero",
+    "accepted": false,
+    "diagnostics": [
+      "invalid operator"
+    ],
+    "compile_exception": null
+  },
+  {
+    "name": "vector_sleep",
+    "accepted": false,
+    "diagnostics": [
+      "invalid operator"
+    ],
+    "compile_exception": null
+  },
+  {
+    "name": "vector_sum_overflow",
+    "accepted": false,
+    "diagnostics": [
+      "invalid operator"
+    ],
+    "compile_exception": null
+  },
+  {
+    "name": "vector_zero",
+    "accepted": false,
+    "diagnostics": [
+      "invalid operator"
+    ],
+    "compile_exception": null
+  }
+]

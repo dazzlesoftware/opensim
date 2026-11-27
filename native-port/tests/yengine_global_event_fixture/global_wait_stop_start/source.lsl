@@ -1,0 +1,1 @@
+integer calls;list result=init();integer complete;list init(){calls++;return xmrEventDequeue(600.0,2097152,0,0,0);}default{state_entry(){complete=1;}touch_start(integer n){}}

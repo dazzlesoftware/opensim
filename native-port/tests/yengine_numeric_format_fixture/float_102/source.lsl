@@ -1,0 +1,1 @@
+string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float("5e-324"),"G17");after=1;}}

@@ -1,0 +1,7 @@
+{
+  "process_id": 1,
+  "retained": [],
+  "global_heap": 40,
+  "locals_heap": 0,
+  "heap_limit": 100000000
+}

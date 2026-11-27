@@ -1,6 +1,7 @@
 #include "opensim/framework/config_http_windows_proxy.hpp"
 #include "opensim/framework/config_native_uri_object.hpp"
 #include "opensim/framework/config_uri_components.hpp"
+
 namespace opensim::framework {
 namespace {
 bool secure(ConfigUriObjectPtr uri) {
@@ -10,9 +11,9 @@ bool secure(ConfigUriObjectPtr uri) {
     auto scheme = uri->scheme();
     return *scheme == u"https" || *scheme == u"wss";
 }
-}
-std::shared_ptr<ConfigHttpWindowsProxy>
-ConfigHttpWindowsProxy::try_create(ConfigHttpWindowsProxyOptions options) {
+} // namespace
+
+std::shared_ptr<ConfigHttpWindowsProxy> ConfigHttpWindowsProxy::try_create(ConfigHttpWindowsProxyOptions options) {
     if (!options.read_settings)
         throw ConfigHttpProxyProviderError("Windows proxy requires current-user settings provider");
     auto helper = std::make_shared<ConfigHttpWinInetProxyHelper>(options.read_settings(), options.ticks);
@@ -29,6 +30,7 @@ ConfigHttpWindowsProxy::try_create(ConfigHttpWindowsProxyOptions options) {
     return std::shared_ptr<ConfigHttpWindowsProxy>(
         new ConfigHttpWindowsProxy(std::move(helper), std::move(session), std::move(options)));
 }
+
 ConfigHttpWindowsProxy::ConfigHttpWindowsProxy(std::shared_ptr<ConfigHttpWinInetProxyHelper> helper,
                                                std::shared_ptr<ConfigHttpWinHttpSession> session,
                                                ConfigHttpWindowsProxyOptions options)
@@ -44,9 +46,11 @@ ConfigHttpWindowsProxy::ConfigHttpWindowsProxy(std::shared_ptr<ConfigHttpWinInet
         helper_->settings().proxy_bypass,
         options.bypass ? std::move(*options.bypass) : native_config_http_windows_proxy_bypass_backend());
 }
+
 ConfigHttpMultiProxy ConfigHttpWindowsProxy::empty() const {
     return {ConfigHttpMultiProxyCandidates::parse({}, false, uris_), cache_};
 }
+
 ConfigHttpMultiProxy ConfigHttpWindowsProxy::get_multi_proxy(ConfigUriObjectPtr uri) const {
     if (helper_->auto_settings_used() && !helper_->recent_auto_detection_failure()) {
         auto session = session_.load();
@@ -54,8 +58,7 @@ ConfigHttpMultiProxy ConfigHttpWindowsProxy::get_multi_proxy(ConfigUriObjectPtr 
             if (uri)
                 uri->absolute_uri();
             throw ConfigUriComponentsError("System.NullReferenceException",
-                                           u"Object reference not set to an instance of an object.",
-                                           0x80004003);
+                                           u"Object reference not set to an instance of an object.", 0x80004003);
         }
         auto result = helper_->get_proxy_for_url(std::move(session), uri);
         if (!result.success)
@@ -73,15 +76,18 @@ ConfigHttpMultiProxy ConfigHttpWindowsProxy::get_multi_proxy(ConfigUriObjectPtr 
     }
     return empty();
 }
+
 ConfigUriObjectPtr ConfigHttpWindowsProxy::get_proxy(ConfigUriObjectPtr uri) const {
     auto proxies = get_multi_proxy(std::move(uri));
     return proxies.read_next().uri;
 }
+
 void ConfigHttpWindowsProxy::dispose() {
     if (!disposed_.exchange(true))
         session_.store({});
 }
+
 std::shared_ptr<ConfigHttpProxy> native_config_http_windows_proxy() {
     return ConfigHttpWindowsProxy::try_create();
 }
-}
+} // namespace opensim::framework

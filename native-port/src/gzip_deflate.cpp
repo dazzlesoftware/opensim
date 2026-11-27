@@ -31,23 +31,26 @@ std::string gzip_compress(std::string_view bytes) {
     stream.zfree = [](voidpf, voidpf memory) { std::free(memory); };
     if (deflateInit2(&stream, Z_DEFAULT_COMPRESSION, Z_DEFLATED, 31, 8, Z_DEFAULT_STRATEGY) != Z_OK)
         throw std::runtime_error("gzip deflate initialization failed");
+
     struct End {
-        z_stream& stream;
+        z_stream &stream;
+
         ~End() {
             deflateEnd(&stream);
         }
     } end{stream};
+
     std::array<char, 8192> buffer{};
     std::string result;
     std::size_t offset = 0;
     while (true) {
         if (stream.avail_in == 0 && offset < bytes.size()) {
             auto count = std::min<std::size_t>(bytes.size() - offset, std::numeric_limits<uInt>::max());
-            stream.next_in = reinterpret_cast<Bytef*>(const_cast<char*>(bytes.data() + offset));
+            stream.next_in = reinterpret_cast<Bytef *>(const_cast<char *>(bytes.data() + offset));
             stream.avail_in = static_cast<uInt>(count);
             offset += count;
         }
-        stream.next_out = reinterpret_cast<Bytef*>(buffer.data());
+        stream.next_out = reinterpret_cast<Bytef *>(buffer.data());
         stream.avail_out = static_cast<uInt>(buffer.size());
         // Match GZipStream.Write followed by Dispose: consume with no flush, then finish.
         int code = deflate(&stream, offset == bytes.size() && stream.avail_in == 0 ? Z_FINISH : Z_NO_FLUSH);
@@ -58,4 +61,4 @@ std::string gzip_compress(std::string_view bytes) {
             throw std::runtime_error("gzip deflate failed");
     }
 }
-}
+} // namespace opensim::network

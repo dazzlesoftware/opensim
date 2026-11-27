@@ -1,0 +1,1 @@
+integer count;integer after;default{state_entry(){xmrEventCallHandler(llParseStringKeepNulls("2",[],[]));after=1;}timer(){++count;}}

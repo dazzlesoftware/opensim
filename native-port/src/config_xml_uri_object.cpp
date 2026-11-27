@@ -2,16 +2,20 @@
 #include <mutex>
 #include <unordered_map>
 #include <stdexcept>
+
 namespace opensim::framework {
 struct ConfigXmlUriObjects::State {
     struct Entry {
         std::weak_ptr<ConfigXmlUri> descriptor;
         std::weak_ptr<const ConfigUriObject> object;
     };
+
     std::mutex mutex;
-    std::unordered_map<const ConfigXmlUri*, Entry> entries;
+    std::unordered_map<const ConfigXmlUri *, Entry> entries;
 };
+
 ConfigXmlUriObjects::ConfigXmlUriObjects() : state_(std::make_shared<State>()) {}
+
 std::shared_ptr<ConfigXmlUri> ConfigXmlUriObjects::wrap(ConfigUriObjectPtr object) const {
     if (!object)
         throw std::invalid_argument("XML URI bridge requires a non-null typed URI object");
@@ -28,7 +32,8 @@ std::shared_ptr<ConfigXmlUri> ConfigXmlUriObjects::wrap(ConfigUriObjectPtr objec
     state_->entries[descriptor.get()] = {descriptor, object};
     return descriptor;
 }
-ConfigUriObjectPtr ConfigXmlUriObjects::get(const std::shared_ptr<ConfigXmlUri>& descriptor) const {
+
+ConfigUriObjectPtr ConfigXmlUriObjects::get(const std::shared_ptr<ConfigXmlUri> &descriptor) const {
     std::lock_guard lock(state_->mutex);
     auto found = state_->entries.find(descriptor.get());
     if (found == state_->entries.end() || found->second.descriptor.lock() != descriptor)
@@ -38,4 +43,4 @@ ConfigUriObjectPtr ConfigXmlUriObjects::get(const std::shared_ptr<ConfigXmlUri>&
         throw std::logic_error("XML URI bridge lost its retained URI object");
     return object;
 }
-}
+} // namespace opensim::framework

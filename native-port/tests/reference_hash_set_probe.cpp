@@ -5,15 +5,18 @@
 #include <sstream>
 #include <string>
 #include <array>
+
 struct Actor {
     int id, serial;
 };
+
 using Set = opensim::framework::ReferenceHashSet<Actor>;
 std::unordered_map<int, std::shared_ptr<Actor>> actors;
 std::unordered_map<int, int> serials;
 std::shared_ptr<Set> set;
 std::array<std::optional<Set::Enumerator>, 2> enumerators;
 std::string trace;
+
 std::shared_ptr<Actor> Get(int id, bool replace = false) {
     if (id == 0)
         return {};
@@ -24,9 +27,11 @@ std::shared_ptr<Actor> Get(int id, bool replace = false) {
     actors[id] = value;
     return value;
 }
-std::string Name(const std::shared_ptr<Actor>& value) {
+
+std::string Name(const std::shared_ptr<Actor> &value) {
     return value ? std::to_string(value->id) + "." + std::to_string(value->serial) : "0";
 }
+
 std::string H(std::string_view s) {
     std::string out;
     for (unsigned char c : s) {
@@ -35,20 +40,23 @@ std::string H(std::string_view s) {
     }
     return out;
 }
-Set& Required() {
+
+Set &Required() {
     if (!set)
         throw std::runtime_error("Object reference not set to an instance of an object.");
     return *set;
 }
-Set::Enumerator& Enum(int n) {
+
+Set::Enumerator &Enum(int n) {
     if (!enumerators[n])
         throw std::runtime_error("Nullable object must have a value.");
     return *enumerators[n];
 }
+
 std::string State() {
     std::string rows;
     if (set)
-        for (auto& a : *set) {
+        for (auto &a : *set) {
             if (!rows.empty())
                 rows += ',';
             rows += Name(a);
@@ -57,6 +65,7 @@ std::string State() {
            (enumerators[0] ? Name(enumerators[0]->current()) : "N") + ";" +
            (enumerators[1] ? Name(enumerators[1]->current()) : "N");
 }
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -106,7 +115,7 @@ int main() {
                     auto last = token.rfind(':');
                     std::string action = token.substr(colon + 1, last - colon - 1);
                     int id = std::stoi(token.substr(last + 1));
-                    for (auto& actor : Required()) {
+                    for (auto &actor : Required()) {
                         trace += "walk:" + Name(actor) + ";";
                         if (action == "A") {
                             auto v = Get(id);
@@ -126,7 +135,7 @@ int main() {
                             set = std::make_shared<Set>();
                     }
                 }
-            } catch (const std::exception& error) {
+            } catch (const std::exception &error) {
                 result = "EX:" + H(error.what());
             }
             if (!output.empty())

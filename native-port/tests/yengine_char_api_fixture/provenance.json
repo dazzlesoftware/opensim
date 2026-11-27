@@ -1,0 +1,14 @@
+{
+  "scope": "Actual unchanged original CodeGen and real SDK execution; 22 sources,16 accepted,6 compile rejected. Explicit object hash is original-only reference, not native supported-overload acceptance. xmrIntegerToString is an observed undefined-name rejection control; only xmrInteger2String is registered.",
+  "counts": {
+    "sources": 22,
+    "accepted": 16,
+    "rejected": 6
+  },
+  "hashes": {
+    "native-port\\tests\\yengine_char_api_reference.cs": "695c95bb4983c91b3c81c10c6ee5ce013b43d28633bcac133c4f8780a592d3b4",
+    "bin\\OpenSim.Region.ScriptEngine.YEngine.dll": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+    "OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+    "OpenSim\\Region\\ScriptEngine\\YEngine\\MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5"
+  }
+}

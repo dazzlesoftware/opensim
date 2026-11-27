@@ -1,0 +1,29 @@
+{
+  "exit_code": 139,
+  "timed_out": false,
+  "platform": "linux",
+  "case": "cycle_self_sleep",
+  "elapsed_seconds": 1.7494151999999303,
+  "command": [
+    "docker",
+    "run",
+    "--rm",
+    "--ulimit",
+    "core=0",
+    "--mount",
+    "type=bind,source=G:\\GitHub\\SecondLife\\opensim,target=/work",
+    "--workdir",
+    "/work",
+    "-e",
+    "LD_LIBRARY_PATH=/work/bin",
+    "-e",
+    "ORIGINAL_FIXED_ARRAY_CASE=cycle_self_sleep",
+    "opensim-native-original-grid:ubuntu24.04",
+    "dotnet",
+    "/work/native-port/build-https/yengine-fixed-array-cycle-reference/bin/Release/net8.0/Reference.dll",
+    "/work/bin",
+    "/work/native-port/tests/yengine_fixed_array_fixture/cycles_linux/cycle_self_sleep",
+    "/work/native-port/tests/yengine_fixed_array_cycle_reference.cs",
+    "/work"
+  ]
+}

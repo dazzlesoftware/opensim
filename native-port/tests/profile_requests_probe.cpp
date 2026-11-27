@@ -1,7 +1,8 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
 #include "profile_requests_fixture.hpp"
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     if (argc == 5 && std::string_view(argv[1]) == "--network")
         return RunNetwork(argv[2], argv[3], argv[4]);
     std::string line;
@@ -43,7 +44,7 @@ int main(int argc, char** argv) {
                 auto p = module.find_presence(target);
                 result = p ? (p->npc ? "NPC" : "P") : "N";
             }
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
             result = "EX:" + H(e.what());
         }
         std::cout << result << "|" << H(trace) << "\n";

@@ -8,6 +8,7 @@
 #include "opensim/framework/text.hpp"
 #include <iostream>
 using namespace opensim::framework;
+
 std::string hex(std::u16string_view text) {
     std::string result;
     for (auto c : text)
@@ -15,6 +16,7 @@ std::string hex(std::u16string_view text) {
             result += "0123456789abcdef"[(c >> n) & 15];
     return result;
 }
+
 int main() {
     auto uris = native_config_uri_object_backend();
     ConfigXmlUriObjects objects;
@@ -40,7 +42,7 @@ int main() {
                 throw std::runtime_error("Missing Startup section");
             std::cout << hex(*startup->get_string(nini_writer_text(u"Name"))) << ":"
                       << hex(*startup->get_string(nini_writer_text(u"Greeting"))) << "\n";
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
             std::cout << "E:" << e.what() << "\n";
         }
 }

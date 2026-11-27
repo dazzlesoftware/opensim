@@ -6,14 +6,17 @@
 using namespace opensim::framework;
 using Key = std::optional<std::string>;
 using Cache = ExpiringCacheOS<Key, std::int32_t>;
+
 namespace {
 double now;
 int flags;
 std::string trace;
-void Fail(int mask, const char* message) {
+
+void Fail(int mask, const char *message) {
     if (flags & mask)
         throw std::runtime_error(message);
 }
+
 std::string H(std::string_view value) {
     std::string out;
     for (unsigned char c : value) {
@@ -22,21 +25,25 @@ std::string H(std::string_view value) {
     }
     return out;
 }
+
 struct Timer : ExpiringCacheTimer {
     explicit Timer(std::int32_t due) {
         trace += "timer:" + std::to_string(due) + ";";
         Fail(2, "timer");
     }
+
     void change(std::int32_t due) override {
         trace += "change:" + std::to_string(due) + ";";
         Fail(4, "change");
     }
+
     void dispose() override {
         trace += "dispose-timer;";
         Fail(8, "dispose-timer");
     }
 };
-std::string Values(const std::shared_ptr<std::vector<std::int32_t>>& a) {
+
+std::string Values(const std::shared_ptr<std::vector<std::int32_t>> &a) {
     if (!a)
         return "N";
     std::string out;
@@ -47,45 +54,52 @@ std::string Values(const std::shared_ptr<std::vector<std::int32_t>>& a) {
     }
     return out;
 }
+
 Key KeyOf(std::string s) {
     return s == "_" ? Key{} : Key(s);
 }
-double Number(const std::string& s) {
+
+double Number(const std::string &s) {
     return s == "nan"    ? std::numeric_limits<double>::quiet_NaN()
            : s == "inf"  ? std::numeric_limits<double>::infinity()
            : s == "-inf" ? -std::numeric_limits<double>::infinity()
                          : std::stod(s);
 }
-}
+} // namespace
+
 namespace opensim::framework {
 template <> struct ExpiringCacheProbe<Key, std::int32_t, std::hash<Key>> {
-    static std::string state(const Cache* cache) {
+    static std::string state(const Cache *cache) {
         if (!cache)
             return "N";
         auto s = cache->state_;
         std::string expires, values;
-        for (const auto& item : s->expires) {
+        for (const auto &item : s->expires) {
             if (!expires.empty())
                 expires += ',';
             expires += item.first.value_or("") + "=" + std::to_string(item.second);
         }
-        for (const auto& item : s->values) {
+        for (const auto &item : s->values) {
             if (!values.empty())
                 values += ',';
             values += item.first.value_or("") + "=" + std::to_string(item.second);
         }
-        return std::to_string(cache->count()) + ":" + expires + ":" + values + ":" +
-               (s->timer.load() ? "1" : "0") + ":" + (s->lock.load() ? "1" : "0");
+        return std::to_string(cache->count()) + ":" + expires + ":" + values + ":" + (s->timer.load() ? "1" : "0") +
+               ":" + (s->lock.load() ? "1" : "0");
     }
-    static void purge(Cache& cache) {
+
+    static void purge(Cache &cache) {
         Cache::purge_state(cache.state_);
     }
-    static void release(Cache& cache) {
+
+    static void release(Cache &cache) {
         Cache::required(cache.state_->lock.load()).exit(ExpiringCacheLock::Mode::Write);
     }
 };
-}
+} // namespace opensim::framework
+
 using Probe = ExpiringCacheProbe<Key, std::int32_t, std::hash<Key>>;
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -106,7 +120,7 @@ int main() {
                                          [](auto, std::int32_t due) { return std::make_shared<Timer>(due); }};
             cache = std::make_unique<Cache>(interval, backend);
             output = "NEW:" + Probe::state(cache.get());
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
             output = "EX:" + H(e.what());
         }
         for (std::string token; in >> token;) {
@@ -163,13 +177,13 @@ int main() {
                     }
                     case 'q': {
                         bool existed = false;
-                        auto& value = cache->try_get_or_default_value(key, existed);
+                        auto &value = cache->try_get_or_default_value(key, existed);
                         result = std::string(existed ? "1" : "0") + ":" + std::to_string(value);
                         break;
                     }
                     case 's': {
                         bool existed = false;
-                        auto& value = cache->try_get_or_default_value(key, std::stoi(p[1]), existed);
+                        auto &value = cache->try_get_or_default_value(key, std::stoi(p[1]), existed);
                         result = std::string(existed ? "1" : "0") + ":" + std::to_string(value);
                         break;
                     }
@@ -203,7 +217,7 @@ int main() {
                         break;
                     }
                 }
-            } catch (const std::exception& e) {
+            } catch (const std::exception &e) {
                 result = "EX:" + H(e.what());
             }
             output += "/" + result + ":" + Probe::state(cache.get());

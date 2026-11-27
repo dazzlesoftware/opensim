@@ -1,0 +1,35 @@
+{
+  "scope": "Actual unchanged original LSL_Api object Name/Desc setters/getters, real SceneObjectPart/SceneObjectGroup, real SOPToXml2/FromXml2Format; no API overrides or replacement host storage.",
+  "cases": 123,
+  "nameSetterOverflowCases": 8,
+  "descriptionSetterExceptionCases": 0,
+  "xmlRoundtrips": 123,
+  "oldEightCaseProbePreserved": true,
+  "databaseRestartVerified": false,
+  "nativeHelperImplemented": false,
+  "macOSVerified": false,
+  "limitations": [
+    "No full region/SQLite/clean-process restart",
+    "No standalone SDK StringToBytesNoTerm call is substituted for actual part property/API path",
+    "IL disassembly is from unchanged bundled OpenMetaverseTypes assembly; no original conversion source was available in checkout"
+  ],
+  "hashes": {
+    "native-port\\tests\\object_text_utf8_reference.cs": "a1d1d1313f55660c500c96fdf936f9385a97e17d85d3a7795f9f7da67cee6553",
+    "native-port\\tests\\object_text_utf8_il_reference.cs": "e83403277291cf111e485d19166cb02be713565262db3ef178760f4348d55ebf",
+    "native-port\\tests\\object_text_utf8_fixture\\metadata.json": "afd285250ce895130fbd4efa0f90cb1669bf9e80b0dded0ff1c4b65337196657",
+    "native-port\\tests\\object_text_utf8_fixture\\original-conversion-il.json": "348502437bd9b7f7608e0c8498a4652b19397ad5010c2dbe6ebdb50af1f73519",
+    "bin\\OpenMetaverseTypes.dll": "548cb3e1fc26c26ca6aab52b8509755e69f59047f63f26e7afbe1c1985f99825",
+    "bin\\OpenSim.Region.Framework.dll": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+    "bin\\OpenSim.Region.ScriptEngine.Shared.Api.dll": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a"
+  },
+  "algorithmProposal": [
+    "Provide explicit bounded/unbounded osUTF8 conversion from UTF16 units; do not use replacement UTF8 encoding for input.",
+    "Original Name stores osUTF8(String) for getter and separately osUTF8(String,63) for viewer cache; Description uses osUTF8(String,127).",
+    "Mirror original two-pass byte-count and byte-emission behavior. Unbounded counter scans past embedded NUL; emitter stops at first NUL; allocation retains zero padding. Bounded counter stops at first NUL.",
+    "Lone low surrogate is skipped. High surrogate consumes the next unit and emits only when it is a low surrogate; invalid follower is consumed/discarded. Dangling high stops scan.",
+    "Unbounded count tracks last accepted code unit; if last accepted is NUL it subtracts one byte and one input unit. A nonempty input containing only invalid surrogate units can therefore yield negative byte count and original OverflowException.",
+    "Bounded count enforces whole-codepoint byte budget before counting; never split BMP multi-byte or surrogate-pair UTF8 bytes.",
+    "Emission writes into zero-initialized allocated count bytes, terminates at NUL and does not shrink allocation to actual emitted byte count. osUTF8.ToString uses Encoding.UTF8.GetString of entire stored length.",
+    "Only adopt native helper after differential tests pass all123 real API outcomes including exception categories, bytes, getters and XML output; do not overgeneralize to arbitrary managed String or SQLite persistence."
+  ]
+}

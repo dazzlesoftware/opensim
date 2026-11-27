@@ -1,0 +1,1 @@
+string input="é";integer result;integer after;default{state_entry(){result=xmrHashCode(input);after=1;}}

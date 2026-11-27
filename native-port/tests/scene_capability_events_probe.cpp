@@ -3,26 +3,29 @@
 #include <iostream>
 using namespace opensim;
 using namespace services;
+
 struct ScenePayload : EventQueueScene {
     std::string name() const override {
         return "Scene";
     }
+
     std::string region_name() const override {
         return "Region";
     }
-    void register_module(EventQueueModule*) override {
-    }
-    void unregister_module(EventQueueModule*) override {
-    }
-    void subscribe_closed(EventQueueModule*, Closed) override {
-    }
-    void unsubscribe_closed(EventQueueModule*) override {
-    }
-    void subscribe_register(EventQueueModule*, Register) override {
-    }
-    void unsubscribe_register(EventQueueModule*) override {
-    }
+
+    void register_module(EventQueueModule *) override {}
+
+    void unregister_module(EventQueueModule *) override {}
+
+    void subscribe_closed(EventQueueModule *, Closed) override {}
+
+    void unsubscribe_closed(EventQueueModule *) override {}
+
+    void subscribe_register(EventQueueModule *, Register) override {}
+
+    void unsubscribe_register(EventQueueModule *) override {}
 };
+
 struct Fixture {
     int profile, targets[4]{}, depth = 0;
     bool mutated = false;
@@ -31,24 +34,26 @@ struct Fixture {
     SceneCapabilityEvents events;
     std::shared_ptr<Caps> caps;
     std::shared_ptr<EventQueueScene> scene;
+
     explicit Fixture(int p)
-        : profile(p), events([this](const std::string& prefix, const std::exception& e) {
+        : profile(p), events([this](const std::string &prefix, const std::exception &e) {
               trace += "error:" + prefix + e.what() + ";";
               if (profile & 64)
                   throw std::runtime_error("logger");
           }) {
         if (p & 8) {
-            auto listener =
-                std::make_shared<server::RegistryCapabilityListener>(server::CapabilityListenerInfo{});
+            auto listener = std::make_shared<server::RegistryCapabilityListener>(server::CapabilityListenerInfo{});
             caps = std::make_shared<Caps>(listener, "host", 0, "seed", framework::Uuid{}, "Region",
                                           [listener] { return listener; });
         }
         if (p & 16)
             scene = std::make_shared<ScenePayload>();
     }
+
     SceneDelegateIdentity identity(int n) {
         return {&targets[n], std::to_string(n)};
     }
+
     template <class E> typename E::Handler handler(int n, char channel) {
         return {identity(n), [this, n, channel](auto agent, auto value) {
                     trace += std::string(1, channel) + std::to_string(n) + ":" + agent.str() + ":" +
@@ -69,6 +74,7 @@ struct Fixture {
                         throw std::runtime_error("failure" + std::to_string(n));
                 }};
     }
+
     void add(char channel, int n) {
         if (channel == 'r')
             events.on_register_caps.add(handler<SceneCapabilityEvents::CapsEvent>(n, channel));
@@ -77,6 +83,7 @@ struct Fixture {
         else
             events.on_client_closed.add(handler<SceneCapabilityEvents::ClosedEvent>(n, channel));
     }
+
     void remove(char channel, int n) {
         if (channel == 'r')
             events.on_register_caps.remove(identity(n));
@@ -85,12 +92,14 @@ struct Fixture {
         else
             events.on_client_closed.remove(identity(n));
     }
-    template <class E> void range(E& e, char channel, bool remove) {
+
+    template <class E> void range(E &e, char channel, bool remove) {
         if (remove)
             e.remove(std::vector<SceneDelegateIdentity>{identity(1), identity(2)});
         else
             e.add(std::vector<typename E::Handler>{handler<E>(1, channel), handler<E>(2, channel)});
     }
+
     void range(bool remove) {
         if (selected == 'r')
             range(events.on_register_caps, selected, remove);
@@ -99,6 +108,7 @@ struct Fixture {
         else
             range(events.on_client_closed, selected, remove);
     }
+
     void trigger(char op) {
         framework::Uuid agent("00000000-0000-0000-0000-000000000007");
         if (op == 'C')
@@ -109,6 +119,7 @@ struct Fixture {
             events.trigger_deregister(agent, caps);
     }
 };
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {

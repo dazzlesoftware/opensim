@@ -6,56 +6,67 @@
 #include <algorithm>
 #include <bit>
 #include <chrono>
+
 namespace opensim::framework {
 namespace {
 [[noreturn]] void index_error() {
     throw DotnetRegexClassError("System.IndexOutOfRangeException", 0x80131508u,
                                 "Index was outside the bounds of the array.");
 }
+
 [[noreturn]] void null_reference() {
     throw DotnetRegexClassError("System.NullReferenceException", 0x80004003u,
                                 "Object reference not set to an instance of an object.");
 }
-int& at(std::vector<int>& values, int index) {
+
+int &at(std::vector<int> &values, int index) {
     if (index < 0 || static_cast<std::size_t>(index) >= values.size())
         index_error();
     return values[index];
 }
+
 char16_t at(std::u16string_view value, int index) {
     if (index < 0 || static_cast<std::size_t>(index) >= value.size())
         index_error();
     return value[index];
 }
+
 int wrap(std::int64_t value) {
     return std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(value));
 }
+
 std::int64_t ticks_now() {
-    return std::chrono::duration_cast<std::chrono::milliseconds>(
-               std::chrono::steady_clock::now().time_since_epoch())
+    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch())
         .count();
 }
+
 struct MatchStorage {
     std::vector<std::vector<int>> matches;
     std::vector<int> counts;
     bool balancing = false;
+
     explicit MatchStorage(int count) : matches(count), counts(count) {
         if (count > 0)
             matches[0].resize(2);
     }
+
     void reset() {
         std::fill(counts.begin(), counts.end(), 0);
         balancing = false;
     }
-    std::vector<int>& group(int cap) {
+
+    std::vector<int> &group(int cap) {
         if (cap < 0 || static_cast<std::size_t>(cap) >= matches.size())
             index_error();
         return matches[cap];
     }
-    int& count(int cap) {
+
+    int &count(int cap) {
         return at(counts, cap);
     }
+
     void add(int cap, int start, int length) {
-        auto& values = group(cap);
+        auto &values = group(cap);
         if (values.empty())
             values.resize(2);
         int size = count(cap);
@@ -65,10 +76,11 @@ struct MatchStorage {
         at(values, size * 2 + 1) = length;
         count(cap) = size + 1;
     }
+
     void balance(int cap) {
         balancing = true;
         int position = count(cap) * 2 - 2;
-        auto& values = group(cap);
+        auto &values = group(cap);
         if (at(values, position) < 0)
             position = -3 - at(values, position);
         position -= 2;
@@ -78,31 +90,37 @@ struct MatchStorage {
         } else
             add(cap, -3 - position, -4 - position);
     }
+
     void remove(int cap) {
         --count(cap);
     }
+
     bool matched(int cap) {
         return static_cast<unsigned>(cap) < counts.size() && counts[cap] > 0 &&
                at(group(cap), counts[cap] * 2 - 1) != -2;
     }
+
     int index(int cap) {
-        auto& values = group(cap);
+        auto &values = group(cap);
         int value = at(values, count(cap) * 2 - 2);
         return value < 0 ? at(values, -3 - value) : value;
     }
+
     int length(int cap) {
-        auto& values = group(cap);
+        auto &values = group(cap);
         int value = at(values, count(cap) * 2 - 1);
         return value < 0 ? at(values, -3 - value) : value;
     }
+
     bool found() {
         return count(0) > 0;
     }
+
     void tidy_balancing() {
         if (!balancing)
             return;
         for (int cap = 0; cap < static_cast<int>(counts.size()); ++cap) {
-            auto& values = group(cap);
+            auto &values = group(cap);
             int size = count(cap) * 2, i = 0;
             while (i < size && at(values, i) >= 0)
                 ++i;
@@ -121,7 +139,8 @@ struct MatchStorage {
         balancing = false;
     }
 };
-}
+} // namespace
+
 DotnetRegexMatchTimeout::DotnetRegexMatchTimeout(DotnetRegexNodeText text, DotnetRegexNodeText expression,
                                                  int milliseconds)
     : DotnetRegexClassError(
@@ -130,14 +149,15 @@ DotnetRegexMatchTimeout::DotnetRegexMatchTimeout(DotnetRegexNodeText text, Dotne
           "for many reasons, including very large inputs or excessive backtracking caused by nested "
           "quantifiers, back-references and other factors."),
       input(std::move(text)), pattern(std::move(expression)),
-      timeout_ticks(static_cast<std::int64_t>(milliseconds) * 10000) {
-}
+      timeout_ticks(static_cast<std::int64_t>(milliseconds) * 10000) {}
+
 void dotnet_regex_validate_timeout(std::int64_t ticks) {
     if (ticks != -10000 && static_cast<std::uint64_t>(ticks) - 1u >= 21474836460000ULL)
         throw DotnetRegexClassError(
             "System.ArgumentOutOfRangeException", 0x80131502u,
             "Specified argument was out of the range of valid values. (Parameter 'matchTimeout')");
 }
+
 struct DotnetRegexInterpreter::Impl {
     DotnetRegexParsedPattern tree;
     DotnetRegexNodeText pattern, input;
@@ -152,26 +172,28 @@ struct DotnetRegexInterpreter::Impl {
     int timeout = 0;
     std::int64_t deadline = 0;
     DotnetRegexTickCount clock;
-    Impl(DotnetRegexParsedPattern value, DotnetRegexNodeText expression,
-         const DotnetRegexExecutionStack& stack)
-        : tree(std::move(value)), pattern(std::move(expression)), code(dotnet_regex_write(tree)),
-          find(tree, stack),
+
+    Impl(DotnetRegexParsedPattern value, DotnetRegexNodeText expression, const DotnetRegexExecutionStack &stack)
+        : tree(std::move(value)), pattern(std::move(expression)), code(dotnet_regex_write(tree)), find(tree, stack),
           culture(tree.backreference_culture ? *tree.backreference_culture : DotnetRegexCultureName{}),
           match(tree.capture_count) {
         if (!culture)
             culture = []() -> std::u16string { null_reference(); };
     }
+
     void check() {
         if (check_timeout && clock() >= deadline)
             throw DotnetRegexMatchTimeout(input ? input : runtime_empty_text(), pattern, timeout);
     }
-    static void double_array(std::vector<int>& array, int& position) {
+
+    static void double_array(std::vector<int> &array, int &position) {
         int count = static_cast<int>(array.size());
         array.resize(count * 2);
         std::copy_backward(array.begin(), array.begin() + count, array.end());
         std::fill(array.begin(), array.begin() + count, 0);
         position += count;
     }
+
     void ensure() {
         int minimum = code.track_count * 4;
         if (sp < minimum)
@@ -179,38 +201,47 @@ struct DotnetRegexInterpreter::Impl {
         if (tp < minimum)
             double_array(track, tp);
     }
+
     void track_push(std::initializer_list<int> values = {}, bool second = false) {
         for (auto value : values)
             at(track, --tp) = value;
         at(track, --tp) = second ? -codepos : codepos;
     }
+
     void stack_push(std::initializer_list<int> values) {
         for (auto value : values)
             at(marks, --sp) = value;
     }
+
     int track_peek(int offset = 0) {
         return at(track, tp - offset - 1);
     }
+
     int stack_peek(int offset = 0) {
         return at(marks, sp - offset - 1);
     }
+
     void set_operator(int value) {
         op = value & ~64;
         rtl = (value & 64) != 0;
     }
+
     int operand(int offset) {
         return at(code.codes, codepos + offset + 1);
     }
+
     void advance(int count) {
         codepos += count + 1;
         set_operator(at(code.codes, codepos));
     }
+
     void go(int target) {
         if (target < codepos)
             ensure();
         codepos = target;
         set_operator(at(code.codes, target));
     }
+
     void backtrack() {
         check();
         int target = at(track, tp++), flag = 128;
@@ -223,26 +254,32 @@ struct DotnetRegexInterpreter::Impl {
             ensure();
         codepos = target;
     }
+
     int track_position() {
         return static_cast<int>(track.size()) - tp;
     }
+
     int crawl_position() {
         return static_cast<int>(crawl.size()) - cp;
     }
+
     void track_to(int position) {
         tp = static_cast<int>(track.size()) - position;
     }
+
     void add_crawl(int cap) {
         if (cp == 0)
             double_array(crawl, cp);
         at(crawl, --cp) = cap;
     }
+
     void capture(int cap, int start, int end) {
         if (end < start)
             std::swap(start, end);
         add_crawl(cap);
         match.add(cap, start, end - start);
     }
+
     void transfer(int cap, int uncap, int start, int end) {
         if (end < start)
             std::swap(start, end);
@@ -265,24 +302,30 @@ struct DotnetRegexInterpreter::Impl {
             match.add(cap, start, end - start);
         }
     }
+
     void uncapture() {
         match.remove(at(crawl, cp++));
     }
+
     int bump() {
         return rtl ? -1 : 1;
     }
+
     int forward_chars() {
         return rtl ? textpos : textend - textpos;
     }
+
     char16_t char_next(std::u16string_view value) {
         int index = rtl ? --textpos : textpos++;
         if (index < 0 || static_cast<std::size_t>(index) >= value.size())
             index_error();
         return value[index];
     }
+
     void backward() {
         textpos += rtl ? 1 : -1;
     }
+
     bool in_set(char16_t c, int index) {
         if (index < 0 || static_cast<std::size_t>(index) >= code.strings.size())
             index_error();
@@ -290,7 +333,8 @@ struct DotnetRegexInterpreter::Impl {
             null_reference();
         return dotnet_regex_char_in_class(c, *code.strings[index], code.strings_ascii_lookup[index]);
     }
-    bool match_string(const std::u16string& str, std::u16string_view value) {
+
+    bool match_string(const std::u16string &str, std::u16string_view value) {
         int count = static_cast<int>(str.size()), position;
         if (!rtl) {
             if (static_cast<int>(value.size()) - textpos < count)
@@ -309,6 +353,7 @@ struct DotnetRegexInterpreter::Impl {
         textpos = position;
         return true;
     }
+
     bool match_ref(int index, int length, std::u16string_view value, bool ignore_case) {
         int position;
         if (!rtl) {
@@ -338,6 +383,7 @@ struct DotnetRegexInterpreter::Impl {
         textpos = position;
         return true;
     }
+
     bool boundary(std::u16string_view value, bool ecma) {
         int previous = textpos - 1;
         auto word = [&](char16_t c) {
@@ -346,10 +392,12 @@ struct DotnetRegexInterpreter::Impl {
         return (static_cast<unsigned>(previous) < value.size() && word(value[previous])) !=
                (static_cast<unsigned>(textpos) < value.size() && word(value[textpos]));
     }
+
     bool try_match(std::u16string_view value);
     DotnetRegexScanResult scan(DotnetRegexNodeText, int, int, int, int, DotnetRegexRunnerMode, std::int64_t,
                                DotnetRegexTickCount);
 };
+
 bool DotnetRegexInterpreter::Impl::try_match(std::u16string_view value) {
     set_operator(at(code.codes, 0));
     codepos = 0;
@@ -742,7 +790,7 @@ bool DotnetRegexInterpreter::Impl::try_match(std::u16string_view value) {
             break;
         }
         case 46: {
-            auto& starting = at(track, static_cast<int>(track.size()) - 1);
+            auto &starting = at(track, static_cast<int>(track.size()) - 1);
             if (starting < textpos)
                 starting = textpos;
             next = 0;
@@ -754,10 +802,10 @@ bool DotnetRegexInterpreter::Impl::try_match(std::u16string_view value) {
         backtrack();
     }
 }
+
 DotnetRegexScanResult DotnetRegexInterpreter::Impl::scan(DotnetRegexNodeText value, int beginning, int length,
                                                          int start, int previous, DotnetRegexRunnerMode mode,
-                                                         std::int64_t timeout_ticks,
-                                                         DotnetRegexTickCount tick_count) {
+                                                         std::int64_t timeout_ticks, DotnetRegexTickCount tick_count) {
     if (!value)
         null_reference();
     if (static_cast<unsigned>(start) > value->size())
@@ -765,9 +813,8 @@ DotnetRegexScanResult DotnetRegexInterpreter::Impl::scan(DotnetRegexNodeText val
             "System.ArgumentOutOfRangeException", 0x80131502u,
             "Start index cannot be less than 0 or greater than input length. (Parameter 'startat')");
     if (static_cast<unsigned>(length) > value->size())
-        throw DotnetRegexClassError(
-            "System.ArgumentOutOfRangeException", 0x80131502u,
-            "Length cannot be less than 0 or exceed input length. (Parameter 'length')");
+        throw DotnetRegexClassError("System.ArgumentOutOfRangeException", 0x80131502u,
+                                    "Length cannot be less than 0 or exceed input length. (Parameter 'length')");
     dotnet_regex_validate_timeout(timeout_ticks);
     input = value;
     clock = tick_count ? std::move(tick_count) : DotnetRegexTickCount(ticks_now);
@@ -778,9 +825,8 @@ DotnetRegexScanResult DotnetRegexInterpreter::Impl::scan(DotnetRegexNodeText val
     }
     if (beginning < 0 || static_cast<std::size_t>(beginning) > value->size() ||
         static_cast<std::size_t>(length) > value->size() - beginning)
-        throw DotnetRegexClassError(
-            "System.ArgumentOutOfRangeException", 0x80131502u,
-            "Specified argument was out of the range of valid values. (Parameter 'start')");
+        throw DotnetRegexClassError("System.ArgumentOutOfRangeException", 0x80131502u,
+                                    "Specified argument was out of the range of valid values. (Parameter 'start')");
     auto text = std::u16string_view(*value).substr(beginning, length);
     textstart = start - beginning;
     textend = length;
@@ -832,17 +878,16 @@ DotnetRegexScanResult DotnetRegexInterpreter::Impl::scan(DotnetRegexNodeText val
             DotnetRegexGroup group;
             group.number = slot;
             if (tree.capture_number_sparse_mapping)
-                for (auto& [key, index] : *tree.capture_number_sparse_mapping)
+                for (auto &[key, index] : *tree.capture_number_sparse_mapping)
                     if (index == slot) {
                         group.number = key;
                         break;
                     }
-            group.name = dotnet_regex_group_name_from_number(tree.capture_number_sparse_mapping,
-                                                             tree.capture_names, tree.capture_count, slot);
+            group.name = dotnet_regex_group_name_from_number(tree.capture_number_sparse_mapping, tree.capture_names,
+                                                             tree.capture_count, slot);
             group.success = match.count(slot) != 0;
             for (int i = 0; i < match.count(slot); ++i)
-                group.captures.push_back(
-                    {match.matches[slot][i * 2] + beginning, match.matches[slot][i * 2 + 1]});
+                group.captures.push_back({match.matches[slot][i * 2] + beginning, match.matches[slot][i * 2 + 1]});
             if (group.success) {
                 group.index = group.captures.back().index;
                 group.length = group.captures.back().length;
@@ -853,19 +898,20 @@ DotnetRegexScanResult DotnetRegexInterpreter::Impl::scan(DotnetRegexNodeText val
     input.reset();
     return result;
 }
+
 DotnetRegexInterpreter::DotnetRegexInterpreter(DotnetRegexParsedPattern tree, DotnetRegexNodeText pattern,
-                                               const DotnetRegexExecutionStack& stack)
-    : impl_(std::make_unique<Impl>(std::move(tree), std::move(pattern), stack)) {
-}
+                                               const DotnetRegexExecutionStack &stack)
+    : impl_(std::make_unique<Impl>(std::move(tree), std::move(pattern), stack)) {}
+
 DotnetRegexInterpreter::~DotnetRegexInterpreter() = default;
-DotnetRegexInterpreter::DotnetRegexInterpreter(DotnetRegexInterpreter&&) noexcept = default;
-DotnetRegexInterpreter& DotnetRegexInterpreter::operator=(DotnetRegexInterpreter&&) noexcept = default;
-DotnetRegexScanResult DotnetRegexInterpreter::scan(DotnetRegexNodeText input, int beginning, int length,
-                                                   int start, int previous, DotnetRegexRunnerMode mode,
-                                                   std::int64_t timeout, DotnetRegexTickCount clock) {
+DotnetRegexInterpreter::DotnetRegexInterpreter(DotnetRegexInterpreter &&) noexcept = default;
+DotnetRegexInterpreter &DotnetRegexInterpreter::operator=(DotnetRegexInterpreter &&) noexcept = default;
+
+DotnetRegexScanResult DotnetRegexInterpreter::scan(DotnetRegexNodeText input, int beginning, int length, int start,
+                                                   int previous, DotnetRegexRunnerMode mode, std::int64_t timeout,
+                                                   DotnetRegexTickCount clock) {
     try {
-        return impl_->scan(std::move(input), beginning, length, start, previous, mode, timeout,
-                           std::move(clock));
+        return impl_->scan(std::move(input), beginning, length, start, previous, mode, timeout, std::move(clock));
     } catch (...) {
         impl_->input.reset();
         throw;
@@ -876,10 +922,11 @@ bool dotnet_regex_is_match(std::string_view text, std::string_view pattern, std:
     const auto expression = std::make_shared<const std::u16string>(utf16_replacing(pattern));
     const auto input = std::make_shared<const std::u16string>(utf16_replacing(text));
     const auto culture = [] { return std::u16string{}; };
-    DotnetRegexInterpreter regex(
-        dotnet_regex_parse(expression, 0, culture, sufficient_execution_stack),
-        expression, sufficient_execution_stack);
-    return regex.scan(input, 0, static_cast<std::int32_t>(input->size()), 0, -1,
-                      DotnetRegexRunnerMode::ExistenceRequired, timeout_ticks).success;
+    DotnetRegexInterpreter regex(dotnet_regex_parse(expression, 0, culture, sufficient_execution_stack), expression,
+                                 sufficient_execution_stack);
+    return regex
+        .scan(input, 0, static_cast<std::int32_t>(input->size()), 0, -1, DotnetRegexRunnerMode::ExistenceRequired,
+              timeout_ticks)
+        .success;
 }
-}
+} // namespace opensim::framework

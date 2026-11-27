@@ -37,16 +37,21 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "opensim/framework/culture_prefix.hpp"
 #include "opensim/framework/text.hpp"
 #include "opensim/services/sqlite_connection.hpp"
+#include "opensim/services/sqlite_generic_connection.hpp"
+
 namespace opensim::server {
 namespace {
 using Text = framework::NiniWriterText;
+
 Text startup_text(std::u16string value) {
     return framework::nini_writer_text(std::move(value));
 }
+
 std::shared_ptr<framework::RegionApplicationConfigurationState> default_application_state() {
     static const auto state = std::make_shared<framework::RegionApplicationConfigurationState>();
     return state;
 }
+
 void startup_log(framework::RegionLoaderLogLevel, Text format, std::vector<Text> args,
                  framework::RegionLoaderLogCall call) {
     auto value = format ? *format : std::u16string{};
@@ -76,10 +81,10 @@ void startup_log(framework::RegionLoaderLogLevel, Text format, std::vector<Text>
     }
     std::clog << framework::utf8(value) << '\n' << std::flush;
 }
-}
-IniConfig IniConfig::load_startup(const std::filesystem::path& path, ConfigurationStartupOptions options) {
-    auto arena =
-        std::make_shared<framework::NiniConfigArena>(framework::native_nini_invariant_config_backend());
+} // namespace
+
+IniConfig IniConfig::load_startup(const std::filesystem::path &path, ConfigurationStartupOptions options) {
+    auto arena = std::make_shared<framework::NiniConfigArena>(framework::native_nini_invariant_config_backend());
     auto paths = framework::native_directory_entries_backend();
     auto selected = startup_text(path.u16string());
     std::filesystem::path directory;
@@ -96,14 +101,13 @@ IniConfig IniConfig::load_startup(const std::filesystem::path& path, Configurati
     auto config_dir = startup_text(directory.u16string());
     backend->config_directory = [config_dir] { return config_dir; };
     backend->log = options.log ? std::move(options.log) : decltype(backend->log)(startup_log);
-    backend->exit = options.exit
-                        ? std::move(options.exit)
-                        : decltype(backend->exit)([](int code) { throw ConfigurationStartupExit(code); });
+    backend->exit = options.exit ? std::move(options.exit)
+                                 : decltype(backend->exit)([](int code) { throw ConfigurationStartupExit(code); });
     if (options.xml_uri_source)
         backend->xml_uri_source = std::move(options.xml_uri_source);
     else if (options.xml_http_services)
-        backend->xml_uri_source = native_startup_xml_source(arena, *options.xml_http_services,
-                                                            std::move(options.xml_resolver_policy));
+        backend->xml_uri_source =
+            native_startup_xml_source(arena, *options.xml_http_services, std::move(options.xml_resolver_policy));
     else
         backend->xml_uri_source = [](Text) -> std::shared_ptr<framework::NiniConfigSourceBase> {
             throw framework::NiniConfigError(
@@ -129,26 +133,30 @@ IniConfig IniConfig::load_startup(const std::filesystem::path& path, Configurati
     // replacement. Keep its graph; do not expand again or flatten config owners.
     return from_native_source(result->source, std::move(directory));
 }
+
 IniConfig IniConfig::from_native_source(std::shared_ptr<framework::NiniConfigSourceBase> source,
                                         std::filesystem::path directory) {
     IniConfig result(NiniConfigView(std::move(source)));
     result.directory = std::move(directory);
     return result;
 }
-bool IniConfig::contains(const std::string& name, const std::string& key) const {
+
+bool IniConfig::contains(const std::string &name, const std::string &key) const {
     return view_.contains(name, key);
 }
-void IniConfig::set(const std::string& name, const std::string& key, std::string value) {
+
+void IniConfig::set(const std::string &name, const std::string &key, std::string value) {
     view_.set(name, key, value);
 }
-IniConfig IniConfig::load(const std::filesystem::path& path) {
+
+IniConfig IniConfig::load(const std::filesystem::path &path) {
     IniConfig result(NiniConfigView::load_raw(path));
     result.directory = std::filesystem::absolute(path).parent_path();
     // Load the complete source before checking effective keys. Earlier syntax
     // failures win; a later replacement section can remove an earlier include.
     auto configs = result.native_source()->configs();
     for (std::int32_t i = 0; i < configs->count(); ++i)
-        for (const auto& key : configs->at(i)->get_keys())
+        for (const auto &key : configs->at(i)->get_keys())
             if (framework::invariant_starts_with(framework::utf8(*key), "Include-"))
                 throw std::runtime_error(
                     "INI Include-* loading is not ported yet; use an explicit native configuration");
@@ -157,24 +165,28 @@ IniConfig IniConfig::load(const std::filesystem::path& path) {
     result.replace_key_values();
     return result;
 }
-std::string IniConfig::get(const std::string& name, const std::string& key,
-                           const std::string& fallback) const {
+
+std::string IniConfig::get(const std::string &name, const std::string &key, const std::string &fallback) const {
     return view_.get(name, key, fallback);
 }
-int IniConfig::integer(const std::string& name, const std::string& key, int fallback) const {
+
+int IniConfig::integer(const std::string &name, const std::string &key, int fallback) const {
     return view_.integer(name, key, fallback);
 }
-bool IniConfig::boolean(const std::string& name, const std::string& key, bool fallback) const {
+
+bool IniConfig::boolean(const std::string &name, const std::string &key, bool fallback) const {
     return view_.boolean(name, key, fallback);
 }
-std::map<std::string, std::string> IniConfig::section(const std::string& name) const {
+
+std::map<std::string, std::string> IniConfig::section(const std::string &name) const {
     return view_.section(name);
 }
-std::vector<std::pair<std::string, std::string>> IniConfig::ordered_section(const std::string& name) const {
+
+std::vector<std::pair<std::string, std::string>> IniConfig::ordered_section(const std::string &name) const {
     return view_.ordered_section(name);
 }
-std::string database_path(const IniConfig& config, const std::string& service,
-                          const std::string& native_key) {
+
+std::string database_path(const IniConfig &config, const std::string &service, const std::string &native_key) {
     auto path = config.get(service, "ConnectionString", config.get("NativeServer", native_key, "native.db"));
     if (path.find('=') != std::string::npos)
         path = services::sqlite_connection_path(services::parse_sqlite_connection(path));
@@ -184,6 +196,26 @@ std::string database_path(const IniConfig& config, const std::string& service,
     if (resolved.is_relative())
         resolved = config.directory / resolved;
     auto utf8 = resolved.lexically_normal().u8string();
-    return {reinterpret_cast<const char*>(utf8.data()), utf8.size()};
+    return {reinterpret_cast<const char *>(utf8.data()), utf8.size()};
 }
+
+std::string sqlite_service_connection(const IniConfig &config, const std::string &service,
+                                      const std::string &native_key) {
+    const auto connection =
+        config.get(service, "ConnectionString", config.get("NativeServer", native_key, "native.db"));
+    if (connection.find('=') == std::string::npos)
+        return services::sqlite_data_source_connection(database_path(config, service, native_key));
+
+    const auto options = services::sqlite_open_options(connection);
+    if (options.uri)
+        return connection;
+
+    auto resolved = services::sqlite_data_source_connection(database_path(config, service, native_key));
+    if (!options.create)
+        resolved += ";FailIfMissing=True";
+    if (options.read_only)
+        resolved += ";Read Only=True";
+    return resolved;
 }
+
+} // namespace opensim::server

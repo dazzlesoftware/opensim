@@ -1,0 +1,1 @@
+YOption chars;integer input=-1;char value;integer result;integer read(char c){return (integer)c;}default{state_entry(){result=read((char)input);}}

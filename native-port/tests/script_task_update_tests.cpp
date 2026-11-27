@@ -4,11 +4,13 @@
 #include <iostream>
 using namespace opensim;
 using namespace scene;
+
 namespace {
 framework::Uuid id(int n) {
     auto tail = std::to_string(n);
     return framework::Uuid("11223344-5566-7788-99aa-" + std::string(12 - tail.size(), '0') + tail);
 }
+
 std::string hex(std::span<const std::uint8_t> bytes) {
     std::string out;
     for (auto b : bytes) {
@@ -17,6 +19,7 @@ std::string hex(std::span<const std::uint8_t> bytes) {
     }
     return out;
 }
+
 std::string probe(int mode, int failure, int overload) {
     std::string trace;
     bool stored_running = false;
@@ -26,7 +29,7 @@ std::string probe(int mode, int failure, int overload) {
         if (point == failure)
             throw std::runtime_error("injected");
     };
-    ScriptTaskUpdateClient client{id((mode & 512) ? 6 : 1), [&](const auto& message, bool modal) {
+    ScriptTaskUpdateClient client{id((mode & 512) ? 6 : 1), [&](const auto &message, bool modal) {
                                       step(2, "AL:" + message + ":" + (modal ? "1" : "0"));
                                   }};
     ScriptTaskUpdateItem item;
@@ -56,12 +59,12 @@ std::string probe(int mode, int failure, int overload) {
     part.remove_instance = [&](auto key, bool delete_state) {
         step(9, "REMOVE:" + key.str() + ":" + (delete_state ? "1" : "0"));
     };
-    part.update_inventory = [&](const auto& v) { step(11, "INV:" + v.id.str()); };
+    part.update_inventory = [&](const auto &v) { step(11, "INV:" + v.id.str()); };
     part.invalidate_permissions = [&] { step(12, "PERMS"); };
-    part.send_properties = [&](const auto& v) { step(13, "PROPS:" + v.agent.str()); };
-    part.compile = [&](auto key, int start, bool post, const auto& engine, int source) -> ScriptTaskErrors {
-        step(14, "COMPILE:" + key.str() + ":" + std::to_string(start) + ":" + (post ? "1" : "0") + ":" +
-                     engine + ":" + std::to_string(source));
+    part.send_properties = [&](const auto &v) { step(13, "PROPS:" + v.agent.str()); };
+    part.compile = [&](auto key, int start, bool post, const auto &engine, int source) -> ScriptTaskErrors {
+        step(14, "COMPILE:" + key.str() + ":" + std::to_string(start) + ":" + (post ? "1" : "0") + ":" + engine + ":" +
+                     std::to_string(source));
         if (mode & 128)
             current_asset = id(5);
         if (mode & 64)
@@ -95,8 +98,7 @@ std::string probe(int mode, int failure, int overload) {
             asset->full_id(id(4));
     };
     backend.updated = [&](auto a, auto i, auto o, bool run, auto asset) {
-        step(17, "EVENT:" + a.str() + ":" + i.str() + ":" + o.str() + ":" + (run ? "1" : "0") + ":" +
-                     asset.str());
+        step(17, "EVENT:" + a.str() + ":" + i.str() + ":" + o.str() + ":" + (run ? "1" : "0") + ":" + asset.str());
     };
     backend.find_client = [&](auto a) -> std::optional<ScriptTaskUpdateClient> {
         step(19, "CLIENT:" + a.str());
@@ -108,23 +110,24 @@ std::string probe(int mode, int failure, int overload) {
     ScriptTaskUpdateController controller(std::move(backend));
     framework::AssetBytes data;
     if (!(mode & 1024))
-        data = std::make_shared<std::vector<std::uint8_t>>(
-            (mode & 2048) ? std::vector<std::uint8_t>{} : std::vector<std::uint8_t>{0, 1, 255, 42});
+        data = std::make_shared<std::vector<std::uint8_t>>((mode & 2048) ? std::vector<std::uint8_t>{}
+                                                                         : std::vector<std::uint8_t>{0, 1, 255, 42});
     std::string result;
     try {
         auto errors = overload ? controller.update(id(1), id(2), id(8), bool(mode & 4096), data)
                                : controller.update(client, id(2), id(8), bool(mode & 4096), data);
         result = errors ? "OK:" + std::to_string(errors->size()) : "NULL";
         if (errors)
-            for (const auto& e : *errors)
+            for (const auto &e : *errors)
                 result += ":" + e;
     } catch (...) {
         result = "THROW";
     }
     return result + ":" + (stored_running ? "1" : "0") + ":" + current_asset.str() + trace;
 }
-}
-int main(int argc, char** argv) {
+} // namespace
+
+int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string_view(argv[1]) == "--probe") {
             int m, f, o;
@@ -133,7 +136,7 @@ int main(int argc, char** argv) {
             return 0;
         }
         int checks = 0;
-        auto check = [&](bool v, const char* s) {
+        auto check = [&](bool v, const char *s) {
             ++checks;
             if (!v)
                 throw std::runtime_error(s);
@@ -143,14 +146,13 @@ int main(int argc, char** argv) {
         check(probe(0, 9, 0).find("|ASSET:") == std::string::npos, "remove failure preserves old asset");
         check(probe(64, 0, 0).starts_with("NULL:"), "null errors preserved");
         check(probe(64, 0, 0).find("|RESUME") != std::string::npos, "null errors still resumes");
-        check(probe(1, 0, 0).find("Insufficient permissions to edit script:0") != std::string::npos,
-              "deny alert");
+        check(probe(1, 0, 0).find("Insufficient permissions to edit script:0") != std::string::npos, "deny alert");
         check(probe(256, 0, 1).find("|EDIT:") == std::string::npos, "missing avatar skips edit");
         check(probe(128, 0, 0).find(":0:" + id(5).str() + "|RESUME") != std::string::npos,
               "event reads item after compiler");
         std::cout << "PASS: " << checks << " script task transaction checks\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

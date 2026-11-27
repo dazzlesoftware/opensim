@@ -36,6 +36,7 @@
 #include <memory>
 #include <limits>
 #include <exception>
+
 namespace opensim::framework {
 class ExpiringCacheTimer {
   public:
@@ -43,11 +44,14 @@ class ExpiringCacheTimer {
     virtual void change(std::int32_t due) = 0;
     virtual void dispose() = 0;
 };
+
 struct ExpiringCacheBackend {
     std::function<double()> timestamp;
     std::function<std::shared_ptr<ExpiringCacheTimer>(std::function<void()>, std::int32_t)> timer;
 };
+
 ExpiringCacheBackend native_expiring_cache_backend();
+
 class ExpiringCacheLock {
   public:
     enum class Mode { Read, Upgradeable, Write };
@@ -62,8 +66,10 @@ class ExpiringCacheLock {
     std::unique_ptr<State> state_;
 };
 template <class K, class V, class Hash> struct ExpiringCacheProbe;
+
 template <class K, class V, class Hash = std::hash<K>> class ExpiringCacheOS {
     using Mode = ExpiringCacheLock::Mode;
+
     struct State {
         ExpiringCacheBackend backend;
         opensim::framework::AtomicSharedPtr<ExpiringCacheLock> lock{std::make_shared<ExpiringCacheLock>()};
@@ -75,21 +81,26 @@ template <class K, class V, class Hash = std::hash<K>> class ExpiringCacheOS {
         double start;
         std::int32_t interval;
     };
+
     std::shared_ptr<State> state_;
-    template <class T> static T& required(const std::shared_ptr<T>& value) {
+
+    template <class T> static T &required(const std::shared_ptr<T> &value) {
         if (!value)
             throw std::runtime_error("Object reference not set to an instance of an object.");
         return *value;
     }
+
     static std::int32_t integer(double value) {
         return !std::isfinite(value) || value < -2147483648.0 || value >= 2147483648.0
                    ? std::numeric_limits<std::int32_t>::min()
                    : static_cast<std::int32_t>(value);
     }
+
     static std::int32_t wrapping_add(std::int32_t a, std::int32_t b) {
         return std::bit_cast<std::int32_t>(std::bit_cast<std::uint32_t>(a) + std::bit_cast<std::uint32_t>(b));
     }
-    static void key(const K& value) {
+
+    static void key(const K &value) {
         if constexpr (requires { value.has_value(); }) {
             if (!value.has_value())
                 throw std::invalid_argument("Value cannot be null. (Parameter 'key')");
@@ -98,8 +109,8 @@ template <class K, class V, class Hash = std::hash<K>> class ExpiringCacheOS {
                 throw std::invalid_argument("Value cannot be null. (Parameter 'key')");
         }
     }
-    template <class Fn>
-    static auto locked(const std::shared_ptr<State>& s, Mode mode, Fn fn) -> decltype(fn()) {
+
+    template <class Fn> static auto locked(const std::shared_ptr<State> &s, Mode mode, Fn fn) -> decltype(fn()) {
         auto lock = s->lock.load();
         required(lock).enter(mode);
         std::exception_ptr failure;
@@ -125,14 +136,16 @@ template <class K, class V, class Hash = std::hash<K>> class ExpiringCacheOS {
             return std::move(*result);
         }
     }
-    static void dispose_timer(const std::shared_ptr<State>& s) {
+
+    static void dispose_timer(const std::shared_ptr<State> &s) {
         auto timer = s->timer.load();
         if (timer) {
             timer->dispose();
             s->timer.store({});
         }
     }
-    static void check_timer(const std::shared_ptr<State>& s) {
+
+    static void check_timer(const std::shared_ptr<State> &s) {
         if (!s->timer.load()) {
             std::weak_ptr<State> weak = s;
             auto timer = s->backend.timer(
@@ -144,16 +157,19 @@ template <class K, class V, class Hash = std::hash<K>> class ExpiringCacheOS {
             s->timer.store(std::move(timer));
         }
     }
-    static std::int32_t expiration(const std::shared_ptr<State>& s, std::int32_t ms) {
+
+    static std::int32_t expiration(const std::shared_ptr<State> &s, std::int32_t ms) {
         if (ms <= 0)
             return std::numeric_limits<std::int32_t>::min();
         return wrapping_add(integer(s->backend.timestamp() - s->start), std::max(ms, s->interval));
     }
-    static void set_expire(const std::shared_ptr<State>& s, const K& k, std::int32_t expiry) {
+
+    static void set_expire(const std::shared_ptr<State> &s, const K &k, std::int32_t expiry) {
         s->expires[k] = expiry;
         s->count.store(static_cast<std::int32_t>(s->expires.size()));
     }
-    static void purge_state(const std::shared_ptr<State>& s) {
+
+    static void purge_state(const std::shared_ptr<State> &s) {
         locked(s, Mode::Upgradeable, [&] {
             if (s->expires.empty()) {
                 dispose_timer(s);
@@ -161,13 +177,13 @@ template <class K, class V, class Hash = std::hash<K>> class ExpiringCacheOS {
             }
             auto now = integer(s->backend.timestamp() - s->start);
             std::vector<K> expired;
-            for (const auto& entry : s->expires)
+            for (const auto &entry : s->expires)
                 if (entry.second > 0 && entry.second < now)
                     expired.push_back(entry.first);
             if (!expired.empty()) {
                 locked(s, Mode::Write, [&] {
                     s->array.reset();
-                    for (const auto& k : expired) {
+                    for (const auto &k : expired) {
                         s->expires.erase(k);
                         s->values.erase(k);
                     }
@@ -190,14 +206,17 @@ template <class K, class V, class Hash = std::hash<K>> class ExpiringCacheOS {
         state_->start = state_->backend.timestamp();
         state_->interval = std::max<std::int32_t>(500, interval);
     }
-    ExpiringCacheOS(const ExpiringCacheOS&) = delete;
-    ExpiringCacheOS& operator=(const ExpiringCacheOS&) = delete;
+
+    ExpiringCacheOS(const ExpiringCacheOS &) = delete;
+    ExpiringCacheOS &operator=(const ExpiringCacheOS &) = delete;
+
     ~ExpiringCacheOS() {
         try {
             dispose();
         } catch (...) {
         }
     }
+
     void dispose() {
         auto s = state_;
         auto lock = s->lock.load();
@@ -207,10 +226,12 @@ template <class K, class V, class Hash = std::hash<K>> class ExpiringCacheOS {
             s->lock.store({});
         }
     }
+
     std::int32_t count() const {
         return state_->count.load();
     }
-    void add(const K& k, const V& value) {
+
+    void add(const K &k, const V &value) {
         auto s = state_;
         auto expiry = wrapping_add(integer(s->backend.timestamp() - s->start), s->interval);
         locked(s, Mode::Write, [&] {
@@ -221,7 +242,8 @@ template <class K, class V, class Hash = std::hash<K>> class ExpiringCacheOS {
             check_timer(s);
         });
     }
-    void add(const K& k, const V& value, std::int32_t ms) {
+
+    void add(const K &k, const V &value, std::int32_t ms) {
         auto s = state_;
         auto expiry = expiration(s, ms);
         locked(s, Mode::Write, [&] {
@@ -232,16 +254,20 @@ template <class K, class V, class Hash = std::hash<K>> class ExpiringCacheOS {
             check_timer(s);
         });
     }
-    void add_or_update(const K& k, const V& value) {
+
+    void add_or_update(const K &k, const V &value) {
         add(k, value);
     }
-    void add_or_update(const K& k, const V& value, std::int32_t seconds) {
+
+    void add_or_update(const K &k, const V &value, std::int32_t seconds) {
         add(k, value, std::bit_cast<std::int32_t>(std::bit_cast<std::uint32_t>(seconds) * 1000u));
     }
-    void add_or_update(const K& k, const V& value, double seconds) {
+
+    void add_or_update(const K &k, const V &value, double seconds) {
         add(k, value, integer(seconds * 1000.0));
     }
-    bool remove(const K& k) {
+
+    bool remove(const K &k) {
         auto s = state_;
         return locked(s, Mode::Write, [&] {
             key(k);
@@ -255,6 +281,7 @@ template <class K, class V, class Hash = std::hash<K>> class ExpiringCacheOS {
             return success;
         });
     }
+
     void clear() {
         auto s = state_;
         locked(s, Mode::Write, [&] {
@@ -265,17 +292,20 @@ template <class K, class V, class Hash = std::hash<K>> class ExpiringCacheOS {
             s->array.reset();
         });
     }
-    bool contains_key(const K& k) {
+
+    bool contains_key(const K &k) {
         auto s = state_;
         return locked(s, Mode::Read, [&] {
             key(k);
             return s->expires.contains(k);
         });
     }
-    bool contains(const K& k) {
+
+    bool contains(const K &k) {
         return contains_key(k);
     }
-    bool contains_key(const K& k, std::int32_t ms) {
+
+    bool contains_key(const K &k, std::int32_t ms) {
         auto s = state_;
         return locked(s, Mode::Upgradeable, [&] {
             key(k);
@@ -288,10 +318,12 @@ template <class K, class V, class Hash = std::hash<K>> class ExpiringCacheOS {
             });
         });
     }
-    bool contains(const K& k, std::int32_t ms) {
+
+    bool contains(const K &k, std::int32_t ms) {
         return contains_key(k, ms);
     }
-    bool try_get_value(const K& k, V& value) {
+
+    bool try_get_value(const K &k, V &value) {
         auto s = state_;
         return locked(s, Mode::Read, [&] {
             key(k);
@@ -304,7 +336,8 @@ template <class K, class V, class Hash = std::hash<K>> class ExpiringCacheOS {
             return true;
         });
     }
-    bool try_get_value(const K& k, std::int32_t ms, V& value) {
+
+    bool try_get_value(const K &k, std::int32_t ms, V &value) {
         auto s = state_;
         return locked(s, Mode::Upgradeable, [&] {
             key(k);
@@ -321,10 +354,11 @@ template <class K, class V, class Hash = std::hash<K>> class ExpiringCacheOS {
             });
         });
     }
-    V& try_get_or_default_value(const K& k, bool& existed) {
+
+    V &try_get_or_default_value(const K &k, bool &existed) {
         auto s = state_;
         required(s->lock.load()).exit(Mode::Upgradeable);
-        V* result = nullptr;
+        V *result = nullptr;
         std::exception_ptr failure;
         try {
             key(k);
@@ -338,10 +372,11 @@ template <class K, class V, class Hash = std::hash<K>> class ExpiringCacheOS {
             std::rethrow_exception(failure);
         return *result;
     }
-    V& try_get_or_default_value(const K& k, std::int32_t ms, bool& existed) {
+
+    V &try_get_or_default_value(const K &k, std::int32_t ms, bool &existed) {
         auto s = state_;
         required(s->lock.load()).enter(Mode::Write);
-        V* result = nullptr;
+        V *result = nullptr;
         std::exception_ptr failure;
         try {
             key(k);
@@ -357,13 +392,14 @@ template <class K, class V, class Hash = std::hash<K>> class ExpiringCacheOS {
             std::rethrow_exception(failure);
         return *result;
     }
+
     std::shared_ptr<std::vector<V>> values() {
         auto s = state_;
         return locked(s, Mode::Upgradeable, [&] {
             if (!s->array) {
                 s->array = std::make_shared<std::vector<V>>();
                 s->array->reserve(s->values.size());
-                for (const auto& entry : s->values)
+                for (const auto &entry : s->values)
                     s->array->push_back(entry.second);
             }
             return s->array;
@@ -373,4 +409,4 @@ template <class K, class V, class Hash = std::hash<K>> class ExpiringCacheOS {
   private:
     friend struct ExpiringCacheProbe<K, V, Hash>;
 };
-}
+} // namespace opensim::framework

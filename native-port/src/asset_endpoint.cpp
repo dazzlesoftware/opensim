@@ -10,7 +10,7 @@ namespace {
 constexpr std::string_view asset_path = "/assets";
 constexpr std::string_view exists_path = "/get_assets_exist";
 
-std::string xml(pugi::xml_document& document) {
+std::string xml(pugi::xml_document &document) {
     std::ostringstream output;
     document.save(output, "", pugi::format_raw);
     return output.str();
@@ -30,20 +30,19 @@ std::vector<std::string> asset_parameters(std::string_view path) {
     }
     return result;
 }
-}
+} // namespace
 
-AssetEndpoint::AssetEndpoint(std::shared_ptr<services::AssetService> service, const IniConfig& config,
-                             const std::string& section)
-    : service_(std::move(service)), auth_(config, section),
-      redirect_(config.get(section, "RedirectURL")),
+AssetEndpoint::AssetEndpoint(std::shared_ptr<services::AssetService> service, const IniConfig &config,
+                             const std::string &section)
+    : service_(std::move(service)), auth_(config, section), redirect_(config.get(section, "RedirectURL")),
       allow_delete_(config.boolean(section, "AllowRemoteDelete", false)),
       allow_delete_all_(config.boolean(section, "AllowRemoteDeleteAllTypes", false)) {}
 
-bool AssetEndpoint::matches(const network::HttpRequest& request) {
+bool AssetEndpoint::matches(const network::HttpRequest &request) {
     return request.path == exists_path || request.path == asset_path || request.path.starts_with("/assets/");
 }
 
-network::HttpResponse AssetEndpoint::handle(const network::HttpRequest& request) {
+network::HttpResponse AssetEndpoint::handle(const network::HttpRequest &request) {
     network::HttpResponse response;
     response.content_type = "text/plain";
     if (request.path == exists_path) {
@@ -54,8 +53,7 @@ network::HttpResponse AssetEndpoint::handle(const network::HttpRequest& request)
         }
         // The original connector registers this handler without service authentication.
         pugi::xml_document input;
-        if (!input.load_buffer(request.body.data(), request.body.size(),
-                               pugi::parse_default | pugi::parse_ws_pcdata)) {
+        if (!input.load_buffer(request.body.data(), request.body.size(), pugi::parse_default | pugi::parse_ws_pcdata)) {
             response.status = 400;
             return response;
         }
@@ -68,7 +66,7 @@ network::HttpResponse AssetEndpoint::handle(const network::HttpRequest& request)
         for (const auto node : root.children("string")) {
             if (*node.attribute("xmlns").value())
                 continue;
-            auto& id = ids.emplace_back();
+            auto &id = ids.emplace_back();
             for (const auto part : node.children()) {
                 if (part.type() == pugi::node_pcdata || part.type() == pugi::node_cdata)
                     id += part.value();
@@ -121,7 +119,7 @@ network::HttpResponse AssetEndpoint::handle(const network::HttpRequest& request)
     if (request.method == "DELETE") {
         bool deleted = false;
         if (allow_delete_ && !parameters.empty()) {
-            const auto& id = parameters.front();
+            const auto &id = parameters.front();
             const auto asset = service_->get_asset(id);
             if (asset && (allow_delete_all_ || (asset->flags() & framework::Maptile)))
                 deleted = service_->erase(id);
@@ -133,7 +131,7 @@ network::HttpResponse AssetEndpoint::handle(const network::HttpRequest& request)
     if (parameters.empty())
         return response;
 
-    const auto& id = parameters.front();
+    const auto &id = parameters.front();
     if (parameters.size() == 1) {
         if (const auto asset = service_->get_asset(id)) {
             response.content_type = "text/xml";
@@ -166,4 +164,4 @@ network::HttpResponse AssetEndpoint::handle(const network::HttpRequest& request)
     }
     return response;
 }
-}
+} // namespace opensim::server

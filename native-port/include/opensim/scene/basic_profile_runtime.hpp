@@ -2,6 +2,7 @@
 // BSD license: native-port/LICENSE.txt.
 #pragma once
 #include "opensim/scene/profile_packets.hpp"
+
 namespace opensim::scene {
 // Binds the consumed Scene/IClientAPI event surfaces to admitted native sessions.
 // Runtime teardown owns collection after clients and their source scene stop.
@@ -20,4 +21,4 @@ class BasicProfileRuntime {
     struct State;
     std::unique_ptr<State> state_;
 };
-}
+} // namespace opensim::scene

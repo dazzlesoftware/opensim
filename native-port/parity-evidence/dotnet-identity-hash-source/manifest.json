@@ -1,0 +1,36 @@
+{
+  "tag": "v8.0.34",
+  "checkedAtUtc": "2026-11-26T18:23:58.613861+00:00",
+  "files": {
+    "LICENSE.TXT": {
+      "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+      "url": "https://raw.githubusercontent.com/dotnet/runtime/v8.0.34/LICENSE.TXT"
+    },
+    "object.cpp": {
+      "sha256": "d323c06c064b314f6f81f2ec215e035d51ee6040d614968eea5fe3d81dd3e813",
+      "url": "https://raw.githubusercontent.com/dotnet/runtime/v8.0.34/src/coreclr/vm/object.cpp"
+    },
+    "syncblk.h": {
+      "sha256": "522d806a1340feb63ce1b9b745b75abcba8649ba48e9112d58822a39f422f090",
+      "url": "https://raw.githubusercontent.com/dotnet/runtime/v8.0.34/src/coreclr/vm/syncblk.h"
+    },
+    "threads.cpp": {
+      "sha256": "45631821a4e8011b3a0d5de21d4b8e17628499a6cabb22b3b21dec8670fe1300",
+      "url": "https://raw.githubusercontent.com/dotnet/runtime/v8.0.34/src/coreclr/vm/threads.cpp"
+    },
+    "threads.h": {
+      "sha256": "c9041bfa81e1ee413a68f8bc869d8b9a7b3d0d14690c0b1eb83a8382ffcdee21",
+      "url": "https://raw.githubusercontent.com/dotnet/runtime/v8.0.34/src/coreclr/vm/threads.h"
+    }
+  },
+  "algorithm": {
+    "hashBits": 26,
+    "threadInitialGlobalSeed": 123456789,
+    "threadConstructorMultiplier": 1566083941,
+    "threadHashMultiplier": "threadId*4+5",
+    "increment": 1,
+    "zeroHash": "advance again",
+    "integerArithmetic": "uint32 wraparound"
+  },
+  "limits": "Runtime thread creation and intervening identity-hash calls determine the stream position; no portable numeric identity across processes is asserted."
+}

@@ -1,7 +1,8 @@
 #include "opensim/framework/config_uri.hpp"
 #include <iostream>
 using namespace opensim::framework;
-int main(int argc, char**) {
+
+int main(int argc, char **) {
     if (argc == 1) {
         auto text = [](std::u16string s) { return std::make_shared<const std::u16string>(std::move(s)); };
         if (is_http_configuration_uri(nullptr) ||

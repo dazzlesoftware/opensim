@@ -11,31 +11,31 @@ namespace {
 using framework::Uuid;
 
 class SqlTravelStore final : public TravelStore {
-public:
+  public:
     SqlTravelStore(sql::Execute execute, std::string realm, bool postgres)
         : execute_(std::move(execute)), postgres_(postgres) {
-        if (realm.empty() || realm.find_first_not_of(
-                "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_") != realm.npos)
+        if (realm.empty() ||
+            realm.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_") != realm.npos)
             throw std::invalid_argument("Invalid SQL travel realm");
         if (postgres_)
-            for (auto& character : realm)
+            for (auto &character : realm)
                 if (character >= 'A' && character <= 'Z')
                     character += 'a' - 'A';
         table_ = quote(realm);
     }
 
     void initialize() {
-        const auto create = [&](const std::string& table) {
+        const auto create = [&](const std::string &table) {
             const auto timestamp = postgres_ ? "\"TMStamp\" timestamp NOT NULL DEFAULT now()"
-                                            : "`TMStamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP";
-            execute_("CREATE TABLE IF NOT EXISTS " + table + " (" +
-                     quote("SessionID") + " varchar(36) NOT NULL PRIMARY KEY," +
-                     quote("UserID") + " varchar(36) NOT NULL," +
-                     quote("GridExternalName") + " varchar(255) NOT NULL DEFAULT ''," +
-                     quote("ServiceToken") + " varchar(255) NOT NULL DEFAULT ''," +
-                     quote("ClientIPAddress") + " varchar(16) NOT NULL DEFAULT ''," +
-                     quote("MyIPAddress") + " varchar(16) NOT NULL DEFAULT ''," + timestamp +
-                     (postgres_ ? ")" : ",KEY (`UserID`)) ENGINE=InnoDB DEFAULT CHARSET=latin1"), {});
+                                             : "`TMStamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP";
+            execute_("CREATE TABLE IF NOT EXISTS " + table + " (" + quote("SessionID") +
+                         " varchar(36) NOT NULL PRIMARY KEY," + quote("UserID") + " varchar(36) NOT NULL," +
+                         quote("GridExternalName") + " varchar(255) NOT NULL DEFAULT ''," + quote("ServiceToken") +
+                         " varchar(255) NOT NULL DEFAULT ''," + quote("ClientIPAddress") +
+                         " varchar(16) NOT NULL DEFAULT ''," + quote("MyIPAddress") +
+                         " varchar(16) NOT NULL DEFAULT ''," + timestamp +
+                         (postgres_ ? ")" : ",KEY (`UserID`)) ENGINE=InnoDB DEFAULT CHARSET=latin1"),
+                     {});
         };
         if (postgres_) {
             execute_("BEGIN", {});
@@ -52,55 +52,57 @@ public:
             create(default_table);
             if (!postgres_ && version == 1)
                 execute_("ALTER TABLE " + default_table +
-                         " MODIFY `TMStamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP", {});
+                             " MODIFY `TMStamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP",
+                         {});
             sql::record_migration(execute_, "HGTravelStore", version, target);
         }
         if (table_ != default_table)
             create(table_);
         execute_("DELETE FROM " + table_ + " WHERE " + quote("TMStamp") +
-                 (postgres_ ? " < CURRENT_DATE - INTERVAL '2 day'" : " < NOW() - INTERVAL 2 DAY"), {});
+                     (postgres_ ? " < CURRENT_DATE - INTERVAL '2 day'" : " < NOW() - INTERVAL 2 DAY"),
+                 {});
         if (postgres_)
             execute_("COMMIT", {});
         else
             execute_("SELECT RELEASE_LOCK(SHA2(CONCAT(DATABASE(), ':HGTravelStore'),256))", {});
     }
 
-    std::optional<TravelRecord> get(const Uuid& session) override {
+    std::optional<TravelRecord> get(const Uuid &session) override {
         auto rows = find("SessionID", session);
         if (rows.empty())
             return std::nullopt;
         return read(rows.front());
     }
 
-    std::optional<TravelRecord> replaced_by(const Uuid& session, const Uuid&) override {
+    std::optional<TravelRecord> replaced_by(const Uuid &session, const Uuid &) override {
         return get(session);
     }
 
-    std::optional<TravelRecord> locate(const Uuid& user, std::string_view home) override {
-        for (const auto& row : find("UserID", user))
+    std::optional<TravelRecord> locate(const Uuid &user, std::string_view home) override {
+        for (const auto &row : find("UserID", user))
             if (!row[2].empty() && row[2] != home)
                 return read(row);
         return std::nullopt;
     }
 
-    void store(const TravelRecord& record) override {
-        auto statement = std::string(postgres_ ? "INSERT INTO " : "REPLACE INTO ") +
-                         table_ + " (" + columns() + ") VALUES (?,?,?,?,?)";
+    void store(const TravelRecord &record) override {
+        auto statement = std::string(postgres_ ? "INSERT INTO " : "REPLACE INTO ") + table_ + " (" + columns() +
+                         ") VALUES (?,?,?,?,?)";
         if (postgres_)
             statement += " ON CONFLICT (\"SessionID\") DO UPDATE SET "
                          "\"UserID\"=EXCLUDED.\"UserID\",\"GridExternalName\"=EXCLUDED.\"GridExternalName\","
                          "\"ServiceToken\"=EXCLUDED.\"ServiceToken\",\"ClientIPAddress\"=EXCLUDED.\"ClientIPAddress\"";
         std::lock_guard lock(mutex_);
-        execute_(statement, {record.session_id.str(), record.user_id.str(), record.grid,
-                             record.service_token, record.client_ip});
+        execute_(statement,
+                 {record.session_id.str(), record.user_id.str(), record.grid, record.service_token, record.client_ip});
     }
 
-    void erase(const Uuid& session) override {
+    void erase(const Uuid &session) override {
         std::lock_guard lock(mutex_);
         execute_("DELETE FROM " + table_ + " WHERE " + quote("SessionID") + "=?", {session.str()});
     }
 
-private:
+  private:
     std::string quote(std::string_view identifier) const {
         const char delimiter = postgres_ ? '"' : '`';
         return delimiter + std::string(identifier) + delimiter;
@@ -111,14 +113,15 @@ private:
                quote("ServiceToken") + "," + quote("ClientIPAddress");
     }
 
-    std::vector<std::vector<std::string>> find(std::string_view column, const Uuid& value) {
+    std::vector<std::vector<std::string>> find(std::string_view column, const Uuid &value) {
         std::lock_guard lock(mutex_);
-        return execute_("SELECT " + columns() + "," + quote("MyIPAddress") + " FROM " +
-                        table_ + " WHERE " + quote(column) + "=?",
-                        {value.str()}).rows;
+        return execute_("SELECT " + columns() + "," + quote("MyIPAddress") + " FROM " + table_ + " WHERE " +
+                            quote(column) + "=?",
+                        {value.str()})
+            .rows;
     }
 
-    static TravelRecord read(const std::vector<std::string>& row) {
+    static TravelRecord read(const std::vector<std::string> &row) {
         return {Uuid(row[0]), Uuid(row[1]), row[2], row[3], row[4], row[5]};
     }
 
@@ -127,10 +130,10 @@ private:
     std::string table_;
     std::mutex mutex_;
 };
-}
+} // namespace
 
 #ifdef OPENSIM_HAVE_MYSQL
-std::shared_ptr<TravelStore> mysql_travel_store(const std::string& connection, const std::string& realm) {
+std::shared_ptr<TravelStore> mysql_travel_store(const std::string &connection, const std::string &realm) {
     auto store = std::make_shared<SqlTravelStore>(sql::mysql(connection), realm, false);
     store->initialize();
     return store;
@@ -138,10 +141,10 @@ std::shared_ptr<TravelStore> mysql_travel_store(const std::string& connection, c
 #endif
 
 #ifdef OPENSIM_HAVE_POSTGRESQL
-std::shared_ptr<TravelStore> postgres_travel_store(const std::string& connection, const std::string& realm) {
+std::shared_ptr<TravelStore> postgres_travel_store(const std::string &connection, const std::string &realm) {
     auto store = std::make_shared<SqlTravelStore>(sql::postgres(connection), realm, true);
     store->initialize();
     return store;
 }
 #endif
-}
+} // namespace opensim::services

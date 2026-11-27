@@ -1,0 +1,1 @@
+YOption chars;YOption advflowctl;char value;integer result;default{state_entry(){string s="AB";value=s[1];result=(integer)value;}}

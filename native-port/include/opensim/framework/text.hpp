@@ -31,13 +31,14 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <span>
 #include <string>
 #include <string_view>
+
 namespace opensim::framework {
 std::shared_ptr<const std::u16string> runtime_empty_text();
 std::u16string utf16(std::string_view text);
 std::u16string utf16_replacing(std::string_view text);
 std::u16string sdk_bytes_to_string(std::span<const std::uint8_t> bytes);
 std::string utf8(std::u16string_view text);
-std::string truncate_utf16(std::string_view text,std::size_t units);
+std::string truncate_utf16(std::string_view text, std::size_t units);
 bool unicode_whitespace(char16_t value);
 std::string trim_utf8(std::string_view text);
-}
+} // namespace opensim::framework

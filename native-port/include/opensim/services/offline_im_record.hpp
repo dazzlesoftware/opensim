@@ -5,5 +5,5 @@
 
 namespace opensim::services {
 network::ServiceXmlValue read_legacy_offline_im(std::string_view xml);
-std::string write_legacy_offline_im(const network::ServiceXmlValue& message);
-}
+std::string write_legacy_offline_im(const network::ServiceXmlValue &message);
+} // namespace opensim::services

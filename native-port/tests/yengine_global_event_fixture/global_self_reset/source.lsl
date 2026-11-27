@@ -1,0 +1,1 @@
+integer calls;integer value=init();integer init(){calls++;llResetScript();calls+=10;return 7;}default{state_entry(){calls+=100;}}

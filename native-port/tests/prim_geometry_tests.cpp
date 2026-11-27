@@ -7,7 +7,8 @@
 #include <stdexcept>
 #include <string>
 using namespace opensim::framework;
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     try {
         std::ios::sync_with_stdio(false);
         std::cin.tie(nullptr);
@@ -15,9 +16,9 @@ int main(int argc, char** argv) {
             std::array<int, 16> v;
             std::string line;
             while (std::getline(std::cin, line)) {
-                const char* cursor = line.data();
-                const char* end = cursor + line.size();
-                for (auto& item : v) {
+                const char *cursor = line.data();
+                const char *end = cursor + line.size();
+                for (auto &item : v) {
                     while (cursor < end && *cursor == ' ')
                         ++cursor;
                     auto parsed = std::from_chars(cursor, end, item);
@@ -42,9 +43,8 @@ int main(int argc, char** argv) {
                 s.path_taper_y = static_cast<std::int8_t>(v[13]);
                 s.path_radius_offset = static_cast<std::int8_t>(v[14]);
                 s.path_revolutions = static_cast<std::uint8_t>(v[15]);
-                std::cout << static_cast<int>(get_prim_type(s)) << ' '
-                          << static_cast<int>(get_prim_type(s, true)) << ' ' << get_number_of_sides(s)
-                          << '\n';
+                std::cout << static_cast<int>(get_prim_type(s)) << ' ' << static_cast<int>(get_prim_type(s, true))
+                          << ' ' << get_number_of_sides(s) << '\n';
             }
             return 0;
         }
@@ -68,7 +68,7 @@ int main(int argc, char** argv) {
             throw std::runtime_error("Triangle encoded mesh faces");
         std::cout << "PASS: prim geometry getter closure\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

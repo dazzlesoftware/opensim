@@ -1,0 +1,1 @@
+integer count;integer after;default{state_entry(){xmrEventCallHandler([21,7]);after=1;}touch_start(integer n){count+=n;xmrEventCallHandler([29,9]);count+=100;}touch_end(integer n){count+=n;llSleep(1.0);count+=1000;}}

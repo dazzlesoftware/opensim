@@ -12,12 +12,13 @@
 #include <windows.h>
 #endif
 using namespace opensim::framework;
+
 struct RegistryOverride {
 #ifdef _WIN32
     HKEY key = nullptr;
     bool active = false;
 #endif
-    RegistryOverride(int argc, char** argv) {
+    RegistryOverride(int argc, char **argv) {
 #ifdef _WIN32
         for (int i = 1; i < argc; ++i)
             if (std::string(argv[i]) == "--registry") {
@@ -28,8 +29,8 @@ struct RegistryOverride {
                     root.substr(prefix.size()).find_first_not_of("0123456789abcdef") != root.npos)
                     throw std::invalid_argument("Unowned fixture registry root");
                 auto raw = utf16_replacing(root);
-                auto status = RegOpenKeyExW(HKEY_CURRENT_USER, reinterpret_cast<const wchar_t*>(raw.c_str()),
-                                            0, KEY_READ, &key);
+                auto status =
+                    RegOpenKeyExW(HKEY_CURRENT_USER, reinterpret_cast<const wchar_t *>(raw.c_str()), 0, KEY_READ, &key);
                 if (status)
                     throw std::runtime_error("Open fixture root");
                 status = RegOverridePredefKey(HKEY_LOCAL_MACHINE, key);
@@ -45,6 +46,7 @@ struct RegistryOverride {
         (void)argv;
 #endif
     }
+
     ~RegistryOverride() {
 #ifdef _WIN32
         if (active)
@@ -54,7 +56,8 @@ struct RegistryOverride {
 #endif
     }
 };
-std::string h(const std::u16string& s) {
+
+std::string h(const std::u16string &s) {
     if (s.empty())
         return ".";
     std::ostringstream o;
@@ -62,14 +65,16 @@ std::string h(const std::u16string& s) {
         o << std::hex << std::setfill('0') << std::setw(4) << int(c);
     return o.str();
 }
-std::string e(const NativeTimeZoneError& x) {
+
+std::string e(const NativeTimeZoneError &x) {
     std::ostringstream o;
-    o << x.source_type << ";" << std::hex << std::setfill('0') << std::setw(8) << x.hresult << ";"
-      << h(x.message) << ";" << (x.parameter ? h(*x.parameter) : "-") << ";"
-      << (x.file_name ? h(*x.file_name) : "-") << ";[" << (x.inner ? e(*x.inner) : "-") << "]";
+    o << x.source_type << ";" << std::hex << std::setfill('0') << std::setw(8) << x.hresult << ";" << h(x.message)
+      << ";" << (x.parameter ? h(*x.parameter) : "-") << ";" << (x.file_name ? h(*x.file_name) : "-") << ";["
+      << (x.inner ? e(*x.inner) : "-") << "]";
     return o.str();
 }
-int run_lookup_probe(int argc, char** argv) {
+
+int run_lookup_probe(int argc, char **argv) {
     RegistryOverride registry_override(argc, argv);
     NativeInvariantDateTimeContextOptions options;
     for (int i = 1; i < argc; ++i) {
@@ -103,21 +108,23 @@ int run_lookup_probe(int argc, char** argv) {
             auto input = id ? std::make_shared<const std::u16string>(*id) : TimeZoneText{};
             auto z = db.find_text(input);
             std::u16string out = z->id_utf16();
-            std::cout << "OK;" << h(out) << ";" << z->daylight_at_ticks(ticks) << ";"
-                      << (z->id_text() == input ? 1 : 0) << "\n";
-        } catch (const NativeTimeZoneError& x) {
+            std::cout << "OK;" << h(out) << ";" << z->daylight_at_ticks(ticks) << ";" << (z->id_text() == input ? 1 : 0)
+                      << "\n";
+        } catch (const NativeTimeZoneError &x) {
             std::cout << e(x) << "\n";
-        } catch (const std::exception& x) {
+        } catch (const std::exception &x) {
             std::cout << "UNEXPECTED " << x.what() << "\n";
         }
     }
     return 0;
 }
+
 #include "opensim/framework/time_zone.hpp"
 #include "opensim/framework/invariant_datetime_context.hpp"
 #include <iostream>
 #include "opensim/framework/file_system_name.hpp"
 using namespace opensim::framework;
+
 int run_lookup_provider_units() {
     try {
         int calls = 0;
@@ -129,9 +136,8 @@ int run_lookup_provider_units() {
             return u"Valid";
         };
         options.ordinal_ignore_case_equal = [](auto a, auto b) {
-            return a.size() == b.size() &&
-                   file_system_name::pinned_case_backend(file_system_name::CasingMode::Normal)
-                       .ordinal_ignore_case_ends_with(a, b);
+            return a.size() == b.size() && file_system_name::pinned_case_backend(file_system_name::CasingMode::Normal)
+                                               .ordinal_ignore_case_ends_with(a, b);
         };
         NativeInvariantDateTimeContextOptions owner_options;
 #ifdef _WIN32
@@ -139,13 +145,11 @@ int run_lookup_provider_units() {
 #endif
         auto owner = std::make_shared<NativeInvariantDateTimeContext>(owner_options);
         TimeZoneDatabase db(owner, options);
-        std::u16string first{u'a', char16_t(0xd800)}, other{u'a', char16_t(0xd801)},
-            upper{u'A', char16_t(0xd800)};
+        std::u16string first{u'a', char16_t(0xd800)}, other{u'a', char16_t(0xd801)}, upper{u'A', char16_t(0xd800)};
         auto a = db.find_utf16(first);
         auto b = db.find_utf16(other);
         auto c = db.find_utf16(upper);
-        if (a == b || a != c || a->id_utf16() != first || b->id_utf16() != other || calls != 2 ||
-            seen != other)
+        if (a == b || a != c || a->id_utf16() != first || b->id_utf16() != other || calls != 2 || seen != other)
             return 1;
         db.clear();
         if (db.find_utf16(first) == a || calls != 3)
@@ -154,7 +158,7 @@ int run_lookup_provider_units() {
         try {
             db.find_utf16(std::nullopt);
             return 3;
-        } catch (const NativeTimeZoneError& e) {
+        } catch (const NativeTimeZoneError &e) {
             if (e.source_type != "System.ArgumentNullException")
                 return 4;
         }
@@ -177,7 +181,7 @@ int run_lookup_provider_units() {
             try {
                 isolated.find_utf16(first);
                 return 6;
-            } catch (const NativeTimeZoneError& e) {
+            } catch (const NativeTimeZoneError &e) {
                 if (e.source_type != "System.TimeZoneNotFoundException")
                     return 7;
             }
@@ -195,7 +199,7 @@ int run_lookup_provider_units() {
         try {
             fault.find_utf16(first);
             return 9;
-        } catch (const std::logic_error& e) {
+        } catch (const std::logic_error &e) {
             if (std::string(e.what()) != "converter fault")
                 return 10;
         }
@@ -203,7 +207,7 @@ int run_lookup_provider_units() {
         auto lower = db.find_utf16(std::u16string(u"X\U00010428"));
         if (upper_scalar != lower)
             return 11;
-        TimeZoneDatabase* current = nullptr;
+        TimeZoneDatabase *current = nullptr;
         bool clear_once = true;
         int reentry_calls = 0;
         NativeTimeZoneLookupOptions reentry;
@@ -226,14 +230,14 @@ int run_lookup_provider_units() {
         if (old == fresh || reentry_calls != 2 || reentrant.find_utf16(first) != fresh)
             return 12;
         std::cout << "PASS raw ID/cache/selected converter/fault/gating/reentrant epoch units\n";
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what();
         return 20;
     }
     return 0;
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
     for (int i = 1; i < argc; ++i) {
         if (std::string(argv[i]) == "--probe")
             return run_lookup_probe(argc, argv);
@@ -246,8 +250,7 @@ int main(int argc, char** argv) {
         TimeZoneDatabase db;
         auto source_literal = time_zone_utc_id_text();
         auto a = db.find_text(source_literal);
-        if (a->id_text() != source_literal || a->daylight_at_ticks(0) ||
-            a->daylight_at_ticks(3155378975999999999LL))
+        if (a->id_text() != source_literal || a->daylight_at_ticks(0) || a->daylight_at_ticks(3155378975999999999LL))
             return 1;
         auto dynamic = std::make_shared<const std::u16string>(u"uTc");
         if (db.find_text(dynamic) != a || a->id_text() == dynamic)
@@ -258,7 +261,7 @@ int main(int argc, char** argv) {
         try {
             db.find_text({});
             return 4;
-        } catch (const NativeTimeZoneError& e) {
+        } catch (const NativeTimeZoneError &e) {
             if (e.source_type != "System.ArgumentNullException" || e.hresult != 0x80004003u ||
                 e.parameter != std::optional<std::u16string>(u"id"))
                 return 5;
@@ -266,14 +269,14 @@ int main(int argc, char** argv) {
         try {
             db.find_utf16(std::u16string(256, u'X') + u"\u00e9");
             return 6;
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
             if (std::string(e.what()).find("\xc3\xa9") == std::string::npos)
                 return 7;
         }
         try {
             db.find_utf16(std::u16string(u"x\0y", 3));
             return 8;
-        } catch (const NativeTimeZoneError& e) {
+        } catch (const NativeTimeZoneError &e) {
             if (e.message.find(char16_t(0)) == e.message.npos || e.inner)
                 return 9;
         }

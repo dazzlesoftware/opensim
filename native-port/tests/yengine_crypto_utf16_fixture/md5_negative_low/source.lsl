@@ -1,0 +1,1 @@
+string result;integer after;default{state_entry(){result=llMD5String(llGetSubString("😀",1,1),-1);after=1;}}

@@ -2,6 +2,7 @@
 import argparse
 import base64
 from contextlib import closing, contextmanager
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 from pathlib import Path
 import queue
@@ -38,7 +39,10 @@ def running_server(executable, config, region=False):
         url, udp = None, None
         try:
             while not url or (region and udp is None):
-                line = lines.get(timeout=15)
+                try:
+                    line = lines.get(timeout=15)
+                except queue.Empty as error:
+                    raise RuntimeError("Native host timed out during startup:\n" + "".join(output)) from error
                 if line is None:
                     raise RuntimeError("Native host exited during startup:\n" + "".join(output))
                 if line.startswith("LISTENING "):
@@ -78,12 +82,135 @@ def request_status(url, data):
             return error.code
 
 
+def verify_grid_message_retry(region_url, private_url, seed, packet, agent, session, admit, circuit, udp,
+                              local_recipient):
+    recipient = uuid.uuid4()
+    remote_session = uuid.uuid4()
+    destinations = [uuid.uuid4(), uuid.uuid4()]
+    received = queue.Queue()
+    local_ready = threading.Event()
+    auth = base64.b64encode(b"presence:fixture-password").decode()
+
+    def report_destination(index):
+        form = urllib.parse.urlencode({
+            "METHOD": "report", "SessionID": str(remote_session), "RegionID": str(destinations[index]),
+        }).encode()
+        request = urllib.request.Request(private_url + "/presence", form, {"Authorization": f"Basic {auth}"})
+        with urllib.request.urlopen(request, timeout=5) as response:
+            assert ET.fromstring(response.read()).findtext("result") == "Success"
+
+    def send_message(sequence, target, text):
+        name = b"Remote Resident\0"
+        message = text.encode() + b"\0"
+        packet(sequence, "ffff00fe", agent.bytes + session.bytes + b"\0" + target.bytes + bytes(54)
+               + bytes([len(name)]) + name + struct.pack("<H", len(message)) + message + bytes(2))
+
+    class Destination(BaseHTTPRequestHandler):
+        protocol_version = "HTTP/1.1"
+
+        def do_POST(self):
+            args, method = xmlrpc.client.loads(self.rfile.read(int(self.headers["Content-Length"])))
+            destination = self.path.strip("/")
+            message = args[0]["message"]
+            success = destination == "1"
+            if message == "Return to the local region":
+                received.put((destination, method, args[0]))
+                if not local_ready.wait(8):
+                    self.send_error(504)
+                    return
+            elif message == "Follow the recipient" and destination == "0":
+                report_destination(1)
+            elif message == "Refresh stale cache":
+                success = destination == "0"
+            reply = xmlrpc.client.dumps(({"success": "TRUE" if success else "FALSE"},),
+                                        methodresponse=True).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/xml")
+            self.send_header("Content-Length", str(len(reply)))
+            self.end_headers()
+            self.wfile.write(reply)
+            if message != "Return to the local region":
+                received.put((destination, method, args[0]))
+
+    with ThreadingHTTPServer(("127.0.0.1", 0), Destination) as server:
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            for index, region_id in enumerate(destinations):
+                fields = {
+                    "METHOD": "register", "VERSIONMIN": "0", "VERSIONMAX": "1",
+                    "uuid": str(region_id), "regionName": f"IM Retry {index}",
+                    "locX": str((1010 + index) * 256), "locY": "256000",
+                    "sizeX": "256", "sizeY": "256", "serverPort": str(server.server_port),
+                    "serverIP": "127.0.0.1", "serverURI": f"http://127.0.0.1:{server.server_port}/{index}/",
+                }
+                with urllib.request.urlopen(region_url + "/grid", urllib.parse.urlencode(fields).encode(),
+                                            timeout=5) as response:
+                    assert ET.fromstring(response.read()).findtext("Result") == "Success"
+            seed(remote_session, recipient, destinations[0])
+            send_message(3, recipient, "Follow the recipient")
+            first, second = received.get(timeout=8), received.get(timeout=8)
+            assert first[:2] == ("0", "grid_instant_message") and second[:2] == ("1", "grid_instant_message")
+            assert first[2] == second[2] and second[2]["message"] == "Follow the recipient"
+
+            report_destination(0)
+            # The HTTP fixture has sent its reply. Give the simulator's worker time to record it.
+            time.sleep(0.2)
+            send_message(4, recipient, "Use cached destination")
+            cached = received.get(timeout=8)
+            assert cached[:2] == ("1", "grid_instant_message")
+            assert cached[2]["message"] == "Use cached destination"
+
+            send_message(5, recipient, "Refresh stale cache")
+            stale, refreshed = received.get(timeout=8), received.get(timeout=8)
+            assert stale[:2] == ("1", "grid_instant_message") and refreshed[:2] == ("0", "grid_instant_message")
+            assert stale[2] == refreshed[2] and refreshed[2]["message"] == "Refresh stale cache"
+
+            local_session = uuid.uuid4()
+            seed(local_session, local_recipient, destinations[0])
+            message = b"Return to the local region\0"
+            send_message(6, local_recipient, "Return to the local region")
+            attempt = received.get(timeout=8)
+            assert attempt[:2] == ("0", "grid_instant_message")
+            recipient_circuit = circuit | {
+                "agent_id": str(local_recipient), "session_id": str(local_session),
+                "secure_session_id": str(uuid.uuid4()), "circuit_code": "93818",
+                "caps_path": "retry-recipient",
+            }
+            accepted = admit(recipient_circuit)
+            assert accepted.get("success"), accepted
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as recipient_viewer:
+                recipient_viewer.settimeout(8)
+                code = struct.pack("<I", 93818)
+                recipient_viewer.sendto(struct.pack(">BIB", 0x40, 1, 0) + bytes.fromhex("ffff0003")
+                                        + code + local_session.bytes + local_recipient.bytes, udp)
+                recipient_viewer.sendto(struct.pack(">BIB", 0x40, 2, 0) + bytes.fromhex("ffff00f9")
+                                        + local_recipient.bytes + local_session.bytes + code, udp)
+                for _ in range(128):
+                    if recipient_viewer.recv(8192)[6:10] == bytes.fromhex("ffff00fa"):
+                        break
+                else:
+                    raise AssertionError("Retry recipient did not become a local root")
+                local_ready.set()
+                for _ in range(128):
+                    if message in recipient_viewer.recv(8192):
+                        break
+                else:
+                    raise AssertionError("Grid IM retry did not reach the local recipient")
+                recipient_viewer.sendto(struct.pack(">BIB", 0x40, 3, 0) + bytes.fromhex("ffff00fc")
+                                        + local_recipient.bytes + local_session.bytes, udp)
+        finally:
+            local_ready.set()
+            server.shutdown()
+            thread.join()
+
+
 def exercise_region(executable, root, private_url, seed, location, grid_user_url=None, local_grid_user=False):
     region = uuid.UUID("11111111-1111-4111-8111-111111111111")
     region_config = root / "region.ini"
     settings = (
         "[NativeServer]\nListenAddress=127.0.0.1\nEnableLocalRegion=true\n"
-        "EnableSimulationEndpoint=true\nUserAccountDatabase=users.db\nAuthenticationDatabase=users.db\n"
+        "EnableSimulationEndpoint=true\nEnableGridEndpoint=true\nUserAccountDatabase=users.db\nAuthenticationDatabase=users.db\n"
         "InventoryDatabase=inventory.db\nGridUserDatabase=gridusers.db\n"
         "EnableFriendsService=true\nFriendsDatabase=friends.db\n"
         "[Network]\nhttp_listener_port=0\n"
@@ -108,6 +235,8 @@ def exercise_region(executable, root, private_url, seed, location, grid_user_url
                    text=True, check=True, timeout=20)
     subprocess.run(command + ["--create-user", "Recorded", "Visitor"], input="fixture-password\n",
                    text=True, check=True, timeout=20)
+    subprocess.run(command + ["--create-user", "Retry", "Recipient"], input="fixture-password\n",
+                   text=True, check=True, timeout=20)
     with closing(sqlite3.connect(root / "users.db")) as connection:
         agent = uuid.UUID(connection.execute("SELECT PrincipalID FROM UserAccounts WHERE FirstName='Remote'")
                           .fetchone()[0])
@@ -115,6 +244,8 @@ def exercise_region(executable, root, private_url, seed, location, grid_user_url
                                   .fetchone()[0])
         recorded_agent = uuid.UUID(connection.execute(
             "SELECT PrincipalID FROM UserAccounts WHERE FirstName='Recorded'").fetchone()[0])
+        retry_agent = uuid.UUID(connection.execute(
+            "SELECT PrincipalID FROM UserAccounts WHERE FirstName='Retry'").fetchone()[0])
     if grid_user_url or local_grid_user:
         # The default parcel belongs to this region's estate owner.
         region_config.write_text(settings.replace("[NativeRegion]", f"[NativeRegion]\nOwnerID={agent}"),
@@ -223,7 +354,9 @@ def exercise_region(executable, root, private_url, seed, location, grid_user_url
             assert struct.unpack_from("<I", data, 59)[0] == 42
             assert struct.unpack_from("<3f", data, 79) == (0, 4294967296, 0)
             assert struct.unpack_from("<I", data, 109)[0] == 0xFFFFFFFF
-            sequence = 3
+            verify_grid_message_retry(region_url, private_url, seed, packet, agent, session, admit, circuit, udp,
+                                      retry_agent)
+            sequence = 7
             if home_service:
                 wait_until(lambda: grid_user_request(home_service, "getgriduserinfo")
                            .findtext("result/LastRegionID") == str(region),

@@ -1,0 +1,1 @@
+string value="a";list result;string mutate(){value="b";return "c";}default{state_entry(){result=[value+mutate()];}}

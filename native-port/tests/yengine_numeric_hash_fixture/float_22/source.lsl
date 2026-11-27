@@ -1,0 +1,1 @@
+integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Float("-1.7976931348623157E+308"));after=1;}}

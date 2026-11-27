@@ -5,7 +5,8 @@
 #include <iostream>
 #include <stdexcept>
 using namespace opensim;
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     try {
         std::ios::sync_with_stdio(false);
         std::cin.tie(nullptr);
@@ -20,8 +21,7 @@ int main(int argc, char** argv) {
             }
             return 0;
         }
-        if (framework::format_invariant_status_date(framework::AssetDateTime(0, 0)) !=
-                "01/01/0001 12:00:00" ||
+        if (framework::format_invariant_status_date(framework::AssetDateTime(0, 0)) != "01/01/0001 12:00:00" ||
             framework::format_invariant_status_date(framework::AssetDateTime(3155378975999999999ll, 2)) !=
                 "12/31/9999 11:59:59")
             throw std::runtime_error("Status date full-range endpoints");
@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
             ++predicates;
             return invariant;
         };
-        provider->current_culture_format = [&](auto date, const auto& pattern) {
+        provider->current_culture_format = [&](auto date, const auto &pattern) {
             ++fallbacks;
             return std::to_string(date.serialized_data()) + ":" + pattern;
         };
@@ -43,8 +43,7 @@ int main(int argc, char** argv) {
         if (weak.expired())
             throw std::runtime_error("Formatter binding lost provider ownership");
         auto date = framework::AssetDateTime(0, 1);
-        if (console.format_date(date, "MM/dd/yyyy hh:mm:ss") != "01/01/0001 12:00:00" || predicates != 1 ||
-            fallbacks)
+        if (console.format_date(date, "MM/dd/yyyy hh:mm:ss") != "01/01/0001 12:00:00" || predicates != 1 || fallbacks)
             throw std::runtime_error("Invariant status fast path");
         invariant = false;
         if (console.format_date(date, "MM/dd/yyyy hh:mm:ss") !=
@@ -56,13 +55,13 @@ int main(int argc, char** argv) {
         if (predicates != 2 || fallbacks != 2)
             throw std::runtime_error("Other pattern did not delegate its full ownership");
         auto retained = weak.lock();
-        retained->current_culture_format = [](auto, const auto&) -> std::string {
+        retained->current_culture_format = [](auto, const auto &) -> std::string {
             throw std::invalid_argument("provider format fault");
         };
         bool format_failed = false;
         try {
             console.format_date(date, "x");
-        } catch (const std::invalid_argument& error) {
+        } catch (const std::invalid_argument &error) {
             format_failed = std::string(error.what()) == "provider format fault";
         }
         if (!format_failed)
@@ -74,7 +73,7 @@ int main(int argc, char** argv) {
         bool culture_failed = false;
         try {
             console.format_date(date, "MM/dd/yyyy hh:mm:ss");
-        } catch (const std::runtime_error& error) {
+        } catch (const std::runtime_error &error) {
             culture_failed = std::string(error.what()) == "provider culture fault";
         }
         if (!culture_failed)
@@ -86,7 +85,7 @@ int main(int argc, char** argv) {
         bool rejected = false;
         try {
             services::bind_flotsam_status_date_format(console, {});
-        } catch (const std::invalid_argument&) {
+        } catch (const std::invalid_argument &) {
             rejected = true;
         }
         if (!rejected)
@@ -96,14 +95,14 @@ int main(int argc, char** argv) {
         rejected = false;
         try {
             services::bind_flotsam_status_date_format(console, incomplete);
-        } catch (const std::invalid_argument&) {
+        } catch (const std::invalid_argument &) {
             rejected = true;
         }
         if (!rejected)
             throw std::runtime_error("Invariant fast path accepted missing other-culture provider");
         std::cout << "PASS: invariant Gregorian status dates and explicit culture/provider ownership\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

@@ -1,0 +1,1 @@
+YOption chars;string name;string seen;string after_name;list saved;list final_saved;integer after;default{state_entry(){name=llGetSubString("😀",1,1);saved=llListReplaceList(xmrEventSaveDets(),[name],5,5);xmrEventLoadDets(saved);seen=llDetectedName(0);saved=xmrEventSaveDets();llSleep(3.0);after_name=llDetectedName(0);final_saved=xmrEventSaveDets();after=1;}}

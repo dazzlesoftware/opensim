@@ -6,10 +6,12 @@
 #include <iostream>
 #include <thread>
 using namespace opensim;
+
 void check(bool ok) {
     if (!ok)
         throw std::runtime_error("position cache check failed");
 }
+
 int main() {
     try {
         services::GridRegion destination;
@@ -20,7 +22,7 @@ int main() {
         int calls = 0;
         services::SimulationConnector manual(
             {}, {},
-            [&](const std::string&, const network::Value&, int timeout, bool compressed) {
+            [&](const std::string &, const network::Value &, int timeout, bool compressed) {
                 check(timeout == 10000 && compressed);
                 ++calls;
                 return network::Value::object({{"Success", network::Value(calls > 1)}});
@@ -34,12 +36,11 @@ int main() {
         check(manual.failed_simulator_count() == 1);
         now = 120.001;
         manual.purge_failed_simulators();
-        check(manual.failed_simulator_count() == 0 && manual.update_agent(destination, position) &&
-              calls == 2);
+        check(manual.failed_simulator_count() == 0 && manual.update_agent(destination, position) && calls == 2);
         std::atomic<double> automatic_now = 0;
         std::atomic<int> automatic_calls = 0;
         services::SimulationConnector automatic({}, {},
-                                                [&](const std::string&, const network::Value&, int, bool) {
+                                                [&](const std::string &, const network::Value &, int, bool) {
                                                     return network::Value::object(
                                                         {{"Success", network::Value(++automatic_calls > 1)}});
                                                 },
@@ -53,7 +54,7 @@ int main() {
               automatic_calls == 2);
         std::cout << "PASS: native position cache expiry boundaries, stale lookup and automatic purge\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what();
         return 1;
     }

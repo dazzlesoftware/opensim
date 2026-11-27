@@ -1,0 +1,1 @@
+YOption arrays;YOption chars;object input=(object)[1,"x"];integer result;integer after;default{state_entry(){result=(integer)input;after=1;}}

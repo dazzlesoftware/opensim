@@ -2,6 +2,7 @@
 #include "osd_fixture_value.hpp"
 #include <iostream>
 using namespace opensim;
+
 std::string hex(std::string_view s) {
     constexpr char d[] = "0123456789abcdef";
     std::string r;
@@ -11,20 +12,22 @@ std::string hex(std::string_view s) {
     }
     return r;
 }
+
 std::optional<std::string> text(std::string token) {
-    return token == "-" ? std::nullopt
-                        : std::optional<std::string>(token == "." ? "" : fixture::unhex(token));
+    return token == "-" ? std::nullopt : std::optional<std::string>(token == "." ? "" : fixture::unhex(token));
 }
-std::string address(const std::shared_ptr<framework::IpAddress>& value) {
+
+std::string address(const std::shared_ptr<framework::IpAddress> &value) {
     if (!value)
         return "null";
     auto bytes = value->bytes();
-    std::string data(reinterpret_cast<const char*>(bytes.data()), value->v6() ? 16 : 4);
+    std::string data(reinterpret_cast<const char *>(bytes.data()), value->v6() ? 16 : 4);
     return std::string(value->v6() ? "6:" : "4:") + hex(value->str()) + ":" + hex(data) + ":" +
            std::to_string(value->v6() ? value->scope_id() : value->ipv4_address()) + ":" +
            (value->unspecified() ? "1" : "0");
 }
-int main(int argc, char**) {
+
+int main(int argc, char **) {
     bool system = argc > 1;
     std::unique_ptr<framework::HostResolver> resolver;
     std::shared_ptr<framework::IpAddress> last;
@@ -35,8 +38,7 @@ int main(int argc, char**) {
     auto ip = [](std::string value) {
         return std::make_shared<framework::IpAddress>(*framework::IpAddress::parse(value));
     };
-    auto lookup =
-        [&](const std::string& name) -> std::optional<std::vector<std::shared_ptr<framework::IpAddress>>> {
+    auto lookup = [&](const std::string &name) -> std::optional<std::vector<std::shared_ptr<framework::IpAddress>>> {
         trace += name + ";";
         if (system)
             return framework::HostResolver::system_lookup(name);
@@ -69,8 +71,7 @@ int main(int argc, char**) {
         try {
             if (command == "p") {
                 auto parsed = framework::IpAddress::parse(text(key));
-                std::cout << (parsed ? address(std::make_shared<framework::IpAddress>(*parsed)) : "null")
-                          << '\n';
+                std::cout << (parsed ? address(std::make_shared<framework::IpAddress>(*parsed)) : "null") << '\n';
                 continue;
             }
             if (command == "reset") {
@@ -118,7 +119,7 @@ int main(int argc, char**) {
         } catch (...) {
             result = "EX";
         }
-        std::cout << result << '|' << clocks << '|' << (resolver ? resolver->count() : 0) << '|' << hex(trace)
-                  << '|' << address(last) << '|' << (endpoint ? hex(endpoint->str()) : "null") << '\n';
+        std::cout << result << '|' << clocks << '|' << (resolver ? resolver->count() : 0) << '|' << hex(trace) << '|'
+                  << address(last) << '|' << (endpoint ? hex(endpoint->str()) : "null") << '\n';
     }
 }

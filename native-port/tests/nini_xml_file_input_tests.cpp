@@ -7,6 +7,7 @@
 #include <chrono>
 #include <array>
 using namespace opensim::framework;
+
 std::string hex(std::u16string_view s) {
     std::string r;
     for (auto c : s)
@@ -14,17 +15,21 @@ std::string hex(std::u16string_view s) {
             r += "0123456789abcdef"[(c >> b) & 15];
     return r;
 }
+
 int file_unit() {
-    const auto path = std::filesystem::temp_directory_path() /
-                      ("opensim-native-xml-" +
-                       std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()) + ".xml");
+    const auto path =
+        std::filesystem::temp_directory_path() /
+        ("opensim-native-xml-" + std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()) + ".xml");
+
     struct Cleanup {
         std::filesystem::path path;
+
         ~Cleanup() {
             std::error_code error;
             std::filesystem::remove(path, error);
         }
     } cleanup{path};
+
     {
         std::ofstream out(path, std::ios::binary);
         out << "<!DOCTYPE root [<!ATTLIST root x CDATA 'default'>]><root>text</root>";
@@ -40,8 +45,7 @@ int file_unit() {
     NiniXmlDom dom;
     native_nini_xml_load(dom, reader);
     auto root = dom.document_element();
-    if (!root || *root->name() != u"root" ||
-        (!root->first_child() || *root->first_child()->value() != u"text") ||
+    if (!root || *root->name() != u"root" || (!root->first_child() || *root->first_child()->value() != u"text") ||
         *root->attribute(nini_writer_text(u"x"))->value() != u"default")
         throw std::runtime_error("Real XML file must parse DTD defaults and content");
     reader->close();
@@ -49,7 +53,7 @@ int file_unit() {
     try {
         std::array<std::uint8_t, 1> byte{};
         file->read(byte);
-    } catch (const NiniXmlProviderError& e) {
+    } catch (const NiniXmlProviderError &e) {
         closed = e.source_type == "System.ObjectDisposedException";
     }
     if (!closed)
@@ -57,23 +61,22 @@ int file_unit() {
     bool null = false;
     try {
         native_nini_xml_file_input({});
-    } catch (const NiniXmlProviderError& e) {
-        null = e.source_type == "System.ArgumentNullException" &&
-               e.parameter == std::optional<std::u16string>(u"path");
+    } catch (const NiniXmlProviderError &e) {
+        null = e.source_type == "System.ArgumentNullException" && e.parameter == std::optional<std::u16string>(u"path");
     }
     if (!null)
         throw std::runtime_error("Null XML file path must retain typed error");
     return 0;
 }
 #ifdef _WIN32
-int wmain(int argc, wchar_t** argv) {
+int wmain(int argc, wchar_t **argv) {
     if (argc == 1)
         return file_unit();
     if (argc != 2)
         return 2;
-    auto path = nini_writer_text(std::u16string(reinterpret_cast<char16_t*>(argv[1])));
+    auto path = nini_writer_text(std::u16string(reinterpret_cast<char16_t *>(argv[1])));
 #else
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
     if (argc == 1)
         return file_unit();
     if (argc != 2)
@@ -97,11 +100,11 @@ int main(int argc, char** argv) {
             std::cout << "CL" << f->length_hint().value_or(-1) << ":";
             try {
                 f->read(b);
-            } catch (const NiniXmlProviderError& e) {
+            } catch (const NiniXmlProviderError &e) {
                 std::cout << e.source_type << ":" << e.hresult << ":" << hex(e.message);
             }
             std::cout << "\n";
-        } catch (const NiniXmlProviderError& e) {
+        } catch (const NiniXmlProviderError &e) {
             std::cout << "E:" << e.source_type << ":" << e.hresult << ":" << hex(e.message) << ":"
                       << (e.file_name ? hex(*e.file_name) : "-") << "\n";
         }

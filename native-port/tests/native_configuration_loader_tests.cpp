@@ -7,11 +7,14 @@
 #include <sstream>
 #include <map>
 using namespace opensim::framework;
+
 namespace {
 using T = NiniWriterText;
+
 T t(std::u16string s) {
     return std::make_shared<const std::u16string>(std::move(s));
 }
+
 T dec(std::string s) {
     if (s == "null")
         return {};
@@ -22,55 +25,63 @@ T dec(std::string s) {
         x += char16_t(std::stoul(s.substr(i, 4), nullptr, 16));
     return t(x);
 }
+
 std::string enc(T s) {
     if (!s)
         return "null";
     if (s->empty())
         return "-";
-    const char* h = "0123456789abcdef";
+    const char *h = "0123456789abcdef";
     std::string x;
     for (auto c : *s)
         for (int i = 12; i >= 0; i -= 4)
             x += h[(c >> i) & 15];
     return x;
 }
+
 struct Exit : std::runtime_error {
-    Exit() : runtime_error("exit:1") {
-    }
+    Exit() : runtime_error("exit:1") {}
 };
+
 std::shared_ptr<NiniConfigBackend> fixture_backend() {
     return native_nini_invariant_config_backend();
 }
+
 class StartupProxy : public NiniConfig {
-    NiniConfig* inner_;
+    NiniConfig *inner_;
     std::function<void(T)> record_;
 
   public:
-    StartupProxy(NiniConfigArena* arena, std::shared_ptr<NiniConfig> inner,
+    StartupProxy(NiniConfigArena *arena, std::shared_ptr<NiniConfig> inner,
                  std::shared_ptr<NiniConfigSourceBase> source, std::function<void(T)> record)
-        : NiniConfig(arena, inner->name(), source.get(), false), inner_(inner.get()),
-          record_(std::move(record)) {
-    }
+        : NiniConfig(arena, inner->name(), source.get(), false), inner_(inner.get()), record_(std::move(record)) {}
+
     T managed_type() const override {
         return t(u"StartupProxy");
     }
+
     T get(T key) override {
         record_(key);
         return inner_->get(std::move(key));
     }
+
     void set(T key, std::shared_ptr<NiniConfigObject> value) override {
         inner_->set(std::move(key), std::move(value));
     }
+
     void remove(T key) override {
         inner_->remove(std::move(key));
     }
+
     std::vector<T> get_keys() const override {
         return inner_->get_keys();
     }
+
     std::vector<T> get_values() const override {
         return inner_->get_values();
     }
 };
+
 struct Row {
     std::vector<std::string> trace;
     std::string fault;
@@ -84,7 +95,8 @@ struct Row {
     bool have_first = false;
     std::map<std::u16string, T> log_literals, producer_literals;
     bool record_startup = false;
-    std::string identity(const std::u16string& group, T value) {
+
+    std::string identity(const std::u16string &group, T value) {
         auto key = group + u":" + (value ? *value : u"");
         auto at = producer_literals.find(key);
         if (at != producer_literals.end())
@@ -92,6 +104,7 @@ struct Row {
         producer_literals.emplace(key, value);
         return "first";
     }
+
     void wrap() {
         if (!record_startup)
             return;
@@ -106,6 +119,7 @@ struct Row {
             argv->configs()->add(arena->handle(p));
         }
     }
+
     void event(std::string name, std::vector<T> args = {}) {
         auto s = name + ":";
         for (std::size_t i = 0; i < args.size(); ++i) {
@@ -120,10 +134,11 @@ struct Row {
         if (name == fault && ++hit == nth)
             throw NiniConfigError(NiniConfigError::Kind::InvalidOperation, u"provider fault");
     }
+
     Row() {
-        backend = std::make_shared<RegionConfigurationBackend>(native_local_region_configuration_backend(
-            arena, std::make_shared<RegionApplicationConfigurationState>()));
-        auto& b = *backend;
+        backend = std::make_shared<RegionConfigurationBackend>(
+            native_local_region_configuration_backend(arena, std::make_shared<RegionApplicationConfigurationState>()));
+        auto &b = *backend;
         bind_native_startup_configuration_services(b);
         b.config_directory = [this] {
             event("configdir");
@@ -141,8 +156,7 @@ struct Row {
                 return f(a);
             };
         }
-        for (auto pair :
-             {std::pair{"fileexists", &b.file_exists}, std::pair{"direxists", &b.directory_exists}}) {
+        for (auto pair : {std::pair{"fileexists", &b.file_exists}, std::pair{"direxists", &b.directory_exists}}) {
             auto f = *pair.second;
             *pair.second = [this, f, n = pair.first](T a) {
                 event(n, {a});
@@ -162,7 +176,7 @@ struct Row {
                                   u"Remote XML configuration is explicitly unsupported by this local host");
         };
         b.log = [this](RegionLoaderLogLevel level, T f, std::vector<T> args, RegionLoaderLogCall call) {
-            static const char16_t* names[] = {u"Info", u"Warn", u"Error", u"Fatal"};
+            static const char16_t *names[] = {u"Info", u"Warn", u"Error", u"Fatal"};
             std::string x;
             for (std::size_t i = 0; i < args.size(); ++i) {
                 if (i)
@@ -173,8 +187,8 @@ struct Row {
             auto identity = at == log_literals.end() ? u"first" : at->second == f ? u"same" : u"different";
             if (at == log_literals.end())
                 log_literals.emplace(*f, f);
-            event("log", {t(call == RegionLoaderLogCall::Format ? u"Format" : u"Message"),
-                          t(names[int(level)]), f, t(utf16_replacing(x)), t(identity)});
+            event("log", {t(call == RegionLoaderLogCall::Format ? u"Format" : u"Message"), t(names[int(level)]), f,
+                          t(utf16_replacing(x)), t(identity)});
         };
         b.exit = [this](int n) {
             trace.push_back("exit:" + std::to_string(n));
@@ -182,6 +196,7 @@ struct Row {
         };
         loader = std::make_shared<RegionConfigurationLoader>(backend);
     }
+
     std::string owner(std::shared_ptr<NiniConfigSourceBase> source) {
         if (source == argv)
             return "argv";
@@ -191,11 +206,12 @@ struct Row {
             return "file:" + enc(ini->save_path());
         return utf8(*source->managed_type());
     }
+
     std::string snapshot() {
         std::string out = enc(loader->ini_file_path()) + "/";
         if (auto s = loader->config_settings())
-            out += enc(s->physics_engine) + "," + enc(s->mesh_engine_name) + "," + enc(s->clientstack_dll) +
-                   "," + enc(s->libraries_xml_file);
+            out += enc(s->physics_engine) + "," + enc(s->mesh_engine_name) + "," + enc(s->clientstack_dll) + "," +
+                   enc(s->libraries_xml_file);
         out += '/';
         if (auto c = loader->config()) {
             if (!c->source)
@@ -216,19 +232,17 @@ struct Row {
         out += '/';
         if (auto object = loader->network_info()) {
             auto n = std::static_pointer_cast<NetworkServersInfo>(object);
-            out += std::to_string(n->HttpListenerPort) + ',' + std::to_string(n->secureInventoryServer) +
-                   ',' + std::to_string(n->isSandbox) + ',' + std::to_string(n->HttpUsesSSL) + ',' +
-                   enc(n->HttpSSLCN) + ',' + enc(n->HttpSSLCertPath) + ',' + enc(n->HttpSSLCNCertPass) + ',' +
-                   std::to_string(n->httpSSLPort) + ',' + std::to_string(n->ssl_listener) + ',' +
-                   std::to_string(n->ssl_external) + ',' + std::to_string(n->https_port) + ',' +
-                   enc(n->cert_path) + ',' + enc(n->cert_pass) + ',' +
+            out += std::to_string(n->HttpListenerPort) + ',' + std::to_string(n->secureInventoryServer) + ',' +
+                   std::to_string(n->isSandbox) + ',' + std::to_string(n->HttpUsesSSL) + ',' + enc(n->HttpSSLCN) + ',' +
+                   enc(n->HttpSSLCertPath) + ',' + enc(n->HttpSSLCNCertPass) + ',' + std::to_string(n->httpSSLPort) +
+                   ',' + std::to_string(n->ssl_listener) + ',' + std::to_string(n->ssl_external) + ',' +
+                   std::to_string(n->https_port) + ',' + enc(n->cert_path) + ',' + enc(n->cert_pass) + ',' +
                    (n->cert_path == runtime_empty_text() ? "1" : "0");
         }
         out += '/';
-        out += (have_first && loader->config_settings() &&
-                        first_dll == loader->config_settings()->clientstack_dll
-                    ? "1"
-                    : "0");
+        out +=
+            (have_first && loader->config_settings() && first_dll == loader->config_settings()->clientstack_dll ? "1"
+                                                                                                                : "0");
         out += '/';
         std::istringstream pairs(utf8(*env));
         std::string pair;
@@ -242,11 +256,13 @@ struct Row {
         return out;
     }
 };
-std::string error(const std::string& type, T msg, std::uint32_t hr, T param = {}) {
+
+std::string error(const std::string &type, T msg, std::uint32_t hr, T param = {}) {
     return type + ":" + enc(msg) + ":" + std::to_string(hr) + ":" + enc(param);
 }
-}
-int main(int argc, char**) {
+} // namespace
+
+int main(int argc, char **) {
     if (argc == 1) {
         auto marker = std::u16string(u"raw-") + char16_t(0xd800);
         try {
@@ -258,15 +274,15 @@ int main(int argc, char**) {
         RegionConfigurationBackend b;
         bind_native_startup_configuration_services(b);
         if (!b.is_http_uri(t(u"https://host/?q#f")) ||
-            !b.starts_with_current(t(u"In\u00adclude-file"), t(u"Include-")) || b.xml_uri_source || b.log ||
-            b.exit || b.config_directory)
+            !b.starts_with_current(t(u"In\u00adclude-file"), t(u"Include-")) || b.xml_uri_source || b.log || b.exit ||
+            b.config_directory)
             return 1;
         auto app = std::make_shared<RegionApplicationConfigurationState>();
         if (app->ini_file_path != runtime_empty_text())
             return 1;
         auto arena = std::make_shared<NiniConfigArena>(native_nini_invariant_config_backend());
-        auto local = std::make_shared<RegionConfigurationBackend>(
-            native_local_region_configuration_backend(arena, app));
+        auto local =
+            std::make_shared<RegionConfigurationBackend>(native_local_region_configuration_backend(arena, app));
         bind_native_startup_configuration_services(*local);
         local->config_directory = [] { return t(u"."); };
         local->log = [](auto, auto, auto, auto) {};
@@ -281,8 +297,7 @@ int main(int argc, char**) {
         app->ini_file_path = retained;
         if (first.ini_file_path() != retained || second.ini_file_path() != retained)
             return 1;
-        std::cout
-            << "PASS: native startup composition, typed UTF16 errors and canonical shared Application state\n";
+        std::cout << "PASS: native startup composition, typed UTF16 errors and canonical shared Application state\n";
         return 0;
     }
     std::string line;
@@ -314,8 +329,7 @@ int main(int argc, char**) {
             r.wrap();
             if (mode == "R")
                 result = r.loader->read_config(
-                             std::make_shared<RegionLoaderConfigSource>(RegionLoaderConfigSource{source}),
-                             dec(list))
+                             std::make_shared<RegionLoaderConfigSource>(RegionLoaderConfigSource{source}), dec(list))
                              ? "1"
                              : "0";
             else if (mode == "I") {
@@ -330,8 +344,8 @@ int main(int argc, char**) {
                             paths.push_back(t(items.substr(start, n - start)));
                         start = n + 1;
                     }
-                r.loader->add_includes(
-                    std::make_shared<RegionLoaderConfigSource>(RegionLoaderConfigSource{source}), paths);
+                r.loader->add_includes(std::make_shared<RegionLoaderConfigSource>(RegionLoaderConfigSource{source}),
+                                       paths);
                 result = "";
                 for (std::size_t i = 0; i < paths.size(); ++i) {
                     if (i)
@@ -354,23 +368,21 @@ int main(int argc, char**) {
                     r.loader->load_config_settings(r.argv, {}, settings, network);
                 }
             }
-        } catch (const Exit&) {
+        } catch (const Exit &) {
             result = error("Shim.ExitException", t(u"exit:1"), 0x80131500u);
-        } catch (const NiniConfigError& e) {
-            result =
-                error(e.source_type(), t(e.message), e.hresult(), e.parameter ? t(*e.parameter) : nullptr);
-        } catch (const NiniStreamError& e) {
+        } catch (const NiniConfigError &e) {
+            result = error(e.source_type(), t(e.message), e.hresult(), e.parameter ? t(*e.parameter) : nullptr);
+        } catch (const NiniStreamError &e) {
             result = error(e.source_type, t(e.message), e.hresult, e.parameter ? t(*e.parameter) : nullptr);
-        } catch (const NiniReaderError& e) {
+        } catch (const NiniReaderError &e) {
             result = error(e.source_type(), t(e.message_utf16()), e.hresult());
-        } catch (const NiniDocumentError& e) {
-            result =
-                error(e.source_type(), t(e.message), e.hresult(), e.parameter ? t(*e.parameter) : nullptr);
-        } catch (const DirectoryEntriesError& e) {
+        } catch (const NiniDocumentError &e) {
+            result = error(e.source_type(), t(e.message), e.hresult(), e.parameter ? t(*e.parameter) : nullptr);
+        } catch (const DirectoryEntriesError &e) {
             result = error(e.source_type, t(e.message), e.hresult, e.parameter ? t(*e.parameter) : nullptr);
-        } catch (const RuntimeEnvironmentError& e) {
+        } catch (const RuntimeEnvironmentError &e) {
             result = error(e.source_type, t(e.message), e.hresult, e.parameter ? t(*e.parameter) : nullptr);
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
             std::cerr << e.what() << '\n';
             return 1;
         }

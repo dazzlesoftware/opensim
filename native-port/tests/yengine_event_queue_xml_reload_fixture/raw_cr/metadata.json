@@ -1,0 +1,38 @@
+{
+  "name": "raw_cr",
+  "input": {
+    "clr": "System.String",
+    "value": "a\rb",
+    "utf16": [
+      97,
+      13,
+      98
+    ]
+  },
+  "append_exception": null,
+  "outer_xml_exception": null,
+  "load_xml_exception": null,
+  "restore_event_queue_exception": null,
+  "restored": {
+    "clr": "System.String",
+    "value": "a\rb",
+    "utf16": [
+      97,
+      13,
+      98
+    ]
+  },
+  "strict_xml_reader_control_exception": null,
+  "strict_xml_reader_control_restored": {
+    "clr": "System.String",
+    "value": "a\nb",
+    "utf16": [
+      97,
+      10,
+      98
+    ]
+  },
+  "sha256": {
+    "serialized.xml": "71c95f193da8e6eb2e61b6049708b503bb578d169269234b49a624fc68094280"
+  }
+}

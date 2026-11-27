@@ -8,24 +8,31 @@
 #include <algorithm>
 #include <climits>
 #include <limits>
+
 namespace opensim::framework {
 namespace {
 using Bytes = std::span<const std::uint8_t>;
+
 struct Invalid {};
+
 [[noreturn]] void invalid() {
     throw Invalid{};
 }
+
 struct Value {
     unsigned tag;
     Bytes bytes, encoded;
 };
+
 struct Der {
     Bytes bytes;
+
     unsigned peek() const {
         if (bytes.empty())
             invalid();
         return bytes.front();
     }
+
     Value read() {
         if (bytes.size() < 2)
             invalid();
@@ -71,17 +78,20 @@ struct Der {
         bytes = bytes.subspan(at + length);
         return value;
     }
+
     Der sequence(unsigned tag = 0x30) {
         auto v = read();
         if (v.tag != tag)
             invalid();
         return {v.bytes};
     }
+
     void end() const {
         if (!bytes.empty())
             invalid();
     }
 };
+
 std::string oid(Value value, unsigned tag = 6) {
     if (value.tag != tag || value.bytes.empty())
         invalid();
@@ -106,7 +116,7 @@ std::string oid(Value value, unsigned tag = 6) {
     // Decode a universal-tagged copy for context-specific RegisteredId as well.
     std::vector<std::uint8_t> encoded(value.encoded.begin(), value.encoded.end());
     encoded.front() = 6;
-    const auto* at = encoded.data();
+    const auto *at = encoded.data();
     std::unique_ptr<ASN1_OBJECT, decltype(&ASN1_OBJECT_free)> object(
         d2i_ASN1_OBJECT(nullptr, &at, static_cast<long>(encoded.size())), ASN1_OBJECT_free);
     if (!object) {
@@ -121,6 +131,7 @@ std::string oid(Value value, unsigned tag = 6) {
     result.resize(size);
     return result;
 }
+
 std::u16string ia5(Value value, unsigned tag) {
     if (value.tag != tag)
         invalid();
@@ -132,7 +143,8 @@ std::u16string ia5(Value value, unsigned tag) {
     }
     return result;
 }
-void directory_string(Der& reader) {
+
+void directory_string(Der &reader) {
     auto value = reader.read();
     if ((value.tag & 0xdf) == 28)
         return; // UniversalString is opaque in the generated decoder.
@@ -140,8 +152,8 @@ void directory_string(Der& reader) {
         return; // Every byte sequence is valid UTF8-or-Latin1 Teletex.
     if (value.tag == 12) {
         try {
-            utf16(std::string_view(reinterpret_cast<const char*>(value.bytes.data()), value.bytes.size()));
-        } catch (const std::invalid_argument&) {
+            utf16(std::string_view(reinterpret_cast<const char *>(value.bytes.data()), value.bytes.size()));
+        } catch (const std::invalid_argument &) {
             invalid();
         }
         return;
@@ -166,7 +178,8 @@ void directory_string(Der& reader) {
     }
     invalid();
 }
-std::optional<std::u16string> general_name(Der& reader) {
+
+std::optional<std::u16string> general_name(Der &reader) {
     const auto tag = reader.peek();
     switch (tag & 0xdf) {
     case 0x80: {
@@ -220,28 +233,30 @@ std::optional<std::u16string> general_name(Der& reader) {
     }
     return {};
 }
+
 std::optional<CertificateDer> aia_extension(Bytes der) {
     if (der.size() > LONG_MAX)
         throw ConfigHttpLinuxCertificateError();
-    const auto* at = der.data();
-    std::unique_ptr<X509, decltype(&X509_free)> certificate(
-        d2i_X509(nullptr, &at, static_cast<long>(der.size())), X509_free);
+    const auto *at = der.data();
+    std::unique_ptr<X509, decltype(&X509_free)> certificate(d2i_X509(nullptr, &at, static_cast<long>(der.size())),
+                                                            X509_free);
     if (!certificate)
         throw ConfigHttpLinuxCertificateError();
     int index = X509_get_ext_by_NID(certificate.get(), NID_info_access, -1);
     if (index < 0)
         return {};
-    auto* extension = X509_get_ext(certificate.get(), index);
-    auto* value = X509_EXTENSION_get_data(extension);
+    auto *extension = X509_get_ext(certificate.get(), index);
+    auto *value = X509_EXTENSION_get_data(extension);
     if (!value || value->length < 0)
         throw ConfigHttpLinuxCertificateError();
     if (!value->length)
         return CertificateDer{};
     return CertificateDer(value->data, value->data + value->length);
 }
-}
+} // namespace
+
 std::optional<std::u16string> config_http_linux_find_http_aia_record(Bytes extension, std::string_view record,
-                                                                     const ConfigUriObjectBackend& uris) {
+                                                                     const ConfigUriObjectBackend &uris) {
     try {
         Der input{extension};
         auto sequence = input.sequence();
@@ -253,25 +268,25 @@ std::optional<std::u16string> config_http_linux_find_http_aia_record(Bytes exten
             entry.end();
             if (method != record || !location)
                 continue;
-            auto uri = uris.try_create(std::make_shared<const std::u16string>(*location),
-                                       ConfigUriObjectKind::Absolute);
+            auto uri =
+                uris.try_create(std::make_shared<const std::u16string>(*location), ConfigUriObjectKind::Absolute);
             if (uri && *uri->scheme() == u"http")
                 return location;
         }
-    } catch (const Invalid&) {
+    } catch (const Invalid &) {
     }
     return {};
 }
+
 namespace {
 template <class Result, class Download, class Add>
-Result find_chain(ConfigHttpLinuxCertificateChain& chain, const ConfigUriObjectBackend& uris,
-                  std::chrono::milliseconds timeout, const Download& download, Add add) {
+Result find_chain(ConfigHttpLinuxCertificateChain &chain, const ConfigUriObjectBackend &uris,
+                  std::chrono::milliseconds timeout, const Download &download, Add add) {
     Result result{X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT, {}};
     std::uintptr_t previous = 0;
     const auto first_added = chain.issuer_addition_count();
     auto incomplete = [](int error) {
-        return error == X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT ||
-               error == X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY;
+        return error == X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT || error == X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY;
     };
     while (incomplete(result.native_error)) {
         auto identity = chain.missing_issuer_identity();
@@ -303,26 +318,28 @@ Result find_chain(ConfigHttpLinuxCertificateChain& chain, const ConfigUriObjectB
     }
     return result;
 }
-}
-ConfigHttpLinuxAiaResult config_http_linux_find_chain_via_aia(ConfigHttpLinuxCertificateChain& chain,
-                                                              const ConfigUriObjectBackend& uris,
+} // namespace
+
+ConfigHttpLinuxAiaResult config_http_linux_find_chain_via_aia(ConfigHttpLinuxCertificateChain &chain,
+                                                              const ConfigUriObjectBackend &uris,
                                                               std::chrono::milliseconds timeout,
-                                                              const ConfigHttpLinuxIssuerDownload& download) {
+                                                              const ConfigHttpLinuxIssuerDownload &download) {
     return find_chain<ConfigHttpLinuxAiaResult>(chain, uris, timeout, download,
-                                                [&](const auto& issuer) { return chain.add_issuer(issuer); });
+                                                [&](const auto &issuer) { return chain.add_issuer(issuer); });
 }
+
 ConfigHttpLinuxAiaAssetResult
-config_http_linux_find_chain_via_assets(ConfigHttpLinuxCertificateChain& chain,
-                                        const ConfigUriObjectBackend& uris, std::chrono::milliseconds timeout,
-                                        const ConfigHttpLinuxIssuerAssetDownload& download) {
-    return find_chain<ConfigHttpLinuxAiaAssetResult>(chain, uris, timeout, download, [&](const auto& issuer) {
-        return chain.add_issuer_aux(issuer.auxiliary_der);
-    });
+config_http_linux_find_chain_via_assets(ConfigHttpLinuxCertificateChain &chain, const ConfigUriObjectBackend &uris,
+                                        std::chrono::milliseconds timeout,
+                                        const ConfigHttpLinuxIssuerAssetDownload &download) {
+    return find_chain<ConfigHttpLinuxAiaAssetResult>(
+        chain, uris, timeout, download, [&](const auto &issuer) { return chain.add_issuer_aux(issuer.auxiliary_der); });
 }
-ConfigHttpLinuxAiaAssetResult
-config_http_linux_find_chain_via_assets(ConfigHttpLinuxCertificateChain& chain,
-                                        const ConfigUriObjectBackend& uris, std::chrono::milliseconds timeout,
-                                        const ConfigHttpX509ResourceClient& client) {
+
+ConfigHttpLinuxAiaAssetResult config_http_linux_find_chain_via_assets(ConfigHttpLinuxCertificateChain &chain,
+                                                                      const ConfigUriObjectBackend &uris,
+                                                                      std::chrono::milliseconds timeout,
+                                                                      const ConfigHttpX509ResourceClient &client) {
     return config_http_linux_find_chain_via_assets(
         chain, uris, timeout, ConfigHttpLinuxIssuerAssetDownload{[&](auto uri, auto duration) {
             if (duration.count() <= 0)
@@ -332,4 +349,4 @@ config_http_linux_find_chain_via_assets(ConfigHttpLinuxCertificateChain& chain,
             return config_http_linux_download_certificate(client, uri, ticks);
         }});
 }
-}
+} // namespace opensim::framework

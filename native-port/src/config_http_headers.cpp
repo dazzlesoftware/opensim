@@ -9,16 +9,17 @@
 #include <wincrypt.h>
 #endif
 #include <algorithm>
+
 namespace opensim::framework {
-ConfigHttpHeaderError::ConfigHttpHeaderError(std::string type, std::u16string text, std::uint32_t hr,
-                                             int code, std::shared_ptr<const ConfigHttpHeaderError> nested)
+ConfigHttpHeaderError::ConfigHttpHeaderError(std::string type, std::u16string text, std::uint32_t hr, int code,
+                                             std::shared_ptr<const ConfigHttpHeaderError> nested)
     : runtime_error(utf8(text)), source_type(std::move(type)), message(std::move(text)), hresult(hr),
-      request_error(code), inner(std::move(nested)) {
-}
-std::optional<std::u16string> config_http_request_host(const std::vector<std::u16string>& values) {
+      request_error(code), inner(std::move(nested)) {}
+
+std::optional<std::u16string> config_http_request_host(const std::vector<std::u16string> &values) {
     static const auto uris = native_config_uri_object_backend();
     if (!values.empty()) {
-        const auto& value = values.front();
+        const auto &value = values.front();
         std::size_t start = 0;
         while (start < value.size() && (value[start] == u' ' || value[start] == u'\t'))
             ++start;
@@ -39,6 +40,7 @@ std::optional<std::u16string> config_http_request_host(const std::vector<std::u1
     }
     return {};
 }
+
 std::u16string config_http_tls_host_key(std::u16string_view host) {
     auto colon = host.find(u':');
     if (colon != host.npos) {
@@ -51,6 +53,7 @@ std::u16string config_http_tls_host_key(std::u16string_view host) {
     }
     return std::u16string(host);
 }
+
 ConfigHttpTlsTargetNames config_http_tls_target_names(std::u16string_view target) {
     ConfigHttpTlsTargetNames names;
     names.normalized = config_http_normalize_tls_host(target);
@@ -82,31 +85,36 @@ bool config_http_windows_certificate_name(std::span<const std::uint8_t> der, std
                                              static_cast<DWORD>(der.size()));
     if (!cert)
         return false;
+
     struct CertGuard {
         PCCERT_CONTEXT value;
+
         ~CertGuard() {
             CertFreeCertificateContext(value);
         }
     } cert_guard{cert};
+
     CERT_CHAIN_PARA parameters{};
     parameters.cbSize = sizeof(parameters);
     PCCERT_CHAIN_CONTEXT chain = nullptr;
-    auto flags = CERT_CHAIN_CACHE_ONLY_URL_RETRIEVAL | CERT_CHAIN_DISABLE_AIA |
-                 CERT_CHAIN_DISABLE_AUTH_ROOT_AUTO_UPDATE;
-    if (!CertGetCertificateChain(nullptr, cert, nullptr, nullptr, &parameters, flags, nullptr, &chain) ||
-        !chain)
+    auto flags =
+        CERT_CHAIN_CACHE_ONLY_URL_RETRIEVAL | CERT_CHAIN_DISABLE_AIA | CERT_CHAIN_DISABLE_AUTH_ROOT_AUTO_UPDATE;
+    if (!CertGetCertificateChain(nullptr, cert, nullptr, nullptr, &parameters, flags, nullptr, &chain) || !chain)
         return false;
+
     struct ChainGuard {
         PCCERT_CHAIN_CONTEXT value;
+
         ~ChainGuard() {
             CertFreeCertificateChain(value);
         }
     } chain_guard{chain};
+
     std::u16string name(host);
     SSL_EXTRA_CERT_CHAIN_POLICY_PARA ssl{};
     ssl.cbSize = sizeof(ssl);
     ssl.dwAuthType = AUTHTYPE_SERVER;
-    ssl.pwszServerName = reinterpret_cast<wchar_t*>(name.data());
+    ssl.pwszServerName = reinterpret_cast<wchar_t *>(name.data());
     CERT_CHAIN_POLICY_PARA policy{};
     policy.cbSize = sizeof(policy);
     policy.dwFlags = 4031;
@@ -119,28 +127,33 @@ bool config_http_windows_certificate_name(std::span<const std::uint8_t> der, std
 #endif
 namespace {
 using Bytes = std::span<const std::uint8_t>;
+
 std::u16string ascii(Bytes bytes) {
     std::u16string out;
     for (auto b : bytes)
         out += b < 128 ? char16_t(b) : u'?';
     return out;
 }
+
 [[noreturn]] void invalid(std::u16string msg, int code = 9) {
     throw ConfigHttpHeaderError("System.Net.Http.HttpRequestException", std::move(msg), 0x80131500, code);
 }
+
 [[noreturn]] void line_error(Bytes line) {
     invalid(u"Received an invalid status line: '" + ascii(line) + u"'.");
 }
+
 bool token(std::uint8_t c) {
     return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
            std::string_view("!#$%&'*+-.^_`|~").find(char(c)) != std::string_view::npos;
 }
+
 bool digit(std::uint8_t c) {
     return c >= '0' && c <= '9';
 }
-}
-std::vector<std::uint8_t> config_http_encode_request_header(std::u16string_view text,
-                                                            ConfigHttpHeaderEncoder encoder) {
+} // namespace
+
+std::vector<std::uint8_t> config_http_encode_request_header(std::u16string_view text, ConfigHttpHeaderEncoder encoder) {
     if (encoder)
         return encoder(text);
     std::vector<std::uint8_t> out;
@@ -148,12 +161,12 @@ std::vector<std::uint8_t> config_http_encode_request_header(std::u16string_view 
     for (auto c : text) {
         if (c > 127)
             throw ConfigHttpHeaderError("System.Net.Http.HttpRequestException",
-                                        u"Request headers must contain only ASCII characters.", 0x80131500,
-                                        0);
+                                        u"Request headers must contain only ASCII characters.", 0x80131500, 0);
         out.push_back(static_cast<std::uint8_t>(c));
     }
     return out;
 }
+
 std::u16string config_http_decode_response_header(Bytes bytes, ConfigHttpHeaderDecoder decoder) {
     if (decoder)
         return decoder(bytes);
@@ -163,6 +176,7 @@ std::u16string config_http_decode_response_header(Bytes bytes, ConfigHttpHeaderD
         out += char16_t(b);
     return out;
 }
+
 std::u16string config_http_decode_named_response_header(std::string_view name, Bytes bytes,
                                                         ConfigHttpHeaderDecoder decoder) {
     if (bytes.empty())
@@ -177,12 +191,13 @@ std::u16string config_http_decode_named_response_header(std::string_view name, B
     }
     if (location)
         try {
-            return utf16(std::string_view(reinterpret_cast<const char*>(bytes.data()), bytes.size()));
-        } catch (const std::invalid_argument&) {
+            return utf16(std::string_view(reinterpret_cast<const char *>(bytes.data()), bytes.size()));
+        } catch (const std::invalid_argument &) {
         }
     return config_http_decode_response_header(bytes, std::move(decoder));
 }
-std::optional<std::int64_t> config_http_content_length(const std::vector<std::u16string>& values) {
+
+std::optional<std::int64_t> config_http_content_length(const std::vector<std::u16string> &values) {
     if (values.empty())
         return {};
     auto value = std::u16string_view(values.front());
@@ -202,21 +217,25 @@ std::optional<std::int64_t> config_http_content_length(const std::vector<std::u1
     }
     return static_cast<std::int64_t>(number);
 }
+
 namespace {
 bool header_token(char16_t c) {
     return c < 128 && token(static_cast<std::uint8_t>(c));
 }
-void ws(std::u16string_view value, std::size_t& at) {
+
+void ws(std::u16string_view value, std::size_t &at) {
     while (at < value.size() && (value[at] == u' ' || value[at] == u'\t'))
         ++at;
 }
-bool take_token(std::u16string_view value, std::size_t& at) {
+
+bool take_token(std::u16string_view value, std::size_t &at) {
     auto start = at;
     while (at < value.size() && header_token(value[at]))
         ++at;
     return at != start;
 }
-bool quoted_value(std::u16string_view value, std::size_t& at) {
+
+bool quoted_value(std::u16string_view value, std::size_t &at) {
     if (at == value.size() || value[at] != u'"')
         return false;
     ++at;
@@ -233,7 +252,8 @@ bool quoted_value(std::u16string_view value, std::size_t& at) {
     }
     return false;
 }
-bool parameter(std::u16string_view value, std::size_t& at) {
+
+bool parameter(std::u16string_view value, std::size_t &at) {
     if (!take_token(value, at))
         return false;
     ws(value, at);
@@ -246,8 +266,8 @@ bool parameter(std::u16string_view value, std::size_t& at) {
     ws(value, at);
     return true;
 }
-bool parse_transfer(std::u16string_view value, bool& chunked,
-                    std::vector<std::u16string>* codings = nullptr) {
+
+bool parse_transfer(std::u16string_view value, bool &chunked, std::vector<std::u16string> *codings = nullptr) {
     std::size_t at = 0;
     bool found = false;
     while (true) {
@@ -306,8 +326,9 @@ bool parse_transfer(std::u16string_view value, bool& chunked,
         ++at;
     }
 }
-}
-void config_http_apply_keep_alive(ConfigHttpKeepAliveState& state, std::u16string_view input) {
+} // namespace
+
+void config_http_apply_keep_alive(ConfigHttpKeepAliveState &state, std::u16string_view input) {
     std::vector<std::pair<std::u16string_view, std::u16string_view>> items;
     std::size_t at = 0;
     ws(input, at);
@@ -369,26 +390,27 @@ void config_http_apply_keep_alive(ConfigHttpKeepAliveState& state, std::u16strin
             state.close = true;
     }
 }
-bool config_http_transfer_encoding_chunked(const std::vector<std::u16string>& values) {
-    for (auto& value : values) {
+
+bool config_http_transfer_encoding_chunked(const std::vector<std::u16string> &values) {
+    for (auto &value : values) {
         bool chunked = false;
         if (parse_transfer(value, chunked) && chunked)
             return true;
     }
     return false;
 }
-std::vector<std::u16string> config_http_disable_chunked_request_encoding(
-    const std::vector<std::u16string>& values) {
+
+std::vector<std::u16string> config_http_disable_chunked_request_encoding(const std::vector<std::u16string> &values) {
     std::vector<std::u16string> result;
     bool removed_chunked = false;
-    for (const auto& value : values) {
+    for (const auto &value : values) {
         std::vector<std::u16string> codings;
         bool chunked = false;
         if (!parse_transfer(value, chunked, &codings)) {
             result.push_back(value);
             continue;
         }
-        for (auto& coding : codings) {
+        for (auto &coding : codings) {
             if (!removed_chunked && coding == u"chunked") {
                 removed_chunked = true;
                 continue;
@@ -398,15 +420,16 @@ std::vector<std::u16string> config_http_disable_chunked_request_encoding(
     }
     return result;
 }
+
 [[noreturn]] void config_http_response_headers_ended(bool can_retry) {
-    auto inner = std::make_shared<ConfigHttpHeaderError>("System.Net.Http.HttpIOException",
-                                                         u"The response ended prematurely. (ResponseEnded)",
-                                                         0x80131620, 10);
-    ConfigHttpHeaderError error("System.Net.Http.HttpRequestException",
-                                u"An error occurred while sending the request.", inner->hresult, 10, inner);
+    auto inner = std::make_shared<ConfigHttpHeaderError>(
+        "System.Net.Http.HttpIOException", u"The response ended prematurely. (ResponseEnded)", 0x80131620, 10);
+    ConfigHttpHeaderError error("System.Net.Http.HttpRequestException", u"An error occurred while sending the request.",
+                                inner->hresult, 10, inner);
     error.retry_on_connection_failure = can_retry;
     throw error;
 }
+
 std::optional<ConfigHttpResponseHead> config_http_parse_response_head(Bytes input, std::size_t maximum,
                                                                       std::optional<std::size_t> configured) {
     auto reported = configured.value_or(maximum);
@@ -415,8 +438,8 @@ std::optional<ConfigHttpResponseHead> config_http_parse_response_head(Bytes inpu
     auto first = std::find(bytes.begin(), bytes.end(), 10);
     if (first == bytes.end()) {
         if (bytes.size() >= maximum)
-            invalid(u"The HTTP response headers length exceeded the set limit of " +
-                        utf16(std::to_string(reported)) + u" bytes.",
+            invalid(u"The HTTP response headers length exceeded the set limit of " + utf16(std::to_string(reported)) +
+                        u" bytes.",
                     11);
         return {};
     }
@@ -427,7 +450,7 @@ std::optional<ConfigHttpResponseHead> config_http_parse_response_head(Bytes inpu
     ConfigHttpResponseHead out;
     if (line.size() < 12 || line[8] != 32)
         line_error(line);
-    if (!std::equal(line.begin(), line.begin() + 7, reinterpret_cast<const std::uint8_t*>("HTTP/1.")) ||
+    if (!std::equal(line.begin(), line.begin() + 7, reinterpret_cast<const std::uint8_t *>("HTTP/1.")) ||
         !digit(line[7]))
         line_error(line);
     out.minor_version = line[7] - '0';
@@ -441,8 +464,7 @@ std::optional<ConfigHttpResponseHead> config_http_parse_response_head(Bytes inpu
         out.reason = config_http_decode_response_header(phrase);
         if (out.reason.find_first_of(u"\r\n") != std::u16string::npos) {
             auto inner = std::make_shared<ConfigHttpHeaderError>(
-                "System.FormatException", u"The reason phrase must not contain new-line characters.",
-                0x80131537);
+                "System.FormatException", u"The reason phrase must not contain new-line characters.", 0x80131537);
             throw ConfigHttpHeaderError("System.Net.Http.HttpRequestException",
                                         u"Received status phrase could not be decoded with iso-8859-1: '" +
                                             ascii(phrase) + u"'.",
@@ -508,12 +530,11 @@ std::optional<ConfigHttpResponseHead> config_http_parse_response_head(Bytes inpu
         while (value_end > value_start && (data[value_end - 1] == 9 || data[value_end - 1] == 32))
             --value_end;
         if (!ignored)
-            out.headers.push_back(
-                {std::string(name.begin(), name.end()),
-                 config_http_decode_named_response_header(
-                     std::string_view(reinterpret_cast<const char*>(name.data()), name.size()),
-                     bytes.subspan(value_start, value_end - value_start))});
+            out.headers.push_back({std::string(name.begin(), name.end()),
+                                   config_http_decode_named_response_header(
+                                       std::string_view(reinterpret_cast<const char *>(name.data()), name.size()),
+                                       bytes.subspan(value_start, value_end - value_start))});
         cursor = next;
     }
 }
-}
+} // namespace opensim::framework

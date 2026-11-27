@@ -1,0 +1,146 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "fullParityVerified": false,
+  "nativeParityVerified": false,
+  "scope": "Actual unchanged original xmrArray2List:3source-created primitive wrappers C/F/I and sourcehelpercalls plus22explicitbackendbacking/argumentmodes*7starts*5counts*3wrappers=2310directcalls/OS. FourphysicalrawfamiliesC/F/I/O only; no rawString[] backing invented.",
+  "generatorSha256": "9f5d11bbd32e359bb4c491ee95bca7b49379be2abb0d994a3ea8732b7d7861a8",
+  "generatorAssemblySha256": "193af5d524f93f60ac220e076e6b1c264c7ffe61be02737d93a73c417429ed9a",
+  "verifierSha256": "669692f46aa63890e426c0439bc656a979e5bc215ac5586e9af84c20cbf54b38",
+  "originalBackendAssemblySha256": {
+    "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+    "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+    "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a"
+  },
+  "originalSourceSha256": {
+    "XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+    "XMRSDTypeClObj.cs": "526bcaa0bac500bdce6bc0ada35eb22f1bef5d4f645f71f73ea0113ed8e9811c",
+    "XMRHeapTracker.cs": "c04982ce71c32699438ad3e9aa5821a7262fe8ba65e6684db02171dec0489ef3"
+  },
+  "platforms": {
+    "windows": {
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "sourceCases": 3,
+      "matrixRows": 2310,
+      "cases": [
+        {
+          "name": "integer_source",
+          "matrixRows": 770,
+          "successes": 152,
+          "faultCounts": {
+            "System.OverflowException": 133,
+            "System.IndexOutOfRangeException": 288,
+            "System.NullReferenceException": 70,
+            "System.InvalidCastException": 127
+          },
+          "matrixSha256": "5e0e828909f18bfa4d57225ed0eb7d7a95cc74b6710b420d0e34b455b756bc82",
+          "metadataSha256": "7a00cb662ac4f817eeae74f499b80972f7366f345a9994cbc10823c78fd4a6ce",
+          "sourceSha256": "ad17b36af32d880d26b1c839fea4d1e2d87ee02b2bb637cab571c39119e2b2fa",
+          "objectSha256": "b80df0a9242b0d44c0691096090e6fe35effc3bc27375f64ffc217580e269478",
+          "snapshotSha256": "02c7ef3dbd25b67100b1a9ad9c46f5c2d11b38408b85ddc5d1298064790061d7"
+        },
+        {
+          "name": "float_source",
+          "matrixRows": 770,
+          "successes": 152,
+          "faultCounts": {
+            "System.OverflowException": 133,
+            "System.IndexOutOfRangeException": 288,
+            "System.NullReferenceException": 70,
+            "System.InvalidCastException": 127
+          },
+          "matrixSha256": "0a48a4791d15ded924af144626868c8f3e6d8722930e19d56ea72d26d7c14114",
+          "metadataSha256": "3c27270f7604d71c01ff42a6ecea8c9bb70b0bee7387d433e66a9feaef04fe38",
+          "sourceSha256": "d5d2e8f5c7e2b9af62591a8ebc855cb6ba7bc415a5f886aaa8d3de99bf04ffb7",
+          "objectSha256": "ddbec3d4681bb9d83f396a27cf8ae4f2af8250bc32df6c0cd2340f41fac288d7",
+          "snapshotSha256": "9f03025b9203870f9fcf4ea4a16347162dac4850cc035fcb342d66797beaf2bc"
+        },
+        {
+          "name": "char_source",
+          "matrixRows": 770,
+          "successes": 149,
+          "faultCounts": {
+            "System.OverflowException": 133,
+            "System.IndexOutOfRangeException": 285,
+            "System.InvalidCastException": 133,
+            "System.NullReferenceException": 70
+          },
+          "matrixSha256": "924f672d908fdaf27b5ee44bcacc5d280dd7cdb0d6c43ba61c69d019e9b4d045",
+          "metadataSha256": "fa92cfb309692a3332755f492f98e1edd6d14505465e650177a9060cb921216b",
+          "sourceSha256": "f84902375591e416eb61c412db007b192282df0ff364bf9c1c3ac8951839313b",
+          "objectSha256": "3b87cb3ccfd2813bee539797bfbc9d261a539d1ac5f5c220b19437cdd4edc21a",
+          "snapshotSha256": "2d9fa7bba4b362bfa0ec23e40b47307769c027fd66ab5a7eb5e56eb5e38d9115"
+        }
+      ]
+    },
+    "linux": {
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "sourceCases": 3,
+      "matrixRows": 2310,
+      "cases": [
+        {
+          "name": "integer_source",
+          "matrixRows": 770,
+          "successes": 152,
+          "faultCounts": {
+            "System.OverflowException": 133,
+            "System.IndexOutOfRangeException": 288,
+            "System.NullReferenceException": 70,
+            "System.InvalidCastException": 127
+          },
+          "matrixSha256": "b01d3850c5791ebf912f61b8e388834b4f356aaa3534dcc7a205d3ed2d23a795",
+          "metadataSha256": "340015787126fadccae28d346adde02113875f73d0a9e9b5a2cc579eae0714fe",
+          "sourceSha256": "ad17b36af32d880d26b1c839fea4d1e2d87ee02b2bb637cab571c39119e2b2fa",
+          "objectSha256": "b80df0a9242b0d44c0691096090e6fe35effc3bc27375f64ffc217580e269478",
+          "snapshotSha256": "02c7ef3dbd25b67100b1a9ad9c46f5c2d11b38408b85ddc5d1298064790061d7"
+        },
+        {
+          "name": "float_source",
+          "matrixRows": 770,
+          "successes": 152,
+          "faultCounts": {
+            "System.OverflowException": 133,
+            "System.IndexOutOfRangeException": 288,
+            "System.NullReferenceException": 70,
+            "System.InvalidCastException": 127
+          },
+          "matrixSha256": "08be4c6bba2d8924db69eeb98f118da14ff38c336b23dbf905714b03dd887b6b",
+          "metadataSha256": "9fd1733e2e62038a09c66f8accf184876f9c0318549edcaca6daffdf52edc30b",
+          "sourceSha256": "d5d2e8f5c7e2b9af62591a8ebc855cb6ba7bc415a5f886aaa8d3de99bf04ffb7",
+          "objectSha256": "ddbec3d4681bb9d83f396a27cf8ae4f2af8250bc32df6c0cd2340f41fac288d7",
+          "snapshotSha256": "9f03025b9203870f9fcf4ea4a16347162dac4850cc035fcb342d66797beaf2bc"
+        },
+        {
+          "name": "char_source",
+          "matrixRows": 770,
+          "successes": 149,
+          "faultCounts": {
+            "System.OverflowException": 133,
+            "System.IndexOutOfRangeException": 285,
+            "System.InvalidCastException": 133,
+            "System.NullReferenceException": 70
+          },
+          "matrixSha256": "c0aebe0f0adf864af2a88574bc82454d54746295bcdfd816c2e73db18f935d45",
+          "metadataSha256": "af640b6f47cf3d0461f0e74094aaddfcf1e8f95bd2c68131cf9e913be665e4d2",
+          "sourceSha256": "f84902375591e416eb61c412db007b192282df0ff364bf9c1c3ac8951839313b",
+          "objectSha256": "3b87cb3ccfd2813bee539797bfbc9d261a539d1ac5f5c220b19437cdd4edc21a",
+          "snapshotSha256": "2d9fa7bba4b362bfa0ec23e40b47307769c027fd66ab5a7eb5e56eb5e38d9115"
+        }
+      ]
+    }
+  },
+  "findings": [
+    "Raw int/double/string cells become new SDKInteger/Float/String boxes; existing SDKscalarboxes are rejected, includingSDKString/key.",
+    "SDKVector/Rotation boxed references preserved, including repeatedalias; newSDKString boxes distinct but internalCLRStringfields keep inputreferencealias.",
+    "Char/List/class/null/nestedarray/Boolean/Single cells reject exact indexedfaults; sourcechar[] onlycount0 conversion succeeds.",
+    "Wrapper/backingArraycast occursbefore negativecount allocationOverflow. Nullbackingcount0 returnsEmptyList regardlessstart; positivecountNullReference. Range checked perGetValue andnull-element index is relative outputslot.",
+    "Publicobj Object[] injection explicitlybypasses heap sizing forunsupported List/class/null children toisolatetheunchanged conversionhelper. No fabricatedscriptdescriptor or fictionalphysicalarrayfamily."
+  ],
+  "pending": [
+    "No native Array2List execution claim.",
+    "Discarded partialoutput fromfaultinghelper isunobservable andnotinspected; sourcehelperisreadonly.",
+    "No hugepositivecounts/arrayranks/multidimensionalarrays, macOS orARM64."
+  ]
+}

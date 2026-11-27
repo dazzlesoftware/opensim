@@ -7,6 +7,7 @@
 #include "opensim/network/service_protocol.hpp"
 #include <algorithm>
 #include <condition_variable>
+
 namespace opensim::server {
 namespace {
 template <class T> T &required(const std::shared_ptr<T> &value) {
@@ -14,11 +15,13 @@ template <class T> T &required(const std::shared_ptr<T> &value) {
         throw std::invalid_argument("Null asset delivery reference");
     return *value;
 }
+
 struct Completion {
     std::mutex mutex;
     std::condition_variable ready;
     std::shared_ptr<framework::AssetBase> asset;
     bool signaled = false, disposed = false;
+
     void complete(std::shared_ptr<framework::AssetBase> value) {
         {
             std::lock_guard lock(mutex);
@@ -29,25 +32,27 @@ struct Completion {
         }
         ready.notify_all();
     }
+
     std::shared_ptr<framework::AssetBase> current() {
         std::lock_guard lock(mutex);
         return asset;
     }
+
     void wait() {
         std::unique_lock lock(mutex);
         ready.wait(lock, [&] { return signaled; });
         disposed = true;
     }
 };
+
 const std::unordered_map<std::string, int8_t> types = {
     {"texture_id", 0},   {"sound_id", 1},     {"callcard_id", 2}, {"landmark_id", 3},  {"script_id", 10},
     {"clothing_id", 5},  {"object_id", 6},    {"notecard_id", 7}, {"lsltext_id", 10},  {"lslbyte_id", 11},
     {"txtr_tga_id", 12}, {"bodypart_id", 13}, {"snd_wav_id", 17}, {"img_tga_id", 18},  {"jpeg_id", 19},
     {"animatn_id", 20},  {"gesture_id", 21},  {"mesh_id", 49},    {"settings_id", 56}, {"material_id", 57}};
+
 std::string decode(std::string_view text) {
-    auto digit = [](char c) {
-        return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
-    };
+    auto digit = [](char c) { return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'); };
     std::string escaped;
     for (size_t i = 0; i < text.size(); ++i) {
         if (text[i] == '%' && (i + 2 >= text.size() || !digit(text[i + 1]) || !digit(text[i + 2])))
@@ -57,7 +62,8 @@ std::string decode(std::string_view text) {
     }
     return network::service_url_decode(escaped);
 }
-}
+} // namespace
+
 std::shared_ptr<AssetQueries> asset_query_dictionary(std::string_view target) {
     auto result = std::make_shared<AssetQueries>();
     const auto question = target.find('?');
@@ -94,20 +100,22 @@ std::shared_ptr<AssetQueries> asset_query_dictionary(std::string_view target) {
         (*result)[name] = std::move(value);
     return result;
 }
+
 std::shared_ptr<AssetQueries> AssetHttpRequest::queries() {
     std::lock_guard lock(query_mutex_);
     if (!queries_)
         queries_ = asset_query_dictionary(native.raw_target.empty() ? native.path : native.raw_target);
     return queries_;
 }
+
 std::optional<std::string> AssetHttpRequest::range() {
     for (auto &[name, value] : native.headers)
         if (framework::invariant_equals_ignore_case(name, "range"))
             return value;
     return {};
 }
-void GetAssetsHandler::handle(std::shared_ptr<AssetHttpRequest> request,
-                              std::shared_ptr<HttpResponseState> response,
+
+void GetAssetsHandler::handle(std::shared_ptr<AssetHttpRequest> request, std::shared_ptr<HttpResponseState> response,
                               const std::optional<std::string> &service_url) {
     [[maybe_unused]] const auto lifetime = weak_from_this().lock();
     required(response).content_type("text/plain");
@@ -171,9 +179,8 @@ void GetAssetsHandler::handle(std::shared_ptr<AssetHttpRequest> request,
                 end = std::clamp(end, int32_t(0), length - 1);
             start = std::clamp(start, int32_t(0), end);
             length = end - start + 1;
-            response->add_header("Content-Range",
-                                 "bytes " + std::to_string(start) + "-" + std::to_string(end) + "/" +
-                                     std::to_string(required(required(done->current()).data).size()));
+            response->add_header("Content-Range", "bytes " + std::to_string(start) + "-" + std::to_string(end) + "/" +
+                                                      std::to_string(required(required(done->current()).data).size()));
             response->status(206);
             response->raw_start(start);
         }
@@ -184,4 +191,4 @@ void GetAssetsHandler::handle(std::shared_ptr<AssetHttpRequest> request,
     response->raw_length(length);
     response->priority(type == 49 || type == 0 ? 2 : 1);
 }
-}
+} // namespace opensim::server

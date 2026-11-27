@@ -1,0 +1,27 @@
+{
+  "accepted": true,
+  "executed": true,
+  "globals": {
+    "result": {
+      "type": "integer",
+      "clr": "System.Int32",
+      "value": 65535
+    }
+  },
+  "errors": [],
+  "exception": null,
+  "exceptionType": null,
+  "stackSize": 1000000,
+  "stackLimit": 1024,
+  "finalStackLeft": 1000000,
+  "stackSamples": [],
+  "name": "return_negative",
+  "source": "YOption chars;integer result;char read(integer c){return (char)c;}default{state_entry(){result=(integer)read(-1);}}",
+  "sha256": {
+    "original.il.txt": "427fbc0c8627d4d74f77d63a507a7052a11d91007aeb470ce7948279f977ac67",
+    "original.yobj": "57964cfc89ad5ddec6d9b956032c85a694c27faf038a1d209a0cd966ab85fb7b",
+    "source.lsl": "d029b0a55570023a7665f445444bd2cd7aca7233d5148cd6423d49f116a8d925",
+    "source_hash.txt": "6e139192d56be7d3ab6ed1ae7adf7acc086b893970c4b6cd106b3d1bd0156518",
+    "generator_source": "7673d801dbf8417561ec385e5286206a754c6c479cb723b7ca2535509236e6c4"
+  }
+}

@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "fullParityVerified": false,
+  "nativeParityVerified": false,
+  "scope": "Backend-injected covariant global iarObjects containers in actual source-compiled paused instances; unchanged original MigrateOutEventHandler and MigrateIn; not source-generated container-type behavior.",
+  "generatorSha256": "285ac74ed2bcfadf3987d3bcd4241723894320127b8d7275c12dd8dccb9b972b",
+  "generatorAssemblySha256": "b591867a5414815968252bbad824de1f9f547e90fb8814155607a6da1cf9b2fe",
+  "verifierSha256": "47cc12ad55505725d457d8860fd9bc639c570de7d07008a1415a2b43e2c17f58",
+  "originalBackendAssemblySha256": {
+    "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+    "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+    "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a"
+  },
+  "originalSourceSha256": {
+    "XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+    "XMRSDTypeClObj.cs": "526bcaa0bac500bdce6bc0ada35eb22f1bef5d4f645f71f73ea0113ed8e9811c",
+    "XMRHeapTracker.cs": "c04982ce71c32699438ad3e9aa5821a7262fe8ba65e6684db02171dec0489ef3"
+  },
+  "platforms": {
+    "windows": {
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "cases": [
+        {
+          "name": "string_container",
+          "containerClr": "System.String[]",
+          "globalHeapAfterLoad": 12,
+          "inputAliases": [
+            false,
+            false
+          ],
+          "sourceSha256": "ebd780ddd5ae34e6e7118ced2fa29fc26d1f7f12c929fa5c7bf45de74cbed7ed",
+          "objectSha256": "04d133a3c7793dfd212aafc94c35ec6a1076589a9eaf50ef2ddb47d7aa328d1a",
+          "snapshotSha256": "0daa1ab78bb923f51d5a117a14bc7f8b750c1f57fa8283aee51b5bc52915f23a",
+          "metadataSha256": "69f30d6c651d17f19ca66eba2480248a85685ebd815a573ce58961bfcb0a0358",
+          "injectionSha256": "5c100a07aa137ce1a06a268a0c5a470feee93068f77d402f980a4c5534be3747",
+          "restoredContainerSha256": "50e7662b6b0b80f450907b1d705ca2b6b293a82d987dcce0fdcdbc279215d969"
+        },
+        {
+          "name": "class_container",
+          "containerClr": "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj[]",
+          "globalHeapAfterLoad": 4,
+          "inputAliases": [
+            true,
+            true
+          ],
+          "sourceSha256": "ebd780ddd5ae34e6e7118ced2fa29fc26d1f7f12c929fa5c7bf45de74cbed7ed",
+          "objectSha256": "04d133a3c7793dfd212aafc94c35ec6a1076589a9eaf50ef2ddb47d7aa328d1a",
+          "snapshotSha256": "aa1f378686e93ac90796faf9d363b426b418933253f156d59020e88d98b2296b",
+          "metadataSha256": "274555aa5f86d44b7ba3f6ce0f24338a394dd45cc6a490dbd9907cd458a97ea6",
+          "injectionSha256": "c4b36661de823044b26c757a037e24c3e75f56a7f53b088c99ac4979bd1e4270",
+          "restoredContainerSha256": "15c133788c6a9269b02324f72475414335c3845c829a2f77ab9c562414210b8d"
+        },
+        {
+          "name": "list_container",
+          "containerClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+list[]",
+          "globalHeapAfterLoad": 16,
+          "inputAliases": [
+            false,
+            false
+          ],
+          "sourceSha256": "ebd780ddd5ae34e6e7118ced2fa29fc26d1f7f12c929fa5c7bf45de74cbed7ed",
+          "objectSha256": "04d133a3c7793dfd212aafc94c35ec6a1076589a9eaf50ef2ddb47d7aa328d1a",
+          "snapshotSha256": "9aa83a7f53eb6d9a055d8f14e05119fe2a33601bc597ea8ad92cfb2201363133",
+          "metadataSha256": "d645cb22435e1e52d79ad89c270d205eee108e06651c67fd079902a2485ac65d",
+          "injectionSha256": "955c8c4fffc4dbf134d5bf4887239c42894d6d93c4e78ab726fcb89def54b930",
+          "restoredContainerSha256": "4f09213459d82b2bbd29815e984673a6179f83e673eef33bfb3079400e36f735"
+        }
+      ]
+    },
+    "linux": {
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "cases": [
+        {
+          "name": "string_container",
+          "containerClr": "System.String[]",
+          "globalHeapAfterLoad": 12,
+          "inputAliases": [
+            false,
+            false
+          ],
+          "sourceSha256": "ebd780ddd5ae34e6e7118ced2fa29fc26d1f7f12c929fa5c7bf45de74cbed7ed",
+          "objectSha256": "04d133a3c7793dfd212aafc94c35ec6a1076589a9eaf50ef2ddb47d7aa328d1a",
+          "snapshotSha256": "0daa1ab78bb923f51d5a117a14bc7f8b750c1f57fa8283aee51b5bc52915f23a",
+          "metadataSha256": "68697085c9959077cacc7a5d53271b800c12a5b1bfd0ff6745f2481789a2dbd0",
+          "injectionSha256": "e47652090b112d2b879fedc5121cb95d74acdbb9d47c0ff720f0883f9bf77f9b",
+          "restoredContainerSha256": "cf5b70e9304fd094362a4629f5f21eed07068191c80b57127a74243160795528"
+        },
+        {
+          "name": "class_container",
+          "containerClr": "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj[]",
+          "globalHeapAfterLoad": 4,
+          "inputAliases": [
+            true,
+            true
+          ],
+          "sourceSha256": "ebd780ddd5ae34e6e7118ced2fa29fc26d1f7f12c929fa5c7bf45de74cbed7ed",
+          "objectSha256": "04d133a3c7793dfd212aafc94c35ec6a1076589a9eaf50ef2ddb47d7aa328d1a",
+          "snapshotSha256": "aa1f378686e93ac90796faf9d363b426b418933253f156d59020e88d98b2296b",
+          "metadataSha256": "03eed131659874d721f8d27f7d451cb2b9e0b6ffb93b566c37619c1b00bba78a",
+          "injectionSha256": "1337f73d55901de11e0ddc9d65d11ed598685875d1e4503ac849900e3ed081bc",
+          "restoredContainerSha256": "8b6918efa6de40af370ba1f59c5188dbcd25073766d01fac642b6cb317407efe"
+        },
+        {
+          "name": "list_container",
+          "containerClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+list[]",
+          "globalHeapAfterLoad": 16,
+          "inputAliases": [
+            false,
+            false
+          ],
+          "sourceSha256": "ebd780ddd5ae34e6e7118ced2fa29fc26d1f7f12c929fa5c7bf45de74cbed7ed",
+          "objectSha256": "04d133a3c7793dfd212aafc94c35ec6a1076589a9eaf50ef2ddb47d7aa328d1a",
+          "snapshotSha256": "9aa83a7f53eb6d9a055d8f14e05119fe2a33601bc597ea8ad92cfb2201363133",
+          "metadataSha256": "169e619ed5788c893ddd94c2efc02a969298e3d85d6603b2da948b29176d257c",
+          "injectionSha256": "4bc9786808128bc7bd32f54a949d767bee8e5d1cf7e368bf9c1e03c72c638d92",
+          "restoredContainerSha256": "2a91d35464c8a20cbbdf84f9d1268ba7158f2059031252a0c9e4ae6091e72b9a"
+        }
+      ]
+    }
+  },
+  "findings": [
+    "Nonempty String[], XMRSDTypeClObj[], and LSL list[] containers survive actual original global Object-lane migration with exact CLR container type.",
+    "Class container entries preserve aliases to the separate global input wrapper.",
+    "String/list null entries remain null. Global heap rebuilds4->12 forString,textlength4;4->16 forlist(oneSDKinteger19);classaliasesremain4.",
+    "Direct field injection intentionally leaves the pre-capture heap ledger stale4; import rebuilds usage.",
+    "Primitive Int32[] replacement through unchanged RecvArrays rejects System.Int32[] toSystem.Object[] cast after6lanesread; control repeated per covariance case."
+  ],
+  "pending": [
+    "Native covariance activation tests not run by this oracle.",
+    "No macOS/ARM64 or arbitrary reference-array covariance claim."
+  ]
+}

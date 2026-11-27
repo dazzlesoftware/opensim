@@ -1,0 +1,1 @@
+string n;string result;integer after;default{state_entry(){n=llComputeHash("payload","unsupported");result=llMD5String(n,7);after=1;}}

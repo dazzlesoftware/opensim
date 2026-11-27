@@ -1,0 +1,1 @@
+YOption advflowctl;integer calls;integer result;integer after;integer selector(){calls++;return 2;}default{state_entry(){switch(selector()){case 2:result=7;llSleep(3.0);result+=10;case 3:result+=100;break;default:result=999;}after=1;}}

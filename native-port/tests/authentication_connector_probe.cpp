@@ -6,7 +6,8 @@
 #include <sstream>
 using namespace opensim;
 using namespace services;
-std::string hex(const std::optional<std::string>& s) {
+
+std::string hex(const std::optional<std::string> &s) {
     if (!s)
         return "-";
     std::string out;
@@ -16,7 +17,8 @@ std::string hex(const std::optional<std::string>& s) {
     }
     return out.empty() ? "." : out;
 }
-std::optional<std::string> decode(const std::string& s) {
+
+std::optional<std::string> decode(const std::string &s) {
     if (s == "-")
         return {};
     if (s == ".")
@@ -26,7 +28,8 @@ std::optional<std::string> decode(const std::string& s) {
         r += char(std::stoi(s.substr(i, 2), nullptr, 16));
     return r;
 }
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     std::string line;
     while (std::getline(std::cin, line)) {
         std::istringstream in(line);
@@ -37,7 +40,7 @@ int main(int argc, char** argv) {
         std::string trace, out;
         framework::Uuid real("00000000-0000-0000-0000-000000000007");
         try {
-            AuthenticationConnector::Request request = [&](const auto& uri, const auto& body) {
+            AuthenticationConnector::Request request = [&](const auto &uri, const auto &body) {
                 trace += hex(uri) + ":" + hex(body) + ";";
                 if (reply == std::optional<std::string>("#throw"))
                     throw std::runtime_error("transport");
@@ -46,8 +49,8 @@ int main(int argc, char** argv) {
             std::unique_ptr<AuthenticationConnector> connector;
             std::string profile = argc > 1 ? argv[1] : "uri";
             if (profile == "--network")
-                connector = std::make_unique<AuthenticationConnector>(
-                    server::IniConfig::load(framework::utf8_path(argv[2])));
+                connector =
+                    std::make_unique<AuthenticationConnector>(server::IniConfig::load(framework::utf8_path(argv[2])));
             else if (profile == "config")
                 connector = std::make_unique<AuthenticationConnector>(
                     server::IniConfig::load(framework::utf8_path(argv[2])), request);

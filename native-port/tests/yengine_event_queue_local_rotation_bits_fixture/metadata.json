@@ -1,0 +1,54 @@
+{
+  "originalRoute": "XMRInstCtor.cs382-384 new XmlDocument().LoadXml(xml), then LoadScriptState -\u003E RestoreEventQueue; strict XmlReader is separate control",
+  "controlScope": "Actual private original serialization/restore of backend CLR inputs; no invented LSL source types",
+  "generatorSha256": "0bc768664829826e8f6accf98277816d3fcf0212ebf65d19d8c22e457659d519",
+  "assemblySha256": "c7001286d134f1efa665e2e68286ccf7f615d318568ed77255fb4ab0158d507e",
+  "originalAssemblySha256": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+  "runtime": ".NET 8.0.34",
+  "architecture": "X64",
+  "originalCaptureSha256": "775f1d83bd4610f788891269ea9ea08b1f79cf4bf3b44300d926f49c8a277cbd",
+  "originalCtorSha256": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+  "cases": [
+    {
+      "name": "local_signed_zero_copied",
+      "input": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+        "bits": [
+          "8000000000000000",
+          "8000000000000000",
+          "0000000000000000",
+          "8000000000000000"
+        ],
+        "text": "\u003C-0.000000, -0.000000, 0.000000, -0.000000\u003E"
+      },
+      "append_exception": null,
+      "outer_xml_exception": null,
+      "load_xml_exception": null,
+      "restore_event_queue_exception": null,
+      "restored": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+        "bits": [
+          "8000000000000000",
+          "8000000000000000",
+          "0000000000000000",
+          "8000000000000000"
+        ],
+        "text": "\u003C-0.000000, -0.000000, 0.000000, -0.000000\u003E"
+      },
+      "strict_xml_reader_control_exception": null,
+      "strict_xml_reader_control_restored": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+        "bits": [
+          "8000000000000000",
+          "8000000000000000",
+          "0000000000000000",
+          "8000000000000000"
+        ],
+        "text": "\u003C-0.000000, -0.000000, 0.000000, -0.000000\u003E"
+      },
+      "sha256": {
+        "serialized.xml": "8a8ffaf6fbd07a9e758d085da597a7df0120cec4508109a7645f1692c9d65e09"
+      }
+    }
+  ]
+}

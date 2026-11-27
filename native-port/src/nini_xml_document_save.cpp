@@ -1,27 +1,34 @@
 #include "opensim/framework/nini_xml_document_save.hpp"
+
 namespace opensim::framework {
 namespace {
 using Node = std::shared_ptr<NiniXmlDomNode>;
+
 [[noreturn]] void null_reference() {
     throw XmlTextWriterError("System.NullReferenceException", 0x80004003,
                              u"Object reference not set to an instance of an object.");
 }
-XmlWriterText value(const NiniWriterText& text) {
+
+XmlWriterText value(const NiniWriterText &text) {
     return text ? XmlWriterText(*text) : std::nullopt;
 }
-bool same(const Node& a, const Node& b) {
+
+bool same(const Node &a, const Node &b) {
     return !a || !b ? a == b : a->same_owner(*b) && a->identity() == b->identity();
 }
+
 Node required(Node node) {
     if (!node)
         null_reference();
     return node;
 }
-void content(const Node& node, NativeXmlTextWriter& writer) {
+
+void content(const Node &node, NativeXmlTextWriter &writer) {
     for (auto current = node->first_child(); current; current = current->next_sibling())
         native_xml_node_write_to(current, writer);
 }
-void start_element(const Node& element, NativeXmlTextWriter& writer) {
+
+void start_element(const Node &element, NativeXmlTextWriter &writer) {
     auto prefix = element->prefix(), local = element->local_name(), uri = element->namespace_uri();
     writer.write_start_element(value(prefix), value(local), value(uri));
     // Source holds the live collection, then rereads Count and Item at each step.
@@ -33,7 +40,8 @@ void start_element(const Node& element, NativeXmlTextWriter& writer) {
             native_xml_node_write_to(attrs[i], writer);
         }
 }
-void element(const Node& root, NativeXmlTextWriter& writer) {
+
+void element(const Node &root, NativeXmlTextWriter &writer) {
     auto current = root;
     for (;;) {
         required(current);
@@ -62,8 +70,9 @@ void element(const Node& root, NativeXmlTextWriter& writer) {
         break;
     }
 }
-}
-void native_xml_node_write_to(const std::shared_ptr<NiniXmlDomNode>& input, NativeXmlTextWriter& writer) {
+} // namespace
+
+void native_xml_node_write_to(const std::shared_ptr<NiniXmlDomNode> &input, NativeXmlTextWriter &writer) {
     auto node = required(input);
     switch (node->node_type()) {
     case 1:
@@ -115,11 +124,13 @@ void native_xml_node_write_to(const std::shared_ptr<NiniXmlDomNode>& input, Nati
         throw std::logic_error("Native DOM node kind requires its serialization dependency");
     }
 }
-void native_xml_document_write_to(NiniXmlDom& document, NativeXmlTextWriter& writer) {
+
+void native_xml_document_write_to(NiniXmlDom &document, NativeXmlTextWriter &writer) {
     auto scope = document.defer_collection();
     native_xml_node_write_to(document.document_node(), writer);
 }
-void native_xml_document_save_to_writer(NiniXmlDom& document, NativeXmlTextWriter& writer) {
+
+void native_xml_document_save_to_writer(NiniXmlDom &document, NativeXmlTextWriter &writer) {
     auto scope = document.defer_collection();
     auto current = document.document_node()->first_child();
     if (!current)
@@ -143,13 +154,15 @@ void native_xml_document_save_to_writer(NiniXmlDom& document, NativeXmlTextWrite
     }
     writer.flush();
 }
-void native_xml_document_save_to_text_io(NiniXmlDom& document, XmlTextWriterIo io, bool preserve_whitespace) {
+
+void native_xml_document_save_to_text_io(NiniXmlDom &document, XmlTextWriterIo io, bool preserve_whitespace) {
     NativeXmlTextWriter writer(std::move(io), true);
     if (!preserve_whitespace)
         writer.formatting(1);
     native_xml_document_save_to_writer(document, writer);
 }
-XmlTextWriterIo native_xml_string_writer_io(const std::shared_ptr<NiniStringWriter>& writer) {
+
+XmlTextWriterIo native_xml_string_writer_io(const std::shared_ptr<NiniStringWriter> &writer) {
     XmlTextWriterIo io;
     auto require = [writer] {
         if (!writer)
@@ -181,17 +194,17 @@ XmlTextWriterIo native_xml_string_writer_io(const std::shared_ptr<NiniStringWrit
                 std::u16string number(decimal.begin(), decimal.end());
                 throw XmlEncoderArrayError("System.ArgumentOutOfRangeException", 0x80131502,
                                            parameter + u" ('" + number +
-                                               u"') must be a non-negative value. (Parameter '" + parameter +
-                                               u"')" + newline + u"Actual value was " + number + u".",
+                                               u"') must be a non-negative value. (Parameter '" + parameter + u"')" +
+                                               newline + u"Actual value was " + number + u".",
                                            parameter, value);
             }
         };
         negative(index, u"index");
         negative(count, u"count");
         if (static_cast<int>(array->size()) - index < count)
-            throw XmlTextWriterError(
-                "System.ArgumentException", 0x80070057,
-                u"Offset and length were out of bounds for the array or count is greater than the number of elements from index to the end of the source collection.");
+            throw XmlTextWriterError("System.ArgumentException", 0x80070057,
+                                     u"Offset and length were out of bounds for the array or count is greater than the "
+                                     u"number of elements from index to the end of the source collection.");
         writer->write(nini_writer_text(std::u16string(array->view().substr(index, count))));
     };
     io.write_whole_array = [array = io.write_array, require](XmlWriterCharArrayHandle value) {
@@ -213,11 +226,11 @@ XmlTextWriterIo native_xml_string_writer_io(const std::shared_ptr<NiniStringWrit
     };
     return io;
 }
-}
+} // namespace opensim::framework
+
 namespace opensim::framework {
-void native_xml_document_save_to_path(NiniXmlDom& document, NiniWriterText path, bool preserve,
-                                      const NiniFileStreamProvider& file,
-                                      const XmlStreamEncodingResolver& resolver) {
+void native_xml_document_save_to_path(NiniXmlDom &document, NiniWriterText path, bool preserve,
+                                      const NiniFileStreamProvider &file, const XmlStreamEncodingResolver &resolver) {
     if (!document.document_element()) {
         NiniXmlProviderError error("System.Xml.XmlException", 0x80131940,
                                    u"Invalid XML document. The document does not have a root element.");
@@ -238,8 +251,7 @@ void native_xml_document_save_to_path(NiniXmlDom& document, NiniWriterText path,
         }
     }
     if (!file)
-        throw std::invalid_argument(
-            "XML file Save requires the exact native FileStream constructor provider");
+        throw std::invalid_argument("XML file Save requires the exact native FileStream constructor provider");
     auto stream = file(path, 2, 2, 1, 4096, 0);
     NativeXmlTextWriter writer(native_xml_stream_io(std::move(stream), std::move(encoding)), true);
     try {
@@ -253,8 +265,9 @@ void native_xml_document_save_to_path(NiniXmlDom& document, NiniWriterText path,
     }
     writer.close();
 }
-void native_xml_document_save_to_stream(NiniXmlDom& document, std::shared_ptr<NiniByteStream> stream,
-                                        bool preserve, const XmlStreamEncodingResolver& resolver) {
+
+void native_xml_document_save_to_stream(NiniXmlDom &document, std::shared_ptr<NiniByteStream> stream, bool preserve,
+                                        const XmlStreamEncodingResolver &resolver) {
     std::shared_ptr<XmlStreamEncoding> encoding;
     auto declaration = document.document_node()->first_child();
     if (declaration && declaration->node_type() == 17) {
@@ -272,7 +285,8 @@ void native_xml_document_save_to_stream(NiniXmlDom& document, std::shared_ptr<Ni
     native_xml_document_write_to(document, writer);
     writer.flush();
 }
-}
+} // namespace opensim::framework
+
 namespace opensim::framework {
 std::shared_ptr<NiniXmlNativeDocumentIo> native_xml_document_io(std::shared_ptr<NiniXmlUriReaderBackend> uri,
                                                                 NiniFileStreamProvider file,
@@ -282,16 +296,16 @@ std::shared_ptr<NiniXmlNativeDocumentIo> native_xml_document_io(std::shared_ptr<
         throw std::invalid_argument("Native XML document requires real file/encoding operations");
     auto io = std::make_shared<NiniXmlNativeDocumentIo>();
     io->open_path = native_nini_xml_uri_reader_factory(uri);
-    io->save_path = [file, encodings](NiniXmlDom& dom, NiniWriterText path) {
+    io->save_path = [file, encodings](NiniXmlDom &dom, NiniWriterText path) {
         native_xml_document_save_to_path(dom, std::move(path), false, file, encodings);
     };
-    io->save_stream = [encodings](NiniXmlDom& dom, std::shared_ptr<NiniWriterStream> stream) {
+    io->save_stream = [encodings](NiniXmlDom &dom, std::shared_ptr<NiniWriterStream> stream) {
         auto bytes = std::dynamic_pointer_cast<NiniByteStream>(stream);
         if (stream && !bytes)
             throw std::invalid_argument("Native XML stream Save requires full byte-stream operations");
         native_xml_document_save_to_stream(dom, std::move(bytes), false, encodings);
     };
-    io->save_writer = [foreign](NiniXmlDom& dom, std::shared_ptr<NiniTextWriter> writer) {
+    io->save_writer = [foreign](NiniXmlDom &dom, std::shared_ptr<NiniTextWriter> writer) {
         XmlTextWriterIo output;
         if (!writer)
             output = native_xml_string_writer_io({});
@@ -301,12 +315,11 @@ std::shared_ptr<NiniXmlNativeDocumentIo> native_xml_document_io(std::shared_ptr<
             output = native_xml_stream_text_io(bytes);
         else {
             if (!foreign)
-                throw std::invalid_argument(
-                    "Foreign TextWriter requires its exact virtual encoding/overload adapter");
+                throw std::invalid_argument("Foreign TextWriter requires its exact virtual encoding/overload adapter");
             output = foreign(writer);
         }
         native_xml_document_save_to_text_io(dom, std::move(output), false);
     };
     return io;
 }
-}
+} // namespace opensim::framework

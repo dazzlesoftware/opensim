@@ -4,7 +4,8 @@
 #include <iostream>
 using namespace opensim;
 using namespace scene;
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string(argv[1]) == "--probe") {
             int seed, mode;
@@ -31,14 +32,14 @@ int main(int argc, char** argv) {
                 std::cout << std::dec << s.delayed_stop << ',' << s.animation_updates << ',' << std::hex
                           << remove_ignored_controls(0xaabbccddu ^ static_cast<std::uint32_t>(seed),
                                                      static_cast<std::uint32_t>(mode));
-                auto c = project_controls(
-                    static_cast<std::uint32_t>(seed) * 0x12345u ^ static_cast<std::uint32_t>(mode),
-                    static_cast<std::uint32_t>(mode) >> 3, (mode & 1) != 0, seed >= 0 ? 1u : 0u);
+                auto c =
+                    project_controls(static_cast<std::uint32_t>(seed) * 0x12345u ^ static_cast<std::uint32_t>(mode),
+                                     static_cast<std::uint32_t>(mode) >> 3, (mode & 1) != 0, seed >= 0 ? 1u : 0u);
                 std::cout << '/';
                 for (auto x : {c.relative.x, c.relative.y, c.relative.z, c.speed})
                     std::cout << std::hex << std::bit_cast<std::uint32_t>(x) << ',';
-                std::cout << c.controls << ',' << c.movement_flags << ',' << int(c.changed) << ','
-                          << int(c.key_pressed) << '\n';
+                std::cout << c.controls << ',' << c.movement_flags << ',' << int(c.changed) << ',' << int(c.key_pressed)
+                          << '\n';
             }
             return 0;
         }
@@ -59,7 +60,7 @@ int main(int argc, char** argv) {
             throw std::runtime_error("Source falling brake sentinel");
         std::cout << "PASS: source movement projection\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

@@ -1,0 +1,231 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "fullParityVerified": false,
+  "nativeParityVerified": false,
+  "scope": "Original character conversion argument order, argument yield and retained String result before later mutation/Sleep",
+  "generatorSha256": "5d96b6180ffbb8a129102370b0b437cccaa78466108825919c24b4a43695a097",
+  "generatorAssemblySha256": "e5ea04d54bef560893dab8cc73f805202dda8119966b2bcdbf3827fb521cbee6",
+  "decoderSha256": "a761826b1c9f1c97398ff14298fccce94a12f782fe301c445eb0435edd7afc0f",
+  "platforms": {
+    "windows": {
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "processId": 65572,
+      "metadataSha256": "466f7b022846078deb18a022d8e35e38fa3aae9dd106fbb3b74858fe2a901a97",
+      "cases": [
+        {
+          "name": "chars_to_string_order",
+          "sourceSha256": "3d135a0e9ac80b3e544ff13eacbc9002e144cd43f80a55b12d6a23f2d18c39a2",
+          "metadataSha256": "cee522ea8be8912c5ec830ce81e12d3a6ae26a0ef2a2622a549b69820a53fee3",
+          "originalObjectSha256": "233bf82260149b06d43ffe67d56ed38a433e2284102d3d9422514e9cfc8c9afd",
+          "snapshotSha256": "be319f9936a50f0c0858997d53cbb822f5024097a0cf0f7075b62d98df5fe8ac",
+          "snapshotBytes": 271,
+          "sourceHash": "5220B18E8BF5A0EFD954BC1585923AA7",
+          "retainedResult": null
+        },
+        {
+          "name": "chars_to_string_count_yield",
+          "sourceSha256": "c25b0f87b44e84c2b4474dfe095f07bfa6b9f8d9160bcc150d9d88ec51f6643a",
+          "metadataSha256": "f492e7c2c4c84fc13bdeeced9e9ccdf68f6de620a764cee51b4a7164eeedd1dc",
+          "originalObjectSha256": "5dc5ccc41d43c5fba9887aa7f263813a627f9510886595bcfcdb1ac4c2eb8ff5",
+          "snapshotSha256": "2678315d69ebeaa1bcdf71f5f186295a1bc6026e589c2e0c75fc518bbb4a332d",
+          "snapshotBytes": 305,
+          "sourceHash": "A72A06A84AD6F3C954FE29F69AAD306D",
+          "retainedResult": null
+        },
+        {
+          "name": "string_to_chars_order",
+          "sourceSha256": "feff572bdb7614db110f904c9feaca85bfcb0f02879011a3fc7121bb2e466312",
+          "metadataSha256": "4cc918ba44e0f91304ddda26fd4aacda4f816f1a22a937e95057edd79a49afe1",
+          "originalObjectSha256": "bffc4c2a9e2fd9dd516ddf40bba7d2fd6529d1490273d2d721747b62e3bdb319",
+          "snapshotSha256": "76181647b7cd528bf038ed832d18c0477331513432386d050b454cef0c2ca40c",
+          "snapshotBytes": 271,
+          "sourceHash": "688F36DE058424D88970A0FFD12CE6F5",
+          "retainedResult": null
+        },
+        {
+          "name": "string_to_chars_count_yield",
+          "sourceSha256": "12d4784bb486e2efda5877306d0696132b3aaf89f35aabfbaf13d328adfe5acb",
+          "metadataSha256": "36133d5249d6a30b3695023bafa3c36280b0d215f9856ccc2771a4eb17b1d5e4",
+          "originalObjectSha256": "95d4cdbec0e979d2829dd2aa2a402c668abbf557d3fb3ce48ede1f8012b70eff",
+          "snapshotSha256": "80dc8456cd130efec5688976bdba33963f0f307a7d76d555f89ec73807c9d516",
+          "snapshotBytes": 313,
+          "sourceHash": "97535A230D3508EE1C222DF5103AAA84",
+          "retainedResult": null
+        },
+        {
+          "name": "chars_result_before_pause",
+          "sourceSha256": "5c9ec4515b74f2bf45c3584df3c7d8a1e4cbecea1103ee142362e2eb23b58bb5",
+          "metadataSha256": "bb21b83cf3d5ff7ef30eff7312e1c02b98a18533acb8466a7cf6c5e66ac6bc82",
+          "originalObjectSha256": "676b6d29a5a94028351a53c808404420a891c1d075d2dcffc7b56bc2562827b1",
+          "snapshotSha256": "7cb4980790139babd7b00990e06da0dcb6e97b7c9fb979e501097fa51b972986",
+          "snapshotBytes": 293,
+          "sourceHash": "905406FC21687B9FE61A8C38CBCF397E",
+          "retainedResult": {
+            "captureSha256": "c3ea707a28cd66f0dc80c088feff38d2bcdc47560460867a2b4520d2bdb1da57",
+            "liveSha256": "37eb454ce2d6967a639109f79fbc4db9f5dd6efb53023b96cbf04420f2debdbb",
+            "frameFunction": "default state_entry",
+            "slot": 1,
+            "utf16": [
+              65
+            ],
+            "resultStore": {
+              "localNumber": 4,
+              "localName": "tmp$15",
+              "type": "string",
+              "portableLocation": [
+                "global-event-reference",
+                4,
+                97
+              ]
+            },
+            "wireStringAliasesLiteral": true,
+            "liveReferencePreserved": true,
+            "liveLiteralEqual": false,
+            "migratedLiteralEqual": true
+          }
+        }
+      ],
+      "originalBackendSha256": {
+        "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+        "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+        "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+        "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+        "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+        "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+        "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+        "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+        "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+        "original_source_XMRInstCapture.cs": "775f1d83bd4610f788891269ea9ea08b1f79cf4bf3b44300d926f49c8a277cbd",
+        "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+        "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+        "original_source_Helpers.cs": "96b7c3090cdded9c12e986bc538705272eae4c0fc12f01deab8f0f1bb94c7bcf",
+        "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+        "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+        "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+        "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+        "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+        "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+        "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+      }
+    },
+    "linux": {
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "processId": 1,
+      "metadataSha256": "4f28e6356470f295208829da284580e77bdcf5e96f328c1f9bbab5d488289c3c",
+      "cases": [
+        {
+          "name": "chars_to_string_order",
+          "sourceSha256": "3d135a0e9ac80b3e544ff13eacbc9002e144cd43f80a55b12d6a23f2d18c39a2",
+          "metadataSha256": "2622f635f2ec5b191a6ce53f0dd1d9127c0edd24d8809c24c0b90fe490470858",
+          "originalObjectSha256": "233bf82260149b06d43ffe67d56ed38a433e2284102d3d9422514e9cfc8c9afd",
+          "snapshotSha256": "be319f9936a50f0c0858997d53cbb822f5024097a0cf0f7075b62d98df5fe8ac",
+          "snapshotBytes": 271,
+          "sourceHash": "5220B18E8BF5A0EFD954BC1585923AA7",
+          "retainedResult": null
+        },
+        {
+          "name": "chars_to_string_count_yield",
+          "sourceSha256": "c25b0f87b44e84c2b4474dfe095f07bfa6b9f8d9160bcc150d9d88ec51f6643a",
+          "metadataSha256": "e6351212e609e7b11d0f3c4d0538e503576b58f3878fc08b285ab8ca10bb3d2d",
+          "originalObjectSha256": "5dc5ccc41d43c5fba9887aa7f263813a627f9510886595bcfcdb1ac4c2eb8ff5",
+          "snapshotSha256": "2678315d69ebeaa1bcdf71f5f186295a1bc6026e589c2e0c75fc518bbb4a332d",
+          "snapshotBytes": 305,
+          "sourceHash": "A72A06A84AD6F3C954FE29F69AAD306D",
+          "retainedResult": null
+        },
+        {
+          "name": "string_to_chars_order",
+          "sourceSha256": "feff572bdb7614db110f904c9feaca85bfcb0f02879011a3fc7121bb2e466312",
+          "metadataSha256": "35766b0f8ec2da6e35ff8de8e04973c86cbd53327fbd9788aa567f98c9186a25",
+          "originalObjectSha256": "bffc4c2a9e2fd9dd516ddf40bba7d2fd6529d1490273d2d721747b62e3bdb319",
+          "snapshotSha256": "76181647b7cd528bf038ed832d18c0477331513432386d050b454cef0c2ca40c",
+          "snapshotBytes": 271,
+          "sourceHash": "688F36DE058424D88970A0FFD12CE6F5",
+          "retainedResult": null
+        },
+        {
+          "name": "string_to_chars_count_yield",
+          "sourceSha256": "12d4784bb486e2efda5877306d0696132b3aaf89f35aabfbaf13d328adfe5acb",
+          "metadataSha256": "dc9cf0ad16f60d1ca09e1e0892728f93b0bf5e93064a4bff6bd3c9e0d38baa7d",
+          "originalObjectSha256": "95d4cdbec0e979d2829dd2aa2a402c668abbf557d3fb3ce48ede1f8012b70eff",
+          "snapshotSha256": "80dc8456cd130efec5688976bdba33963f0f307a7d76d555f89ec73807c9d516",
+          "snapshotBytes": 313,
+          "sourceHash": "97535A230D3508EE1C222DF5103AAA84",
+          "retainedResult": null
+        },
+        {
+          "name": "chars_result_before_pause",
+          "sourceSha256": "5c9ec4515b74f2bf45c3584df3c7d8a1e4cbecea1103ee142362e2eb23b58bb5",
+          "metadataSha256": "b79827c441ec641bbe2442eb25f0885a41ff35fcfaee8dcf8642817391267de1",
+          "originalObjectSha256": "676b6d29a5a94028351a53c808404420a891c1d075d2dcffc7b56bc2562827b1",
+          "snapshotSha256": "7cb4980790139babd7b00990e06da0dcb6e97b7c9fb979e501097fa51b972986",
+          "snapshotBytes": 293,
+          "sourceHash": "905406FC21687B9FE61A8C38CBCF397E",
+          "retainedResult": {
+            "captureSha256": "da8a16e75aa37a1141510e0b0bac0e80af0803f75ad1e7d36a16f271a2b3915f",
+            "liveSha256": "78511bde5f6c5ba5aa10ce2b80360306e09b5fab1beec02a62cd17eaada5d4b2",
+            "frameFunction": "default state_entry",
+            "slot": 1,
+            "utf16": [
+              65
+            ],
+            "resultStore": {
+              "localNumber": 4,
+              "localName": "tmp$15",
+              "type": "string",
+              "portableLocation": [
+                "global-event-reference",
+                4,
+                97
+              ]
+            },
+            "wireStringAliasesLiteral": true,
+            "liveReferencePreserved": true,
+            "liveLiteralEqual": false,
+            "migratedLiteralEqual": true
+          }
+        }
+      ],
+      "originalBackendSha256": {
+        "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+        "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+        "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+        "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+        "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+        "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+        "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+        "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+        "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+        "original_source_XMRInstCapture.cs": "775f1d83bd4610f788891269ea9ea08b1f79cf4bf3b44300d926f49c8a277cbd",
+        "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+        "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+        "original_source_Helpers.cs": "96b7c3090cdded9c12e986bc538705272eae4c0fc12f01deab8f0f1bb94c7bcf",
+        "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+        "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+        "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+        "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+        "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+        "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+        "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+      }
+    }
+  },
+  "measuredBehavior": {
+    "Chars2StringArguments": "Source(),Start(),Count() evaluate once left-to-right:123; Count Sleep retains prior arguments without replay.",
+    "String2CharsArguments": "Source(),Start(),Destination(),Offset(),Count() evaluate once left-to-right:12345; Count Sleep occurs before mutation and resumes one copy.",
+    "retainedResult": "Chars2String resultA survives later Pause mutating backing toZ; actual live received reference is the captured frame StringA, while fresh conversion returnsZ.",
+    "identity": "Live converted StringA differs from equal literalA; external dictionary merges them, so migrated received==literal becomes1; same_string remains1.",
+    "coordinate": "Original retained String result-store uses opening parenthesis, zero-based line4/column97."
+  },
+  "crossPlatformSnapshotsIdentical": true,
+  "boundaries": [
+    "Five bounded actual source cases per original Windows/Linux runtime; no native execution/parity claim.",
+    "String content hashes compared only for equality within one process, never numeric across processes.",
+    "Independent raw String decoder avoids Python single-character interning when asserting wire identity.",
+    "No forced GC or GC-cause claim."
+  ],
+  "verifierSha256": "9339091e9e546afa22ecc5272abf54ddf149847f25b943b89a13678595a01366"
+}

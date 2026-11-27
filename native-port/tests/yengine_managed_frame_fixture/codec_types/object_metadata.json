@@ -1,0 +1,262 @@
+{
+  "source_hash": "97B197DCF4D19AF9A9D1EF017E8E4CC1",
+  "compiled_version": -11,
+  "states": [
+    "default"
+  ],
+  "global_names": {},
+  "methods": [
+    {
+      "name": "$globalvarinit()",
+      "return_type": "void",
+      "return_clr_type": "System.Void",
+      "parameters": [
+        {
+          "name": "$xmrthis",
+          "type": "xmrsuper",
+          "clr_type": "FunctionExecutionReferenceInstance"
+        }
+      ],
+      "locals": [],
+      "labels": [],
+      "records": []
+    },
+    {
+      "name": "default state_entry",
+      "return_type": "void",
+      "return_clr_type": "System.Void",
+      "parameters": [
+        {
+          "name": "$xmrthis",
+          "type": "xmrinst",
+          "clr_type": "OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract"
+        }
+      ],
+      "locals": [
+        {
+          "number": 0,
+          "name": "__xmrinst",
+          "type": "xmrsuper",
+          "clr_type": "FunctionExecutionReferenceInstance"
+        },
+        {
+          "number": 1,
+          "name": "__curHeap",
+          "type": "int",
+          "clr_type": "System.Int32"
+        }
+      ],
+      "labels": [
+        {
+          "number": 0,
+          "name": "__retlbl",
+          "offset": 19
+        }
+      ],
+      "records": [
+        {
+          "offset": 0,
+          "opcode": "ldarg.0",
+          "opcode_value": 2,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 8
+          }
+        },
+        {
+          "offset": 1,
+          "opcode": "castclass",
+          "opcode_value": 116,
+          "operand_kind": "type",
+          "operand": "FunctionExecutionReferenceInstance",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 8
+          }
+        },
+        {
+          "offset": 6,
+          "opcode": "stloc",
+          "opcode_value": -498,
+          "operand_kind": "local",
+          "operand": 0,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 8
+          }
+        },
+        {
+          "offset": 7,
+          "opcode": "ldloc",
+          "opcode_value": -500,
+          "operand_kind": "local",
+          "operand": 0,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 8
+          }
+        },
+        {
+          "offset": 8,
+          "opcode": "ldfld",
+          "opcode_value": 123,
+          "operand_kind": "field",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract:m_localsHeapUsed",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 8
+          }
+        },
+        {
+          "offset": 13,
+          "opcode": "stloc",
+          "opcode_value": -498,
+          "operand_kind": "local",
+          "operand": 1,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 8
+          }
+        },
+        {
+          "offset": 14,
+          "opcode": "leave",
+          "opcode_value": 221,
+          "operand_kind": "label",
+          "operand": 0,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 8
+          }
+        },
+        {
+          "offset": 19,
+          "opcode": "ldloc",
+          "opcode_value": -500,
+          "operand_kind": "local",
+          "operand": 0,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 8
+          }
+        },
+        {
+          "offset": 20,
+          "opcode": "ldloc",
+          "opcode_value": -500,
+          "operand_kind": "local",
+          "operand": 1,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 8
+          }
+        },
+        {
+          "offset": 21,
+          "opcode": "stfld",
+          "opcode_value": 125,
+          "operand_kind": "field",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract:m_localsHeapUsed",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 8
+          }
+        },
+        {
+          "offset": 26,
+          "opcode": "ret",
+          "opcode_value": 42,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 8
+          }
+        }
+      ],
+      "source_locations": [
+        {
+          "offset": 0,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 8
+        },
+        {
+          "offset": 1,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 8
+        },
+        {
+          "offset": 6,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 8
+        },
+        {
+          "offset": 7,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 8
+        },
+        {
+          "offset": 8,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 8
+        },
+        {
+          "offset": 13,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 8
+        },
+        {
+          "offset": 14,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 8
+        },
+        {
+          "offset": 19,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 8
+        },
+        {
+          "offset": 20,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 8
+        },
+        {
+          "offset": 21,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 8
+        },
+        {
+          "offset": 26,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 8
+        }
+      ],
+      "call_labels": [],
+      "saved_slots": []
+    }
+  ]
+}

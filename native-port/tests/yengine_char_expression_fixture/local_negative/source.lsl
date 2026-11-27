@@ -1,0 +1,1 @@
+YOption chars;integer result;char value;default{state_entry(){char c=(char)-1;result=(integer)c;}}

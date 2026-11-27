@@ -1,0 +1,1 @@
+key left=(key)"bad";rotation right=<0,0,0,1>;list result;default{state_entry(){result=[left>right];}}

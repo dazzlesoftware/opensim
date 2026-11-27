@@ -1,0 +1,35 @@
+{
+  "passed": true,
+  "generator_sha256": "74d354ae10f1ec16536e8f2b3dfa8ae851ea3a065a25dc880d6e4f820820e71f",
+  "processes": [
+    {
+      "directory": "windows_process_a",
+      "metadata_sha256": "cf0dbe44f4e5b06989ed994603be1029283b6b9e1ffbe552e844bf3b0347b37d",
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "threads": 4,
+      "hashes_per_thread": 64,
+      "unique_recovery_all": true
+    },
+    {
+      "directory": "windows_process_b",
+      "metadata_sha256": "ae0f27abb364f66c358cf5a1540fd6dfbe6086d47bf97daf6e29f65fd73e7bfc",
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "threads": 4,
+      "hashes_per_thread": 64,
+      "unique_recovery_all": true
+    },
+    {
+      "directory": "linux_process",
+      "metadata_sha256": "e9a3a18798ddaa5cdbe7e076ec6fdae69e55f590f2186fb1912e598eb21c267e",
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "threads": 4,
+      "hashes_per_thread": 64,
+      "unique_recovery_all": true
+    }
+  ],
+  "scope": "12 actual threads / 768 measured hashes. Per-thread 64 candidates constrained by first hash only, unique state validated against remaining63 and exact source-derived generator; alias/content mutation stability. Not portable fixed process sequences and no assumed constructor/global seed consumption.",
+  "full_parity_claim": false
+}

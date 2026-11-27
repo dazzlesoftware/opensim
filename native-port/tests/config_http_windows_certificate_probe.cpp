@@ -3,6 +3,7 @@
 #include <sstream>
 #include <string>
 using namespace opensim::framework;
+
 std::vector<std::uint8_t> bytes(std::string value) {
     std::vector<std::uint8_t> out;
     if (value == "_")
@@ -11,6 +12,7 @@ std::vector<std::uint8_t> bytes(std::string value) {
         out.push_back(static_cast<std::uint8_t>(std::stoul(value.substr(i, 2), nullptr, 16)));
     return out;
 }
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {

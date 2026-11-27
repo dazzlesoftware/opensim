@@ -5,95 +5,122 @@
 #include <limits>
 using namespace opensim;
 using namespace opensim::services;
+
 namespace opensim::services {
 struct EventQueueProbe {
-    static void id(EventQueueModule& m, framework::Uuid a, int32_t value) {
+    static void id(EventQueueModule &m, framework::Uuid a, int32_t value) {
         m.ids_[a.str()] = value;
     }
 };
-}
+} // namespace opensim::services
+
 namespace {
 int checks = 0;
-void check(bool value, const char* message) {
+
+void check(bool value, const char *message) {
     ++checks;
     if (!value)
         throw std::runtime_error(message);
 }
+
 struct Backend : EventQueueBackend {
     int draws = 0;
     std::vector<std::string> messages;
     std::vector<CapabilityCommand> commands;
+
     framework::Uuid random_uuid() override {
         return framework::Uuid("00000000-0000-0000-0000-000000000001");
     }
+
     int32_t random_next(int32_t maximum) override {
         check(maximum == 30000000, "random bound");
         return 40 + draws++;
     }
-    void debug(const std::string& s) override {
+
+    void debug(const std::string &s) override {
         messages.push_back(s);
     }
-    void warn(const std::string& s) override {
+
+    void warn(const std::string &s) override {
         messages.push_back(s);
     }
-    void error(const std::string& s) override {
+
+    void error(const std::string &s) override {
         messages.push_back(s);
     }
-    void console(const std::string& s) override {
+
+    void console(const std::string &s) override {
         messages.push_back(s);
     }
+
     void add_command(CapabilityCommand c) override {
         commands.push_back(std::move(c));
     }
 };
+
 struct Scene : EventQueueScene {
     int registered = 0, closed = 0, caps = 0;
+
     std::string name() const override {
         return "Scene";
     }
+
     std::string region_name() const override {
         return "Region";
     }
-    void register_module(EventQueueModule*) override {
+
+    void register_module(EventQueueModule *) override {
         ++registered;
     }
-    void unregister_module(EventQueueModule*) override {
+
+    void unregister_module(EventQueueModule *) override {
         --registered;
     }
-    void subscribe_closed(EventQueueModule*, Closed) override {
+
+    void subscribe_closed(EventQueueModule *, Closed) override {
         ++closed;
     }
-    void unsubscribe_closed(EventQueueModule*) override {
+
+    void unsubscribe_closed(EventQueueModule *) override {
         --closed;
     }
-    void subscribe_register(EventQueueModule*, Register) override {
+
+    void subscribe_register(EventQueueModule *, Register) override {
         ++caps;
     }
-    void unsubscribe_register(EventQueueModule*) override {
+
+    void unsubscribe_register(EventQueueModule *) override {
         --caps;
     }
 };
+
 struct CapsSink : EventQueueCaps {
     std::vector<std::shared_ptr<CapabilityPollHandler>> handlers;
-    void register_poll(const std::string& name, std::shared_ptr<CapabilityPollHandler> h) override {
+
+    void register_poll(const std::string &name, std::shared_ptr<CapabilityPollHandler> h) override {
         check(name == "EventQueueGet", "cap name");
         handlers.push_back(std::move(h));
     }
 };
+
 server::PollBytes bytes(std::string s) {
     return std::make_shared<std::vector<uint8_t>>(s.begin(), s.end());
 }
+
 int status(server::PollTablePtr r) {
     return std::any_cast<int32_t>(r->get("int_response_code"));
 }
+
 std::string body(server::PollTablePtr r) {
     auto b = std::any_cast<server::PollBytes>(r->get("bin_response_data"));
     return {b->begin(), b->end()};
 }
+
 std::string response(std::string events, int id) {
     return "<llsd><map><key>events</key><array>" + events + "</array><key>id</key>" +
            (id == 0 ? "<integer />" : "<integer>" + std::to_string(id) + "</integer>") + "</map></llsd>";
 }
+
 void run() {
     Backend backend;
     auto module = std::make_shared<EventQueueModule>(backend);
@@ -127,8 +154,7 @@ void run() {
     module->on_register_caps(agent, caps);
     module->enqueue(bytes("new"), agent);
     check(caps->handlers.back()->url == handler->url, "reconnect URL reused");
-    check(body(module->get_events(request, agent)) == response("old", 41),
-          "old events stop at reconnect marker");
+    check(body(module->get_events(request, agent)) == response("old", 41), "old events stop at reconnect marker");
     check(backend.draws == 2, "marker resets random sequence");
     check(body(module->get_events(request, agent)) == response("new", 41), "new batch uses new sequence");
     module->enqueue(bytes(""), agent);
@@ -170,14 +196,14 @@ void run() {
     date.kind = network::Value::Kind::Date;
     check(event_queue_inner_xml(date) == "<date />", "legacy epoch date");
 }
-}
+} // namespace
 #ifndef EVENT_QUEUE_PROBE
 int main() {
     try {
         run();
         std::cout << "PASS: " << checks << " event queue checks\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << "FAIL: " << e.what() << '\n';
         return 1;
     }

@@ -1,0 +1,1 @@
+vector left=<1,2,3>;string right="a";list result;default{state_entry(){result=[left!=right];}}

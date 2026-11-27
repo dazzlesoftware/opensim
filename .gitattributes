@@ -25,3 +25,5 @@
 # These vendored files are verified against byte-for-byte checksums.
 /native-port/third_party/** -text
 /ThirdPartyLicenses/ODE.txt -text
+/native-port/tools/linux-preview/*.sh text eol=lf
+/native-port/tools/preview/*.sh text eol=lf

@@ -1,0 +1,382 @@
+{
+  "date": "2026-11-24",
+  "historicalTimeoutRootCauseConfirmed": false,
+  "freshLoginRegressionObserved": false,
+  "diagnosticFix": {
+    "problem": "PID-only append-mode trace files mixed multiple fixture runs after process ID reuse; a preserved viewer trace contains headers from different fixture parents",
+    "change": "Server and viewer trace filenames now carry a unique fixture run ID, with a separate unique suffix for each viewer launch; the successful report records that ID",
+    "limitation": "This fixes trace attribution, not the historical handshake failure itself"
+  },
+  "reproducedCase": {
+    "trigger": "Another UDP endpoint presents an already-connected session's circuit code and credentials",
+    "observed": "Old client receives DisableSimulator, old capabilities disappear, new endpoint receives PacketAck without RegionHandshake",
+    "sourceBehavior": "LLUDPServer.AddClient calls Scene.CloseAgent before constructing and starting the replacement client; Scene.AddNewAgent reads the circuit again after teardown",
+    "nativeBehavior": "Client removal deletes the old circuit; RegionRuntime rejects its stale reservation before insertion",
+    "recovery": "An ordinary new XML-RPC login supplies fresh session credentials; UDP arrival succeeds even with three repeated UseCircuitCode packets",
+    "relationToHistoricalFailure": "Matches the historical trace signature; why that fixture introduced another endpoint remains unconfirmed"
+  },
+  "verification": {
+    "windowsEndpointRecovery": "build-https/handshake-endpoint-recovery/results.json",
+    "linuxEndpointRecovery": "build-linux-preview/evidence/endpoint-recovery-results.json",
+    "windowsCurrentRuntimeRegression": "build-https/preview-after-viewer-access/results.json",
+    "linuxCurrentRuntimeRegression": "build-linux-preview/evidence/preview-after-viewer-access-results.json",
+    "windowsConnectedFixture": "build-https/handshake-followup-raw/connected-region-results.json",
+    "uniqueTraceFixture": "build-https/handshake-followup-unique-trace/connected-region-results.json",
+    "runtimeShutdownRestartTest": "tests/admission_restart_tests.cpp",
+    "sourceComparisonTests": [
+      "scene_admission_source_parity",
+      "pending_admission_source_parity",
+      "client_replacement_source_parity"
+    ],
+    "realFirestormRerunInThisFollowup": false
+  },
+  "remaining": [
+    "Identify the historical fixture control flow or endpoint ownership transition before claiming its timeout resolved",
+    "Verify protected child-agent close refusal and remaining admission concurrency/exception paths",
+    "Full parity and macOS execution remain outstanding"
+  ],
+  "relatedLifecycleFix": {
+    "historicalTimeoutResolved": false,
+    "change": "New admission releases the region reservation lock during bounded waits for a Removing presence, allowing the old removal callback to finish",
+    "test": "tests/transfer_runtime_tests.cpp:removing_presence_reentry",
+    "coverage": "Eight ordinary authenticated close/reentry cycles on Windows and Linux; controlled native viewer packet fixture, no fresh real Firestorm run"
+  },
+  "originalStandaloneBaseline": {
+    "platform": "Windows",
+    "evidence": "build-https/original-peer-baseline/results.json",
+    "fixture": "tests/original_peer_network.py",
+    "passed": true,
+    "normalAccountCreation": true,
+    "loginMovementCapabilityShutdown": true,
+    "historicalRootCauseConfirmed": false,
+    "handshakeBeforeMovement": false
+  },
+  "identifiedOrderingGap": {
+    "originalAdmission": "OpenSim/Region/ClientStack/Linden/UDP/LLUDPServer.cs:1625 sends handshake only for teleportFlags<=0",
+    "originalRootArrival": "OpenSim/Region/Framework/Scenes/ScenePresence.cs:2272 sends handshake before MoveAgentIntoRegion unless crossing",
+    "native": "src/viewer_region.cpp gates initial poll on zero teleport flags and emits root-arrival handshake before movement reply using transferred crossing flags and original teleport override",
+    "status": "implemented; sixteen controlled cases and twelve selected broader tests pass on Windows/Linux",
+    "historicalTimeoutLinkVerified": false,
+    "evidence": "build-https/handshake-order-results.json",
+    "latestEvidence": "build-https/friend-staging-results.json"
+  },
+  "repeatedCircuitReference": {
+    "evidence": "build-https/handshake-reference-followup-results.json",
+    "originalWindowsReliableRepeats": 3,
+    "originalRestartedHandshake": false,
+    "nativeEstablishedRepeatBehaviorAlreadyMatched": true,
+    "pendingAdmissionReuseCallbackPreserved": true,
+    "testViewerFix": "Strip appended ACK trailer before zero decoding; retain all piggybacked big-endian and standalone little-endian acknowledgement IDs",
+    "movementFirstHttpHopsPerPlatform": 8,
+    "initialTimingCorrectionPending": true,
+    "historicalRootCauseConfirmed": false
+  },
+  "foreignFixtureRace": {
+    "evidence": "build-https/friend-staging-results.json",
+    "cause": "Supplemental test AgentData could promote the destination before the source real UpdateAgent staged; original root-update rejection then made the source cancel the destination",
+    "fix": "Synchronize on opt-in AgentData staging trace; controlled HG peers send full data; preserve original nearby native child capability lifetime",
+    "productionRoutingChanged": false,
+    "platforms": [
+      "Windows",
+      "Linux"
+    ],
+    "historicalTimeoutLinkVerified": false
+  },
+  "lateForeignAgentLookupFollowup": {
+    "date": "2026-11-25",
+    "evidence": "build-https/buffered-grid-diagnosis-results.json",
+    "causeOfCapturedLookupFailure": "Remote HTTP connection reset during response-header read; request was acknowledged and viewer root. Original .NET preserves the same no-replay failure behavior.",
+    "historicalHandshakeRootCauseConfirmed": false
+  },
+  "handshakeTimingDiagnostics": {
+    "date": "2026-11-25",
+    "evidence": "build-https/handshake-timing-results.json",
+    "status": "Live/buffered diagnostics now include monotonic elapsed microseconds. Windows and Linux trace/foreign-agent gates each pass 2/2. No current Firestorm/VNC windows available for real-viewer reproduction; historical timeout remains unconfirmed."
+  },
+  "pendingLoginCloseFollowup": {
+    "date": "2026-11-25",
+    "evidence": "build-https/pending-login-close-results.json",
+    "status": "Reproduced ordinary pre-viewer login circuit/caps leak; authenticated close now clears reservations without false client-close events or global logout, matching original no-client branch. Four controlled cases include blocked verifier late return. Windows/Linux 5/5 runtime/network checks and expanded 3/3 protected-root gate pass. V2 renewed root first-close refusal and V1 early-root close behavior verified against source ordering. Historical Firestorm and original-root logout causes remain unconfirmed.",
+    "historicalHandshakeCauseConfirmed": false,
+    "fullParity": false
+  },
+  "latestLocalViewerEvidenceCheck": {
+    "date": "2026-11-25",
+    "runningFirestormProcesses": 0,
+    "currentFirestormLogBytes": 0,
+    "retainedLogPredatesLatestBuild": true,
+    "historicalTimeoutRootCauseConfirmed": false,
+    "limitation": "No fresh viewer handshake run was performed; retained log is not evidence for the current native build."
+  },
+  "reliablePacketLossFollowup": {
+    "date": "2026-11-25",
+    "windows": "build-https/handshake-packet-loss/results.json",
+    "linux": "build-linux-preview/evidence/handshake-packet-loss/results.json",
+    "discardedHandshakeDeliveriesPerAccount": 2,
+    "accountsPerPlatform": 2,
+    "checksPassedPerPlatform": 15,
+    "reliableResendSequencePreserved": true,
+    "historicalTimeoutReproduced": false,
+    "historicalTimeoutRootCauseConfirmed": false,
+    "realFirestormVerified": false,
+    "productionHandshakeBehaviorChanged": false
+  },
+  "crossingScriptChangeRegression": {
+    "date": "2026-11-25",
+    "evidence": "build-https/crossing-script-lifetime-results.json",
+    "entryChecksPerPlatform": 15,
+    "historicalTimeoutRootCauseConfirmed": false,
+    "realFirestormVerified": false,
+    "productionHandshakeBehaviorChanged": false
+  },
+  "seatedCrossingChangeRegression": {
+    "date": "2026-11-25",
+    "evidence": "build-https/seated-crossing-admission-results.json",
+    "entryChecksPerPlatform": 15,
+    "historicalTimeoutRootCauseConfirmed": false,
+    "productionHandshakeBehaviorChanged": false,
+    "realFirestormVerified": false
+  },
+  "crossingSnapshotTimingRegression": {
+    "date": "2026-11-25",
+    "evidence": "build-https/crossing-snapshot-timing-results.json",
+    "entryChecksPerPlatform": 15,
+    "historicalTimeoutRootCauseConfirmed": false,
+    "productionHandshakeBehaviorChanged": false,
+    "realFirestormVerified": false
+  },
+  "seatedAppearanceRegression": {
+    "date": "2026-11-25",
+    "evidence": "build-https/seated-appearance-results.json",
+    "entryChecksPerPlatform": 15,
+    "historicalTimeoutRootCauseConfirmed": false,
+    "productionHandshakeBehaviorChanged": false,
+    "realFirestormVerified": false
+  },
+  "seatedScriptLifetimeRegression": {
+    "date": "2026-11-25",
+    "evidence": "build-https/seated-script-lifetime-results.json",
+    "entryChecksPerPlatform": 15,
+    "historicalTimeoutRootCauseConfirmed": false,
+    "productionHandshakeBehaviorChanged": false,
+    "realFirestormVerified": false
+  },
+  "seatedCrossingNetworkFollowup": {
+    "date": "2026-11-25",
+    "evidence": "build-https/seated-crossing-network-results.json",
+    "platforms": [
+      "Windows",
+      "Linux"
+    ],
+    "nearbySeatedDestinationArrivalVerified": true,
+    "childUdpConnectionReused": true,
+    "initialFixtureMissingChildConnectionCorrected": true,
+    "historicalTimeoutRootCauseConfirmed": false,
+    "productionHandshakeBehaviorChanged": false,
+    "realFirestormVerified": false
+  },
+  "crossingBanAndWalkingFollowup": {
+    "date": "2026-11-25",
+    "evidence": "build-https/crossing-ban-cache-results.json",
+    "packetLossHandshakeRegressionPassedOn": [
+      "Windows",
+      "Linux"
+    ],
+    "walkingFixtureChildConnectionCorrected": true,
+    "walkingDestinationRootArrivalObservedOn": [
+      "Windows",
+      "Linux"
+    ],
+    "walkingAnimationContinuityVerified": false,
+    "historicalTimeoutRootCauseConfirmed": false,
+    "realFirestormVerified": false
+  },
+  "walkingAnimationFollowup": {
+    "date": "2026-11-25",
+    "evidence": "build-https/walking-animation-continuity-results.json",
+    "sevenSelectedGatesPassedOn": [
+      "Windows",
+      "Linux"
+    ],
+    "fixtureAcknowledgementAndChildConnectionIssuesCorrected": true,
+    "capturedAnimationSnapshotRestoreMatch": true,
+    "historicalTimeoutRootCauseConfirmed": false,
+    "realFirestormVerified": false
+  },
+  "teleportCrossingPreparationRegression": {
+    "date": "2026-11-25",
+    "evidence": "build-https/teleport-crossing-integration-results.json",
+    "sevenSelectedGatesPassedOn": [
+      "Windows",
+      "Linux"
+    ],
+    "historicalTimeoutRootCauseConfirmed": false,
+    "productionHandshakeBehaviorChanged": false,
+    "realFirestormVerified": false
+  },
+  "objectTeleportAdapterRegression": {
+    "date": "2026-11-25",
+    "evidence": "build-https/teleport-live-adapter-results.json",
+    "packetLossRegressionPassedOn": [
+      "Windows",
+      "Linux"
+    ],
+    "historicalTimeoutRootCauseConfirmed": false,
+    "productionHandshakeBehaviorChanged": false,
+    "realFirestormVerified": false
+  },
+  "objectTeleportGenerationRegression": {
+    "date": "2026-11-25",
+    "evidence": "build-https/teleport-generation-guards-results.json",
+    "fourSelectedGatesPassedOn": [
+      "Windows",
+      "Linux"
+    ],
+    "historicalTimeoutRootCauseConfirmed": false,
+    "productionHandshakeBehaviorChanged": false,
+    "realFirestormVerified": false
+  },
+  "objectTeleportViewerTransitRegression": {
+    "date": "2026-11-25",
+    "evidence": "build-https/teleport-viewer-transit-results.json",
+    "fiveSelectedGatesPassedOn": [
+      "Windows",
+      "Linux"
+    ],
+    "historicalTimeoutRootCauseConfirmed": false,
+    "productionHandshakeBehaviorChanged": false,
+    "realFirestormVerified": false
+  },
+  "terseTimeDilationRegression": {
+    "date": "2026-11-25",
+    "evidence": "build-https/terse-time-dilation-results.json",
+    "fiveSelectedGatesPassedOn": [
+      "Windows",
+      "Linux"
+    ],
+    "historicalTimeoutRootCauseConfirmed": false,
+    "productionHandshakeBehaviorChanged": false,
+    "realFirestormVerified": false
+  },
+  "objectTeleportObserverVisibilityRegression": {
+    "date": "2026-11-25",
+    "evidence": "build-https/teleport-observer-visibility-results.json",
+    "fiveSelectedGatesPassedOn": [
+      "Windows",
+      "Linux"
+    ],
+    "historicalTimeoutRootCauseConfirmed": false,
+    "productionHandshakeBehaviorChanged": false,
+    "realFirestormVerified": false
+  },
+  "physicalTeleportInstanceRegression": {
+    "date": "2026-11-25",
+    "evidence": "build-https/teleport-physical-instance-results.json",
+    "eightSelectedGatesPassedOn": [
+      "Windows",
+      "Linux"
+    ],
+    "historicalTimeoutRootCauseConfirmed": false,
+    "productionHandshakeBehaviorChanged": false,
+    "realFirestormVerified": false
+  },
+  "keyframedMotionSerializationRegression": {
+    "date": "2026-11-25",
+    "evidence": "build-https/keyframed-motion-serialization-verification.json",
+    "packetLossRegressionPassedOn": [
+      "Windows",
+      "Linux"
+    ],
+    "historicalTimeoutRootCauseConfirmed": false,
+    "productionHandshakeBehaviorChanged": false,
+    "realFirestormVerified": false
+  },
+  "isolatedSessionTimingMatrix": {
+    "date": "2026-11-25",
+    "scope": "Fresh native application XML-RPC logins and actual UDP sockets with unique run/session/socket attribution",
+    "platforms": {
+      "Windows": {
+        "result": "native-port\\build-https\\handshake-session-timing\\session-timing-7b4264bd960f4ddb99cba4e4b96a95e5\\results.json",
+        "freshTimingCasesPassed": 12,
+        "gapsMs": [
+          0,
+          10,
+          100,
+          500
+        ],
+        "cycles": 3,
+        "sameEndpointEstablishedRepeatsPerSession": 3,
+        "replacementControl": {
+          "passed": true,
+          "oldDisabled": true,
+          "oldCapabilitiesRemoved": true,
+          "replacementAcknowledged": true,
+          "replacementAdmitted": false,
+          "freshSessionRecovery": true
+        },
+        "nativeSha256": "6922d23f843a203f4ce652794cc5d8e1d3467c8e46a4e0a99f14ec56674d3333",
+        "scriptSha256": "2dae8c82d4a47b26a5c2f1ac0465a65ab434032d6924ae3f31b8c473cba34a04",
+        "eventsSha256": "081fb86d683ade12147d06e3fbe22ddaf986b68fab4e30237435ddac94248488",
+        "traceSha256": "1182c3697a368ea01b762ef123b822ae27fde87d2dc31c39c4e14e6ea4a5fbc6",
+        "distinctSocketIdentities": 15,
+        "arrivalsWithRecordedHandshakePackets": 14,
+        "serverPid": 9508,
+        "traceMarkersVerified": [
+          "authenticated",
+          "admission-result",
+          "root-arrival"
+        ],
+        "handshakeReadyMarkerPresent": false,
+        "note": "Actual RegionHandshake packets are recorded per socket; ordinary login traces did not emit handshake-ready. Linux server endpoint process lookup reports owner=0; fixture records socket owner PID directly."
+      },
+      "Linux": {
+        "result": "native-port\\build-linux-preview\\evidence\\handshake-session-timing\\session-timing-27daa5e2b7d045cf88b4e87766d63f06\\results.json",
+        "freshTimingCasesPassed": 12,
+        "gapsMs": [
+          0,
+          10,
+          100,
+          500
+        ],
+        "cycles": 3,
+        "sameEndpointEstablishedRepeatsPerSession": 3,
+        "replacementControl": {
+          "passed": true,
+          "oldDisabled": true,
+          "oldCapabilitiesRemoved": true,
+          "replacementAcknowledged": true,
+          "replacementAdmitted": false,
+          "freshSessionRecovery": true
+        },
+        "nativeSha256": "bfa2bf49e37b896e6db37664e0b4e45a41e8cc02554805ef13a4b6d2a913d9df",
+        "scriptSha256": "2dae8c82d4a47b26a5c2f1ac0465a65ab434032d6924ae3f31b8c473cba34a04",
+        "eventsSha256": "81793cbf73e2dc6728cc4934d9901cd13d489c89e98a372b156c13706b05d899",
+        "traceSha256": "0299ae17c29391be356c5f2425351084ee8d1e11e62d42d23cd834e2f83e4d0c",
+        "distinctSocketIdentities": 15,
+        "arrivalsWithRecordedHandshakePackets": 14,
+        "serverPid": 9,
+        "traceMarkersVerified": [
+          "authenticated",
+          "admission-result",
+          "root-arrival"
+        ],
+        "handshakeReadyMarkerPresent": false,
+        "note": "Actual RegionHandshake packets are recorded per socket; ordinary login traces did not emit handshake-ready. Linux server endpoint process lookup reports owner=0; fixture records socket owner PID directly."
+      }
+    },
+    "historicalTimeoutRootCauseConfirmed": false,
+    "realFirestormVerified": false,
+    "originalTimingMatrixVerified": false,
+    "testBuildDataChanged": false,
+    "previewPackagesChanged": false
+  },
+  "freshSessionOverlapFollowup": {
+    "date": "2026-11-26",
+    "evidence": "build-https/handshake-overlap-results.json",
+    "windowsPassed": 3,
+    "linuxPassed": 3,
+    "historicalRootCauseConfirmed": false,
+    "realFirestormVerified": false,
+    "status": "Active duplicate login refused; immediate post-LogoutRequest fresh-session UDP arrival and repeated circuit acknowledgements pass on both platforms. Actual Removing overlap was not deterministically forced."
+  }
+}

@@ -34,26 +34,27 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 #include <stdexcept>
 using namespace opensim;
-void check(bool value, const char* message) {
+
+void check(bool value, const char *message) {
     if (!value)
         throw std::runtime_error(message);
 }
+
 int main() {
-    const auto path = std::filesystem::temp_directory_path() /
-                      ("opensim-identity-" + framework::Uuid::random().str() + ".ini");
+    const auto path =
+        std::filesystem::temp_directory_path() / ("opensim-identity-" + framework::Uuid::random().str() + ".ini");
     try {
-        framework::RegionUri::Resolver resolver = [](const std::string& host) -> std::optional<std::string> {
+        framework::RegionUri::Resolver resolver = [](const std::string &host) -> std::optional<std::string> {
             return host == "bad.invalid" ? std::nullopt : std::optional<std::string>{"203.0.113.7"};
         };
         server::IniConfig empty;
         server::GridIdentity missing(empty, std::nullopt, resolver);
-        check(!missing.has_hypergrid && !missing.gate_uri() && missing.gate_uri_slash().empty() &&
-                  !missing.economy_url,
+        check(!missing.has_hypergrid && !missing.gate_uri() && missing.gate_uri_slash().empty() && !missing.economy_url,
               "ignore-missing default struct/null behavior");
         bool threw = false;
         try {
             server::GridIdentity required(empty, "", resolver);
-        } catch (const std::runtime_error& error) {
+        } catch (const std::runtime_error &error) {
             threw = std::string(error.what()) == "GatekeeperURI configuration error";
         }
         check(threw, "empty default requires gatekeeper");
@@ -61,12 +62,13 @@ int main() {
         std::atomic<bool> grid_info_available = true;
         network::HttpServerOptions options;
         options.port = 0;
-        network::AsyncHttpServer grid_info_server(options, [&](const auto& request, auto channel) {
+        network::AsyncHttpServer grid_info_server(options, [&](const auto &request, auto channel) {
             network::HttpResponse response;
             if (request.path == "/json_grid_info" && request.method == "GET") {
                 ++grid_info_requests;
                 response.status = grid_info_available ? 200 : 503;
-                response.body = R"json({"login":"https://remote.example/login","custom":"remote value","numeric":7})json";
+                response.body =
+                    R"json({"login":"https://remote.example/login","custom":"remote value","numeric":7})json";
             } else {
                 response.status = 404;
             }
@@ -76,12 +78,11 @@ int main() {
         grid_info_server.start([&](int port) { grid_info_port = port; });
         {
             std::ofstream file(path);
-            file
-                << "[Const]\nGatekeeperURI=http://gate.example\nHomeURI=https://home.example:9000\n"
-                   "GatekeeperURIAlias=alias.example,https://alias.example:80, bad/path\n"
-                   "HomeURIAlias=homealias.example\nStunServers=stun.example:3478,stun.example:3478,bad/path\n"
-                   "[GridInfo]\nGridName=Identity Grid\nGridInfoURI=http://127.0.0.1:"
-                << grid_info_port << "\n[GridInfoService]\nlogin=https://configured.example/login\n";
+            file << "[Const]\nGatekeeperURI=http://gate.example\nHomeURI=https://home.example:9000\n"
+                    "GatekeeperURIAlias=alias.example,https://alias.example:80, bad/path\n"
+                    "HomeURIAlias=homealias.example\nStunServers=stun.example:3478,stun.example:3478,bad/path\n"
+                    "[GridInfo]\nGridName=Identity Grid\nGridInfoURI=http://127.0.0.1:"
+                 << grid_info_port << "\n[GridInfoService]\nlogin=https://configured.example/login\n";
         }
         auto config = server::IniConfig::load(path);
         network::WebHttpClients clients(network::native_web_http_handler_factory());
@@ -92,8 +93,7 @@ int main() {
               "OSSL grid queries prefer configured values and report a missing endpoint");
         check(server::script_grid_service_value(config, clients, "custom") == "remote value" &&
                   server::script_grid_service_value(config, clients, "numeric") == "7" &&
-                  server::script_grid_service_value(config, clients, "missing").empty() &&
-                  grid_info_requests == 3,
+                  server::script_grid_service_value(config, clients, "missing").empty() && grid_info_requests == 3,
               "OSSL grid queries read JSON values from the grid info endpoint");
         grid_info_available = false;
         check(server::script_grid_service_value(config, clients, "custom") == "Get GridInfo Failed!" &&
@@ -123,22 +123,20 @@ int main() {
               "grid URL display setter does not change identity");
         check(info.accepts_gatekeeper_token("http://gate.example/;token"),
               "Gatekeeper token names the configured grid");
-        check(info.accepts_gatekeeper_token("https://alias.example:80;token"),
-              "Gatekeeper token names a grid alias");
+        check(info.accepts_gatekeeper_token("https://alias.example:80;token"), "Gatekeeper token names a grid alias");
         check(!info.accepts_gatekeeper_token("http://gate.example:9000;token") &&
-                  !info.accepts_gatekeeper_token("http://gate.example") &&
-                  !info.accepts_gatekeeper_token(";token") &&
+                  !info.accepts_gatekeeper_token("http://gate.example") && !info.accepts_gatekeeper_token(";token") &&
                   !info.accepts_gatekeeper_token("bad/path;token"),
               "Gatekeeper rejects invalid or foreign token destinations");
         int verification_calls = 0;
-        const auto verify = [&](const framework::HttpHost&, bool local) {
+        const auto verify = [&](const framework::HttpHost &, bool local) {
             ++verification_calls;
             return local;
         };
-        check(!server::authenticate_gatekeeper_agent(info, "bad/path;token", "192.0.2.10",
-                                                     "http://gate.example", verify, resolver) &&
-                  !server::authenticate_gatekeeper_agent(info, "http://gate.example;token", "",
-                                                         "http://gate.example", verify, resolver) &&
+        check(!server::authenticate_gatekeeper_agent(info, "bad/path;token", "192.0.2.10", "http://gate.example",
+                                                     verify, resolver) &&
+                  !server::authenticate_gatekeeper_agent(info, "http://gate.example;token", "", "http://gate.example",
+                                                         verify, resolver) &&
                   !server::authenticate_gatekeeper_agent(info, "http://gate.example;token", "192.0.2.10",
                                                          "http://bad.invalid", verify, resolver) &&
                   verification_calls == 0,
@@ -165,7 +163,7 @@ int main() {
         std::filesystem::remove(path);
         std::cout << "PASS: grid identity configuration and registry integration\n";
         return 0;
-    } catch (const std::exception& error) {
+    } catch (const std::exception &error) {
         std::filesystem::remove(path);
         std::cerr << error.what() << '\n';
         return 1;

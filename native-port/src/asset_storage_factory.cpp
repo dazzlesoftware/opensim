@@ -3,6 +3,7 @@
 #include "opensim/services/asset_storage_factory.hpp"
 #include "opensim/framework/sha1.hpp"
 #include "opensim/framework/culture_prefix.hpp"
+
 namespace opensim::services {
 namespace {
 template <class T> T &required(const std::shared_ptr<T> &value) {
@@ -10,27 +11,31 @@ template <class T> T &required(const std::shared_ptr<T> &value) {
         throw std::invalid_argument("Null asset service configuration reference");
     return *value;
 }
+
 std::shared_ptr<AssetStorageState> process_state() {
     static auto state = std::make_shared<AssetStorageState>();
     return state;
 }
-}
+} // namespace
+
 std::string AssetStorageBackend::hash(const framework::AssetBytes &data) {
     return framework::sha1_hex(required(data));
 }
+
 ConfiguredAssetService::ConfiguredAssetService(std::shared_ptr<InitializableAssetStore> data,
                                                std::shared_ptr<DefaultAssetLoader> defaults,
                                                std::optional<std::string> section,
                                                std::shared_ptr<AssetStorageBackend> backend)
-    : StoredAssetService(
-          data, {[backend](const auto &message) { backend->warn(message); },
-                 [backend](const auto &message, const auto &error) { backend->error(message, error); }}),
+    : StoredAssetService(data, {[backend](const auto &message) { backend->warn(message); },
+                                [backend](const auto &message, const auto &error) { backend->error(message, error); }}),
       database(std::move(data)), loader(std::move(defaults)), config_name(std::move(section)) {}
+
 AssetStorageFactory::AssetStorageFactory(std::shared_ptr<AssetStorageBackend> backend,
                                          std::shared_ptr<AssetStorageState> state)
     : backend_(std::move(backend)), state_(state ? std::move(state) : process_state()) {
     required(backend_);
 }
+
 std::shared_ptr<ConfiguredAssetService> AssetStorageFactory::create(const server::IniConfig *config,
                                                                     const std::optional<std::string> &name) {
     if (!config)
@@ -101,4 +106,4 @@ std::shared_ptr<ConfiguredAssetService> AssetStorageFactory::create(const server
     }
     return service;
 }
-}
+} // namespace opensim::services

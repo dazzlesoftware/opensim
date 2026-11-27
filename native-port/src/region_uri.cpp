@@ -43,22 +43,23 @@
 #endif
 namespace opensim::framework {
 namespace {
-void trim_start(std::string_view& value, std::string_view chars) {
+void trim_start(std::string_view &value, std::string_view chars) {
     const auto first = value.find_first_not_of(chars);
     value.remove_prefix(first == std::string_view::npos ? value.size() : first);
 }
+
 int nibble(char c) {
     return c >= '0' && c <= '9'   ? c - '0'
            : c >= 'a' && c <= 'f' ? c - 'a' + 10
            : c >= 'A' && c <= 'F' ? c - 'A' + 10
                                   : -1;
 }
+
 std::string unescape(std::string_view value) {
     std::string result;
     std::size_t i = 0;
     while (i < value.size()) {
-        if (value[i] != '%' || i + 2 >= value.size() || nibble(value[i + 1]) < 0 ||
-            nibble(value[i + 2]) < 0) {
+        if (value[i] != '%' || i + 2 >= value.size() || nibble(value[i + 1]) < 0 || nibble(value[i + 2]) < 0) {
             result += value[i++];
             continue;
         }
@@ -95,7 +96,8 @@ std::string unescape(std::string_view value) {
     std::replace(result.begin(), result.end(), '+', ' ');
     return result;
 }
-bool valid_host(const std::string& host) {
+
+bool valid_host(const std::string &host) {
     if (host.empty() || host.size() > 255)
         return false;
     auto value = std::string_view(host);
@@ -106,8 +108,7 @@ bool valid_host(const std::string& host) {
     std::size_t start = 0;
     while (start < value.size()) {
         const auto end = value.find('.', start);
-        const auto label =
-            value.substr(start, end == std::string_view::npos ? value.size() - start : end - start);
+        const auto label = value.substr(start, end == std::string_view::npos ? value.size() - start : end - start);
         if (label.empty() || label.size() > 63)
             return false;
         for (unsigned char c : label)
@@ -121,6 +122,7 @@ bool valid_host(const std::string& host) {
     }
     return true;
 }
+
 std::string legacy_bytes(std::string value) {
     if (value.ends_with('\0'))
         value.pop_back();
@@ -129,10 +131,12 @@ std::string legacy_bytes(std::string value) {
         std::fill(value.begin() + static_cast<std::ptrdiff_t>(nul), value.end(), '\0');
     return value;
 }
+
 std::string decoded_text(std::string_view value) {
     return utf8(utf16_replacing(value));
 }
-std::int32_t digits(std::string_view value, std::size_t& used) {
+
+std::int32_t digits(std::string_view value, std::size_t &used) {
     std::uint32_t result = 0;
     used = 0;
     while (used < value.size() && value[used] >= '0' && value[used] <= '9') {
@@ -141,20 +145,24 @@ std::int32_t digits(std::string_view value, std::size_t& used) {
     }
     return std::bit_cast<std::int32_t>(result);
 }
-std::optional<std::string> resolve(const std::string& host) {
+
+std::optional<std::string> resolve(const std::string &host) {
     auto address = host_resolver().host_from_dns(host);
     return address ? std::optional<std::string>(address->str()) : std::nullopt;
 }
-}
-bool valid_http_host(const std::string& host) {
+} // namespace
+
+bool valid_http_host(const std::string &host) {
     return valid_host(host);
 }
-RegionUri::RegionUri(const std::optional<std::string>& value) : original(value) {
+
+RegionUri::RegionUri(const std::optional<std::string> &value) : original(value) {
     parse(value);
     if (!has_host() && has_region_name())
         flags |= IsLocalGrid;
 }
-RegionUri::RegionUri(const std::optional<std::string>& value, const LocalGrid& grid, const Resolver& resolver)
+
+RegionUri::RegionUri(const std::optional<std::string> &value, const LocalGrid &grid, const Resolver &resolver)
     : original(value) {
     parse(value);
     if (!has_host()) {
@@ -173,14 +181,14 @@ RegionUri::RegionUri(const std::optional<std::string>& value, const LocalGrid& g
     if (!resolve_dns(resolver))
         flags = 0;
 }
-void RegionUri::parse(const std::optional<std::string>& value) {
+
+void RegionUri::parse(const std::optional<std::string> &value) {
     flags = 0;
     if (!value || trim_utf8(*value).empty())
         return;
     const auto backing = legacy_bytes(*value);
     auto input = std::string_view(backing);
-    const auto sub = [&](std::string_view view, std::size_t start,
-                         std::size_t length = std::string_view::npos) {
+    const auto sub = [&](std::string_view view, std::size_t start, std::size_t length = std::string_view::npos) {
         if (start >= view.size())
             return view.substr(view.size());
         length = std::min(length, view.size() - start);
@@ -220,7 +228,7 @@ void RegionUri::parse(const std::optional<std::string>& value) {
             (first_dot != std::string_view::npos && separator > first_dot))
             return;
         auto prefix = decoded_text(sub(input, 0, separator));
-        for (auto& c : prefix)
+        for (auto &c : prefix)
             if (c >= 'A' && c <= 'Z')
                 c = static_cast<char>(c + 32);
         bool secure = false;
@@ -229,8 +237,7 @@ void RegionUri::parse(const std::optional<std::string>& value) {
             while (prefix.ends_with('s'))
                 prefix.pop_back();
         }
-        if (prefix != "http" && prefix != "hg" && prefix != "hop" && prefix != "surl" &&
-            prefix != "x-grid-info")
+        if (prefix != "http" && prefix != "hg" && prefix != "hop" && prefix != "surl" && prefix != "x-grid-info")
             return;
         if (secure) {
             schema = "https://";
@@ -290,7 +297,7 @@ void RegionUri::parse(const std::optional<std::string>& value) {
         host = host_part.find_first_of("+%") != std::string_view::npos
                    ? decoded_text(legacy_bytes(unescape(decoded_text(host_part))))
                    : decoded_text(host_part);
-        for (auto& c : host)
+        for (auto &c : host)
             if (c >= 'A' && c <= 'Z')
                 c = static_cast<char>(c + 32);
         if (!valid_host(host)) {
@@ -382,7 +389,8 @@ void RegionUri::parse(const std::optional<std::string>& value) {
     }
     z = negative ? std::bit_cast<std::int32_t>(0u - static_cast<std::uint32_t>(parsed)) : parsed;
 }
-bool RegionUri::resolve_dns(const Resolver& resolver) {
+
+bool RegionUri::resolve_dns(const Resolver &resolver) {
     if (!has_host())
         return false;
     const auto address = resolver ? resolver(host) : resolve(host);
@@ -392,6 +400,7 @@ bool RegionUri::resolve_dns(const Resolver& resolver) {
     flags |= HasResolvedHost;
     return true;
 }
+
 void RegionUri::set_local(bool value) {
     if (value) {
         host.clear();
@@ -399,17 +408,20 @@ void RegionUri::set_local(bool value) {
         flags |= IsLocalGrid;
     }
 }
+
 std::string RegionUri::host_url() const {
     return has_host() ? schema + host + ":" + std::to_string(port) : "";
 }
+
 std::string RegionUri::host_url_slash() const {
     return has_host() ? host_url() + "/" : "";
 }
+
 std::string RegionUri::region_url_name() const {
     return host_url_slash() + (has_region_name() ? region_name : "");
 }
+
 std::string RegionUri::host_port_space_name() const {
-    return (has_host() ? host + ":" + std::to_string(port) + "/ " : "") +
-           (has_region_name() ? region_name : "");
+    return (has_host() ? host + ":" + std::to_string(port) + "/ " : "") + (has_region_name() ? region_name : "");
 }
-}
+} // namespace opensim::framework

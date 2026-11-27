@@ -1,0 +1,1 @@
+string result;integer after;default{state_entry(){result=llSHA1String("漢字");after=1;}}

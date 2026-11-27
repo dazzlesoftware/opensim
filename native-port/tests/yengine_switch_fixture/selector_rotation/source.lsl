@@ -1,0 +1,1 @@
+YOption advflowctl;YOption chars;rotation value=<0,0,0,1>;integer result;integer calls;default{state_entry(){switch(value){case 1:result=7;break;default:result=9;}}}

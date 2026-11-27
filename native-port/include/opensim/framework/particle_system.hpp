@@ -20,4 +20,4 @@ struct ParticleSystem {
 
     std::vector<std::uint8_t> bytes() const;
 };
-}
+} // namespace opensim::framework

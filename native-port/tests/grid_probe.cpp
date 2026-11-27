@@ -33,12 +33,14 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <fstream>
 using namespace opensim;
 using namespace services;
+
 framework::Uuid id(int n) {
     std::ostringstream out;
     out << "00000000-0000-0000-0000-" << std::hex << std::setw(12) << std::setfill('0') << n;
     return framework::Uuid(out.str());
 }
-void emit(const std::function<std::string()>& value) {
+
+void emit(const std::function<std::string()> &value) {
     std::string text;
     try {
         text = value();
@@ -49,11 +51,12 @@ void emit(const std::function<std::string()>& value) {
         std::cout << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(c);
     std::cout << '\n';
 }
-std::string info(const std::optional<GridRegion>& region) {
+
+std::string info(const std::optional<GridRegion> &region) {
     if (!region)
         return "-";
     std::string result;
-    for (const auto& [key, value] : region->fields()) {
+    for (const auto &[key, value] : region->fields()) {
         if (!result.empty())
             result += ';';
         result += key + "=" + value.value_or("NULL");
@@ -62,24 +65,27 @@ std::string info(const std::optional<GridRegion>& region) {
            std::to_string(region->coord_y()) + "|" + std::to_string(region->handle()) + "|" +
            std::to_string(region->maturity) + "|" + region->raw_server_uri.value_or("NULL");
 }
-std::string rows(const std::vector<GridRegion>& rows) {
+
+std::string rows(const std::vector<GridRegion> &rows) {
     std::string result;
-    for (const auto& row : rows) {
+    for (const auto &row : rows) {
         if (!result.empty())
             result += ',';
         result += row.id.str();
     }
     return result;
 }
-std::string rawrows(const RegionRows& rows) {
+
+std::string rawrows(const RegionRows &rows) {
     std::string result;
-    for (const auto& row : rows) {
+    for (const auto &row : rows) {
         if (!result.empty())
             result += ',';
         result += row->id.str();
     }
     return result;
 }
+
 GridRegion region(int n, std::string name, int x, int y, int sx = 256, int sy = 256) {
     GridRegion result;
     result.id = id(n);
@@ -95,13 +101,15 @@ GridRegion region(int n, std::string name, int x, int y, int sx = 256, int sy = 
     result.scope = id(8);
     return result;
 }
+
 std::string unhex(std::string_view input) {
     std::string result;
     for (std::size_t i = 0; i < input.size(); i += 2)
         result.push_back(static_cast<char>(std::stoi(std::string(input.substr(i, 2)), nullptr, 16)));
     return result;
 }
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     try {
         if (std::string(argv[1]) == "--model") {
             std::string line;
@@ -126,8 +134,8 @@ int main(int argc, char** argv) {
         }
 
         const int seed = std::stoi(argv[1]);
-        const auto path = std::filesystem::temp_directory_path() /
-                          ("opensim-grid-" + framework::Uuid::random().str() + ".ini");
+        const auto path =
+            std::filesystem::temp_directory_path() / ("opensim-grid-" + framework::Uuid::random().str() + ".ini");
         {
             std::ofstream file(path);
             file << "[GridService]\nRegionsAutoRegistration=" << ((seed & 8) == 0 ? "true" : "false")
@@ -143,16 +151,16 @@ int main(int argc, char** argv) {
         FaultRegionStore store;
         GridService::Verify verify;
         if (seed & 4)
-            verify = [&](const auto& principal, const auto& token, int time) {
+            verify = [&](const auto &principal, const auto &token, int time) {
                 return (seed & 2) != 0 && principal == id(9) && token == "token" && time == 30;
             };
         GridService grid(
             store, config, [] { return 1700000000; }, verify,
-            [](const std::string& uri) { return uri.find("local.example") != std::string::npos ? 1 : 0; },
-            [](const std::string& host) -> std::optional<std::string> {
+            [](const std::string &uri) { return uri.find("local.example") != std::string::npos ? 1 : 0; },
+            [](const std::string &host) -> std::optional<std::string> {
                 return host == "bad.invalid" ? std::nullopt : std::optional<std::string>{"203.0.113.7"};
             },
-            [](const auto&, auto& uri) -> std::optional<GridRegion> {
+            [](const auto &, auto &uri) -> std::optional<GridRegion> {
                 if (uri.host != "remote.example")
                     return std::nullopt;
                 GridRegion result;
@@ -192,6 +200,8 @@ int main(int argc, char** argv) {
         auto row = store.get(id(1), {});
         row->data["flags"] = std::to_string(flags[seed % 8]);
         row->data["PrincipalID"] = (seed % 4 == 0 ? framework::Uuid{} : id(9)).str();
+        if (seed % 8 == 1)
+            row->data["PrincipalID"] = " " + id(9).str() + "suffix";
         emit([&] { return grid.register_region(id(8), first); });
         emit([&] { return std::to_string(grid.flags(id(8), id(1))); });
         first.x += 8192;
@@ -201,10 +211,13 @@ int main(int argc, char** argv) {
         emit([&] { return info(grid.by_id(id(8), id(1))); });
         emit([&] { return std::to_string(grid.flags(id(8), id(99))); });
         emit([&] {
-            return std::to_string(parse_region_flags(
-                3, "DefaultRegion -fallbackregion +PERSISTENT -DefaultRegion unknown +1024"));
+            return std::to_string(
+                parse_region_flags(3, "DefaultRegion -fallbackregion +PERSISTENT -DefaultRegion unknown +1024"));
         });
         emit([&] { return std::to_string(parse_region_flags(-1, "-2147483648 +0 -1")); });
+        emit([&] {
+            return std::to_string(parse_region_flags(2, "\tDefaultRegion\t -\tfallbackregion\t +\tPERSISTENT"));
+        });
         auto tall = region(10, "Tall", 1000, 10000, 256, 1024);
         auto tallrow = std::make_shared<RegionData>(region_data(tall));
         tallrow->data["flags"] = "5";
@@ -248,9 +261,9 @@ int main(int argc, char** argv) {
         emit([&] { return grid.deregister_region(id(13)) ? "1" : "0"; });
         store.store_throws = false;
         emit([&] { return info(grid.by_id(id(8), id(13))); });
-        for (auto extra : {region(20, "Alpha Town", 80000, 80000), region(21, "Other Alpha", 82000, 80000),
-                           region(22, "Alpha", 84000, 80000),
-                           region(23, "http://remote.example:80/ World", 86000, 80000)}) {
+        for (auto extra :
+             {region(20, "Alpha Town", 80000, 80000), region(21, "Other Alpha", 82000, 80000),
+              region(22, "Alpha", 84000, 80000), region(23, "http://remote.example:80/ World", 86000, 80000)}) {
             auto data = std::make_shared<RegionData>(region_data(extra));
             data->data["flags"] = "5";
             store.store(data);
@@ -284,7 +297,7 @@ int main(int argc, char** argv) {
         emit([&] { return info(grid.by_name({}, "\xc3\xa9tage")); });
         emit([&] { return rows(grid.names({}, "\xc3\xa9tage", 2)); });
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

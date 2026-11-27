@@ -112,6 +112,7 @@ RequireInventory = false
 AllowRemoteSetLoginLevel = true
 [GridService]
 DefaultRegionFlags = +DefaultRegion +FallbackRegion
+AuthenticationService = OpenSim.Services.AuthenticationService.dll:WebkeyOrPasswordAuthenticationService
 [UserAccountService]
 AllowSetAccount = true
 AllowCreateUser = true
@@ -383,6 +384,48 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
                 return ET.fromstring(body)
             check(registry({"METHOD":"register"}).findtext("Result") == "Failure", "grid registration protocol version required")
             check(registry(registration).findtext("Result") == "Success", "grid region registration through real HTTP")
+            with contextlib.closing(sqlite3.connect(root / "regions.db")) as connection, connection:
+                connection.execute("UPDATE regions SET flags = flags | 256, PrincipalID = ? WHERE uuid = ?",
+                                   (principal, region_id))
+            with contextlib.closing(sqlite3.connect(database)) as connection, connection:
+                connection.execute(
+                    "INSERT INTO tokens (UUID, token, validity) VALUES (?, ?, datetime('now','localtime','+5 minutes'))",
+                    (principal, "region-registration-token"),
+                )
+            check(
+                registry({**registration, "Token": "invalid"}).findtext("Message") == "Bad authentication",
+                "protected region rejects an invalid token",
+            )
+            check(
+                registry({**registration, "Token": "region-registration-token"}).findtext("Result") == "Success",
+                "protected region accepts a valid token from the configured authentication service",
+            )
+            with contextlib.closing(sqlite3.connect(root / "regions.db")) as connection, connection:
+                connection.execute(
+                    "UPDATE regions SET flags = (flags & ~256) | 128, PrincipalID = ? WHERE uuid = ?",
+                    (str(uuid.UUID(int=0)), region_id),
+                )
+            check(
+                registry({**registration, "Token": "region-registration-token"}).findtext("Message")
+                == "Region location is reserved",
+                "a reservation without a principal rejects even a valid token",
+            )
+            with contextlib.closing(sqlite3.connect(root / "regions.db")) as connection, connection:
+                connection.execute("UPDATE regions SET PrincipalID = ? WHERE uuid = ?", (principal, region_id))
+            check(
+                registry({**registration, "Token": "invalid"}).findtext("Message") == "Bad authentication",
+                "a principal-backed reservation requires a valid token",
+            )
+            check(
+                registry({**registration, "Token": "region-registration-token"}).findtext("Result") == "Success",
+                "a valid token claims a principal-backed reservation",
+            )
+            with contextlib.closing(sqlite3.connect(root / "regions.db")) as connection:
+                check(
+                    connection.execute("SELECT flags & 384 FROM regions WHERE uuid = ?", (region_id,)).fetchone()
+                    == (0,),
+                    "claim clears the reservation flag without setting a permanent authentication flag",
+                )
             check(
                 registry({"METHOD":"get_region_by_name", "NAME":"Network Region"}).findtext("result/uuid") == region_id,
                 "registered region name lookup through HTTP",
@@ -460,6 +503,18 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
                 registry({**registration, "uuid":persisted_id, "SCOPEID":persisted_scope, "regionName":"Persistent Region", "locX":"51200", "locY":"51200", "sizeY":"512"}).findtext("Result") == "Success",
                 "scoped durable grid registration",
             )
+            conflicting_scope = str(uuid.uuid4())
+            check(
+                registry({**registration, "uuid": persisted_id, "SCOPEID": conflicting_scope,
+                          "regionName": "Conflicting Region", "locX": "51456", "locY": "51200"}
+                         ).findtext("Result") == "Success",
+                "grid HTTP registration preserves the managed reply for a declined scoped write",
+            )
+            check(
+                registry({"METHOD": "get_region_by_uuid", "SCOPEID": conflicting_scope,
+                          "REGIONID": persisted_id}).findtext("result") == "null",
+                "declined scoped write does not publish the region in the conflicting scope",
+            )
             def grid_request(method, **values):
                 status, _, body = server.request("POST", "/griduser", urllib.parse.urlencode({"METHOD": method, **values}))
                 check(status == 200, "grid-user HTTP response")
@@ -490,6 +545,15 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
                 "register a four-tile region for grid statistics",
             )
             now = int(time.time())
+            oversized_region = str(uuid.uuid4())
+            check(
+                registry({**registration, "uuid": oversized_region, "regionName": "Oversized Statistics Region",
+                          "locX": "102400", "locY": "102400"}).findtext("Result") == "Success",
+                "register a region for the persisted overflow case",
+            )
+            with contextlib.closing(sqlite3.connect(root / "regions.db")) as connection, connection:
+                connection.execute("UPDATE regions SET sizeX = 32768, sizeY = 65536 WHERE uuid = ?",
+                                   (oversized_region,))
             with contextlib.closing(sqlite3.connect(root / "grid-user.db")) as connection, connection:
                 residents = connection.execute("SELECT COUNT(*) FROM GridUser WHERE UserID NOT LIKE '%;%'").fetchone()[0]
                 connection.executemany(
@@ -504,9 +568,11 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
                 status == 200 and counts.tag == "gridstats"
                 and counts.findtext("residents") == str(residents + 2)
                 and counts.findtext("active_users") == "2"
-                and counts.findtext("region_count") == "6",
-                "grid statistics count region tiles, local residents, and recent local and foreign users",
+                and counts.findtext("region_count") == str(6 - 32768),
+                "grid statistics count region tiles with Int32 wrap, local residents, and recent users",
             )
+            with contextlib.closing(sqlite3.connect(root / "regions.db")) as connection, connection:
+                connection.execute("DELETE FROM regions WHERE uuid = ?", (oversized_region,))
             check(
                 registry({"METHOD": "deregister", "REGIONID": statistics_region}).findtext("Result") == "Success"
                 and server.request("GET", "/get_grid_stats")[2] == stats,
@@ -553,6 +619,77 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
                       f"Hypergrid HELO {method} discovery")
             check(server.request("POST", "/helo")[0] == 405, "Hypergrid HELO rejects POST")
             check(server.login({}, "get_grid_info")["gridnick"] == "native-test", "XML-RPC grid discovery")
+            discovery_xml = xmlrpc.client.dumps(({},), methodname="get_grid_info").encode()
+            status, _, reply = server.request(
+                "POST", "/", gzip.compress(discovery_xml), "text/xml", {"X-Content-Encoding": "gzip"}
+            )
+            check(status == 200 and xmlrpc.client.loads(reply)[0][0]["gridnick"] == "native-test",
+                  "Legacy gzip XML-RPC grid discovery")
+            discovery_text = discovery_xml.decode()
+            for bom, encoding in (
+                (b"\xff\xfe", "utf-16-le"), (b"\xfe\xff", "utf-16-be"),
+                (b"\xff\xfe\x00\x00", "utf-32-le"), (b"\x00\x00\xfe\xff", "utf-32-be"),
+            ):
+                wire = bom + discovery_text.encode(encoding)
+                status, _, reply = server.request(
+                    "POST", "/", gzip.compress(wire), "text/xml", {"X-Content-Encoding": "gzip"}
+                )
+                check(status == 200 and xmlrpc.client.loads(reply)[0][0]["gridnick"] == "native-test",
+                      f"XML-RPC discovers the grid with a {encoding} BOM after decompression")
+            blank_rpc = b"<methodCall><methodName> &#x2003; </methodName><params/></methodCall>"
+            check(server.request("POST", "/", blank_rpc, "text/xml")[0] == 404,
+                  "A whitespace-only XML-RPC method returns the managed HTTP status")
+            split_method = b"<methodCall><methodName>ignored<!-- split -->get_grid_info</methodName></methodCall>"
+            status, _, reply = server.request("POST", "/", split_method, "text/xml")
+            check(status == 200 and xmlrpc.client.loads(reply)[0][0]["gridnick"] == "native-test",
+                  "XML-RPC dispatch uses the last method-name text segment")
+            cdata_method = b"<methodCall><methodName><![CDATA[get_grid_info]]></methodName></methodCall>"
+            check(server.request("POST", "/", cdata_method, "text/xml")[0] == 404,
+                  "XML-RPC dispatch ignores a method name supplied only as CDATA")
+            for tag in ("int", "boolean", "double", "dateTime.iso8601"):
+                for value, expected in ((f'<{tag} marker=">"/>', 200), (f"<{tag}></{tag}>", 404)):
+                    body = (
+                        "<methodCall><methodName>get_grid_info</methodName>"
+                        f"<params><param><value>{value}</value></param></params></methodCall>"
+                    )
+                    check(server.request("POST", "/", body, "text/xml")[0] == expected,
+                          f"XML-RPC distinguishes self-closing and empty scalar tags: {value}")
+            discovery_with_struct = xmlrpc.client.dumps(({"first": "A"},), methodname="get_grid_info")
+            duplicate = discovery_with_struct.replace(
+                "</struct>", "<member><name>first</name><value>B</value></member></struct>"
+            )
+            check(server.request("POST", "/", duplicate, "text/xml")[0] == 404,
+                  "Duplicate XML-RPC struct keys are rejected before dispatch")
+            for member_name in ("ignored<!-- split -->first", "<![CDATA[second]]>", ""):
+                malformed = duplicate.replace("<name>first</name><value>B", f"<name>{member_name}</name><value>B")
+                check(server.request("POST", "/", malformed, "text/xml")[0] == 404,
+                      f"XML-RPC rejects a duplicate or missing struct name for {member_name!r}")
+            for timestamp, expected_status in (
+                ("20240229T12:30:00", 200), ("20230229T12:30:00", 404), ("2024-02-29T12:30:00Z", 404),
+            ):
+                payload = (
+                    "<methodCall><methodName>get_grid_info</methodName><params><param><value>"
+                    f"<dateTime.iso8601>{timestamp}</dateTime.iso8601></value></param></params></methodCall>"
+                )
+                check(server.request("POST", "/", payload, "text/xml")[0] == expected_status,
+                      f"Grid discovery follows Nwc XML-RPC timestamp parsing for {timestamp!r}")
+            for encoded, expected_status in (("Y Q==", 200), ("", 200), ("bad!", 404)):
+                payload = (
+                    "<methodCall><methodName>get_grid_info</methodName><params><param><value>"
+                    f"<base64>{encoded}</base64></value></param></params></methodCall>"
+                )
+                check(server.request("POST", "/", payload, "text/xml")[0] == expected_status,
+                      f"Grid discovery follows Nwc XML-RPC base64 parsing for {encoded!r}")
+            for number, expected_status in ((" 1.5 ", 200), ("1,234.5", 200), ("NaN", 200), ("bad", 404)):
+                request = xmlrpc.client.dumps((1.5,), methodname="get_grid_info")
+                request = request.replace("<double>1.5</double>", f"<double>{number}</double>")
+                check(server.request("POST", "/", request, "text/xml")[0] == expected_status,
+                      f"Grid discovery follows Nwc XML-RPC double parsing for {number!r}")
+            for boolean, expected_status in ((" +1 ", 200), ("2", 200), ("true", 404), ("32768", 404)):
+                request = xmlrpc.client.dumps((True,), methodname="get_grid_info")
+                request = request.replace("<boolean>1</boolean>", f"<boolean>{boolean}</boolean>")
+                check(server.request("POST", "/", request, "text/xml")[0] == expected_status,
+                      f"Grid discovery follows Nwc XML-RPC boolean parsing for {boolean!r}")
             bound = cli("--port", str(server.uri.port), expected=1)
             check("bind" in bound.stderr.lower(), "occupied port fails visibly")
             check(server.login({})["message"].startswith("Incomplete login credentials"), "missing XML-RPC credentials match source failure")
@@ -601,7 +738,11 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
                 replies = list(pool.map(lambda _: server.login({"first": "Test", "last": "User", "web_login_key": key}), range(2)))
             check(sum(reply == authenticated for reply in replies) == 1, "web key is consumed exactly once under concurrent requests")
             admin = {"first": "Admin", "last": "User", "passwd": hashlib.md5(b"admin-password").hexdigest(), "level": 100}
-            check(server.login(admin, "set_login_level")["success"] is True, "administrator can set login level with legacy prehash")
+            set_level = xmlrpc.client.dumps((admin,), methodname="set_login_level")
+            set_level = set_level.replace("<int>100</int>", "<int>0<!-- split --> +100 </int>")
+            status, _, reply = server.request("POST", "/", set_level, "text/xml")
+            check(status == 200 and xmlrpc.client.loads(reply)[0][0]["success"] is True,
+                  "Administrator can set login level with a signed, space-padded XML-RPC integer")
             check(server.login(credentials)["reason"] == "presence", "minimum login level enforced")
             check(server.login({**admin, "level": 0}, "set_login_level")["success"] is True, "administrator can restore login level")
             check(server.login({**credentials, "level": 100}, "set_login_level")["success"] == "false", "ordinary user cannot set login level")
@@ -648,6 +789,7 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
             check(
                 status == 200
                 and region.findtext("regionName") == "Persistent Region"
+                and region.findtext("locX") == "51200"
                 and region.findtext("sizeY") == "512",
                 "grid region fields survive server restart",
             )
@@ -714,6 +856,8 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
                           f"GridServiceConnector={public_port}/OpenSim.Server.Handlers.dll:GridServiceConnector\n"
                           f"GridUserServiceConnector={public_port}/OpenSim.Server.Handlers.dll:GridUserServiceConnector\n"
                           f"GridInfoServerInConnector={discovery_port}/OpenSim.Server.Handlers.dll:GridInfoServerInConnector\n"
+                          f"VoiceConnector={discovery_port}/OpenSim.Server.Handlers.dll:FreeswitchServerConnector\n"
+                          "[FreeswitchService]\nServerAddress=voice.example.test\nContext=voice-fixture\n"
                           "[UserAgentService]\n"
                           "LocalServiceModule=OpenSim.Services.HypergridService.dll:UserAgentService\n"
                           "StorageProvider=OpenSim.Data.SQLite.dll\n"
@@ -753,6 +897,25 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
                 check(split.request("GET", path, connector_port=discovery_port)[0] == 200
                       and split.request("GET", path)[0] == 404,
                       f"{path} is served only on the configured grid discovery port")
+            status, _, voice_config = split.request("GET", "/fsapi/region-config", connector_port=discovery_port)
+            check(status == 200 and json.loads(voice_config) == {
+                "Realm": "voice.example.test", "SIPProxy": "voice.example.test:5060", "AttemptUseSTUN": False,
+                "EchoServer": "voice.example.test", "EchoPort": 50505, "DefaultWellKnownIP": "voice.example.test",
+                "DefaultTimeout": 5000, "Context": "voice-fixture", "APIPrefix": "/fsapi",
+            }, "FreeSwitch grid connector serves region configuration on its configured port")
+            status, _, dialplan = split.request(
+                "POST", "/fsapi/freeswitch-config", "section=dialplan&Hunt-Context=voice-fixture",
+                "application/x-www-form-urlencoded", connector_port=discovery_port,
+            )
+            check(status == 200 and ET.fromstring(dialplan).find("./section/context").get("name") == "voice-fixture"
+                  and split.request("GET", "/fsapi/region-config")[0] == 404,
+                  "FreeSwitch grid dialplan shares the private listener and stays off the login listener")
+            for malformed_voice_form in ("section=dialplan&Hunt-Context", "section=dialplan&%73ection=dialplan"):
+                status, _, _ = split.request(
+                    "POST", "/fsapi/freeswitch-config", malformed_voice_form,
+                    "application/x-www-form-urlencoded", connector_port=discovery_port,
+                )
+                check(status == 500, "FreeSwitch rejects missing values and duplicate decoded form keys")
             discovery = split.login({}, "get_grid_info", connector_port=discovery_port)
             check(discovery["gridnick"] == "native-test" and discovery["login"] == split.uri.geturl(),
                   "grid discovery XML-RPC runs on the configured port and advertises the login listener")
@@ -972,7 +1135,11 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
                     try:
                         with socket.create_connection((secure.uri.hostname, secure.uri.port), timeout=8) as raw:
                             with diagnostic.wrap_socket(raw, server_hostname=secure.uri.hostname) as peer:
-                                fingerprint = hashlib.sha256(peer.getpeercert(binary_form=True)).hexdigest()
+                                presented = peer.getpeercert(binary_form=True)
+                                fingerprint = hashlib.sha256(presented).hexdigest()
+                        (args.work / "unexpected-peer.pem").write_text(
+                            ssl.DER_cert_to_PEM_cert(presented), encoding="ascii"
+                        )
                         report["observedPeerSha256"] = fingerprint
                         report["peerMatchesFixture"] = fingerprint == expected_fingerprint
                     except OSError as diagnostic_error:

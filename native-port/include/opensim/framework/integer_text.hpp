@@ -6,8 +6,7 @@
 #include <string_view>
 
 namespace opensim::framework {
-template <class UInt>
-bool try_parse_unsigned_integer(std::string_view input, UInt& result) {
+template <class UInt> bool try_parse_unsigned_integer(std::string_view input, UInt &result) {
     result = 0;
     const auto is_whitespace = [](char character) {
         return character == ' ' || (character >= '\t' && character <= '\r');
@@ -42,4 +41,4 @@ bool try_parse_unsigned_integer(std::string_view input, UInt& result) {
     result = parsed_value;
     return true;
 }
-}
+} // namespace opensim::framework

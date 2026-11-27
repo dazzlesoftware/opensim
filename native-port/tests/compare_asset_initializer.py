@@ -95,6 +95,14 @@ def main():
     cases = []
     connections = [
         'Data Source=$DB;Pooling=False',
+        'Data Source=$DB;Pooling=True',
+        'Data Source=$DB;FailIfMissing=True',
+        'Data Source=$DB;Read Only=True',
+        'Data Source=$DB;Read Only=False',
+        'FullUri=file:$DB?mode=rw',
+        'FullUri=file:$DB?mode=ro',
+        'Data Source=$DB;FullUri=file:$DB.missing?mode=ro',
+        'URI=file:$DB;FullUri=file:$DB.missing?mode=ro',
         'URI=file:$DB,version=3',
         'Data Source="$DB";Version=3;Pooling=False',
         'data source=$DB;version=3;pooling=false',
@@ -155,6 +163,10 @@ def main():
         'URI=file:$DB;Version=2',
         'URI=invalid',
         'Data Source=$DB;Pooling=bogus',
+        'Data Source=$DB.missing;FailIfMissing=True',
+        'Data Source=$DB.missing;Read Only=True',
+        'Data Source=$DB;FailIfMissing=bogus',
+        'Data Source=$DB;Read Only=bogus',
     ]:
         cases.append(
             dict(

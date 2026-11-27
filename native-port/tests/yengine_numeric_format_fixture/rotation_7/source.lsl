@@ -1,0 +1,1 @@
+string result;integer after;default{state_entry(){result=xmrRotation2String(<xmrString2Float("0"),xmrString2Float("0"),xmrString2Float("0"),xmrString2Float("1")>,"0.00;[0.00];'zero'");after=1;}}

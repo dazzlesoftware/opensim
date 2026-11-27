@@ -8,7 +8,8 @@
 #include <bit>
 #include <cstdint>
 using namespace opensim::framework;
-std::u16string Decode(const std::string& s) {
+
+std::u16string Decode(const std::string &s) {
     std::u16string out;
     if (s == "-" || s == ".")
         return out;
@@ -17,6 +18,7 @@ std::u16string Decode(const std::string& s) {
                                      (std::stoi(s.substr(i + 2, 2), nullptr, 16) << 8));
     return out;
 }
+
 std::string Hex(std::u16string_view text) {
     std::ostringstream s;
     s << std::hex << std::setfill('0');
@@ -24,6 +26,7 @@ std::string Hex(std::u16string_view text) {
         s << std::setw(2) << (c & 255) << std::setw(2) << (c >> 8);
     return s.str();
 }
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -47,7 +50,7 @@ int main() {
                          std::bit_cast<double>(std::stoull(c, nullptr, 16))};
             }
             std::cout << Hex(utf16(vector3d_string(value))) << "\n";
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
             std::cout << "EX:" << e.what() << "\n";
         }
     }

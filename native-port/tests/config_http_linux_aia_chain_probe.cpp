@@ -4,13 +4,15 @@
 #include <sstream>
 #include <iomanip>
 using namespace opensim::framework;
-CertificateDer bytes(const std::string& text) {
+
+CertificateDer bytes(const std::string &text) {
     CertificateDer out;
     if (text != "_")
         for (std::size_t i = 0; i < text.size(); i += 2)
             out.push_back(static_cast<std::uint8_t>(std::stoul(text.substr(i, 2), nullptr, 16)));
     return out;
 }
+
 std::string hex(std::span<const std::uint8_t> value) {
     std::ostringstream out;
     out << std::hex << std::setfill('0');
@@ -18,6 +20,7 @@ std::string hex(std::span<const std::uint8_t> value) {
         out << std::setw(2) << unsigned(c);
     return out.str();
 }
+
 std::string hex(std::u16string_view value) {
     std::ostringstream out;
     out << std::hex << std::setfill('0');
@@ -25,7 +28,8 @@ std::string hex(std::u16string_view value) {
         out << std::setw(4) << unsigned(c);
     return out.str();
 }
-std::string flags(const std::vector<std::uint32_t>& values) {
+
+std::string flags(const std::vector<std::uint32_t> &values) {
     std::string result;
     for (auto n : values) {
         if (!result.empty())
@@ -34,7 +38,8 @@ std::string flags(const std::vector<std::uint32_t>& values) {
     }
     return result.empty() ? "-" : result;
 }
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     const bool http = argc == 2 && std::string_view(argv[1]) == "--http-downloads";
     auto uris = native_config_uri_object_backend();
     ConfigXmlNativeHttpServices services;
@@ -88,7 +93,7 @@ int main(int argc, char** argv) {
         std::vector<std::size_t> selected;
         std::vector<std::string> calls;
         if (mode) {
-            for (const auto& der : manual)
+            for (const auto &der : manual)
                 last = chain.add_issuer(der);
             if (mode == 1)
                 selected = chain.selected_added_issuers();
@@ -102,14 +107,14 @@ int main(int argc, char** argv) {
                         return config_http_linux_download_certificate(*client, uri, duration.count() * 10000);
                     }});
                 last = aia.native_error;
-                for (auto& cert : aia.downloaded)
+                for (auto &cert : aia.downloaded)
                     downloaded.push_back(std::move(cert.der));
             } else {
                 auto aia = config_http_linux_find_chain_via_aia(
                     chain, *uris, std::chrono::milliseconds(timeout),
                     [&](auto uri, auto duration) -> std::optional<CertificateDer> {
                         calls.push_back(hex(uri) + "/" + std::to_string(duration.count()));
-                        for (const auto& [address, reply] : replies)
+                        for (const auto &[address, reply] : replies)
                             if (address == uri)
                                 return reply;
                         throw std::runtime_error("Unmapped issuer URL");
@@ -130,7 +135,7 @@ int main(int argc, char** argv) {
         for (std::size_t i = 0; i < selected.size(); ++i)
             std::cout << (i ? "," : "") << selected[i];
         std::cout << " F:" << flags(result.status);
-        for (const auto& element : result.elements)
+        for (const auto &element : result.elements)
             std::cout << ' ' << hex(element.certificate) << ':' << flags(element.status);
         std::cout << " U:";
         if (calls.empty())

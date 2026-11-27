@@ -1,0 +1,21 @@
+{
+  "accepted": false,
+  "executed": false,
+  "globals": {},
+  "errors": [
+    "illegal to cast from list to char"
+  ],
+  "exception": null,
+  "exceptionType": null,
+  "stackSize": 1000000,
+  "stackLimit": 1024,
+  "finalStackLeft": null,
+  "stackSamples": [],
+  "name": "cast_from_list",
+  "source": "YOption chars;char value;integer result;default{state_entry(){value=(char)([65]);result=(integer)value;}}",
+  "sha256": {
+    "source.lsl": "e3bec217638739bb8e2d24f63705f8662fd133e5376a413b9a949bfcc9436de2",
+    "source_hash.txt": "2d3d53e7e92f2f7640c3db6a3f14ab021a18c774e15a8a0f5af0564cfee68552",
+    "generator_source": "d86517a13d8f4094e933279614d487a0e69d44a49f2296c4af7562bf7386d651"
+  }
+}

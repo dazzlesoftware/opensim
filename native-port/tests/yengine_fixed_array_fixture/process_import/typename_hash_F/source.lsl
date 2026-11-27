@@ -1,0 +1,1 @@
+YOption arrays;YOption chars;object input;object alias;string typename;integer first;integer second;integer same;integer after;default{state_entry(){input=xmrFixedArrayAllocF(1);alias=input;typename=xmrTypeName(input);first=xmrHashCode(input);second=xmrHashCode(alias);same=(first==second);after=1;}}

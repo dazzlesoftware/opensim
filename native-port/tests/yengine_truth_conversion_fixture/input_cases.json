@@ -1,0 +1,325 @@
+[
+  {
+    "name": "key_0",
+    "kind": "Key",
+    "value": "",
+    "source": "key item=(key)\"\";integer converted;integer ordinary;integer negated;integer casted;list boxed;integer as_string;integer cast_condition;default{state_entry(){converted=xmrKeyToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrKeyToBool(item);boxed=[xmrKeyToBool(item)];if((string)item)as_string=1;if((key)(string)item)cast_condition=1;}}"
+  },
+  {
+    "name": "key_1",
+    "kind": "Key",
+    "value": "00000000-0000-0000-0000-000000000000",
+    "source": "key item=(key)\"00000000-0000-0000-0000-000000000000\";integer converted;integer ordinary;integer negated;integer casted;list boxed;integer as_string;integer cast_condition;default{state_entry(){converted=xmrKeyToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrKeyToBool(item);boxed=[xmrKeyToBool(item)];if((string)item)as_string=1;if((key)(string)item)cast_condition=1;}}"
+  },
+  {
+    "name": "key_2",
+    "kind": "Key",
+    "value": "00000000000000000000000000000000",
+    "source": "key item=(key)\"00000000000000000000000000000000\";integer converted;integer ordinary;integer negated;integer casted;list boxed;integer as_string;integer cast_condition;default{state_entry(){converted=xmrKeyToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrKeyToBool(item);boxed=[xmrKeyToBool(item)];if((string)item)as_string=1;if((key)(string)item)cast_condition=1;}}"
+  },
+  {
+    "name": "key_3",
+    "kind": "Key",
+    "value": "bad",
+    "source": "key item=(key)\"bad\";integer converted;integer ordinary;integer negated;integer casted;list boxed;integer as_string;integer cast_condition;default{state_entry(){converted=xmrKeyToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrKeyToBool(item);boxed=[xmrKeyToBool(item)];if((string)item)as_string=1;if((key)(string)item)cast_condition=1;}}"
+  },
+  {
+    "name": "key_4",
+    "kind": "Key",
+    "value": "{11111111-2222-3333-4444-555555555555}",
+    "source": "key item=(key)\"{11111111-2222-3333-4444-555555555555}\";integer converted;integer ordinary;integer negated;integer casted;list boxed;integer as_string;integer cast_condition;default{state_entry(){converted=xmrKeyToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrKeyToBool(item);boxed=[xmrKeyToBool(item)];if((string)item)as_string=1;if((key)(string)item)cast_condition=1;}}"
+  },
+  {
+    "name": "key_5",
+    "kind": "Key",
+    "value": " 00000000-0000-0000-0000-000000000000 ",
+    "source": "key item=(key)\" 00000000-0000-0000-0000-000000000000 \";integer converted;integer ordinary;integer negated;integer casted;list boxed;integer as_string;integer cast_condition;default{state_entry(){converted=xmrKeyToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrKeyToBool(item);boxed=[xmrKeyToBool(item)];if((string)item)as_string=1;if((key)(string)item)cast_condition=1;}}"
+  },
+  {
+    "name": "key_6",
+    "kind": "Key",
+    "value": " ",
+    "source": "key item=(key)\" \";integer converted;integer ordinary;integer negated;integer casted;list boxed;integer as_string;integer cast_condition;default{state_entry(){converted=xmrKeyToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrKeyToBool(item);boxed=[xmrKeyToBool(item)];if((string)item)as_string=1;if((key)(string)item)cast_condition=1;}}"
+  },
+  {
+    "name": "key_7",
+    "kind": "Key",
+    "value": "11111111-2222-3333-4444-555555555555",
+    "source": "key item=(key)\"11111111-2222-3333-4444-555555555555\";integer converted;integer ordinary;integer negated;integer casted;list boxed;integer as_string;integer cast_condition;default{state_entry(){converted=xmrKeyToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrKeyToBool(item);boxed=[xmrKeyToBool(item)];if((string)item)as_string=1;if((key)(string)item)cast_condition=1;}}"
+  },
+  {
+    "name": "key_8",
+    "kind": "Key",
+    "value": "11111111222233334444555555555555",
+    "source": "key item=(key)\"11111111222233334444555555555555\";integer converted;integer ordinary;integer negated;integer casted;list boxed;integer as_string;integer cast_condition;default{state_entry(){converted=xmrKeyToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrKeyToBool(item);boxed=[xmrKeyToBool(item)];if((string)item)as_string=1;if((key)(string)item)cast_condition=1;}}"
+  },
+  {
+    "name": "key_9",
+    "kind": "Key",
+    "value": "\u0000",
+    "source": "key item=(key)\"\u0000\";integer converted;integer ordinary;integer negated;integer casted;list boxed;integer as_string;integer cast_condition;default{state_entry(){converted=xmrKeyToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrKeyToBool(item);boxed=[xmrKeyToBool(item)];if((string)item)as_string=1;if((key)(string)item)cast_condition=1;}}"
+  },
+  {
+    "name": "string_0",
+    "kind": "String",
+    "value": "",
+    "source": "string item=\"\";integer converted;integer ordinary;integer negated;integer casted;list boxed;integer as_string;default{state_entry(){converted=xmrStringToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrStringToBool(item);boxed=[xmrStringToBool(item)];if((string)item)as_string=1;}}"
+  },
+  {
+    "name": "string_1",
+    "kind": "String",
+    "value": "0",
+    "source": "string item=\"0\";integer converted;integer ordinary;integer negated;integer casted;list boxed;integer as_string;default{state_entry(){converted=xmrStringToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrStringToBool(item);boxed=[xmrStringToBool(item)];if((string)item)as_string=1;}}"
+  },
+  {
+    "name": "string_2",
+    "kind": "String",
+    "value": "false",
+    "source": "string item=\"false\";integer converted;integer ordinary;integer negated;integer casted;list boxed;integer as_string;default{state_entry(){converted=xmrStringToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrStringToBool(item);boxed=[xmrStringToBool(item)];if((string)item)as_string=1;}}"
+  },
+  {
+    "name": "string_3",
+    "kind": "String",
+    "value": " ",
+    "source": "string item=\" \";integer converted;integer ordinary;integer negated;integer casted;list boxed;integer as_string;default{state_entry(){converted=xmrStringToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrStringToBool(item);boxed=[xmrStringToBool(item)];if((string)item)as_string=1;}}"
+  },
+  {
+    "name": "string_4",
+    "kind": "String",
+    "value": "\u0000",
+    "source": "string item=\"\u0000\";integer converted;integer ordinary;integer negated;integer casted;list boxed;integer as_string;default{state_entry(){converted=xmrStringToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrStringToBool(item);boxed=[xmrStringToBool(item)];if((string)item)as_string=1;}}"
+  },
+  {
+    "name": "string_5",
+    "kind": "String",
+    "value": "a\u0000b",
+    "source": "string item=\"a\u0000b\";integer converted;integer ordinary;integer negated;integer casted;list boxed;integer as_string;default{state_entry(){converted=xmrStringToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrStringToBool(item);boxed=[xmrStringToBool(item)];if((string)item)as_string=1;}}"
+  },
+  {
+    "name": "string_6",
+    "kind": "String",
+    "value": "\u200b",
+    "source": "string item=\"\u200b\";integer converted;integer ordinary;integer negated;integer casted;list boxed;integer as_string;default{state_entry(){converted=xmrStringToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrStringToBool(item);boxed=[xmrStringToBool(item)];if((string)item)as_string=1;}}"
+  },
+  {
+    "name": "string_7",
+    "kind": "String",
+    "value": "00000000-0000-0000-0000-000000000000",
+    "source": "string item=\"00000000-0000-0000-0000-000000000000\";integer converted;integer ordinary;integer negated;integer casted;list boxed;integer as_string;default{state_entry(){converted=xmrStringToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrStringToBool(item);boxed=[xmrStringToBool(item)];if((string)item)as_string=1;}}"
+  },
+  {
+    "name": "vector_0",
+    "kind": "Vector",
+    "value": [
+      "0",
+      "0",
+      "0"
+    ],
+    "source": "vector item=<xmrString2Float(\"0\"),xmrString2Float(\"0\"),xmrString2Float(\"0\")>;integer converted;integer ordinary;integer negated;integer casted;list boxed;default{state_entry(){converted=xmrVectorToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrVectorToBool(item);boxed=[xmrVectorToBool(item)];}}"
+  },
+  {
+    "name": "vector_1",
+    "kind": "Vector",
+    "value": [
+      "-0",
+      "0",
+      "0"
+    ],
+    "source": "vector item=<xmrString2Float(\"-0\"),xmrString2Float(\"0\"),xmrString2Float(\"0\")>;integer converted;integer ordinary;integer negated;integer casted;list boxed;default{state_entry(){converted=xmrVectorToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrVectorToBool(item);boxed=[xmrVectorToBool(item)];}}"
+  },
+  {
+    "name": "vector_2",
+    "kind": "Vector",
+    "value": [
+      "1",
+      "0",
+      "0"
+    ],
+    "source": "vector item=<xmrString2Float(\"1\"),xmrString2Float(\"0\"),xmrString2Float(\"0\")>;integer converted;integer ordinary;integer negated;integer casted;list boxed;default{state_entry(){converted=xmrVectorToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrVectorToBool(item);boxed=[xmrVectorToBool(item)];}}"
+  },
+  {
+    "name": "vector_3",
+    "kind": "Vector",
+    "value": [
+      "NaN",
+      "0",
+      "0"
+    ],
+    "source": "vector item=<xmrString2Float(\"NaN\"),xmrString2Float(\"0\"),xmrString2Float(\"0\")>;integer converted;integer ordinary;integer negated;integer casted;list boxed;default{state_entry(){converted=xmrVectorToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrVectorToBool(item);boxed=[xmrVectorToBool(item)];}}"
+  },
+  {
+    "name": "vector_4",
+    "kind": "Vector",
+    "value": [
+      "Infinity",
+      "0",
+      "0"
+    ],
+    "source": "vector item=<xmrString2Float(\"Infinity\"),xmrString2Float(\"0\"),xmrString2Float(\"0\")>;integer converted;integer ordinary;integer negated;integer casted;list boxed;default{state_entry(){converted=xmrVectorToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrVectorToBool(item);boxed=[xmrVectorToBool(item)];}}"
+  },
+  {
+    "name": "rotation_0",
+    "kind": "Rotation",
+    "value": [
+      "0",
+      "0",
+      "0",
+      "1"
+    ],
+    "source": "rotation item=<xmrString2Float(\"0\"),xmrString2Float(\"0\"),xmrString2Float(\"0\"),xmrString2Float(\"1\")>;integer converted;integer ordinary;integer negated;integer casted;list boxed;default{state_entry(){converted=xmrRotationToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrRotationToBool(item);boxed=[xmrRotationToBool(item)];}}"
+  },
+  {
+    "name": "rotation_1",
+    "kind": "Rotation",
+    "value": [
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "source": "rotation item=<xmrString2Float(\"0\"),xmrString2Float(\"0\"),xmrString2Float(\"0\"),xmrString2Float(\"0\")>;integer converted;integer ordinary;integer negated;integer casted;list boxed;default{state_entry(){converted=xmrRotationToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrRotationToBool(item);boxed=[xmrRotationToBool(item)];}}"
+  },
+  {
+    "name": "rotation_2",
+    "kind": "Rotation",
+    "value": [
+      "0",
+      "0",
+      "0",
+      "-1"
+    ],
+    "source": "rotation item=<xmrString2Float(\"0\"),xmrString2Float(\"0\"),xmrString2Float(\"0\"),xmrString2Float(\"-1\")>;integer converted;integer ordinary;integer negated;integer casted;list boxed;default{state_entry(){converted=xmrRotationToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrRotationToBool(item);boxed=[xmrRotationToBool(item)];}}"
+  },
+  {
+    "name": "rotation_3",
+    "kind": "Rotation",
+    "value": [
+      "-0",
+      "0",
+      "0",
+      "1"
+    ],
+    "source": "rotation item=<xmrString2Float(\"-0\"),xmrString2Float(\"0\"),xmrString2Float(\"0\"),xmrString2Float(\"1\")>;integer converted;integer ordinary;integer negated;integer casted;list boxed;default{state_entry(){converted=xmrRotationToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrRotationToBool(item);boxed=[xmrRotationToBool(item)];}}"
+  },
+  {
+    "name": "rotation_4",
+    "kind": "Rotation",
+    "value": [
+      "0",
+      "0",
+      "0",
+      "2"
+    ],
+    "source": "rotation item=<xmrString2Float(\"0\"),xmrString2Float(\"0\"),xmrString2Float(\"0\"),xmrString2Float(\"2\")>;integer converted;integer ordinary;integer negated;integer casted;list boxed;default{state_entry(){converted=xmrRotationToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrRotationToBool(item);boxed=[xmrRotationToBool(item)];}}"
+  },
+  {
+    "name": "rotation_5",
+    "kind": "Rotation",
+    "value": [
+      "NaN",
+      "0",
+      "0",
+      "1"
+    ],
+    "source": "rotation item=<xmrString2Float(\"NaN\"),xmrString2Float(\"0\"),xmrString2Float(\"0\"),xmrString2Float(\"1\")>;integer converted;integer ordinary;integer negated;integer casted;list boxed;default{state_entry(){converted=xmrRotationToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrRotationToBool(item);boxed=[xmrRotationToBool(item)];}}"
+  },
+  {
+    "name": "list_0",
+    "kind": "List",
+    "value": [],
+    "source": "list item=[];integer converted;integer ordinary;integer negated;integer casted;list boxed;default{state_entry(){converted=xmrListToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrListToBool(item);boxed=[xmrListToBool(item)];}}"
+  },
+  {
+    "name": "list_1",
+    "kind": "List",
+    "value": [
+      {
+        "type": "integer",
+        "value": 0
+      }
+    ],
+    "source": "list item=[0];integer converted;integer ordinary;integer negated;integer casted;list boxed;default{state_entry(){converted=xmrListToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrListToBool(item);boxed=[xmrListToBool(item)];}}"
+  },
+  {
+    "name": "list_2",
+    "kind": "List",
+    "value": [
+      {
+        "type": "string",
+        "value": ""
+      }
+    ],
+    "source": "list item=[\"\"];integer converted;integer ordinary;integer negated;integer casted;list boxed;default{state_entry(){converted=xmrListToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrListToBool(item);boxed=[xmrListToBool(item)];}}"
+  },
+  {
+    "name": "list_3",
+    "kind": "List",
+    "value": [
+      {
+        "type": "string",
+        "value": "0"
+      }
+    ],
+    "source": "list item=[\"0\"];integer converted;integer ordinary;integer negated;integer casted;list boxed;default{state_entry(){converted=xmrListToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrListToBool(item);boxed=[xmrListToBool(item)];}}"
+  },
+  {
+    "name": "list_4",
+    "kind": "List",
+    "value": [
+      {
+        "type": "list",
+        "value": []
+      }
+    ],
+    "source": "list item=[[]];integer converted;integer ordinary;integer negated;integer casted;list boxed;default{state_entry(){converted=xmrListToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrListToBool(item);boxed=[xmrListToBool(item)];}}"
+  },
+  {
+    "name": "list_5",
+    "kind": "List",
+    "value": [
+      {
+        "type": "list",
+        "value": [
+          {
+            "type": "list",
+            "value": []
+          }
+        ]
+      }
+    ],
+    "source": "list item=[[[]]];integer converted;integer ordinary;integer negated;integer casted;list boxed;default{state_entry(){converted=xmrListToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrListToBool(item);boxed=[xmrListToBool(item)];}}"
+  },
+  {
+    "name": "list_6",
+    "kind": "List",
+    "value": [
+      {
+        "type": "integer",
+        "value": 0
+      },
+      {
+        "type": "integer",
+        "value": 0
+      }
+    ],
+    "source": "list item=[0,0];integer converted;integer ordinary;integer negated;integer casted;list boxed;default{state_entry(){converted=xmrListToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrListToBool(item);boxed=[xmrListToBool(item)];}}"
+  },
+  {
+    "name": "composition_boxed",
+    "kind": "Source",
+    "value": null,
+    "source": "list boxed;default{state_entry(){boxed=[xmrStringToBool(\"x\"),xmrKeyToBool((key)\"bad\")];}}"
+  },
+  {
+    "name": "composition_enqueue",
+    "kind": "Source",
+    "value": null,
+    "source": "list returned;default{state_entry(){xmrEventEnqueue([21,xmrStringToBool(\"x\")]);returned=xmrEventDequeue(0.0,2097152,0,0,0);}touch_start(integer n){}}"
+  },
+  {
+    "name": "composition_call_handler",
+    "kind": "Source",
+    "value": null,
+    "source": "integer after;integer seen;default{state_entry(){xmrEventCallHandler([21,xmrStringToBool(\"x\")]);after=1;}touch_start(integer n){seen=n;}}"
+  }
+]

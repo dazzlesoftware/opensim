@@ -7,54 +7,63 @@
 #include <mutex>
 #include <iostream>
 using namespace opensim;
+
 struct UpdateObject : framework::AgentTransferObject {
     std::string xml, extra;
     bool changed = false;
-    explicit UpdateObject(std::string value) : xml(std::move(value)) {
-    }
+
+    explicit UpdateObject(std::string value) : xml(std::move(value)) {}
+
     std::string to_xml2() override {
         return xml;
     }
+
     std::string extra_to_xml_string() override {
         return extra;
     }
-    void extra_from_xml_string(const std::string& value) override {
+
+    void extra_from_xml_string(const std::string &value) override {
         extra = value;
     }
+
     bool has_group_changed() const override {
         return changed;
     }
+
     void has_group_changed(bool value) override {
         changed = value;
     }
 };
+
 struct UpdateScene : framework::AgentTransferScene {
-    std::shared_ptr<framework::AgentTransferObject> deserialize_object(const std::string& xml) override {
+    std::shared_ptr<framework::AgentTransferObject> deserialize_object(const std::string &xml) override {
         if (xml == "throw")
             throw std::runtime_error("controlled deserializer");
         return std::make_shared<UpdateObject>(xml);
     }
 };
-struct Service : services::ISimulationLogin,
-                 services::ISimulationAgentLifecycle,
-                 services::ISimulationAgentUpdates {
+
+struct Service : services::ISimulationLogin, services::ISimulationAgentLifecycle, services::ISimulationAgentUpdates {
     std::atomic<int> data_updates = 0, position_updates = 0, scene_calls = 0;
     std::shared_ptr<framework::AgentData> last_data;
     std::shared_ptr<framework::AgentPosition> last_position;
     framework::EntityTransferContext last_context;
-    std::shared_ptr<framework::AgentTransferScene> get_scene(const framework::Uuid&) override {
+
+    std::shared_ptr<framework::AgentTransferScene> get_scene(const framework::Uuid &) override {
         ++scene_calls;
         return std::make_shared<UpdateScene>();
     }
-    bool update_agent(services::GridRegion&, const std::shared_ptr<framework::AgentData>& data,
-                      framework::EntityTransferContext& context) override {
+
+    bool update_agent(services::GridRegion &, const std::shared_ptr<framework::AgentData> &data,
+                      framework::EntityTransferContext &context) override {
         std::lock_guard lock(state);
         ++data_updates;
         last_data = data;
         last_context = context;
         return !data->agent_id.str().ends_with('9');
     }
-    bool update_agent(services::GridRegion&, const std::shared_ptr<framework::AgentPosition>& data) override {
+
+    bool update_agent(services::GridRegion &, const std::shared_ptr<framework::AgentPosition> &data) override {
         std::lock_guard lock(state);
         ++position_updates;
         last_position = data;
@@ -63,12 +72,13 @@ struct Service : services::ISimulationLogin,
             circuit->start_position = data->position;
         return !data->agent_id.str().ends_with('9');
     }
+
     std::mutex state;
     std::atomic<int> closes = 0, releases = 0;
     std::optional<std::string> last_auth;
     framework::Uuid last_agent, last_region;
-    bool release_agent(const framework::Uuid& region, const framework::Uuid& agent,
-                       const std::string& uri) override {
+
+    bool release_agent(const framework::Uuid &region, const framework::Uuid &agent, const std::string &uri) override {
         std::lock_guard lock(state);
         last_auth = uri;
         last_agent = agent;
@@ -76,8 +86,9 @@ struct Service : services::ISimulationLogin,
         ++releases;
         return false;
     }
-    bool close_agent(services::GridRegion& region, const framework::Uuid& agent,
-                     const std::optional<std::string>& auth) override {
+
+    bool close_agent(services::GridRegion &region, const framework::Uuid &agent,
+                     const std::optional<std::string> &auth) override {
         std::lock_guard lock(state);
         last_auth = auth;
         last_agent = agent;
@@ -86,11 +97,13 @@ struct Service : services::ISimulationLogin,
         ++closes;
         return false;
     }
+
     std::atomic<int> calls = 0, creates = 0;
     framework::AgentCircuitManager circuits;
-    bool query_access(services::GridRegion&, const framework::Uuid& id, const std::optional<std::string>&,
-                      bool, const framework::Vector3&, std::vector<framework::Uuid>& features,
-                      framework::EntityTransferContext& context, std::string& reason) override {
+
+    bool query_access(services::GridRegion &, const framework::Uuid &id, const std::optional<std::string> &, bool,
+                      const framework::Vector3 &, std::vector<framework::Uuid> &features,
+                      framework::EntityTransferContext &context, std::string &reason) override {
         ++calls;
         if (id.str().ends_with('9')) {
             reason = "denied by fixture";
@@ -102,9 +115,10 @@ struct Service : services::ISimulationLogin,
         reason = "";
         return true;
     }
-    bool create_agent(const services::GridRegion*, services::GridRegion&,
-                      const std::shared_ptr<framework::AgentCircuitData>& circuit, std::uint32_t,
-                      framework::EntityTransferContext&, std::string& reason) override {
+
+    bool create_agent(const services::GridRegion *, services::GridRegion &,
+                      const std::shared_ptr<framework::AgentCircuitData> &circuit, std::uint32_t,
+                      framework::EntityTransferContext &, std::string &reason) override {
         ++creates;
         if (circuit->agent_id.str().ends_with('9')) {
             reason = "denied by fixture";
@@ -115,30 +129,30 @@ struct Service : services::ISimulationLogin,
         return true;
     }
 };
-int main(int argc, char**) {
+
+int main(int argc, char **) {
     try {
         const bool admission = argc > 1;
         auto service_ptr = std::make_shared<Service>();
-        auto& service = *service_ptr;
+        auto &service = *service_ptr;
         std::mutex workers_mutex;
         std::vector<std::future<void>> workers;
-        server::AgentDeleteHandler lifecycle(
-            service_ptr, [&](std::function<void()> task, const std::string&) {
-                std::lock_guard lock(workers_mutex);
-                workers.push_back(std::async(std::launch::async, [task = std::move(task)] {
-                    try {
-                        task();
-                    } catch (const std::exception&) {
-                    }
-                }));
-            });
+        server::AgentDeleteHandler lifecycle(service_ptr, [&](std::function<void()> task, const std::string &) {
+            std::lock_guard lock(workers_mutex);
+            workers.push_back(std::async(std::launch::async, [task = std::move(task)] {
+                try {
+                    task();
+                } catch (const std::exception &) {
+                }
+            }));
+        });
         server::AgentUpdateHandler updates(&service);
         server::AgentAccessHandler access(&service, &lifecycle, &updates);
         network::HttpServerOptions options;
         options.port = 0;
         options.custom_methods = {"QUERYACCESS"};
         options.decompress_request_body = false;
-        network::HttpServer server(options, [&](const network::HttpRequest& request) {
+        network::HttpServer server(options, [&](const network::HttpRequest &request) {
             network::HttpResponse response;
             response.content_type = "application/json";
             if (request.path == "/stats") {
@@ -151,10 +165,10 @@ int main(int argc, char**) {
                     stats.set("data_agent", service.last_data->agent_id.str());
                     stats.set("data_active_group", service.last_data->active_group_id.str());
                     stats.set("data_position", framework::vector3_string(service.last_data->position));
-                    stats.set("data_objects", network::Value(static_cast<std::int32_t>(
-                                                  service.last_data->attachment_objects
-                                                      ? service.last_data->attachment_objects->size()
-                                                      : 0)));
+                    stats.set("data_objects",
+                              network::Value(static_cast<std::int32_t>(
+                                  service.last_data->attachment_objects ? service.last_data->attachment_objects->size()
+                                                                        : 0)));
                     stats.set("update_context", service.last_context.pack());
                 }
                 if (service.last_position) {
@@ -188,8 +202,7 @@ int main(int argc, char**) {
                         auto found = circuit->service_urls->find("Large");
                         if (found != circuit->service_urls->end())
                             if (auto text = std::any_cast<std::string>(&found->second))
-                                stats.set("large_bytes",
-                                          network::Value(static_cast<std::int32_t>(text->size())));
+                                stats.set("large_bytes", network::Value(static_cast<std::int32_t>(text->size())));
                     }
                 }
                 response.body = network::osd_json(stats, true);
@@ -209,7 +222,7 @@ int main(int argc, char**) {
                 response.status = 405;
                 return response;
             }
-            for (const auto& [key, value] : request.headers)
+            for (const auto &[key, value] : request.headers)
                 if (key == "x-secondlife-shard")
                     response.status = 406;
             server::AgentPathParameters parameters;
@@ -226,7 +239,7 @@ int main(int argc, char**) {
                 args = network::parse_osd_json(request.body);
                 if (args.kind != network::Value::Kind::Map)
                     throw std::invalid_argument("Not map");
-            } catch (const std::exception&) {
+            } catch (const std::exception &) {
                 response.status = 400;
                 return response;
             }
@@ -239,11 +252,11 @@ int main(int argc, char**) {
         server.stop();
         {
             std::lock_guard lock(workers_mutex);
-            for (auto& worker : workers)
+            for (auto &worker : workers)
                 worker.get();
         }
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what();
         return 1;
     }

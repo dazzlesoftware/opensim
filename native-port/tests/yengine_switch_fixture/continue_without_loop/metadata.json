@@ -1,0 +1,21 @@
+{
+  "accepted": false,
+  "executed": false,
+  "globals": {},
+  "errors": [
+    "not in a continueable situation"
+  ],
+  "exception": null,
+  "exceptionType": null,
+  "stackSize": 1000000,
+  "stackLimit": 1024,
+  "finalStackLeft": null,
+  "stackSamples": [],
+  "name": "continue_without_loop",
+  "source": "YOption advflowctl;YOption chars;integer result;integer calls;default{state_entry(){switch(1){case 1:continue;}}}",
+  "sha256": {
+    "source.lsl": "82ad015fe4c0b87248f3c84b09325d50024882f247f981cb5c669efb3318198d",
+    "source_hash.txt": "a647ab5dd92ec0469e9193459e8a623833bd1001b25110a0b5d15d3f91a29209",
+    "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+  }
+}

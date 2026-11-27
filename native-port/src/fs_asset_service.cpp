@@ -31,12 +31,12 @@ namespace {
 using namespace std::chrono_literals;
 constexpr auto migration = "FSAssetStore";
 
-std::string provider_setting(const server::IniConfig& config, const char* key) {
+std::string provider_setting(const server::IniConfig &config, const char *key) {
     auto value = config.get("AssetService", key);
     return value.empty() ? config.get("DatabaseService", key) : value;
 }
 
-bool use_postgres(const server::IniConfig& config) {
+bool use_postgres(const server::IniConfig &config) {
     const auto provider = provider_setting(config, "StorageProvider");
 #ifdef OPENSIM_HAVE_POSTGRESQL
     if (provider == "OpenSim.Data.PGSQL.dll" || provider == "OpenSim.Data.PGSQL.dll:PGSQLFSAssetData")
@@ -63,17 +63,16 @@ int number(std::string_view text) {
     return value;
 }
 
-std::string_view bytes_view(const framework::AssetBytes& data) {
+std::string_view bytes_view(const framework::AssetBytes &data) {
     if (!data || data->empty())
         return {};
-    return {reinterpret_cast<const char*>(data->data()), data->size()};
+    return {reinterpret_cast<const char *>(data->data()), data->size()};
 }
 
 class FsAssetService final : public AssetService {
-public:
-    FsAssetService(const server::IniConfig& config, std::shared_ptr<NativeAssetStorageBackend> backend)
-        : settings_(provider_setting(config, "ConnectionString")),
-          postgres_(use_postgres(config)),
+  public:
+    FsAssetService(const server::IniConfig &config, std::shared_ptr<NativeAssetStorageBackend> backend)
+        : settings_(provider_setting(config, "ConnectionString")), postgres_(use_postgres(config)),
           table_(config.get("AssetService", "Realm", "fsassets")),
           access_days_(config.integer("AssetService", "DaysBetweenAccessTimeUpdates", 0)),
           show_stats_(config.boolean("AssetService", "ShowConsoleStats", true)),
@@ -81,8 +80,9 @@ public:
                  framework::utf8_path(config.get("AssetService", "SpoolDirectory", "/tmp")),
                  config.boolean("AssetService", "UseOsgridFormat", false)),
           backend_(std::move(backend)) {
-        if (table_.empty() || table_.find_first_not_of(
-            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_") != std::string::npos)
+        if (table_.empty() ||
+            table_.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_") !=
+                std::string::npos)
             throw std::invalid_argument("Invalid filesystem asset metadata table name");
         const char quote = postgres_ ? '"' : '`';
         table_ = quote + table_ + quote;
@@ -110,11 +110,11 @@ public:
         }
     }
 
-    Asset get_asset(const std::string& id) override {
+    Asset get_asset(const std::string &id) override {
         return get_with_digest(id, nullptr);
     }
 
-    Asset get_with_digest(const std::string& id, std::string* digest) {
+    Asset get_with_digest(const std::string &id, std::string *digest) {
         const auto started = std::chrono::steady_clock::now();
         auto [metadata, hash] = lookup(id);
         if (digest)
@@ -144,8 +144,9 @@ public:
         asset->data = bytes ? std::make_shared<std::vector<std::uint8_t>>(bytes->begin(), bytes->end())
                             : std::make_shared<std::vector<std::uint8_t>>();
         if (show_stats_) {
-            const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-                std::chrono::steady_clock::now() - started).count();
+            const auto elapsed =
+                std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - started)
+                    .count();
             std::lock_guard lock(stats_mutex_);
             ++stats_.reads;
             stats_.milliseconds += elapsed;
@@ -156,29 +157,39 @@ public:
         return asset;
     }
 
-    Asset get_cached(const std::string& id) override { return get_asset(id); }
-    Asset get_foreign(const std::string&, const std::optional<std::string>&, bool) override { return {}; }
-    void get(const std::string&, const std::optional<std::string>&, bool, Complete) override {}
-    bool get_async(const std::string& id, std::any sender, Retrieved callback) override {
+    Asset get_cached(const std::string &id) override {
+        return get_asset(id);
+    }
+
+    Asset get_foreign(const std::string &, const std::optional<std::string> &, bool) override {
+        return {};
+    }
+
+    void get(const std::string &, const std::optional<std::string> &, bool, Complete) override {}
+
+    bool get_async(const std::string &id, std::any sender, Retrieved callback) override {
         callback(id, std::move(sender), get_asset(id));
         return true;
     }
-    std::shared_ptr<framework::AssetMetadata> get_metadata(const std::string& id) override {
+
+    std::shared_ptr<framework::AssetMetadata> get_metadata(const std::string &id) override {
         return lookup(id).first;
     }
-    framework::AssetBytes get_data(const std::string& id) override {
+
+    framework::AssetBytes get_data(const std::string &id) override {
         const auto [metadata, hash] = lookup(id);
         if (!metadata)
             return {};
         const auto data = files_.read(hash).value_or("");
         return std::make_shared<std::vector<std::uint8_t>>(data.begin(), data.end());
     }
-    std::vector<bool> assets_exist(const std::vector<std::string>& ids) override {
+
+    std::vector<bool> assets_exist(const std::vector<std::string> &ids) override {
         if (ids.empty())
             return {};
         sql::Parameters parameters;
         std::string statement = "SELECT id FROM " + table_ + " WHERE id IN (";
-        for (const auto& id : ids) {
+        for (const auto &id : ids) {
             parameters.emplace_back(framework::construct_sdk_uuid(framework::utf16(id)).str());
             statement += "?,";
         }
@@ -188,20 +199,22 @@ public:
             return std::vector<bool>(ids.size(), false);
         const auto rows = execute(statement, parameters);
         std::unordered_set<framework::Uuid, framework::UuidHash> found;
-        for (const auto& row : rows.rows)
+        for (const auto &row : rows.rows)
             found.emplace(row.at(0));
         std::vector<bool> result;
-        for (const auto& id : parameters)
+        for (const auto &id : parameters)
             result.push_back(found.contains(framework::Uuid(*id)));
         return result;
     }
+
     std::optional<std::string> store(Asset asset) override {
         const auto hash = FsAssetFiles::digest(bytes_view(asset->data));
         asset->name(framework::truncate_utf16(asset->name().value(), framework::AssetBase::MaxAssetName));
-        asset->description(framework::truncate_utf16(asset->description().value(),
-                                                     framework::AssetBase::MaxAssetDescription));
+        asset->description(
+            framework::truncate_utf16(asset->description().value(), framework::AssetBase::MaxAssetDescription));
         const auto bytes = asset->type() == static_cast<int>(framework::AssetType::Object) && asset->data
-                               ? sanitize_object_asset(asset->data) : asset->data;
+                               ? sanitize_object_asset(asset->data)
+                               : asset->data;
         if (files_.stage(hash, bytes_view(bytes)))
             asset->data = bytes;
         if (asset->full_id().is_zero()) {
@@ -223,9 +236,9 @@ public:
                     connect()("INSERT INTO " + table_ +
                                   " (id,name,description,type,hash,asset_flags,create_time,access_time)"
                                   " VALUES (?,?,?,?,?,?,UNIX_TIMESTAMP(),UNIX_TIMESTAMP())",
-                              {id, asset->name(), asset->description(), std::to_string(asset->type()),
-                               hash, std::to_string(asset->flags())});
-                } catch (const std::exception& error) {
+                              {id, asset->name(), asset->description(), std::to_string(asset->type()), hash,
+                               std::to_string(asset->flags())});
+                } catch (const std::exception &error) {
                     backend_->error("[FSASSETS]: Failed to insert asset " + id, error);
                 }
                 return id;
@@ -235,43 +248,45 @@ public:
             const auto timestamp = postgres_timestamp();
             const auto key = asset->full_id().str();
             if (!exists) {
-                execute("INSERT INTO " + table_ +
-                            " (id,type,hash,asset_flags,create_time,access_time) VALUES (?,?,?,?,?,?)",
-                        {key, std::to_string(asset->type()), hash, std::to_string(asset->flags()),
-                         timestamp, timestamp});
+                execute(
+                    "INSERT INTO " + table_ +
+                        " (id,type,hash,asset_flags,create_time,access_time) VALUES (?,?,?,?,?,?)",
+                    {key, std::to_string(asset->type()), hash, std::to_string(asset->flags()), timestamp, timestamp});
                 return id;
             }
             execute("UPDATE " + table_ + " SET access_time=? WHERE id=?", {timestamp, key});
-            return asset->type() == static_cast<int>(framework::AssetType::OSMaterial)
-                       ? id : framework::Uuid{}.str();
-        } catch (const std::exception& error) {
+            return asset->type() == static_cast<int>(framework::AssetType::OSMaterial) ? id : framework::Uuid{}.str();
+        } catch (const std::exception &error) {
             backend_->error("[FSASSETS]: Failed to store asset " + id, error);
-            return asset->type() == static_cast<int>(framework::AssetType::OSMaterial)
-                       ? id : framework::Uuid{}.str();
+            return asset->type() == static_cast<int>(framework::AssetType::OSMaterial) ? id : framework::Uuid{}.str();
         }
     }
-    bool update_content(const std::string&, framework::AssetBytes) override { return false; }
-    bool erase(const std::string& id) override try {
+
+    bool update_content(const std::string &, framework::AssetBytes) override {
+        return false;
+    }
+
+    bool erase(const std::string &id) override try {
         connect()("DELETE FROM " + table_ + " WHERE id=?",
                   {postgres_ ? framework::construct_sdk_uuid(framework::utf16(id)).str() : id});
         return true;
-    } catch (const std::exception& error) {
+    } catch (const std::exception &error) {
+
         if (postgres_)
             throw;
         backend_->error("[FSASSETS]: Failed to delete asset " + id, error);
         return true;
     }
 
-    using Output = std::function<void(const std::string&)>;
+    using Output = std::function<void(const std::string &)>;
 
-    void show_count(const std::vector<std::string>&, const Output& output) {
+    void show_count(const std::vector<std::string> &, const Output &output) {
         const auto execute = connect_for_read();
-        const auto count = execute ? execute("SELECT COUNT(*) FROM " + table_, {}).rows.at(0).at(0)
-                                   : "0";
+        const auto count = execute ? execute("SELECT COUNT(*) FROM " + table_, {}).rows.at(0).at(0) : "0";
         output("Total asset count: " + count);
     }
 
-    void show_digest(const std::vector<std::string>& args, const Output& output) {
+    void show_digest(const std::vector<std::string> &args, const Output &output) {
         if (args.size() < 3) {
             output("Syntax: show digest <ID>");
             return;
@@ -291,7 +306,7 @@ public:
         server::asset_console_hex(*asset->data, output);
     }
 
-    void delete_from_console(const std::vector<std::string>& args, const Output& output) {
+    void delete_from_console(const std::vector<std::string> &args, const Output &output) {
         if (args.size() < 3) {
             output("Syntax: delete asset <ID>");
             return;
@@ -305,7 +320,7 @@ public:
         output("Asset deleted");
     }
 
-    void import_from_console(const std::vector<std::string>& args, const Output& output) try {
+    void import_from_console(const std::vector<std::string> &args, const Output &output) try {
         const std::size_t first = args.front() == "force" ? 2 : 1;
         if (args.size() < first + 2) {
             output("Syntax: import <conn> <table> [<start> <count>]");
@@ -324,17 +339,17 @@ public:
         output("Querying database");
         output("Reading data");
         std::size_t imported = 0;
-        const auto import_row = [&](const std::vector<std::string_view>& row) {
+        const auto import_row = [&](const std::vector<std::string_view> &row) {
             if (imported % 100 == 0)
                 output(std::to_string(imported) + " assets imported so far");
-            auto asset = std::make_shared<framework::AssetBase>(framework::parse_sdk_uuid(row.at(0)),
-                std::string(row.at(1)),
+            auto asset = std::make_shared<framework::AssetBase>(
+                framework::parse_sdk_uuid(row.at(0)), std::string(row.at(1)),
                 std::bit_cast<std::int8_t>(static_cast<std::uint8_t>(number(row.at(3)))), std::nullopt);
             asset->description(std::string(row.at(2)));
             asset->metadata()->content_type(framework::asset_content_type(asset->type()));
             asset->metadata()->creation_date = framework::AssetDateTime(
                 621355968000000000LL + static_cast<std::int64_t>(number(row.at(4))) * 10000000, 1);
-            const auto& data = row.at(5);
+            const auto &data = row.at(5);
             if (postgres_) {
                 if (data.size() % 2 != 0)
                     throw std::runtime_error("Invalid PostgreSQL asset bytes");
@@ -364,19 +379,21 @@ public:
             sql::stream_mysql(args[first], statement, import_row);
 #endif
         output("Import done, " + std::to_string(imported) + " assets imported");
-    } catch (const std::exception& error) {
+    } catch (const std::exception &error) {
+
         backend_->error("[FSASSETS]: Error importing assets: ", error);
     }
 
-private:
+  private:
     std::string import_table(std::string_view name) const {
         const auto quote = postgres_ ? '"' : '`';
         std::string result;
         while (!name.empty()) {
             const auto dot = name.find('.');
             const auto part = name.substr(0, dot);
-            if (part.empty() || part.find_first_not_of(
-                    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_") != std::string_view::npos)
+            if (part.empty() ||
+                part.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_") !=
+                    std::string_view::npos)
                 throw std::invalid_argument("Invalid filesystem import table name");
             if (!result.empty())
                 result += '.';
@@ -390,9 +407,11 @@ private:
         throw std::invalid_argument("Invalid filesystem import table name");
     }
 
-    sql::Execute connect() const { return connect(settings_); }
+    sql::Execute connect() const {
+        return connect(settings_);
+    }
 
-    sql::Execute connect(const std::string& settings) const {
+    sql::Execute connect(const std::string &settings) const {
 #ifdef OPENSIM_HAVE_POSTGRESQL
         if (postgres_)
             return sql::postgres(settings);
@@ -430,40 +449,42 @@ private:
             execute("COMMIT", {});
     }
 
-    sql::Execute connect_for_read() const try {
-        return connect();
-    } catch (const std::exception& error) {
+    sql::Execute connect_for_read() const try { return connect(); } catch (const std::exception &error) {
+
         if (postgres_)
             throw;
         backend_->error("[FSASSETS]: Database open failed", error);
         return {};
     }
 
-    std::pair<std::shared_ptr<framework::AssetMetadata>, std::string> lookup(const std::string& id) {
-        const auto postgres_id = postgres_
-            ? std::optional{framework::construct_sdk_uuid(framework::utf16(id))}
-            : std::nullopt;
+    std::pair<std::shared_ptr<framework::AssetMetadata>, std::string> lookup(const std::string &id) {
+        const auto postgres_id =
+            postgres_ ? std::optional{framework::construct_sdk_uuid(framework::utf16(id))} : std::nullopt;
         const auto execute = connect_for_read();
         if (!execute)
             return {};
         const auto names = postgres_ ? "'',''," : "name,description,";
         const auto key = postgres_id ? postgres_id->str() : id;
-        const auto result = execute(std::string("SELECT ") + names + "type,hash,create_time,asset_flags,access_time"
-                                    " FROM " + table_ + " WHERE id=?", {key});
+        const auto result = execute(std::string("SELECT ") + names +
+                                        "type,hash,create_time,asset_flags,access_time"
+                                        " FROM " +
+                                        table_ + " WHERE id=?",
+                                    {key});
         if (result.rows.empty())
             return {};
-        const auto& row = result.rows.front();
+        const auto &row = result.rows.front();
         auto metadata = std::make_shared<framework::AssetMetadata>();
         metadata->full_id(postgres_id ? *postgres_id : framework::construct_sdk_uuid(framework::utf16(id)));
         metadata->name = row.at(0);
         metadata->description = row.at(1);
         metadata->type = std::bit_cast<std::int8_t>(static_cast<std::uint8_t>(number(row.at(2))));
         metadata->content_type(framework::asset_content_type(metadata->type));
-        metadata->creation_date = framework::AssetDateTime(
-            621355968000000000LL + static_cast<std::int64_t>(number(row.at(4))) * 10000000, 1);
+        metadata->creation_date =
+            framework::AssetDateTime(621355968000000000LL + static_cast<std::int64_t>(number(row.at(4))) * 10000000, 1);
         metadata->flags = number(row.at(5));
-        const auto now = std::chrono::duration_cast<std::chrono::seconds>(
-            std::chrono::system_clock::now().time_since_epoch()).count();
+        const auto now =
+            std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch())
+                .count();
         if (access_days_ <= 0 || now - number(row.at(6)) >= static_cast<std::int64_t>(access_days_) * 86400) {
             if (postgres_)
                 execute("UPDATE " + table_ + " SET access_time=? WHERE id=?", {postgres_timestamp(), key});
@@ -473,7 +494,7 @@ private:
         return {std::move(metadata), row.at(3)};
     }
 
-    static void sanitize(framework::AssetBase& asset) {
+    static void sanitize(framework::AssetBase &asset) {
         if (asset.type() == static_cast<int>(framework::AssetType::Object) && asset.data)
             asset.data = sanitize_object_asset(asset.data);
     }
@@ -485,7 +506,7 @@ private:
         while (!stop.stop_requested()) {
             try {
                 files_.flush();
-            } catch (const std::exception& error) {
+            } catch (const std::exception &error) {
                 backend_->error("[FSASSETS]: Failed to archive the spool", error);
             }
             wake.wait_for(lock, stop, 1s, [] { return false; });
@@ -508,10 +529,10 @@ private:
             if (snapshot.reads == 0)
                 continue;
             std::ostringstream message;
-            message << "[FSASSETS]: Read stats: " << snapshot.reads << " files, "
-                    << snapshot.milliseconds << " ticks, avg " << std::fixed << std::setprecision(2)
-                    << static_cast<double>(snapshot.milliseconds) / static_cast<double>(snapshot.reads)
-                    << ", missing " << snapshot.missing << ", FS " << snapshot.missing_files;
+            message << "[FSASSETS]: Read stats: " << snapshot.reads << " files, " << snapshot.milliseconds
+                    << " ticks, avg " << std::fixed << std::setprecision(2)
+                    << static_cast<double>(snapshot.milliseconds) / static_cast<double>(snapshot.reads) << ", missing "
+                    << snapshot.missing << ", FS " << snapshot.missing_files;
             backend_->info(message.str());
         }
     }
@@ -536,11 +557,11 @@ private:
     std::jthread writer_;
     std::jthread reporter_;
 };
-}
+} // namespace
 #endif
 
-std::shared_ptr<AssetService> make_fs_asset_service(
-    const server::IniConfig& config, std::shared_ptr<NativeAssetStorageBackend> backend) {
+std::shared_ptr<AssetService> make_fs_asset_service(const server::IniConfig &config,
+                                                    std::shared_ptr<NativeAssetStorageBackend> backend) {
 #if defined(OPENSIM_HAVE_MYSQL) || defined(OPENSIM_HAVE_POSTGRESQL)
     return std::make_shared<FsAssetService>(config, std::move(backend));
 #else
@@ -550,19 +571,20 @@ std::shared_ptr<AssetService> make_fs_asset_service(
 #endif
 }
 
-void register_fs_asset_console(const std::shared_ptr<AssetService>& service,
-                               framework::ConsoleCommandResolver& commands,
-                               const std::function<void(const std::string&)>& output) {
+void register_fs_asset_console(const std::shared_ptr<AssetService> &service,
+                               framework::ConsoleCommandResolver &commands,
+                               const std::function<void(const std::string &)> &output) {
 #if defined(OPENSIM_HAVE_MYSQL) || defined(OPENSIM_HAVE_POSTGRESQL)
     const auto filesystem = std::dynamic_pointer_cast<FsAssetService>(service);
     if (!filesystem)
         return;
     const auto bind = [&](auto handler) {
         using Callback = framework::ConsoleCommandResolver::Callback::element_type;
-        return std::make_shared<Callback>([weak = std::weak_ptr(filesystem), output, handler](const auto&, auto& args) {
-            if (const auto service = weak.lock())
-                ((*service).*handler)(args, output);
-        });
+        return std::make_shared<Callback>(
+            [weak = std::weak_ptr(filesystem), output, handler](const auto &, auto &args) {
+                if (const auto service = weak.lock())
+                    ((*service).*handler)(args, output);
+            });
     };
     commands.add({"fs", "show assets", "show assets", "Show asset stats", "", false},
                  bind(&FsAssetService::show_count));
@@ -581,4 +603,4 @@ void register_fs_asset_console(const std::shared_ptr<AssetService>& service,
     (void)output;
 #endif
 }
-}
+} // namespace opensim::services

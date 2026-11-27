@@ -7,14 +7,14 @@
 
 namespace opensim::services {
 class SqliteOfflineImStore {
-public:
-    explicit SqliteOfflineImStore(const std::string& connection, const std::string& realm = "native_offline_im");
-    bool store(framework::Uuid recipient, const network::ServiceXmlValue& message, int limit);
+  public:
+    explicit SqliteOfflineImStore(const std::string &connection, const std::string &realm = "native_offline_im");
+    bool store(framework::Uuid recipient, const network::ServiceXmlValue &message, int limit);
     std::vector<network::ServiceXmlValue> drain(framework::Uuid recipient);
     void erase(framework::Uuid recipient);
 
-private:
+  private:
     SqliteDatabase database_;
     std::string table_;
 };
-}
+} // namespace opensim::services

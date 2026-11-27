@@ -6,17 +6,20 @@
 #include <iostream>
 #include <sstream>
 using namespace opensim::framework;
+
 Uuid id(int n) {
     std::ostringstream out;
     out << "00000000-0000-0000-0000-" << std::hex << std::setw(12) << std::setfill('0') << n;
     return Uuid(out.str());
 }
+
 std::string unhex(const std::string &value) {
     std::string result;
     for (std::size_t i = 0; i < value.size(); i += 2)
         result += static_cast<char>(std::stoi(value.substr(i, 2), nullptr, 16));
     return result;
 }
+
 std::string hex(std::string_view value) {
     constexpr char digits[] = "0123456789abcdef";
     std::string result;
@@ -27,40 +30,44 @@ std::string hex(std::string_view value) {
     }
     return result;
 }
+
 std::optional<std::string> text(const std::string &value) {
     if (value == "-")
         return {};
     return value == "." ? "" : unhex(value);
 }
+
 std::string encode(const std::optional<std::string> &value) {
     return value ? "s" + hex(*value) : "n";
 }
+
 std::string bytes(const AssetBytes &data) {
     return data ? "b" + hex({reinterpret_cast<const char *>(data->data()), data->size()}) : "n";
 }
+
 AssetMetadata &required(const std::shared_ptr<AssetBase> &asset) {
     auto metadata = asset->metadata();
     if (!metadata)
         throw std::runtime_error("null metadata");
     return *metadata;
 }
+
 std::string snapshot(const std::shared_ptr<AssetBase> &a) {
     std::string result = bytes(a->data) + "|" + std::to_string(a->upload_attempts) + "|";
     try {
         const auto &m = required(a);
         result += a->full_id().str() + "|" + encode(a->id()) + "|" + encode(a->name()) + "|" +
-                  encode(a->description()) + "|" + encode(a->creator_id()) + "|" + std::to_string(a->type()) +
-                  "|" + std::to_string(a->local()) + "|" + std::to_string(a->temporary()) + "|" +
-                  std::to_string(a->flags()) + "|" + encode(m.content_type()) + "|" +
-                  std::to_string(m.creation_date.ticks()) + ":" + std::to_string(m.creation_date.kind()) +
-                  "|" + bytes(m.sha1) + "|" + std::to_string(a->is_binary()) +
-                  std::to_string(a->is_textual()) + std::to_string(a->contains_references()) + "|" +
-                  a->to_string();
+                  encode(a->description()) + "|" + encode(a->creator_id()) + "|" + std::to_string(a->type()) + "|" +
+                  std::to_string(a->local()) + "|" + std::to_string(a->temporary()) + "|" + std::to_string(a->flags()) +
+                  "|" + encode(m.content_type()) + "|" + std::to_string(m.creation_date.ticks()) + ":" +
+                  std::to_string(m.creation_date.kind()) + "|" + bytes(m.sha1) + "|" + std::to_string(a->is_binary()) +
+                  std::to_string(a->is_textual()) + std::to_string(a->contains_references()) + "|" + a->to_string();
     } catch (const std::exception &) {
         result += "METAEX";
     }
     return result;
 }
+
 int main() {
     auto asset = std::make_shared<AssetBase>();
     std::string line;
@@ -152,8 +159,8 @@ int main() {
                 int value;
                 input >> value;
                 prefix = "CODE:" +
-                         std::to_string(static_cast<int>(asset_type_from_code(
-                             std::bit_cast<std::int8_t>(static_cast<std::uint8_t>(value))))) +
+                         std::to_string(static_cast<int>(
+                             asset_type_from_code(std::bit_cast<std::int8_t>(static_cast<std::uint8_t>(value))))) +
                          ":" + asset_content_type(value) + ":" + inventory_content_type(value) + ":" +
                          asset_extension(value) + "|";
             } else if (command == "lookup") {

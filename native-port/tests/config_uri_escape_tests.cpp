@@ -2,6 +2,7 @@
 #include <iostream>
 #include <sstream>
 using namespace opensim::framework;
+
 std::string encode(std::u16string_view s) {
     std::string out;
     for (auto c : s)
@@ -9,6 +10,7 @@ std::string encode(std::u16string_view s) {
             out += "0123456789abcdef"[(c >> b) & 15];
     return out;
 }
+
 int main() {
     auto safe = std::make_shared<const std::u16string>(u"abc-._~");
     if (config_uri_escape(safe, true, ConfigUriEscapeSet::Unreserved) != safe)
@@ -30,7 +32,7 @@ int main() {
         try {
             auto r = config_uri_escape(s, existing != 0, static_cast<ConfigUriEscapeSet>(set));
             std::cout << "S:" << (r == s ? 1 : 0) << ":" << encode(*r) << '\n';
-        } catch (const ConfigUriEscapeError& e) {
+        } catch (const ConfigUriEscapeError &e) {
             std::cout << "E:" << e.source_type << ":" << e.hresult << ":" << e.what() << '\n';
         }
     }

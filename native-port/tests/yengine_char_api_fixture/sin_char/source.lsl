@@ -1,0 +1,1 @@
+YOption chars;YOption arrays;float result;integer after;default{state_entry(){result=llSin('A');after=1;}}

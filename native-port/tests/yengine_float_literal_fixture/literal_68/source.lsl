@@ -1,0 +1,1 @@
+float value=0.0e309;integer done;default{state_entry(){done=1;}}

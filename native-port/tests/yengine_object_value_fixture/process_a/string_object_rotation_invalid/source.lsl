@@ -1,0 +1,1 @@
+YOption arrays;object input="invalid";rotation result;integer after;default{state_entry(){result=(rotation)input;after=1;}}

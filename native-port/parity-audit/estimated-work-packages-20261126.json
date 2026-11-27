@@ -1,0 +1,400 @@
+[
+  {
+    "id": "WP-01",
+    "name": "Admission and lifecycle",
+    "status": "TRANSIT/CHILD-LEASE FIXES CREDITED; LIFECYCLE VERIFICATION PARTIAL",
+    "remaining": "Finish production admission/child/circuit/capability failure paths, teardown concurrency and repeated-login recovery on both servers; retain historical unexplained-fixture risk.",
+    "evidence": "src/region_runtime.cpp; handshake-investigation.json; tests/admission_restart_tests.cpp",
+    "estimate": {
+      "unit": "focused_engineering_days",
+      "optimistic": 2,
+      "mostLikely": 4,
+      "pessimistic": 9,
+      "includes": [
+        "remaining method/contract discovery",
+        "implementation",
+        "targeted source/runtime tests on Windows and Linux"
+      ],
+      "basis": "Engineering judgement, not measured agent elapsed time",
+      "confidence": "low"
+    },
+    "reviewBasis": "Transit and lease stubs are now implemented, with postPreviewFollowup source/runtime evidence. Remaining lifecycle and fresh-viewer obligations remain.",
+    "closureCriteria": "Finish production admission/child/circuit/capability failure paths, teardown concurrency and repeated-login recovery on both servers; retain historical unexplained-fixture risk.",
+    "estimateDate": "2026-11-26"
+  },
+  {
+    "id": "WP-02",
+    "name": "Scripting dispatch coverage",
+    "status": "25 CONFIRMED COMPILER-ENTRY GAPS; ACCEPTED-CALL BEHAVIOR REVIEW OPEN",
+    "remaining": "Implement remaining 25 rejected APIs, grouped by primitive setters, vehicle backend, raycast, dynamic texture manager, camera, groups and rez. Validate original permission, delay, error and persistence behavior.",
+    "evidence": "parity-audit/script-api-method-review.json; parity-audit/confirmed-method-gaps.json",
+    "estimate": {
+      "unit": "focused_engineering_days",
+      "optimistic": 12,
+      "mostLikely": 22,
+      "pessimistic": 40,
+      "includes": [
+        "remaining method/contract discovery",
+        "implementation",
+        "targeted source/runtime tests on Windows and Linux"
+      ],
+      "basis": "Engineering judgement, not measured agent elapsed time",
+      "confidence": "low"
+    },
+    "latestEvidence": [
+      "build-https/script-compiler-console-results.json",
+      "build-linux-preview/evidence/script-compiler-console-results.json",
+      "build-https/ossl-aes-results.json",
+      "build-https/ossl-format-results.json",
+      "build-https/ossl-console-results.json"
+    ],
+    "reviewBasis": "Actual compile_lsl probe: 770 overloads, 745 accepted, 25 rejected on both Windows/Linux. Original rejected-method bodies and dependencies inspected previously.",
+    "closureCriteria": "Implement remaining 25 rejected APIs, grouped by primitive setters, vehicle backend, raycast, dynamic texture manager, camera, groups and rez. Validate original permission, delay, error and persistence behavior.",
+    "estimateDate": "2026-11-26"
+  },
+  {
+    "id": "WP-03",
+    "name": "YEngine and script persistence",
+    "status": "PARTIAL",
+    "remaining": "Review all remaining YEngine language constructs and runtime producers; close classes/interfaces/delegates/exceptions/array, reference identity, heap, event ordering and checkpoint compatibility gaps.",
+    "evidence": "remaining-work.json: Connected native world and first script execution",
+    "estimate": {
+      "unit": "focused_engineering_days",
+      "optimistic": 15,
+      "mostLikely": 30,
+      "pessimistic": 60,
+      "includes": [
+        "remaining method/contract discovery",
+        "implementation",
+        "targeted source/runtime tests on Windows and Linux"
+      ],
+      "basis": "Engineering judgement, not measured agent elapsed time",
+      "confidence": "low"
+    },
+    "reviewBasis": "Latest Object, String/Key, event/rotation/detector persistence milestones are recorded. Remaining language surfaces are explicitly listed in objectValueLanguageWork.",
+    "closureCriteria": "Review all remaining YEngine language constructs and runtime producers; close classes/interfaces/delegates/exceptions/array, reference identity, heap, event ordering and checkpoint compatibility gaps.",
+    "estimateDate": "2026-11-26"
+  },
+  {
+    "id": "WP-04",
+    "name": "Scene and geometry",
+    "status": "PARTIAL",
+    "remaining": "Complete linkset/object/shape operations and source-compatible update, permission, lifecycle and serialization behavior beyond preview.",
+    "evidence": "src/primitive_parameter_*.cpp; src/region_runtime.cpp",
+    "estimate": {
+      "unit": "focused_engineering_days",
+      "optimistic": 7,
+      "mostLikely": 12,
+      "pessimistic": 25,
+      "includes": [
+        "remaining method/contract discovery",
+        "implementation",
+        "targeted source/runtime tests on Windows and Linux"
+      ],
+      "basis": "Engineering judgement, not measured agent elapsed time",
+      "confidence": "low"
+    },
+    "reviewBasis": "Source/required-scope review; whole-method semantic closure not established.",
+    "closureCriteria": "Complete linkset/object/shape operations and source-compatible update, permission, lifecycle and serialization behavior beyond preview.",
+    "estimateDate": "2026-11-26"
+  },
+  {
+    "id": "WP-05",
+    "name": "Physics",
+    "status": "PARTIAL",
+    "remaining": "Close physics actor/mesh/ray/vehicle and contacts/settings gaps with region interaction tests, including Windows/Linux backend execution.",
+    "evidence": "remaining-work.json: Connected native world and first script execution",
+    "estimate": {
+      "unit": "focused_engineering_days",
+      "optimistic": 8,
+      "mostLikely": 15,
+      "pessimistic": 30,
+      "includes": [
+        "remaining method/contract discovery",
+        "implementation",
+        "targeted source/runtime tests on Windows and Linux"
+      ],
+      "basis": "Engineering judgement, not measured agent elapsed time",
+      "confidence": "low"
+    },
+    "reviewBasis": "Source/required-scope review; bounded ubODE preview is verified, full physics alternatives and behavior are not.",
+    "closureCriteria": "Close physics actor/mesh/ray/vehicle and contacts/settings gaps with region interaction tests, including Windows/Linux backend execution.",
+    "estimateDate": "2026-11-26"
+  },
+  {
+    "id": "WP-06",
+    "name": "Land, estates and terrain",
+    "status": "PARTIAL",
+    "remaining": "Complete land, estate, parcel, terrain and environment administration and persistence with permissions/source/real viewer coverage.",
+    "evidence": "src/region_runtime.cpp; legacy CoreModules/World and PhysicsModules files",
+    "estimate": {
+      "unit": "focused_engineering_days",
+      "optimistic": 5,
+      "mostLikely": 9,
+      "pessimistic": 18,
+      "includes": [
+        "remaining method/contract discovery",
+        "implementation",
+        "targeted source/runtime tests on Windows and Linux"
+      ],
+      "basis": "Engineering judgement, not measured agent elapsed time",
+      "confidence": "low"
+    },
+    "reviewBasis": "Source/required-scope review; bounded brushes/estate paths do not close full module surface.",
+    "closureCriteria": "Complete land, estate, parcel, terrain and environment administration and persistence with permissions/source/real viewer coverage.",
+    "estimateDate": "2026-11-26"
+  },
+  {
+    "id": "WP-07",
+    "name": "Appearance and attachments",
+    "status": "PARTIAL",
+    "remaining": "Complete attachment, animation, appearance/baking/provider/culling and cross-region failure behavior; verify latest runtime in real Firestorm.",
+    "evidence": "preview-acceptance.json; remaining-work.json: Avatar appearance and structured-data compatibility",
+    "estimate": {
+      "unit": "focused_engineering_days",
+      "optimistic": 4,
+      "mostLikely": 8,
+      "pessimistic": 16,
+      "includes": [
+        "remaining method/contract discovery",
+        "implementation",
+        "targeted source/runtime tests on Windows and Linux"
+      ],
+      "basis": "Engineering judgement, not measured agent elapsed time",
+      "confidence": "low"
+    },
+    "reviewBasis": "Latest motion attachment and persistence evidence supplements the initial preview; fresh visual rerun still needed.",
+    "closureCriteria": "Complete attachment, animation, appearance/baking/provider/culling and cross-region failure behavior; verify latest runtime in real Firestorm.",
+    "estimateDate": "2026-11-26"
+  },
+  {
+    "id": "WP-08",
+    "name": "Inventory and offers",
+    "status": "PARTIAL",
+    "remaining": "Finish all inventory item/folder/task transfer, offer/accept/decline, permissions, upload and cross-grid behavior across restart.",
+    "evidence": "remaining-work.json: Inventory services and Offline instant messaging",
+    "estimate": {
+      "unit": "focused_engineering_days",
+      "optimistic": 5,
+      "mostLikely": 10,
+      "pessimistic": 20,
+      "includes": [
+        "remaining method/contract discovery",
+        "implementation",
+        "targeted source/runtime tests on Windows and Linux"
+      ],
+      "basis": "Engineering judgement, not measured agent elapsed time",
+      "confidence": "low"
+    },
+    "reviewBasis": "Source/required-scope review; preview folder/copy/rez paths pass.",
+    "closureCriteria": "Finish all inventory item/folder/task transfer, offer/accept/decline, permissions, upload and cross-grid behavior across restart.",
+    "estimateDate": "2026-11-26"
+  },
+  {
+    "id": "WP-09",
+    "name": "Asset service and cache",
+    "status": "PARTIAL",
+    "remaining": "Close remaining asset backends/codecs/cache maintenance/cleanup/provider/migration/error paths.",
+    "evidence": "remaining-work.json: Native asset persistence; Baked texture uploads and asset cache",
+    "estimate": {
+      "unit": "focused_engineering_days",
+      "optimistic": 4,
+      "mostLikely": 8,
+      "pessimistic": 16,
+      "includes": [
+        "remaining method/contract discovery",
+        "implementation",
+        "targeted source/runtime tests on Windows and Linux"
+      ],
+      "basis": "Engineering judgement, not measured agent elapsed time",
+      "confidence": "low"
+    },
+    "reviewBasis": "Scope review includes later implemented file cache; old blanket missing claims must not inflate estimate.",
+    "closureCriteria": "Close remaining asset backends/codecs/cache maintenance/cleanup/provider/migration/error paths.",
+    "estimateDate": "2026-11-26"
+  },
+  {
+    "id": "WP-10",
+    "name": "Profiles, groups, friends, messaging and economy",
+    "status": "PARTIAL / DISCOVERY REQUIRED",
+    "remaining": "Complete groups, advanced profiles, messaging/offline/friend/economy module features and real viewer service interoperability.",
+    "evidence": "remaining-work.json profile scopes; OpenSim/Addons/Groups; OptionalModules",
+    "estimate": {
+      "unit": "focused_engineering_days",
+      "optimistic": 8,
+      "mostLikely": 16,
+      "pessimistic": 32,
+      "includes": [
+        "remaining method/contract discovery",
+        "implementation",
+        "targeted source/runtime tests on Windows and Linux"
+      ],
+      "basis": "Engineering judgement, not measured agent elapsed time",
+      "confidence": "low"
+    },
+    "reviewBasis": "Advanced/profile/optional source obligations remain open; discovery estimate is included.",
+    "closureCriteria": "Complete groups, advanced profiles, messaging/offline/friend/economy module features and real viewer service interoperability.",
+    "estimateDate": "2026-11-26"
+  },
+  {
+    "id": "WP-11",
+    "name": "Crossings and federation",
+    "status": "PARTIAL",
+    "remaining": "Complete remaining AgentData and original-peer/HG/native multi-region travel and rollback, especially rapid return/logout and attachment/controller timing.",
+    "evidence": "remaining-work.json: Native Hypergrid travel; Inbound simulator agent handlers",
+    "estimate": {
+      "unit": "focused_engineering_days",
+      "optimistic": 5,
+      "mostLikely": 10,
+      "pessimistic": 24,
+      "includes": [
+        "remaining method/contract discovery",
+        "implementation",
+        "targeted source/runtime tests on Windows and Linux"
+      ],
+      "basis": "Engineering judgement, not measured agent elapsed time",
+      "confidence": "low"
+    },
+    "reviewBasis": "Recent V1/V2/native/original-peer work credited; postPreviewFollowup lists remaining failed-return and module timing cases.",
+    "closureCriteria": "Complete remaining AgentData and original-peer/HG/native multi-region travel and rollback, especially rapid return/logout and attachment/controller timing.",
+    "estimateDate": "2026-11-26"
+  },
+  {
+    "id": "WP-12",
+    "name": "Storage providers",
+    "status": "PARTIAL",
+    "remaining": "Audit required provider methods, migrations, legacy data and connection configurations across bundled SQLite/MySQL/PostgreSQL services.",
+    "evidence": "legacy OpenSim/Data; remaining-work.json provider scopes",
+    "estimate": {
+      "unit": "focused_engineering_days",
+      "optimistic": 5,
+      "mostLikely": 10,
+      "pessimistic": 22,
+      "includes": [
+        "remaining method/contract discovery",
+        "implementation",
+        "targeted source/runtime tests on Windows and Linux"
+      ],
+      "basis": "Engineering judgement, not measured agent elapsed time",
+      "confidence": "low"
+    },
+    "reviewBasis": "Provider-specific tests cover subsets. Inventory gaps are not silently marked complete.",
+    "closureCriteria": "Audit required provider methods, migrations, legacy data and connection configurations across bundled SQLite/MySQL/PostgreSQL services.",
+    "estimateDate": "2026-11-26"
+  },
+  {
+    "id": "WP-13",
+    "name": "HTTP, TLS and proxies",
+    "status": "PARTIAL",
+    "remaining": "Finish shared production sender and consumed HTTP/TLS/proxy/auth/cancellation/stream lifecycle semantics on both platforms.",
+    "evidence": "remaining-work.json: Native outgoing HTTP shared handlers; latest certificate checkpoint fields",
+    "estimate": {
+      "unit": "focused_engineering_days",
+      "optimistic": 4,
+      "mostLikely": 8,
+      "pessimistic": 18,
+      "includes": [
+        "remaining method/contract discovery",
+        "implementation",
+        "targeted source/runtime tests on Windows and Linux"
+      ],
+      "basis": "Engineering judgement, not measured agent elapsed time",
+      "confidence": "low"
+    },
+    "reviewBasis": "Certificate component checkpoints credited; remaining full-host/consumed-policy obligations included.",
+    "closureCriteria": "Finish shared production sender and consumed HTTP/TLS/proxy/auth/cancellation/stream lifecycle semantics on both platforms.",
+    "estimateDate": "2026-11-26"
+  },
+  {
+    "id": "WP-14",
+    "name": "Configuration and deployment",
+    "status": "PARTIAL",
+    "remaining": "Close executable/configuration/module/console startup and management behavior; identify native replacements for bundled extension functionality.",
+    "evidence": "prebuild.xml; native-port/CMakeLists.txt; remaining-work.json constructor/provider scopes",
+    "estimate": {
+      "unit": "focused_engineering_days",
+      "optimistic": 3,
+      "mostLikely": 6,
+      "pessimistic": 14,
+      "includes": [
+        "remaining method/contract discovery",
+        "implementation",
+        "targeted source/runtime tests on Windows and Linux"
+      ],
+      "basis": "Engineering judgement, not measured agent elapsed time",
+      "confidence": "low"
+    },
+    "reviewBasis": "Native build already works. This estimates remaining feature-level lifecycle coverage, not a C# build-tool rewrite.",
+    "closureCriteria": "Close executable/configuration/module/console startup and management behavior; identify native replacements for bundled extension functionality.",
+    "estimateDate": "2026-11-26"
+  },
+  {
+    "id": "WP-15",
+    "name": "Archives, backups and tools",
+    "status": "DISCOVERY / ACCEPTANCE REQUIRED",
+    "remaining": "Implement/verify archive import/export, backup/restore, format/version compatibility and admin/tool workflows separately from SQLite restart.",
+    "evidence": "legacy OptionalModules/Archivers and framework serialization; file-classification.json",
+    "estimate": {
+      "unit": "focused_engineering_days",
+      "optimistic": 5,
+      "mostLikely": 10,
+      "pessimistic": 22,
+      "includes": [
+        "remaining method/contract discovery",
+        "implementation",
+        "targeted source/runtime tests on Windows and Linux"
+      ],
+      "basis": "Engineering judgement, not measured agent elapsed time",
+      "confidence": "low"
+    },
+    "reviewBasis": "Preview clean restart is already verified. Archive interoperability remains separately open.",
+    "closureCriteria": "Implement/verify archive import/export, backup/restore, format/version compatibility and admin/tool workflows separately from SQLite restart.",
+    "estimateDate": "2026-11-26"
+  },
+  {
+    "id": "WP-16",
+    "name": "Optional modules and external dependencies",
+    "status": "DISCOVERY REQUIRED",
+    "remaining": "Review unmapped optional/bundled sources method-by-method, identify native equivalents and implement confirmed uncovered functionality. Inventory ignored/external dependencies and expose scope additions.",
+    "evidence": "source-baseline.json limitations; file-classification.json",
+    "estimate": {
+      "unit": "focused_engineering_days",
+      "optimistic": 10,
+      "mostLikely": 20,
+      "pessimistic": 45,
+      "includes": [
+        "remaining method/contract discovery",
+        "implementation",
+        "targeted source/runtime tests on Windows and Linux"
+      ],
+      "basis": "Engineering judgement, not measured agent elapsed time",
+      "confidence": "low"
+    },
+    "reviewBasis": "All tracked files are classified, but 27,177-member index is not a completed semantic review. Parser-error files require manual handling.",
+    "closureCriteria": "Review unmapped optional/bundled sources method-by-method, identify native equivalents and implement confirmed uncovered functionality. Inventory ignored/external dependencies and expose scope additions.",
+    "estimateDate": "2026-11-26"
+  },
+  {
+    "id": "WP-17",
+    "name": "Windows/Linux acceptance matrix",
+    "status": "PARTIAL",
+    "remaining": "Run fresh original-peer and Firestorm end-to-end acceptance, Windows/Linux storage/restart/network/soak and packaging gates; fix newly found integration regressions.",
+    "evidence": "preview-acceptance.json; postPreviewFollowup; build-preview-release/20261124-preview1/evidence",
+    "estimate": {
+      "unit": "focused_engineering_days",
+      "optimistic": 8,
+      "mostLikely": 15,
+      "pessimistic": 30,
+      "includes": [
+        "remaining method/contract discovery",
+        "implementation",
+        "targeted source/runtime tests on Windows and Linux"
+      ],
+      "basis": "Engineering judgement, not measured agent elapsed time",
+      "confidence": "low"
+    },
+    "reviewBasis": "Automated 16-check runs passed in this turn on Windows and Linux. Visual/soak/original-peer/full parity acceptance still pending.",
+    "closureCriteria": "Run fresh original-peer and Firestorm end-to-end acceptance, Windows/Linux storage/restart/network/soak and packaging gates; fix newly found integration regressions.",
+    "estimateDate": "2026-11-26"
+  }
+]

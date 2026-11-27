@@ -1,0 +1,1 @@
+float result;integer after;default{state_entry(){result=llListStatistics("6",[1]);after=1;}}

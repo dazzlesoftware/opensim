@@ -1,0 +1,1 @@
+string text;list items;integer after;default{state_entry(){after=1;}}

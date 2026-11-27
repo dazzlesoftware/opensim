@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <limits>
 #include <bit>
+
 namespace opensim::framework {
 struct ConfigHttpNativePool::Bucket {
     struct Idle {
@@ -10,11 +11,13 @@ struct ConfigHttpNativePool::Bucket {
         ConfigHttpKeepAliveState keep_alive;
         std::shared_ptr<ConfigHttpSourceReceiveBuffer> receive;
     };
+
     std::vector<Idle> idle;
     std::deque<std::shared_ptr<char>> waiters;
     std::size_t associated = 0;
     std::optional<std::u16string> tunnel_user_agent;
 };
+
 struct ConfigHttpNativePool::State {
     ConfigXmlHttpPoolSettings settings;
     std::mutex mutex;
@@ -22,40 +25,42 @@ struct ConfigHttpNativePool::State {
     bool started = false, closed = false;
     std::size_t pending_revision = 0;
     std::map<std::pair<std::string, std::uint16_t>, std::shared_ptr<Bucket>> buckets;
-    explicit State(ConfigXmlHttpPoolSettings s) : settings(s) {
-    }
+
+    explicit State(ConfigXmlHttpPoolSettings s) : settings(s) {}
+
     bool expired(Clock::time_point start, std::chrono::milliseconds duration, Clock::time_point now) const {
         return duration.count() >= 0 && now - start > duration;
     }
-    bool keep_alive_expired(const Bucket::Idle& idle, Clock::time_point now) const {
+
+    bool keep_alive_expired(const Bucket::Idle &idle, Clock::time_point now) const {
         if (!idle.keep_alive.timeout_seconds)
             return false;
         // Source unchecked Int32 multiplication precedes comparison to Int64 ticks.
         auto milliseconds =
             std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(idle.keep_alive.timeout_seconds) * 1000u);
-        return std::chrono::duration_cast<std::chrono::milliseconds>(now - idle.returned).count() >=
-               milliseconds;
+        return std::chrono::duration_cast<std::chrono::milliseconds>(now - idle.returned).count() >= milliseconds;
     }
 };
+
 ConfigHttpNativePool::ConfigHttpNativePool(ConfigXmlHttpPoolSettings settings)
     : state_(std::make_shared<State>(settings)) {
     if (settings.max_connections_per_server <= 0)
         throw std::invalid_argument("HTTP pool requires a positive connection limit");
-    if (settings.idle_timeout.count() < -1 || settings.lifetime.count() < -1 ||
-        settings.connect_timeout.count() < -1 || settings.connect_timeout.count() == 0)
+    if (settings.idle_timeout.count() < -1 || settings.lifetime.count() < -1 || settings.connect_timeout.count() < -1 ||
+        settings.connect_timeout.count() == 0)
         throw std::invalid_argument(
             "HTTP pool requires nonnegative/infinite lifetimes and a positive/infinite connect timeout");
     scavenger_ = std::jthread([state = state_](std::stop_token stop) {
         std::unique_lock lock(state->mutex);
         state->changed.wait(lock, stop, [&] { return state->started; });
         auto idle = state->settings.idle_timeout;
-        auto interval = idle.count() < 0 ? std::chrono::milliseconds(30000)
-                                         : std::max(std::chrono::milliseconds(1000), idle / 4);
+        auto interval =
+            idle.count() < 0 ? std::chrono::milliseconds(30000) : std::max(std::chrono::milliseconds(1000), idle / 4);
         while (!stop.stop_requested()) {
             auto until = Clock::now() + interval;
             auto revision = state->pending_revision;
-            for (const auto& [key, bucket] : state->buckets)
-                for (const auto& connection : bucket->idle)
+            for (const auto &[key, bucket] : state->buckets)
+                for (const auto &connection : bucket->idle)
                     if (connection.receive)
                         if (auto deadline = connection.receive->deadline())
                             until = std::min(until, *deadline);
@@ -64,8 +69,8 @@ ConfigHttpNativePool::ConfigHttpNativePool(ConfigXmlHttpPoolSettings settings)
                 break;
             auto now = Clock::now();
             for (auto it = state->buckets.begin(); it != state->buckets.end();) {
-                auto& bucket = *it->second;
-                std::erase_if(bucket.idle, [&](auto& connection) {
+                auto &bucket = *it->second;
+                std::erase_if(bucket.idle, [&](auto &connection) {
                     if (!state->expired(connection.created, state->settings.lifetime, now) &&
                         !state->expired(connection.returned, idle, now) &&
                         !state->keep_alive_expired(connection, now) &&
@@ -84,10 +89,11 @@ ConfigHttpNativePool::ConfigHttpNativePool(ConfigXmlHttpPoolSettings settings)
         }
     });
 }
+
 ConfigHttpNativePool::~ConfigHttpNativePool() {
     std::unique_lock lock(state_->mutex);
     state_->closed = true;
-    for (auto& [key, bucket] : state_->buckets) {
+    for (auto &[key, bucket] : state_->buckets) {
         bucket->associated -= bucket->idle.size();
         bucket->idle.clear();
     }
@@ -95,17 +101,20 @@ ConfigHttpNativePool::~ConfigHttpNativePool() {
     scavenger_.request_stop();
     state_->changed.notify_all();
 }
+
 ConfigHttpNativePool::Lease::Lease(std::shared_ptr<State> state, std::shared_ptr<Bucket> bucket)
-    : state_(std::move(state)), bucket_(std::move(bucket)), created_(Clock::now()) {
-}
+    : state_(std::move(state)), bucket_(std::move(bucket)), created_(Clock::now()) {}
+
 ConfigHttpNativePool::Lease::~Lease() {
     finish({}, false);
 }
+
 std::optional<std::u16string> ConfigHttpNativePool::Lease::tunnel_user_agent() const {
     std::lock_guard lock(state_->mutex);
     return bucket_->tunnel_user_agent;
 }
-void ConfigHttpNativePool::Lease::adopt(httplib::Client& client) {
+
+void ConfigHttpNativePool::Lease::adopt(httplib::Client &client) {
     if (idle_.is_valid()) {
         if (!client.opensim_adopt_stream(std::move(idle_)))
             throw std::logic_error("HTTP pool could not adopt its idle socket");
@@ -118,24 +127,28 @@ void ConfigHttpNativePool::Lease::adopt(httplib::Client& client) {
         idle_ = {};
     }
 }
-void ConfigHttpNativePool::Lease::connected(const httplib::ClientImpl::StreamHandle& handle) {
+
+void ConfigHttpNativePool::Lease::connected(const httplib::ClientImpl::StreamHandle &handle) {
     if (!handle.opensim_reused_connection) {
         created_ = handle.opensim_connection_created;
         keep_alive_ = {};
     }
 }
+
 std::shared_ptr<ConfigHttpSourceReceiveBuffer> ConfigHttpNativePool::Lease::source_receive_buffer() {
     if (!receive_)
         receive_ = std::make_shared<ConfigHttpSourceReceiveBuffer>();
     return receive_;
 }
-bool ConfigHttpNativePool::Lease::response_headers(const ConfigHttpResponseHead& head) {
-    for (auto& header : head.headers)
+
+bool ConfigHttpNativePool::Lease::response_headers(const ConfigHttpResponseHead &head) {
+    for (auto &header : head.headers)
         if (httplib::detail::case_ignore::equal(header.name, "Keep-Alive"))
             config_http_apply_keep_alive(keep_alive_, header.value);
     return !keep_alive_.close;
 }
-void ConfigHttpNativePool::Lease::finish(httplib::ClientImpl::StreamHandle&& handle, bool reusable) noexcept {
+
+void ConfigHttpNativePool::Lease::finish(httplib::ClientImpl::StreamHandle &&handle, bool reusable) noexcept {
     if (returned_)
         return;
     returned_ = true;
@@ -164,10 +177,10 @@ void ConfigHttpNativePool::Lease::finish(httplib::ClientImpl::StreamHandle&& han
     lock.unlock();
     state_->changed.notify_all();
 }
+
 std::shared_ptr<ConfigHttpNativePool::Lease>
-ConfigHttpNativePool::acquire(const std::string& host, std::uint16_t port, Clock::time_point deadline,
-                              std::function<bool()> interrupted,
-                              std::optional<std::u16string> tunnel_user_agent) {
+ConfigHttpNativePool::acquire(const std::string &host, std::uint16_t port, Clock::time_point deadline,
+                              std::function<bool()> interrupted, std::optional<std::u16string> tunnel_user_agent) {
     auto state = state_;
     std::unique_lock lock(state->mutex);
     if (!state->started) {
@@ -179,7 +192,7 @@ ConfigHttpNativePool::acquire(const std::string& host, std::uint16_t port, Clock
         (state->settings.idle_timeout.count() == 0 || state->settings.lifetime.count() == 0))
         bucket = std::make_shared<Bucket>();
     else {
-        auto& item = state->buckets[{host, port}];
+        auto &item = state->buckets[{host, port}];
         if (!item)
             item = std::make_shared<Bucket>();
         bucket = item;
@@ -200,10 +213,9 @@ ConfigHttpNativePool::acquire(const std::string& host, std::uint16_t port, Clock
             if (bucket->waiters.front() == ticket) {
                 // LIFO reuse matches SocketsHttpHandler's available HTTP/1 stack.
                 while (!bucket->idle.empty()) {
-                    auto& idle = bucket->idle.back();
+                    auto &idle = bucket->idle.back();
                     if (!state->expired(idle.created, state->settings.lifetime, now) &&
-                        !state->keep_alive_expired(idle, now) &&
-                        !(idle.receive && idle.receive->expired(now)))
+                        !state->keep_alive_expired(idle, now) && !(idle.receive && idle.receive->expired(now)))
                         break;
                     auto stale = std::move(idle);
                     bucket->idle.pop_back();
@@ -214,8 +226,7 @@ ConfigHttpNativePool::acquire(const std::string& host, std::uint16_t port, Clock
                     now = Clock::now();
                 }
                 if (!bucket->idle.empty() ||
-                    bucket->associated <
-                        static_cast<std::size_t>(state->settings.max_connections_per_server)) {
+                    bucket->associated < static_cast<std::size_t>(state->settings.max_connections_per_server)) {
                     auto lease = std::shared_ptr<Lease>(new Lease(state, bucket));
                     if (!bucket->idle.empty()) {
                         auto idle = std::move(bucket->idle.back());
@@ -234,8 +245,7 @@ ConfigHttpNativePool::acquire(const std::string& host, std::uint16_t port, Clock
                 }
             }
             state->changed.wait_until(
-                lock,
-                interrupted ? std::min(deadline, Clock::now() + std::chrono::milliseconds(10)) : deadline);
+                lock, interrupted ? std::min(deadline, Clock::now() + std::chrono::milliseconds(10)) : deadline);
         }
     } catch (...) {
         std::erase(bucket->waiters, ticket);
@@ -244,4 +254,4 @@ ConfigHttpNativePool::acquire(const std::string& host, std::uint16_t port, Clock
         throw;
     }
 }
-}
+} // namespace opensim::framework

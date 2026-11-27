@@ -1,0 +1,1 @@
+rotation item=<0,0,0,1>;list result;default{state_entry(){result=(list)item;}}

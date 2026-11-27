@@ -1,0 +1,1 @@
+YOption arrays;object input;object alias;object nil;integer h0;integer h1;integer h2;integer h3;integer h4;integer h5;integer after;default{state_entry(){h0=xmrHeapUsed();input=xmrFixedArrayAllocO(1);h1=xmrHeapUsed();xmrFixedArraySetO(input,0,"abcd");h2=xmrHeapUsed();input=nil;h3=xmrHeapUsed();after=1;}}

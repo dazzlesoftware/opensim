@@ -2,6 +2,7 @@
 // BSD license: native-port/LICENSE.txt.
 #pragma once
 #include "opensim/network/lludp.hpp"
+
 namespace opensim::scene {
 // Source CreateObjectPropertiesBlock input. Permission/sale fields belong to
 // root; identity, dates, inventory serial and strings belong to requested part.
@@ -17,10 +18,11 @@ struct ObjectPropertiesData {
     std::uint32_t category = 0, inventory_serial = 0;
     std::string name = "Object", description, touch_name, sit_name;
 };
+
 // One source full-properties block. Send on Task throttle, without automatic
 // packet splitting. Host queue/prioritization and multiobject batching remain
 // separate. Valid UTF-8 strings use source SDK byte limits (63/127/36/36),
 // embedded NUL stops encoding; empty fields have zero length, no extra NUL.
-network::lludp::Packet object_properties(const ObjectPropertiesData&);
-network::lludp::Packet object_properties_family(const ObjectPropertiesData&,std::uint32_t request_flags);
-}
+network::lludp::Packet object_properties(const ObjectPropertiesData &);
+network::lludp::Packet object_properties_family(const ObjectPropertiesData &, std::uint32_t request_flags);
+} // namespace opensim::scene

@@ -2,6 +2,7 @@
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/scene/task_inventory_remove.hpp"
 #include <stdexcept>
+
 namespace opensim::scene {
 TaskInventoryRemoveController::TaskInventoryRemoveController(TaskInventoryRemoveBackend backend)
     : backend_(std::move(backend)) {
@@ -10,7 +11,8 @@ TaskInventoryRemoveController::TaskInventoryRemoveController(TaskInventoryRemove
         !backend_.group_remove || !backend_.invalidate_effective || !backend_.properties)
         throw std::invalid_argument("Incomplete task inventory removal backend");
 }
-void TaskInventoryRemoveController::remove(const TaskInventoryRemoveClient& client, framework::Uuid item_id,
+
+void TaskInventoryRemoveController::remove(const TaskInventoryRemoveClient &client, framework::Uuid item_id,
                                            std::uint32_t local) const {
     auto part = backend_.part(local);
     if (!part || !part->has_group)
@@ -40,4 +42,4 @@ void TaskInventoryRemoveController::remove(const TaskInventoryRemoveClient& clie
     }
     backend_.properties(*part, client);
 }
-}
+} // namespace opensim::scene

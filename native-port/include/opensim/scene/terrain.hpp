@@ -10,20 +10,34 @@
 #include <string_view>
 #include <utility>
 #include <vector>
+
 namespace opensim::scene {
 // TerrainData's height/patch projection. Storage codecs, effects and the full
 // terrain module remain separate from this thread-safe heightfield owner.
 class Terrain {
-public:
+  public:
     static constexpr std::uint32_t patch_size = 16;
     static constexpr float default_height = 21.f;
     explicit Terrain(std::uint32_t width = 256, std::uint32_t height = 256);
-    Terrain(const Terrain& other);
-    Terrain& operator=(const Terrain&) = delete;
-    std::uint32_t width() const noexcept { return width_; }
-    std::uint32_t height() const noexcept { return height_; }
-    std::uint32_t patches_x() const noexcept { return width_ / patch_size; }
-    std::uint32_t patches_y() const noexcept { return height_ / patch_size; }
+    Terrain(const Terrain &other);
+    Terrain &operator=(const Terrain &) = delete;
+
+    std::uint32_t width() const noexcept {
+        return width_;
+    }
+
+    std::uint32_t height() const noexcept {
+        return height_;
+    }
+
+    std::uint32_t patches_x() const noexcept {
+        return width_ / patch_size;
+    }
+
+    std::uint32_t patches_y() const noexcept {
+        return height_ / patch_size;
+    }
+
     float get(int x, int y) const;
     void set(int x, int y, float value);
     // The source interpolates the two triangles of a cell, not a bilinear plane.
@@ -31,9 +45,8 @@ public:
     framework::Vector3 script_ground_normal(float x, float y, float offset_x, float offset_y) const;
     void clear_land(float value = default_height);
     void initialize_island();
-    void replace_heights(const Terrain& source);
-    std::array<float, 256> patch(std::uint32_t px, std::uint32_t py, float sub = 0.f,
-                                 float premult = 1.f) const;
+    void replace_heights(const Terrain &source);
+    std::array<float, 256> patch(std::uint32_t px, std::uint32_t py, float sub = 0.f, float premult = 1.f) const;
     std::pair<float, float> patch_min_max(std::uint32_t px, std::uint32_t py) const;
     std::vector<float> serialized_floats() const; // y outer, x inner
     std::uint64_t revision() const;
@@ -57,7 +70,7 @@ public:
     bool tainted_patch(int px, int py, bool clear = false);
     int next_taint(int start_index = 0); // inclusive, tests and clears
     Terrain clone() const;               // source Clone copies heights, starts with no taints
-private:
+  private:
     std::size_t index(int x, int y) const;
     std::size_t patch_index(std::uint32_t px, std::uint32_t py) const;
     bool taint_get_unlocked(int index, bool clear);
@@ -69,4 +82,4 @@ private:
     std::uint64_t revision_ = 0;
     mutable std::shared_mutex mutex_;
 };
-}
+} // namespace opensim::scene

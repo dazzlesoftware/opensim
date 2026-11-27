@@ -2,7 +2,8 @@
 #include <iostream>
 #include <sstream>
 using namespace opensim::framework;
-int main(int argc, char**) {
+
+int main(int argc, char **) {
     if (argc == 1) {
         ConfigHttpKeepAliveState state;
         config_http_apply_keep_alive(state, u"timeout=20, max=10");

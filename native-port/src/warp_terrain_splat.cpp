@@ -88,7 +88,7 @@ class SplatNoise {
         const auto y0 = cell_y & (size - 1);
         const auto y1 = (y0 + 1) & (size - 1);
         const auto gradient = [&](std::size_t ix, std::size_t iy, float rx, float ry) {
-            const auto& g = gradients_[permutation_[permutation_[ix] + iy]];
+            const auto &g = gradients_[permutation_[permutation_[ix] + iy]];
             return rx * g[0] + ry * g[1];
         };
         const auto smooth = [](float t) { return t * t * (3.f - 2.f * t); };
@@ -104,8 +104,8 @@ class SplatNoise {
 };
 
 float splat_layer(float elevation, float x, float y, std::uint32_t global_x, std::uint32_t global_y,
-                  const WarpTerrainSplat& options) {
-    const auto bilinear = [&](const std::array<float, 4>& corners) {
+                  const WarpTerrainSplat &options) {
+    const auto bilinear = [&](const std::array<float, 4> &corners) {
         return lerp(lerp(corners[0], corners[2], x), lerp(corners[1], corners[3], x), y);
     };
     const float start = std::clamp(bilinear(options.start_heights), 0.f, 255.f);
@@ -124,11 +124,11 @@ float splat_layer(float elevation, float x, float y, std::uint32_t global_x, std
 } // namespace
 
 MapBitmap render_warp_terrain_splat(std::span<const float> terrain, std::uint32_t terrain_width,
-                                  std::uint32_t terrain_height, const WarpTerrainSplat& options,
-                                  std::array<MapBitmap, 4> textures) {
+                                    std::uint32_t terrain_height, const WarpTerrainSplat &options,
+                                    std::array<MapBitmap, 4> textures) {
     const auto pixel_count = std::uint64_t(options.width) * options.height;
-    if (pixel_count == 0 || pixel_count > std::numeric_limits<std::size_t>::max() / 3 ||
-        terrain_width == 0 || terrain_height == 0 || std::uint64_t(terrain_width) * terrain_height != terrain.size())
+    if (pixel_count == 0 || pixel_count > std::numeric_limits<std::size_t>::max() / 3 || terrain_width == 0 ||
+        terrain_height == 0 || std::uint64_t(terrain_width) * terrain_height != terrain.size())
         throw std::invalid_argument("Invalid Warp3D terrain splat dimensions");
 
     constexpr std::array<MapColor, 4> defaults{{{164, 136, 117}, {65, 87, 47}, {157, 145, 131}, {125, 128, 130}}};
@@ -136,7 +136,7 @@ MapBitmap render_warp_terrain_splat(std::span<const float> terrain, std::uint32_
     auto colors = defaults;
     if (average) {
         // The managed solid-color path puts these constants into BGR scanlines.
-        for (auto& color : colors)
+        for (auto &color : colors)
             std::swap(color[0], color[2]);
     }
     if (options.textured) {
@@ -168,17 +168,15 @@ MapBitmap render_warp_terrain_splat(std::span<const float> terrain, std::uint32_
         const auto ty = y * step_y;
         for (std::uint32_t x = 0; x < options.width; ++x) {
             const auto tx = x * step_x;
-            const float layer = splat_layer(terrain[std::size_t(ty) * terrain_width + tx],
-                                           x * inverse_width, y * inverse_height,
-                                           options.region_x + tx, options.region_y + ty, options);
+            const float layer = splat_layer(terrain[std::size_t(ty) * terrain_width + tx], x * inverse_width,
+                                            y * inverse_height, options.region_x + tx, options.region_y + ty, options);
             const auto low = static_cast<std::size_t>(layer);
             const auto high = std::min<std::size_t>(low + 1, 3);
             const auto patch_offset = ((ty & 15u) * 16 + (tx & 15u)) * 3;
             const auto output = (std::size_t(y) * options.width + x) * 3;
             const auto component = [&](std::size_t index, std::size_t channel) {
-                return average || textures[index].pixels.empty()
-                    ? colors[index][channel]
-                    : textures[index].pixels[patch_offset + channel];
+                return average || textures[index].pixels.empty() ? colors[index][channel]
+                                                                 : textures[index].pixels[patch_offset + channel];
             };
             for (std::size_t channel = 0; channel < 3; ++channel)
                 result.pixels[output + channel] = static_cast<std::uint8_t>(

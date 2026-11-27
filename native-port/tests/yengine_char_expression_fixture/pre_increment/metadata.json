@@ -1,0 +1,32 @@
+{
+  "accepted": true,
+  "executed": true,
+  "globals": {
+    "result": {
+      "type": "integer",
+      "clr": "System.Int32",
+      "value": 0
+    },
+    "value": {
+      "type": "char",
+      "clr": "System.Char",
+      "utf16": 0
+    }
+  },
+  "errors": [],
+  "exception": null,
+  "exceptionType": null,
+  "stackSize": 1000000,
+  "stackLimit": 1024,
+  "finalStackLeft": 1000000,
+  "stackSamples": [],
+  "name": "pre_increment",
+  "source": "YOption chars;integer result;char value;default{state_entry(){value=(char)65535;result=++value;}}",
+  "sha256": {
+    "original.il.txt": "91a5f3b4f013c40e1564dc269cca7f97310ef32adaccb5321dcfd8a0ebd418c3",
+    "original.yobj": "8942ad3e3e6141ae2fe98f2c55525493589acc3c7456463c57ea956152b5eb3a",
+    "source.lsl": "573df2eb541e9be7b232be311534e084926e6497393b96a2eadbb79821c64228",
+    "source_hash.txt": "84b8cc06ab5d7da69d1156fb9a9a513389efd0cf6ca784aa5017eb3376b91c4a",
+    "generator_source": "7673d801dbf8417561ec385e5286206a754c6c479cb723b7ca2535509236e6c4"
+  }
+}

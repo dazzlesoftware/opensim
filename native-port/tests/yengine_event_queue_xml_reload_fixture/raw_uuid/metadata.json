@@ -1,0 +1,23 @@
+{
+  "name": "raw_uuid",
+  "input": {
+    "clr": "OpenMetaverse.UUID",
+    "value": "11111111-2222-3333-4444-555555555555"
+  },
+  "append_exception": null,
+  "outer_xml_exception": null,
+  "load_xml_exception": null,
+  "restore_event_queue_exception": null,
+  "restored": {
+    "clr": "OpenMetaverse.UUID",
+    "value": "11111111-2222-3333-4444-555555555555"
+  },
+  "strict_xml_reader_control_exception": null,
+  "strict_xml_reader_control_restored": {
+    "clr": "OpenMetaverse.UUID",
+    "value": "11111111-2222-3333-4444-555555555555"
+  },
+  "sha256": {
+    "serialized.xml": "4b3fbf971d00c9fa73b6dc765510306577bf503bb7dd2846f765219d17cae871"
+  }
+}

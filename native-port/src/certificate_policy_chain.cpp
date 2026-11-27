@@ -7,26 +7,33 @@
 #include <limits>
 #include <set>
 #include <span>
+
 namespace opensim::framework {
 namespace {
 using Bytes = std::span<const std::uint8_t>;
 using Oids = std::optional<std::set<std::string>>;
+
 [[noreturn]] void corrupt() {
     throw CertificatePolicyError();
 }
-void decrement(std::int32_t& value) {
+
+void decrement(std::int32_t &value) {
     value = std::bit_cast<std::int32_t>(std::bit_cast<std::uint32_t>(value) - std::uint32_t{1});
 }
+
 struct Der {
     Bytes data;
+
     bool empty() const {
         return data.empty();
     }
+
     unsigned peek() const {
         if (empty())
             corrupt();
         return data.front();
     }
+
     Bytes take(std::optional<unsigned> expected = {}) {
         if (data.size() < 2)
             corrupt();
@@ -74,13 +81,16 @@ struct Der {
         data = data.subspan(at + length);
         return value;
     }
+
     void end() const {
         if (!empty())
             corrupt();
     }
+
     Der sequence() {
         return Der{take(0x30)};
     }
+
     std::int32_t integer(unsigned tag = 2) {
         auto value = take(tag);
         if (value.empty() || value.size() > 4)
@@ -92,6 +102,7 @@ struct Der {
             number = (number << 8) | b;
         return std::bit_cast<std::int32_t>(number);
     }
+
     std::string oid() {
         auto bytes = take(6);
         if (bytes.empty())
@@ -169,20 +180,23 @@ struct Der {
         return result;
     }
 };
-Der sequence(const std::vector<std::uint8_t>& bytes) {
+
+Der sequence(const std::vector<std::uint8_t> &bytes) {
     Der reader{bytes};
     auto value = reader.sequence();
     reader.end();
     return value;
 }
-std::set<std::string> eku(const std::vector<std::uint8_t>& bytes) {
+
+std::set<std::string> eku(const std::vector<std::uint8_t> &bytes) {
     auto reader = sequence(bytes);
     std::set<std::string> result;
     while (!reader.empty())
         result.insert(reader.oid());
     return result;
 }
-std::set<std::string> policies(const std::vector<std::uint8_t>& bytes) {
+
+std::set<std::string> policies(const std::vector<std::uint8_t> &bytes) {
     auto reader = sequence(bytes);
     std::set<std::string> result;
     while (!reader.empty()) {
@@ -194,13 +208,15 @@ std::set<std::string> policies(const std::vector<std::uint8_t>& bytes) {
     }
     return result;
 }
+
 struct Policy {
     Oids application, certificate;
     std::optional<std::vector<std::pair<std::string, std::string>>> mappings;
     bool implicit_app = true, implicit_cert = true, any_app = false, any_cert = false;
     std::optional<std::int32_t> inhibit_any, inhibit_mapping, require_explicit;
 };
-Policy read(const CertificatePolicyData& data) {
+
+Policy read(const CertificatePolicyData &data) {
     Policy policy;
     if (data.application_cert_policies)
         policy.application = policies(*data.application_cert_policies);
@@ -239,21 +255,23 @@ Policy read(const CertificatePolicyData& data) {
         policy.any_cert = policy.certificate->erase("2.5.29.32.0") != 0;
     return policy;
 }
-}
+} // namespace
+
 struct CertificatePolicyChain::State {
     std::vector<Policy> policies;
     bool fail_all_certificate = false;
 };
-CertificatePolicyChain::CertificatePolicyChain(const std::vector<CertificatePolicyData>& chain) {
+
+CertificatePolicyChain::CertificatePolicyChain(const std::vector<CertificatePolicyData> &chain) {
     if (chain.size() > static_cast<std::size_t>(std::numeric_limits<std::int32_t>::max()))
         throw std::length_error("Certificate chain exceeds native managed-length boundary");
     auto state = std::make_shared<State>();
-    for (const auto& data : chain)
+    for (const auto &data : chain)
         state->policies.push_back(read(data));
     auto explicit_depth = static_cast<std::int32_t>(chain.size()), any_depth = explicit_depth,
          mapping_depth = explicit_depth;
     for (auto it = state->policies.rbegin(); it != state->policies.rend(); ++it) {
-        auto& policy = *it;
+        auto &policy = *it;
         if (!policy.certificate && explicit_depth <= 0)
             state->fail_all_certificate = true;
         if (any_depth <= 0) {
@@ -279,22 +297,23 @@ CertificatePolicyChain::CertificatePolicyChain(const std::vector<CertificatePoli
     }
     state_ = std::move(state);
 }
-bool CertificatePolicyChain::matches_application_policy(const Oid& oid) const {
+
+bool CertificatePolicyChain::matches_application_policy(const Oid &oid) const {
     for (auto it = state_->policies.rbegin(); it != state_->policies.rend(); ++it)
-        if (!it->implicit_app && !it->any_app &&
-            (!oid || !it->application || !it->application->contains(*oid)))
+        if (!it->implicit_app && !it->any_app && (!oid || !it->application || !it->application->contains(*oid)))
             return false;
     return true;
 }
-bool CertificatePolicyChain::matches_certificate_policy(const Oid& oid) const {
+
+bool CertificatePolicyChain::matches_certificate_policy(const Oid &oid) const {
     if (state_->fail_all_certificate)
         return false;
     auto current = oid;
     for (auto it = state_->policies.rbegin(); it != state_->policies.rend(); ++it) {
-        const auto& policy = *it;
+        const auto &policy = *it;
         auto before = current;
         if (policy.mappings && before)
-            for (const auto& pair : *policy.mappings)
+            for (const auto &pair : *policy.mappings)
                 if (pair.first == *before)
                     current = pair.second;
         if (!policy.implicit_cert && !policy.any_cert &&
@@ -303,16 +322,18 @@ bool CertificatePolicyChain::matches_certificate_policy(const Oid& oid) const {
     }
     return true;
 }
-bool CertificatePolicyChain::matches_application_policies(const std::vector<Oid>& oids) const {
-    for (const auto& oid : oids)
+
+bool CertificatePolicyChain::matches_application_policies(const std::vector<Oid> &oids) const {
+    for (const auto &oid : oids)
         if (!matches_application_policy(oid))
             return false;
     return true;
 }
-bool CertificatePolicyChain::matches_certificate_policies(const std::vector<Oid>& oids) const {
-    for (const auto& oid : oids)
+
+bool CertificatePolicyChain::matches_certificate_policies(const std::vector<Oid> &oids) const {
+    for (const auto &oid : oids)
         if (!matches_certificate_policy(oid))
             return false;
     return true;
 }
-}
+} // namespace opensim::framework

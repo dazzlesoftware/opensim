@@ -1,0 +1,154 @@
+{
+  "globals": {
+    "after": {
+      "type": "integer",
+      "clr": "System.Int32",
+      "value": 0
+    },
+    "input": {
+      "type": "fixed_array",
+      "clr": "System.Object[]",
+      "reference_id": 1,
+      "element_type": "System.Object",
+      "length": 1,
+      "value": [
+        {
+          "type": "array_reference",
+          "clr": "System.Object[]",
+          "reference_id": 1
+        }
+      ]
+    }
+  },
+  "object_hash": {
+    "input": {
+      "type": "array_reference",
+      "clr": "System.Object[]",
+      "reference_id": 1
+    },
+    "direct_hash": 48490504,
+    "direct_exception": null,
+    "component_hashes": null,
+    "formula": null,
+    "alias_same_backing": null
+  },
+  "object_reference_pairs": [
+    {
+      "left": "input",
+      "right": "input[0]",
+      "same_reference": true,
+      "object_equals": true
+    }
+  ],
+  "event_code": "state_entry",
+  "call_mode": 1,
+  "sleep_until_ticks": 639313182839065233,
+  "object_description": "",
+  "event_arguments": [],
+  "state_index": 0,
+  "new_state_index": -1,
+  "initialize_globals": false,
+  "running": true,
+  "detectors": [
+    {
+      "key": "11111111-2222-3333-4444-555555555555",
+      "owner": "22222222-3333-4444-5555-666666666666",
+      "group": "33333333-4444-5555-6666-777777777777",
+      "name": "original rich detector 3",
+      "link_number": 5,
+      "type": 11,
+      "grab": [
+        3.125,
+        3.25,
+        3.5
+      ],
+      "position": [
+        13.00000003,
+        14.00000003,
+        15.00000003
+      ],
+      "rotation": [
+        {
+          "clr": "System.Double",
+          "value": 0.125,
+          "bits": "3fc0000000000000",
+          "text": "0.125"
+        },
+        {
+          "clr": "System.Double",
+          "value": 0.25,
+          "bits": "3fd0000000000000",
+          "text": "0.25"
+        },
+        {
+          "clr": "System.Double",
+          "value": 0.5,
+          "bits": "3fe0000000000000",
+          "text": "0.5"
+        },
+        {
+          "clr": "System.Double",
+          "value": 0.875,
+          "bits": "3fec000000000000",
+          "text": "0.875"
+        }
+      ],
+      "velocity": [
+        23.00000003,
+        24.00000003,
+        25.00000003
+      ],
+      "touch_st": [
+        4.00000003,
+        5.00000003,
+        6.00000003
+      ],
+      "touch_normal": [
+        7.00000003,
+        8.000000029999999,
+        9.000000029999999
+      ],
+      "touch_binormal": [
+        10.000000029999999,
+        11.000000029999999,
+        12.000000029999999
+      ],
+      "touch_pos": [
+        13.000000029999999,
+        14.000000029999999,
+        15.000000029999999
+      ],
+      "touch_uv": [
+        16.00000003,
+        17.00000003,
+        18.00000003
+      ],
+      "touch_face": 6
+    }
+  ],
+  "queue": [],
+  "frames": [
+    {
+      "function": "default state_entry",
+      "call_no": 1,
+      "slots": 2,
+      "slot_types": [
+        "EventHelpersInstance",
+        "System.Int32"
+      ],
+      "slot_values": [
+        {
+          "type": "unsupported",
+          "clr": "EventHelpersInstance",
+          "value": "EventHelpersInstance"
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ],
+      "wait_deadline_utc_ticks": null
+    }
+  ]
+}

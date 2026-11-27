@@ -1,0 +1,1 @@
+YOption arrays;YOption chars;object input=(object)<1,2,3,4>;object alias=input;object other=(object)<1,2,3,4>;integer result;integer alias_equal;integer value_equal;default{state_entry(){alias_equal=(input==alias);result=(input==other);value_equal=((string)input==(string)other);}}

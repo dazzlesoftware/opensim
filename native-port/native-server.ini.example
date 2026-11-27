@@ -44,9 +44,10 @@ AvatarDatabase = avatars.db
 EnableLoginOrchestration = false
 ; Opt in to admission on a reachable compatible remote simulator (also enables preparation).
 EnableRemoteSimulationConnector = false
-; Experimental scene path; mutually exclusive with the remote connector.
-; Uses NativeRegion settings; see native-region.ini.example for a complete setup.
-EnableLocalRegion = false
+; With no override, discover region definitions from the Regions directory.
+; Set false to run services only, or true to use a single [NativeRegion] section.
+; See native-region.ini.example for a single-region setup.
+; EnableLocalRegion = false
 InventoryDatabase = inventory.db
 ; Set SQLite before --init-db for durable region registration.
 GridRegionProvider = Null

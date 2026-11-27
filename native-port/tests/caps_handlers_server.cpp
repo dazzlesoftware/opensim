@@ -1,14 +1,15 @@
 #include "caps_http_listener.hpp"
+
 int main() {
     try {
         auto listener = std::make_shared<Listener>();
         services::Caps object(listener, "127.0.0.1", 0, "seed", framework::Uuid{}, "region",
                               [listener] { return listener; });
-        auto& caps = object.handlers();
+        auto &caps = object.handlers();
         std::atomic<int> waiting = 0;
         network::HttpServerOptions options;
         options.port = 0;
-        network::HttpServer http(options, [&](const network::HttpRequest& r) {
+        network::HttpServer http(options, [&](const network::HttpRequest &r) {
             network::HttpResponse response;
             if (r.path == "/ready") {
                 response.status = 503;
@@ -57,7 +58,7 @@ int main() {
                     response.body += "</map></llsd>";
                 } else {
                     auto value = network::Value::object({});
-                    for (const auto& e : object.details(false, &names))
+                    for (const auto &e : object.details(false, &names))
                         value.set(e.first, e.second.value_or(""));
                     response.content_type = "application/json";
                     response.body = network::osd_json(value, true);
@@ -86,7 +87,7 @@ int main() {
                 server::CapsHandlers::Requested req = {"X"};
                 auto map = caps.details(false, r.path == "/requested" ? &req : nullptr);
                 auto value = network::Value::object({});
-                for (const auto& e : map)
+                for (const auto &e : map)
                     value.set(e.first, e.second.value_or(""));
                 response.content_type = "application/json";
                 response.body = network::osd_json(value, true);
@@ -99,7 +100,7 @@ int main() {
         std::getline(std::cin, line);
         http.stop();
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what();
         return 1;
     }

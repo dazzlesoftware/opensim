@@ -1,6 +1,7 @@
 #include "opensim/framework/config_http_multi_proxy.hpp"
 #include "opensim/framework/config_http_environment_proxy.hpp"
 #include <limits>
+
 namespace opensim::framework {
 ConfigHttpMultiProxy::ConfigHttpMultiProxy(ConfigHttpMultiProxyCandidates candidates,
                                            std::shared_ptr<ConfigHttpFailedProxyCache> cache)
@@ -8,6 +9,7 @@ ConfigHttpMultiProxy::ConfigHttpMultiProxy(ConfigHttpMultiProxyCandidates candid
     if (!cache_)
         throw ConfigHttpProxyProviderError("MultiProxy requires its shared FailedProxyCache");
 }
+
 ConfigHttpMultiProxyCandidate ConfigHttpMultiProxy::read_next() {
     if (current_)
         cache_->set_proxy_failed(current_);
@@ -40,4 +42,4 @@ ConfigHttpMultiProxyCandidate ConfigHttpMultiProxy::read_next() {
     }
     return result;
 }
-}
+} // namespace opensim::framework

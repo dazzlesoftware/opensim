@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "checkedAtUtc": "2026-11-26T23:07:46.764875+00:00",
+  "passed": true,
+  "scope": "Actual unchanged originalYEngine source execution, productionbinarywrite/read, sameLIVE and migratedresume with65537/100000distinctstringdefinitions inside objectarrays",
+  "nativeParityVerified": false,
+  "schedulerMethodology": "Unchanged original60ms scheduler prefix slices untilsourcefilled1; then real llSleep capture. Testguardraised1000000checks; noheap/database or backendworkaround",
+  "generatorSha256": "cfd7ceba7aeb46429127d0b58a1ba93be084dec88ddb2e4895111f7cd318c683",
+  "verifierSha256": "8136f8a70671b8d7bf1b585656d0e8ecf6eca8eb431aec4cc0e476f116265d50",
+  "platforms": {
+    "windows": {
+      "metadataSha256": "75bb82bca16add61c63fae2f093dcc1632eb82fee1c0ad4b17b3615a8d6b653b",
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "cases": [
+        {
+          "name": "references_O_65537",
+          "sourceSha256": "c6b0968aa2ef70704907a4383a7594164e47238f9aa1717691efd361fdafb94b",
+          "snapshotSha256": "12344d59593d8a33bf5ffec65af39ac501924594d246e9efca7882ddee638c25",
+          "snapshotBytes": 447830,
+          "arrayLength": 65537,
+          "verifiedDistinctSYSSTRDefinitions": 65537,
+          "fullCellsSha256": "8bcbd140d6a6cc752b5d6e5eab927983b9ec14755f59f136ba37a5c4da6edeef",
+          "metadataSha256": "1afc198ab8e4616961e7190e70ce4d4d94bb0e3c2a55bcb1413a9bdeff8d41c9"
+        },
+        {
+          "name": "references_O_100000",
+          "sourceSha256": "b1dd9958c34d1551874144cb38f9f602358ef13a5f8c81dc3c0868a6af75e235",
+          "snapshotSha256": "ae7bd995d94b907e55249c5ffcae6276239d5320ee32f56ddd4c3697d36010c6",
+          "snapshotBytes": 689071,
+          "arrayLength": 100000,
+          "verifiedDistinctSYSSTRDefinitions": 100000,
+          "fullCellsSha256": "10acc4543c22e8cbce4bb741d23251bedfad84162c59be19e05facfd0940ec00",
+          "metadataSha256": "8e0325fa1dfb46e766ae52264a36d2888f6f7d8948872dae5f308d113bad3830"
+        }
+      ]
+    },
+    "linux": {
+      "metadataSha256": "35889b3ad8292d55d235d9df1ac297eab1037ea6b280e5d9c31e407d9f77e6b1",
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "cases": [
+        {
+          "name": "references_O_65537",
+          "sourceSha256": "c6b0968aa2ef70704907a4383a7594164e47238f9aa1717691efd361fdafb94b",
+          "snapshotSha256": "12344d59593d8a33bf5ffec65af39ac501924594d246e9efca7882ddee638c25",
+          "snapshotBytes": 447830,
+          "arrayLength": 65537,
+          "verifiedDistinctSYSSTRDefinitions": 65537,
+          "fullCellsSha256": "8bcbd140d6a6cc752b5d6e5eab927983b9ec14755f59f136ba37a5c4da6edeef",
+          "metadataSha256": "853ad625f2d5433273a1981f86a9c5271008ee676da44cd310856285686a1e31"
+        },
+        {
+          "name": "references_O_100000",
+          "sourceSha256": "b1dd9958c34d1551874144cb38f9f602358ef13a5f8c81dc3c0868a6af75e235",
+          "snapshotSha256": "ae7bd995d94b907e55249c5ffcae6276239d5320ee32f56ddd4c3697d36010c6",
+          "snapshotBytes": 689071,
+          "arrayLength": 100000,
+          "verifiedDistinctSYSSTRDefinitions": 100000,
+          "fullCellsSha256": "10acc4543c22e8cbce4bb741d23251bedfad84162c59be19e05facfd0940ec00",
+          "metadataSha256": "73218e9a5d5a5b95f2901dd7f2f6b3940db5964cc681ad6713478ef158f608da"
+        }
+      ]
+    }
+  },
+  "independentWireVerification": "Located unique SYSARRAYob Int32length then parsed every SYSSTR BinaryWriter length and verified exactdecimaltext; all definitions distinct, noDUPREF substitutes",
+  "allProcessesTerminal": true
+}

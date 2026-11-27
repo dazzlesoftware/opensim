@@ -1,0 +1,32 @@
+{
+  "accepted": true,
+  "executed": true,
+  "globals": {
+    "calls": {
+      "type": "integer",
+      "clr": "System.Int32",
+      "value": 1
+    },
+    "result": {
+      "type": "integer",
+      "clr": "System.Int32",
+      "value": 7
+    }
+  },
+  "errors": [],
+  "exception": null,
+  "exceptionType": null,
+  "stackSize": 1000000,
+  "stackLimit": 1024,
+  "finalStackLeft": 1000000,
+  "stackSamples": [],
+  "name": "selector_once",
+  "source": "YOption advflowctl;YOption chars;integer result;integer calls;integer get(){calls++;return 2;}default{state_entry(){switch(get()){case 1:result=9;break;case 2:result=7;break;default:result=8;}}}",
+  "sha256": {
+    "original.il.txt": "940f71b548e40113e3e22034a0a992a269655381e6c8a2edd1310a5d46d9af67",
+    "original.yobj": "354c4bcc6dc4a3a8fb3fdd3913923b2693f7ef14d0dd56b87a6889793053a61f",
+    "source.lsl": "ddda524d4c46b79fee82ea3a499701d6aca738d959fdbbdebbea6c399754f558",
+    "source_hash.txt": "250b6cb2dca7724f28aefdc5fff3396730e0786514df16855f7024149b59fd87",
+    "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+  }
+}

@@ -1,0 +1,137 @@
+[
+  {
+    "name": "integer_0",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "125",
+    "format": "G2",
+    "coverage_group": "integer_halfway_general_scientific",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"125\"),\"G2\");after=1;}}"
+  },
+  {
+    "name": "integer_1",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "125",
+    "format": "E1",
+    "coverage_group": "integer_halfway_general_scientific",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"125\"),\"E1\");after=1;}}"
+  },
+  {
+    "name": "integer_2",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-125",
+    "format": "G2",
+    "coverage_group": "integer_halfway_general_scientific",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-125\"),\"G2\");after=1;}}"
+  },
+  {
+    "name": "integer_3",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-125",
+    "format": "E1",
+    "coverage_group": "integer_halfway_general_scientific",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-125\"),\"E1\");after=1;}}"
+  },
+  {
+    "name": "integer_4",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "145",
+    "format": "G2",
+    "coverage_group": "integer_halfway_general_scientific",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"145\"),\"G2\");after=1;}}"
+  },
+  {
+    "name": "integer_5",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "145",
+    "format": "E1",
+    "coverage_group": "integer_halfway_general_scientific",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"145\"),\"E1\");after=1;}}"
+  },
+  {
+    "name": "integer_6",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-145",
+    "format": "G2",
+    "coverage_group": "integer_halfway_general_scientific",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-145\"),\"G2\");after=1;}}"
+  },
+  {
+    "name": "integer_7",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-145",
+    "format": "E1",
+    "coverage_group": "integer_halfway_general_scientific",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-145\"),\"E1\");after=1;}}"
+  },
+  {
+    "name": "float_0",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "12.345",
+    "format": "0.0E+00E+00",
+    "coverage_group": "multiple_exponent_tokens",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"12.345\"),\"0.0E+00E+00\");after=1;}}"
+  },
+  {
+    "name": "float_1",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "12.345",
+    "format": "0.0E+00e-00",
+    "coverage_group": "multiple_exponent_tokens",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"12.345\"),\"0.0E+00e-00\");after=1;}}"
+  },
+  {
+    "name": "float_2",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.25",
+    "format": "'a\u0000b'0",
+    "coverage_group": "quoted_escaped_nul",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.25\"),\"'a\u0000b'0\");after=1;}}"
+  },
+  {
+    "name": "float_3",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.25",
+    "format": "\\\u0000x0",
+    "coverage_group": "quoted_escaped_nul",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.25\"),\"\\\\\u0000x0\");after=1;}}"
+  },
+  {
+    "name": "float_4",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-0.04",
+    "format": "0.0;(0.0)",
+    "coverage_group": "negative_rounds_zero_sections",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-0.04\"),\"0.0;(0.0)\");after=1;}}"
+  },
+  {
+    "name": "float_5",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-0.04",
+    "format": "0.0;(0.0);",
+    "coverage_group": "negative_rounds_zero_sections",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-0.04\"),\"0.0;(0.0);\");after=1;}}"
+  },
+  {
+    "name": "float_6",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-0.4",
+    "format": "0;(0)",
+    "coverage_group": "negative_rounds_zero_sections",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-0.4\"),\"0;(0)\");after=1;}}"
+  }
+]

@@ -1,0 +1,1 @@
+integer result;integer after;default{state_entry(){result=xmrHashCode(xmrString2Float("1e300"));after=1;}}

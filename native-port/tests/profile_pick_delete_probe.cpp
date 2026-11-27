@@ -1,8 +1,9 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
 #include "profile_list_fixture.hpp"
+
 namespace {
-std::string DeleteState(UserProfileRequests& m) {
+std::string DeleteState(UserProfileRequests &m) {
     auto one = [&](Uuid key) {
         std::shared_ptr<UserProfileCacheEntry> e;
         m.profile_cache().try_get_value(key, e);
@@ -12,7 +13,7 @@ std::string DeleteState(UserProfileRequests& m) {
         auto identity = Identity(e), list_id = Identity(e->picksList);
         std::string rows;
         if (e->picks)
-            for (auto& row : *e->picks) {
+            for (auto &row : *e->picks) {
                 if (!rows.empty())
                     rows += ',';
                 auto item_id = Identity(row.second);
@@ -20,14 +21,15 @@ std::string DeleteState(UserProfileRequests& m) {
                         (row.second ? row.second->PickId.str() + ":" + T(row.second->Name) : "N");
             }
         auto props = Identity(e->props), ads = Identity(e->classifiedsLists);
-        return count + ":" + identity + ":" + std::to_string(e->flags) + ":" + T(e->born) + ":" + list_id +
-               ":" + DumpList(e->picksList) + ":" + (e->picks ? rows : "N") + ":" + props + ":" +
+        return count + ":" + identity + ":" + std::to_string(e->flags) + ":" + T(e->born) + ":" + list_id + ":" +
+               DumpList(e->picksList) + ":" + (e->picks ? rows : "N") + ":" + props + ":" +
                (e->props ? e->props->UserId.str() : "N") + ":" + ads + ":" + DumpList(e->classifiedsLists);
     };
     auto a = one(Id(1)), b = one(Id(2)), saved_id = Identity(saved);
     return a + ";" + b + ";" + saved_id + ":" + DumpList(saved);
 }
-}
+} // namespace
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -91,8 +93,8 @@ int main() {
                     (*e->classifiedsLists)[Id(9)] = u"ad";
                     if (token != "L") {
                         e->picksList = std::make_shared<UserProfileNameList>();
-                        e->picks = std::make_shared<
-                            OrderedDictionary<Uuid, std::shared_ptr<UserProfilePick>, UuidHash>>();
+                        e->picks =
+                            std::make_shared<OrderedDictionary<Uuid, std::shared_ptr<UserProfilePick>, UuidHash>>();
                         if (token != "E") {
                             (*e->picksList)[query] = text;
                             (*e->picksList)[Id(4)] = u"second";
@@ -105,7 +107,7 @@ int main() {
                     }
                     m.profile_cache().add_or_update(token == "B" ? Id(2) : Id(1), e, 300.0);
                 }
-            } catch (const std::exception& error) {
+            } catch (const std::exception &error) {
                 result = "EX:" + H(error.what());
             }
             if (!output.empty())

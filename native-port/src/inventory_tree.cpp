@@ -28,8 +28,10 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "opensim/services/library_service.hpp"
 #include <algorithm>
 #include <stdexcept>
+
 namespace opensim::services {
 using framework::Uuid;
+
 std::shared_ptr<InventoryFolderTree> InventoryFolderTree::create_child(const Uuid &requested_id,
                                                                        const std::string &requested_name,
                                                                        std::uint16_t requested_type) {
@@ -45,6 +47,7 @@ std::shared_ptr<InventoryFolderTree> InventoryFolderTree::create_child(const Uui
     children_.push_back(result);
     return result;
 }
+
 void InventoryFolderTree::add_child(const std::shared_ptr<InventoryFolderTree> &folder) {
     if (!folder)
         throw std::invalid_argument("Missing child folder");
@@ -60,16 +63,18 @@ void InventoryFolderTree::add_child(const std::shared_ptr<InventoryFolderTree> &
         throw std::invalid_argument("Inventory tree cycle");
     std::lock_guard lock(mutex_);
     folder->parent = id;
-    auto found = std::find_if(children_.begin(), children_.end(),
-                              [&](const auto &child) { return child->id == folder->id; });
+    auto found =
+        std::find_if(children_.begin(), children_.end(), [&](const auto &child) { return child->id == folder->id; });
     if (found == children_.end())
         children_.push_back(folder);
     else
         *found = folder;
 }
+
 bool InventoryFolderTree::contains_child(const Uuid &requested_id) const {
     return static_cast<bool>(child(requested_id));
 }
+
 std::shared_ptr<InventoryFolderTree> InventoryFolderTree::child(const Uuid &requested_id) const {
     std::lock_guard lock(mutex_);
     for (const auto &folder : children_)
@@ -77,6 +82,7 @@ std::shared_ptr<InventoryFolderTree> InventoryFolderTree::child(const Uuid &requ
             return folder;
     return {};
 }
+
 std::shared_ptr<InventoryFolderTree> InventoryFolderTree::remove_child(const Uuid &requested_id) {
     std::lock_guard lock(mutex_);
     for (auto it = children_.begin(); it != children_.end(); ++it)
@@ -87,6 +93,7 @@ std::shared_ptr<InventoryFolderTree> InventoryFolderTree::remove_child(const Uui
         }
     return {};
 }
+
 void InventoryFolderTree::add_item(const std::shared_ptr<InventoryItem> &item) {
     if (!item)
         throw std::invalid_argument("Missing inventory item");
@@ -98,6 +105,7 @@ void InventoryFolderTree::add_item(const std::shared_ptr<InventoryItem> &item) {
         }
     items_.push_back(item);
 }
+
 void InventoryFolderTree::purge() {
     std::lock_guard lock(mutex_);
     for (const auto &folder : children_)
@@ -105,6 +113,7 @@ void InventoryFolderTree::purge() {
     children_.clear();
     items_.clear();
 }
+
 std::shared_ptr<InventoryItem> InventoryFolderTree::find_item(const Uuid &requested_id) const {
     std::lock_guard lock(mutex_);
     for (const auto &value : items_)
@@ -115,6 +124,7 @@ std::shared_ptr<InventoryItem> InventoryFolderTree::find_item(const Uuid &reques
             return result;
     return {};
 }
+
 std::shared_ptr<InventoryItem> InventoryFolderTree::find_asset(const Uuid &requested_id) const {
     std::lock_guard lock(mutex_);
     for (const auto &value : items_)
@@ -125,6 +135,7 @@ std::shared_ptr<InventoryItem> InventoryFolderTree::find_asset(const Uuid &reque
             return result;
     return {};
 }
+
 bool InventoryFolderTree::delete_item(const Uuid &requested_id) {
     std::lock_guard lock(mutex_);
     for (auto it = items_.begin(); it != items_.end(); ++it)
@@ -137,6 +148,7 @@ bool InventoryFolderTree::delete_item(const Uuid &requested_id) {
             return true;
     return false;
 }
+
 std::shared_ptr<InventoryFolderTree> InventoryFolderTree::find_folder(const Uuid &requested_id) {
     if (this->id == requested_id)
         return shared_from_this();
@@ -146,6 +158,7 @@ std::shared_ptr<InventoryFolderTree> InventoryFolderTree::find_folder(const Uuid
             return result;
     return {};
 }
+
 std::shared_ptr<InventoryFolderTree> InventoryFolderTree::find_type(int requested_type) const {
     std::lock_guard lock(mutex_);
     for (const auto &folder : children_)
@@ -153,12 +166,14 @@ std::shared_ptr<InventoryFolderTree> InventoryFolderTree::find_type(int requeste
             return folder;
     return {};
 }
+
 namespace {
 bool whitespace(std::uint32_t value) {
-    return (value >= 9 && value <= 13) || value == 0x20 || value == 0x85 || value == 0xa0 ||
-           value == 0x1680 || (value >= 0x2000 && value <= 0x200a) || value == 0x2028 || value == 0x2029 ||
-           value == 0x202f || value == 0x205f || value == 0x3000;
+    return (value >= 9 && value <= 13) || value == 0x20 || value == 0x85 || value == 0xa0 || value == 0x1680 ||
+           (value >= 0x2000 && value <= 0x200a) || value == 0x2028 || value == 0x2029 || value == 0x202f ||
+           value == 0x205f || value == 0x3000;
 }
+
 std::string trim(const std::string &text) {
     std::size_t first = std::string::npos, last = 0;
     for (std::size_t i = 0; i < text.size();) {
@@ -178,7 +193,8 @@ std::string trim(const std::string &text) {
     }
     return first == std::string::npos ? std::string{} : text.substr(first, last - first);
 }
-}
+} // namespace
+
 std::shared_ptr<InventoryFolderTree> InventoryFolderTree::find_folder_path(std::string path) {
     path = trim(path);
     if (path.empty() || path == "/")
@@ -191,6 +207,7 @@ std::shared_ptr<InventoryFolderTree> InventoryFolderTree::find_folder_path(std::
             return split == std::string::npos ? folder : folder->find_folder_path(path.substr(split + 1));
     return {};
 }
+
 std::shared_ptr<InventoryItem> InventoryFolderTree::find_item_path(const std::string &path) const {
     const auto split = path.find('/');
     std::lock_guard lock(mutex_);
@@ -204,14 +221,17 @@ std::shared_ptr<InventoryItem> InventoryFolderTree::find_item_path(const std::st
                 return folder->find_item_path(path.substr(split + 1));
     return {};
 }
+
 std::vector<std::shared_ptr<InventoryItem>> InventoryFolderTree::items() const {
     std::lock_guard lock(mutex_);
     return items_;
 }
+
 std::vector<std::shared_ptr<InventoryFolderTree>> InventoryFolderTree::children() const {
     std::lock_guard lock(mutex_);
     return children_;
 }
+
 int InventoryFolderTree::total_count() const {
     std::lock_guard lock(mutex_);
     std::uint32_t count = static_cast<std::uint32_t>(items_.size());
@@ -219,4 +239,4 @@ int InventoryFolderTree::total_count() const {
         count += static_cast<std::uint32_t>(folder->total_count());
     return static_cast<std::int32_t>(count);
 }
-}
+} // namespace opensim::services

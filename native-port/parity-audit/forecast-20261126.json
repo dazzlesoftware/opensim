@@ -1,0 +1,42 @@
+{
+  "date": "2026-11-26",
+  "platforms": [
+    "Windows x64",
+    "Linux x64"
+  ],
+  "macOSExcluded": true,
+  "methodSemanticReviewComplete": false,
+  "assessment": "Planning forecast includes unresolved method-level discovery explicitly. It is not evidence that the full semantic review is finished.",
+  "basis": "17 task-level three-point judgement estimates. No measured conversion from agent tokens or machine hours to engineering days exists.",
+  "engineeringDays": {
+    "optimistic": 110,
+    "mostLikely": 213,
+    "pessimistic": 441
+  },
+  "weightedExpectedDays": 233.8,
+  "confidence": "low",
+  "assumptions": [
+    "Tracked bundled feature scope, including optional modules and providers, stays required.",
+    "Estimates credit completed preview, lifecycle and persistence milestones.",
+    "Five focused engineering days per week per effective workstream.",
+    "Two effective independent workstreams are a scenario assumption, not inferred from the number of agents.",
+    "Integration work is represented in WP-17; a 20 percent schedule reserve covers unresolved discovery and rework.",
+    "Calendar excludes user waiting time and service outages; major scope discoveries require re-estimation."
+  ],
+  "twoEffectiveWorkstreamScenario": {
+    "planningWeeks": [
+      24,
+      36
+    ],
+    "dates": [
+      "2027-05-13",
+      "2027-08-05"
+    ],
+    "weightedWeeksWith20PercentReserve": 28.1
+  },
+  "oneEffectiveWorkstreamScenario": {
+    "weightedWeeksWith20PercentReserve": 56.1
+  },
+  "nextReestimate": "After full semantic discovery WP-16 and remaining language contract review WP-03 have bounded acceptance tasks, and after recording actual task closure capacity.",
+  "notACommitment": true
+}

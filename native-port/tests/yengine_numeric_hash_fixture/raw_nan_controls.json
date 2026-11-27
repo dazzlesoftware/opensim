@@ -1,0 +1,92 @@
+[
+  {
+    "source_expressible": false,
+    "reason": "Arbitrary NaN payload is a direct CLR numeric control, not fabricated LSL source",
+    "input": {
+      "clr": "System.Double",
+      "value": null,
+      "text": "NaN",
+      "bits": "7ff0000000000001"
+    },
+    "result": {
+      "type": "integer",
+      "clr": "System.Int32",
+      "value": 2146435072
+    }
+  },
+  {
+    "source_expressible": false,
+    "reason": "Arbitrary NaN payload is a direct CLR numeric control, not fabricated LSL source",
+    "input": {
+      "clr": "System.Double",
+      "value": null,
+      "text": "NaN",
+      "bits": "fff0000000000001"
+    },
+    "result": {
+      "type": "integer",
+      "clr": "System.Int32",
+      "value": 2146435072
+    }
+  },
+  {
+    "source_expressible": false,
+    "reason": "Arbitrary NaN payload is a direct CLR numeric control, not fabricated LSL source",
+    "input": {
+      "clr": "System.Double",
+      "value": null,
+      "text": "NaN",
+      "bits": "7ff8000000000000"
+    },
+    "result": {
+      "type": "integer",
+      "clr": "System.Int32",
+      "value": 2146435072
+    }
+  },
+  {
+    "source_expressible": false,
+    "reason": "Arbitrary NaN payload is a direct CLR numeric control, not fabricated LSL source",
+    "input": {
+      "clr": "System.Double",
+      "value": null,
+      "text": "NaN",
+      "bits": "fff8000000000000"
+    },
+    "result": {
+      "type": "integer",
+      "clr": "System.Int32",
+      "value": 2146435072
+    }
+  },
+  {
+    "source_expressible": false,
+    "reason": "Arbitrary NaN payload is a direct CLR numeric control, not fabricated LSL source",
+    "input": {
+      "clr": "System.Double",
+      "value": null,
+      "text": "NaN",
+      "bits": "7fffffffffffffff"
+    },
+    "result": {
+      "type": "integer",
+      "clr": "System.Int32",
+      "value": 2146435072
+    }
+  },
+  {
+    "source_expressible": false,
+    "reason": "Arbitrary NaN payload is a direct CLR numeric control, not fabricated LSL source",
+    "input": {
+      "clr": "System.Double",
+      "value": null,
+      "text": "NaN",
+      "bits": "ffffffffffffffff"
+    },
+    "result": {
+      "type": "integer",
+      "clr": "System.Int32",
+      "value": 2146435072
+    }
+  }
+]

@@ -1,0 +1,1 @@
+string input="lambda λ CJK漢 é";integer result;integer after;default{state_entry(){result=xmrHashCode(input);after=1;}}

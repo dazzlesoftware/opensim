@@ -1,0 +1,1 @@
+integer result;default{state_entry(){result=xmrStringCompare(1,2);}}

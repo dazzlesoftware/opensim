@@ -1,0 +1,1 @@
+YOption chars;YOption arrays;string result;integer after;default{state_entry(){result=llDumpList2String('A',"|");after=1;}}

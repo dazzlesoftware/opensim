@@ -1,0 +1,1 @@
+integer value=init();integer init(){return 7;}default{touch_start(integer n){}}

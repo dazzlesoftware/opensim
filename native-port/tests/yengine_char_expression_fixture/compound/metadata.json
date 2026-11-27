@@ -1,0 +1,32 @@
+{
+  "accepted": true,
+  "executed": true,
+  "globals": {
+    "result": {
+      "type": "integer",
+      "clr": "System.Int32",
+      "value": 0
+    },
+    "value": {
+      "type": "char",
+      "clr": "System.Char",
+      "utf16": 0
+    }
+  },
+  "errors": [],
+  "exception": null,
+  "exceptionType": null,
+  "stackSize": 1000000,
+  "stackLimit": 1024,
+  "finalStackLeft": 1000000,
+  "stackSamples": [],
+  "name": "compound",
+  "source": "YOption chars;integer result;char value;default{state_entry(){value=(char)65535;value+=1;result=(integer)value;}}",
+  "sha256": {
+    "original.il.txt": "55ce3b2d28033f700a7e86f6afe4e775b2c2271c376c86874e5c1ce02366cd2f",
+    "original.yobj": "21138f906700a36110a3511031585dc6c5d2967ae86656a974746a523a566668",
+    "source.lsl": "92f6b23d4d318301a741eefc4b1f831de7b6bc7892ae65dd9cb21ea883eec111",
+    "source_hash.txt": "13d9ff5e67a4dbd692b0e9452b1e3fef722675ed961760cb8753ea4addac62b5",
+    "generator_source": "7673d801dbf8417561ec385e5286206a754c6c479cb723b7ca2535509236e6c4"
+  }
+}

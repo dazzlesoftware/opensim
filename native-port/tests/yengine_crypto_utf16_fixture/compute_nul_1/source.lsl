@@ -1,0 +1,1 @@
+string result;integer after;default{state_entry(){result=llComputeHash(llBase64ToString("YQBi"),"md5_sha1");after=1;}}

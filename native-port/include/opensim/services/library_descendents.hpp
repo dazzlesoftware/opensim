@@ -3,6 +3,7 @@
 #pragma once
 #include "opensim/services/inventory_caps.hpp"
 #include "opensim/services/inventory_diagnostics.hpp"
+
 namespace opensim::services {
 struct LibraryDescendentsBackend {
     std::function<std::optional<framework::Uuid>()> root_owner;
@@ -11,13 +12,14 @@ struct LibraryDescendentsBackend {
     std::function<void(std::string)> log;
     InventoryDiagnostic diagnostic;
 };
+
 class FetchLibraryDescendentsCore {
   public:
     explicit FetchLibraryDescendentsCore(LibraryDescendentsBackend);
-    network::HttpResponse handle(const network::HttpRequest&, InventoryBadRequests*, framework::Uuid agent) const;
+    network::HttpResponse handle(const network::HttpRequest &, InventoryBadRequests *, framework::Uuid agent) const;
 
   private:
     LibraryDescendentsBackend backend_;
     framework::Uuid initial_owner_;
 };
-}
+} // namespace opensim::services

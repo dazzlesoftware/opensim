@@ -1,9 +1,11 @@
 struct SceneFixture;
+
 struct ScanSettings : scene::GatherRegionSettings {
     SceneFixture *f;
     int tag;
     framework::Uuid texture(int) override;
 };
+
 struct ScanInfo : scene::GatherRegionInfo {
     SceneFixture *f;
     int tag;
@@ -11,40 +13,47 @@ struct ScanInfo : scene::GatherRegionInfo {
     std::shared_ptr<scene::GatherRegionSettings> settings() override;
     framework::Uuid id() override;
 };
+
 struct ScanEnv : scene::GatherEnvironment {
     SceneFixture *f;
     int tag;
     void gather(scene::GatheredAssetMap &) override;
 };
+
 struct ScanLandData : scene::GatherLandData {
     SceneFixture *f;
     int tag;
     std::shared_ptr<ScanEnv> env;
     std::shared_ptr<scene::GatherEnvironment> environment() override;
 };
+
 struct ScanParcel : scene::GatherParcel {
     SceneFixture *f;
     int tag;
     std::shared_ptr<ScanLandData> value;
     std::shared_ptr<scene::GatherLandData> data() override;
 };
+
 struct ScanLand : scene::GatherLand {
     SceneFixture *f;
     int tag;
     std::vector<std::shared_ptr<scene::GatherParcel>> list;
     void for_each(const std::function<void(std::shared_ptr<scene::GatherParcel>)> &) override;
 };
+
 struct ScanRegistry : scene::GatherEntities {
     SceneFixture *f;
     int tag;
     std::shared_ptr<std::vector<std::shared_ptr<scene::GatherEntity>>> list;
     decltype(list) snapshot() override;
 };
+
 struct ScanAppearance : scene::GatherAppearance {
     SceneFixture *f;
     std::shared_ptr<LiveTexture> tex;
     std::shared_ptr<scene::GatherTexture> texture() override;
 };
+
 struct ScanAvatar : scene::GatherPresence {
     SceneFixture *f;
     std::shared_ptr<ScanAppearance> a;
@@ -52,6 +61,7 @@ struct ScanAvatar : scene::GatherPresence {
     bool deleted() override;
     std::shared_ptr<scene::GatherAppearance> appearance() override;
 };
+
 struct ScanScene : scene::GatherScene {
     SceneFixture *f;
     int tag;
@@ -64,6 +74,7 @@ struct ScanScene : scene::GatherScene {
     std::shared_ptr<scene::GatherLand> land() override;
     std::shared_ptr<scene::GatherEntities> entities() override;
 };
+
 struct SceneFixture {
     int profile, cancel, nth, seen = 0;
     bool running = true;
@@ -72,12 +83,14 @@ struct SceneFixture {
     std::shared_ptr<LiveFixture> live;
     std::vector<std::shared_ptr<scene::GatherScene>> scenes;
     std::shared_ptr<scene::UuidGathererState> last;
+
     void hit(int p, int tag) {
         log("S:" + std::to_string(p) + ":" + std::to_string(tag));
         fault(200 + p);
         if (p == cancel && ++seen == nth)
             running = false;
     }
+
     SceneFixture(int p, int c, int n, std::function<void(const std::string &)> l, std::function<void(int)> h)
         : profile(p), cancel(c), nth(n), log(std::move(l)), fault(std::move(h)) {
         live = std::make_shared<LiveFixture>(p == 13 ? 1 : 0, 3, 0, 1, log, [this](int point) {
@@ -211,6 +224,7 @@ struct SceneFixture {
         if (profile == 1)
             scenes.clear();
     }
+
     std::string call(const std::shared_ptr<scene::UuidGathererBackend> &assets) {
         auto b = std::make_shared<scene::SceneAssetGatherBackend>();
         b->assets = assets;
@@ -247,68 +261,84 @@ struct SceneFixture {
         return result + ":" + (running ? "1" : "0");
     }
 };
+
 inline framework::Uuid ScanSettings::texture(int index) {
     f->hit(32, index);
     return ::id(1 + tag * 20 + index);
 }
+
 inline std::shared_ptr<scene::GatherRegionSettings> ScanInfo::settings() {
     f->hit(31, tag);
     return data;
 }
+
 inline framework::Uuid ScanInfo::id() {
     f->hit(49, tag);
     return ::id(70 + tag);
 }
+
 inline void ScanEnv::gather(scene::GatheredAssetMap &ids) {
     f->hit(34, tag);
     ids[::id(20 + tag)] = 0;
     ids[framework::Uuid{}] = 0;
 }
+
 inline std::shared_ptr<scene::GatherEnvironment> ScanLandData::environment() {
     f->hit(38, tag);
     return env;
 }
+
 inline std::shared_ptr<scene::GatherLandData> ScanParcel::data() {
     f->hit(37, tag);
     return value;
 }
+
 inline void ScanLand::for_each(const std::function<void(std::shared_ptr<scene::GatherParcel>)> &visit) {
     f->hit(36, tag);
     for (auto &p : list)
         visit(p);
 }
+
 inline decltype(ScanRegistry::list) ScanRegistry::snapshot() {
     f->hit(40, tag);
     return list;
 }
+
 inline std::shared_ptr<scene::GatherTexture> ScanAppearance::texture() {
     f->hit(44, 0);
     return tex;
 }
+
 inline bool ScanAvatar::child() {
     f->hit(41, 0);
     return f->profile == 15;
 }
+
 inline bool ScanAvatar::deleted() {
     f->hit(42, 0);
     return f->profile == 16;
 }
+
 inline std::shared_ptr<scene::GatherAppearance> ScanAvatar::appearance() {
     f->hit(43, 0);
     return a;
 }
+
 inline std::shared_ptr<scene::GatherRegionInfo> ScanScene::info() {
     f->hit(30, tag);
     return data;
 }
+
 inline std::shared_ptr<scene::GatherEnvironment> ScanScene::environment() {
     f->hit(33, tag);
     return env;
 }
+
 inline std::shared_ptr<scene::GatherLand> ScanScene::land() {
     f->hit(35, tag);
     return parcels;
 }
+
 inline std::shared_ptr<scene::GatherEntities> ScanScene::entities() {
     f->hit(39, tag);
     return registry;

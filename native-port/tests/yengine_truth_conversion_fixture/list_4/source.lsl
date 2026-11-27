@@ -1,0 +1,1 @@
+list item=[[]];integer converted;integer ordinary;integer negated;integer casted;list boxed;default{state_entry(){converted=xmrListToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrListToBool(item);boxed=[xmrListToBool(item)];}}

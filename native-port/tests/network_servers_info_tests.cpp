@@ -4,12 +4,15 @@
 #include <iostream>
 #include <sstream>
 using namespace opensim::framework;
+
 namespace {
 using T = NiniWriterText;
+
 T t(std::u16string s) {
     return nini_writer_text(std::move(s));
 }
-T dec(const std::string& s) {
+
+T dec(const std::string &s) {
     if (s == "null")
         return {};
     std::u16string x;
@@ -18,31 +21,32 @@ T dec(const std::string& s) {
             x += char16_t(std::stoul(s.substr(i, 4), nullptr, 16));
     return t(x);
 }
+
 std::string enc(T s) {
     if (!s)
         return "null";
     if (s->empty())
         return "-";
     std::string r;
-    const char* h = "0123456789abcdef";
+    const char *h = "0123456789abcdef";
     for (auto c : *s)
         for (int n = 12; n >= 0; n -= 4)
             r += h[(c >> n) & 15];
     return r;
 }
+
 struct Row {
     std::shared_ptr<NetworkServersInfo> info;
-    std::shared_ptr<NiniConfigArena> arena =
-        std::make_shared<NiniConfigArena>(native_nini_invariant_config_backend());
+    std::shared_ptr<NiniConfigArena> arena = std::make_shared<NiniConfigArena>(native_nini_invariant_config_backend());
     std::shared_ptr<NiniConfigSourceBase> source;
     std::vector<std::string> trace;
     int fault = 0, mutation = 0, mutation_at = 0, calls = 0;
+
     Row(int seed) {
-        info = seed < 0 ? std::make_shared<NetworkServersInfo>(0xffffffffu, 0)
-                        : std::make_shared<NetworkServersInfo>();
+        info = seed < 0 ? std::make_shared<NetworkServersInfo>(0xffffffffu, 0) : std::make_shared<NetworkServersInfo>();
         if (seed <= 0)
             return;
-        auto& n = *info;
+        auto &n = *info;
         n.HttpListenerPort = 0u - std::uint32_t(seed);
         n.secureInventoryServer = (seed & 1) != 0;
         n.isSandbox = (seed & 2) != 0;
@@ -57,11 +61,12 @@ struct Row {
         n.cert_path = seed % 3 == 0 ? nullptr : t(u"cert-seed");
         n.cert_pass = seed % 2 == 0 ? nullptr : t(u"pass-seed");
     }
-    void hit(const char* kind, T key, std::string fallback) {
+
+    void hit(const char *kind, T key, std::string fallback) {
         trace.push_back(std::string(kind) + ":" + enc(key) + ":" + fallback);
         ++calls;
         if (calls == mutation_at) {
-            auto& n = *info;
+            auto &n = *info;
             switch (mutation) {
             case 1:
                 n.ssl_listener = true;
@@ -100,6 +105,7 @@ struct Row {
         if (calls == fault)
             throw NiniConfigError(NiniConfigError::Kind::InvalidOperation, u"getter fault");
     }
+
     void load(int mode, T ini) {
         source = arena->create_ini_source(nini_string_reader(*ini));
         if (mode == 0) {
@@ -147,29 +153,31 @@ struct Row {
         } else
             info->load_from_configuration(source);
     }
+
     std::string snapshot() {
-        auto& n = *info;
+        auto &n = *info;
         ConfigSettings c;
         std::ostringstream s;
-        s << n.HttpListenerPort << ',' << n.secureInventoryServer << ',' << n.isSandbox << ','
-          << n.HttpUsesSSL << ',' << enc(n.HttpSSLCN) << ',' << enc(n.HttpSSLCertPath) << ','
-          << enc(n.HttpSSLCNCertPass) << ',' << n.httpSSLPort << ',' << n.ssl_listener << ','
-          << n.ssl_external << ',' << n.https_port << ',' << enc(n.cert_path) << ',' << enc(n.cert_pass)
-          << ',' << enc(c.PhysicsEngine) << ',' << enc(c.MeshEngineName) << ',' << enc(c.ClientstackDll)
-          << ',' << enc(c.LibrariesXMLFile) << ',' << c.DefaultRegionHttpPort;
+        s << n.HttpListenerPort << ',' << n.secureInventoryServer << ',' << n.isSandbox << ',' << n.HttpUsesSSL << ','
+          << enc(n.HttpSSLCN) << ',' << enc(n.HttpSSLCertPath) << ',' << enc(n.HttpSSLCNCertPass) << ','
+          << n.httpSSLPort << ',' << n.ssl_listener << ',' << n.ssl_external << ',' << n.https_port << ','
+          << enc(n.cert_path) << ',' << enc(n.cert_pass) << ',' << enc(c.PhysicsEngine) << ',' << enc(c.MeshEngineName)
+          << ',' << enc(c.ClientstackDll) << ',' << enc(c.LibrariesXMLFile) << ',' << c.DefaultRegionHttpPort;
         return s.str();
     }
 };
-std::string error(const char* type, T msg, std::uint32_t hr, T param = {}) {
+
+std::string error(const char *type, T msg, std::uint32_t hr, T param = {}) {
     return std::string(type) + ":" + enc(msg) + ":" + std::to_string(hr) + ":" + enc(param);
 }
-}
-int main(int argc, char**) {
+} // namespace
+
+int main(int argc, char **) {
     if (argc == 1) {
         NetworkServersInfo a, b(0xffffffffu, 0xffffffffu);
-        if (a.HttpListenerPort != 9000 || a.httpSSLPort != 9001 ||
-            a.cert_path != network_servers_empty_text() || a.HttpSSLCN != network_servers_empty_text() ||
-            a.cert_path != b.cert_path || a.HttpSSLCertPath != b.HttpSSLCertPath || b.https_port != 0)
+        if (a.HttpListenerPort != 9000 || a.httpSSLPort != 9001 || a.cert_path != network_servers_empty_text() ||
+            a.HttpSSLCN != network_servers_empty_text() || a.cert_path != b.cert_path ||
+            a.HttpSSLCertPath != b.HttpSSLCertPath || b.https_port != 0)
             return 1;
         RegionConfigurationBackend backend;
         bind_network_servers_info(backend);
@@ -178,8 +186,7 @@ int main(int argc, char**) {
             return 1;
         auto arena = std::make_shared<NiniConfigArena>(native_nini_invariant_config_backend());
         std::weak_ptr<NiniConfigArena> lifetime = arena;
-        auto source =
-            arena->create_ini_source(nini_string_reader(u"[Network]\nhttp_listener_cn=retained-value\n"));
+        auto source = arena->create_ini_source(nini_string_reader(u"[Network]\nhttp_listener_cn=retained-value\n"));
         a.load_from_configuration(source);
         source.reset();
         arena.reset();
@@ -204,14 +211,12 @@ int main(int argc, char**) {
         std::string status = "ok";
         try {
             r.load(mode, dec(doc));
-        } catch (const NiniConfigError& e) {
-            status =
-                error(e.source_type(), t(e.message), e.hresult(), e.parameter ? t(*e.parameter) : nullptr);
-        } catch (const NiniReaderError& e) {
+        } catch (const NiniConfigError &e) {
+            status = error(e.source_type(), t(e.message), e.hresult(), e.parameter ? t(*e.parameter) : nullptr);
+        } catch (const NiniReaderError &e) {
             status = error(e.source_type(), t(e.message_utf16()), e.hresult());
-        } catch (const NiniDocumentError& e) {
-            status =
-                error(e.source_type(), t(e.message), e.hresult(), e.parameter ? t(*e.parameter) : nullptr);
+        } catch (const NiniDocumentError &e) {
+            status = error(e.source_type(), t(e.message), e.hresult(), e.parameter ? t(*e.parameter) : nullptr);
         }
         std::cout << status << '/' << r.snapshot() << '/';
         for (std::size_t i = 0; i < r.trace.size(); ++i) {

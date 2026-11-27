@@ -1,0 +1,32 @@
+{
+  "accepted": true,
+  "executed": true,
+  "globals": {
+    "result": {
+      "type": "integer",
+      "clr": "System.Int32",
+      "value": 0
+    },
+    "value": {
+      "type": "char",
+      "clr": "System.Char",
+      "utf16": 0
+    }
+  },
+  "errors": [],
+  "exception": null,
+  "exceptionType": null,
+  "stackSize": 1000000,
+  "stackLimit": 1024,
+  "finalStackLeft": 1000000,
+  "stackSamples": [],
+  "name": "variables_less",
+  "source": "YOption chars;integer result;char value;default{state_entry(){char a='B';char b='A';result=a<b;}}",
+  "sha256": {
+    "original.il.txt": "e6cb0ec329586e23ed1dd9d4092aaca9376f00f4ba2ce07c1245eed540c4aba5",
+    "original.yobj": "7e069946aab5e797ea9a28f23afab10259a283e4b9fca4bd7e6ba4949752d115",
+    "source.lsl": "4050cc169bb93cec01005a73e843061c0b8f46e9e9e8b8f6cbacc885ad0d4aa9",
+    "source_hash.txt": "ae2864465a1d72d445698d7c3eadcfed1ff8915ce872cae031cba5553d78a200",
+    "generator_source": "7673d801dbf8417561ec385e5286206a754c6c479cb723b7ca2535509236e6c4"
+  }
+}

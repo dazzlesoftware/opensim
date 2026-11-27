@@ -1,0 +1,8 @@
+{
+  "scenario": "empty_pass8",
+  "argument_is_global_class": true,
+  "own_heap_usage": 4,
+  "global_heap": 4,
+  "target_limit": 8,
+  "boundary": "Backend-injected ehArgs Object[]; source state_entry has no declared parameters."
+}

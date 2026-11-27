@@ -1,0 +1,680 @@
+[
+  {
+    "name": "process_format_restart",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "39B082668CC1AA30494F8903A58C61D9",
+    "compiled_version": -11,
+    "suspended": true,
+    "migrated": true,
+    "initial_exception": null,
+    "live_cycles": [
+      {
+        "cycle": 1,
+        "exception": null,
+        "checks": 2,
+        "state": {
+          "globals": {
+            "calls": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 1
+            },
+            "done": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 1
+            },
+            "entries": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 1
+            },
+            "ff": {
+              "type": "string",
+              "clr": "System.String",
+              "value": "-0.000"
+            },
+            "fi": {
+              "type": "string",
+              "clr": "System.String",
+              "value": "1.3E\u002B02"
+            },
+            "fr": {
+              "type": "string",
+              "clr": "System.String",
+              "value": "\u003C0.0,0.0,0.0,1.0\u003E"
+            },
+            "fv": {
+              "type": "string",
+              "clr": "System.String",
+              "value": "\u003C,,\u003E"
+            },
+            "gf": {
+              "type": "string",
+              "clr": "System.String",
+              "value": "-0.000"
+            },
+            "gi": {
+              "type": "string",
+              "clr": "System.String",
+              "value": "1.3E\u002B02"
+            },
+            "gr": {
+              "type": "string",
+              "clr": "System.String",
+              "value": "\u003C0.0,0.0,0.0,1.0\u003E"
+            },
+            "gv": {
+              "type": "string",
+              "clr": "System.String",
+              "value": "\u003C,,\u003E"
+            }
+          },
+          "event_code": "None",
+          "call_mode": 0,
+          "sleep_until_ticks": 639312743318881476,
+          "object_description": "format completed",
+          "event_arguments": null,
+          "state_index": 0,
+          "new_state_index": -1,
+          "initialize_globals": false,
+          "running": true,
+          "detectors": [
+            {
+              "key": "11111111-2222-3333-4444-555555555555",
+              "owner": "22222222-3333-4444-5555-666666666666",
+              "group": "33333333-4444-5555-6666-777777777777",
+              "name": "original rich detector 3",
+              "link_number": 5,
+              "type": 11,
+              "grab": [
+                3.125,
+                3.25,
+                3.5
+              ],
+              "position": [
+                13.00000003,
+                14.00000003,
+                15.00000003
+              ],
+              "rotation": [
+                0.125,
+                0.25,
+                0.5,
+                0.875
+              ],
+              "velocity": [
+                23.00000003,
+                24.00000003,
+                25.00000003
+              ],
+              "touch_st": [
+                4.00000003,
+                5.00000003,
+                6.00000003
+              ],
+              "touch_normal": [
+                7.00000003,
+                8.000000029999999,
+                9.000000029999999
+              ],
+              "touch_binormal": [
+                10.000000029999999,
+                11.000000029999999,
+                12.000000029999999
+              ],
+              "touch_pos": [
+                13.000000029999999,
+                14.000000029999999,
+                15.000000029999999
+              ],
+              "touch_uv": [
+                16.00000003,
+                17.00000003,
+                18.00000003
+              ],
+              "touch_face": 6
+            }
+          ],
+          "queue": [],
+          "frames": []
+        }
+      }
+    ],
+    "migrated_cycles": [
+      {
+        "cycle": 1,
+        "exception": null,
+        "checks": 2,
+        "state": {
+          "globals": {
+            "calls": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 1
+            },
+            "done": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 1
+            },
+            "entries": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 1
+            },
+            "ff": {
+              "type": "string",
+              "clr": "System.String",
+              "value": "-0.000"
+            },
+            "fi": {
+              "type": "string",
+              "clr": "System.String",
+              "value": "1.3E\u002B02"
+            },
+            "fr": {
+              "type": "string",
+              "clr": "System.String",
+              "value": "\u003C0.0,0.0,0.0,1.0\u003E"
+            },
+            "fv": {
+              "type": "string",
+              "clr": "System.String",
+              "value": "\u003C,,\u003E"
+            },
+            "gf": {
+              "type": "string",
+              "clr": "System.String",
+              "value": "-0.000"
+            },
+            "gi": {
+              "type": "string",
+              "clr": "System.String",
+              "value": "1.3E\u002B02"
+            },
+            "gr": {
+              "type": "string",
+              "clr": "System.String",
+              "value": "\u003C0.0,0.0,0.0,1.0\u003E"
+            },
+            "gv": {
+              "type": "string",
+              "clr": "System.String",
+              "value": "\u003C,,\u003E"
+            }
+          },
+          "event_code": "None",
+          "call_mode": 0,
+          "sleep_until_ticks": 0,
+          "object_description": "format completed",
+          "event_arguments": null,
+          "state_index": 0,
+          "new_state_index": -1,
+          "initialize_globals": false,
+          "running": true,
+          "detectors": [],
+          "queue": [],
+          "frames": []
+        }
+      }
+    ],
+    "prefix_resume": null,
+    "live_resume_exception": null,
+    "live_resume": {
+      "globals": {
+        "calls": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "done": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "entries": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "ff": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "-0.000"
+        },
+        "fi": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "1.3E\u002B02"
+        },
+        "fr": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "\u003C0.0,0.0,0.0,1.0\u003E"
+        },
+        "fv": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "\u003C,,\u003E"
+        },
+        "gf": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "-0.000"
+        },
+        "gi": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "1.3E\u002B02"
+        },
+        "gr": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "\u003C0.0,0.0,0.0,1.0\u003E"
+        },
+        "gv": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "\u003C,,\u003E"
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 639312743318881476,
+      "object_description": "format completed",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "calls": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "done": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "entries": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "ff": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "-0.000"
+        },
+        "fi": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "1.3E\u002B02"
+        },
+        "fr": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "\u003C0.0,0.0,0.0,1.0\u003E"
+        },
+        "fv": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "\u003C,,\u003E"
+        },
+        "gf": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "-0.000"
+        },
+        "gi": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "1.3E\u002B02"
+        },
+        "gr": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "\u003C0.0,0.0,0.0,1.0\u003E"
+        },
+        "gv": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "\u003C,,\u003E"
+        }
+      },
+      "event_code": "state_entry",
+      "call_mode": 1,
+      "sleep_until_ticks": 639312743318881476,
+      "object_description": "format sleeping",
+      "event_arguments": [],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 3,
+          "slots": 2,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32"
+          ]
+        }
+      ]
+    },
+    "after_followup": null,
+    "after_load": {
+      "globals": {
+        "calls": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "done": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "entries": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "ff": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "-0.000"
+        },
+        "fi": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "1.3E\u002B02"
+        },
+        "fr": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "\u003C0.0,0.0,0.0,1.0\u003E"
+        },
+        "fv": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "\u003C,,\u003E"
+        },
+        "gf": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "-0.000"
+        },
+        "gi": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "1.3E\u002B02"
+        },
+        "gr": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "\u003C0.0,0.0,0.0,1.0\u003E"
+        },
+        "gv": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "\u003C,,\u003E"
+        }
+      },
+      "event_code": "state_entry",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": [],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 3,
+          "slots": 2,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32"
+          ]
+        }
+      ]
+    },
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "calls": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "done": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "entries": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "ff": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "-0.000"
+        },
+        "fi": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "1.3E\u002B02"
+        },
+        "fr": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "\u003C0.0,0.0,0.0,1.0\u003E"
+        },
+        "fv": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "\u003C,,\u003E"
+        },
+        "gf": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "-0.000"
+        },
+        "gi": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "1.3E\u002B02"
+        },
+        "gr": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "\u003C0.0,0.0,0.0,1.0\u003E"
+        },
+        "gv": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "\u003C,,\u003E"
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "format completed",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Exact actual process-driver SOURCE compiled by unchanged original CodeGen, executed by original four numeric formatting methods inside global initializers and user function. Original StartEx/base CheckRunWork captures at actual llSleep(3). Same-live ResumeEx and separate actual MigrateOut/In plus original EventQueue XML resume independently. Real minimal Scene/API objects, no conversion/sleep return substitutes; only scheduler eligibility timing is driven outside RunOne.",
+    "sha256": {
+      "cache_key.txt": "74ebdf2e4d80f6765e6a25ecde2959a72477dddf42bdf7f57c00455da144c3d0",
+      "event-queue.xml": "09030ac3a8d5dbaa452ef2076d8c8a18f45eb5608570c79b134fc4ffc843309e",
+      "original.il.txt": "a05b2e112566c696d931ed9ff43d42508c7c6e3fe05a824a293eb82dc7690565",
+      "original.yobj": "afff2b88387196ed8ec1d90e3aaf2bdf50a171f5d5d73d3255eaeebd82b9b254",
+      "snapshot.bin": "a7b5e2bae3a9e65cf0e410910131902b07d886cd2dd719e58fb48e18c5e6bbe2",
+      "source.lsl": "8bdaef59f5aed01c6b97f335ae0e3ce5ab434b7f6dc67d0a4dcc00e8cb6a8875",
+      "generator_source": "e33eef5625dff0b855a08c1b3abbc7ca8489a51854b42877c6bdd5f671ccb71f",
+      "generator_assembly": "954c02e7c95da3b3ace971eb3b7a193e6b6d65901e69351d6c130741b36576fe",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  }
+]

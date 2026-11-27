@@ -1,0 +1,130 @@
+[
+  {
+    "name": "immediate_wrap",
+    "source": "YOption chars;integer result;char value;default{state_entry(){result=(integer)(char)65536;}}"
+  },
+  {
+    "name": "local_wrap",
+    "source": "YOption chars;integer result;char value;default{state_entry(){char c=(char)65536;result=(integer)c;}}"
+  },
+  {
+    "name": "parameter_wrap",
+    "source": "YOption chars;integer result;integer read(char c){return (integer)c;}default{state_entry(){result=read((char)65536);}}"
+  },
+  {
+    "name": "return_wrap",
+    "source": "YOption chars;integer result;char read(integer c){return (char)c;}default{state_entry(){result=(integer)read(65536);}}"
+  },
+  {
+    "name": "immediate_negative",
+    "source": "YOption chars;integer result;char value;default{state_entry(){result=(integer)(char)-1;}}"
+  },
+  {
+    "name": "local_negative",
+    "source": "YOption chars;integer result;char value;default{state_entry(){char c=(char)-1;result=(integer)c;}}"
+  },
+  {
+    "name": "parameter_negative",
+    "source": "YOption chars;integer result;integer read(char c){return (integer)c;}default{state_entry(){result=read((char)-1);}}"
+  },
+  {
+    "name": "return_negative",
+    "source": "YOption chars;integer result;char read(integer c){return (char)c;}default{state_entry(){result=(integer)read(-1);}}"
+  },
+  {
+    "name": "immediate_large",
+    "source": "YOption chars;integer result;char value;default{state_entry(){result=(integer)(char)65537;}}"
+  },
+  {
+    "name": "local_large",
+    "source": "YOption chars;integer result;char value;default{state_entry(){char c=(char)65537;result=(integer)c;}}"
+  },
+  {
+    "name": "parameter_large",
+    "source": "YOption chars;integer result;integer read(char c){return (integer)c;}default{state_entry(){result=read((char)65537);}}"
+  },
+  {
+    "name": "return_large",
+    "source": "YOption chars;integer result;char read(integer c){return (char)c;}default{state_entry(){result=(integer)read(65537);}}"
+  },
+  {
+    "name": "option_xmr",
+    "source": "XMROption chars;integer result;char value;default{state_entry(){value='A';result=(integer)value;}}"
+  },
+  {
+    "name": "option_allowall",
+    "source": "YOption allowall;integer result;char value;default{state_entry(){value='A';result=(integer)value;}}"
+  },
+  {
+    "name": "literal_without_option",
+    "source": "integer result;default{state_entry(){result=(integer)'A';}}"
+  },
+  {
+    "name": "escape_return",
+    "source": "YOption chars;integer result;char value;default{state_entry(){result=(integer)'\\r';}}"
+  },
+  {
+    "name": "escape_unknown",
+    "source": "YOption chars;integer result;char value;default{state_entry(){result=(integer)'\\q';}}"
+  },
+  {
+    "name": "escape_actual_nul",
+    "source": "YOption chars;integer result;char value;default{state_entry(){result=(integer)'\u0000';}}"
+  },
+  {
+    "name": "variables_add",
+    "source": "YOption chars;integer result;char value;default{state_entry(){char a='B';char b='A';result=a+b;}}"
+  },
+  {
+    "name": "variables_subtract",
+    "source": "YOption chars;integer result;char value;default{state_entry(){char a='B';char b='A';result=a-b;}}"
+  },
+  {
+    "name": "variables_multiply",
+    "source": "YOption chars;integer result;char value;default{state_entry(){char a='B';char b='A';result=a*b;}}"
+  },
+  {
+    "name": "variables_equal",
+    "source": "YOption chars;integer result;char value;default{state_entry(){char a='B';char b='A';result=a==b;}}"
+  },
+  {
+    "name": "variables_less",
+    "source": "YOption chars;integer result;char value;default{state_entry(){char a='B';char b='A';result=a<b;}}"
+  },
+  {
+    "name": "variable_not",
+    "source": "YOption chars;integer result;char value;default{state_entry(){value='A';result=!value;}}"
+  },
+  {
+    "name": "variable_condition",
+    "source": "YOption chars;integer result;char value;default{state_entry(){value='A';result=value?1:2;}}"
+  },
+  {
+    "name": "post_increment",
+    "source": "YOption chars;integer result;char value;default{state_entry(){value=(char)65535;result=value++;}}"
+  },
+  {
+    "name": "pre_increment",
+    "source": "YOption chars;integer result;char value;default{state_entry(){value=(char)65535;result=++value;}}"
+  },
+  {
+    "name": "compound",
+    "source": "YOption chars;integer result;char value;default{state_entry(){value=(char)65535;value+=1;result=(integer)value;}}"
+  },
+  {
+    "name": "list_cast",
+    "source": "YOption chars;char value;list result;default{state_entry(){value='A';result=(list)value;}}"
+  },
+  {
+    "name": "list_implicit",
+    "source": "YOption chars;char value;list result;default{state_entry(){value='A';result=value;}}"
+  },
+  {
+    "name": "list_literal",
+    "source": "YOption chars;char value;list result;default{state_entry(){value='A';result=[value];}}"
+  },
+  {
+    "name": "list_literal_int",
+    "source": "YOption chars;char value;list result;default{state_entry(){value='A';result=[(integer)value];}}"
+  }
+]

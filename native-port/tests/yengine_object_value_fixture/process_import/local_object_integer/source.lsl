@@ -1,0 +1,1 @@
+YOption arrays;YOption chars;object input=(object)7;object alias;integer result;default{state_entry(){object local=input;alias=local;result=(input==alias);}}

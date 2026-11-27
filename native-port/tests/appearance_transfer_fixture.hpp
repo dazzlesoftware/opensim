@@ -4,6 +4,7 @@ struct TransferFixture {
     std::map<Id, std::shared_ptr<services::InventoryItem>> source_items;
     std::shared_ptr<framework::AvatarAttachment> second;
     int gets = 0;
+
     TransferFixture(int variant) {
         appearance->wearables = std::make_shared<framework::AvatarAppearance::Wearables>(3);
         auto w = std::make_shared<framework::AvatarWearable>();
@@ -63,6 +64,7 @@ struct TransferFixture {
             w->add(id(15), id(205));
         }
     }
+
     void before_random(int n, int mutation) {
         if (mutation == 11 && n == 1 && source_items.contains(id(11))) {
             auto a = source_items.at(id(11));
@@ -71,6 +73,7 @@ struct TransferFixture {
             a->next_permissions = 32768;
         }
     }
+
     void before_clock(int n, int mutation) {
         if (mutation == 12 && n == 1 && source_items.contains(id(11))) {
             auto a = source_items.at(id(11));
@@ -78,6 +81,7 @@ struct TransferFixture {
             a->creation_date = -999;
         }
     }
+
     void queried(Id item, int mutation) {
         ++gets;
         if (!appearance)

@@ -4,11 +4,13 @@
 #include "opensim/framework/task_inventory_item.hpp"
 #include <memory>
 #include <vector>
+
 namespace opensim::scene {
 struct TaskInventoryPart {
     framework::Uuid id, group;
     std::uint32_t local_id = 0;
 };
+
 struct TaskInventoryRegistryHooks {
     std::function<TaskInventoryPart()> part;
     std::function<void(std::uint32_t, std::optional<framework::Uuid>)> changed;
@@ -17,15 +19,16 @@ struct TaskInventoryRegistryHooks {
     std::function<void(std::uint32_t, framework::Uuid)> remove_script;
     std::function<void(std::string)> log;
 };
+
 class TaskInventoryRegistry {
   public:
     using Item = std::shared_ptr<framework::TaskInventoryItem>;
     explicit TaskInventoryRegistry(TaskInventoryRegistryHooks);
     ~TaskInventoryRegistry();
-    TaskInventoryRegistry(const TaskInventoryRegistry&) = delete;
-    TaskInventoryRegistry& operator=(const TaskInventoryRegistry&) = delete;
+    TaskInventoryRegistry(const TaskInventoryRegistry &) = delete;
+    TaskInventoryRegistry &operator=(const TaskInventoryRegistry &) = delete;
     bool add(Item, bool allowed_drop = false);
-    void restore(const std::vector<Item>& items);
+    void restore(const std::vector<Item> &items);
     bool update(Item, bool fire_script_events = true, bool consider_changed = true);
     int remove(framework::Uuid);
     Item find(framework::Uuid) const;
@@ -37,10 +40,11 @@ class TaskInventoryRegistry {
     std::uint32_t serial() const;
     void serial(std::uint32_t);
     bool inventory_changed() const;
+    void assign_group(framework::Uuid group, bool attachment);
     void inventory_changed(bool);
 
   private:
     struct Impl;
     std::unique_ptr<Impl> impl_;
 };
-}
+} // namespace opensim::scene

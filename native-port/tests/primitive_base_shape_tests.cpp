@@ -12,7 +12,8 @@
 static_assert(!std::is_copy_assignable_v<opensim::framework::ShapeByteArray>);
 using namespace opensim::framework;
 using Bytes = PrimitiveBaseShapeCore::Bytes;
-template <class Range> std::string hex(const Range& b) {
+
+template <class Range> std::string hex(const Range &b) {
     std::string s;
     for (auto v : b) {
         s += "0123456789abcdef"[v >> 4];
@@ -20,7 +21,8 @@ template <class Range> std::string hex(const Range& b) {
     }
     return s;
 }
-Bytes bytes(const std::string& s) {
+
+Bytes bytes(const std::string &s) {
     if (s == "null")
         return {};
     std::vector<std::uint8_t> b;
@@ -29,13 +31,16 @@ Bytes bytes(const std::string& s) {
             b.push_back(static_cast<std::uint8_t>(std::stoul(s.substr(i, 2), nullptr, 16)));
     return std::make_shared<ShapeByteArray>(std::move(b));
 }
-std::string encode(const std::string& s) {
+
+std::string encode(const std::string &s) {
     return hex(std::vector<std::uint8_t>(s.begin(), s.end()));
 }
-float number(const std::string& s) {
+
+float number(const std::string &s) {
     return std::bit_cast<float>(static_cast<std::uint32_t>(std::stoul(s, nullptr, 16)));
 }
-std::optional<std::u16string> text16(const std::string& s) {
+
+std::optional<std::u16string> text16(const std::string &s) {
     if (s == "null")
         return {};
     std::u16string result;
@@ -44,7 +49,8 @@ std::optional<std::u16string> text16(const std::string& s) {
             result.push_back(static_cast<char16_t>(std::stoul(s.substr(i, 4), nullptr, 16)));
     return result;
 }
-std::string raw16(const std::optional<std::u16string>& value) {
+
+std::string raw16(const std::optional<std::u16string> &value) {
     if (!value)
         return "null";
     std::ostringstream out;
@@ -53,59 +59,72 @@ std::string raw16(const std::optional<std::u16string>& value) {
         out << std::setw(4) << static_cast<unsigned>(c);
     return out.str();
 }
-std::string nullable_hex(const Bytes& value) {
+
+std::string nullable_hex(const Bytes &value) {
     return value ? hex(*value) : "null";
 }
+
 class TraceMediaReader : public ShapeMediaXmlReader {
   public:
-    std::function<void(const std::string&)> event;
+    std::function<void(const std::string &)> event;
     std::optional<std::u16string> type = u"sl";
     std::u16string inner = u"<llsd><array /></llsd>";
     bool empty = false;
     std::string fault;
     unsigned disposals = 0;
-    explicit TraceMediaReader(std::function<void(const std::string&)> trace) : event(std::move(trace)) {
-    }
-    void call(const std::string& name) {
+
+    explicit TraceMediaReader(std::function<void(const std::string &)> trace) : event(std::move(trace)) {}
+
+    void call(const std::string &name) {
         event(name);
         if (fault == name)
             throw PrimitiveShapeError("System.InvalidOperationException", name + " fault");
     }
+
     void dtd_processing_ignore() override {
         call("dtd");
     }
+
     void move_to_content() override {
         call("move");
     }
+
     std::optional<std::u16string> get_attribute(std::u16string_view) override {
         call("attr");
         return type;
     }
+
     void read_start_element(std::u16string_view) override {
         call("start");
     }
+
     std::u16string read_inner_xml() override {
         call("inner");
         return inner;
     }
+
     bool is_empty_element() override {
         call("empty");
         return empty;
     }
+
     void dispose() override {
         ++disposals;
         call("dispose");
     }
 };
+
 class TraceMediaWriter : public ShapeMediaXmlWriter {
   public:
     std::function<void(std::u16string)> write;
-    explicit TraceMediaWriter(std::function<void(std::u16string)> sink) : write(std::move(sink)) {
-    }
+
+    explicit TraceMediaWriter(std::function<void(std::u16string)> sink) : write(std::move(sink)) {}
+
     void write_raw(std::u16string value) override {
         write(std::move(value));
     }
 };
+
 // Fixture-only DOM adapter. Production reader/LLSD obligations stay explicit.
 class FixtureMediaReader : public ShapeMediaXmlReader {
     pugi::xml_document doc_;
@@ -113,7 +132,7 @@ class FixtureMediaReader : public ShapeMediaXmlReader {
     bool empty_ = false;
 
   public:
-    explicit FixtureMediaReader(const std::optional<std::u16string>& text) {
+    explicit FixtureMediaReader(const std::optional<std::u16string> &text) {
         if (!text)
             throw std::runtime_error("null XML");
         for (std::size_t i = 0; i < text->size(); ++i) {
@@ -134,19 +153,22 @@ class FixtureMediaReader : public ShapeMediaXmlReader {
         auto end = data.find('>');
         empty_ = end != std::string::npos && end > 0 && data[end - 1] == '/';
     }
-    void dtd_processing_ignore() override {
-    }
-    void move_to_content() override {
-    }
+
+    void dtd_processing_ignore() override {}
+
+    void move_to_content() override {}
+
     std::optional<std::u16string> get_attribute(std::u16string_view name) override {
         auto a = root_.attribute(utf8(name).c_str());
         return a ? std::optional<std::u16string>(utf16_replacing(a.value())) : std::nullopt;
     }
+
     void read_start_element(std::u16string_view name) override {
         if (utf8(name) != root_.name())
             throw std::runtime_error("Wrong root");
         current_ = root_.first_child();
     }
+
     std::u16string read_inner_xml() override {
         std::ostringstream out;
         if (current_.type() == pugi::node_element)
@@ -154,15 +176,17 @@ class FixtureMediaReader : public ShapeMediaXmlReader {
                 n.print(out, "", pugi::format_raw);
         return utf16_replacing(out.str());
     }
+
     bool is_empty_element() override {
         return empty_;
     }
-    void dispose() override {
-    }
+
+    void dispose() override {}
 };
+
 ShapeMediaXmlBackend media_backend() {
     ShapeMediaXmlBackend b;
-    b.create_reader = [](const auto& text) { return std::make_shared<FixtureMediaReader>(text); };
+    b.create_reader = [](const auto &text) { return std::make_shared<FixtureMediaReader>(text); };
     b.deserialize_llsd = [](auto xml) {
         try {
             return opensim::network::parse_llsd_xml(utf8(xml));
@@ -173,33 +197,35 @@ ShapeMediaXmlBackend media_backend() {
     b.media_from_osd = shape_media_entry_from_invariant_osd;
     return b;
 }
-std::string media_snapshot(const std::shared_ptr<ShapeMediaList>& list) {
+
+std::string media_snapshot(const std::shared_ptr<ShapeMediaList> &list) {
     if (!list)
         return "null";
     std::ostringstream o;
     o << list->size() << ":";
-    for (const auto& p : list->entries) {
+    for (const auto &p : list->entries) {
         if (!p) {
             o << "null;";
             continue;
         }
-        const auto& e = *p;
+        const auto &e = *p;
         o << e.enable_alternative_image << e.auto_loop << e.auto_play << e.auto_scale << e.auto_zoom
-          << e.interact_on_first_click << e.enable_whitelist << "," << e.controls << "," << e.height << ","
-          << e.width << "," << int(e.control_permissions) << "," << int(e.interact_permissions) << ","
-          << raw16(e.home_url) << "," << raw16(e.current_url) << ",";
+          << e.interact_on_first_click << e.enable_whitelist << "," << e.controls << "," << e.height << "," << e.width
+          << "," << int(e.control_permissions) << "," << int(e.interact_permissions) << "," << raw16(e.home_url) << ","
+          << raw16(e.current_url) << ",";
         if (!e.whitelist)
             o << "null";
         else
-            for (const auto& v : *e.whitelist)
+            for (const auto &v : *e.whitelist)
                 o << raw16(v) << ":";
         o << ";";
     }
     return o.str();
 }
-std::string omv_snapshot(const ShapeOmvPrimitive& s) {
+
+std::string omv_snapshot(const ShapeOmvPrimitive &s) {
     std::ostringstream o;
-    const auto& p = s.prim_data;
+    const auto &p = s.prim_data;
     o << std::bit_cast<std::uint32_t>(p.path_end) << ",";
     o << std::bit_cast<std::uint32_t>(p.path_radius_offset) << ",";
     o << std::bit_cast<std::uint32_t>(p.path_skew) << ",";
@@ -235,7 +261,7 @@ std::string omv_snapshot(const ShapeOmvPrimitive& s) {
         o << "null";
     o << ",";
     if (s.flexible) {
-        auto& f = *s.flexible;
+        auto &f = *s.flexible;
         o << f.softness << ":";
         for (float v : {f.tension, f.drag, f.gravity, f.wind, f.force.x, f.force.y, f.force.z})
             o << std::bit_cast<std::uint32_t>(v) << ":";
@@ -243,20 +269,18 @@ std::string omv_snapshot(const ShapeOmvPrimitive& s) {
         o << "null";
     o << ",";
     if (s.light) {
-        auto& l = *s.light;
-        for (float v :
-             {l.color[0], l.color[1], l.color[2], l.color[3], l.intensity, l.radius, l.cutoff, l.falloff})
+        auto &l = *s.light;
+        for (float v : {l.color[0], l.color[1], l.color[2], l.color[3], l.intensity, l.radius, l.cutoff, l.falloff})
             o << std::bit_cast<std::uint32_t>(v) << ":";
     } else
         o << "null";
     o << ",";
     if (s.properties) {
-        auto& v = *s.properties;
-        o << raw16(v.name) << ":" << raw16(v.description) << ":" << raw16(v.touch_name) << ":"
-          << raw16(v.sit_name) << ":" << v.object_id.str() << ":" << v.creator_id.str() << ":"
-          << v.owner_id.str() << ":" << v.group_id.str() << ":" << v.item_id.str() << ":" << v.folder_id.str()
-          << ":" << v.from_task_id.str() << ":" << v.last_owner_id.str() << ":" << v.creation_date_ticks
-          << ":";
+        auto &v = *s.properties;
+        o << raw16(v.name) << ":" << raw16(v.description) << ":" << raw16(v.touch_name) << ":" << raw16(v.sit_name)
+          << ":" << v.object_id.str() << ":" << v.creator_id.str() << ":" << v.owner_id.str() << ":" << v.group_id.str()
+          << ":" << v.item_id.str() << ":" << v.folder_id.str() << ":" << v.from_task_id.str() << ":"
+          << v.last_owner_id.str() << ":" << v.creation_date_ticks << ":";
         for (auto n : v.permissions)
             o << n << ":";
         o << v.ownership_cost << ":" << v.sale_price << ":" << v.category << ":" << int(v.sale_type) << ":"
@@ -267,7 +291,8 @@ std::string omv_snapshot(const ShapeOmvPrimitive& s) {
         o << "null";
     return o.str();
 }
-void seed(PrimitiveBaseShapeCore& s) {
+
+void seed(PrimitiveBaseShapeCore &s) {
     s.flexi_entry = s.light_entry = s.sculpt_entry = s.projection_entry = true;
     s.sculpt_type = 5;
     s.sculpt_texture = Uuid("00112233-4455-6677-8899-aabbccddeeff");
@@ -297,7 +322,8 @@ void seed(PrimitiveBaseShapeCore& s) {
     s.render_materials->entries =
         std::make_shared<ShapeArray<ShapeMaterialEntry>>(1, ShapeMaterialEntry{7, s.sculpt_texture});
 }
-std::string snapshot(const PrimitiveBaseShapeCore& s) {
+
+std::string snapshot(const PrimitiveBaseShapeCore &s) {
     std::ostringstream o;
     o << std::bit_cast<std::uint32_t>(s.scale.x) << "," << std::bit_cast<std::uint32_t>(s.scale.y) << ","
       << std::bit_cast<std::uint32_t>(s.scale.z) << ",";
@@ -347,12 +373,11 @@ std::string snapshot(const PrimitiveBaseShapeCore& s) {
     o << s.light_entry << ",";
     o << s.sculpt_entry << ",";
     o << s.projection_entry << ",";
-    o << s.mesh_flag_entry() << "," << s.mesh_flags() << "," << s.animesh_enabled() << ","
-      << s.sculpt_texture.str() << "," << s.projection_texture.str() << "," << hex(*s.texture_entry()) << ",";
+    o << s.mesh_flag_entry() << "," << s.mesh_flags() << "," << s.animesh_enabled() << "," << s.sculpt_texture.str()
+      << "," << s.projection_texture.str() << "," << hex(*s.texture_entry()) << ",";
     if (s.reflection_probe)
         o << std::bit_cast<std::uint32_t>(s.reflection_probe->ambiance) << ":"
-          << std::bit_cast<std::uint32_t>(s.reflection_probe->clip_distance) << ":"
-          << int(s.reflection_probe->flags);
+          << std::bit_cast<std::uint32_t>(s.reflection_probe->clip_distance) << ":" << int(s.reflection_probe->flags);
     else
         o << "null";
     o << ",";
@@ -361,7 +386,7 @@ std::string snapshot(const PrimitiveBaseShapeCore& s) {
     else if (!s.render_materials->entries)
         o << "none";
     else
-        for (const auto& e : *s.render_materials->entries)
+        for (const auto &e : *s.render_materials->entries)
             o << int(e.te_index) << ":" << e.id.str() << ";";
     o << "," << hex(s.extra_params()) << ",";
     if (!s.render_materials)
@@ -369,13 +394,14 @@ std::string snapshot(const PrimitiveBaseShapeCore& s) {
     else if (!s.render_materials->overrides)
         o << "null";
     else
-        for (const auto& e : *s.render_materials->overrides)
+        for (const auto &e : *s.render_materials->overrides)
             o << int(e.te_index) << ":" << raw16(e.data) << ";";
     o << "," << nullable_hex(s.render_overrides_to_raw()) << "," << nullable_hex(s.sculpt_data) << ","
       << media_snapshot(s.media);
     return o.str();
 }
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     try {
         std::ios::sync_with_stdio(false);
         std::cin.tie(nullptr);
@@ -383,12 +409,11 @@ int main(int argc, char** argv) {
             std::string line;
             while (std::getline(std::cin, line)) {
                 std::vector<std::string> logs;
-                auto log = [&](const auto& message) { logs.push_back(message); };
+                auto log = [&](const auto &message) { logs.push_back(message); };
                 PrimitiveBaseShapeCore s(log);
                 std::u16string negative_sign = u"-";
                 ShapeMediaIntegerFormat format = [&](std::int32_t v) {
-                    return v < 0 ? negative_sign + utf16(std::to_string(-std::int64_t(v)))
-                                 : utf16(std::to_string(v));
+                    return v < 0 ? negative_sign + utf16(std::to_string(-std::int64_t(v))) : utf16(std::to_string(v));
                 };
                 std::string error = "ok", result = "";
                 std::stringstream steps(line);
@@ -420,8 +445,8 @@ int main(int argc, char** argv) {
                                 s = PrimitiveBaseShapeCore::default_shape(log);
                                 break;
                             case 5:
-                                s = PrimitiveBaseShapeCore::create_mesh(
-                                    n, Uuid("00112233-4455-6677-8899-aabbccddeeff"), log);
+                                s = PrimitiveBaseShapeCore::create_mesh(n, Uuid("00112233-4455-6677-8899-aabbccddeeff"),
+                                                                        log);
                                 break;
                             case 6:
                                 s = PrimitiveBaseShapeCore::create_cylinder(1.25f, 2.5f, log);
@@ -507,7 +532,7 @@ int main(int argc, char** argv) {
                             int k;
                             std::string raw;
                             in >> k >> raw;
-                            auto& e = *s.media->entries.back();
+                            auto &e = *s.media->entries.back();
                             if (k == 0)
                                 e.current_url = text16(raw);
                             else
@@ -521,13 +546,12 @@ int main(int argc, char** argv) {
                             int count;
                             in >> count;
                             s.media->entries.back()->whitelist =
-                                count < 0
-                                    ? nullptr
-                                    : std::make_shared<ShapeArray<std::optional<std::u16string>>>(count);
+                                count < 0 ? nullptr
+                                          : std::make_shared<ShapeArray<std::optional<std::u16string>>>(count);
                         } else if (op == "mediavalue") {
                             int index, value;
                             in >> index >> value;
-                            auto& e = *s.media->entries.back();
+                            auto &e = *s.media->entries.back();
                             switch (index) {
                             case 0:
                                 e.enable_alternative_image = value != 0;
@@ -584,8 +608,7 @@ int main(int argc, char** argv) {
                             TraceMediaWriter writer([&](auto value) {
                                 result = "raw:" + raw16(value) + ";";
                                 if (fault)
-                                    throw PrimitiveShapeError("System.InvalidOperationException",
-                                                              "writer fault");
+                                    throw PrimitiveShapeError("System.InvalidOperationException", "writer fault");
                             });
                             s.media->write_xml(writer, format);
                         } else if (op == "mediawritenull") {
@@ -638,7 +661,7 @@ int main(int argc, char** argv) {
                             int profile, path, state, pcode, sculpt, texture;
                             in >> profile >> path >> state >> pcode >> sculpt >> texture;
                             auto prim = std::make_shared<ShapeOmvPrimitive>();
-                            auto& p = prim->prim_data;
+                            auto &p = prim->prim_data;
                             p.profile_curve = static_cast<std::uint8_t>(profile);
                             p.path_curve = static_cast<std::uint8_t>(path);
                             p.state = static_cast<std::uint8_t>(state);
@@ -676,17 +699,16 @@ int main(int argc, char** argv) {
                             p.profile_end = number(raw);
                             in >> raw;
                             p.profile_hollow = number(raw);
-                            for (float* value : {&prim->scale.x, &prim->scale.y, &prim->scale.z}) {
+                            for (float *value : {&prim->scale.x, &prim->scale.y, &prim->scale.z}) {
                                 in >> raw;
                                 *value = number(raw);
                             }
                             if (texture)
-                                prim->textures = std::make_shared<TextureEntry>(
-                                    Uuid("00112233-4455-6677-8899-aabbccddeeff"));
+                                prim->textures =
+                                    std::make_shared<TextureEntry>(Uuid("00112233-4455-6677-8899-aabbccddeeff"));
                             if (sculpt >= 0)
-                                prim->sculpt = std::make_shared<ShapeOmvSculpt>(
-                                    ShapeOmvSculpt{Uuid("00112233-4455-6677-8899-aabbccddeeff"),
-                                                   static_cast<std::uint8_t>(sculpt)});
+                                prim->sculpt = std::make_shared<ShapeOmvSculpt>(ShapeOmvSculpt{
+                                    Uuid("00112233-4455-6677-8899-aabbccddeeff"), static_cast<std::uint8_t>(sculpt)});
                             s = PrimitiveBaseShapeCore(prim, log);
                         } else if (op == "convert") {
                             int positioned;
@@ -745,8 +767,7 @@ int main(int argc, char** argv) {
                             int index, face;
                             std::string raw;
                             in >> index >> face >> raw;
-                            s.render_materials->overrides->at(index) = {static_cast<std::uint8_t>(face),
-                                                                        text16(raw)};
+                            s.render_materials->overrides->at(index) = {static_cast<std::uint8_t>(face), text16(raw)};
                         } else if (op == "ovrread") {
                             std::string raw;
                             in >> raw;
@@ -929,11 +950,10 @@ int main(int argc, char** argv) {
                             std::string x, y, z, l;
                             bool convex;
                             in >> x >> y >> z >> l >> convex;
-                            result = std::to_string(
-                                s.mesh_key({number(x), number(y), number(z)}, number(l), convex));
+                            result = std::to_string(s.mesh_key({number(x), number(y), number(z)}, number(l), convex));
                         } else
                             throw std::runtime_error("Unknown shape probe operation");
-                    } catch (const PrimitiveShapeError& e) {
+                    } catch (const PrimitiveShapeError &e) {
                         error = e.source_type + ":" + encode(e.what()) + ":" +
                                 (e.hresult ? std::to_string(*e.hresult) : "null") + ":" +
                                 (e.parameter ? encode(*e.parameter) : "null");
@@ -941,14 +961,14 @@ int main(int argc, char** argv) {
                     }
                 }
                 std::cout << error << "/" << result << "/" << snapshot(s) << "/";
-                for (auto& message : logs)
+                for (auto &message : logs)
                     std::cout << encode(message) << ";";
                 std::cout << '\n';
             }
             return 0;
         }
         std::vector<std::string> logs;
-        auto log = [&](const auto& m) { logs.push_back(m); };
+        auto log = [&](const auto &m) { logs.push_back(m); };
         auto a = PrimitiveBaseShapeCore::create_mesh(8, Uuid{}, log);
         if (get_number_of_sides(a.geometry()) != 8)
             throw std::runtime_error("Geometry adapter");
@@ -977,24 +997,24 @@ int main(int argc, char** argv) {
         bool rejected = false;
         try {
             PrimitiveBaseShapeCore incomplete({});
-        } catch (const std::invalid_argument&) {
+        } catch (const std::invalid_argument &) {
             rejected = true;
         }
         if (!rejected)
             throw std::runtime_error("Missing logger silently omitted");
 
         std::vector<int> counts;
-        PrimitiveBaseShape stateful([n = 0, &counts](const auto&) mutable { counts.push_back(++n); });
+        PrimitiveBaseShape stateful([n = 0, &counts](const auto &) mutable { counts.push_back(++n); });
         auto logger_copy = stateful.copy();
         stateful.profile_curve(240);
         logger_copy.profile_curve(240);
         if (counts != std::vector<int>{1, 2})
             throw std::runtime_error("Shape copy cloned logger callback state");
         std::vector<std::string> trace;
-        auto reader = std::make_shared<TraceMediaReader>([&](const auto& e) { trace.push_back(e); });
+        auto reader = std::make_shared<TraceMediaReader>([&](const auto &e) { trace.push_back(e); });
         ShapeMediaXmlBackend xml;
         xml.media_from_osd = shape_media_entry_from_invariant_osd;
-        xml.create_reader = [&](const auto&) {
+        xml.create_reader = [&](const auto &) {
             trace.push_back("create");
             return reader;
         };
@@ -1008,17 +1028,16 @@ int main(int argc, char** argv) {
             v.array.push_back(map);
             return v;
         };
-        auto list = std::make_shared<ShapeMediaList>([&](const auto&) { trace.push_back("log"); });
+        auto list = std::make_shared<ShapeMediaList>([&](const auto &) { trace.push_back("log"); });
         list->read_xml(u"source", xml);
-        if (trace != std::vector<std::string>{"create", "dtd", "move", "attr", "start", "inner", "parse",
-                                              "dispose"} ||
+        if (trace != std::vector<std::string>{"create", "dtd", "move", "attr", "start", "inner", "parse", "dispose"} ||
             list->size() != 2 || reader->disposals != 1)
             throw std::runtime_error("Media read/disposal sequence");
         trace.clear();
         reader->fault = "move";
         list->read_xml(u"source", xml);
-        if (trace != std::vector<std::string>{"create", "dtd", "move", "dispose", "log"} ||
-            list->size() != 2 || reader->disposals != 2)
+        if (trace != std::vector<std::string>{"create", "dtd", "move", "dispose", "log"} || list->size() != 2 ||
+            reader->disposals != 2)
             throw std::runtime_error("Media fault disposal/log ordering");
         trace.clear();
         reader->fault = "dispose";
@@ -1037,7 +1056,7 @@ int main(int argc, char** argv) {
         bool escaped = false;
         try {
             list->read_xml(*reader, xml);
-        } catch (const PrimitiveShapeError&) {
+        } catch (const PrimitiveShapeError &) {
             escaped = true;
         }
         if (!escaped || trace != std::vector<std::string>{"empty", "inner"} || reader->disposals != 3)
@@ -1045,7 +1064,7 @@ int main(int argc, char** argv) {
         escaped = false;
         try {
             list->read_xml(u"source", {});
-        } catch (const std::invalid_argument&) {
+        } catch (const std::invalid_argument &) {
             escaped = true;
         }
         if (!escaped)
@@ -1063,7 +1082,7 @@ int main(int argc, char** argv) {
         a.get_mesh();
         std::cout << "PASS: PrimitiveBaseShape methods, aliases, geometry and XML-provider lifecycle\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

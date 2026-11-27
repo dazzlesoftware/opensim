@@ -6,14 +6,17 @@
 #include <stdexcept>
 using namespace opensim;
 using namespace scene;
+
 static std::string hex(float f) {
     std::ostringstream s;
     s << std::hex << std::bit_cast<std::uint32_t>(f);
     return s.str();
 }
+
 static std::string vec(framework::Vector3 v) {
     return hex(v.x) + "," + hex(v.y) + "," + hex(v.z);
 }
+
 static std::string probe(int seed, int mode) {
     RezLocationRequest r;
     r.ray_start = {seed * .25f, 3, 30};
@@ -43,13 +46,12 @@ static std::string probe(int seed, int mode) {
     };
     if (mode & 8)
         b.filtered_raycast = [&](auto start, auto direction, float length, int count, std::uint16_t flags) {
-            trace += "P:" + vec(start) + ":" + vec(direction) + ":" + hex(length) + ":" +
-                     std::to_string(count) + ":" + std::to_string(flags) + ";";
+            trace += "P:" + vec(start) + ":" + vec(direction) + ":" + hex(length) + ":" + std::to_string(count) + ":" +
+                     std::to_string(flags) + ";";
             if (!(mode & 16))
                 return std::vector<RezContact>{};
-            return std::vector<RezContact>{{11, {1, 2, seed * .25f}, {1, 0, 0}},
-                                           {0, {4, 5, 16}, {0, 0, 1}},
-                                           {22, {7, 8, 18}, {0, 1, 0}}};
+            return std::vector<RezContact>{
+                {11, {1, 2, seed * .25f}, {1, 0, 0}}, {0, {4, 5, 16}, {0, 0, 1}}, {22, {7, 8, 18}, {0, 1, 0}}};
         };
     b.part_uuid = [&](std::uint32_t id) -> std::optional<framework::Uuid> {
         trace += "L:" + std::to_string(id) + ";";
@@ -64,18 +66,19 @@ static std::string probe(int seed, int mode) {
         trace += "T;";
         if (!(mode & 32))
             return {};
-        trace += "O:" + vec(start) + ":" + vec(direction) + ":" + hex(q.w) + ":" + std::to_string(front) +
-                 ":" + std::to_string(center) + ";";
+        trace += "O:" + vec(start) + ":" + vec(direction) + ":" + hex(q.w) + ":" + std::to_string(front) + ":" +
+                 std::to_string(center) + ";";
         return intersection(mode & 64);
     };
     b.closest_intersection = [&](auto start, auto direction, bool front, bool center) {
-        trace += "C:" + vec(start) + ":" + vec(direction) + ":" + std::to_string(front) + ":" +
-                 std::to_string(center) + ";";
+        trace +=
+            "C:" + vec(start) + ":" + vec(direction) + ":" + std::to_string(front) + ":" + std::to_string(center) + ";";
         return intersection(mode & 128);
     };
     return vec(get_new_rez_location(r, b)) + "|" + trace;
 }
-int main(int argc, char**) {
+
+int main(int argc, char **) {
     try {
         if (argc > 1) {
             int seed, mode;
@@ -87,17 +90,13 @@ int main(int argc, char**) {
         const framework::Quaternion rotation{0, 0, half_turn, half_turn};
         const auto rotated =
             intersect_rez_box({10, 10, 10}, rotation, {4, 2, 2}, {10, 15, 10}, {0, -1, 0}, true, false);
-        if (!rotated.hit || std::abs(rotated.point.y - 12.f) > .001f ||
-            std::abs(rotated.normal.y - 1.f) > .001f ||
+        if (!rotated.hit || std::abs(rotated.point.y - 12.f) > .001f || std::abs(rotated.normal.y - 1.f) > .001f ||
             rotated.axis_aligned_face_normal != framework::Vector3{1, 0, 0})
             throw std::runtime_error("Rotated rez box did not return its world and local face normals");
-        const auto front =
-            intersect_rez_box({10, 10, 10}, rotation, {4, 2, 2}, {10, 10, 10}, {0, 1, 0}, true, false);
-        const auto exit =
-            intersect_rez_box({10, 10, 10}, rotation, {4, 2, 2}, {10, 10, 10}, {0, 1, 0}, false, false);
+        const auto front = intersect_rez_box({10, 10, 10}, rotation, {4, 2, 2}, {10, 10, 10}, {0, 1, 0}, true, false);
+        const auto exit = intersect_rez_box({10, 10, 10}, rotation, {4, 2, 2}, {10, 10, 10}, {0, 1, 0}, false, false);
         if (front.hit || !exit.hit || std::abs(exit.point.y - 12.f) > .001f)
-            throw std::runtime_error(
-                "Rez box did not respect front-face filtering for a ray starting inside");
+            throw std::runtime_error("Rez box did not respect front-face filtering for a ray starting inside");
         RezLocationRequest r;
         r.ray_end = {1, 2, 30};
         auto p = get_new_rez_location(r, {});
@@ -107,13 +106,13 @@ int main(int argc, char**) {
         bool threw = false;
         try {
             get_new_rez_location(r, {});
-        } catch (const std::logic_error&) {
+        } catch (const std::logic_error &) {
             threw = true;
         }
         if (!threw)
             throw std::runtime_error("missing backend");
         std::cout << "PASS: rez fallback and explicit missing-backend failure\n";
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << "\n";
         return 1;
     }

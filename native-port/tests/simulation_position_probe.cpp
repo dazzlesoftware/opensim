@@ -8,24 +8,28 @@
 #include <sstream>
 using namespace opensim;
 using network::Value;
+
 std::string hex(std::string_view s) {
     std::string out;
-    const char* h = "0123456789abcdef";
+    const char *h = "0123456789abcdef";
     for (unsigned char c : s) {
         out += h[c >> 4];
         out += h[c & 15];
     }
     return out;
 }
-std::string decode(const std::string& s) {
+
+std::string decode(const std::string &s) {
     std::string out;
     for (std::size_t i = 0; i < s.size(); i += 2)
         out += static_cast<char>(std::stoi(s.substr(i, 2), nullptr, 16));
     return out;
 }
+
 framework::Uuid id(int n) {
     return framework::Uuid("00000000-0000-0000-0000-00000000000" + std::to_string(n));
 }
+
 services::GridRegion region(bool second = false) {
     services::GridRegion r;
     r.id = id(second ? 8 : 9);
@@ -35,6 +39,7 @@ services::GridRegion region(bool second = false) {
     r.set_server_uri(second ? "http://other:9000/base/" : "http://sim:9000/base/");
     return r;
 }
+
 std::shared_ptr<framework::AgentPosition> position(float far = 10, int agent = 7) {
     auto p = std::make_shared<framework::AgentPosition>();
     p->agent_id = id(agent);
@@ -42,19 +47,22 @@ std::shared_ptr<framework::AgentPosition> position(float far = 10, int agent = 7
     p->far = far;
     return p;
 }
+
 struct Harness : services::SimulationConnector {
     mutable int paths = 0;
     int throw_path = 0;
     bool custom = false;
-    using SimulationConnector::SimulationConnector;
     using SimulationConnector::send_agent_position;
+    using SimulationConnector::SimulationConnector;
+
     std::string agent_path() const override {
         if (++paths == throw_path)
             throw std::runtime_error("path");
         return custom ? "custom/" : "agent/";
     }
 };
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     if (argc > 1) {
         services::SimulationConnector connector(simulation_http_requester());
         auto destination = region();
@@ -80,19 +88,18 @@ int main(int argc, char** argv) {
             first->god_data = std::make_shared<Value>();
         auto second = position(20), third = position(30);
         auto a = region(), b = region(true);
-        Harness* handler = nullptr;
+        Harness *handler = nullptr;
         std::promise<void> entered, proceed;
         auto gate = proceed.get_future().share();
-        auto status = [](const std::function<bool()>& call) {
+        auto status = [](const std::function<bool()> &call) {
             try {
                 return call() ? std::string("1") : std::string("0");
-            } catch (const std::exception&) {
+            } catch (const std::exception &) {
                 return std::string("EX");
             }
         };
-        services::SimulationConnector::PositionRequest request = [&](const std::string& uri,
-                                                                     const Value& data, int timeout,
-                                                                     bool compressed) {
+        services::SimulationConnector::PositionRequest request = [&](const std::string &uri, const Value &data,
+                                                                     int timeout, bool compressed) {
             ++calls;
             trace += hex(uri) + ":" + std::to_string(timeout) + ":" + std::to_string(compressed) + ":" +
                      hex(network::osd_json(data, true)) + ";";
@@ -108,8 +115,8 @@ int main(int argc, char** argv) {
                     nested += status([&] { return handler->update_agent(a, first); }) + ",";
                 }
             }
-            const auto& replies = args.get("replies");
-            const auto& reply = replies.array.at(std::min<std::size_t>(calls - 1, replies.array.size() - 1));
+            const auto &replies = args.get("replies");
+            const auto &reply = replies.array.at(std::min<std::size_t>(calls - 1, replies.array.size() - 1));
             if (reply.kind == Value::Kind::String && reply.text == "throw")
                 throw std::runtime_error("request");
             return reply;
@@ -118,8 +125,8 @@ int main(int argc, char** argv) {
         handler = &connector;
         connector.throw_path = network::osd_integer(args.get("throw_path"));
         connector.custom = network::osd_boolean(args.get("custom"));
-        auto public_call = [&](services::GridRegion* destination,
-                               const std::shared_ptr<framework::AgentPosition>& data) {
+        auto public_call = [&](services::GridRegion *destination,
+                               const std::shared_ptr<framework::AgentPosition> &data) {
             return status([&] { return connector.update_agent(destination, data); });
         };
         auto append = [&](std::string value) { results += value + ","; };
@@ -128,11 +135,11 @@ int main(int argc, char** argv) {
             framework::EntityTransferContext context;
             context.outbound_version = static_cast<float>(network::osd_real(args.get("version")));
             append(status([&] {
-                return connector.send_agent_position(
-                    network::osd_boolean(args.get("null_destination")) ? nullptr : &a,
-                    network::osd_boolean(args.get("null_data")) ? nullptr : first,
-                    network::osd_boolean(args.get("null_context")) ? nullptr : &context,
-                    network::osd_integer(args.get("timeout")));
+                return connector.send_agent_position(network::osd_boolean(args.get("null_destination")) ? nullptr : &a,
+                                                     network::osd_boolean(args.get("null_data")) ? nullptr : first,
+                                                     network::osd_boolean(args.get("null_context")) ? nullptr
+                                                                                                    : &context,
+                                                     network::osd_integer(args.get("timeout")));
             }));
         } else if (mode == "parallel") {
             auto worker = std::async(std::launch::async, [&] { return public_call(&a, first); });
@@ -173,7 +180,7 @@ int main(int argc, char** argv) {
                 append(public_call(&b, first));
             }
         }
-        std::cout << results << "|" << nested << "|" << hex(trace) << "|"
-                  << connector.failed_simulator_count() << "|" << connector.paths << "\n";
+        std::cout << results << "|" << nested << "|" << hex(trace) << "|" << connector.failed_simulator_count() << "|"
+                  << connector.paths << "\n";
     }
 }

@@ -1,0 +1,1 @@
+rotation result;default{state_entry(){result=(rotation)[1,2];}}

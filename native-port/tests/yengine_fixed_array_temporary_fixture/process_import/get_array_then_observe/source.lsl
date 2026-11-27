@@ -1,0 +1,1 @@
+YOption arrays;object nil;integer baseline;integer observed;integer observed2;integer inside;integer result;integer finished;integer after;integer index(integer h){observed=h;inside=xmrHeapUsed();return 0;}default{state_entry(){baseline=xmrHeapUsed();result=xmrFixedArrayGetI(xmrFixedArrayAllocI(8),index(xmrHeapUsed()));finished=xmrHeapUsed();after=1;}}

@@ -1,0 +1,1 @@
+string input="restart λ😀";integer before_hash;integer result;integer entries;integer after;default{state_entry(){entries++;before_hash=xmrHashCode(input);llSleep(0.1);result=xmrHashCode(input);after=1;}}

@@ -2,20 +2,24 @@
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/server/avatar_endpoint.hpp"
 #include "opensim/framework/text.hpp"
+
 namespace opensim::server {
 using namespace network;
+
 namespace {
-std::string text(const FormValue& value) {
+std::string text(const FormValue &value) {
     if (auto s = std::get_if<std::string>(&value))
         return *s;
     return "System.Collections.Generic.List`1[System.String]";
 }
+
 // StreamReader's default UTF-8 decoder detects UTF-8/16/32 byte-order marks.
-AvatarOperations::Strings strings(const std::vector<std::string>& values) {
+AvatarOperations::Strings strings(const std::vector<std::string> &values) {
     return {values.begin(), values.end()};
 }
-}
-HttpResponse AvatarEndpoint::handle(const HttpRequest& request) {
+} // namespace
+
+HttpResponse AvatarEndpoint::handle(const HttpRequest &request) {
     HttpResponse response;
     response.content_type = "application/xml";
     response.headers["Cache-Control"] = "no-store";
@@ -44,13 +48,13 @@ HttpResponse AvatarEndpoint::handle(const HttpRequest& request) {
                 return response;
             auto value = ServiceXmlValue::object({});
             const auto pairs = avatar->to_key_value_pairs();
-            for (const auto& [key, item] : *pairs)
+            for (const auto &[key, item] : *pairs)
                 if (item.has_value() && item.type() != typeid(std::nullptr_t))
                     value.fields.push_back({key, framework::service_url_object_text(item)});
             response.body = service_xml(ServiceXmlValue::object({{"result", std::move(value)}}));
         } else if (name == "setavatar") {
             services::AccountValues values;
-            for (const auto& key : fields.ordered_keys())
+            for (const auto &key : fields.ordered_keys())
                 if (key != "VERSIONMAX" && key != "VERSIONMIN" && key != "METHOD" && key != "UserID")
                     values[key] = text(fields.at(key));
             services::AvatarData avatar(values);
@@ -82,4 +86,4 @@ HttpResponse AvatarEndpoint::handle(const HttpRequest& request) {
     }
     return response;
 }
-}
+} // namespace opensim::server

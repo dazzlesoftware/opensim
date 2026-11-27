@@ -4,14 +4,16 @@
 #include "opensim/scene/avatar_update.hpp"
 #include <bit>
 #include <cmath>
+
 namespace opensim::scene {
 namespace {
-void real(std::vector<std::uint8_t>& bytes, float f) {
+void real(std::vector<std::uint8_t> &bytes, float f) {
     auto u = std::bit_cast<std::uint32_t>(f);
     for (int i = 0; i < 4; i++)
         bytes.push_back(static_cast<std::uint8_t>(u >> (8 * i)));
 }
-void vector(std::vector<std::uint8_t>& bytes, framework::Vector3 v) {
+
+void vector(std::vector<std::uint8_t> &bytes, framework::Vector3 v) {
     if (v == framework::Vector3{})
         bytes.insert(bytes.end(), 12, 0);
     else {
@@ -20,11 +22,12 @@ void vector(std::vector<std::uint8_t>& bytes, framework::Vector3 v) {
         real(bytes, v.z);
     }
 }
-}
-network::lludp::Packet avatar_object_update(const AvatarUpdate& a, std::uint64_t region, float dilation) {
+} // namespace
+
+network::lludp::Packet avatar_object_update(const AvatarUpdate &a, std::uint64_t region, float dilation) {
     using namespace network;
     auto p = lludp::make_packet("ObjectUpdate");
-    auto& r = p.block("RegionData");
+    auto &r = p.block("RegionData");
     r["RegionHandle"] = region;
     r["TimeDilation"] = std::uint64_t(dilation <= 0 || std::isnan(dilation) ? 0
                                       : dilation >= 1 ? 65535
@@ -73,4 +76,4 @@ network::lludp::Packet avatar_object_update(const AvatarUpdate& a, std::uint64_t
     p.blocks["ObjectData"].push_back(std::move(b));
     return p;
 }
-}
+} // namespace opensim::scene

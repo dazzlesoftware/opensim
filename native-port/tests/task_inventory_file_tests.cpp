@@ -4,11 +4,13 @@
 #include <iostream>
 using namespace opensim;
 using namespace scene;
+
 namespace {
 framework::Uuid id(int n) {
     auto s = std::to_string(n);
     return framework::Uuid("11223344-5566-7788-99aa-" + std::string(12 - s.size(), '0') + s);
 }
+
 std::string hex(std::span<const std::uint8_t> bytes) {
     std::string out;
     constexpr char d[] = "0123456789abcdef";
@@ -18,6 +20,7 @@ std::string hex(std::span<const std::uint8_t> bytes) {
     }
     return out;
 }
+
 TaskInventoryFileItem item(int type, int inv, std::uint32_t permissions, int scenario) {
     TaskInventoryFileItem i;
     i.item = id(2);
@@ -47,6 +50,7 @@ TaskInventoryFileItem item(int type, int inv, std::uint32_t permissions, int sce
         i.name = std::string("a\0b", 3);
     return i;
 }
+
 std::string probe(int type, int inv, std::uint32_t permissions, int scenario) {
     std::vector<std::string> events;
     int step = 0, random = 0;
@@ -100,12 +104,15 @@ std::string probe(int type, int inv, std::uint32_t permissions, int scenario) {
     }
     return status;
 }
+
 int checks = 0;
+
 void check(bool value, const char *label) {
     ++checks;
     if (!value)
         throw std::runtime_error(label);
 }
+
 void run() {
     auto valid = probe(10, 10, 0xc000u, 0);
     check(valid.starts_with("OOOOOOOOOBO"), "source cache reuse survives type-generation failure");
@@ -113,12 +120,12 @@ void run() {
     check(valid.find("R:" + id(1).str() + ":0:") != valid.npos, "empty and wrapped serial replies");
     auto denied = probe(10, 10, 0, 0);
     check(denied.find(hex(std::span<const uint8_t>(
-              reinterpret_cast<const uint8_t *>("asset_id\t00000000-0000-0000-0000-000000000000"), 45))) !=
-              denied.npos,
+              reinterpret_cast<const uint8_t *>("asset_id\t00000000-0000-0000-0000-000000000000"), 45))) != denied.npos,
           "script asset hidden without Modify and Copy");
     check(probe(-1, 10, 0xc000u, 0).starts_with("BBBBOBBOBBB"), "SDK invalid type index preserved");
 }
-}
+} // namespace
+
 int main(int argc, char **argv) {
     try {
         if (argc == 2 && std::string_view(argv[1]) == "--probe") {

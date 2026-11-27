@@ -13,19 +13,23 @@
 #include <iomanip>
 #include <thread>
 #include <chrono>
+
 namespace opensim::tests {
 namespace {
 using framework::Uuid;
 using network::lludp::Packet;
+
 void require(bool v, const char *message) {
     if (!v)
         throw std::runtime_error(std::string("Inventory script rez probe: ") + message);
 }
+
 std::string hex(std::uint32_t value) {
     std::ostringstream s;
     s << std::hex << std::setfill('0') << std::setw(8) << value;
     return s.str();
 }
+
 std::vector<std::string> blocks(std::string_view text) {
     std::vector<std::string> result;
     std::size_t at = 0;
@@ -39,6 +43,7 @@ std::vector<std::string> blocks(std::string_view text) {
     }
     return result;
 }
+
 std::string field(std::string_view block, const char *key) {
     auto start = block.find(std::string("\t\t") + key + "\t");
     require(start != block.npos, "expected task field absent");
@@ -46,6 +51,7 @@ std::string field(std::string_view block, const char *key) {
     auto end = block.find('\n', start);
     return std::string(block.substr(start, end - start));
 }
+
 bool message(const Packet &p, Uuid object, const std::string &wanted) {
     if (p.spec->name != "ChatFromSimulator")
         return false;
@@ -55,9 +61,10 @@ bool message(const Packet &p, Uuid object, const std::string &wanted) {
     auto bytes = std::get<std::vector<std::uint8_t>>(b.at("Message"));
     return std::string(bytes.begin(), std::find(bytes.begin(), bytes.end(), 0)) == wanted;
 }
-}
-void run_inventory_script_rez_probe(Uuid agent, Uuid object, std::uint32_t local,
-                                    const std::filesystem::path &metadata, const LegacyInventoryProbeIo &io) {
+} // namespace
+
+void run_inventory_script_rez_probe(Uuid agent, Uuid object, std::uint32_t local, const std::filesystem::path &metadata,
+                                    const LegacyInventoryProbeIo &io) {
     std::ifstream input(metadata, std::ios::binary);
     require(bool(input), "metadata open");
     std::string bytes((std::istreambuf_iterator<char>(input)), {});
@@ -66,8 +73,7 @@ void run_inventory_script_rez_probe(Uuid agent, Uuid object, std::uint32_t local
         return;
     auto info = root.get("inventory_rez");
     auto user = info.get("user"), library = info.get("library");
-    auto user_id = network::osd_uuid(user.get("item_id")),
-         library_id = network::osd_uuid(library.get("item_id"));
+    auto user_id = network::osd_uuid(user.get("item_id")), library_id = network::osd_uuid(library.get("item_id"));
     require(!user_id.is_zero() && !library_id.is_zero(), "source IDs");
     auto current = read_task_inventory_file(object, local, 6, io);
     std::set<Uuid> copies;
@@ -119,8 +125,7 @@ void run_inventory_script_rez_probe(Uuid agent, Uuid object, std::uint32_t local
                 "actual task owner/parent");
         require(field(*row, "creator_id") == network::osd_string(source.get("creator_id")),
                 "canonical stored creator preserved");
-        require(field(*row, "last_owner_id") == Uuid{}.str(),
-                "same-owner transfer leaves source last owner zero");
+        require(field(*row, "last_owner_id") == Uuid{}.str(), "same-owner transfer leaves source last owner zero");
         auto current_mask = network::osd_unsigned(source.get("owner_mask"));
         auto disclosed =
             (current_mask & 0xc000u) == 0xc000u ? network::osd_string(source.get("asset_id")) : Uuid{}.str();
@@ -142,15 +147,14 @@ void run_inventory_script_rez_probe(Uuid agent, Uuid object, std::uint32_t local
             std::string result;
             require(bool(std::getline(std::cin, result)) && result == "OK", "copied script running event");
         } else {
-            std::cout << "Existing library script asset " << network::osd_string(source.get("asset_id"))
-                      << std::endl;
+            std::cout << "Existing library script asset " << network::osd_string(source.get("asset_id")) << std::endl;
             std::string result;
             require(bool(std::getline(std::cin, result)) && result == "OK", "actual library asset delivery");
         }
         current = std::move(next);
     }
-    std::cout
-        << "Verified existing user script execution, duplicate names, no-copy retention, library fallback and source metadata\n";
+    std::cout << "Verified existing user script execution, duplicate names, no-copy retention, library fallback and "
+                 "source metadata\n";
     // Real viewer moves must persist before non-copy removal. A copyable item
     // moved with zero FolderID uses the real system folder and remains in Contents.
     auto target = network::osd_uuid(info.get("destination"));
@@ -161,9 +165,8 @@ void run_inventory_script_rez_probe(Uuid agent, Uuid object, std::uint32_t local
                                                network::osd_string(library.get("name"))};
     for (int phase = 0; phase < 4; ++phase) {
         auto rows = blocks(current.text);
-        auto source = std::find_if(rows.begin(), rows.end(), [&](const auto &row) {
-            return field(row, "name") == transfer_names[phase] + "|";
-        });
+        auto source = std::find_if(rows.begin(), rows.end(),
+                                   [&](const auto &row) { return field(row, "name") == transfer_names[phase] + "|"; });
         require(source != rows.end(), "transfer source row");
         auto task_key = Uuid(field(*source, "item_id"));
         auto before = io.snapshot().size();
@@ -178,15 +181,12 @@ void run_inventory_script_rez_probe(Uuid agent, Uuid object, std::uint32_t local
                 return false;
             for (const auto &b : p.blocks.at("InventoryData")) {
                 auto name = std::get<std::vector<std::uint8_t>>(b.at("Name"));
-                if (std::string(name.begin(), std::find(name.begin(), name.end(), 0)) ==
-                    transfer_names[phase])
+                if (std::string(name.begin(), std::find(name.begin(), name.end(), 0)) == transfer_names[phase])
                     return true;
             }
             return false;
         };
-        io.wait([&](const auto &packets) {
-            return std::any_of(packets.begin() + before, packets.end(), matches);
-        });
+        io.wait([&](const auto &packets) { return std::any_of(packets.begin() + before, packets.end(), matches); });
         auto packets = io.snapshot();
         auto response = std::find_if(packets.begin() + before, packets.end(), matches);
         require(response != packets.end() && response->reliable && response->zerocoded,
@@ -196,41 +196,37 @@ void run_inventory_script_rez_probe(Uuid agent, Uuid object, std::uint32_t local
         require(!new_key.is_zero() && new_key != task_key, "transfer allocates avatar item identity");
         require(std::get<Uuid>(b.at("OwnerID")) == agent && std::get<std::uint64_t>(b.at("CallbackID")) == 0,
                 "transfer owner/callback");
-        network::Value expected =
-            network::Value::object({{"inventoryID", new_key.str()},
-                                    {"avatarID", agent.str()},
-                                    {"assetID", std::get<Uuid>(b.at("AssetID")).str()},
-                                    {"parentFolderID", std::get<Uuid>(b.at("FolderID")).str()},
-                                    {"inventoryName", transfer_names[phase]},
-                                    {"creatorID", field(*source, "creator_id")},
-                                    {"phase", network::Value(phase)}});
-        for (const auto &pair : std::vector<std::pair<std::string, std::string>>{
-                 {"base_mask", "inventoryBasePermissions"},
-                 {"owner_mask", "inventoryCurrentPermissions"},
-                 {"group_mask", "inventoryGroupPermissions"},
-                 {"everyone_mask", "inventoryEveryOnePermissions"},
-                 {"next_owner_mask", "inventoryNextPermissions"},
-                 {"flags", "flags"}}) {
+        network::Value expected = network::Value::object({{"inventoryID", new_key.str()},
+                                                          {"avatarID", agent.str()},
+                                                          {"assetID", std::get<Uuid>(b.at("AssetID")).str()},
+                                                          {"parentFolderID", std::get<Uuid>(b.at("FolderID")).str()},
+                                                          {"inventoryName", transfer_names[phase]},
+                                                          {"creatorID", field(*source, "creator_id")},
+                                                          {"phase", network::Value(phase)}});
+        for (const auto &pair :
+             std::vector<std::pair<std::string, std::string>>{{"base_mask", "inventoryBasePermissions"},
+                                                              {"owner_mask", "inventoryCurrentPermissions"},
+                                                              {"group_mask", "inventoryGroupPermissions"},
+                                                              {"everyone_mask", "inventoryEveryOnePermissions"},
+                                                              {"next_owner_mask", "inventoryNextPermissions"},
+                                                              {"flags", "flags"}}) {
             auto value = std::stoul(field(*source, pair.first.c_str()), nullptr, 16);
             expected.set(pair.second, network::Value::long_integer(value));
         }
-        require(
-            std::get<std::uint64_t>(b.at("Flags")) ==
-                (static_cast<std::uint32_t>(std::stoul(field(*source, "flags"), nullptr, 16)) & 0x2000ffu),
-            "source viewer flags filtering");
+        require(std::get<std::uint64_t>(b.at("Flags")) ==
+                    (static_cast<std::uint32_t>(std::stoul(field(*source, "flags"), nullptr, 16)) & 0x2000ffu),
+                "source viewer flags filtering");
         std::cout << "Task inventory persisted " << network::osd_json(expected, true) << std::endl;
         std::string result;
         require(bool(std::getline(std::cin, result)) && result == "OK",
                 "actual persisted avatar inventory transaction");
-        auto next =
-            read_task_inventory_file(object, local, static_cast<std::int16_t>(serial + (phase ? 1 : 0)), io);
+        auto next = read_task_inventory_file(object, local, static_cast<std::int16_t>(serial + (phase ? 1 : 0)), io);
         auto next_rows = blocks(next.text);
         bool retained = std::any_of(next_rows.begin(), next_rows.end(),
                                     [&](const auto &row) { return field(row, "item_id") == task_key.str(); });
         require(retained == (phase == 0), "copy retained / move or delete removed source");
         require(next_rows.size() == rows.size() - (phase ? 1 : 0), "source task count after transfer");
-        require((next.filename == current.filename) == (phase == 0),
-                "source serial/cache mutation after transfer");
+        require((next.filename == current.filename) == (phase == 0), "source serial/cache mutation after transfer");
         if (phase)
             ++serial;
         current = std::move(next);
@@ -240,8 +236,8 @@ void run_inventory_script_rez_probe(Uuid agent, Uuid object, std::uint32_t local
     // Actual metadata update: wire AssetID does not exist and registry retains the
     // stored asset. Source masks are constrained before serial/cache mutation.
     auto rows = blocks(current.text);
-    auto edited = std::find_if(rows.begin(), rows.end(),
-                               [](const auto &row) { return field(row, "name") == "New Script 1|"; });
+    auto edited =
+        std::find_if(rows.begin(), rows.end(), [](const auto &row) { return field(row, "name") == "New Script 1|"; });
     require(edited != rows.end(), "metadata edit source");
     auto edited_id = Uuid(field(*edited, "item_id"));
     auto base = static_cast<std::uint32_t>(std::stoul(field(*edited, "base_mask"), nullptr, 16)) | 0x80000u;
@@ -263,8 +259,7 @@ void run_inventory_script_rez_probe(Uuid agent, Uuid object, std::uint32_t local
     fields["Type"] = fields["InvType"] = std::int64_t(10);
     fields["CreationDate"] = std::int64_t(-1);
     fields["TransactionID"] = Uuid::random();
-    fields["Name"] =
-        std::vector<std::uint8_t>{'E', 'd', 'i', 't', 'e', 'd', ' ', 's', 'c', 'r', 'i', 'p', 't', '!'};
+    fields["Name"] = std::vector<std::uint8_t>{'E', 'd', 'i', 't', 'e', 'd', ' ', 's', 'c', 'r', 'i', 'p', 't', '!'};
     fields["Description"] = std::vector<std::uint8_t>{'N', 'e', 'w', 0};
     auto before = io.snapshot().size();
     io.send(update);
@@ -281,8 +276,7 @@ void run_inventory_script_rez_probe(Uuid agent, Uuid object, std::uint32_t local
     auto changed_rows = blocks(changed.text);
     auto row = std::find_if(changed_rows.begin(), changed_rows.end(),
                             [&](const auto &r) { return field(r, "item_id") == edited_id.str(); });
-    require(row != changed_rows.end() && field(*row, "name") == "Edited script|" &&
-                field(*row, "desc") == "New|",
+    require(row != changed_rows.end() && field(*row, "name") == "Edited script|" && field(*row, "desc") == "New|",
             "exact incoming field conversion");
     require(field(*row, "parent_id") == object.str() && field(*row, "group_id") == Uuid{}.str(),
             "registry repairs parent and group");
@@ -291,11 +285,8 @@ void run_inventory_script_rez_probe(Uuid agent, Uuid object, std::uint32_t local
                 field(*row, "everyone_mask") == hex(0x2000u & base) &&
                 field(*row, "next_owner_mask") == hex((0x2000u & base) | 0x80000u),
             "owner mask constraints and forced Move");
-    for (const auto &value :
-         std::vector<std::pair<const char *, std::uint32_t>>{{"everyone_mask", 0x2000},
-                                                             {"group_mask", 0x8000},
-                                                             {"owner_mask", 0x9e000},
-                                                             {"next_owner_mask", 0x2000}}) {
+    for (const auto &value : std::vector<std::pair<const char *, std::uint32_t>>{
+             {"everyone_mask", 0x2000}, {"group_mask", 0x8000}, {"owner_mask", 0x9e000}, {"next_owner_mask", 0x2000}}) {
         if (std::stoul(field(*edited, value.first), nullptr, 16) != value.second)
             flags |= std::string_view(value.first) == "everyone_mask" ? 0x80000u
                      : std::string_view(value.first) == "group_mask"  ? 0x40000u
@@ -314,8 +305,7 @@ void run_inventory_script_rez_probe(Uuid agent, Uuid object, std::uint32_t local
     ignored_update.block("InventoryData")["Name"] = std::vector<std::uint8_t>{'b', 'a', 'd', 0};
     io.send(ignored_update);
     auto unchanged = read_task_inventory_file(object, local, 13, io);
-    require(unchanged.filename == current.filename && unchanged.text == current.text,
-            "asset-key update ignored");
+    require(unchanged.filename == current.filename && unchanged.text == current.text, "asset-key update ignored");
     for (int phase = 0; phase < 2; ++phase) {
         auto source_id = phase ? library_id : network::osd_uuid(info.get("drop_item"));
         auto source_name = phase ? network::osd_string(library.get("name")) : "Dropped no-copy script";
@@ -350,15 +340,15 @@ void run_inventory_script_rez_probe(Uuid agent, Uuid object, std::uint32_t local
             running.block("Script")["ItemID"] = key;
             io.send(running);
         }
-        std::cout << "Task inventory dropped " << source_id.str() << ' ' << dropped.str() << ' '
-                  << edited_id.str() << ' ' << phase << std::endl;
+        std::cout << "Task inventory dropped " << source_id.str() << ' ' << dropped.str() << ' ' << edited_id.str()
+                  << ' ' << phase << std::endl;
         std::string result;
         require(bool(std::getline(std::cin, result)) && result == "OK",
                 "drop persistence and no automatic script start");
         current = std::move(next);
     }
-    std::cout
-        << "Verified real metadata permissions/flags, ignored asset-key updates, no-copy inventory consumption and user/library drops without automatic script execution\n";
+    std::cout << "Verified real metadata permissions/flags, ignored asset-key updates, no-copy inventory consumption "
+                 "and user/library drops without automatic script execution\n";
     run_user_inventory_probe(agent, object, edited_id, metadata, io);
     // Source keeps the engine instance when Type remains LSL but InvType changes.
     // Part event registration, task inventory and engine lifetime are independent.
@@ -372,7 +362,6 @@ void run_inventory_script_rez_probe(Uuid agent, Uuid object, std::uint32_t local
                             return true;
             return false;
         });
-
     };
     auto running_query = [&](Uuid item) {
         auto packet = io.make("GetScriptRunning");
@@ -402,7 +391,6 @@ void run_inventory_script_rez_probe(Uuid agent, Uuid object, std::uint32_t local
                     return true;
             return false;
         });
-
     };
     auto touch_flag = [&](std::size_t first, bool enabled) {
         io.wait([&](const auto &packets) {
@@ -414,7 +402,6 @@ void run_inventory_script_rez_probe(Uuid agent, Uuid object, std::uint32_t local
                             return true;
             return false;
         });
-
     };
     auto retype = io.make("UpdateTaskInventory");
     retype.block("UpdateData")["LocalID"] = std::uint64_t(local);
@@ -428,15 +415,13 @@ void run_inventory_script_rez_probe(Uuid agent, Uuid object, std::uint32_t local
     meta["NextOwnerMask"] = std::uint64_t((0x2000u & base) | 0x80000u);
     meta["Type"] = std::int64_t(10);
     meta["InvType"] = std::int64_t(7);
-    meta["Name"] =
-        std::vector<std::uint8_t>{'E', 'd', 'i', 't', 'e', 'd', ' ', 's', 'c', 'r', 'i', 'p', 't', 0};
+    meta["Name"] = std::vector<std::uint8_t>{'E', 'd', 'i', 't', 'e', 'd', ' ', 's', 'c', 'r', 'i', 'p', 't', 0};
     meta["CreationDate"] = std::int64_t(-1);
     before = io.snapshot().size();
     io.send(retype);
     props(before, 16);
     current = read_task_inventory_file(object, local, 16, io);
-    require(current.text.find("item_id\t" + edited_id.str()) != std::string::npos,
-            "retyped task remains stored");
+    require(current.text.find("item_id\t" + edited_id.str()) != std::string::npos, "retyped task remains stored");
     auto previous = unique_chat("Touched.");
     touch();
     wait_chat("Touched.", previous);
@@ -455,8 +440,7 @@ void run_inventory_script_rez_probe(Uuid agent, Uuid object, std::uint32_t local
             if (packets[n].spec->name == "UpdateCreateInventoryItem")
                 for (const auto &b : packets[n].blocks.at("InventoryData")) {
                     auto name = std::get<std::vector<std::uint8_t>>(b.at("Name"));
-                    if (std::string(name.begin(), std::find(name.begin(), name.end(), 0)) ==
-                            "Edited script" &&
+                    if (std::string(name.begin(), std::find(name.begin(), name.end(), 0)) == "Edited script" &&
                         std::get<std::int64_t>(b.at("InvType")) == 7)
                         return b;
                 }
@@ -465,8 +449,8 @@ void run_inventory_script_rez_probe(Uuid agent, Uuid object, std::uint32_t local
     io.wait([&](const auto &packets) { return trash_reply(packets).has_value(); });
     auto trash_item = *trash_reply(io.snapshot());
     std::cout << "Retained script trash " << object.str() << ' ' << edited_id.str() << ' '
-              << std::get<Uuid>(trash_item.at("ItemID")).str() << ' '
-              << std::get<Uuid>(trash_item.at("AssetID")).str() << std::endl;
+              << std::get<Uuid>(trash_item.at("ItemID")).str() << ' ' << std::get<Uuid>(trash_item.at("AssetID")).str()
+              << std::endl;
     std::string checked;
     require(bool(std::getline(std::cin, checked)) && checked == "OK", "actual retained-script Trash copy");
     previous = unique_chat("Touched.");
@@ -506,12 +490,12 @@ void run_inventory_script_rez_probe(Uuid agent, Uuid object, std::uint32_t local
         query.block("Script")["ItemID"] = key;
         io.send(query);
     }
-    std::cout << "Script lifecycle missing " << object.str() << ' ' << primary_id.str() << ' '
-              << edited_id.str() << std::endl;
+    std::cout << "Script lifecycle missing " << object.str() << ' ' << primary_id.str() << ' ' << edited_id.str()
+              << std::endl;
     require(bool(std::getline(std::cin, checked)) && checked == "OK",
             "ordinary script terminated while retained script still runs");
-    std::cout
-        << "Verified source task/event/engine lifetime separation, removed-script running state, touch gating, reset re-registration and ordinary-script termination\n";
+    std::cout << "Verified source task/event/engine lifetime separation, removed-script running state, touch gating, "
+                 "reset re-registration and ordinary-script termination\n";
     run_generic_asset_probe(agent, metadata, io);
 }
-}
+} // namespace opensim::tests

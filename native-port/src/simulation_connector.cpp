@@ -5,11 +5,14 @@
 #include "opensim/framework/vector_text.hpp"
 #include "opensim/services/avatar_data.hpp"
 #include "opensim/framework/text.hpp"
+
 namespace opensim::services {
 using network::Value;
 using namespace network;
+
 SimulationConnectorError::SimulationConnectorError(std::string type, std::u16string text)
     : runtime_error(framework::utf8(text)), source_type(std::move(type)), message(std::move(text)) {}
+
 namespace {
 Value real(float n) {
     Value v;
@@ -17,6 +20,7 @@ Value real(float n) {
     v.real = n;
     return v;
 }
+
 framework::Uuid constructor_uuid(std::string_view s) {
     while (s.starts_with(' '))
         s.remove_prefix(1);
@@ -24,13 +28,15 @@ framework::Uuid constructor_uuid(std::string_view s) {
         throw std::invalid_argument("Short UUID");
     return framework::Uuid(s.substr(0, s[8] == '-' ? 36 : 32));
 }
-const Value& map(const Value& v) {
+
+const Value &map(const Value &v) {
     if (v.kind != Value::Kind::Map)
         throw std::invalid_argument("Result is not a map");
     return v;
 }
-}
-bool SimulationConnector::create_object(GridRegion* destination, const framework::Vector3& position,
+} // namespace
+
+bool SimulationConnector::create_object(GridRegion *destination, const framework::Vector3 &position,
                                         std::shared_ptr<SimulationObject> object, bool) {
     if (!destination)
         throw std::invalid_argument("Null destination");
@@ -56,40 +62,45 @@ bool SimulationConnector::create_object(GridRegion* destination, const framework
         args.set("destination_uuid", destination->id.str());
         auto result = object_request_(uri, args, 40000, false);
         return osd_boolean(result.get("success"));
-    } catch (const std::exception&) {
+    } catch (const std::exception &) {
         return false;
     }
 }
-bool SimulationConnector::release_agent(const framework::Uuid& region, const framework::Uuid& agent,
-                                        const std::string& uri) {
+
+bool SimulationConnector::release_agent(const framework::Uuid &region, const framework::Uuid &agent,
+                                        const std::string &uri) {
     return release_agent(region, agent, std::optional<std::string>(uri));
 }
-bool SimulationConnector::release_agent(const framework::Uuid&, const framework::Uuid&,
-                                        const std::optional<std::string>& uri) {
+
+bool SimulationConnector::release_agent(const framework::Uuid &, const framework::Uuid &,
+                                        const std::optional<std::string> &uri) {
     try {
         delete_request_(uri, 10000);
-    } catch (const std::exception&) {
+    } catch (const std::exception &) {
     }
     return true;
 }
-bool SimulationConnector::close_agent(GridRegion& destination, const framework::Uuid& agent,
-                                      const std::optional<std::string>& auth) {
+
+bool SimulationConnector::close_agent(GridRegion &destination, const framework::Uuid &agent,
+                                      const std::optional<std::string> &auth) {
     return close_agent(&destination, agent, auth);
 }
-bool SimulationConnector::close_agent(GridRegion* destination, const framework::Uuid& agent,
-                                      const std::optional<std::string>& auth) {
+
+bool SimulationConnector::close_agent(GridRegion *destination, const framework::Uuid &agent,
+                                      const std::optional<std::string> &auth, bool child_only) {
     if (!destination)
         throw std::invalid_argument("Null destination");
     const auto uri = destination->server_uri() + agent_path() + agent.str() + "/" + destination->id.str() +
-                     "/?auth=" + auth.value_or("");
+                     (child_only ? "/close-child/?auth=child:" : "/?auth=") + auth.value_or("");
     try {
         delete_request_(uri, 10000);
-    } catch (const std::exception&) {
+    } catch (const std::exception &) {
     }
     return true;
 }
-void SimulationConnector::pack_data(Value& args, const GridRegion* source, framework::AgentCircuitData&,
-                                    const GridRegion& destination, std::uint32_t flags) {
+
+void SimulationConnector::pack_data(Value &args, const GridRegion *source, framework::AgentCircuitData &,
+                                    const GridRegion &destination, std::uint32_t flags) {
     if (source) {
         args.set("source_x", std::to_string(source->x));
         args.set("source_y", std::to_string(source->y));
@@ -104,22 +115,21 @@ void SimulationConnector::pack_data(Value& args, const GridRegion* source, frame
     args.set("destination_uuid", destination.id.str());
     args.set("teleport_flags", std::to_string(flags));
 }
-bool SimulationConnector::query_access(GridRegion& d, const framework::Uuid& a,
-                                       const std::optional<std::string>& h, bool t,
-                                       const framework::Vector3& p, std::vector<framework::Uuid>& f,
-                                       LoginTransferContext& c, std::string& r) {
+
+bool SimulationConnector::query_access(GridRegion &d, const framework::Uuid &a, const std::optional<std::string> &h,
+                                       bool t, const framework::Vector3 &p, std::vector<framework::Uuid> &f,
+                                       LoginTransferContext &c, std::string &r) {
     return query_access(&d, a, h, t, p, &f, &c, r);
 }
-bool SimulationConnector::query_access(GridRegion* destination, const framework::Uuid& agent,
-                                       const std::optional<std::string>& home, bool via_teleport,
-                                       const framework::Vector3& position,
-                                       std::vector<framework::Uuid>* features, LoginTransferContext* context,
-                                       std::string& reason) {
+
+bool SimulationConnector::query_access(GridRegion *destination, const framework::Uuid &agent,
+                                       const std::optional<std::string> &home, bool via_teleport,
+                                       const framework::Vector3 &position, std::vector<framework::Uuid> *features,
+                                       LoginTransferContext *context, std::string &reason) {
     reason = "Failed to contact destination";
     if (!destination)
         throw std::invalid_argument("Null destination");
-    const auto uri =
-        destination->server_uri() + agent_path() + agent.str() + "/" + destination->id.str() + "/";
+    const auto uri = destination->server_uri() + agent_path() + agent.str() + "/" + destination->id.str() + "/";
     Value request = Value::object({});
     request.set("viaTeleport", Value(via_teleport));
     request.set("position", framework::vector3_string(position));
@@ -135,7 +145,7 @@ bool SimulationConnector::query_access(GridRegion* destination, const framework:
     available.kind = Value::Kind::Array;
     if (!features)
         throw std::invalid_argument("Null features");
-    for (const auto& f : *features)
+    for (const auto &f : *features)
         available.array.emplace_back(f.str());
     request.set("features", std::move(available));
     if (home)
@@ -145,14 +155,12 @@ bool SimulationConnector::query_access(GridRegion* destination, const framework:
         bool success = osd_boolean(result.get("success")), has_result = false;
         if (result.contains("_Result")) {
             has_result = true;
-            const auto& data = map(result.get("_Result"));
+            const auto &data = map(result.get("_Result"));
             success = osd_boolean(data.get("success"));
             reason = osd_string(data.get("reason"));
             if (data.contains("negotiated_inbound_version")) {
-                context->inbound_version =
-                    static_cast<float>(osd_real(data.get("negotiated_inbound_version")));
-                context->outbound_version =
-                    static_cast<float>(osd_real(data.get("negotiated_outbound_version")));
+                context->inbound_version = static_cast<float>(osd_real(data.get("negotiated_inbound_version")));
+                context->outbound_version = static_cast<float>(osd_real(data.get("negotiated_outbound_version")));
             } else if (data.contains("version")) {
                 auto version = osd_string(data.get("version"));
                 auto slash = version.find('/');
@@ -179,27 +187,26 @@ bool SimulationConnector::query_access(GridRegion* destination, const framework:
             return false;
         }
         features->clear();
-        const auto& advertised = result.get("features");
+        const auto &advertised = result.get("features");
         if (advertised.kind == Value::Kind::Array)
-            for (const auto& f : advertised.array)
+            for (const auto &f : advertised.array)
                 features->push_back(constructor_uuid(osd_string(f)));
-        context->wearables_count = context->outbound_version < 0.5f   ? 15
-                                   : context->outbound_version < 0.6f ? 16
-                                                                      : -1;
+        context->wearables_count = context->outbound_version < 0.5f ? 15 : context->outbound_version < 0.6f ? 16 : -1;
         return success;
-    } catch (const std::exception&) {
+    } catch (const std::exception &) {
         return false;
     }
 }
-bool SimulationConnector::create_agent(const GridRegion* s, GridRegion& d,
-                                       const std::shared_ptr<framework::AgentCircuitData>& c, std::uint32_t f,
-                                       LoginTransferContext& x, std::string& r) {
+
+bool SimulationConnector::create_agent(const GridRegion *s, GridRegion &d,
+                                       const std::shared_ptr<framework::AgentCircuitData> &c, std::uint32_t f,
+                                       LoginTransferContext &x, std::string &r) {
     return create_agent(s, &d, c, f, &x, r);
 }
-bool SimulationConnector::create_agent(const GridRegion* source, GridRegion* destination,
-                                       const std::shared_ptr<framework::AgentCircuitData>& circuit,
-                                       std::uint32_t flags, LoginTransferContext* context,
-                                       std::string& reason) {
+
+bool SimulationConnector::create_agent(const GridRegion *source, GridRegion *destination,
+                                       const std::shared_ptr<framework::AgentCircuitData> &circuit, std::uint32_t flags,
+                                       LoginTransferContext *context, std::string &reason) {
     reason.clear();
     if (!destination) {
         reason = "Destination not found";
@@ -218,21 +225,21 @@ bool SimulationConnector::create_agent(const GridRegion* source, GridRegion* des
         pack_data(args, source, *circuit, *destination, flags);
         auto result = request_(uri, args, "POST", true, false);
         if (osd_boolean(result.get("success")) && result.get("_Result").kind == Value::Kind::Map) {
-            const auto& data = result.get("_Result");
+            const auto &data = result.get("_Result");
             reason = osd_string(data.get("reason"));
             return osd_boolean(data.get("success"));
         }
         result = request_(uri, args, "POST", false, false);
         if (osd_boolean(result.get("success")) && result.get("_Result").kind == Value::Kind::Map) {
-            const auto& data = result.get("_Result");
+            const auto &data = result.get("_Result");
             reason = osd_string(data.get("reason"));
             return osd_boolean(data.get("success"));
         }
         reason = osd_string(result.get("Message"));
         return false;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         reason = e.what();
         return false;
     }
 }
-}
+} // namespace opensim::services

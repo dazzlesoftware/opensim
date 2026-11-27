@@ -2,21 +2,20 @@
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/services/login_completion.hpp"
 #include <stdexcept>
+
 namespace opensim::services {
-LoginCompletion::Result LoginCompletion::finish(PreparedLogin& prepared,
-                                                const LoginCompletionRequest& request) {
+LoginCompletion::Result LoginCompletion::finish(PreparedLogin &prepared, const LoginCompletionRequest &request) {
     if (!dependencies_.launcher)
         throw std::runtime_error("Login agent launcher unavailable");
     AgentLaunchRequest launch;
     launch.destination =
         prepared.destination.region ? std::make_shared<GridRegion>(*prepared.destination.region) : nullptr;
-    launch.gatekeeper = prepared.destination.gatekeeper
-                            ? std::make_shared<GridRegion>(*prepared.destination.gatekeeper)
-                            : nullptr;
+    launch.gatekeeper =
+        prepared.destination.gatekeeper ? std::make_shared<GridRegion>(*prepared.destination.gatekeeper) : nullptr;
     launch.account_scope = framework::Uuid(prepared.account.scope_id);
     launch.where = prepared.destination.where;
     launch.flags = prepared.destination.flags;
-    launch.make_agent = [&](const GridRegion&, std::uint32_t code) {
+    launch.make_agent = [&](const GridRegion &, std::uint32_t code) {
         if (!dependencies_.factory)
             throw std::runtime_error("Login agent factory unavailable");
         LoginAgentDetails details;
@@ -43,8 +42,7 @@ LoginCompletion::Result LoginCompletion::finish(PreparedLogin& prepared,
         friends = dependencies_.friends(framework::Uuid(prepared.account.principal_id));
     auto message = welcome_message();
     std::string name = request.first.value_or("") + " " + request.last.value_or("");
-    for (std::size_t pos = 0; (pos = message.find("<USERNAME>", pos)) != std::string::npos;
-         pos += name.size())
+    for (std::size_t pos = 0; (pos = message.find("<USERNAME>", pos)) != std::string::npos; pos += name.size())
         message.replace(pos, 10, name);
     if (!dependencies_.gestures)
         throw std::runtime_error("Inventory gesture service unavailable");
@@ -56,7 +54,7 @@ LoginCompletion::Result LoginCompletion::finish(PreparedLogin& prepared,
     input.destination = result.destination.get();
     input.home = prepared.home ? &*prepared.home : nullptr;
     input.skeleton = LoginResponseLibrary::Folders{};
-    for (const auto& folder : prepared.skeleton)
+    for (const auto &folder : prepared.skeleton)
         input.skeleton->push_back(std::make_shared<LoginInventoryFolder>(folder));
     input.friends = std::move(friends);
     input.gestures = std::move(gestures);
@@ -80,4 +78,4 @@ LoginCompletion::Result LoginCompletion::finish(PreparedLogin& prepared,
     input.max_agent_groups = options_.max_agent_groups;
     return std::make_shared<LoginResponse>(input, dependencies_.environment);
 }
-}
+} // namespace opensim::services

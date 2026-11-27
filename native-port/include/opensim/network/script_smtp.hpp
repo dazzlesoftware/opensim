@@ -15,8 +15,7 @@ struct ScriptSmtpSecurity {
     std::string login, password;
 };
 
-void send_script_smtp(const std::string& host, int port, std::string_view from, std::string_view to,
-                      std::string_view subject, std::string_view body,
-                      std::string_view owner, std::string_view object,
-                      const ScriptSmtpSecurity& security);
-}
+void send_script_smtp(const std::string &host, int port, std::string_view from, std::string_view to,
+                      std::string_view subject, std::string_view body, std::string_view owner, std::string_view object,
+                      const ScriptSmtpSecurity &security);
+} // namespace opensim::network

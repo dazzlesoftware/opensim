@@ -1,11 +1,14 @@
 #include "avatar_data_fixture.hpp"
-std::string value(const std::string& s) {
+
+std::string value(const std::string &s) {
     return s == "." ? std::string{} : fixture::unhex(s);
 }
-std::optional<std::string> nullable(const std::string& s) {
+
+std::optional<std::string> nullable(const std::string &s) {
     return s == "-" ? std::nullopt : std::optional(value(s));
 }
-std::string view(const services::AvatarData& a) {
+
+std::string view(const services::AvatarData &a) {
     std::string s = std::to_string(a.avatar_type) + "|";
     if (!a.data)
         s += "null";
@@ -29,6 +32,7 @@ std::string view(const services::AvatarData& a) {
     }
     return s;
 }
+
 int main() {
     services::AvatarData a;
     std::string line;
@@ -79,8 +83,7 @@ int main() {
                 framework::AvatarAppearance ap;
                 if (mode == 1) {
                     ap.serial = -3;
-                    ap.avatar_height =
-                        std::bit_cast<float>(static_cast<std::uint32_t>(std::stoul(v, nullptr, 16)));
+                    ap.avatar_height = std::bit_cast<float>(static_cast<std::uint32_t>(std::stoul(v, nullptr, 16)));
                 }
                 if (mode == 2)
                     ap.visual_params.reset();
@@ -99,8 +102,7 @@ int main() {
                 if (mode == 9) {
                     ap.wearables->at(0)->add(id(7), id(8));
                     for (int n : {1, 2})
-                        ap.append_attachment(
-                            std::make_shared<framework::AvatarAttachment>(5, id(n), id(n + 10)));
+                        ap.append_attachment(std::make_shared<framework::AvatarAttachment>(5, id(n), id(n + 10)));
                     ap.append_attachment(std::make_shared<framework::AvatarAttachment>(129, id(3), id(13)));
                 }
                 if (mode == 10)

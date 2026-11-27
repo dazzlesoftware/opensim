@@ -1,0 +1,1 @@
+YOption chars;char high=(char)55357;string format;string result;integer after;default{state_entry(){format=(string)high+"0";result=xmrFloat2String(xmrString2Float("NaN"),format);after=1;}}

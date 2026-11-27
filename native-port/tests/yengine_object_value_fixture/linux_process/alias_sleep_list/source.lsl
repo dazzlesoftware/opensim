@@ -1,0 +1,1 @@
+YOption arrays;object input=(object)[1,2];object alias=input;integer before_equal;integer result;integer entries;integer after;default{state_entry(){entries++;before_equal=(input==alias);llSleep(0.1);result=(input==alias);after=1;}}

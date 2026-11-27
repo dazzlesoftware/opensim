@@ -6,6 +6,7 @@
 #include "opensim/framework/network_servers_info.hpp"
 #include "opensim/framework/nini_streams.hpp"
 #include "opensim/framework/text.hpp"
+
 namespace opensim::framework {
 NiniWriterText native_configuration_exception_message(std::exception_ptr error) {
     if (!error)
@@ -30,13 +31,13 @@ NiniWriterText native_configuration_exception_message(std::exception_ptr error) 
         return nini_writer_text(utf16_replacing(e.what()));
     }
 }
+
 void bind_native_startup_configuration_services(RegionConfigurationBackend &backend,
                                                 std::shared_ptr<EnvironmentConfigBackend> environment) {
     backend.is_http_uri = [](auto value) { return is_http_configuration_uri(std::move(value)); };
     backend.starts_with_current = [](auto value, auto prefix) {
         if (!prefix || *prefix != u"Include-")
-            throw std::invalid_argument(
-                "Native startup configuration supports only the consumed Include- prefix");
+            throw std::invalid_argument("Native startup configuration supports only the consumed Include- prefix");
         return startup_invariant_configuration_include_key(std::move(value));
     };
     backend.merge_environment = [environment = std::move(environment)](auto source) {
@@ -51,4 +52,4 @@ void bind_native_startup_configuration_services(RegionConfigurationBackend &back
     bind_network_servers_info(backend);
     backend.exception_message = native_configuration_exception_message;
 }
-}
+} // namespace opensim::framework

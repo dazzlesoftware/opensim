@@ -1,0 +1,1 @@
+rotation item=<0,0,0,1>;string result;default{state_entry(){result=(string)item;}}

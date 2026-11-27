@@ -1,0 +1,1 @@
+float item=1.25;integer result;default{state_entry(){result=(integer)item;}}

@@ -15,23 +15,24 @@ struct HttpRequestThrottleSettings {
 };
 
 class HttpRequestThrottle {
-public:
+  public:
     explicit HttpRequestThrottle(HttpRequestThrottleSettings settings = {});
     bool allow(std::uint32_t prim, framework::Uuid owner, double now_seconds);
     void stop(std::uint32_t prim, double now_seconds);
     void clear();
 
-private:
+  private:
     struct Bucket {
         double last_time;
         float credit;
 
         bool consume(double now_seconds, float rate, float burst);
     };
+
     const HttpRequestThrottleSettings settings_;
     std::mutex mutex_;
     std::unordered_map<std::uint32_t, Bucket> prims_;
     std::unordered_map<framework::Uuid, Bucket, framework::UuidHash> owners_;
 };
 
-}
+} // namespace opensim::script

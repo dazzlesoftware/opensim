@@ -31,10 +31,12 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdexcept>
 using namespace opensim;
 using namespace services;
-void check(bool value, const char* name) {
+
+void check(bool value, const char *name) {
     if (!value)
         throw std::runtime_error(name);
 }
+
 GridRegion region() {
     GridRegion value;
     value.id = framework::Uuid::random();
@@ -45,6 +47,7 @@ GridRegion region() {
     value.external_host = "127.0.0.1";
     return value;
 }
+
 int main() {
     try {
         // !static is isolated for normal queries but the original flag helper
@@ -53,7 +56,7 @@ int main() {
         bool threw = false;
         try {
             isolated.with_flags(DefaultRegion, {});
-        } catch (const std::runtime_error&) {
+        } catch (const std::runtime_error &) {
             threw = true;
         }
         check(threw, "flags query before singleton must fail");
@@ -72,12 +75,10 @@ int main() {
               "copy constructor omissions and generated URI normalization");
         model.x = -1;
         model.y = -257;
-        check(model.coord_x() == 16777215 && model.coord_y() == 16777214 &&
-                  model.handle() == 18446744073709551359ull,
+        check(model.coord_x() == 16777215 && model.coord_y() == 16777214 && model.handle() == 18446744073709551359ull,
               "unsigned region coordinates and handle");
         check(!GridRegion{}.equals(GridRegion{}), "zero IDs never equal");
-        check(parse_region_flags(
-                  3, "DefaultRegion -fallbackregion +PERSISTENT -DefaultRegion unknown +1024") == 1040,
+        check(parse_region_flags(3, "DefaultRegion -fallbackregion +PERSISTENT -DefaultRegion unknown +1024") == 1040,
               "flag enum parsing and signed operations");
         server::IniConfig config;
         FaultRegionStore store;
@@ -105,6 +106,11 @@ int main() {
         check(grid.register_region({}, moved).find("failed to delete") != std::string::npos,
               "relocation delete exception reported");
         store.erase_throws = false;
+        const auto previous_row = store.get(first.id, {});
+        store.next_store_throws = true;
+        check(grid.register_region({}, moved).find("failed to update") != std::string::npos &&
+                  store.get(first.id, {}) == previous_row,
+              "failed relocation write restores the previous region");
         store.erase_false = true;
         check(grid.register_region({}, moved).empty() && grid.by_id({}, first.id)->x == moved.x,
               "false delete result does not abort source registration");
@@ -127,11 +133,10 @@ int main() {
         store.store_throws = false;
         check(!isolated.get(first.id, {}), "isolated provider does not share normal dictionary");
         store.set(first.id, "flags", "5");
-        check(!isolated.with_flags(DefaultRegion, {}).empty(),
-              "isolated provider flag helper delegates to singleton");
+        check(!isolated.with_flags(DefaultRegion, {}).empty(), "isolated provider flag helper delegates to singleton");
         std::cout << "PASS: grid model, registry and provider failure paths\n";
         return 0;
-    } catch (const std::exception& error) {
+    } catch (const std::exception &error) {
         std::cerr << error.what() << '\n';
         return 1;
     }

@@ -8,6 +8,7 @@
 #include <bit>
 #include <chrono>
 #include <fstream>
+#include <future>
 #include <iostream>
 #include <map>
 #include <sstream>
@@ -15,109 +16,134 @@
 using namespace opensim;
 using namespace services;
 using Asset = AssetService::Asset;
+
 namespace {
 struct EmptyStore : AssetStore {
     Asset get(framework::Uuid) override {
         return {};
     }
+
     bool store(Asset) override {
         return true;
     }
-    std::vector<bool> exists(const std::vector<framework::Uuid>&) override {
+
+    std::vector<bool> exists(const std::vector<framework::Uuid> &) override {
         return {};
     }
+
     std::vector<std::shared_ptr<framework::AssetMetadata>> metadata_set(int, int) override {
         return {};
     }
-    bool erase(const std::string&) override {
+
+    bool erase(const std::string &) override {
         return false;
     }
 };
 struct Probe;
+
 struct FakeTimer : FlotsamCleanupTimer {
-    Probe& p;
+    Probe &p;
     int tag;
     bool active = false, closed = false, automatic = true;
     std::function<void()> handler;
-    FakeTimer(Probe& host, int id) : p(host), tag(id) {
-    }
+
+    FakeTimer(Probe &host, int id) : p(host), tag(id) {}
+
     void subscribe(std::function<void()>) override;
     void start() override;
     void stop() override;
     void close() override;
     void emit();
 };
+
 struct FakeWorker : framework::ObjectJobQueue {
-    Probe& p;
+    Probe &p;
     int tag;
     bool disposed = false;
-    FakeWorker(Probe& host, int id) : p(host), tag(id) {
-    }
+
+    FakeWorker(Probe &host, int id) : p(host), tag(id) {}
+
     bool enqueue(std::any) override {
         return true;
     }
+
     std::size_t count() const override {
         return 0;
     }
-    void cancel() override {
-    }
+
+    void cancel() override {}
+
     void dispose() override;
 };
+
 struct FakeCache : framework::IAssetCache {
-    Probe& p;
+    Probe &p;
     int tag, calls = 0;
-    FakeCache(Probe& host, int id) : p(host), tag(id) {
-    }
-    void cache(const Asset&, bool) override;
-    void cache_negative(const std::string&) override {
-    }
-    bool get(const std::string&, Asset&) override {
+
+    FakeCache(Probe &host, int id) : p(host), tag(id) {}
+
+    void cache(const Asset &, bool) override;
+
+    void cache_negative(const std::string &) override {}
+
+    bool get(const std::string &, Asset &) override {
         return false;
     }
-    Asset get_cached(const std::string&) override {
+
+    Asset get_cached(const std::string &) override {
         return {};
     }
-    bool get_from_memory(const std::string&, Asset&) override {
+
+    bool get_from_memory(const std::string &, Asset &) override {
         return false;
     }
-    bool check(const std::string&) override {
+
+    bool check(const std::string &) override {
         return false;
     }
-    void expire(const std::string&) override;
-    void clear() override {
-    }
+
+    void expire(const std::string &) override;
+
+    void clear() override {}
 };
+
 struct FakeScene : FlotsamCacheScene {
-    Probe& p;
+    Probe &p;
     int tag, cache_tag = -1;
     bool available = true;
     std::shared_ptr<AssetService> service;
     framework::Uuid id;
-    FakeScene(Probe& host, int n)
+
+    FakeScene(Probe &host, int n)
         : p(host), tag(n), service(std::make_shared<StoredAssetService>(std::make_shared<EmptyStore>())),
-          id(n == 1 ? "00000000-0000-0000-0000-000000000002" : "00000000-0000-0000-0000-000000000001") {
-    }
+          id(n == 1 ? "00000000-0000-0000-0000-000000000002" : "00000000-0000-0000-0000-000000000001") {}
+
     void register_cache(std::shared_ptr<framework::IAssetCache>) override;
     void unregister_cache(std::shared_ptr<framework::IAssetCache>) override;
     std::shared_ptr<AssetService> request_asset_service() override;
     framework::Uuid cache_region_id() override;
 };
+
 struct FakeLoader : DefaultAssetLoader {
-    Probe& p;
-    explicit FakeLoader(Probe& host) : p(host) {
-    }
-    void for_each(const std::string&, std::function<void(Asset)>) override;
+    Probe &p;
+
+    explicit FakeLoader(Probe &host) : p(host) {}
+
+    void for_each(const std::string &, std::function<void(Asset)>) override;
 };
+
 struct FakeBackend : FlotsamCacheModuleBackend {
-    Probe& p;
+    Probe &p;
     int tag;
-    FakeBackend(Probe& host, int n) : p(host), tag(n) {
-    }
+
+    FakeBackend(Probe &host, int n) : p(host), tag(n) {}
+
     std::shared_ptr<FlotsamCleanupTimer> make_timer(double) override;
     std::shared_ptr<framework::ObjectJobQueue> make_worker() override;
-    std::shared_ptr<DefaultAssetLoader> load_loader(const std::string&) override;
+    std::shared_ptr<DefaultAssetLoader> load_loader(const std::string &) override;
     void cleanup_elapsed(std::shared_ptr<FlotsamCacheLifecycle>) override;
 };
+
 struct Probe {
     int timer_serial = 0, worker_serial = 0, loader_mode = 2, point = 0, nth = 1, seen = 0;
     bool mutate = false;
@@ -130,19 +156,23 @@ struct Probe {
     std::array<std::shared_ptr<FakeBackend>, 2> backends;
     std::array<std::shared_ptr<FakeScene>, 3> scenes;
     std::shared_ptr<FlotsamCacheSharedState> shared;
-    void add(const std::string& s) {
+
+    void add(const std::string &s) {
         trace.push_back(s);
     }
+
     void fail(int p) {
         if (point == p && ++seen == nth)
             throw std::runtime_error("fault");
     }
+
     static std::optional<std::string> loader_name(int n) {
         if (n == 0)
             return {};
         return n == 1 ? "" : n == 2 ? "  " : n == 3 ? "\xe2\x80\x83" : n == 4 ? "loader" : "\xe2\x80\x8b";
     }
-    std::string execute(const std::string& line) {
+
+    std::string execute(const std::string &line) {
         std::istringstream in(line);
         std::string op;
         int m = 0;
@@ -171,15 +201,14 @@ struct Probe {
                 caches[i] = std::make_shared<FakeCache>(*this, i);
                 backends[i] = std::make_shared<FakeBackend>(*this, i);
                 modules[i] = std::make_shared<FlotsamCacheModule>(
-                    FlotsamCacheModule::Options{i == 0 ? m != 0 : enabled1 != 0,
-                                                i == 0 ? file0 != 0 : file1 != 0, expiration, cleanup,
-                                                loader_name(i == 0 ? loader0 : loader1), "args"},
+                    FlotsamCacheModule::Options{i == 0 ? m != 0 : enabled1 != 0, i == 0 ? file0 != 0 : file1 != 0,
+                                                expiration, cleanup, loader_name(i == 0 ? loader0 : loader1), "args"},
                     caches[i], backends[i], shared);
             }
             return "init";
         }
         if (op == "defaults" || op == "delete-defaults") {
-            auto info = [this](const auto& text) {
+            auto info = [this](const auto &text) {
                 add("INFO:" + text);
                 fail(17);
             };
@@ -250,7 +279,8 @@ struct Probe {
             throw std::runtime_error("Unknown lifecycle operation");
         return op;
     }
-    std::string run(const std::string& line) {
+
+    std::string run(const std::string &line) {
         trace.clear();
         std::string result;
         try {
@@ -258,9 +288,9 @@ struct Probe {
         } catch (...) {
             result = "EX";
         }
-        auto join = [](const auto& v, const std::string& delimiter) {
+        auto join = [](const auto &v, const std::string &delimiter) {
             std::string s;
-            for (auto& x : v) {
+            for (auto &x : v) {
                 if (!s.empty())
                     s += delimiter;
                 s += x;
@@ -271,58 +301,61 @@ struct Probe {
         for (int m = 0; m < 2; ++m) {
             auto life = modules[m]->lifecycle();
             std::vector<std::string> ids;
-            for (auto& s : life->scenes)
+            for (auto &s : life->scenes)
                 ids.push_back(std::to_string(std::dynamic_pointer_cast<FakeScene>(s)->tag));
             std::string service = "-";
             for (int n = 0; n < 3; ++n)
                 if (life->service == scenes[n]->service)
                     service = std::to_string(n);
             auto timer = std::dynamic_pointer_cast<FakeTimer>(life->timer);
-            snapshots.push_back(join(ids, ",") + "/" + service + "/" +
-                                std::to_string(timer ? timer->tag : 0) + "/" +
-                                (life->timer_running ? "1" : "0") + "/" +
-                                (life->cleanup_running ? "1" : "0") + "/" + std::to_string(caches[m]->calls));
+            snapshots.push_back(join(ids, ",") + "/" + service + "/" + std::to_string(timer ? timer->tag : 0) + "/" +
+                                (life->timer_running ? "1" : "0") + "/" + (life->cleanup_running ? "1" : "0") + "/" +
+                                std::to_string(caches[m]->calls));
         }
         auto worker = std::dynamic_pointer_cast<FakeWorker>(shared->worker.load());
         auto defaults = shared->default_assets.load();
         std::vector<std::string> ids(defaults->begin(), defaults->end());
         std::sort(ids.begin(), ids.end());
         std::vector<std::string> registrations, timer_values, worker_values;
-        for (auto& s : scenes)
+        for (auto &s : scenes)
             registrations.push_back(std::to_string(s->cache_tag));
-        for (auto& t : timers)
-            timer_values.push_back(std::to_string(t->tag) + ":" + (t->active ? "1" : "0") +
-                                   (t->closed ? "1" : "0") + (t->automatic ? "1" : "0") +
-                                   (t->handler ? "1" : "0"));
-        for (auto& w : workers)
+        for (auto &t : timers)
+            timer_values.push_back(std::to_string(t->tag) + ":" + (t->active ? "1" : "0") + (t->closed ? "1" : "0") +
+                                   (t->automatic ? "1" : "0") + (t->handler ? "1" : "0"));
+        for (auto &w : workers)
             worker_values.push_back(std::to_string(w->tag) + ":" + (w->disposed ? "1" : "0"));
         return result + "|" + join(trace, ";") + "|" + join(snapshots, ";") + "|" +
-               std::to_string(worker ? worker->tag : 0) + "/" + join(ids, ",") + "|" +
-               join(registrations, ",") + "|" + join(timer_values, ",") + "|" + join(worker_values, ",");
+               std::to_string(worker ? worker->tag : 0) + "/" + join(ids, ",") + "|" + join(registrations, ",") + "|" +
+               join(timer_values, ",") + "|" + join(worker_values, ",");
     }
 };
+
 void FakeTimer::subscribe(std::function<void()> value) {
     p.add("B:" + std::to_string(tag));
     p.fail(6);
     handler = std::move(value);
 }
+
 void FakeTimer::start() {
     p.add("T:" + std::to_string(tag));
     p.fail(7);
     active = true;
     closed = false;
 }
+
 void FakeTimer::stop() {
     p.add("P:" + std::to_string(tag));
     p.fail(8);
     active = false;
 }
+
 void FakeTimer::close() {
     p.add("Z:" + std::to_string(tag));
     p.fail(9);
     active = false;
     closed = true;
 }
+
 void FakeTimer::emit() {
     p.add("E:" + std::to_string(tag));
     if (active && !closed) {
@@ -335,28 +368,33 @@ void FakeTimer::emit() {
         }
     }
 }
+
 void FakeWorker::dispose() {
     p.add("Q:" + std::to_string(tag));
     p.fail(11);
     disposed = true;
 }
-void FakeCache::expire(const std::string& id) {
+
+void FakeCache::expire(const std::string &id) {
     p.add("EXPIRE:" + std::to_string(tag) + ":" + id);
     p.fail(18);
 }
-void FakeCache::cache(const Asset& a, bool replace) {
+
+void FakeCache::cache(const Asset &a, bool replace) {
     ++calls;
     p.add("CACHE:" + std::to_string(tag) + ":" + (a ? a->id() : "-") + ":" + (replace ? "1" : "0"));
     p.fail(14);
     if (p.mutate && a)
         a->id("changed");
 }
+
 void FakeScene::register_cache(std::shared_ptr<framework::IAssetCache> value) {
     auto m = std::dynamic_pointer_cast<FakeCache>(value)->tag;
     p.add("R:" + std::to_string(tag) + ":" + std::to_string(m));
     p.fail(1);
     cache_tag = m;
 }
+
 void FakeScene::unregister_cache(std::shared_ptr<framework::IAssetCache> value) {
     auto m = std::dynamic_pointer_cast<FakeCache>(value)->tag;
     p.add("U:" + std::to_string(tag) + ":" + std::to_string(m));
@@ -364,17 +402,20 @@ void FakeScene::unregister_cache(std::shared_ptr<framework::IAssetCache> value) 
     if (cache_tag == m)
         cache_tag = -1;
 }
+
 std::shared_ptr<AssetService> FakeScene::request_asset_service() {
     p.add("S:" + std::to_string(tag));
     p.fail(3);
     return available ? service : nullptr;
 }
+
 framework::Uuid FakeScene::cache_region_id() {
     p.add("ID:" + std::to_string(tag));
     p.fail(15);
     return id;
 }
-void FakeLoader::for_each(const std::string& args, std::function<void(Asset)> action) {
+
+void FakeLoader::for_each(const std::string &args, std::function<void(Asset)> action) {
     p.add("F:" + args);
     p.fail(13);
     if (p.loader_mode == 7) {
@@ -383,20 +424,21 @@ void FakeLoader::for_each(const std::string& args, std::function<void(Asset)> ac
     }
     if (p.loader_mode == 1)
         return;
-    action(std::make_shared<framework::AssetBase>(std::optional<std::string>("a"), "default a",
-                                                  std::int8_t(0), "creator"));
+    action(std::make_shared<framework::AssetBase>(std::optional<std::string>("a"), "default a", std::int8_t(0),
+                                                  "creator"));
     if (p.loader_mode == 5)
         throw std::runtime_error("middle");
     if (p.loader_mode == 4) {
         action({});
         return;
     }
-    auto a = std::make_shared<framework::AssetBase>(
-        std::optional<std::string>(p.loader_mode == 3 ? "a" : "b"), "default b", std::int8_t(0), "creator");
+    auto a = std::make_shared<framework::AssetBase>(std::optional<std::string>(p.loader_mode == 3 ? "a" : "b"),
+                                                    "default b", std::int8_t(0), "creator");
     if (p.loader_mode == 6)
         a->metadata({});
     action(a);
 }
+
 std::shared_ptr<FlotsamCleanupTimer> FakeBackend::make_timer(double interval) {
     auto id = ++p.timer_serial;
     p.add("N:" + std::to_string(id) + ":" + std::to_string(std::bit_cast<std::uint64_t>(interval)));
@@ -409,6 +451,7 @@ std::shared_ptr<FlotsamCleanupTimer> FakeBackend::make_timer(double interval) {
     timer->automatic = false;
     return timer;
 }
+
 std::shared_ptr<framework::ObjectJobQueue> FakeBackend::make_worker() {
     auto id = ++p.worker_serial;
     p.add("W:" + std::to_string(id) + ":FloatsamCacheWriter:1000:1");
@@ -417,7 +460,8 @@ std::shared_ptr<framework::ObjectJobQueue> FakeBackend::make_worker() {
     p.workers.push_back(worker);
     return worker;
 }
-std::shared_ptr<DefaultAssetLoader> FakeBackend::load_loader(const std::string& name) {
+
+std::shared_ptr<DefaultAssetLoader> FakeBackend::load_loader(const std::string &name) {
     std::string hex;
     for (unsigned char c : name) {
         hex += "0123456789abcdef"[c >> 4];
@@ -427,85 +471,99 @@ std::shared_ptr<DefaultAssetLoader> FakeBackend::load_loader(const std::string& 
     p.fail(12);
     return p.loader_mode == 0 ? nullptr : std::make_shared<FakeLoader>(p);
 }
+
 void FakeBackend::cleanup_elapsed(std::shared_ptr<FlotsamCacheLifecycle>) {
     p.add("CLEAN:" + std::to_string(tag));
     p.fail(16);
 }
-template <class F> void until(F ready, const char* error) {
+
+template <class F> void until(F ready, const char *error) {
     auto end = std::chrono::steady_clock::now() + std::chrono::seconds(5);
     while (!ready() && std::chrono::steady_clock::now() < end)
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     if (!ready())
         throw std::runtime_error(error);
 }
+
 struct RealScene : FlotsamCacheScene {
     std::shared_ptr<framework::IAssetCache> cache;
-    std::shared_ptr<AssetService> service =
-        std::make_shared<StoredAssetService>(std::make_shared<EmptyStore>());
+    std::shared_ptr<AssetService> service = std::make_shared<StoredAssetService>(std::make_shared<EmptyStore>());
     framework::Uuid id;
-    explicit RealScene(const char* text) : id(text) {
-    }
+
+    explicit RealScene(const char *text) : id(text) {}
+
     void register_cache(std::shared_ptr<framework::IAssetCache> value) override {
         cache = value;
     }
+
     void unregister_cache(std::shared_ptr<framework::IAssetCache> value) override {
         if (cache == value)
             cache.reset();
     }
+
     std::shared_ptr<AssetService> request_asset_service() override {
         return service;
     }
+
     framework::Uuid cache_region_id() override {
         return id;
     }
 };
+
 struct RealLoader : DefaultAssetLoader {
-    std::vector<std::weak_ptr<framework::AssetBase>>& weak;
-    explicit RealLoader(std::vector<std::weak_ptr<framework::AssetBase>>& refs) : weak(refs) {
-    }
-    void for_each(const std::string&, std::function<void(Asset)> action) override {
+    std::vector<std::weak_ptr<framework::AssetBase>> &weak;
+
+    explicit RealLoader(std::vector<std::weak_ptr<framework::AssetBase>> &refs) : weak(refs) {}
+
+    void for_each(const std::string &, std::function<void(Asset)> action) override {
         for (auto id : {"00000000-0000-0000-0000-00000000aa01", "00000000-0000-0000-0000-00000000aa02"}) {
-            auto a = std::make_shared<framework::AssetBase>(framework::Uuid(id), "default", std::int8_t(7),
-                                                            "creator");
-            a->data =
-                std::make_shared<std::vector<std::uint8_t>>(std::initializer_list<std::uint8_t>{0, 255, 1});
+            auto a = std::make_shared<framework::AssetBase>(framework::Uuid(id), "default", std::int8_t(7), "creator");
+            a->data = std::make_shared<std::vector<std::uint8_t>>(std::initializer_list<std::uint8_t>{0, 255, 1});
             weak.push_back(a);
             action(a);
         }
     }
 };
+
 struct RealBackend : FlotsamCacheModuleBackend {
     int loads = 0;
     std::vector<std::weak_ptr<framework::AssetBase>> weak;
-    std::shared_ptr<DefaultAssetLoader> load_loader(const std::string&) override {
+
+    std::shared_ptr<DefaultAssetLoader> load_loader(const std::string &) override {
         ++loads;
         return std::make_shared<RealLoader>(weak);
     }
-    void cleanup_elapsed(std::shared_ptr<FlotsamCacheLifecycle>) override {
-    }
+
+    void cleanup_elapsed(std::shared_ptr<FlotsamCacheLifecycle>) override {}
 };
-std::string path_text(const std::filesystem::path& p) {
+
+std::string path_text(const std::filesystem::path &p) {
     auto u = p.u8string();
-    return {reinterpret_cast<const char*>(u.data()), u.size()};
+    return {reinterpret_cast<const char *>(u.data()), u.size()};
 }
+
 struct RetainedLoader : DefaultAssetLoader {
-    std::function<void(Asset)>& callback;
-    explicit RetainedLoader(std::function<void(Asset)>& value) : callback(value) {
-    }
-    void for_each(const std::string&, std::function<void(Asset)> action) override {
+    std::function<void(Asset)> &callback;
+
+    explicit RetainedLoader(std::function<void(Asset)> &value) : callback(value) {}
+
+    void for_each(const std::string &, std::function<void(Asset)> action) override {
         callback = std::move(action);
     }
 };
+
 struct RetainedBackend : FlotsamCacheModuleBackend {
-    std::function<void(Asset)>& callback;
-    explicit RetainedBackend(std::function<void(Asset)>& value) : callback(value) {
-    }
-    std::shared_ptr<DefaultAssetLoader> load_loader(const std::string&) override {
+    std::function<void(Asset)> &callback;
+
+    explicit RetainedBackend(std::function<void(Asset)> &value) : callback(value) {}
+
+    std::shared_ptr<DefaultAssetLoader> load_loader(const std::string &) override {
         return std::make_shared<RetainedLoader>(callback);
     }
-    void cleanup_elapsed(std::shared_ptr<FlotsamCacheLifecycle>) override {
-    }
+
+    void cleanup_elapsed(std::shared_ptr<FlotsamCacheLifecycle>) override {}
 };
+
 std::string retained() {
     Probe p;
     std::function<void(Asset)> callback;
@@ -524,12 +582,13 @@ std::string retained() {
     cache.reset();
     if (weak.expired())
         throw std::runtime_error("Retained default callback did not own cache");
-    callback(std::make_shared<framework::AssetBase>(std::optional<std::string>("late"), "late",
-                                                    std::int8_t(0), "creator"));
+    callback(
+        std::make_shared<framework::AssetBase>(std::optional<std::string>("late"), "late", std::int8_t(0), "creator"));
     bool added = shared->default_assets.load()->contains("late");
     callback = {};
     return std::string("1:") + (added ? "1:" : "0:") + (weak.expired() ? "0" : "1");
 }
+
 void actual() {
     if (retained() != "1:1:0")
         throw std::runtime_error("Retained loader/cache/default-ID ownership");
@@ -549,23 +608,25 @@ void actual() {
     until([&] { return fired == 2; }, "Source Close must allow timer restart");
     timer->close();
     timer.reset();
-    auto root =
-        std::filesystem::temp_directory_path() / ("opensim-cache-module-" + framework::Uuid::random().str());
+    auto root = std::filesystem::temp_directory_path() / ("opensim-cache-module-" + framework::Uuid::random().str());
     std::filesystem::create_directory(root);
+
     struct Cleanup {
         std::filesystem::path p;
+
         ~Cleanup() {
             std::error_code e;
             std::filesystem::remove_all(p, e);
         }
     } cleanup{root};
+
     auto shared = std::make_shared<FlotsamCacheSharedState>();
     auto io = native_flotsam_shared_file_backend(shared);
-    auto store = std::make_shared<FlotsamFileStore>(FlotsamFileStore::Options{root / "cache", 1, 3, false},
-                                                    io, shared->files);
-    auto cache = std::make_shared<FlotsamMemoryCache>(
-        FlotsamMemoryCache::Options{false, true, .016, 120000, true, false, 0}, FlotsamMemoryCache::Clock{},
-        true, flotsam_cache_files(store, io));
+    auto store =
+        std::make_shared<FlotsamFileStore>(FlotsamFileStore::Options{root / "cache", 1, 3, false}, io, shared->files);
+    auto cache =
+        std::make_shared<FlotsamMemoryCache>(FlotsamMemoryCache::Options{false, true, .016, 120000, true, false, 0},
+                                             FlotsamMemoryCache::Clock{}, true, flotsam_cache_files(store, io));
     auto backend = std::make_shared<RealBackend>();
     FlotsamCacheModule module({true, true, 0, 10000, "loader", "args"}, cache, backend, shared);
     auto scene = std::make_shared<RealScene>("00000000-0000-0000-0000-000000000001");
@@ -576,15 +637,14 @@ void actual() {
     auto wait_writes = [&] {
         until(
             [&] {
-                return std::all_of(backend->weak.begin(), backend->weak.end(),
-                                   [](auto& w) { return w.expired(); });
+                return std::all_of(backend->weak.begin(), backend->weak.end(), [](auto &w) { return w.expired(); });
             },
             "Default assets not released after real queued writes");
     };
     wait_writes();
     if (backend->loads != 1 || shared->default_assets.load()->size() != 2 || !shared->worker.load())
         throw std::runtime_error("Actual worker/default load lifecycle");
-    for (auto& id : *shared->default_assets.load()) {
+    for (auto &id : *shared->default_assets.load()) {
         auto a = store->get(id);
         if (!a || !a->data || *a->data != std::vector<std::uint8_t>{0, 255, 1})
             throw std::runtime_error("Actual default NRBF file bytes");
@@ -614,9 +674,9 @@ void actual() {
     }
     {
         std::ofstream file(root / "set.xml");
-        file
-            << "<Nini><Section Name=\"asset\"><Key Name=\"assetID\" Value=\"" << id.str()
-            << "\"/><Key Name=\"name\" Value=\"Cache-only default\"/><Key Name=\"fileName\" Value=\"data.bin\"/><Key Name=\"assetType\" Value=\"7\"/></Section></Nini>";
+        file << "<Nini><Section Name=\"asset\"><Key Name=\"assetID\" Value=\"" << id.str()
+             << "\"/><Key Name=\"name\" Value=\"Cache-only default\"/><Key Name=\"fileName\" Value=\"data.bin\"/><Key "
+                "Name=\"assetType\" Value=\"7\"/></Section></Nini>";
     }
     {
         std::ofstream file(root / "control.xml");
@@ -624,18 +684,18 @@ void actual() {
     }
     {
         std::ofstream file(root / "server.ini");
-        file
-            << "[Modules]\nAssetCaching=FlotsamAssetCache\nAssetServices=LocalAssetServicesConnector\n[AssetCache]\n"
-               "FileCacheEnabled=false\nMemoryCacheEnabled=true\nMemoryCacheTimeout=0.25\n[AssetService]\n"
-               "LocalServiceModule=OpenSim.Services.AssetService.dll:AssetService\n"
-               "StorageProvider=OpenSim.Data.SQLite.dll\nConnectionString=URI=file:"
-            << path_text(root / "assets.db")
-            << ";version=3;Pooling=false\nAssetLoaderEnabled=false\nDefaultAssetLoader=OpenSim.Framework.AssetLoader.Filesystem.dll\nAssetLoaderArgs="
-            << path_text(root / "control.xml") << '\n';
+        file << "[Modules]\nAssetCaching=FlotsamAssetCache\nAssetServices=LocalAssetServicesConnector\n[AssetCache]\n"
+                "FileCacheEnabled=false\nMemoryCacheEnabled=true\nMemoryCacheTimeout=0.25\n[AssetService]\n"
+                "LocalServiceModule=OpenSim.Services.AssetService.dll:AssetService\n"
+                "StorageProvider=OpenSim.Data.SQLite.dll\nConnectionString=URI=file:"
+             << path_text(root / "assets.db")
+             << ";version=3;Pooling=false\nAssetLoaderEnabled=false\nDefaultAssetLoader=OpenSim.Framework.AssetLoader."
+                "Filesystem.dll\nAssetLoaderArgs="
+             << path_text(root / "control.xml") << '\n';
     }
     auto events = std::make_shared<SceneCapabilityEvents>(SceneCapabilityEvents::Error{});
-    RegionAssetRuntime runtime(server::IniConfig::load(root / "server.ini"), events, "Default-cache region",
-                               {}, scene->id);
+    RegionAssetRuntime runtime(server::IniConfig::load(root / "server.ini"), events, "Default-cache region", {},
+                               scene->id);
     auto a = runtime.asset_cache()->get_cached(id.str());
     if (!a || a->name() != std::optional<std::string>("Cache-only default") || !a->data ||
         *a->data != std::vector<std::uint8_t>{0, 1, 255} || runtime.get(id) != a)
@@ -648,13 +708,21 @@ void actual() {
     if (!runtime.default_assets_command(false))
         throw std::runtime_error("Configured reload command unavailable");
     auto replacement = runtime.get(id);
-    if (!replacement || replacement == a || !replacement->data || *replacement->data != *a->data ||
-        inspect.get(id))
+    if (!replacement || replacement == a || !replacement->data || *replacement->data != *a->data || inspect.get(id))
         throw std::runtime_error("Configured reload did not replace cache-only default without SQL writes");
     std::vector<std::string> console;
-    auto output = [&](const std::string& line) { console.push_back(line); };
-    if (!runtime.cache_console({"fcache", "status"}, output) || console.empty() ||
-        console.front() != "[FLOTSAM ASSET CACHE] Memory Cache: 1 assets")
+    auto output = [&](const std::string &line) { console.push_back(line); };
+    auto first_status_line = std::make_shared<std::promise<std::string>>();
+    auto status = first_status_line->get_future();
+    if (!runtime.cache_console({"fcache", "status"},
+                               [first_status_line, first = true](const std::string &line) mutable {
+                                   if (first) {
+                                       first = false;
+                                       first_status_line->set_value(line);
+                                   }
+                               }) ||
+        status.wait_for(std::chrono::seconds(5)) != std::future_status::ready ||
+        status.get() != "[FLOTSAM ASSET CACHE] Memory Cache: 1 assets")
         throw std::runtime_error("Configured status console did not report memory entries");
     auto memory = std::dynamic_pointer_cast<FlotsamMemoryCache>(runtime.asset_cache());
     memory->cache_negative("missing");
@@ -688,24 +756,23 @@ void actual() {
         std::vector<std::string> initialization_log;
         bool alias_rejected = false;
         try {
-            RegionAssetRuntime invalid(server::IniConfig::load(root / "server.ini"), events,
-                                       "Invalid Nini alias",
-                                       [&](const auto& line) { initialization_log.push_back(line); });
-        } catch (const FlotsamConfigValueError& error) {
+            RegionAssetRuntime invalid(server::IniConfig::load(root / "server.ini"), events, "Invalid Nini alias",
+                                       [&](const auto &line) { initialization_log.push_back(line); });
+        } catch (const FlotsamConfigValueError &error) {
             alias_rejected = error.kind == FlotsamConfigValueError::Kind::Alias;
         }
-        if (!alias_rejected || initialization_log != std::vector<std::string>{
-                                                         "[FLOTSAM ASSET CACHE]: FlotsamAssetCache enabled"})
-            throw std::runtime_error(
-                "Actual runtime must initialize/log before rejecting a non-Nini file-cache alias");
+        if (!alias_rejected ||
+            initialization_log != std::vector<std::string>{"[FLOTSAM ASSET CACHE]: FlotsamAssetCache enabled"})
+            throw std::runtime_error("Actual runtime must initialize/log before rejecting a non-Nini file-cache alias");
         {
             std::ofstream output(root / "server.ini");
             output << original;
         }
     }
 }
-}
-int main(int argc, char** argv) {
+} // namespace
+
+int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string_view(argv[1]) == "--probe") {
             Probe p;
@@ -716,11 +783,11 @@ int main(int argc, char** argv) {
             std::cout << retained() << '\n';
         else {
             actual();
-            std::cout
-                << "PASS: native one-shot timer, shared worker/default file lifecycle and actual configured cache-only default loading\n";
+            std::cout << "PASS: native one-shot timer, shared worker/default file lifecycle and actual configured "
+                         "cache-only default loading\n";
         }
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

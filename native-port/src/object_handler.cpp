@@ -5,17 +5,18 @@
 #include "opensim/network/simulation_body.hpp"
 #include "opensim/framework/vector_text.hpp"
 #include <stdexcept>
+
 namespace opensim::server {
-void ObjectHandler::process_request(const network::HttpRequest& request, network::HttpResponse& response) {
+void ObjectHandler::process_request(const network::HttpRequest &request, network::HttpResponse &response) {
     response.keep_alive = false;
     if (!service_) {
         response.status = 500;
         response.body = "false";
         return;
     }
-    for (const auto& [name, value] : request.headers) {
+    for (const auto &[name, value] : request.headers) {
         auto lower = name;
-        for (auto& c : lower)
+        for (auto &c : lower)
             if (c >= 'A' && c <= 'Z')
                 c += 32;
         if (lower == "x-secondlife-shard") {
@@ -36,7 +37,8 @@ void ObjectHandler::process_request(const network::HttpRequest& request, network
     }
     post_object(*args, response);
 }
-void ObjectHandler::post_object(const network::Value& args, network::HttpResponse& response) {
+
+void ObjectHandler::post_object(const network::Value &args, network::HttpResponse &response) {
     using namespace network;
     if (args.view().kind != Value::Kind::Map)
         throw std::invalid_argument("Object post requires an OSD map");
@@ -54,12 +56,11 @@ void ObjectHandler::post_object(const network::Value& args, network::HttpRespons
     auto x = osd_integer(args.get("destination_x")), y = osd_integer(args.get("destination_y"));
     auto name = osd_string(args.get("destination_name"));
     framework::Vector3 position{};
-    const auto& value = args.get("new_position").view();
+    const auto &value = args.get("new_position").view();
     if (value.kind == Value::Kind::String)
         position = framework::parse_sdk_vector3(value.text);
     else if (value.kind == Value::Kind::Array && value.array.size() == 3)
-        position = {static_cast<float>(osd_real(value.array[0])),
-                    static_cast<float>(osd_real(value.array[1])),
+        position = {static_cast<float>(osd_real(value.array[0])), static_cast<float>(osd_real(value.array[1])),
                     static_cast<float>(osd_real(value.array[2]))};
     auto extra = osd_string(args.get("extra"));
     std::shared_ptr<services::SimulationObject> object;
@@ -68,7 +69,7 @@ void ObjectHandler::post_object(const network::Value& args, network::HttpRespons
         if (!object)
             throw std::invalid_argument("Null transfer object");
         object->extra_from_xml_string(extra);
-    } catch (const std::exception&) {
+    } catch (const std::exception &) {
         response.status = 400;
         return;
     }
@@ -78,7 +79,7 @@ void ObjectHandler::post_object(const network::Value& args, network::HttpRespons
         if (!state.empty())
             try {
                 object->set_state(state, scene.get());
-            } catch (const std::exception&) {
+            } catch (const std::exception &) {
             }
     }
     services::GridRegion destination;
@@ -89,16 +90,17 @@ void ObjectHandler::post_object(const network::Value& args, network::HttpRespons
     bool result;
     try {
         result = create_object(destination, position, object);
-    } catch (const std::exception&) {
+    } catch (const std::exception &) {
         result = false;
     }
     response.status = 200;
     response.body = result ? "True" : "False";
 }
-bool ObjectHandler::create_object(services::GridRegion& destination, const framework::Vector3& position,
-                                  const std::shared_ptr<services::SimulationObject>& object) {
+
+bool ObjectHandler::create_object(services::GridRegion &destination, const framework::Vector3 &position,
+                                  const std::shared_ptr<services::SimulationObject> &object) {
     if (!service_)
         throw std::invalid_argument("Null simulation service");
     return service_->create_object(&destination, position, object, false);
 }
-}
+} // namespace opensim::server

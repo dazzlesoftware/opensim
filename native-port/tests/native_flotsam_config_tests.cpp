@@ -6,8 +6,9 @@
 #include <sstream>
 using namespace opensim;
 using namespace services;
+
 namespace {
-std::string hex(const std::string& text) {
+std::string hex(const std::string &text) {
     std::string out;
     for (unsigned char c : text) {
         out += "0123456789abcdef"[c >> 4];
@@ -15,7 +16,8 @@ std::string hex(const std::string& text) {
     }
     return out.empty() ? "." : out;
 }
-std::string decode(const std::string& value) {
+
+std::string decode(const std::string &value) {
     if (value == ".")
         return {};
     std::string out;
@@ -23,7 +25,8 @@ std::string decode(const std::string& value) {
         out.push_back(static_cast<char>(std::stoi(value.substr(i, 2), nullptr, 16)));
     return out;
 }
-std::string probe(const std::string& line) {
+
+std::string probe(const std::string &line) {
     std::istringstream in(line);
     std::string operation, text;
     int aliases, present;
@@ -36,8 +39,7 @@ std::string probe(const std::string& line) {
     auto section = source->section("Probe");
     try {
         if (operation == "s" || operation == "n") {
-            auto result =
-                section->text("x", operation == "s" ? std::optional<std::string>("fallback") : std::nullopt);
+            auto result = section->text("x", operation == "s" ? std::optional<std::string>("fallback") : std::nullopt);
             return result ? "S:" + hex(*result) : "S:-";
         }
         if (operation == "b")
@@ -48,7 +50,7 @@ std::string probe(const std::string& line) {
             return "L:" + std::to_string(section->long_integer("x", INT64_MIN));
         if (operation == "r")
             return "R:" + std::to_string(std::bit_cast<std::uint64_t>(section->real("x", -0.0)));
-    } catch (const FlotsamConfigValueError& error) {
+    } catch (const FlotsamConfigValueError &error) {
         auto type = error.kind == FlotsamConfigValueError::Kind::Format     ? "FormatException"
                     : error.kind == FlotsamConfigValueError::Kind::Overflow ? "OverflowException"
                                                                             : "ArgumentException";
@@ -56,8 +58,9 @@ std::string probe(const std::string& line) {
     }
     throw std::runtime_error("Unexpected typed config operation");
 }
-}
-int main(int argc, char** argv) {
+} // namespace
+
+int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string(argv[1]) == "--probe") {
             for (std::string line; std::getline(std::cin, line);)
@@ -77,14 +80,14 @@ int main(int argc, char** argv) {
         bool rejected = false;
         try {
             native_flotsam_config_backend({}, {}, {}, {}, {});
-        } catch (const std::invalid_argument&) {
+        } catch (const std::invalid_argument &) {
             rejected = true;
         }
         if (!rejected)
             throw std::runtime_error("Native config host dependencies must be required");
-        auto backend = native_flotsam_config_backend(
-            [](auto n) { return std::make_shared<int>(n); }, [](auto n) { return std::make_shared<int>(n); },
-            [](const auto&) {}, [](const auto&) {}, [](const auto&) {});
+        auto backend = native_flotsam_config_backend([](auto n) { return std::make_shared<int>(n); },
+                                                     [](auto n) { return std::make_shared<int>(n); },
+                                                     [](const auto &) {}, [](const auto &) {}, [](const auto &) {});
         if (backend->hours_to_ticks(.5) != 18000000000ll || backend->total_hours(18000000000ll) != .5 ||
             !backend->full_path(std::string("assetcache")))
             throw std::runtime_error("Native path/TimeSpan provider binding");
@@ -109,8 +112,7 @@ int main(int argc, char** argv) {
                     epochs.push_back(now);
                     return now;
                 },
-                false, [&](const auto&) { now += 100; }, [](const auto&) {},
-                [&](const auto&) { ++registrations; });
+                false, [&](const auto &) { now += 100; }, [](const auto &) {}, [&](const auto &) { ++registrations; });
             FlotsamCacheConfig initializer(instance, common, binding.backend);
             {
                 std::lock_guard lock(*binding.gate);
@@ -126,8 +128,8 @@ int main(int argc, char** argv) {
             FlotsamMemoryCache cache(binding.entries->live_options(), binding.entries);
             if (epochs.size() != calls)
                 throw std::runtime_error("Adopted wrapper must not recreate initialized containers");
-            auto asset = std::make_shared<framework::AssetBase>(framework::Uuid::random(), "retired",
-                                                                std::int8_t(0), "");
+            auto asset =
+                std::make_shared<framework::AssetBase>(framework::Uuid::random(), "retired", std::int8_t(0), "");
             std::weak_ptr<framework::AssetBase> weak = asset;
             cache.cache(asset);
             asset.reset();
@@ -137,8 +139,7 @@ int main(int argc, char** argv) {
                 initializer.initialise(native_flotsam_config_source(ini));
             }
             if (weak.expired() || memory == binding.entries->memory.load() || memory->count() != 1)
-                throw std::runtime_error(
-                    "Reinitialization must retain armed old memory rather than Dispose it");
+                throw std::runtime_error("Reinitialization must retain armed old memory rather than Dispose it");
             now = 802;
             cache.pump();
             if (!weak.expired() || memory->count())
@@ -146,15 +147,13 @@ int main(int argc, char** argv) {
             auto previous = instance->memory_entries;
             now = 5000;
             cache.clear();
-            if (instance->memory_entries == previous ||
-                instance->memory_entries != binding.entries->memory.load() ||
+            if (instance->memory_entries == previous || instance->memory_entries != binding.entries->memory.load() ||
                 instance->negative_entries != binding.entries->negative.load())
-                throw std::runtime_error(
-                    "Data clear must publish actual replacements back into initializer state");
+                throw std::runtime_error("Data clear must publish actual replacements back into initializer state");
         }
         std::cout << "PASS: native Nini typed configuration and real path/time-span binding\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

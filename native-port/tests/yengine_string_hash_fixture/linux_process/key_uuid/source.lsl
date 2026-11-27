@@ -1,0 +1,1 @@
+key input="11111111-2222-3333-4444-555555555555";integer result;integer after;default{state_entry(){result=xmrHashCode(input);after=1;}}

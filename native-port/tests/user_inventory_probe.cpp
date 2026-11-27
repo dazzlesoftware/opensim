@@ -5,6 +5,7 @@
 #include <iostream>
 #include <algorithm>
 #include <set>
+
 namespace opensim::tests {
 void run_user_inventory_probe(framework::Uuid agent, framework::Uuid object, framework::Uuid running,
                               const std::filesystem::path &metadata, const LegacyInventoryProbeIo &io) {
@@ -86,12 +87,13 @@ void run_user_inventory_probe(framework::Uuid agent, framework::Uuid object, fra
         if (!std::getline(std::cin, result) || result != "OK")
             throw std::runtime_error("Actual user inventory persistence/notification check failed");
     }
-    std::cout
-        << "Verified actual user inventory export/masks, landmark preservation, zero-next persistence gate, owner rejection, move notifications, ignored rename and item/folder/object removal\n";
+    std::cout << "Verified actual user inventory export/masks, landmark preservation, zero-next persistence gate, "
+                 "owner rejection, move notifications, ignored rename and item/folder/object removal\n";
     run_inventory_copy_probe(agent, object, running, metadata, io);
     run_inventory_new_probe(agent, object, running, metadata, io);
     run_inventory_link_probe(agent, object, running, metadata, io);
 }
+
 void run_inventory_copy_probe(framework::Uuid agent, framework::Uuid object, framework::Uuid running,
                               const std::filesystem::path &metadata, const LegacyInventoryProbeIo &io) {
     using framework::Uuid;
@@ -141,24 +143,21 @@ void run_inventory_copy_probe(framework::Uuid agent, framework::Uuid object, fra
             require(std::none_of(packets.begin() + before, packets.end(), matches),
                     "denied copy emitted a create reply");
         } else {
-            io.wait([&](const auto &packets) {
-                return std::any_of(packets.begin() + before, packets.end(), matches);
-            });
+            io.wait([&](const auto &packets) { return std::any_of(packets.begin() + before, packets.end(), matches); });
             auto packets = io.snapshot();
             auto reply = std::find_if(packets.begin() + before, packets.end(), matches);
             require(reply != packets.end() && reply->reliable && reply->zerocoded, "actual reply flags");
             const auto &fields = reply->block("InventoryData");
             auto key = std::get<Uuid>(fields.at("ItemID"));
-            require(!key.is_zero() && key != network::osd_uuid(profile.get("old_item")) &&
-                        created.insert(key).second,
+            require(!key.is_zero() && key != network::osd_uuid(profile.get("old_item")) && created.insert(key).second,
                     "fresh copy identity");
             auto expected = profile.get("expected");
-            for (const auto &pair : std::vector<std::pair<const char *, const char *>>{
-                     {"BaseMask", "inventoryBasePermissions"},
-                     {"OwnerMask", "inventoryCurrentPermissions"},
-                     {"EveryoneMask", "inventoryEveryOnePermissions"},
-                     {"GroupMask", "inventoryGroupPermissions"},
-                     {"NextOwnerMask", "inventoryNextPermissions"}})
+            for (const auto &pair :
+                 std::vector<std::pair<const char *, const char *>>{{"BaseMask", "inventoryBasePermissions"},
+                                                                    {"OwnerMask", "inventoryCurrentPermissions"},
+                                                                    {"EveryoneMask", "inventoryEveryOnePermissions"},
+                                                                    {"GroupMask", "inventoryGroupPermissions"},
+                                                                    {"NextOwnerMask", "inventoryNextPermissions"}})
                 require(std::get<std::uint64_t>(fields.at(pair.first)) ==
                             network::osd_unsigned(expected.get(pair.second)),
                         "copy permission projection");
@@ -167,27 +166,25 @@ void run_inventory_copy_probe(framework::Uuid agent, framework::Uuid object, fra
                     "source flags filtering");
             require(std::get<Uuid>(fields.at("OwnerID")) == agent &&
                         std::get<Uuid>(fields.at("AssetID")) == network::osd_uuid(expected.get("assetID")) &&
-                        std::get<Uuid>(fields.at("FolderID")) ==
-                            network::osd_uuid(expected.get("parentFolderID")),
+                        std::get<Uuid>(fields.at("FolderID")) == network::osd_uuid(expected.get("parentFolderID")),
                     "actual owner/asset/destination");
-            require(std::get<Uuid>(fields.at("GroupID")).is_zero() &&
-                        !std::get<bool>(fields.at("GroupOwned")) &&
+            require(std::get<Uuid>(fields.at("GroupID")).is_zero() && !std::get<bool>(fields.at("GroupOwned")) &&
                         std::get<std::int64_t>(fields.at("SalePrice")) == 0 &&
                         std::get<std::uint64_t>(fields.at("SaleType")) == 0,
                     "source fresh group/sale fields");
-            require(std::get<std::int64_t>(fields.at("InvType")) ==
-                        network::osd_integer(expected.get("invType")),
+            require(std::get<std::int64_t>(fields.at("InvType")) == network::osd_integer(expected.get("invType")),
                     "actual inventory type");
             std::cout << "Inventory copy persisted " << phase << ' ' << key.str() << std::endl;
             std::string result;
-            require(bool(std::getline(std::cin, result)) && result == "OK",
-                    "actual persisted copy / asset reference");
+            require(bool(std::getline(std::cin, result)) && result == "OK", "actual persisted copy / asset reference");
         }
         ++phase;
     }
-    std::cout
-        << "Verified stored copies, callback IDs, original retention, Copy/Transfer denials, library-first metadata, claimed-source permission propagation, folder fallback and animation-set permission enforcement\n";
+    std::cout << "Verified stored copies, callback IDs, original retention, Copy/Transfer denials, "
+                 "library-first metadata, claimed-source permission propagation, folder fallback "
+                 "and animation-set permission enforcement\n";
 }
+
 void run_inventory_new_probe(framework::Uuid agent, framework::Uuid object, framework::Uuid running,
                              const std::filesystem::path &metadata, const LegacyInventoryProbeIo &io) {
     using framework::Uuid;
@@ -241,23 +238,19 @@ void run_inventory_new_probe(framework::Uuid agent, framework::Uuid object, fram
             io.send(barrier);
             std::cout << "Inventory new denied " << phase << ' ' << running.str() << std::endl;
             std::string result;
-            require(bool(std::getline(std::cin, result)) && result == "OK",
-                    "source denial persistence barrier");
+            require(bool(std::getline(std::cin, result)) && result == "OK", "source denial persistence barrier");
             auto packets = io.snapshot();
             require(std::none_of(packets.begin() + before, packets.end(), matches), "denied create reply");
             continue;
         }
-        io.wait([&](const auto &packets) {
-            return std::any_of(packets.begin() + before, packets.end(), matches);
-        });
+        io.wait([&](const auto &packets) { return std::any_of(packets.begin() + before, packets.end(), matches); });
         auto packets = io.snapshot();
         auto found = std::find_if(packets.begin() + before, packets.end(), matches);
         require(found != packets.end() && found->reliable && found->zerocoded, "actual create reply flags");
         auto &fields = found->block("InventoryData");
         auto id = std::get<Uuid>(fields.at("ItemID"));
         require(!id.is_zero() && ids.insert(id).second, "new unique inventory identity");
-        require(std::get<Uuid>(fields.at("OwnerID")) == agent &&
-                    std::get<Uuid>(fields.at("CreatorID")) == agent &&
+        require(std::get<Uuid>(fields.at("OwnerID")) == agent && std::get<Uuid>(fields.at("CreatorID")) == agent &&
                     std::get<std::int64_t>(fields.at("Type")) == type[phase] &&
                     std::get<std::int64_t>(fields.at("InvType")) == inv[phase],
                 "new item owner/creator/types");
@@ -265,25 +258,22 @@ void run_inventory_new_probe(framework::Uuid agent, framework::Uuid object, fram
                     std::get<std::uint64_t>(fields.at("OwnerMask")) == 0x9e000 &&
                     std::get<std::uint64_t>(fields.at("NextOwnerMask")) == 0x82000,
                 "new full/next masks");
-        require(std::get<std::uint64_t>(fields.at("GroupMask")) ==
-                        ((phase == 4 || phase == 7) ? 0x9e000u : 0u) &&
-                    std::get<std::uint64_t>(fields.at("EveryoneMask")) ==
-                        ((phase == 4 || phase == 7) ? 0x9a000u : 0u),
+        require(std::get<std::uint64_t>(fields.at("GroupMask")) == ((phase == 4 || phase == 7) ? 0x9e000u : 0u) &&
+                    std::get<std::uint64_t>(fields.at("EveryoneMask")) == ((phase == 4 || phase == 7) ? 0x9a000u : 0u),
                 "landmark permission masks");
         require(std::get<std::uint64_t>(fields.at("Flags")) == (phase == 3   ? 255u
                                                                 : phase == 9 ? 9u
                                                                              : 0u),
                 "wearable subtype flags");
-        require(phase == 1 || std::get<Uuid>(fields.at("FolderID")) == folder,
-                "original nonzero folder retained");
+        require(phase == 1 || std::get<Uuid>(fields.at("FolderID")) == folder, "original nonzero folder retained");
         std::cout << "Inventory new persisted " << phase << ' ' << id.str() << ' '
-                  << std::get<Uuid>(fields.at("AssetID")).str() << ' '
-                  << std::get<Uuid>(fields.at("FolderID")).str() << std::endl;
+                  << std::get<Uuid>(fields.at("AssetID")).str() << ' ' << std::get<Uuid>(fields.at("FolderID")).str()
+                  << std::endl;
         std::string result;
         require(bool(std::getline(std::cin, result)) && result == "OK", "real creation store and asset");
     }
-    std::cout
-        << "Verified actual viewer inventory creation, default assets, source folder fallback, landmark asset persistence/precedence, wearable flags and absent-module rejection\n";
+    std::cout << "Verified actual viewer inventory creation, default assets, source folder fallback, landmark asset "
+                 "persistence/precedence, wearable flags and absent-module rejection\n";
 }
 
 void run_inventory_link_probe(framework::Uuid agent, framework::Uuid object, framework::Uuid running,
@@ -334,20 +324,16 @@ void run_inventory_link_probe(framework::Uuid agent, framework::Uuid object, fra
             return p.spec->name == "UpdateCreateInventoryItem" &&
                    std::get<std::uint64_t>(p.block("InventoryData").at("CallbackID")) == callback;
         };
-        io.wait([&](const auto &packets) {
-            return std::any_of(packets.begin() + before, packets.end(), matches);
-        });
+        io.wait([&](const auto &packets) { return std::any_of(packets.begin() + before, packets.end(), matches); });
         auto packets = io.snapshot();
         auto reply = std::find_if(packets.begin() + before, packets.end(), matches);
         require(reply != packets.end() && reply->reliable && reply->zerocoded, "real link callback reply");
         const auto &fields = reply->block("InventoryData");
         auto id = std::get<Uuid>(fields.at("ItemID"));
-        require(!id.is_zero() && id != target &&
-                    std::find(created.begin(), created.end(), id) == created.end(),
+        require(!id.is_zero() && id != target && std::find(created.begin(), created.end(), id) == created.end(),
                 "fresh identity even for duplicate links");
         created.push_back(id);
-        require(std::get<Uuid>(fields.at("OwnerID")) == agent &&
-                    std::get<Uuid>(fields.at("CreatorID")) == agent &&
+        require(std::get<Uuid>(fields.at("OwnerID")) == agent && std::get<Uuid>(fields.at("CreatorID")) == agent &&
                     std::get<Uuid>(fields.at("AssetID")) == target,
                 "target item remains asset field; no dereference/flatten");
         require(std::get<std::int64_t>(fields.at("Type")) == type &&
@@ -355,16 +341,14 @@ void run_inventory_link_probe(framework::Uuid agent, framework::Uuid object, fra
                 "source accepts supplied types");
         require(std::get<std::uint64_t>(fields.at("BaseMask")) == (phase == 6 ? 0x8e000u : 0x9e000u) &&
                     std::get<std::uint64_t>(fields.at("OwnerMask")) == (phase == 6 ? 0x8e000u : 0x9e000u) &&
-                    std::get<std::uint64_t>(fields.at("NextOwnerMask")) ==
-                        (phase == 6 ? 0xc000u : 0x9e000u) &&
+                    std::get<std::uint64_t>(fields.at("NextOwnerMask")) == (phase == 6 ? 0xc000u : 0x9e000u) &&
                     std::get<std::uint64_t>(fields.at("EveryoneMask")) == (phase == 6 ? 0u : 0x8e000u) &&
                     std::get<std::uint64_t>(fields.at("GroupMask")) == (phase == 6 ? 0u : 0x9e000u),
                 "link source masks including animation special case");
         require(std::get<std::uint64_t>(fields.at("Flags")) == 0 &&
                     std::get<Uuid>(reply->block("AgentData").at("TransactionID")).is_zero(),
                 "ignored transaction and fresh flags");
-        require(phase == 7 || std::get<Uuid>(fields.at("FolderID")) == folder,
-                "link original nonzero folder kept");
+        require(phase == 7 || std::get<Uuid>(fields.at("FolderID")) == folder, "link original nonzero folder kept");
         std::cout << "Inventory link persisted " << phase << ' ' << id.str() << ' ' << target.str() << ' '
                   << std::get<Uuid>(fields.at("FolderID")).str() << std::endl;
         std::string result;
@@ -400,15 +384,15 @@ void run_inventory_link_probe(framework::Uuid agent, framework::Uuid object, fra
             barrier.block("Script")["ObjectID"] = object;
             barrier.block("Script")["ItemID"] = running;
             io.send(barrier);
-            std::cout << "Inventory link moved " << id.str() << ' ' << destination.str() << ' '
-                      << running.str() << std::endl;
+            std::cout << "Inventory link moved " << id.str() << ' ' << destination.str() << ' ' << running.str()
+                      << std::endl;
             std::string result;
             require(bool(std::getline(std::cin, result)) && result == "OK",
                     "actual root link move and bulk notification");
         }
     }
-    std::cout
-        << "Verified actual duplicate/item/folder/missing/zero/chained links, arbitrary wire types, source permissions, root/orphan placement and legacy fetch replies\n";
+    std::cout << "Verified actual duplicate/item/folder/missing/zero/chained links, arbitrary wire types, source "
+                 "permissions, root/orphan placement and legacy fetch replies\n";
 }
 
-}
+} // namespace opensim::tests

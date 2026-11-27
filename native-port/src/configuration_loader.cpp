@@ -5,14 +5,17 @@
 #include <filesystem>
 #include <map>
 #include <mutex>
+
 namespace opensim::framework {
 namespace {
 using T = NiniWriterText;
 using Source = std::shared_ptr<RegionLoaderConfigSource>;
+
 T t(std::u16string s) {
     return s.empty() ? runtime_empty_text() : std::make_shared<const std::u16string>(std::move(s));
 }
-T t(const char16_t* literal) {
+
+T t(const char16_t *literal) {
     if (!*literal)
         return runtime_empty_text();
     static std::mutex mutex;
@@ -23,53 +26,63 @@ T t(const char16_t* literal) {
         return at->second;
     return literals.emplace(literal, t(std::u16string(literal))).first->second;
 }
+
 T default_clientstack_literal() {
     static const auto value = t(u"OpenSim.Region.ClientStack.LindenUDP.dll");
     return value;
 }
-std::u16string v(const T& s) {
+
+std::u16string v(const T &s) {
     return s ? *s : u"";
 }
+
 [[noreturn]] void nullref() {
     throw NiniConfigError(NiniConfigError::Kind::NullReference,
                           u"Object reference not set to an instance of an object.");
 }
-bool same(const T& a, const T& b) {
+
+bool same(const T &a, const T &b) {
     return (!a && !b) || (a && b && *a == *b);
 }
-bool has(const std::vector<T>& items, const T& p) {
-    return std::any_of(items.begin(), items.end(), [&](const T& item) { return same(item, p); });
+
+bool has(const std::vector<T> &items, const T &p) {
+    return std::any_of(items.begin(), items.end(), [&](const T &item) { return same(item, p); });
 }
-void add(std::vector<T>& items, T p) {
+
+void add(std::vector<T> &items, T p) {
     if (!has(items, p))
         items.push_back(std::move(p));
 }
-std::shared_ptr<NiniConfigSourceBase> src(const Source& s) {
+
+std::shared_ptr<NiniConfigSourceBase> src(const Source &s) {
     if (!s || !s->source)
         nullref();
     return s->source;
 }
+
 bool ini_extension(T s) {
     return s && s->size() == 4 && (*s)[0] == u'.' && ((*s)[1] == u'i' || (*s)[1] == u'I') &&
            ((*s)[2] == u'n' || (*s)[2] == u'N') && ((*s)[3] == u'i' || (*s)[3] == u'I');
 }
-}
+} // namespace
+
 RegionConfigurationLoader::RegionConfigurationLoader(std::shared_ptr<RegionConfigurationBackend> b)
     : backend_(std::move(b)) {
     if (!backend_ || !backend_->application || !backend_->config_directory || !backend_->combine ||
-        !backend_->full_path || !backend_->extension || !backend_->file_exists ||
-        !backend_->directory_exists || !backend_->directory_files || !backend_->glob ||
-        !backend_->is_http_uri || !backend_->starts_with_current || !backend_->empty_ini_source ||
-        !backend_->ini_file_source || !backend_->xml_uri_source || !backend_->merge_environment ||
-        !backend_->replace_key_values || !backend_->create_network_info || !backend_->load_network_info ||
-        !backend_->log || !backend_->exit || !backend_->exception_message)
-        throw std::invalid_argument(
-            "Region configuration loader requires path, file, URI/XML, culture, Nini, environment, network, log and process providers");
+        !backend_->full_path || !backend_->extension || !backend_->file_exists || !backend_->directory_exists ||
+        !backend_->directory_files || !backend_->glob || !backend_->is_http_uri || !backend_->starts_with_current ||
+        !backend_->empty_ini_source || !backend_->ini_file_source || !backend_->xml_uri_source ||
+        !backend_->merge_environment || !backend_->replace_key_values || !backend_->create_network_info ||
+        !backend_->load_network_info || !backend_->log || !backend_->exit || !backend_->exception_message)
+        throw std::invalid_argument("Region configuration loader requires path, file, URI/XML, culture, Nini, "
+                                    "environment, network, log and process providers");
 }
+
 bool RegionConfigurationLoader::is_uri(T p) {
     return backend_->is_http_uri(std::move(p));
 }
-void RegionConfigurationLoader::add_includes(Source config, std::vector<T>& sources) {
+
+void RegionConfigurationLoader::add_includes(Source config, std::vector<T> &sources) {
     auto e = src(config)->configs()->get_enumerator();
     while (e.move_next()) {
         auto c = std::dynamic_pointer_cast<NiniConfig>(e.current());
@@ -96,9 +109,8 @@ void RegionConfigurationLoader::add_includes(Source config, std::vector<T>& sour
                     path = t(v(backend_->full_path(path)) + v(wildcard));
                     auto paths = backend_->glob(path);
                     if (at == std::u16string::npos && paths.empty())
-                        backend_->log(RegionLoaderLogLevel::Warn,
-                                      t(u"[CONFIG]: Could not find include file {0}"), {path},
-                                      RegionLoaderLogCall::Format);
+                        backend_->log(RegionLoaderLogLevel::Warn, t(u"[CONFIG]: Could not find include file {0}"),
+                                      {path}, RegionLoaderLogCall::Format);
                     else
                         for (auto p : paths)
                             add(sources, p);
@@ -107,6 +119,7 @@ void RegionConfigurationLoader::add_includes(Source config, std::vector<T>& sour
         }
     }
 }
+
 bool RegionConfigurationLoader::read_config(Source config, T path) {
     bool success = false;
     if (!is_uri(path)) {
@@ -131,16 +144,17 @@ bool RegionConfigurationLoader::read_config(Source config, T path) {
         } catch (...) {
             auto message = backend_->exception_message(std::current_exception());
             backend_->log(RegionLoaderLogLevel::Fatal,
-                          t(u"[CONFIG]: Exception reading config from URI " + v(path) + u"\n " + v(message)),
-                          {}, RegionLoaderLogCall::Message);
+                          t(u"[CONFIG]: Exception reading config from URI " + v(path) + u"\n " + v(message)), {},
+                          RegionLoaderLogCall::Message);
             backend_->exit(1);
         }
     }
     return success;
 }
+
 std::shared_ptr<RegionLoaderConfigSource> RegionConfigurationLoader::load_config_settings(
     std::shared_ptr<NiniConfigSourceBase> argv, std::shared_ptr<NiniConfigSourceBase>,
-    std::shared_ptr<RegionLoaderConfigSettings>& settings, std::shared_ptr<void>& network) {
+    std::shared_ptr<RegionLoaderConfigSettings> &settings, std::shared_ptr<void> &network) {
     config_settings_ = settings = std::make_shared<RegionLoaderConfigSettings>();
     network_info_ = network = backend_->create_network_info();
     bool exists = false;
@@ -194,8 +208,8 @@ std::shared_ptr<RegionLoaderConfigSource> RegionConfigurationLoader::load_config
     auto dirname = startup->get_string(t(u"inidirectory"), t(u"config"));
     auto dirpath = backend_->combine(backend_->config_directory(), dirname);
     if (backend_->directory_exists(dirpath)) {
-        backend_->log(RegionLoaderLogLevel::Info, t(u"[CONFIG]: Searching folder {0} for config ini files"),
-                      {dirpath}, RegionLoaderLogCall::Format);
+        backend_->log(RegionLoaderLogLevel::Info, t(u"[CONFIG]: Searching folder {0} for config ini files"), {dirpath},
+                      RegionLoaderLogCall::Format);
         std::vector<T> overrides;
         auto files = backend_->directory_files(dirname);
         for (auto path : files)
@@ -240,6 +254,7 @@ std::shared_ptr<RegionLoaderConfigSource> RegionConfigurationLoader::load_config
     read_config_settings();
     return config_;
 }
+
 void RegionConfigurationLoader::read_config_settings() {
     auto startup = src(config_)->configs()->at(t(u"Startup"));
     if (startup) {
@@ -267,13 +282,13 @@ void RegionConfigurationLoader::read_config_settings() {
         nullref();
     backend_->load_network_info(receiver, source);
 }
+
 RegionConfigurationBackend
 native_local_region_configuration_backend(std::shared_ptr<NiniConfigArena> arena,
                                           std::shared_ptr<RegionApplicationConfigurationState> application,
                                           std::shared_ptr<DirectoryEntriesBackend> directories) {
     if (!arena || !application)
-        throw std::invalid_argument(
-            "Native local region loader requires Nini arena and shared application state");
+        throw std::invalid_argument("Native local region loader requires Nini arena and shared application state");
     if (!directories)
         directories = native_directory_entries_backend();
     auto globbackend = native_glob_backend(directories);
@@ -281,11 +296,11 @@ native_local_region_configuration_backend(std::shared_ptr<NiniConfigArena> arena
     b.application = std::move(application);
     b.combine = [combine = globbackend.combine](T a, T c) {
         if (!a)
-            throw NiniConfigError(NiniConfigError::Kind::ArgumentNull,
-                                  u"Value cannot be null. (Parameter 'path1')", u"path1");
+            throw NiniConfigError(NiniConfigError::Kind::ArgumentNull, u"Value cannot be null. (Parameter 'path1')",
+                                  u"path1");
         if (!c)
-            throw NiniConfigError(NiniConfigError::Kind::ArgumentNull,
-                                  u"Value cannot be null. (Parameter 'path2')", u"path2");
+            throw NiniConfigError(NiniConfigError::Kind::ArgumentNull, u"Value cannot be null. (Parameter 'path2')",
+                                  u"path2");
         return t(combine(*a, *c));
     };
     b.full_path = directories->full_path;
@@ -327,7 +342,7 @@ native_local_region_configuration_backend(std::shared_ptr<NiniConfigArena> arena
     b.glob = [globbackend](T p) {
         auto paths = framework::glob(p ? std::optional<std::u16string>(*p) : std::nullopt, globbackend);
         std::vector<T> out;
-        for (auto& path : paths)
+        for (auto &path : paths)
             out.push_back(t(std::move(path)));
         return out;
     };
@@ -335,4 +350,4 @@ native_local_region_configuration_backend(std::shared_ptr<NiniConfigArena> arena
     b.ini_file_source = [arena](T p) { return arena->create_ini_source(p); };
     return b;
 }
-}
+} // namespace opensim::framework

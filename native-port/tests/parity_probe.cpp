@@ -47,6 +47,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using namespace opensim::framework;
 using namespace opensim::network;
+
 int main() {
     std::cout.imbue(std::locale::classic());
     std::cout << std::setprecision(std::numeric_limits<double>::max_digits10);
@@ -55,10 +56,10 @@ int main() {
     std::map<int, std::unique_ptr<TokenBucket>> buckets;
     std::map<int, std::unique_ptr<CircularBuffer<int>>> buffers;
     std::map<int, std::unique_ptr<BasicDOSProtector>> protectors;
-    const auto state = [](const TokenBucket& b, int result) {
-        std::cout << "bucket|" << result << '|' << b.requested_drip_rate() << '|' << b.total_drip_request()
-                  << '|' << b.drip_rate() << '|' << b.max_drip_rate() << '|' << b.requested_burst() << '|'
-                  << b.burst() << '|' << b.token_count() << '\n';
+    const auto state = [](const TokenBucket &b, int result) {
+        std::cout << "bucket|" << result << '|' << b.requested_drip_rate() << '|' << b.total_drip_request() << '|'
+                  << b.drip_rate() << '|' << b.max_drip_rate() << '|' << b.requested_burst() << '|' << b.burst() << '|'
+                  << b.token_count() << '\n';
     };
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -86,13 +87,9 @@ int main() {
                         options->forget_time_span_ms >> options->max_concurrent_sessions >> action;
                     options->throttled_action = static_cast<ThrottleAction>(action);
                     protectors[id] = std::make_unique<BasicDOSProtector>(
-                        options,
-                        [&tick_now] {
-                            return tick_now & EnvironmentTickCountMask;
-                        },
-                        false);
+                        options, [&tick_now] { return tick_now & EnvironmentTickCountMask; }, false);
                 } else {
-                    auto& protector = *protectors.at(id);
+                    auto &protector = *protectors.at(id);
                     std::string key;
                     input >> key;
                     if (op == "dos_process")
@@ -102,16 +99,16 @@ int main() {
                     else if (op == "dos_cleanup" && protector.cleanup_enabled())
                         protector.expire_blocks();
                 }
-            } catch (const ThrottledError&) {
+            } catch (const ThrottledError &) {
                 result = "throttled";
-            } catch (const std::exception&) {
+            } catch (const std::exception &) {
                 result = "error";
             }
             std::cout << "dos|" << result;
             if (protectors.contains(id)) {
-                const auto& p = *protectors.at(id);
-                std::cout << '|' << p.cleanup_enabled() << '|' << p.is_blocked("A") << '|'
-                          << p.is_blocked("B") << '|' << p.is_blocked("C");
+                const auto &p = *protectors.at(id);
+                std::cout << '|' << p.cleanup_enabled() << '|' << p.is_blocked("A") << '|' << p.is_blocked("B") << '|'
+                          << p.is_blocked("C");
             }
             std::cout << '\n';
         } else if (op.starts_with("buffer_")) {
@@ -124,7 +121,7 @@ int main() {
                     input >> capacity >> overflow;
                     buffers[id] = std::make_unique<CircularBuffer<int>>(capacity, overflow != 0);
                 } else {
-                    auto& b = *buffers.at(id);
+                    auto &b = *buffers.at(id);
                     int value;
                     if (op == "buffer_single") {
                         input >> value;
@@ -182,12 +179,12 @@ int main() {
                             result += std::to_string(item) + ",";
                     }
                 }
-            } catch (const std::exception&) {
+            } catch (const std::exception &) {
                 result = "error";
             }
             std::cout << "buffer|" << result;
             if (buffers.contains(id)) {
-                const auto& b = *buffers.at(id);
+                const auto &b = *buffers.at(id);
                 std::cout << '|' << b.capacity() << '|' << b.size() << '|';
                 for (auto value : b.get_buffer())
                     std::cout << value << ',';
@@ -195,7 +192,7 @@ int main() {
                 try {
                     for (auto value : b)
                         std::cout << value << ',';
-                } catch (const std::exception&) {
+                } catch (const std::exception &) {
                     std::cout << "error";
                 }
             }
@@ -203,17 +200,15 @@ int main() {
         } else if (op == "prime") {
             std::int32_t n;
             input >> n;
-            std::cout << "prime|" << PrimeNumberHelper::is_prime(n) << '|' << PrimeNumberHelper::get_prime(n)
-                      << '\n';
+            std::cout << "prime|" << PrimeNumberHelper::is_prime(n) << '|' << PrimeNumberHelper::get_prime(n) << '\n';
         } else if (op == "perm") {
             std::uint32_t source, target;
             input >> source >> target;
             auto folded = target, nomod = target;
             PermissionsUtil::apply_folded_permissions(source, folded);
             PermissionsUtil::apply_no_mod_folded_permissions(source, nomod);
-            std::cout << "perm|" << folded << '|' << nomod << '|'
-                      << PermissionsUtil::fix_and_fold_permissions(target) << '|'
-                      << PermissionsUtil::permissions_to_string(target) << '\n';
+            std::cout << "perm|" << folded << '|' << nomod << '|' << PermissionsUtil::fix_and_fold_permissions(target)
+                      << '|' << PermissionsUtil::permissions_to_string(target) << '\n';
         } else if (op == "log") {
             std::uint32_t a, b, c;
             input >> a >> b >> c;
@@ -253,9 +248,8 @@ int main() {
                     return mode == 4 ? fallback : minimum;
                 };
             ThrottleRates rates(read);
-            std::cout << "throttle|" << rates.client_max_rate << '|' << rates.minimum_adaptive_throttle_rate
-                      << '|' << rates.adaptive_throttles_enabled << '|' << rates.total << '|'
-                      << rates.burst_time;
+            std::cout << "throttle|" << rates.client_max_rate << '|' << rates.minimum_adaptive_throttle_rate << '|'
+                      << rates.adaptive_throttles_enabled << '|' << rates.total << '|' << rates.burst_time;
             for (int i = -2; i <= 8; ++i)
                 std::cout << '|' << rates.get_rate(static_cast<ThrottleOutPacketType>(i));
             std::cout << '\n';
@@ -266,20 +260,17 @@ int main() {
             int id, parent, adaptive;
             float rate, burst;
             input >> id >> parent >> rate >> burst >> adaptive;
-            auto* p = parent < 0 ? nullptr : buckets.at(parent).get();
+            auto *p = parent < 0 ? nullptr : buckets.at(parent).get();
             if (adaptive < 0)
-                buckets[id] = std::make_unique<TokenBucket>(p, rate, burst, [&now] {
-                    return now;
-                });
+                buckets[id] = std::make_unique<TokenBucket>(p, rate, burst, [&now] { return now; });
             else
-                buckets[id] = std::make_unique<AdaptiveTokenBucket>(p, rate, burst, adaptive != 0, [&now] {
-                    return now;
-                });
+                buckets[id] =
+                    std::make_unique<AdaptiveTokenBucket>(p, rate, burst, adaptive != 0, [&now] { return now; });
             state(*buckets.at(id), -1);
         } else {
             int id;
             input >> id;
-            auto& bucket = *buckets.at(id);
+            auto &bucket = *buckets.at(id);
             int result = -1;
             if (op == "remove" || op == "check" || op == "bytes") {
                 std::int32_t value;
@@ -306,7 +297,7 @@ int main() {
                 else if (op == "total")
                     bucket.total_drip_request(value);
                 else {
-                    auto& adaptive = dynamic_cast<AdaptiveTokenBucket&>(bucket);
+                    auto &adaptive = dynamic_cast<AdaptiveTokenBucket &>(bucket);
                     if (op == "adjust")
                         adaptive.adjusted_drip_rate(value);
                     else if (op == "ack")

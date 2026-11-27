@@ -26,29 +26,35 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "opensim/network/circuit_transport.hpp"
+#include "pending_cache_clock.hpp"
 #include <condition_variable>
 #include <iostream>
 #include <mutex>
 #include <thread>
 using namespace opensim::network;
 using namespace opensim::framework;
+
 namespace {
 int failures = 0;
-void check(bool value, const char* name) {
+
+void check(bool value, const char *name) {
     if (!value) {
         ++failures;
         std::cerr << "FAIL: " << name << '\n';
     }
 }
+
 struct Fixture {
     AgentCircuitManager manager;
     std::shared_ptr<AgentCircuitData> data = std::make_shared<AgentCircuitData>();
+
     Fixture() {
         data->agent_id = Uuid::random();
         data->session_id = Uuid::random();
         data->circuit_code = 42;
         manager.add_new_circuit(42, data);
     }
+
     lludp::Packet use() {
         auto p = lludp::make_packet("UseCircuitCode");
         p.sequence = 123;
@@ -58,6 +64,7 @@ struct Fixture {
         return p;
     }
 };
+
 void transport_tests() {
     Fixture f;
     int now = 1000, delivered = 0, removed = 0;
@@ -66,14 +73,13 @@ void transport_tests() {
     UdpEndpoint endpoint{"127.0.0.1", 10000};
     CircuitTransport transport(
         f.manager,
-        [&](const auto&, auto bytes) {
+        [&](const auto &, auto bytes) {
             sent.push_back(lludp::decode_datagram(bytes));
             return true;
         },
-        [&](const auto&, const auto&, const auto&) { return allow; },
-        [&](const auto&, const auto&) { ++delivered; }, [&](const auto&) { ++removed; }, {},
-        [&] { return now; });
-    auto receive = [&](const auto& packet) { transport.receive(endpoint, lludp::encode_datagram(packet)); };
+        [&](const auto &, const auto &, const auto &) { return allow; },
+        [&](const auto &, const auto &) { ++delivered; }, [&](const auto &) { ++removed; }, {}, [&] { return now; });
+    auto receive = [&](const auto &packet) { transport.receive(endpoint, lludp::encode_datagram(packet)); };
     auto use = f.use();
     use.block("CircuitCode")["SessionID"] = Uuid::random();
     receive(use);
@@ -92,9 +98,9 @@ void transport_tests() {
     message.block("AgentData")["SessionID"] = Uuid::random();
     receive(message);
     check(delivered == 0 && transport.statistics().rejected_ids == 1, "packet session validation");
-    for (const auto* name : {"ObjectBuy", "MoneyBalanceRequest"}) {
+    for (const auto *name : {"ObjectBuy", "MoneyBalanceRequest"}) {
         auto request = lludp::make_packet(name);
-        auto& identity = request.block("AgentData");
+        auto &identity = request.block("AgentData");
         identity["AgentID"] = f.data->agent_id;
         identity["SessionID"] = Uuid{};
         receive(request);
@@ -119,8 +125,7 @@ void transport_tests() {
     const auto before = sent.size();
     now += 1000;
     transport.poll();
-    check(transport.statistics().unacked_bytes > 0,
-          "reliable datagram contributes to pending acknowledgement bytes");
+    check(transport.statistics().unacked_bytes > 0, "reliable datagram contributes to pending acknowledgement bytes");
     check(sent.size() == before, "initial resend bucket waits for its first refill");
     now += 100;
     transport.poll();
@@ -144,38 +149,69 @@ void transport_tests() {
     check(sent.back().spec->name == "CompletePingCheck" &&
               std::get<std::uint64_t>(sent.back().block("PingID").at("PingID")) == 17,
           "ping reply preserves identifier");
-    transport.set_paused(f.data->agent_id, true);
+    auto pause = lludp::make_packet("AgentPause");
+    pause.sequence = 100;
+    pause.block("AgentData")["AgentID"] = f.data->agent_id;
+    pause.block("AgentData")["SessionID"] = f.data->session_id;
+    receive(pause);
     now += 60001;
     transport.poll();
     check(transport.connection(f.data->agent_id).has_value(), "paused circuit extends timeout");
-    transport.set_paused(f.data->agent_id, false);
+    auto resume = lludp::make_packet("AgentResume");
+    resume.sequence = 101;
+    resume.block("AgentData")["AgentID"] = f.data->agent_id;
+    resume.block("AgentData")["SessionID"] = f.data->session_id;
+    const auto before_resume = sent.size();
+    receive(resume);
+    check(sent.size() > before_resume && sent.back().spec->name == "StartPingCheck",
+          "AgentResume sends an immediate ping");
+    now += 60001;
     transport.poll();
     check(!transport.connection(f.data->agent_id) && removed == 1, "idle disconnect removes indexes");
     receive(f.use());
     check(!transport.remove_client_if_session(f.data->agent_id, Uuid::random()) && removed == 1,
           "stale session cannot disconnect current circuit");
+    const auto current = transport.connection(f.data->agent_id).value();
+    auto stale = current;
+    stale.session = Uuid::random();
+    const auto before_stale_reply = sent.size();
+    check(!transport.send_if_current(stale, lludp::make_packet("AgentMovementComplete")) &&
+              sent.size() == before_stale_reply,
+          "stale session cannot send movement completion to the current circuit");
+    check(transport.send_if_current(current, lludp::make_packet("AgentMovementComplete")).has_value() &&
+              sent.back().spec->name == "AgentMovementComplete",
+          "movement completion is sent immediately to the matching circuit");
     check(transport.remove_client_if_session(f.data->agent_id, f.data->session_id) && removed == 2,
           "matching session disconnects current circuit");
+    receive(f.use());
+    const auto reconnected = transport.connection(f.data->agent_id);
+    check(reconnected && reconnected->session == current.session && reconnected->circuit_code == current.circuit_code &&
+              reconnected->endpoint == current.endpoint,
+          "viewer can reconnect with the same session, circuit code, and endpoint");
+    const auto before_reconnect_reply = sent.size();
+    check(!transport.send_if_current(current, lludp::make_packet("AgentMovementComplete")) &&
+              sent.size() == before_reconnect_reply,
+          "an old connection cannot send movement completion after reconnect");
     transport.close();
     receive(f.use());
     check(!transport.connection(f.data->agent_id), "closed transport rejects admission");
 }
-void socket_test(const std::string& address) {
+
+void socket_test(const std::string &address) {
     Fixture f;
     std::mutex mutex;
     std::condition_variable changed;
     std::vector<lludp::Packet> replies;
-    CircuitTransport* transport_ptr = nullptr;
-    UdpSocket* server_ptr = nullptr;
-    UdpSocket server({address, 0},
-                     [&](const auto& source, auto bytes) { transport_ptr->receive(source, bytes); });
+    CircuitTransport *transport_ptr = nullptr;
+    UdpSocket *server_ptr = nullptr;
+    UdpSocket server({address, 0}, [&](const auto &source, auto bytes) { transport_ptr->receive(source, bytes); });
     server_ptr = &server;
     CircuitTransport transport(
-        f.manager, [&](const auto& target, auto bytes) { return server_ptr->send_to(target, bytes); },
-        [](const auto&, const auto&, const auto&) { return true; });
+        f.manager, [&](const auto &target, auto bytes) { return server_ptr->send_to(target, bytes); },
+        [](const auto &, const auto &, const auto &) { return true; });
     transport_ptr = &transport;
     const auto bound = server.start();
-    UdpSocket client({address, 0}, [&](const auto&, auto bytes) {
+    UdpSocket client({address, 0}, [&](const auto &, auto bytes) {
         std::lock_guard lock(mutex);
         replies.push_back(lludp::decode_datagram(bytes));
         changed.notify_all();
@@ -194,26 +230,26 @@ void socket_test(const std::string& address) {
         std::unique_lock lock(mutex);
         check(changed.wait_for(lock, std::chrono::seconds(2), [&] { return replies.size() >= 2; }),
               "socket admitted circuit ping");
-        check(replies.size() >= 2 && replies.back().spec->name == "CompletePingCheck",
-              "socket ping packet decoding");
+        check(replies.size() >= 2 && replies.back().spec->name == "CompletePingCheck", "socket ping packet decoding");
     }
     client.stop();
     server.stop();
     transport.close();
 }
+
 void reentrant_teardown_test() {
     Fixture f;
-    CircuitTransport* owner = nullptr;
+    CircuitTransport *owner = nullptr;
     bool remove_on_send = false;
     int now = 1000;
     CircuitTransport transport(
         f.manager,
-        [&](const auto&, auto) {
+        [&](const auto &, auto) {
             if (remove_on_send)
                 owner->remove_client(f.data->agent_id);
             return true;
         },
-        [](const auto&, const auto&, const auto&) { return true; }, {}, {}, {}, [&] { return now; });
+        [](const auto &, const auto &, const auto &) { return true; }, {}, {}, {}, [&] { return now; });
     owner = &transport;
     transport.receive({"127.0.0.1", 10001}, lludp::encode_datagram(f.use()));
     remove_on_send = true;
@@ -223,30 +259,147 @@ void reentrant_teardown_test() {
     check(!transport.connection(f.data->agent_id), "sender callback can remove its own circuit safely");
     remove_on_send = false;
     transport.receive({"127.0.0.1", 10001}, lludp::encode_datagram(f.use()));
-    transport.send(f.data->agent_id, packet, [&](const auto&) { transport.remove_client(f.data->agent_id); });
+    transport.send(f.data->agent_id, packet, [&](const auto &) { transport.remove_client(f.data->agent_id); });
     now += 1000;
     transport.poll();
     check(!transport.connection(f.data->agent_id), "expiry callback can remove its own circuit safely");
 }
+
+void endpoint_identity_socket_test(const std::string &address) {
+    std::mutex mutex;
+    std::condition_variable changed;
+    std::vector<UdpEndpoint> endpoints;
+    std::vector<std::uint8_t> payloads;
+    UdpSocket receiver({address, 0}, [&](const auto &source, auto bytes) {
+        std::lock_guard lock(mutex);
+        endpoints.push_back(source);
+        payloads.push_back(bytes.empty() ? 0 : bytes.front());
+        changed.notify_all();
+    });
+    const auto destination = receiver.start();
+    UdpSocket sender({address, 0}, [](const auto &, auto) {});
+    sender.start();
+    for (const auto value : {1, 2}) {
+        const std::uint8_t byte = static_cast<std::uint8_t>(value);
+        check(sender.send_to(destination, std::span(&byte, 1)), "send endpoint identity fixture datagram");
+    }
+    check(sender.send_to(destination, {}), "send empty datagram fixture");
+    const std::uint8_t final = 3;
+    check(sender.send_to(destination, std::span(&final, 1)), "send endpoint identity completion datagram");
+    {
+        std::unique_lock lock(mutex);
+        check(changed.wait_for(lock, std::chrono::seconds(2),
+                               [&] { return !payloads.empty() && payloads.back() == final; }),
+              "receive endpoint identity completion datagram");
+        check(payloads == std::vector<std::uint8_t>{1, 2, 3}, "empty UDP datagrams do not reach the source receiver");
+        check(endpoints.size() == 3 && endpoints[0].identity && endpoints[0].identity == endpoints[1].identity &&
+                  endpoints[1].identity == endpoints[2].identity && endpoints[0] == endpoints[2],
+              "real UDP receives preserve cached endpoint reference identity and routing equality");
+    }
+    sender.stop();
+    receiver.stop();
+}
+
+void replacement_tests(bool print_observations = false) {
+    for (int mode = 0; mode < 6; ++mode) {
+        Fixture fixture;
+        const UdpEndpoint original{"127.0.0.1", 11001}, replacement{"127.0.0.1", 11002};
+        CircuitTransport *owner = nullptr;
+        int admissions = 0, removals = 0, delivered = 0;
+        std::string events;
+        CircuitTransport transport(
+            fixture.manager,
+            [&](const auto &endpoint, auto bytes) {
+                const auto packet = lludp::decode_datagram(bytes);
+                if (packet.spec->name == "DisableSimulator") {
+                    check(endpoint == original, "replacement disables the original endpoint");
+                    events += "disable;";
+                }
+                return true;
+            },
+            [&](const auto &data, const auto &, const auto &) {
+                if (++admissions == 1)
+                    return true;
+                events += "admit;";
+                check(!owner->connection(data->agent_id), "old client is removed before replacement admission");
+                check(owner->statistics().unacked_bytes == 0, "replacement discards original reliable packets");
+                if (mode == 2)
+                    throw std::runtime_error("replacement scene failure");
+                return mode != 1 && fixture.manager.get_agent_circuit_data(data->circuit_code) == data;
+            },
+            [&](const auto &, const auto &) { ++delivered; },
+            [&](const auto &) {
+                ++removals;
+                events += "disconnect;";
+                if (mode == 3)
+                    fixture.manager.remove_circuit(fixture.data->agent_id);
+                if (mode == 4)
+                    owner->close();
+                if (mode == 5)
+                    throw std::runtime_error("replacement teardown failure");
+            });
+        owner = &transport;
+        transport.receive(original, lludp::encode_datagram(fixture.use()));
+        const auto previous = transport.connection(fixture.data->agent_id).value();
+        auto reliable = lludp::make_packet("RegionHandshake");
+        reliable.reliable = true;
+        transport.send(fixture.data->agent_id, std::move(reliable));
+        check(transport.statistics().unacked_bytes > 0, "replacement fixture has original reliable traffic");
+
+        auto invalid = fixture.use();
+        invalid.block("CircuitCode")["SessionID"] = Uuid::random();
+        transport.receive(replacement, lludp::encode_datagram(invalid));
+        check(removals == 0 && admissions == 1 && transport.connection(fixture.data->agent_id).has_value(),
+              "unauthenticated replacement cannot close the original client");
+
+        transport.receive(replacement, lludp::encode_datagram(fixture.use()));
+        const auto current = transport.connection(fixture.data->agent_id);
+        const bool interrupted = mode == 4 || mode == 5;
+        check(removals == 1 && admissions == (interrupted ? 1 : 2),
+              "authenticated replacement tears down once before scene admission");
+        check(events == (interrupted ? "disable;disconnect;" : "disable;disconnect;admit;"),
+              "replacement preserves shutdown, teardown and startup order");
+        check(bool(current) == (mode == 0), "failed replacement does not restore the original client");
+        check(transport.statistics().callback_errors == ((mode == 2 || mode == 5) ? 1u : 0u),
+              "replacement records startup and teardown callback failures");
+        check(!transport.send_if_current(previous, lludp::make_packet("AgentMovementComplete")),
+              "original generation cannot send after replacement");
+        if (current) {
+            check(current->endpoint == replacement && current->generation != previous.generation,
+                  "replacement gets a new endpoint and connection generation");
+            auto update = lludp::make_packet("AgentUpdate");
+            update.block("AgentData")["AgentID"] = fixture.data->agent_id;
+            update.block("AgentData")["SessionID"] = fixture.data->session_id;
+            transport.receive(original, lludp::encode_datagram(update));
+            check(delivered == 0, "original endpoint cannot deliver after replacement");
+            transport.receive(replacement, lludp::encode_datagram(update));
+            check(delivered == 1, "replacement endpoint delivers to its new client");
+        }
+        if (print_observations && (mode == 0 || mode == 2 || mode == 3 || mode == 5))
+            std::cout << mode << '|' << events << '|' << bool(current) << '\n';
+    }
+}
+
 void pending_admission_test() {
     Fixture f;
+    PendingCacheClock pending_clock;
     int now = 1000, admissions = 0, delivered = 0;
     std::vector<std::function<void()>> jobs;
     std::vector<lludp::Packet> sent;
     CircuitTransport transport(
         f.manager,
-        [&](const auto&, auto bytes) {
+        [&](const auto &, auto bytes) {
             sent.push_back(lludp::decode_datagram(bytes));
             return true;
         },
-        [&](const auto&, const auto&, const auto&) {
+        [&](const auto &, const auto &, const auto &) {
             ++admissions;
             return true;
         },
-        [&](const auto&, const auto&) { ++delivered; }, {}, {}, [&] { return now; },
-        [&](auto job) { jobs.push_back(std::move(job)); });
+        [&](const auto &, const auto &) { ++delivered; }, {}, {}, [&] { return now; },
+        [&](auto job) { jobs.push_back(std::move(job)); }, pending_clock.backend());
     const UdpEndpoint endpoint{"127.0.0.1", 10002};
-    auto receive = [&](const auto& packet) { transport.receive(endpoint, lludp::encode_datagram(packet)); };
+    auto receive = [&](const auto &packet) { transport.receive(endpoint, lludp::encode_datagram(packet)); };
     receive(f.use());
     receive(f.use());
     check(jobs.size() == 1 && sent.size() == 2 && admissions == 0,
@@ -264,9 +417,12 @@ void pending_admission_test() {
     receive(f.use());
     receive(message);
     now += 60001;
+    pending_clock.now += 60001;
+    pending_clock.fire();
     transport.poll();
     jobs.front()();
-    check(delivered == 1, "expired pending queue is discarded");
+    check(delivered == 1 && admissions == 2 && transport.connection(f.data->agent_id).has_value(),
+          "expired pending queue is discarded without cancelling its scheduled admission");
     transport.remove_client(f.data->agent_id);
     jobs.clear();
     receive(f.use());
@@ -276,14 +432,15 @@ void pending_admission_test() {
     std::function<void()> orphan;
     {
         CircuitTransport temporary(
-            f.manager, [](const auto&, auto) { return true; },
-            [](const auto&, const auto&, const auto&) { return true; }, {}, {}, {}, {},
+            f.manager, [](const auto &, auto) { return true; },
+            [](const auto &, const auto &, const auto &) { return true; }, {}, {}, {}, {},
             [&](auto job) { orphan = std::move(job); });
         temporary.receive(endpoint, lludp::encode_datagram(f.use()));
     }
     orphan();
     check(true, "released owner leaves executor job safe to invoke");
 }
+
 void concurrent_admission_test() {
     Fixture f;
     std::mutex mutex;
@@ -292,15 +449,15 @@ void concurrent_admission_test() {
     std::thread worker;
     std::atomic<int> delivered = 0;
     CircuitTransport transport(
-        f.manager, [](const auto&, auto) { return true; },
-        [&](const auto&, const auto&, const auto&) {
+        f.manager, [](const auto &, auto) { return true; },
+        [&](const auto &, const auto &, const auto &) {
             std::unique_lock lock(mutex);
             entered = true;
             changed.notify_all();
             changed.wait(lock, [&] { return release; });
             return true;
         },
-        [&](const auto&, const auto&) { ++delivered; }, {}, {}, {},
+        [&](const auto &, const auto &) { ++delivered; }, {}, {}, {},
         [&](auto job) { worker = std::thread(std::move(job)); });
     const UdpEndpoint endpoint{"127.0.0.1", 10003};
     transport.receive(endpoint, lludp::encode_datagram(f.use()));
@@ -322,23 +479,133 @@ void concurrent_admission_test() {
     worker.join();
     check(delivered == 1, "worker completion delivers pending datagrams");
 }
+
+void concurrent_replacement_test() {
+    Fixture fixture;
+    std::mutex mutex;
+    std::condition_variable changed;
+    int started = 0, admissions = 0, removals = 0;
+    bool first_entered = false, release = false;
+    std::vector<std::thread> workers;
+    const UdpEndpoint original{"127.0.0.1", 11003}, replacement{"127.0.0.1", 11004};
+    CircuitTransport transport(
+        fixture.manager, [](const auto &, auto) { return true; },
+        [&](const auto &, const auto &, const auto &) {
+            std::unique_lock lock(mutex);
+            if (++admissions == 1) {
+                first_entered = true;
+                changed.notify_all();
+                changed.wait(lock, [&] { return release; });
+            }
+            return true;
+        },
+        {}, [&](const auto &) { ++removals; }, {}, {},
+        [&](auto job) {
+            workers.emplace_back([&, job = std::move(job)] {
+                {
+                    std::lock_guard lock(mutex);
+                    ++started;
+                }
+                changed.notify_all();
+                job();
+            });
+        });
+    transport.receive(original, lludp::encode_datagram(fixture.use()));
+    {
+        std::unique_lock lock(mutex);
+        check(changed.wait_for(lock, std::chrono::seconds(2), [&] { return first_entered; }),
+              "first concurrent client reaches scene admission");
+    }
+    transport.receive(replacement, lludp::encode_datagram(fixture.use()));
+    {
+        std::unique_lock lock(mutex);
+        check(changed.wait_for(lock, std::chrono::seconds(2), [&] { return started == 2; }),
+              "replacement worker starts while original admission is pending");
+        release = true;
+    }
+    changed.notify_all();
+    for (auto &worker : workers)
+        worker.join();
+    const auto current = transport.connection(fixture.data->agent_id);
+    check(admissions == 2 && removals == 1 && current && current->endpoint == replacement,
+          "concurrent replacement waits for startup, tears down the old client and admits the replacement");
+}
+
+void reused_admission_test() {
+    for (const std::uint32_t teleport_flags : {0u, 1u}) {
+        Fixture fixture;
+        fixture.data->teleport_flags = teleport_flags;
+        PendingCacheClock clock;
+        UdpEndpoint endpoint{"127.0.0.1", 11005};
+        endpoint.identity = std::make_shared<const UdpEndpoint>(endpoint);
+        std::vector<std::function<void()>> jobs;
+        std::vector<std::string> packets;
+        int admissions = 0, removed = 0, delivered = 0, reused = 0;
+        CircuitTransport *owner = nullptr;
+        CircuitTransport transport(
+            fixture.manager,
+            [&](const auto &, auto bytes) {
+                packets.emplace_back(lludp::decode_datagram(bytes).spec->name);
+                return true;
+            },
+            [&](const auto &, const auto &, const auto &) {
+                ++admissions;
+                return true;
+            },
+            [&](const auto &, const auto &) { ++delivered; }, [&](const auto &) { ++removed; }, {},
+            [&] { return static_cast<std::int32_t>(clock.now); }, [&](auto job) { jobs.push_back(std::move(job)); },
+            clock.backend());
+        owner = &transport;
+        transport.set_reuse_callbacks([](const auto &) { return true; },
+                                      [&](const auto &connection) {
+                                          ++reused;
+                                          check(delivered == 1,
+                                                "pending data is replayed before the reused-client handshake");
+                                          owner->send_if_current(connection, lludp::make_packet("RegionHandshake"));
+                                      });
+        transport.receive(endpoint, lludp::encode_datagram(fixture.use()));
+        clock.now = 60001;
+        clock.fire();
+        transport.receive(endpoint, lludp::encode_datagram(fixture.use()));
+        auto update = lludp::make_packet("AgentUpdate");
+        update.block("AgentData")["AgentID"] = fixture.data->agent_id;
+        update.block("AgentData")["SessionID"] = fixture.data->session_id;
+        transport.receive(endpoint, lludp::encode_datagram(update));
+        check(jobs.size() == 2, "expired pending lease allows a second job for the same cached endpoint");
+        jobs[0]();
+        const auto first = transport.connection(fixture.data->agent_id).value();
+        transport.send(fixture.data->agent_id, lludp::make_packet("RegionHandshake"));
+        const auto reliable_bytes = transport.statistics().unacked_bytes;
+        jobs[1]();
+        const auto current = transport.connection(fixture.data->agent_id);
+        check(admissions == 1 && removed == 0 && current && current->generation == first.generation,
+              "matching cached endpoint/session/secure-session reuses its admitted generation");
+        check(reliable_bytes > 0 && transport.statistics().unacked_bytes >= reliable_bytes &&
+                  std::find(packets.begin(), packets.end(), "DisableSimulator") == packets.end(),
+              "reuse retains reliable traffic and never disables the existing client");
+        check(reused == (teleport_flags == 0 ? 1 : 0),
+              "reused-client handshake repeats only for source zero teleport flags");
+    }
+}
+
 void queued_fragment_test() {
     Fixture f;
     int now = 1000;
     std::vector<lludp::Packet> sent;
     CircuitTransport transport(
         f.manager,
-        [&](const auto&, auto bytes) {
+        [&](const auto &, auto bytes) {
             sent.push_back(lludp::decode_datagram(bytes));
             check(bytes.size() <= 1200, "split outgoing datagram fits MTU");
             return true;
         },
-        [](const auto&, const auto&, const auto&) { return true; }, {}, {}, {}, [&] { return now; });
-    transport.receive({"127.0.0.1", 10004}, lludp::encode_datagram(f.use()));
+        [](const auto &, const auto &, const auto &) { return true; }, {}, {}, {}, [&] { return now; });
+    const UdpEndpoint endpoint{"127.0.0.1", 10004};
+    transport.receive(endpoint, lludp::encode_datagram(f.use()));
     sent.clear();
     auto packet = lludp::make_packet("ObjectUpdateCompressed");
     packet.reliable = false;
-    const auto& block = packet.spec->blocks.back();
+    const auto &block = packet.spec->blocks.back();
     for (int i = 0; i < 4; ++i) {
         auto row = lludp::make_block(block);
         row["Data"] = std::vector<std::uint8_t>(700, static_cast<std::uint8_t>(i + 1));
@@ -355,34 +622,47 @@ void queued_fragment_test() {
     check(sent.size() == 4, "all fragments pass through category queue");
     for (std::size_t i = 0; i < sent.size(); ++i) {
         check(sent[i].sequence == i + 1, "fragments receive independent consecutive sequences");
-        const auto& rows = sent[i].blocks.at(block.name);
+        const auto &rows = sent[i].blocks.at(block.name);
         check(rows.size() == 1 && std::get<std::vector<std::uint8_t>>(rows.front().at("Data")) ==
                                       std::vector<std::uint8_t>(700, static_cast<std::uint8_t>(i + 1)),
               "fragment preserves original object data and order");
     }
     auto packed = transport.packed_throttles(f.data->agent_id);
     check(packed && packed->size() == 28, "circuit exposes viewer throttle settings");
-    transport.set_throttles(f.data->agent_id, *packed);
+    auto throttle = lludp::make_packet("AgentThrottle");
+    throttle.sequence = 500;
+    throttle.block("AgentData")["AgentID"] = f.data->agent_id;
+    throttle.block("AgentData")["SessionID"] = f.data->session_id;
+    throttle.block("AgentData")["CircuitCode"] = std::uint64_t{0};
+    throttle.block("Throttle")["Throttles"] = std::vector<std::uint8_t>(28, 0);
+    transport.receive(endpoint, lludp::encode_datagram(throttle));
+    const auto limited = transport.packed_throttles(f.data->agent_id);
+    check(limited && limited != packed, "viewer throttle applies on the authenticated transport circuit");
+    throttle.sequence++;
+    throttle.block("Throttle")["Throttles"] = std::vector<std::uint8_t>(27, 0);
+    transport.receive(endpoint, lludp::encode_datagram(throttle));
+    check(transport.packed_throttles(f.data->agent_id) == limited, "short throttle leaves current rates intact");
 }
+
 void update_scheduler_test() {
     Fixture f;
     int now = 1000, updates = 0;
     bool available = true;
     std::vector<std::function<void()>> jobs;
     CircuitTransport transport(
-        f.manager, [](const auto&, auto) { return true; },
-        [](const auto&, const auto&, const auto&) { return true; }, {}, {}, {}, [&] { return now; },
+        f.manager, [](const auto &, auto) { return true; },
+        [](const auto &, const auto &, const auto &) { return true; }, {}, {}, {}, [&] { return now; },
         [&](auto job) { jobs.push_back(std::move(job)); });
     transport.receive({"127.0.0.1", 10005}, lludp::encode_datagram(f.use()));
     jobs.front()();
     jobs.clear();
     transport.set_update_callbacks(
         f.data->agent_id,
-        [&](const auto&, auto flags) {
+        [&](const auto &, auto flags) {
             check(static_cast<int>(flags) == 63, "empty queue supplies all category flags");
             return available;
         },
-        [&](const auto&, auto) { ++updates; });
+        [&](const auto &, auto) { ++updates; });
     auto run = [&] {
         auto job = std::move(jobs.front());
         jobs.erase(jobs.begin());
@@ -405,8 +685,8 @@ void update_scheduler_test() {
     check(jobs.empty(), "no update callback when host has no updates");
     available = true;
     transport.set_update_callbacks(
-        f.data->agent_id, [](const auto&, auto) { return true; },
-        [](const auto&, auto) { throw std::runtime_error("producer failure"); });
+        f.data->agent_id, [](const auto &, auto) { return true; },
+        [](const auto &, auto) { throw std::runtime_error("producer failure"); });
     transport.poll();
     run();
     check(transport.statistics().callback_errors == 1, "producer exception is contained");
@@ -418,12 +698,13 @@ void update_scheduler_test() {
     check(transport.statistics().callback_errors == 1 && updates == 2,
           "late producer job ignores disconnected circuit");
 }
+
 void texture_refill_test() {
     Fixture fixture;
     int now = 1000;
     CircuitTransport transport(
-        fixture.manager, [](const auto&, auto) { return true; },
-        [](const auto&, const auto&, const auto&) { return true; }, {}, {}, {}, [&] { return now; });
+        fixture.manager, [](const auto &, auto) { return true; },
+        [](const auto &, const auto &, const auto &) { return true; }, {}, {}, {}, [&] { return now; });
     transport.receive({"127.0.0.1", 10010}, lludp::encode_datagram(fixture.use()));
     const auto agent = fixture.data->agent_id;
     const auto session = fixture.data->session_id;
@@ -446,17 +727,18 @@ void texture_refill_test() {
     }
     check(transport.take_texture_refill(agent, session), "texture refill resumes after backlog drains");
 }
+
 void outbound_zero_encoding_test() {
     Fixture fixture;
     const UdpEndpoint endpoint{"127.0.0.1", 10009};
     std::vector<std::uint8_t> wire;
     CircuitTransport transport(
         fixture.manager,
-        [&](const auto&, auto bytes) {
+        [&](const auto &, auto bytes) {
             wire.assign(bytes.begin(), bytes.end());
             return true;
         },
-        [](const auto&, const auto&, const auto&) { return true; }, {}, {});
+        [](const auto &, const auto &, const auto &) { return true; }, {}, {});
     transport.receive(endpoint, lludp::encode_datagram(fixture.use()));
 
     auto packet = lludp::make_packet("PacketAck");
@@ -477,24 +759,25 @@ void outbound_zero_encoding_test() {
     check(wire.size() < raw_size && compressed.zerocoded && compressed.blocks == packet.blocks,
           "outbound zero encoding is retained when it shrinks the packet");
 }
+
 void ack_threshold_test() {
     Fixture fixture;
     const UdpEndpoint endpoint{"127.0.0.1", 10008};
     std::vector<lludp::Packet> sent;
     CircuitTransport transport(
         fixture.manager,
-        [&](const auto&, auto bytes) {
+        [&](const auto &, auto bytes) {
             sent.push_back(lludp::decode_datagram(bytes));
             return true;
         },
-        [](const auto&, const auto&, const auto&) { return true; }, {}, {}, {}, [] { return 1000; });
+        [](const auto &, const auto &, const auto &) { return true; }, {}, {}, {}, [] { return 1000; });
     transport.receive(endpoint, lludp::encode_datagram(fixture.use()));
     sent.clear();
 
     auto packet = lludp::make_packet("AgentUpdate");
     packet.reliable = true;
     packet.zerocoded = false;
-    auto& identity = packet.block("AgentData");
+    auto &identity = packet.block("AgentData");
     identity["AgentID"] = fixture.data->agent_id;
     identity["SessionID"] = fixture.data->session_id;
 
@@ -512,14 +795,55 @@ void ack_threshold_test() {
               sent.front().blocks.at("Packets").size() == count_before_flush + 1,
           "crossing two legacy MTUs flushes pending ACKs");
 }
+
+void packet_callback_transport_access_test() {
+    Fixture fixture;
+    const UdpEndpoint endpoint{"127.0.0.1", 10009};
+    std::mutex mutex;
+    std::condition_variable changed;
+    bool callback_entered = false;
+    bool send_completed = false;
+    bool send_completed_during_callback = false;
+    CircuitTransport transport(
+        fixture.manager, [](const auto &, auto) { return true; },
+        [](const auto &, const auto &, const auto &) { return true; },
+        [&](const auto &, const auto &) {
+            std::unique_lock lock(mutex);
+            callback_entered = true;
+            changed.notify_all();
+            send_completed_during_callback =
+                changed.wait_for(lock, std::chrono::seconds(2), [&] { return send_completed; });
+        },
+        {});
+    transport.receive(endpoint, lludp::encode_datagram(fixture.use()));
+    auto packet = lludp::make_packet("AgentUpdate");
+    packet.sequence = 124;
+    packet.block("AgentData")["AgentID"] = fixture.data->agent_id;
+    packet.block("AgentData")["SessionID"] = fixture.data->session_id;
+    std::jthread sender([&] {
+        {
+            std::unique_lock lock(mutex);
+            if (!changed.wait_for(lock, std::chrono::seconds(2), [&] { return callback_entered; }))
+                return;
+        }
+        const auto sent = transport.send(fixture.data->agent_id, lludp::make_packet("PacketAck"));
+        std::lock_guard lock(mutex);
+        send_completed = sent.has_value();
+        changed.notify_all();
+    });
+    transport.receive(endpoint, lludp::encode_datagram(packet));
+    sender.join();
+    check(send_completed_during_callback, "viewer packet callback allows another thread to send");
+}
+
 void region_bandwidth_test() {
     Fixture f;
     int now = 1000;
     CircuitTransportOptions options;
     options.scene_throttle_max_bps = 64000;
     CircuitTransport transport(
-        f.manager, [](const auto&, auto) { return true; },
-        [](const auto&, const auto&, const auto&) { return true; }, {}, {}, options, [&] { return now; });
+        f.manager, [](const auto &, auto) { return true; },
+        [](const auto &, const auto &, const auto &) { return true; }, {}, {}, options, [&] { return now; });
     transport.receive({"127.0.0.1", 10006}, lludp::encode_datagram(f.use()));
     const auto single = *transport.bytes_can_send(f.data->agent_id, ThrottleOutPacketType::Task, 1000);
     auto other = std::make_shared<AgentCircuitData>();
@@ -533,28 +857,38 @@ void region_bandwidth_test() {
     use.block("CircuitCode")["SessionID"] = other->session_id;
     transport.receive({"127.0.0.1", 10007}, lludp::encode_datagram(use));
     const auto shared = *transport.bytes_can_send(f.data->agent_id, ThrottleOutPacketType::Task, 1000);
-    check(single > 0 && shared > 0 && shared < single,
-          "region bandwidth parent shares capacity across agents");
+    check(single > 0 && shared > 0 && shared < single, "region bandwidth parent shares capacity across agents");
     transport.remove_client(other->agent_id);
     check(*transport.bytes_can_send(f.data->agent_id, ThrottleOutPacketType::Task, 1000) == single,
           "disconnect releases region bandwidth request");
 }
-}
-int main() {
+} // namespace
+
+int main(int argc, char **argv) {
     try {
+        if (argc == 2 && std::string_view(argv[1]) == "--replacement-probe") {
+            replacement_tests(true);
+            return failures ? 1 : 0;
+        }
         transport_tests();
         reentrant_teardown_test();
+        endpoint_identity_socket_test("127.0.0.1");
+        endpoint_identity_socket_test("::1");
+        replacement_tests();
         pending_admission_test();
         concurrent_admission_test();
+        concurrent_replacement_test();
+        reused_admission_test();
         queued_fragment_test();
         update_scheduler_test();
         texture_refill_test();
         outbound_zero_encoding_test();
         ack_threshold_test();
+        packet_callback_transport_access_test();
         region_bandwidth_test();
         socket_test("127.0.0.1");
         socket_test("::1");
-    } catch (const std::exception& error) {
+    } catch (const std::exception &error) {
         std::cerr << error.what() << '\n';
         return 1;
     }

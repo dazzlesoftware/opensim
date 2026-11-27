@@ -2,6 +2,7 @@
 #include <iostream>
 #include <sstream>
 using namespace opensim::framework;
+
 std::string encode(std::u16string_view s) {
     std::string out;
     for (auto c : s)
@@ -9,6 +10,7 @@ std::string encode(std::u16string_view s) {
             out += "0123456789abcdef"[(c >> b) & 15];
     return out;
 }
+
 int main() {
     auto unicode = native_config_uri_unicode_backend();
     std::string line;

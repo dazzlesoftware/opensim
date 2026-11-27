@@ -29,14 +29,17 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <bit>
 #include <iostream>
 using namespace opensim::network;
+
 namespace {
 int failures = 0;
-void check(bool value, const char* name) {
+
+void check(bool value, const char *name) {
     if (!value) {
         ++failures;
         std::cerr << "FAIL: " << name << '\n';
     }
 }
+
 auto packet(int category, int length = 100) {
     auto p = std::make_shared<OutgoingPacket>();
     p->category = static_cast<ThrottleOutPacketType>(category);
@@ -44,17 +47,17 @@ auto packet(int category, int length = 100) {
     p->buffer->data_length = length;
     return p;
 }
+
 void tests() {
     double now = 0;
     ClientPacketQueue queues(ThrottleRates{}, nullptr, [&] { return now; });
     std::vector<int> sent;
     int empty = 0, unacked = 0;
     auto drain = [&] {
-        return queues.drain([&](const auto& p) { sent.push_back(static_cast<int>(p->category)); },
+        return queues.drain([&](const auto &p) { sent.push_back(static_cast<int>(p->category)); },
                             [&] { return unacked; }, [&](auto flags) { empty = static_cast<int>(flags); });
     };
-    check(!queues.enqueue(packet(-1)) && !queues.enqueue(packet(7)),
-          "unknown categories bypass throttle queues");
+    check(!queues.enqueue(packet(-1)) && !queues.enqueue(packet(7)), "unknown categories bypass throttle queues");
     for (int i = 6; i >= 0; --i)
         queues.enqueue(packet(i));
     check(!drain() && sent.empty() && queues.queued() == 0,
@@ -68,8 +71,7 @@ void tests() {
     now += 1;
     unacked = 51;
     const auto count = sent.size();
-    check(drain() && sent.size() == count + 1 && sent.back() == 0 &&
-              queues.queued(ThrottleOutPacketType::Task) == 1,
+    check(drain() && sent.size() == count + 1 && sent.back() == 0 && queues.queued(ThrottleOutPacketType::Task) == 1,
           "resend serviced before ACK stall");
     unacked = 50;
     check(drain() && sent.back() == 4, "normal traffic resumes at fifty unacked packets");
@@ -100,7 +102,7 @@ void tests() {
     bool rejected = false;
     try {
         queues.set_throttles(std::span(bytes).first(27));
-    } catch (const std::out_of_range&) {
+    } catch (const std::out_of_range &) {
         rejected = true;
     }
     check(rejected, "truncated throttle data rejected");
@@ -122,7 +124,8 @@ void tests() {
     queues.clear();
     check(!queues.enqueue(packet(4)) && !drain(), "shutdown releases queues and prevents sends");
 }
-}
+} // namespace
+
 int main() {
     tests();
     return failures ? 1 : 0;

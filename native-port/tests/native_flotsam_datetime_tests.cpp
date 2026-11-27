@@ -7,18 +7,22 @@
 #include <vector>
 using namespace opensim;
 using namespace services;
+
 namespace {
-void check(bool value, const char* message) {
+void check(bool value, const char *message) {
     if (!value)
         throw std::runtime_error(message);
 }
+
 struct Output : FlotsamConsoleOutput {
     std::vector<std::string> lines;
-    void output(const std::string& s) override {
+
+    void output(const std::string &s) override {
         lines.push_back(s);
     }
 };
-std::optional<std::string> decode(const std::string& value) {
+
+std::optional<std::string> decode(const std::string &value) {
     if (value == "~")
         return {};
     std::string out;
@@ -26,10 +30,10 @@ std::optional<std::string> decode(const std::string& value) {
         out += static_cast<char>(std::stoi(value.substr(i, 2), nullptr, 16));
     return out;
 }
+
 void unit() {
     auto first = framework::shared_native_invariant_datetime_context();
-    check(first == framework::shared_native_invariant_datetime_context(),
-          "default runtime owner must be shared");
+    check(first == framework::shared_native_invariant_datetime_context(), "default runtime owner must be shared");
     auto backend = std::make_shared<FlotsamConsoleBackend>();
     auto owner = std::make_shared<framework::NativeInvariantDateTimeContext>();
     std::weak_ptr weak = owner;
@@ -47,8 +51,8 @@ void unit() {
     auto life = std::make_shared<FlotsamCacheLifecycle>();
     auto output = std::make_shared<Output>();
     auto expire = [&](std::initializer_list<FlotsamConsoleBackend::Text> args) {
-        FlotsamCacheConsole::expire(std::make_shared<FlotsamCacheConsole::Arguments>(args), config, life,
-                                    backend, output);
+        FlotsamCacheConsole::expire(std::make_shared<FlotsamCacheConsole::Arguments>(args), config, life, backend,
+                                    output);
     };
     expire({"fcache", "expire", "nonsense"});
     check(!life->cleanup_running && output->lines.back() == "expire is not a valid date & time",
@@ -60,8 +64,7 @@ void unit() {
     check(life->cleanup_running && output->lines.back() == "File cache not active, not clearing.",
           "disabled-file source successful expire retains gate");
     expire({"fcache", "expire", "now"});
-    check(output->lines.back() == "Flotsam assets check already running",
-          "disabled-file gate blocks later commands");
+    check(output->lines.back() == "Flotsam assets check already running", "disabled-file gate blocks later commands");
     backend.reset();
     check(weak.expired(), "callbacks release context after backend destruction");
     owner = std::make_shared<framework::NativeInvariantDateTimeContext>();
@@ -80,8 +83,9 @@ void unit() {
     stamps.reset();
     check(weak.expired(), "timestamp callbacks release owner");
 }
-}
-int main(int argc, char** argv) {
+} // namespace
+
+int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string(argv[1]) == "--probe") {
             FlotsamConsoleBackend b;
@@ -98,7 +102,7 @@ int main(int argc, char** argv) {
         unit();
         std::cout << "PASS: native Flotsam date binding, shared owner and source expire gates\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

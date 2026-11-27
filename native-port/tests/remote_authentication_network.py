@@ -182,6 +182,9 @@ AuthenticationDatabase=must-not-open.db
 AuthenticationProvider=Remote
 EnableAuthenticationEndpoint=true
 EnableAccountEndpoint=true
+EnableGridEndpoint=true
+GridRegionProvider=SQLite
+GridRegionDatabase=frontend-regions.db
 [Network]
 http_listener_port=0
 [LoginService]
@@ -189,6 +192,8 @@ RequireInventory=false
 AllowRemoteSetLoginLevel=true
 [UserAccountService]
 AllowCreateUser=true
+[GridService]
+AuthenticationService=OpenSim.Services.Connectors.dll:AuthenticationServicesConnector
 [AuthenticationService]
 AuthenticationServerURI=http://127.0.0.1:{backend.port}
 ConnectionString=Unsupported=must-not-parse
@@ -280,6 +285,36 @@ AllowSetPassword=true
                     == 'Success',
                     'frontend verify forwards to remote provider',
                 )
+                region_id = str(uuid.uuid4())
+                registration = dict(
+                    METHOD='register', VERSIONMIN=1, VERSIONMAX=1, uuid=region_id,
+                    regionName='Remote Auth Region', locX=25600, locY=25600,
+                    sizeX=256, sizeY=256, serverPort=9000,
+                )
+
+                def register_region(**fields):
+                    status, body = front.request('/grid', urllib.parse.urlencode({**registration, **fields}))
+                    check(status == 200, 'grid registration returns HTTP 200')
+                    return ET.fromstring(body)
+
+                check(register_region().findtext('Result') == 'Success', 'register region before protecting it')
+                with contextlib.closing(sqlite3.connect(root / 'frontend-regions.db')) as db, db:
+                    db.execute('UPDATE regions SET flags = flags | 256, PrincipalID = ? WHERE uuid = ?',
+                               (principal, region_id))
+                check(
+                    register_region(Token='invalid').findtext('Message') == 'Bad authentication',
+                    'remote authentication rejects an invalid region token',
+                )
+                check(
+                    register_region(Token=token).findtext('Result') == 'Success',
+                    'remote authentication accepts the backend-issued region token',
+                )
+                with contextlib.closing(sqlite3.connect(root / 'frontend-regions.db')) as db:
+                    check(
+                        db.execute('SELECT PrincipalID, flags & 256 FROM regions WHERE uuid = ?',
+                                   (region_id,)).fetchone() == (principal, 256),
+                        'refresh keeps the protected region principal and authentication flag',
+                    )
                 check(
                     front.auth('release', principal, TOKEN=token).findtext('Result') == 'Success',
                     'frontend release forwards to remote provider',
@@ -328,6 +363,17 @@ AllowSetPassword=true
                 ).findtext('Token')
                 old_port = backend.port
                 backend.stop()
+                denied = register_region(Token=persistent, regionName='Registration During Outage')
+                check(
+                    denied.findtext('Result') == 'Failure' and persistent not in ET.tostring(denied, encoding='unicode'),
+                    'grid registration fails without exposing the token when remote verification is unavailable',
+                )
+                with contextlib.closing(sqlite3.connect(root / 'frontend-regions.db')) as db:
+                    check(
+                        db.execute('SELECT regionName FROM regions WHERE uuid = ?', (region_id,)).fetchone()
+                        == ('Remote Auth Region',),
+                        'failed verification leaves the registered region unchanged',
+                    )
                 check(
                     front.login()['message'].startswith('Error generating Login Response'),
                     'remote transport failure follows login internal-error boundary',
@@ -348,6 +394,10 @@ AllowSetPassword=true
                 )
                 backend = Running(backend_config)
                 check(
+                    register_region(Token=persistent).findtext('Result') == 'Success',
+                    'protected region registration recovers after the backend restarts',
+                )
+                check(
                     front.auth('verify', principal, TOKEN=persistent).findtext('Result')
                     == 'Success',
                     'remote tokens survive backend restart',
@@ -356,11 +406,88 @@ AllowSetPassword=true
                     front.login() == good,
                     'existing frontend resumes authentication after backend restart',
                 )
+            mixed_config = root / 'mixed.ini'
+            mixed_config.write_text(
+                front_settings.replace('AuthenticationProvider=Remote', 'AuthenticationProvider=SQLite')
+                .replace('frontend-accounts.db', 'mixed-accounts.db')
+                .replace('frontend-regions.db', 'mixed-regions.db')
+                .replace('must-not-open.db', 'mixed-auth.db')
+                .replace('ConnectionString=Unsupported=must-not-parse\n', '')
+                .replace('Realm=\n', ''),
+                encoding='utf-8',
+            )
+            cli(mixed_config, '--init-db')
+            cli(mixed_config, '--create-user', 'Remote', 'User', password='mixed-local-password\n')
+            with Running(mixed_config) as mixed:
+                check(
+                    mixed.login('mixed-local-password')['message'].startswith('Error connecting'),
+                    'mixed server accepts the local SQLite viewer password',
+                )
+                check(
+                    mixed.login('backend-password')['message'].startswith('Could not authenticate'),
+                    'mixed server rejects the remote backend viewer password',
+                )
+                def register_mixed(**fields):
+                    status, body = mixed.request('/grid', urllib.parse.urlencode({**registration, **fields}))
+                    check(status == 200, 'mixed grid registration returns HTTP 200')
+                    return ET.fromstring(body)
+
+                check(register_mixed().findtext('Result') == 'Success', 'mixed grid registers a region')
+                with contextlib.closing(sqlite3.connect(root / 'mixed-regions.db')) as db, db:
+                    db.execute('UPDATE regions SET flags = flags | 256, PrincipalID = ? WHERE uuid = ?',
+                               (principal, region_id))
+                check(
+                    register_mixed(Token=persistent).findtext('Result') == 'Success',
+                    'grid can verify remote tokens with local viewer authentication configured',
+                )
             with Running(front_config) as front:
                 check(
                     front.login()['message'].startswith('Error connecting'),
                     'remote authentication survives frontend restart',
                 )
+            reverse_config = root / 'reverse.ini'
+            reverse_config.write_text(
+                front_settings.replace('frontend-accounts.db', 'reverse-accounts.db')
+                .replace('frontend-regions.db', 'reverse-regions.db')
+                .replace('must-not-open.db', 'reverse-auth.db')
+                .replace('ConnectionString=Unsupported=must-not-parse\n', '')
+                .replace('Realm=\n', '')
+                .replace('OpenSim.Services.Connectors.dll:AuthenticationServicesConnector',
+                         'OpenSim.Services.AuthenticationService.dll:PasswordAuthenticationService'),
+                encoding='utf-8',
+            )
+            cli(reverse_config, '--init-db')
+            cli(reverse_config, '--create-user', 'Remote', 'User', password='reverse-local-password\n')
+            with contextlib.closing(sqlite3.connect(root / 'reverse-accounts.db')) as db, db:
+                db.execute('UPDATE UserAccounts SET PrincipalID = ?', (principal,))
+            with contextlib.closing(sqlite3.connect(root / 'reverse-auth.db')) as db, db:
+                db.execute(
+                    "INSERT INTO tokens (UUID, token, validity) VALUES (?, ?, datetime('now','localtime','+5 minutes'))",
+                    (principal, 'local-region-token'),
+                )
+            with Running(reverse_config) as reverse:
+                check(
+                    reverse.login('backend-password')['message'].startswith('Error connecting'),
+                    'reverse mixed server accepts the remote backend viewer password',
+                )
+                check(
+                    reverse.login('reverse-local-password')['message'].startswith('Could not authenticate'),
+                    'reverse mixed server rejects the local viewer password',
+                )
+
+                def register_reverse(**fields):
+                    status, body = reverse.request('/grid', urllib.parse.urlencode({**registration, **fields}))
+                    check(status == 200, 'reverse mixed registration returns HTTP 200')
+                    return ET.fromstring(body)
+
+                check(register_reverse().findtext('Result') == 'Success', 'reverse mixed grid registers a region')
+                with contextlib.closing(sqlite3.connect(root / 'reverse-regions.db')) as db, db:
+                    db.execute('UPDATE regions SET flags = flags | 256, PrincipalID = ? WHERE uuid = ?',
+                               (principal, region_id))
+                check(register_reverse(Token=persistent).findtext('Message') == 'Bad authentication',
+                      'local grid verification rejects a remote token')
+                check(register_reverse(Token='local-region-token').findtext('Result') == 'Success',
+                      'local grid verification accepts a local token with remote viewer authentication')
             check(
                 sentinel.read_bytes() == b'not a SQLite database; leave untouched',
                 'remote mode leaves selected local auth file untouched',

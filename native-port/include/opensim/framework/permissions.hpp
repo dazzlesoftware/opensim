@@ -35,21 +35,33 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace opensim::framework {
 enum class PermissionMask : std::uint32_t {
-    None = 0, FoldedTransfer = 1, FoldedModify = 1 << 1,
-    FoldedCopy = 1 << 2, FoldedExport = 1 << 3,
+    None = 0,
+    FoldedTransfer = 1,
+    FoldedModify = 1 << 1,
+    FoldedCopy = 1 << 2,
+    FoldedExport = 1 << 3,
     Slam = 1 << 4, // Legacy only: new code must not set this bit.
-    FoldedMask = 0x0f, FoldingShift = 13,
-    Transfer = 1 << 13, Modify = 1 << 14, Copy = 1 << 15,
-    Export = 1 << 16, Move = 1 << 19, Damage = 1 << 20,
-    All = 0x8e000, AllAndExport = 0x9e000,
-    AllAndExportNoMod = 0x9a000, AllEffective = 0x9e000,
+    FoldedMask = 0x0f,
+    FoldingShift = 13,
+    Transfer = 1 << 13,
+    Modify = 1 << 14,
+    Copy = 1 << 15,
+    Export = 1 << 16,
+    Move = 1 << 19,
+    Damage = 1 << 20,
+    All = 0x8e000,
+    AllAndExport = 0x9e000,
+    AllAndExportNoMod = 0x9a000,
+    AllEffective = 0x9e000,
     UnfoldedMask = 0x1e000
 };
+
 constexpr std::uint32_t bits(PermissionMask mask) noexcept {
     return static_cast<std::uint32_t>(mask);
 }
-inline bool set_lsl_permission_mask(const std::array<std::uint32_t*, 5>& masks,
-                                    std::int32_t selector, std::int32_t value) {
+
+inline bool set_lsl_permission_mask(const std::array<std::uint32_t *, 5> &masks, std::int32_t selector,
+                                    std::int32_t value) {
     constexpr std::uint32_t full = 0x8e000u;
     const auto to_lsl = [](std::uint32_t permissions) {
         const auto bits = permissions & full;
@@ -67,17 +79,18 @@ inline bool set_lsl_permission_mask(const std::array<std::uint32_t*, 5>& masks,
     auto bits = static_cast<std::uint32_t>(value) & full;
     if ((selector == 0 || selector == 1 || selector == 4) && !(bits & (copy | transfer)))
         bits |= transfer;
-    auto& target = *masks[selector];
+    auto &target = *masks[selector];
     target = (target & ~full) | bits;
     return true;
 }
+
 struct PermissionsUtil {
     static std::string permissions_to_string(std::uint32_t permissions);
     // Returns the existing log message so the host can route it to its logger.
-    static std::string log_permissions(const std::string& name, const std::string& message,
-        std::uint32_t base, std::uint32_t current, std::uint32_t next);
-    static void apply_folded_permissions(std::uint32_t source, std::uint32_t& target) noexcept;
-    static void apply_no_mod_folded_permissions(std::uint32_t source, std::uint32_t& target) noexcept;
+    static std::string log_permissions(const std::string &name, const std::string &message, std::uint32_t base,
+                                       std::uint32_t current, std::uint32_t next);
+    static void apply_folded_permissions(std::uint32_t source, std::uint32_t &target) noexcept;
+    static void apply_no_mod_folded_permissions(std::uint32_t source, std::uint32_t &target) noexcept;
     static std::uint32_t fix_and_fold_permissions(std::uint32_t permissions) noexcept;
 };
-}
+} // namespace opensim::framework

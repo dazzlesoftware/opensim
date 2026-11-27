@@ -1,0 +1,1 @@
+string result;integer after;default{state_entry(){result=llBase64ToString(llBase64ToString("IQ=="));after=1;}}

@@ -1,0 +1,43 @@
+{
+  "status": "PASS",
+  "scope": "Exact ordinary-entry source originalWindows/Linux realSleep and privateproductionbinary plus freshprocess import; native externaldriver syntax/sourceguard checked but not executed",
+  "source_sha256": "af954e83e2aad7dfb57731d7f95a912a58a113929ab5f006a19a53f26b442ef3",
+  "generator_sha256": "dec66d9972a8e3a252b90170effd51853ecfa83457abed17b22beaacb40abef2",
+  "driver_sha256": "299d82ba6ae2a15f3ebd624143576311c336c4af38c752d6e2a2dc9aa97ca7b1",
+  "metadata_sha256": {
+    "windows": "ce4bc7f263ca37bfd0a4f5709e8c4808a4e61ca6b19deb7b9ffd11d5e728ad48",
+    "linux": "00ecb7a964a14b14ff58336cd3e6691f9c563d66bf5f1a49d2759b3d958b0fdc",
+    "process_import": "16dce4714c16494349286b429e46e37a464dd01c6a98eda62a98e7d222f26203"
+  },
+  "native_driver_execution": "NOT_RUN",
+  "hash_inequality_required": false,
+  "files_sha256": {
+    "linux\\metadata.json": "00ecb7a964a14b14ff58336cd3e6691f9c563d66bf5f1a49d2759b3d958b0fdc",
+    "linux\\process_fixed_array_restart\\cache_key.txt": "1a2878bdd3a902830264b8de949529e9ce1068e2a1b5f8a5df7a7c1798482677",
+    "linux\\process_fixed_array_restart\\detect-array.xml": "a54ca4e5f26d31a98b63cca7e3c95a199a39e5bdc40fb23eb9c8287d8de2c615",
+    "linux\\process_fixed_array_restart\\event-queue.xml": "09030ac3a8d5dbaa452ef2076d8c8a18f45eb5608570c79b134fc4ffc843309e",
+    "linux\\process_fixed_array_restart\\metadata.json": "ef0d0aab74651e2526f42426625f0f8cef56714e1957f35920b140311d43fa23",
+    "linux\\process_fixed_array_restart\\original.il.txt": "fa05a914aa44b06753c917e30f8b64637f5832ca3b0b9c1cbeca90627fc5f34d",
+    "linux\\process_fixed_array_restart\\original.yobj": "5c92ef57b37eea716029dd445616b08fd2cb946fa25ae216ed1b1b914baf169a",
+    "linux\\process_fixed_array_restart\\permissive-control.bin": "9cf4ce0538920bb582855dd89ba1df8a49147ae96aecd71079e9181fb7863edd",
+    "linux\\process_fixed_array_restart\\snapshot.bin": "9cf4ce0538920bb582855dd89ba1df8a49147ae96aecd71079e9181fb7863edd",
+    "linux\\process_fixed_array_restart\\source.lsl": "af954e83e2aad7dfb57731d7f95a912a58a113929ab5f006a19a53f26b442ef3",
+    "metadata.json": "ce4bc7f263ca37bfd0a4f5709e8c4808a4e61ca6b19deb7b9ffd11d5e728ad48",
+    "process_fixed_array_restart\\cache_key.txt": "1a2878bdd3a902830264b8de949529e9ce1068e2a1b5f8a5df7a7c1798482677",
+    "process_fixed_array_restart\\detect-array.xml": "a54ca4e5f26d31a98b63cca7e3c95a199a39e5bdc40fb23eb9c8287d8de2c615",
+    "process_fixed_array_restart\\event-queue.xml": "09030ac3a8d5dbaa452ef2076d8c8a18f45eb5608570c79b134fc4ffc843309e",
+    "process_fixed_array_restart\\metadata.json": "74b890965ef8912b7cc4822150369d1a13075dc0c96d1d80116e84d057bf5ede",
+    "process_fixed_array_restart\\original.il.txt": "f71b35e172808c26170932d716ffff12ab3407bacf33b6f5833852264ab3a69e",
+    "process_fixed_array_restart\\original.yobj": "5c92ef57b37eea716029dd445616b08fd2cb946fa25ae216ed1b1b914baf169a",
+    "process_fixed_array_restart\\permissive-control.bin": "10b83ae013c965007f21fe9a287cff6156eeb1cababa22a8c41cbbf9d876c830",
+    "process_fixed_array_restart\\snapshot.bin": "10b83ae013c965007f21fe9a287cff6156eeb1cababa22a8c41cbbf9d876c830",
+    "process_fixed_array_restart\\source.lsl": "af954e83e2aad7dfb57731d7f95a912a58a113929ab5f006a19a53f26b442ef3",
+    "process_import\\metadata.json": "16dce4714c16494349286b429e46e37a464dd01c6a98eda62a98e7d222f26203",
+    "process_import\\process_fixed_array_restart\\cache_key.txt": "1a2878bdd3a902830264b8de949529e9ce1068e2a1b5f8a5df7a7c1798482677",
+    "process_import\\process_fixed_array_restart\\detect-array.xml": "a54ca4e5f26d31a98b63cca7e3c95a199a39e5bdc40fb23eb9c8287d8de2c615",
+    "process_import\\process_fixed_array_restart\\metadata.json": "cdf9878121cb1cab881a4e5aa507144495fbbc8cc467ca1ce23869229e9484a0",
+    "process_import\\process_fixed_array_restart\\original.il.txt": "f71b35e172808c26170932d716ffff12ab3407bacf33b6f5833852264ab3a69e",
+    "process_import\\process_fixed_array_restart\\original.yobj": "5c92ef57b37eea716029dd445616b08fd2cb946fa25ae216ed1b1b914baf169a",
+    "process_import\\process_fixed_array_restart\\source.lsl": "af954e83e2aad7dfb57731d7f95a912a58a113929ab5f006a19a53f26b442ef3"
+  }
+}

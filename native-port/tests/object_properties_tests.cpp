@@ -4,11 +4,13 @@
 #include <iostream>
 using namespace opensim;
 using namespace scene;
+
 namespace {
 framework::Uuid id(int n) {
     auto tail = std::to_string(n);
     return framework::Uuid("11223344-5566-7788-99aa-" + std::string(12 - tail.size(), '0') + tail);
 }
+
 std::string hex(std::span<const std::uint8_t> bytes) {
     std::string out;
     for (auto b : bytes) {
@@ -17,6 +19,7 @@ std::string hex(std::span<const std::uint8_t> bytes) {
     }
     return out;
 }
+
 std::string text(int mode) {
     switch (mode & 7) {
     case 0:
@@ -49,6 +52,7 @@ std::string text(int mode) {
         return "\r\n\t\"'é中😃";
     }
 }
+
 ObjectPropertiesData data(int seed, int mode) {
     ObjectPropertiesData o;
     o.id = id(1);
@@ -77,11 +81,13 @@ ObjectPropertiesData data(int seed, int mode) {
     o.sit_name = text(mode + 3);
     return o;
 }
+
 std::string probe(int seed, int mode) {
     return hex(network::lludp::encode_datagram(object_properties(data(seed, mode))));
 }
-}
-int main(int argc, char** argv) {
+} // namespace
+
+int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string_view(argv[1]) == "--probe") {
             int s, m;
@@ -90,33 +96,31 @@ int main(int argc, char** argv) {
             return 0;
         }
         int checks = 0;
-        auto check = [&](bool b, const char* s) {
+        auto check = [&](bool b, const char *s) {
             ++checks;
             if (!b)
                 throw std::runtime_error(s);
         };
         auto p = object_properties(data(-1, 255));
-        const auto& b = p.block("ObjectData");
+        const auto &b = p.block("ObjectData");
         check(p.reliable && p.zerocoded, "source header");
         check(std::get<framework::Uuid>(b.at("OwnerID")).is_zero(), "group-owned viewer encoding");
         check(std::get<std::int64_t>(b.at("InventorySerial")) == -1, "serial wraps signed16");
         check(std::get<std::uint64_t>(b.at("CreationDate")) == std::uint64_t(-1) * 1000000ull,
               "signed creation date cast");
         check(
-            std::get<std::vector<std::uint8_t>>(object_properties(data(1, 2)).block("ObjectData").at("Name"))
-                    .size() == 64,
+            std::get<std::vector<std::uint8_t>>(object_properties(data(1, 2)).block("ObjectData").at("Name")).size() ==
+                64,
             "namebyte limit+NUL");
         check(
-            std::get<std::vector<std::uint8_t>>(object_properties(data(1, 6)).block("ObjectData").at("Name"))
-                    .size() == 4,
+            std::get<std::vector<std::uint8_t>>(object_properties(data(1, 6)).block("ObjectData").at("Name")).size() ==
+                4,
             "embeddedNUL truncates");
-        check(
-            std::get<std::vector<std::uint8_t>>(object_properties(data(1, 0)).block("ObjectData").at("Name"))
-                .empty(),
-            "empty means zero bytes");
+        check(std::get<std::vector<std::uint8_t>>(object_properties(data(1, 0)).block("ObjectData").at("Name")).empty(),
+              "empty means zero bytes");
         std::cout << "PASS: " << checks << " object properties checks\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

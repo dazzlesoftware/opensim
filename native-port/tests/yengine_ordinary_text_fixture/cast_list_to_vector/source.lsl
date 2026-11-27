@@ -1,0 +1,1 @@
+vector result;default{state_entry(){result=(vector)[1,2];}}

@@ -7,14 +7,16 @@
 #include <cmath>
 #include <condition_variable>
 #include <thread>
+
 namespace opensim::services {
 namespace {
-bool white(const std::optional<std::string>& text) {
+bool white(const std::optional<std::string> &text) {
     if (!text)
         return true;
     auto chars = framework::utf16_replacing(*text);
     return std::all_of(chars.begin(), chars.end(), framework::unicode_whitespace);
 }
+
 class CleanupTimer final : public FlotsamCleanupTimer {
     struct State {
         std::mutex mutex;
@@ -24,8 +26,9 @@ class CleanupTimer final : public FlotsamCleanupTimer {
         std::chrono::milliseconds interval;
         std::chrono::steady_clock::time_point due;
         std::function<void()> callback;
-        explicit State(int ms) : interval(ms) {
-        }
+
+        explicit State(int ms) : interval(ms) {}
+
         void run() {
             std::unique_lock lock(mutex);
             while (!shutdown) {
@@ -49,6 +52,7 @@ class CleanupTimer final : public FlotsamCleanupTimer {
             }
         }
     };
+
     std::shared_ptr<State> state_;
     std::thread thread_;
 
@@ -60,6 +64,7 @@ class CleanupTimer final : public FlotsamCleanupTimer {
         state_ = std::make_shared<State>(static_cast<int>(rounded));
         thread_ = std::thread([state = state_] { state->run(); });
     }
+
     ~CleanupTimer() override {
         {
             std::lock_guard lock(state_->mutex);
@@ -75,10 +80,12 @@ class CleanupTimer final : public FlotsamCleanupTimer {
                 thread_.join();
         }
     }
+
     void subscribe(std::function<void()> callback) override {
         std::lock_guard lock(state_->mutex);
         state_->callback = std::move(callback);
     }
+
     void start() override {
         std::lock_guard lock(state_->mutex);
         if (!state_->armed) {
@@ -88,29 +95,35 @@ class CleanupTimer final : public FlotsamCleanupTimer {
             state_->changed.notify_all();
         }
     }
+
     void stop() override {
         std::lock_guard lock(state_->mutex);
         state_->armed = false;
         ++state_->generation;
         state_->changed.notify_all();
     }
+
     // System.Timers.Timer.Close stops the timer without disposing the component;
     // the source object may be started again after Close.
     void close() override {
         stop();
     }
 };
-}
+} // namespace
+
 std::shared_ptr<FlotsamCacheSharedState> shared_flotsam_cache_state() {
     static auto state = std::make_shared<FlotsamCacheSharedState>();
     return state;
 }
+
 std::shared_ptr<FlotsamCleanupTimer> native_flotsam_cleanup_timer(double milliseconds) {
     return std::make_shared<CleanupTimer>(milliseconds);
 }
+
 std::shared_ptr<FlotsamCleanupTimer> FlotsamCacheModuleBackend::make_timer(double interval) {
     return native_flotsam_cleanup_timer(interval);
 }
+
 std::shared_ptr<framework::ObjectJobQueue> FlotsamCacheModuleBackend::make_worker() {
     return std::make_shared<framework::ObjectJobEngine>(
         [](std::any value) {
@@ -121,6 +134,7 @@ std::shared_ptr<framework::ObjectJobQueue> FlotsamCacheModuleBackend::make_worke
         },
         "FloatsamCacheWriter", 1000, 1);
 }
+
 FlotsamCacheModule::FlotsamCacheModule(Options options, std::shared_ptr<framework::IAssetCache> cache,
                                        std::shared_ptr<FlotsamCacheModuleBackend> backend,
                                        std::shared_ptr<FlotsamCacheSharedState> shared)
@@ -129,6 +143,7 @@ FlotsamCacheModule::FlotsamCacheModule(Options options, std::shared_ptr<framewor
     if (!cache_ || !backend_)
         throw std::invalid_argument("Missing Flotsam cache module dependency");
 }
+
 void FlotsamCacheModule::add_region(std::shared_ptr<FlotsamCacheScene> scene) {
     if (!options_.enabled)
         return;
@@ -137,6 +152,7 @@ void FlotsamCacheModule::add_region(std::shared_ptr<FlotsamCacheScene> scene) {
     scene->register_cache(cache_);
     life_->scenes.push_back(std::move(scene));
 }
+
 void FlotsamCacheModule::stop_workers() {
     life_->cleanup_running = false;
     if (life_->timer_running) {
@@ -149,6 +165,7 @@ void FlotsamCacheModule::stop_workers() {
         shared_->worker.store(nullptr);
     }
 }
+
 void FlotsamCacheModule::remove_region(std::shared_ptr<FlotsamCacheScene> scene) {
     if (!options_.enabled)
         return;
@@ -162,12 +179,14 @@ void FlotsamCacheModule::remove_region(std::shared_ptr<FlotsamCacheScene> scene)
     if (life_->scenes.empty())
         stop_workers();
 }
+
 void FlotsamCacheModule::close() {
     if (life_->scenes.empty()) {
         std::lock_guard lock(life_->timer_mutex);
         stop_workers();
     }
 }
+
 void FlotsamCacheModule::region_loaded(std::shared_ptr<FlotsamCacheScene> scene) {
     if (!options_.enabled)
         return;
@@ -177,10 +196,9 @@ void FlotsamCacheModule::region_loaded(std::shared_ptr<FlotsamCacheScene> scene)
         life_->service = scene->request_asset_service();
     }
     std::lock_guard lock(life_->timer_mutex);
-    if (!life_->timer_running && options_.file && options_.expiration_ticks > 0 &&
-        options_.cleanup_ticks > 0) {
-        auto interval = std::clamp(static_cast<double>(options_.cleanup_ticks) / 10000.0, -922337203685477.0,
-                                   922337203685477.0);
+    if (!life_->timer_running && options_.file && options_.expiration_ticks > 0 && options_.cleanup_ticks > 0) {
+        auto interval =
+            std::clamp(static_cast<double>(options_.cleanup_ticks) / 10000.0, -922337203685477.0, 922337203685477.0);
         life_->timer = backend_->make_timer(interval);
         std::weak_ptr<FlotsamCacheLifecycle> life = life_;
         std::weak_ptr<FlotsamCacheModuleBackend> backend = backend_;
@@ -217,7 +235,8 @@ void FlotsamCacheModule::region_loaded(std::shared_ptr<FlotsamCacheScene> scene)
         }
     }
 }
-void FlotsamCacheModule::load_default_assets(std::function<void(const std::string&)> info) {
+
+void FlotsamCacheModule::load_default_assets(std::function<void(const std::string &)> info) {
     if (!info)
         throw std::invalid_argument("Missing default-assets logger");
     if (white(options_.loader)) {
@@ -232,21 +251,22 @@ void FlotsamCacheModule::load_default_assets(std::function<void(const std::strin
     info("[FLOTSAM ASSET CACHE] start loading local default assets");
     auto count = std::make_shared<std::atomic<std::int32_t>>(0);
     auto ids = std::make_shared<std::unordered_set<std::string>>();
-    loader->for_each(
-        options_.loader_arguments, [cache = cache_, ids, shared = shared_, count](AssetService::Asset asset) {
-            cache->cache(asset, true);
-            if (!asset)
-                throw std::runtime_error("Object reference not set to an instance of an object.");
-            {
-                std::lock_guard lock(shared->defaults_mutex);
-                ids->insert(asset->id());
-            }
-            count->fetch_add(1);
-        });
+    loader->for_each(options_.loader_arguments,
+                     [cache = cache_, ids, shared = shared_, count](AssetService::Asset asset) {
+                         cache->cache(asset, true);
+                         if (!asset)
+                             throw std::runtime_error("Object reference not set to an instance of an object.");
+                         {
+                             std::lock_guard lock(shared->defaults_mutex);
+                             ids->insert(asset->id());
+                         }
+                         count->fetch_add(1);
+                     });
     shared_->default_assets = ids;
     info("[FLOTSAM ASSET CACHE] loaded " + std::to_string(count->load()) + " local default assets");
 }
-void FlotsamCacheModule::delete_default_assets(std::function<void(const std::string&)> info) {
+
+void FlotsamCacheModule::delete_default_assets(std::function<void(const std::string &)> info) {
     if (!info)
         throw std::invalid_argument("Missing default-assets logger");
     if (white(options_.loader)) {
@@ -269,9 +289,9 @@ void FlotsamCacheModule::delete_default_assets(std::function<void(const std::str
     shared_->default_assets = std::make_shared<std::unordered_set<std::string>>();
     info("[FLOTSAM ASSET CACHE] deleted " + std::to_string(count->load()) + " local default assets");
 }
-std::shared_ptr<FlotsamFileBackend>
-native_flotsam_shared_file_backend(std::shared_ptr<FlotsamCacheSharedState> shared,
-                                   std::function<void(const std::string&)> warn) {
+
+std::shared_ptr<FlotsamFileBackend> native_flotsam_shared_file_backend(std::shared_ptr<FlotsamCacheSharedState> shared,
+                                                                       std::function<void(const std::string &)> warn) {
     if (!shared)
         throw std::invalid_argument("Null shared cache state");
     auto backend = native_flotsam_file_backend({}, std::move(warn));
@@ -289,4 +309,4 @@ native_flotsam_shared_file_backend(std::shared_ptr<FlotsamCacheSharedState> shar
     };
     return backend;
 }
-}
+} // namespace opensim::services

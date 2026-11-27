@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "fullParityVerified": false,
+  "nativeParityVerified": false,
+  "scope": "Original actual production MigrateOutEventHandler snapshots and unchanged MigrateIn; two compiler-created integer[] wrappers, fresh allocated, same-instance reload and explicit fresh-unallocated helper controls;48 restore checks perOS.",
+  "generatorSha256": "b4877be30401972be15e648e6ee1702892dec32e336109acfe936b5c2cc8d358",
+  "generatorAssemblySha256": "90532c0d0e5cf44c8233fd115d1a0c1135da14b7123070d0c7c45dd4d4c3e3ab",
+  "verifierSha256": "eaf93b06b212b3f6789cffc8edd14bc15c76b0e01c768eafaec353ebca04beec",
+  "originalBackendAssemblySha256": {
+    "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+    "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+    "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a"
+  },
+  "originalSourceSha256": {
+    "XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+    "XMRInstCapture.cs": "775f1d83bd4610f788891269ea9ea08b1f79cf4bf3b44300d926f49c8a277cbd",
+    "XMRSDTypeClObj.cs": "526bcaa0bac500bdce6bc0ada35eb22f1bef5d4f645f71f73ea0113ed8e9811c",
+    "XMRHeapTracker.cs": "c04982ce71c32699438ad3e9aa5821a7262fe8ba65e6684db02171dec0489ef3"
+  },
+  "platforms": {
+    "windows": {
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "cases": [
+        {
+          "name": "two_wrappers",
+          "observationsSha256": "76d1a8479eeba66a6418b9b6c8a028e8a5a6a88d8e7cb8556690ecfce69c6b17",
+          "metadataSha256": "bfbe1dc95f301b8593dc8eee72fd18d44564e6dcc1912ab989072ebe789c904c",
+          "snapshotSha256": "fdcc7c08e0fa5d7f39f014c940bd6aef1eb4deca8cd6db848ca284f2871ada66",
+          "sourceSha256": "5faf7cbedcb211c1a7e57fe6bff785d354eb02e3353dd90bbc2b023a76fcb6d4",
+          "restoreChecks": 24
+        },
+        {
+          "name": "empty_wrappers",
+          "observationsSha256": "6647e34fdd4676801c6d1c79d0f42e23378c918f8cdc5845462d8b8e4441ea42",
+          "metadataSha256": "4fc003019552907865982654cfe821804b7dee8347e7ebc51fb9b2235f10ad70",
+          "snapshotSha256": "148387f89b2c73c4b20ec281b4254f6e9017f61b2318fdce77c6057f060a4335",
+          "sourceSha256": "3cfb4d36204a48bf5b104f1e0380b1732939d741e4e4e8696221ee6fe957b139",
+          "restoreChecks": 24
+        }
+      ]
+    },
+    "linux": {
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "cases": [
+        {
+          "name": "two_wrappers",
+          "observationsSha256": "bca927b81d77935353a223f2603893aab04b2d04c7b4c9f363be78950a7f7449",
+          "metadataSha256": "1b942207955d84cf76e7ec9be0f889f741893616f1a443534eecac40142130eb",
+          "snapshotSha256": "fdcc7c08e0fa5d7f39f014c940bd6aef1eb4deca8cd6db848ca284f2871ada66",
+          "sourceSha256": "5faf7cbedcb211c1a7e57fe6bff785d354eb02e3353dd90bbc2b023a76fcb6d4",
+          "restoreChecks": 24
+        },
+        {
+          "name": "empty_wrappers",
+          "observationsSha256": "b976b80121b29e8962c63f7740578cca5b69ab4964ce2ddbd3fef4fa6b42e4e1",
+          "metadataSha256": "8568a0bce0f7231c78fc87a321ecce2ae4208a09ebdb1ba9bc7208a27cf38846",
+          "snapshotSha256": "148387f89b2c73c4b20ec281b4254f6e9017f61b2318fdce77c6057f060a4335",
+          "sourceSha256": "3cfb4d36204a48bf5b104f1e0380b1732939d741e4e4e8696221ee6fe957b139",
+          "restoreChecks": 24
+        }
+      ]
+    }
+  },
+  "findings": [
+    "Own16 wrappers restore atlimit16,19,20,high in all3modes;20 is not required.",
+    "Allocated/same-instance lowlimit0/3 faults while clearing old global arrays:oldtotal4,newtotal4; global ledger remains4 but integer/class lanes become null.",
+    "Atlimit4/15, own16 class restore faults oldtotal0,newtotal16; global integer lane already[0], global ledger0,class lane stillnull.",
+    "Therefore nested class restore sees committed global ledger0 after successful clearing, before final global rebuilt4 commit; old own ledgers not aggregated.",
+    "Empty backing normalizesnull; own4 wrappers restore atlimit4 and above.",
+    "Failing inner class has not been installed in outer global class lane; unattached inner partial object not inspected."
+  ],
+  "pending": [
+    "No native original-import or native near-limit restore parity claim.",
+    "No macOS/ARM64 checks."
+  ]
+}

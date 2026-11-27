@@ -1,0 +1,53 @@
+{
+  "platforms": [
+    "Windows",
+    "Linux"
+  ],
+  "fullParityVerified": false,
+  "trackedCsharpFiles": 1556,
+  "uniqueMappedSources": 213,
+  "unmappedSources": 1343,
+  "classificationCounts": {
+    "no_direct_native_evidence_found": 849,
+    "validation_or_replacement_obligation": 283,
+    "native_symbol_candidate_requires_method_audit": 183,
+    "explicit_scoped_mapping": 213,
+    "original_source_referenced_by_native_tests": 28
+  },
+  "kindCounts": {
+    "production": 1100,
+    "assembly_metadata": 60,
+    "interface_contract": 155,
+    "legacy_test": 163,
+    "legacy_build_tool": 60,
+    "bundled_dependency": 18
+  },
+  "domainCounts": {
+    "Framework and applications": 473,
+    "Legacy tests": 140,
+    "Database providers and migrations": 103,
+    "Viewer protocols and capabilities": 40,
+    "Core region modules": 216,
+    "Scene and object lifecycle": 48,
+    "Optional modules": 72,
+    "Physics": 108,
+    "Scripting and script persistence": 86,
+    "Server deployment and handlers": 71,
+    "Services and federation": 121,
+    "Legacy build tooling": 60,
+    "Bundled dependencies": 18
+  },
+  "sourceMapDuplicates": [],
+  "scriptApiCounts": {
+    "dispatch_literal_present_requires_behavior_verification": 706,
+    "no_dispatch_literal_found_review_required": 31
+  },
+  "baselineDrift": {
+    "newTrackedSources": [],
+    "removedTrackedSources": []
+  },
+  "eta": {
+    "forecastReady": false,
+    "reason": "Per-method coverage and estimated acceptance tasks remain unresolved; file classification is not feature completion."
+  }
+}

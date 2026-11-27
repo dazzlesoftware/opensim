@@ -3,6 +3,7 @@
 #include "opensim/script/asset_text.hpp"
 #include <iostream>
 using namespace opensim;
+
 namespace {
 std::string hex(std::string_view s) {
     std::string out;
@@ -12,6 +13,7 @@ std::string hex(std::string_view s) {
     }
     return out;
 }
+
 std::vector<std::uint8_t> unhex(std::string_view s) {
     if (s.size() % 2)
         throw std::invalid_argument("hex");
@@ -27,6 +29,7 @@ std::vector<std::uint8_t> unhex(std::string_view s) {
         bytes.push_back(static_cast<std::uint8_t>((digit(s[i]) << 4) | digit(s[i + 1])));
     return bytes;
 }
+
 std::string probe(std::string_view s) {
     try {
         framework::AssetBytes bytes;
@@ -37,7 +40,8 @@ std::string probe(std::string_view s) {
         return "THROW";
     }
 }
-}
+} // namespace
+
 int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string_view(argv[1]) == "--probe") {

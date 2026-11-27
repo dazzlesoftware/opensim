@@ -1,0 +1,1 @@
+string left="a";list right=[1,2];default{state_entry(){left+=right;}}

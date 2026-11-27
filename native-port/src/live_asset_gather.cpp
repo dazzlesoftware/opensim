@@ -9,37 +9,44 @@
 #include "opensim/network/sdk_llsd_xml.hpp"
 #include <bit>
 #include <stdexcept>
+
 namespace opensim::scene {
 namespace {
 constexpr auto null_message = "Object reference not set to an instance of an object.";
+
 template <class T> T &required(const std::shared_ptr<T> &value) {
     if (!value)
         throw std::runtime_error(null_message);
     return *value;
 }
+
 std::int32_t decrement(std::int32_t value) {
     return std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(value) - 1u);
 }
+
 class NativeTexture final : public GatherTexture {
     std::shared_ptr<framework::TextureEntry> entry_;
 
   public:
     explicit NativeTexture(std::shared_ptr<framework::TextureEntry> e) : entry_(std::move(e)) {}
+
     std::shared_ptr<framework::TextureFace> default_texture() override {
         return entry_->default_texture;
     }
+
     std::shared_ptr<std::vector<std::shared_ptr<framework::TextureFace>>> faces() override {
         return std::make_shared<std::vector<std::shared_ptr<framework::TextureFace>>>(entry_->faces.begin(),
                                                                                       entry_->faces.end());
     }
 };
+
 class SnapshotShape final : public GatherShape {
     std::shared_ptr<GatherTexture> textures_;
-    framework::PrimitiveBaseShapeCore shape_{[](const std::string&) {}};
+    framework::PrimitiveBaseShapeCore shape_{[](const std::string &) {}};
     int sides_;
 
   public:
-    explicit SnapshotShape(const SceneObject& part) : sides_(part.shape.face_count()) {
+    explicit SnapshotShape(const SceneObject &part) : sides_(part.shape.face_count()) {
         if (!part.texture_entry.empty())
             textures_ = gather_texture(std::make_shared<framework::TextureEntry>(part.texture_entry));
         shape_.read_extra_params(std::make_shared<framework::ShapeByteArray>(part.extra_params));
@@ -53,31 +60,41 @@ class SnapshotShape final : public GatherShape {
         }
         if (!part.material_overrides.empty()) {
             shape_.render_overrides_from_raw(
-                std::make_shared<framework::ShapeByteArray>(part.material_overrides),
-                [](auto text, auto prefix) {
+                std::make_shared<framework::ShapeByteArray>(part.material_overrides), [](auto text, auto prefix) {
                     return framework::invariant_starts_with(framework::utf8(text), framework::utf8(prefix));
                 });
         }
     }
+
     std::shared_ptr<GatherTexture> textures() override {
         return textures_;
     }
-    int sides() const { return sides_; }
-    framework::Uuid sculpt() override { return shape_.sculpt_texture; }
-    framework::Uuid projection() override { return shape_.projection_texture; }
+
+    int sides() const {
+        return sides_;
+    }
+
+    framework::Uuid sculpt() override {
+        return shape_.sculpt_texture;
+    }
+
+    framework::Uuid projection() override {
+        return shape_.projection_texture;
+    }
+
     std::shared_ptr<GatherRenderMaterials> materials() override {
         if (!shape_.render_materials)
             return {};
         auto result = std::make_shared<GatherRenderMaterials>();
-        const auto& source = *shape_.render_materials;
+        const auto &source = *shape_.render_materials;
         if (source.entries) {
             result->entries = std::make_shared<std::vector<framework::Uuid>>();
-            for (const auto& entry : *source.entries)
+            for (const auto &entry : *source.entries)
                 result->entries->push_back(entry.id);
         }
         if (source.overrides) {
             result->overrides = std::make_shared<std::vector<GatherRenderMaterials::Override>>();
-            for (const auto& entry : *source.overrides)
+            for (const auto &entry : *source.overrides)
                 result->overrides->push_back({entry.data});
         }
         return result;
@@ -91,9 +108,10 @@ class SnapshotInventory final : public GatherInventory {
   public:
     explicit SnapshotInventory(std::vector<framework::TaskInventoryItem> items) {
         items_->reserve(items.size());
-        for (auto& item : items)
+        for (auto &item : items)
             items_->push_back(std::make_shared<framework::TaskInventoryItem>(std::move(item)));
     }
+
     std::shared_ptr<std::vector<std::shared_ptr<framework::TaskInventoryItem>>> items() override {
         return items_;
     }
@@ -104,9 +122,10 @@ class SnapshotDynAttrs final : public GatherDynAttrs {
 
   public:
     explicit SnapshotDynAttrs(std::string xml) : xml_(std::move(xml)) {}
-    bool try_store(const std::string& space, const std::string& name, services::FeatureData& store) override {
+
+    bool try_store(const std::string &space, const std::string &name, services::FeatureData &store) override {
         const auto data = network::deserialize_sdk_llsd_xml(xml_);
-        const auto& fields = data.get(space);
+        const auto &fields = data.get(space);
         if (fields.kind != network::Value::Kind::Map || !fields.map.contains(name))
             return false;
         store = services::SimulatorFeatureValue::from_value(fields.get(name));
@@ -124,24 +143,38 @@ class SnapshotPart final : public GatherPart {
   public:
     explicit SnapshotPart(ObjectAssetPart part)
         : object_(std::move(part.object)), inventory_(std::make_shared<SnapshotInventory>(std::move(part.inventory))) {}
+
     std::shared_ptr<GatherShape> shape() override {
         if (!shape_)
             shape_ = std::make_shared<SnapshotShape>(object_);
         return shape_;
     }
+
     std::int32_t sides() override {
         shape();
         return shape_->sides();
     }
-    framework::Uuid collision_sound() override { return object_.collision_sound; }
+
+    framework::Uuid collision_sound() override {
+        return object_.collision_sound;
+    }
+
     framework::Uuid invalid_collision_sound() override {
         return framework::Uuid("ffffffff-ffff-ffff-ffff-ffffffffffff");
     }
-    framework::Uuid sound() override { return object_.looped_sound; }
+
+    framework::Uuid sound() override {
+        return object_.looped_sound;
+    }
+
     framework::AssetBytes particles() override {
         return std::make_shared<std::vector<std::uint8_t>>(object_.particle_system);
     }
-    std::shared_ptr<GatherInventory> inventory() override { return inventory_; }
+
+    std::shared_ptr<GatherInventory> inventory() override {
+        return inventory_;
+    }
+
     std::shared_ptr<GatherAnimations> animations() override {
         if (animations_ || object_.object_animations.size() < 2)
             return animations_;
@@ -169,13 +202,20 @@ class SnapshotPart final : public GatherPart {
         animations_ = std::move(result);
         return animations_;
     }
+
     std::shared_ptr<GatherDynAttrs> dynattrs() override {
         if (!attributes_ && !object_.dynamic_attributes_xml.empty())
             attributes_ = std::make_shared<SnapshotDynAttrs>(object_.dynamic_attributes_xml);
         return attributes_;
     }
-    std::optional<std::string> name() override { return object_.name; }
-    framework::Uuid id() override { return object_.id; }
+
+    std::optional<std::string> name() override {
+        return object_.name;
+    }
+
+    framework::Uuid id() override {
+        return object_.id;
+    }
 };
 
 class SnapshotObject final : public GatherObject {
@@ -185,16 +225,33 @@ class SnapshotObject final : public GatherObject {
   public:
     explicit SnapshotObject(ObjectAssetLinkset object) {
         parts_->reserve(object.parts.size());
-        for (auto& part : object.parts)
+        for (auto &part : object.parts)
             parts_->push_back(std::make_shared<SnapshotPart>(std::move(part)));
     }
-    bool deleted() override { return false; }
-    std::shared_ptr<std::vector<std::shared_ptr<GatherPart>>> parts() override { return parts_; }
-    bool temporary() override { return false; }
+
+    bool deleted() override {
+        return false;
+    }
+
+    std::shared_ptr<std::vector<std::shared_ptr<GatherPart>>> parts() override {
+        return parts_;
+    }
+
+    bool temporary() override {
+        return false;
+    }
+
     void dispose() override {}
-    std::optional<std::string> name() override { return parts_->front()->name(); }
-    framework::Uuid id() override { return parts_->front()->id(); }
+
+    std::optional<std::string> name() override {
+        return parts_->front()->name();
+    }
+
+    framework::Uuid id() override {
+        return parts_->front()->id();
+    }
 };
+
 std::string osd_type(const services::FeatureData &data) {
     using K = network::Value::Kind;
     if (!data)
@@ -230,24 +287,27 @@ std::string osd_type(const services::FeatureData &data) {
         return "OSD";
     }
 }
+
 services::FeatureData as_map(const services::FeatureData &value) {
     if (value && value->scalar.kind == network::Value::Kind::Map)
         return value;
     return {};
 }
-}
+} // namespace
+
 std::shared_ptr<GatherTexture> gather_texture(std::shared_ptr<framework::TextureEntry> value) {
     if (!value)
         return {};
     return std::make_shared<NativeTexture>(std::move(value));
 }
+
 std::shared_ptr<GatherObject> gather_object_snapshot(ObjectAssetLinkset object) {
     if (object.parts.empty())
         throw std::invalid_argument("A scene object snapshot requires a root part");
     return std::make_shared<SnapshotObject>(std::move(object));
 }
-void gather_baked_textures(UuidGatherer& gatherer,
-                           std::span<const std::shared_ptr<framework::TextureFace>> faces) {
+
+void gather_baked_textures(UuidGatherer &gatherer, std::span<const std::shared_ptr<framework::TextureFace>> faces) {
     static const framework::Uuid default_avatar_texture("c228d1cf-4b5d-4ba8-84f4-899a0796aa97");
     for (const std::size_t index : {8, 9, 10, 11, 19, 20, 40, 41, 42, 43, 44}) {
         if (index >= faces.size() || !faces[index])
@@ -257,6 +317,7 @@ void gather_baked_textures(UuidGatherer& gatherer,
             gatherer.add_gathered(texture, 0);
     }
 }
+
 void UuidGatherer::inspect_live_materials(const std::shared_ptr<GatherPart> &part,
                                           const std::function<void(const std::string &)> &warn) {
     if (!required(part).dynattrs())
@@ -276,8 +337,8 @@ void UuidGatherer::inspect_live_materials(const std::shared_ptr<GatherPart> &par
         return;
     for (auto &entry : materials->array) {
         if (entry && entry->scalar.kind != network::Value::Kind::Map)
-            throw std::runtime_error("Unable to cast object of type 'OpenMetaverse.StructuredData." +
-                                     osd_type(entry) + "' to type 'OpenMetaverse.StructuredData.OSDMap'.");
+            throw std::runtime_error("Unable to cast object of type 'OpenMetaverse.StructuredData." + osd_type(entry) +
+                                     "' to type 'OpenMetaverse.StructuredData.OSDMap'.");
         try {
             auto &map = required(entry).map;
             auto item = map.find("Material");
@@ -299,6 +360,7 @@ void UuidGatherer::inspect_live_materials(const std::shared_ptr<GatherPart> &par
         }
     }
 }
+
 void UuidGatherer::add_for_inspection(const std::shared_ptr<GatherObject> &object,
                                       const std::function<void(const std::string &)> &warn) {
     if (!warn)
@@ -340,22 +402,19 @@ void UuidGatherer::add_for_inspection(const std::shared_ptr<GatherObject> &objec
                 state_->gathered[required(required(part).shape()).projection()] = 0;
             if (required(required(part).shape()).materials()) {
                 if (required(required(required(part).shape()).materials()).entries) {
-                    for (std::size_t j = 0;
-                         j < required(required(required(part).shape()).materials()).entries->size(); ++j) {
+                    for (std::size_t j = 0; j < required(required(required(part).shape()).materials()).entries->size();
+                         ++j) {
                         if (!required(required(required(part).shape()).materials()).entries->at(j).is_zero())
-                            add_for_inspection(
-                                required(required(required(part).shape()).materials()).entries->at(j),
-                                std::int8_t(57));
+                            add_for_inspection(required(required(required(part).shape()).materials()).entries->at(j),
+                                               std::int8_t(57));
                     }
                 }
                 if (required(required(required(part).shape()).materials()).overrides) {
                     for (std::size_t j = 0;
                          j < required(required(required(part).shape()).materials()).overrides->size(); ++j) {
-                        auto text =
-                            required(required(required(part).shape()).materials()).overrides->at(j).data;
+                        auto text = required(required(required(part).shape()).materials()).overrides->at(j).data;
                         if (text && !text->empty()) {
-                            auto current =
-                                required(required(required(part).shape()).materials()).overrides->at(j).data;
+                            auto current = required(required(required(part).shape()).materials()).overrides->at(j).data;
                             inspect_embedded(current ? std::u16string_view(*current) : std::u16string_view{});
                         }
                     }
@@ -379,16 +438,15 @@ void UuidGatherer::add_for_inspection(const std::shared_ptr<GatherObject> &objec
                     auto pi = required(part).id().str();
                     auto on = required(object).name().value_or("");
                     auto oi = required(object).id().str();
-                    warn("[UUID GATHERER]: Could not check particle system for part " + pn + " " + pi +
-                         " in object " + on + " " + oi + " since it is corrupt.  Continuing.");
+                    warn("[UUID GATHERER]: Could not check particle system for part " + pn + " " + pi + " in object " +
+                         on + " " + oi + " since it is corrupt.  Continuing.");
                 }
             }
             auto items = required(required(part).inventory()).items();
             for (std::size_t j = 0; j < required(items).size(); ++j) {
                 auto item = required(items).at(j);
-                add_for_inspection(
-                    required(item).asset_id,
-                    std::bit_cast<std::int8_t>(static_cast<std::uint8_t>(required(item).type)));
+                add_for_inspection(required(item).asset_id,
+                                   std::bit_cast<std::int8_t>(static_cast<std::uint8_t>(required(item).type)));
             }
             if (required(part).animations() && required(required(part).animations()).size() > 0) {
                 auto animations = required(part).animations();
@@ -406,13 +464,14 @@ void UuidGatherer::add_for_inspection(const std::shared_ptr<GatherObject> &objec
     if (required(object).temporary())
         required(object).dispose();
 }
+
 SceneAssetGatherer::SceneAssetGatherer(std::shared_ptr<SceneAssetGatherBackend> backend)
     : backend_(std::move(backend)) {
     if (!backend_ || !backend_->scenes || !backend_->assets || !backend_->running || !backend_->sleep ||
         !backend_->stamp || !backend_->info || !backend_->warn)
-        throw std::invalid_argument(
-            "Scene asset gatherer requires complete scene/service/status dependencies");
+        throw std::invalid_argument("Scene asset gatherer requires complete scene/service/status dependencies");
 }
+
 std::shared_ptr<UuidGathererState> SceneAssetGatherer::gather() {
     backend_->info("[FLOTSAM ASSET CACHE] gather assets in use");
     auto state = std::make_shared<UuidGathererState>();
@@ -423,8 +482,7 @@ std::shared_ptr<UuidGathererState> SceneAssetGatherer::gather() {
     };
     backend_->scenes([&](const std::shared_ptr<GatherScene> &scene) {
         for (int i = 0; i < 9; ++i)
-            gatherer.add_gathered(required(required(required(scene).info()).settings()).texture(i),
-                                  std::int8_t(0));
+            gatherer.add_gathered(required(required(required(scene).info()).settings()).texture(i), std::int8_t(0));
         auto env = required(scene).environment();
         if (env)
             env->gather(state->gathered);
@@ -479,4 +537,4 @@ std::shared_ptr<UuidGathererState> SceneAssetGatherer::gather() {
     return state;
 }
 
-}
+} // namespace opensim::scene

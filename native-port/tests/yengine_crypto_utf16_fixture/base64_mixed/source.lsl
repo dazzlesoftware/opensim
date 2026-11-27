@@ -1,0 +1,1 @@
+string result;integer after;default{state_entry(){result=llStringToBase64("x"+llGetSubString("😀",0,0)+"z");after=1;}}

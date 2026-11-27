@@ -3,6 +3,7 @@
 #include "opensim/scene/inventory_item_create.hpp"
 #include "opensim/framework/text.hpp"
 #include <bit>
+
 namespace opensim::scene {
 namespace {
 std::uint32_t crc(framework::Uuid id) {
@@ -12,9 +13,10 @@ std::uint32_t crc(framework::Uuid id) {
                (std::uint32_t(b[i + 3]) << 24);
     };
     return (std::uint32_t(b[0]) << 24) + (std::uint32_t(b[1]) << 16) + (std::uint32_t(b[2]) << 8) + b[3] +
-           (std::uint32_t(b[4]) << 8) + b[5] + (std::uint32_t(b[6]) << 24) + (std::uint32_t(b[7]) << 16) +
-           le(8) + le(12);
+           (std::uint32_t(b[4]) << 8) + b[5] + (std::uint32_t(b[6]) << 24) + (std::uint32_t(b[7]) << 16) + le(8) +
+           le(12);
 }
+
 std::vector<std::uint8_t> text(std::string_view s) {
     framework::utf16(s);
     auto zero = s.find('\0');
@@ -30,7 +32,8 @@ std::vector<std::uint8_t> text(std::string_view s) {
     out.push_back(0);
     return out;
 }
-}
+} // namespace
+
 network::lludp::Packet inventory_item_create(framework::Uuid agent, const services::InventoryItem &item,
                                              framework::Uuid transaction, std::uint32_t callback) {
     using namespace network;
@@ -47,8 +50,7 @@ network::lludp::Packet inventory_item_create(framework::Uuid agent, const servic
     b["AssetID"] = item.asset_id;
     b["CreatorID"] = creator;
     b["BaseMask"] = std::uint64_t(static_cast<std::uint32_t>(item.base_permissions));
-    b["Description"] =
-        text(framework::trim_utf8(item.description).empty() ? std::string{} : item.description);
+    b["Description"] = text(framework::trim_utf8(item.description).empty() ? std::string{} : item.description);
     b["EveryoneMask"] = std::uint64_t(static_cast<std::uint32_t>(item.everyone_permissions));
     b["FolderID"] = item.parent;
     b["InvType"] = std::int64_t(std::bit_cast<std::int8_t>(static_cast<std::uint8_t>(item.inventory_type)));
@@ -73,4 +75,4 @@ network::lludp::Packet inventory_item_create(framework::Uuid agent, const servic
     packet.blocks["InventoryData"].push_back(std::move(b));
     return packet;
 }
-}
+} // namespace opensim::scene

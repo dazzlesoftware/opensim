@@ -1,0 +1,2222 @@
+[
+  {
+    "case": "pure_background_zero",
+    "initialXmlNames": [
+      "root XML detector"
+    ],
+    "frameRoles": [
+      {
+        "phase": "initial",
+        "index": 1,
+        "name": "selected binary detector",
+        "rotation_bits": [
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000"
+        ],
+        "deadline": 639313046240000000
+      },
+      {
+        "phase": "after_load",
+        "index": 1,
+        "name": "selected binary detector",
+        "rotation_bits": [
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000",
+          "3ff0000000000000"
+        ],
+        "deadline": 639313046240000000
+      }
+    ],
+    "live": {
+      "after": {
+        "name": "selected binary detector",
+        "grab_bits": [
+          "3fbf9add3739635f",
+          "3ff3c0ca42c8964b",
+          "4002c3f34e2fa7a7"
+        ],
+        "position_bits": [
+          "40243f35ba6e72c7",
+          "40267819485912c9",
+          "4028b0fcd38be9ea"
+        ],
+        "rotation_bits": [
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000"
+        ],
+        "touch_st_bits": [
+          "403e1f9ae0000000",
+          "403f3c0ca0000000",
+          "40402c3f40000000"
+        ],
+        "face": 13
+      },
+      "background": 1,
+      "before": {
+        "name": "selected binary detector",
+        "grab_bits": [
+          "3fbf9add3739635f",
+          "3ff3c0ca42c8964b",
+          "4002c3f34e2fa7a7"
+        ],
+        "position_bits": [
+          "40243f35ba6e72c7",
+          "40267819485912c9",
+          "4028b0fcd38be9ea"
+        ],
+        "rotation_bits": [
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000"
+        ],
+        "touch_st_bits": [
+          "403e1f9ae0000000",
+          "403f3c0ca0000000",
+          "40402c3f40000000"
+        ],
+        "face": 13
+      },
+      "complete": 1,
+      "entries": 1,
+      "replacement": {
+        "name": "replacement detector",
+        "grab_bits": [
+          "405907e6b74dce59",
+          "40594f03290b2259",
+          "4059961f9a717d3e"
+        ],
+        "position_bits": [
+          "405b87e6b74dce59",
+          "405bcf03290b2259",
+          "405c161f9a717d3e"
+        ],
+        "rotation_bits": [
+          "3fe4000000000000",
+          "3fe0000000000000",
+          "3fd8000000000000",
+          "3fd0000000000000"
+        ],
+        "touch_st_bits": [
+          "406043f360000000",
+          "40606781a0000000",
+          "40608b0fc0000000"
+        ],
+        "face": 13
+      },
+      "result": 2,
+      "resumed": 1,
+      "returned": {
+        "name": "queued XML detector",
+        "grab_bits": [
+          "4072c1f9add37396",
+          "4072d3c0ca42c896",
+          "4072e587e69c5f4f"
+        ],
+        "position_bits": [
+          "407361f9add37396",
+          "407373c0ca42c896",
+          "40738587e69c5f4f"
+        ],
+        "rotation_bits": [
+          "3fbf9add3739635f",
+          "bfef9add3c0e56b8",
+          "3fd5555554f9b516",
+          "bea07111652d2b5c"
+        ],
+        "touch_st_bits": [
+          "4074a1f9a0000000",
+          "4074b3c0c0000000",
+          "4074c587e0000000"
+        ],
+        "face": 13
+      }
+    },
+    "migrated": {
+      "after": {
+        "name": "selected binary detector",
+        "grab_bits": [
+          "3fbf9add3739635f",
+          "3ff3c0ca42c8964b",
+          "4002c3f34e2fa7a7"
+        ],
+        "position_bits": [
+          "40243f35ba6e72c7",
+          "40267819485912c9",
+          "4028b0fcd38be9ea"
+        ],
+        "rotation_bits": [
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000",
+          "3ff0000000000000"
+        ],
+        "touch_st_bits": [
+          "403e1f9ae0000000",
+          "403f3c0ca0000000",
+          "40402c3f40000000"
+        ],
+        "face": 13
+      },
+      "background": 1,
+      "before": {
+        "name": "selected binary detector",
+        "grab_bits": [
+          "3fbf9add3739635f",
+          "3ff3c0ca42c8964b",
+          "4002c3f34e2fa7a7"
+        ],
+        "position_bits": [
+          "40243f35ba6e72c7",
+          "40267819485912c9",
+          "4028b0fcd38be9ea"
+        ],
+        "rotation_bits": [
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000",
+          "3ff0000000000000"
+        ],
+        "touch_st_bits": [
+          "403e1f9ae0000000",
+          "403f3c0ca0000000",
+          "40402c3f40000000"
+        ],
+        "face": 13
+      },
+      "complete": 1,
+      "entries": 1,
+      "replacement": {
+        "name": "replacement detector",
+        "grab_bits": [
+          "405907e6b74dce59",
+          "40594f03290b2259",
+          "4059961f9a717d3e"
+        ],
+        "position_bits": [
+          "405b87e6b74dce59",
+          "405bcf03290b2259",
+          "405c161f9a717d3e"
+        ],
+        "rotation_bits": [
+          "3fe4000000000000",
+          "3fe0000000000000",
+          "3fd8000000000000",
+          "3fd0000000000000"
+        ],
+        "touch_st_bits": [
+          "406043f360000000",
+          "40606781a0000000",
+          "40608b0fc0000000"
+        ],
+        "face": 13
+      },
+      "result": 2,
+      "resumed": 1,
+      "returned": {
+        "name": "queued XML detector",
+        "grab_bits": [
+          "4072c1f9ae0c1765",
+          "4072d3c0ca600b03",
+          "4072e587e6b3fea0"
+        ],
+        "position_bits": [
+          "407361f9ae0c1765",
+          "407373c0ca600b03",
+          "40738587e6b3fea0"
+        ],
+        "rotation_bits": [
+          "3fbf9ae0c1765775",
+          "bfef9adc8fb86f48",
+          "3fd55553ef6b5d46",
+          "8000000000000000"
+        ],
+        "touch_st_bits": [
+          "bff0000000000000",
+          "bff0000000000000",
+          "0000000000000000"
+        ],
+        "face": -1
+      }
+    }
+  },
+  {
+    "case": "direct_enabled_background_zero",
+    "initialXmlNames": [
+      "root XML detector"
+    ],
+    "frameRoles": [
+      {
+        "phase": "initial",
+        "index": 1,
+        "name": "selected binary detector",
+        "rotation_bits": [
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000"
+        ],
+        "deadline": 639313046240000000
+      },
+      {
+        "phase": "after_load",
+        "index": 1,
+        "name": "selected binary detector",
+        "rotation_bits": [
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000",
+          "3ff0000000000000"
+        ],
+        "deadline": 639313046240000000
+      }
+    ],
+    "live": {
+      "after": {
+        "name": "selected binary detector",
+        "grab_bits": [
+          "3fbf9add3739635f",
+          "3ff3c0ca42c8964b",
+          "4002c3f34e2fa7a7"
+        ],
+        "position_bits": [
+          "40243f35ba6e72c7",
+          "40267819485912c9",
+          "4028b0fcd38be9ea"
+        ],
+        "rotation_bits": [
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000"
+        ],
+        "touch_st_bits": [
+          "403e1f9ae0000000",
+          "403f3c0ca0000000",
+          "40402c3f40000000"
+        ],
+        "face": 13
+      },
+      "background": 1,
+      "before": {
+        "name": "selected binary detector",
+        "grab_bits": [
+          "3fbf9add3739635f",
+          "3ff3c0ca42c8964b",
+          "4002c3f34e2fa7a7"
+        ],
+        "position_bits": [
+          "40243f35ba6e72c7",
+          "40267819485912c9",
+          "4028b0fcd38be9ea"
+        ],
+        "rotation_bits": [
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000"
+        ],
+        "touch_st_bits": [
+          "403e1f9ae0000000",
+          "403f3c0ca0000000",
+          "40402c3f40000000"
+        ],
+        "face": 13
+      },
+      "complete": 1,
+      "entries": 1,
+      "replacement": {
+        "name": "replacement detector",
+        "grab_bits": [
+          "405907e6b74dce59",
+          "40594f03290b2259",
+          "4059961f9a717d3e"
+        ],
+        "position_bits": [
+          "405b87e6b74dce59",
+          "405bcf03290b2259",
+          "405c161f9a717d3e"
+        ],
+        "rotation_bits": [
+          "3fe4000000000000",
+          "3fe0000000000000",
+          "3fd8000000000000",
+          "3fd0000000000000"
+        ],
+        "touch_st_bits": [
+          "406043f360000000",
+          "40606781a0000000",
+          "40608b0fc0000000"
+        ],
+        "face": 13
+      },
+      "result": 2,
+      "resumed": 1,
+      "returned": {
+        "name": "queued XML detector",
+        "grab_bits": [
+          "4072c1f9add37396",
+          "4072d3c0ca42c896",
+          "4072e587e69c5f4f"
+        ],
+        "position_bits": [
+          "407361f9add37396",
+          "407373c0ca42c896",
+          "40738587e69c5f4f"
+        ],
+        "rotation_bits": [
+          "3fbf9add3739635f",
+          "bfef9add3c0e56b8",
+          "3fd5555554f9b516",
+          "bea07111652d2b5c"
+        ],
+        "touch_st_bits": [
+          "4074a1f9a0000000",
+          "4074b3c0c0000000",
+          "4074c587e0000000"
+        ],
+        "face": 13
+      }
+    },
+    "migrated": {
+      "after": {
+        "name": "selected binary detector",
+        "grab_bits": [
+          "3fbf9add3739635f",
+          "3ff3c0ca42c8964b",
+          "4002c3f34e2fa7a7"
+        ],
+        "position_bits": [
+          "40243f35ba6e72c7",
+          "40267819485912c9",
+          "4028b0fcd38be9ea"
+        ],
+        "rotation_bits": [
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000",
+          "3ff0000000000000"
+        ],
+        "touch_st_bits": [
+          "403e1f9ae0000000",
+          "403f3c0ca0000000",
+          "40402c3f40000000"
+        ],
+        "face": 13
+      },
+      "background": 1,
+      "before": {
+        "name": "selected binary detector",
+        "grab_bits": [
+          "3fbf9add3739635f",
+          "3ff3c0ca42c8964b",
+          "4002c3f34e2fa7a7"
+        ],
+        "position_bits": [
+          "40243f35ba6e72c7",
+          "40267819485912c9",
+          "4028b0fcd38be9ea"
+        ],
+        "rotation_bits": [
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000",
+          "3ff0000000000000"
+        ],
+        "touch_st_bits": [
+          "403e1f9ae0000000",
+          "403f3c0ca0000000",
+          "40402c3f40000000"
+        ],
+        "face": 13
+      },
+      "complete": 1,
+      "entries": 1,
+      "replacement": {
+        "name": "replacement detector",
+        "grab_bits": [
+          "405907e6b74dce59",
+          "40594f03290b2259",
+          "4059961f9a717d3e"
+        ],
+        "position_bits": [
+          "405b87e6b74dce59",
+          "405bcf03290b2259",
+          "405c161f9a717d3e"
+        ],
+        "rotation_bits": [
+          "3fe4000000000000",
+          "3fe0000000000000",
+          "3fd8000000000000",
+          "3fd0000000000000"
+        ],
+        "touch_st_bits": [
+          "406043f360000000",
+          "40606781a0000000",
+          "40608b0fc0000000"
+        ],
+        "face": 13
+      },
+      "result": 2,
+      "resumed": 1,
+      "returned": {
+        "name": "queued XML detector",
+        "grab_bits": [
+          "4072c1f9ae0c1765",
+          "4072d3c0ca600b03",
+          "4072e587e6b3fea0"
+        ],
+        "position_bits": [
+          "407361f9ae0c1765",
+          "407373c0ca600b03",
+          "40738587e6b3fea0"
+        ],
+        "rotation_bits": [
+          "3fbf9ae0c1765775",
+          "bfef9adc8fb86f48",
+          "3fd55553ef6b5d46",
+          "8000000000000000"
+        ],
+        "touch_st_bits": [
+          "bff0000000000000",
+          "bff0000000000000",
+          "0000000000000000"
+        ],
+        "face": -1
+      }
+    }
+  },
+  {
+    "case": "pure_background_precision",
+    "initialXmlNames": [
+      "root XML detector"
+    ],
+    "frameRoles": [
+      {
+        "phase": "initial",
+        "index": 1,
+        "name": "selected binary detector",
+        "rotation_bits": [
+          "3fbf9add3739635f",
+          "bfef9add3c0e56b8",
+          "3fd5555554f9b516",
+          "bea07111652d2b5c"
+        ],
+        "deadline": 639313046240000000
+      },
+      {
+        "phase": "after_load",
+        "index": 1,
+        "name": "selected binary detector",
+        "rotation_bits": [
+          "3fbf9add3739635f",
+          "bfef9add3c0e56b8",
+          "3fd5555554f9b516",
+          "bea07111652d2b5c"
+        ],
+        "deadline": 639313046240000000
+      }
+    ],
+    "live": {
+      "after": {
+        "name": "selected binary detector",
+        "grab_bits": [
+          "3fbf9add3739635f",
+          "3ff3c0ca42c8964b",
+          "4002c3f34e2fa7a7"
+        ],
+        "position_bits": [
+          "40243f35ba6e72c7",
+          "40267819485912c9",
+          "4028b0fcd38be9ea"
+        ],
+        "rotation_bits": [
+          "3fbf9add3739635f",
+          "bfef9add3c0e56b8",
+          "3fd5555554f9b516",
+          "bea07111652d2b5c"
+        ],
+        "touch_st_bits": [
+          "403e1f9ae0000000",
+          "403f3c0ca0000000",
+          "40402c3f40000000"
+        ],
+        "face": 13
+      },
+      "background": 1,
+      "before": {
+        "name": "selected binary detector",
+        "grab_bits": [
+          "3fbf9add3739635f",
+          "3ff3c0ca42c8964b",
+          "4002c3f34e2fa7a7"
+        ],
+        "position_bits": [
+          "40243f35ba6e72c7",
+          "40267819485912c9",
+          "4028b0fcd38be9ea"
+        ],
+        "rotation_bits": [
+          "3fbf9add3739635f",
+          "bfef9add3c0e56b8",
+          "3fd5555554f9b516",
+          "bea07111652d2b5c"
+        ],
+        "touch_st_bits": [
+          "403e1f9ae0000000",
+          "403f3c0ca0000000",
+          "40402c3f40000000"
+        ],
+        "face": 13
+      },
+      "complete": 1,
+      "entries": 1,
+      "replacement": {
+        "name": "replacement detector",
+        "grab_bits": [
+          "405907e6b74dce59",
+          "40594f03290b2259",
+          "4059961f9a717d3e"
+        ],
+        "position_bits": [
+          "405b87e6b74dce59",
+          "405bcf03290b2259",
+          "405c161f9a717d3e"
+        ],
+        "rotation_bits": [
+          "3fe4000000000000",
+          "3fe0000000000000",
+          "3fd8000000000000",
+          "3fd0000000000000"
+        ],
+        "touch_st_bits": [
+          "406043f360000000",
+          "40606781a0000000",
+          "40608b0fc0000000"
+        ],
+        "face": 13
+      },
+      "result": 2,
+      "resumed": 1,
+      "returned": {
+        "name": "queued XML detector",
+        "grab_bits": [
+          "4072c1f9add37396",
+          "4072d3c0ca42c896",
+          "4072e587e69c5f4f"
+        ],
+        "position_bits": [
+          "407361f9add37396",
+          "407373c0ca42c896",
+          "40738587e69c5f4f"
+        ],
+        "rotation_bits": [
+          "3fbf9add3739635f",
+          "bfef9add3c0e56b8",
+          "3fd5555554f9b516",
+          "bea07111652d2b5c"
+        ],
+        "touch_st_bits": [
+          "4074a1f9a0000000",
+          "4074b3c0c0000000",
+          "4074c587e0000000"
+        ],
+        "face": 13
+      }
+    },
+    "migrated": {
+      "after": {
+        "name": "selected binary detector",
+        "grab_bits": [
+          "3fbf9add3739635f",
+          "3ff3c0ca42c8964b",
+          "4002c3f34e2fa7a7"
+        ],
+        "position_bits": [
+          "40243f35ba6e72c7",
+          "40267819485912c9",
+          "4028b0fcd38be9ea"
+        ],
+        "rotation_bits": [
+          "3fbf9add3739635f",
+          "bfef9add3c0e56b8",
+          "3fd5555554f9b516",
+          "bea07111652d2b5c"
+        ],
+        "touch_st_bits": [
+          "403e1f9ae0000000",
+          "403f3c0ca0000000",
+          "40402c3f40000000"
+        ],
+        "face": 13
+      },
+      "background": 1,
+      "before": {
+        "name": "selected binary detector",
+        "grab_bits": [
+          "3fbf9add3739635f",
+          "3ff3c0ca42c8964b",
+          "4002c3f34e2fa7a7"
+        ],
+        "position_bits": [
+          "40243f35ba6e72c7",
+          "40267819485912c9",
+          "4028b0fcd38be9ea"
+        ],
+        "rotation_bits": [
+          "3fbf9add3739635f",
+          "bfef9add3c0e56b8",
+          "3fd5555554f9b516",
+          "bea07111652d2b5c"
+        ],
+        "touch_st_bits": [
+          "403e1f9ae0000000",
+          "403f3c0ca0000000",
+          "40402c3f40000000"
+        ],
+        "face": 13
+      },
+      "complete": 1,
+      "entries": 1,
+      "replacement": {
+        "name": "replacement detector",
+        "grab_bits": [
+          "405907e6b74dce59",
+          "40594f03290b2259",
+          "4059961f9a717d3e"
+        ],
+        "position_bits": [
+          "405b87e6b74dce59",
+          "405bcf03290b2259",
+          "405c161f9a717d3e"
+        ],
+        "rotation_bits": [
+          "3fe4000000000000",
+          "3fe0000000000000",
+          "3fd8000000000000",
+          "3fd0000000000000"
+        ],
+        "touch_st_bits": [
+          "406043f360000000",
+          "40606781a0000000",
+          "40608b0fc0000000"
+        ],
+        "face": 13
+      },
+      "result": 2,
+      "resumed": 1,
+      "returned": {
+        "name": "queued XML detector",
+        "grab_bits": [
+          "4072c1f9ae0c1765",
+          "4072d3c0ca600b03",
+          "4072e587e6b3fea0"
+        ],
+        "position_bits": [
+          "407361f9ae0c1765",
+          "407373c0ca600b03",
+          "40738587e6b3fea0"
+        ],
+        "rotation_bits": [
+          "3fbf9ae0c1765775",
+          "bfef9adc8fb86f48",
+          "3fd55553ef6b5d46",
+          "8000000000000000"
+        ],
+        "touch_st_bits": [
+          "bff0000000000000",
+          "bff0000000000000",
+          "0000000000000000"
+        ],
+        "face": -1
+      }
+    }
+  },
+  {
+    "case": "direct_enabled_background_precision",
+    "initialXmlNames": [
+      "root XML detector"
+    ],
+    "frameRoles": [
+      {
+        "phase": "initial",
+        "index": 1,
+        "name": "selected binary detector",
+        "rotation_bits": [
+          "3fbf9add3739635f",
+          "bfef9add3c0e56b8",
+          "3fd5555554f9b516",
+          "bea07111652d2b5c"
+        ],
+        "deadline": 639313046240000000
+      },
+      {
+        "phase": "after_load",
+        "index": 1,
+        "name": "selected binary detector",
+        "rotation_bits": [
+          "3fbf9add3739635f",
+          "bfef9add3c0e56b8",
+          "3fd5555554f9b516",
+          "bea07111652d2b5c"
+        ],
+        "deadline": 639313046240000000
+      }
+    ],
+    "live": {
+      "after": {
+        "name": "selected binary detector",
+        "grab_bits": [
+          "3fbf9add3739635f",
+          "3ff3c0ca42c8964b",
+          "4002c3f34e2fa7a7"
+        ],
+        "position_bits": [
+          "40243f35ba6e72c7",
+          "40267819485912c9",
+          "4028b0fcd38be9ea"
+        ],
+        "rotation_bits": [
+          "3fbf9add3739635f",
+          "bfef9add3c0e56b8",
+          "3fd5555554f9b516",
+          "bea07111652d2b5c"
+        ],
+        "touch_st_bits": [
+          "403e1f9ae0000000",
+          "403f3c0ca0000000",
+          "40402c3f40000000"
+        ],
+        "face": 13
+      },
+      "background": 1,
+      "before": {
+        "name": "selected binary detector",
+        "grab_bits": [
+          "3fbf9add3739635f",
+          "3ff3c0ca42c8964b",
+          "4002c3f34e2fa7a7"
+        ],
+        "position_bits": [
+          "40243f35ba6e72c7",
+          "40267819485912c9",
+          "4028b0fcd38be9ea"
+        ],
+        "rotation_bits": [
+          "3fbf9add3739635f",
+          "bfef9add3c0e56b8",
+          "3fd5555554f9b516",
+          "bea07111652d2b5c"
+        ],
+        "touch_st_bits": [
+          "403e1f9ae0000000",
+          "403f3c0ca0000000",
+          "40402c3f40000000"
+        ],
+        "face": 13
+      },
+      "complete": 1,
+      "entries": 1,
+      "replacement": {
+        "name": "replacement detector",
+        "grab_bits": [
+          "405907e6b74dce59",
+          "40594f03290b2259",
+          "4059961f9a717d3e"
+        ],
+        "position_bits": [
+          "405b87e6b74dce59",
+          "405bcf03290b2259",
+          "405c161f9a717d3e"
+        ],
+        "rotation_bits": [
+          "3fe4000000000000",
+          "3fe0000000000000",
+          "3fd8000000000000",
+          "3fd0000000000000"
+        ],
+        "touch_st_bits": [
+          "406043f360000000",
+          "40606781a0000000",
+          "40608b0fc0000000"
+        ],
+        "face": 13
+      },
+      "result": 2,
+      "resumed": 1,
+      "returned": {
+        "name": "queued XML detector",
+        "grab_bits": [
+          "4072c1f9add37396",
+          "4072d3c0ca42c896",
+          "4072e587e69c5f4f"
+        ],
+        "position_bits": [
+          "407361f9add37396",
+          "407373c0ca42c896",
+          "40738587e69c5f4f"
+        ],
+        "rotation_bits": [
+          "3fbf9add3739635f",
+          "bfef9add3c0e56b8",
+          "3fd5555554f9b516",
+          "bea07111652d2b5c"
+        ],
+        "touch_st_bits": [
+          "4074a1f9a0000000",
+          "4074b3c0c0000000",
+          "4074c587e0000000"
+        ],
+        "face": 13
+      }
+    },
+    "migrated": {
+      "after": {
+        "name": "selected binary detector",
+        "grab_bits": [
+          "3fbf9add3739635f",
+          "3ff3c0ca42c8964b",
+          "4002c3f34e2fa7a7"
+        ],
+        "position_bits": [
+          "40243f35ba6e72c7",
+          "40267819485912c9",
+          "4028b0fcd38be9ea"
+        ],
+        "rotation_bits": [
+          "3fbf9add3739635f",
+          "bfef9add3c0e56b8",
+          "3fd5555554f9b516",
+          "bea07111652d2b5c"
+        ],
+        "touch_st_bits": [
+          "403e1f9ae0000000",
+          "403f3c0ca0000000",
+          "40402c3f40000000"
+        ],
+        "face": 13
+      },
+      "background": 1,
+      "before": {
+        "name": "selected binary detector",
+        "grab_bits": [
+          "3fbf9add3739635f",
+          "3ff3c0ca42c8964b",
+          "4002c3f34e2fa7a7"
+        ],
+        "position_bits": [
+          "40243f35ba6e72c7",
+          "40267819485912c9",
+          "4028b0fcd38be9ea"
+        ],
+        "rotation_bits": [
+          "3fbf9add3739635f",
+          "bfef9add3c0e56b8",
+          "3fd5555554f9b516",
+          "bea07111652d2b5c"
+        ],
+        "touch_st_bits": [
+          "403e1f9ae0000000",
+          "403f3c0ca0000000",
+          "40402c3f40000000"
+        ],
+        "face": 13
+      },
+      "complete": 1,
+      "entries": 1,
+      "replacement": {
+        "name": "replacement detector",
+        "grab_bits": [
+          "405907e6b74dce59",
+          "40594f03290b2259",
+          "4059961f9a717d3e"
+        ],
+        "position_bits": [
+          "405b87e6b74dce59",
+          "405bcf03290b2259",
+          "405c161f9a717d3e"
+        ],
+        "rotation_bits": [
+          "3fe4000000000000",
+          "3fe0000000000000",
+          "3fd8000000000000",
+          "3fd0000000000000"
+        ],
+        "touch_st_bits": [
+          "406043f360000000",
+          "40606781a0000000",
+          "40608b0fc0000000"
+        ],
+        "face": 13
+      },
+      "result": 2,
+      "resumed": 1,
+      "returned": {
+        "name": "queued XML detector",
+        "grab_bits": [
+          "4072c1f9ae0c1765",
+          "4072d3c0ca600b03",
+          "4072e587e6b3fea0"
+        ],
+        "position_bits": [
+          "407361f9ae0c1765",
+          "407373c0ca600b03",
+          "40738587e6b3fea0"
+        ],
+        "rotation_bits": [
+          "3fbf9ae0c1765775",
+          "bfef9adc8fb86f48",
+          "3fd55553ef6b5d46",
+          "8000000000000000"
+        ],
+        "touch_st_bits": [
+          "bff0000000000000",
+          "bff0000000000000",
+          "0000000000000000"
+        ],
+        "face": -1
+      }
+    }
+  },
+  {
+    "case": "nested_background",
+    "initialXmlNames": [
+      "root XML detector"
+    ],
+    "frameRoles": [
+      {
+        "phase": "initial",
+        "index": 1,
+        "name": "outer selected binary detector",
+        "rotation_bits": [
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000"
+        ],
+        "deadline": 639313046240000000
+      },
+      {
+        "phase": "initial",
+        "index": 3,
+        "name": "inner selected binary detector",
+        "rotation_bits": [
+          "3fbf9add3739635f",
+          "bfef9add3c0e56b8",
+          "3fd5555554f9b516",
+          "bea07111652d2b5c"
+        ],
+        "deadline": 639313046240000000
+      },
+      {
+        "phase": "after_load",
+        "index": 1,
+        "name": "outer selected binary detector",
+        "rotation_bits": [
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000",
+          "3ff0000000000000"
+        ],
+        "deadline": 639313046240000000
+      },
+      {
+        "phase": "after_load",
+        "index": 3,
+        "name": "inner selected binary detector",
+        "rotation_bits": [
+          "3fbf9add3739635f",
+          "bfef9add3c0e56b8",
+          "3fd5555554f9b516",
+          "bea07111652d2b5c"
+        ],
+        "deadline": 639313046240000000
+      }
+    ],
+    "live": {
+      "after": {
+        "name": "inner queued XML detector",
+        "grab_bits": [
+          "407361f9add37396",
+          "407373c0ca42c896",
+          "40738587e69c5f4f"
+        ],
+        "position_bits": [
+          "407401f9add37396",
+          "407413c0ca42c896",
+          "40742587e69c5f4f"
+        ],
+        "rotation_bits": [
+          "3fbf9add3739635f",
+          "bfef9add3c0e56b8",
+          "3fd5555554f9b516",
+          "bea07111652d2b5c"
+        ],
+        "touch_st_bits": [
+          "407541f9a0000000",
+          "407553c0c0000000",
+          "40756587e0000000"
+        ],
+        "face": 13
+      },
+      "background": 1,
+      "before": {
+        "name": "outer selected binary detector",
+        "grab_bits": [
+          "3fbf9add3739635f",
+          "3ff3c0ca42c8964b",
+          "4002c3f34e2fa7a7"
+        ],
+        "position_bits": [
+          "40243f35ba6e72c7",
+          "40267819485912c9",
+          "4028b0fcd38be9ea"
+        ],
+        "rotation_bits": [
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000"
+        ],
+        "touch_st_bits": [
+          "403e1f9ae0000000",
+          "403f3c0ca0000000",
+          "40402c3f40000000"
+        ],
+        "face": 13
+      },
+      "caller_after": 0,
+      "complete": 1,
+      "entries": 1,
+      "inner_after": {
+        "name": "inner selected binary detector",
+        "grab_bits": [
+          "40243f35ba6e72c7",
+          "40267819485912c9",
+          "4028b0fcd38be9ea"
+        ],
+        "position_bits": [
+          "40341f9add373964",
+          "40353c0ca42c8964",
+          "4036587e69c5f4f4"
+        ],
+        "rotation_bits": [
+          "3fbf9add3739635f",
+          "bfef9add3c0e56b8",
+          "3fd5555554f9b516",
+          "bea07111652d2b5c"
+        ],
+        "touch_st_bits": [
+          "40440fcd60000000",
+          "40449e0660000000",
+          "40452c3f40000000"
+        ],
+        "face": 13
+      },
+      "inner_before": {
+        "name": "inner selected binary detector",
+        "grab_bits": [
+          "40243f35ba6e72c7",
+          "40267819485912c9",
+          "4028b0fcd38be9ea"
+        ],
+        "position_bits": [
+          "40341f9add373964",
+          "40353c0ca42c8964",
+          "4036587e69c5f4f4"
+        ],
+        "rotation_bits": [
+          "3fbf9add3739635f",
+          "bfef9add3c0e56b8",
+          "3fd5555554f9b516",
+          "bea07111652d2b5c"
+        ],
+        "touch_st_bits": [
+          "40440fcd60000000",
+          "40449e0660000000",
+          "40452c3f40000000"
+        ],
+        "face": 13
+      },
+      "inner_entries": 1,
+      "inner_replacement": {
+        "name": "inner replacement detector",
+        "grab_bits": [
+          "405b87e6b74dce59",
+          "405bcf03290b2259",
+          "405c161f9a717d3e"
+        ],
+        "position_bits": [
+          "405e07e6b74dce59",
+          "405e4f03290b2259",
+          "405e961f9a717d3e"
+        ],
+        "rotation_bits": [
+          "3fd0000000000000",
+          "3fd8000000000000",
+          "3fe0000000000000",
+          "3fe4000000000000"
+        ],
+        "touch_st_bits": [
+          "406183f360000000",
+          "4061a781a0000000",
+          "4061cb0fc0000000"
+        ],
+        "face": 13
+      },
+      "inner_result": 5,
+      "inner_returned": {
+        "name": "inner queued XML detector",
+        "grab_bits": [
+          "407361f9add37396",
+          "407373c0ca42c896",
+          "40738587e69c5f4f"
+        ],
+        "position_bits": [
+          "407401f9add37396",
+          "407413c0ca42c896",
+          "40742587e69c5f4f"
+        ],
+        "rotation_bits": [
+          "3fbf9add3739635f",
+          "bfef9add3c0e56b8",
+          "3fd5555554f9b516",
+          "bea07111652d2b5c"
+        ],
+        "touch_st_bits": [
+          "407541f9a0000000",
+          "407553c0c0000000",
+          "40756587e0000000"
+        ],
+        "face": 13
+      },
+      "replacement": {
+        "name": "outer replacement detector",
+        "grab_bits": [
+          "405907e6b74dce59",
+          "40594f03290b2259",
+          "4059961f9a717d3e"
+        ],
+        "position_bits": [
+          "405b87e6b74dce59",
+          "405bcf03290b2259",
+          "405c161f9a717d3e"
+        ],
+        "rotation_bits": [
+          "3fe4000000000000",
+          "3fe0000000000000",
+          "3fd8000000000000",
+          "3fd0000000000000"
+        ],
+        "touch_st_bits": [
+          "406043f360000000",
+          "40606781a0000000",
+          "40608b0fc0000000"
+        ],
+        "face": 13
+      },
+      "result": 2,
+      "resumed": 1,
+      "returned": {
+        "name": "outer queued XML detector",
+        "grab_bits": [
+          "4072c1f9add37396",
+          "4072d3c0ca42c896",
+          "4072e587e69c5f4f"
+        ],
+        "position_bits": [
+          "407361f9add37396",
+          "407373c0ca42c896",
+          "40738587e69c5f4f"
+        ],
+        "rotation_bits": [
+          "3fbf9add3739635f",
+          "bfef9add3c0e56b8",
+          "3fd5555554f9b516",
+          "bea07111652d2b5c"
+        ],
+        "touch_st_bits": [
+          "4074a1f9a0000000",
+          "4074b3c0c0000000",
+          "4074c587e0000000"
+        ],
+        "face": 13
+      }
+    },
+    "migrated": {
+      "after": {
+        "name": "inner queued XML detector",
+        "grab_bits": [
+          "407361f9ae0c1765",
+          "407373c0ca600b03",
+          "40738587e6b3fea0"
+        ],
+        "position_bits": [
+          "407401f9ae0c1765",
+          "407413c0ca600b03",
+          "40742587e6b3fea0"
+        ],
+        "rotation_bits": [
+          "3fbf9ae0c1765775",
+          "bfef9adc8fb86f48",
+          "3fd55553ef6b5d46",
+          "8000000000000000"
+        ],
+        "touch_st_bits": [
+          "bff0000000000000",
+          "bff0000000000000",
+          "0000000000000000"
+        ],
+        "face": -1
+      },
+      "background": 1,
+      "before": {
+        "name": "outer selected binary detector",
+        "grab_bits": [
+          "3fbf9add3739635f",
+          "3ff3c0ca42c8964b",
+          "4002c3f34e2fa7a7"
+        ],
+        "position_bits": [
+          "40243f35ba6e72c7",
+          "40267819485912c9",
+          "4028b0fcd38be9ea"
+        ],
+        "rotation_bits": [
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000",
+          "3ff0000000000000"
+        ],
+        "touch_st_bits": [
+          "403e1f9ae0000000",
+          "403f3c0ca0000000",
+          "40402c3f40000000"
+        ],
+        "face": 13
+      },
+      "caller_after": 0,
+      "complete": 1,
+      "entries": 1,
+      "inner_after": {
+        "name": "inner selected binary detector",
+        "grab_bits": [
+          "40243f35ba6e72c7",
+          "40267819485912c9",
+          "4028b0fcd38be9ea"
+        ],
+        "position_bits": [
+          "40341f9add373964",
+          "40353c0ca42c8964",
+          "4036587e69c5f4f4"
+        ],
+        "rotation_bits": [
+          "3fbf9add3739635f",
+          "bfef9add3c0e56b8",
+          "3fd5555554f9b516",
+          "bea07111652d2b5c"
+        ],
+        "touch_st_bits": [
+          "40440fcd60000000",
+          "40449e0660000000",
+          "40452c3f40000000"
+        ],
+        "face": 13
+      },
+      "inner_before": {
+        "name": "inner selected binary detector",
+        "grab_bits": [
+          "40243f35ba6e72c7",
+          "40267819485912c9",
+          "4028b0fcd38be9ea"
+        ],
+        "position_bits": [
+          "40341f9add373964",
+          "40353c0ca42c8964",
+          "4036587e69c5f4f4"
+        ],
+        "rotation_bits": [
+          "3fbf9add3739635f",
+          "bfef9add3c0e56b8",
+          "3fd5555554f9b516",
+          "bea07111652d2b5c"
+        ],
+        "touch_st_bits": [
+          "40440fcd60000000",
+          "40449e0660000000",
+          "40452c3f40000000"
+        ],
+        "face": 13
+      },
+      "inner_entries": 1,
+      "inner_replacement": {
+        "name": "inner replacement detector",
+        "grab_bits": [
+          "405b87e6b74dce59",
+          "405bcf03290b2259",
+          "405c161f9a717d3e"
+        ],
+        "position_bits": [
+          "405e07e6b74dce59",
+          "405e4f03290b2259",
+          "405e961f9a717d3e"
+        ],
+        "rotation_bits": [
+          "3fd0000000000000",
+          "3fd8000000000000",
+          "3fe0000000000000",
+          "3fe4000000000000"
+        ],
+        "touch_st_bits": [
+          "406183f360000000",
+          "4061a781a0000000",
+          "4061cb0fc0000000"
+        ],
+        "face": 13
+      },
+      "inner_result": 5,
+      "inner_returned": {
+        "name": "inner queued XML detector",
+        "grab_bits": [
+          "407361f9ae0c1765",
+          "407373c0ca600b03",
+          "40738587e6b3fea0"
+        ],
+        "position_bits": [
+          "407401f9ae0c1765",
+          "407413c0ca600b03",
+          "40742587e6b3fea0"
+        ],
+        "rotation_bits": [
+          "3fbf9ae0c1765775",
+          "bfef9adc8fb86f48",
+          "3fd55553ef6b5d46",
+          "8000000000000000"
+        ],
+        "touch_st_bits": [
+          "bff0000000000000",
+          "bff0000000000000",
+          "0000000000000000"
+        ],
+        "face": -1
+      },
+      "replacement": {
+        "name": "outer replacement detector",
+        "grab_bits": [
+          "405907e6b74dce59",
+          "40594f03290b2259",
+          "4059961f9a717d3e"
+        ],
+        "position_bits": [
+          "405b87e6b74dce59",
+          "405bcf03290b2259",
+          "405c161f9a717d3e"
+        ],
+        "rotation_bits": [
+          "3fe4000000000000",
+          "3fe0000000000000",
+          "3fd8000000000000",
+          "3fd0000000000000"
+        ],
+        "touch_st_bits": [
+          "406043f360000000",
+          "40606781a0000000",
+          "40608b0fc0000000"
+        ],
+        "face": 13
+      },
+      "result": 2,
+      "resumed": 1,
+      "returned": {
+        "name": "outer queued XML detector",
+        "grab_bits": [
+          "4072c1f9ae0c1765",
+          "4072d3c0ca600b03",
+          "4072e587e6b3fea0"
+        ],
+        "position_bits": [
+          "407361f9ae0c1765",
+          "407373c0ca600b03",
+          "40738587e6b3fea0"
+        ],
+        "rotation_bits": [
+          "3fbf9ae0c1765775",
+          "bfef9adc8fb86f48",
+          "3fd55553ef6b5d46",
+          "8000000000000000"
+        ],
+        "touch_st_bits": [
+          "bff0000000000000",
+          "bff0000000000000",
+          "0000000000000000"
+        ],
+        "face": -1
+      }
+    }
+  },
+  {
+    "case": "background_to_direct",
+    "initialXmlNames": [
+      "root XML detector"
+    ],
+    "frameRoles": [
+      {
+        "phase": "initial",
+        "index": 1,
+        "name": "outer selected binary detector",
+        "rotation_bits": [
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000"
+        ],
+        "deadline": 639313046240000000
+      },
+      {
+        "phase": "after_load",
+        "index": 1,
+        "name": "outer selected binary detector",
+        "rotation_bits": [
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000",
+          "3ff0000000000000"
+        ],
+        "deadline": 639313046240000000
+      }
+    ],
+    "live": {
+      "after": {
+        "name": "outer replacement detector",
+        "grab_bits": [
+          "405907e6b74dce59",
+          "40594f03290b2259",
+          "4059961f9a717d3e"
+        ],
+        "position_bits": [
+          "405b87e6b74dce59",
+          "405bcf03290b2259",
+          "405c161f9a717d3e"
+        ],
+        "rotation_bits": [
+          "3fe4000000000000",
+          "3fe0000000000000",
+          "3fd8000000000000",
+          "3fd0000000000000"
+        ],
+        "touch_st_bits": [
+          "406043f360000000",
+          "40606781a0000000",
+          "40608b0fc0000000"
+        ],
+        "face": 13
+      },
+      "background": 2,
+      "before": {
+        "name": "outer selected binary detector",
+        "grab_bits": [
+          "3fbf9add3739635f",
+          "3ff3c0ca42c8964b",
+          "4002c3f34e2fa7a7"
+        ],
+        "position_bits": [
+          "40243f35ba6e72c7",
+          "40267819485912c9",
+          "4028b0fcd38be9ea"
+        ],
+        "rotation_bits": [
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000"
+        ],
+        "touch_st_bits": [
+          "403e1f9ae0000000",
+          "403f3c0ca0000000",
+          "40402c3f40000000"
+        ],
+        "face": 13
+      },
+      "caller_after": 0,
+      "complete": 1,
+      "entries": 1,
+      "inner_after": {
+        "name": "outer replacement detector",
+        "grab_bits": [
+          "405907e6b74dce59",
+          "40594f03290b2259",
+          "4059961f9a717d3e"
+        ],
+        "position_bits": [
+          "405b87e6b74dce59",
+          "405bcf03290b2259",
+          "405c161f9a717d3e"
+        ],
+        "rotation_bits": [
+          "3fe4000000000000",
+          "3fe0000000000000",
+          "3fd8000000000000",
+          "3fd0000000000000"
+        ],
+        "touch_st_bits": [
+          "406043f360000000",
+          "40606781a0000000",
+          "40608b0fc0000000"
+        ],
+        "face": 13
+      },
+      "inner_before": {
+        "name": "outer replacement detector",
+        "grab_bits": [
+          "405907e6b74dce59",
+          "40594f03290b2259",
+          "4059961f9a717d3e"
+        ],
+        "position_bits": [
+          "405b87e6b74dce59",
+          "405bcf03290b2259",
+          "405c161f9a717d3e"
+        ],
+        "rotation_bits": [
+          "3fe4000000000000",
+          "3fe0000000000000",
+          "3fd8000000000000",
+          "3fd0000000000000"
+        ],
+        "touch_st_bits": [
+          "406043f360000000",
+          "40606781a0000000",
+          "40608b0fc0000000"
+        ],
+        "face": 13
+      },
+      "inner_entries": 1,
+      "inner_replacement": {
+        "name": "inner replacement detector",
+        "grab_bits": [
+          "405b87e6b74dce59",
+          "405bcf03290b2259",
+          "405c161f9a717d3e"
+        ],
+        "position_bits": [
+          "405e07e6b74dce59",
+          "405e4f03290b2259",
+          "405e961f9a717d3e"
+        ],
+        "rotation_bits": [
+          "3fd0000000000000",
+          "3fd8000000000000",
+          "3fe0000000000000",
+          "3fe4000000000000"
+        ],
+        "touch_st_bits": [
+          "406183f360000000",
+          "4061a781a0000000",
+          "4061cb0fc0000000"
+        ],
+        "face": 13
+      },
+      "inner_result": 0,
+      "inner_returned": 0,
+      "replacement": {
+        "name": "outer replacement detector",
+        "grab_bits": [
+          "405907e6b74dce59",
+          "40594f03290b2259",
+          "4059961f9a717d3e"
+        ],
+        "position_bits": [
+          "405b87e6b74dce59",
+          "405bcf03290b2259",
+          "405c161f9a717d3e"
+        ],
+        "rotation_bits": [
+          "3fe4000000000000",
+          "3fe0000000000000",
+          "3fd8000000000000",
+          "3fd0000000000000"
+        ],
+        "touch_st_bits": [
+          "406043f360000000",
+          "40606781a0000000",
+          "40608b0fc0000000"
+        ],
+        "face": 13
+      },
+      "result": 2,
+      "resumed": 1,
+      "returned": {
+        "name": "outer queued XML detector",
+        "grab_bits": [
+          "4072c1f9add37396",
+          "4072d3c0ca42c896",
+          "4072e587e69c5f4f"
+        ],
+        "position_bits": [
+          "407361f9add37396",
+          "407373c0ca42c896",
+          "40738587e69c5f4f"
+        ],
+        "rotation_bits": [
+          "3fbf9add3739635f",
+          "bfef9add3c0e56b8",
+          "3fd5555554f9b516",
+          "bea07111652d2b5c"
+        ],
+        "touch_st_bits": [
+          "4074a1f9a0000000",
+          "4074b3c0c0000000",
+          "4074c587e0000000"
+        ],
+        "face": 13
+      }
+    },
+    "migrated": {
+      "after": {
+        "name": "outer replacement detector",
+        "grab_bits": [
+          "405907e6b74dce59",
+          "40594f03290b2259",
+          "4059961f9a717d3e"
+        ],
+        "position_bits": [
+          "405b87e6b74dce59",
+          "405bcf03290b2259",
+          "405c161f9a717d3e"
+        ],
+        "rotation_bits": [
+          "3fe4000000000000",
+          "3fe0000000000000",
+          "3fd8000000000000",
+          "3fd0000000000000"
+        ],
+        "touch_st_bits": [
+          "406043f360000000",
+          "40606781a0000000",
+          "40608b0fc0000000"
+        ],
+        "face": 13
+      },
+      "background": 2,
+      "before": {
+        "name": "outer selected binary detector",
+        "grab_bits": [
+          "3fbf9add3739635f",
+          "3ff3c0ca42c8964b",
+          "4002c3f34e2fa7a7"
+        ],
+        "position_bits": [
+          "40243f35ba6e72c7",
+          "40267819485912c9",
+          "4028b0fcd38be9ea"
+        ],
+        "rotation_bits": [
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000",
+          "3ff0000000000000"
+        ],
+        "touch_st_bits": [
+          "403e1f9ae0000000",
+          "403f3c0ca0000000",
+          "40402c3f40000000"
+        ],
+        "face": 13
+      },
+      "caller_after": 0,
+      "complete": 1,
+      "entries": 1,
+      "inner_after": {
+        "name": "outer replacement detector",
+        "grab_bits": [
+          "405907e6b74dce59",
+          "40594f03290b2259",
+          "4059961f9a717d3e"
+        ],
+        "position_bits": [
+          "405b87e6b74dce59",
+          "405bcf03290b2259",
+          "405c161f9a717d3e"
+        ],
+        "rotation_bits": [
+          "3fe4000000000000",
+          "3fe0000000000000",
+          "3fd8000000000000",
+          "3fd0000000000000"
+        ],
+        "touch_st_bits": [
+          "406043f360000000",
+          "40606781a0000000",
+          "40608b0fc0000000"
+        ],
+        "face": 13
+      },
+      "inner_before": {
+        "name": "outer replacement detector",
+        "grab_bits": [
+          "405907e6b74dce59",
+          "40594f03290b2259",
+          "4059961f9a717d3e"
+        ],
+        "position_bits": [
+          "405b87e6b74dce59",
+          "405bcf03290b2259",
+          "405c161f9a717d3e"
+        ],
+        "rotation_bits": [
+          "3fe4000000000000",
+          "3fe0000000000000",
+          "3fd8000000000000",
+          "3fd0000000000000"
+        ],
+        "touch_st_bits": [
+          "406043f360000000",
+          "40606781a0000000",
+          "40608b0fc0000000"
+        ],
+        "face": 13
+      },
+      "inner_entries": 1,
+      "inner_replacement": {
+        "name": "inner replacement detector",
+        "grab_bits": [
+          "405b87e6b74dce59",
+          "405bcf03290b2259",
+          "405c161f9a717d3e"
+        ],
+        "position_bits": [
+          "405e07e6b74dce59",
+          "405e4f03290b2259",
+          "405e961f9a717d3e"
+        ],
+        "rotation_bits": [
+          "3fd0000000000000",
+          "3fd8000000000000",
+          "3fe0000000000000",
+          "3fe4000000000000"
+        ],
+        "touch_st_bits": [
+          "406183f360000000",
+          "4061a781a0000000",
+          "4061cb0fc0000000"
+        ],
+        "face": 13
+      },
+      "inner_result": 0,
+      "inner_returned": 0,
+      "replacement": {
+        "name": "outer replacement detector",
+        "grab_bits": [
+          "405907e6b74dce59",
+          "40594f03290b2259",
+          "4059961f9a717d3e"
+        ],
+        "position_bits": [
+          "405b87e6b74dce59",
+          "405bcf03290b2259",
+          "405c161f9a717d3e"
+        ],
+        "rotation_bits": [
+          "3fe4000000000000",
+          "3fe0000000000000",
+          "3fd8000000000000",
+          "3fd0000000000000"
+        ],
+        "touch_st_bits": [
+          "406043f360000000",
+          "40606781a0000000",
+          "40608b0fc0000000"
+        ],
+        "face": 13
+      },
+      "result": 2,
+      "resumed": 1,
+      "returned": {
+        "name": "outer queued XML detector",
+        "grab_bits": [
+          "4072c1f9ae0c1765",
+          "4072d3c0ca600b03",
+          "4072e587e6b3fea0"
+        ],
+        "position_bits": [
+          "407361f9ae0c1765",
+          "407373c0ca600b03",
+          "40738587e6b3fea0"
+        ],
+        "rotation_bits": [
+          "3fbf9ae0c1765775",
+          "bfef9adc8fb86f48",
+          "3fd55553ef6b5d46",
+          "8000000000000000"
+        ],
+        "touch_st_bits": [
+          "bff0000000000000",
+          "bff0000000000000",
+          "0000000000000000"
+        ],
+        "face": -1
+      }
+    }
+  },
+  {
+    "case": "direct_to_background",
+    "initialXmlNames": [
+      "direct XML detector"
+    ],
+    "frameRoles": [
+      {
+        "phase": "initial",
+        "index": 1,
+        "name": "inner selected binary detector",
+        "rotation_bits": [
+          "3fbf9add3739635f",
+          "bfef9add3c0e56b8",
+          "3fd5555554f9b516",
+          "bea07111652d2b5c"
+        ],
+        "deadline": 639313046240000000
+      },
+      {
+        "phase": "after_load",
+        "index": 1,
+        "name": "inner selected binary detector",
+        "rotation_bits": [
+          "3fbf9add3739635f",
+          "bfef9add3c0e56b8",
+          "3fd5555554f9b516",
+          "bea07111652d2b5c"
+        ],
+        "deadline": 639313046240000000
+      }
+    ],
+    "live": {
+      "after": 0,
+      "background": 1,
+      "before": {
+        "name": "root XML detector",
+        "grab_bits": [
+          "406903f35ba6e72d",
+          "406927819485912c",
+          "40694b0fcd38be9f"
+        ],
+        "position_bits": [
+          "406a43f35ba6e72d",
+          "406a67819485912c",
+          "406a8b0fcd38be9f"
+        ],
+        "rotation_bits": [
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000"
+        ],
+        "touch_st_bits": [
+          "406cc3f360000000",
+          "406ce781a0000000",
+          "406d0b0fc0000000"
+        ],
+        "face": 13
+      },
+      "caller_after": 0,
+      "complete": 1,
+      "entries": 1,
+      "inner_after": {
+        "name": "inner selected binary detector",
+        "grab_bits": [
+          "40243f35ba6e72c7",
+          "40267819485912c9",
+          "4028b0fcd38be9ea"
+        ],
+        "position_bits": [
+          "40341f9add373964",
+          "40353c0ca42c8964",
+          "4036587e69c5f4f4"
+        ],
+        "rotation_bits": [
+          "3fbf9add3739635f",
+          "bfef9add3c0e56b8",
+          "3fd5555554f9b516",
+          "bea07111652d2b5c"
+        ],
+        "touch_st_bits": [
+          "40440fcd60000000",
+          "40449e0660000000",
+          "40452c3f40000000"
+        ],
+        "face": 13
+      },
+      "inner_before": {
+        "name": "inner selected binary detector",
+        "grab_bits": [
+          "40243f35ba6e72c7",
+          "40267819485912c9",
+          "4028b0fcd38be9ea"
+        ],
+        "position_bits": [
+          "40341f9add373964",
+          "40353c0ca42c8964",
+          "4036587e69c5f4f4"
+        ],
+        "rotation_bits": [
+          "3fbf9add3739635f",
+          "bfef9add3c0e56b8",
+          "3fd5555554f9b516",
+          "bea07111652d2b5c"
+        ],
+        "touch_st_bits": [
+          "40440fcd60000000",
+          "40449e0660000000",
+          "40452c3f40000000"
+        ],
+        "face": 13
+      },
+      "inner_entries": 1,
+      "inner_replacement": {
+        "name": "inner replacement detector",
+        "grab_bits": [
+          "405b87e6b74dce59",
+          "405bcf03290b2259",
+          "405c161f9a717d3e"
+        ],
+        "position_bits": [
+          "405e07e6b74dce59",
+          "405e4f03290b2259",
+          "405e961f9a717d3e"
+        ],
+        "rotation_bits": [
+          "3fd0000000000000",
+          "3fd8000000000000",
+          "3fe0000000000000",
+          "3fe4000000000000"
+        ],
+        "touch_st_bits": [
+          "406183f360000000",
+          "4061a781a0000000",
+          "4061cb0fc0000000"
+        ],
+        "face": 13
+      },
+      "inner_result": 5,
+      "inner_returned": 0,
+      "replacement": {
+        "name": "direct XML detector",
+        "grab_bits": [
+          "406a43f35ba6e72d",
+          "406a67819485912c",
+          "406a8b0fcd38be9f"
+        ],
+        "position_bits": [
+          "406b83f35ba6e72d",
+          "406ba7819485912c",
+          "406bcb0fcd38be9f"
+        ],
+        "rotation_bits": [
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000"
+        ],
+        "touch_st_bits": [
+          "406e03f360000000",
+          "406e2781a0000000",
+          "406e4b0fc0000000"
+        ],
+        "face": 13
+      },
+      "result": 0,
+      "resumed": 1,
+      "returned": {
+        "name": "inner queued XML detector",
+        "grab_bits": [
+          "407361f9add37396",
+          "407373c0ca42c896",
+          "40738587e69c5f4f"
+        ],
+        "position_bits": [
+          "407401f9add37396",
+          "407413c0ca42c896",
+          "40742587e69c5f4f"
+        ],
+        "rotation_bits": [
+          "3fbf9add3739635f",
+          "bfef9add3c0e56b8",
+          "3fd5555554f9b516",
+          "bea07111652d2b5c"
+        ],
+        "touch_st_bits": [
+          "407541f9a0000000",
+          "407553c0c0000000",
+          "40756587e0000000"
+        ],
+        "face": 13
+      }
+    },
+    "migrated": {
+      "after": 0,
+      "background": 1,
+      "before": {
+        "name": "root XML detector",
+        "grab_bits": [
+          "406903f35ba6e72d",
+          "406927819485912c",
+          "40694b0fcd38be9f"
+        ],
+        "position_bits": [
+          "406a43f35ba6e72d",
+          "406a67819485912c",
+          "406a8b0fcd38be9f"
+        ],
+        "rotation_bits": [
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000",
+          "3ff0000000000000"
+        ],
+        "touch_st_bits": [
+          "406cc3f360000000",
+          "406ce781a0000000",
+          "406d0b0fc0000000"
+        ],
+        "face": 13
+      },
+      "caller_after": 0,
+      "complete": 1,
+      "entries": 1,
+      "inner_after": {
+        "name": "inner selected binary detector",
+        "grab_bits": [
+          "40243f35ba6e72c7",
+          "40267819485912c9",
+          "4028b0fcd38be9ea"
+        ],
+        "position_bits": [
+          "40341f9add373964",
+          "40353c0ca42c8964",
+          "4036587e69c5f4f4"
+        ],
+        "rotation_bits": [
+          "3fbf9add3739635f",
+          "bfef9add3c0e56b8",
+          "3fd5555554f9b516",
+          "bea07111652d2b5c"
+        ],
+        "touch_st_bits": [
+          "40440fcd60000000",
+          "40449e0660000000",
+          "40452c3f40000000"
+        ],
+        "face": 13
+      },
+      "inner_before": {
+        "name": "inner selected binary detector",
+        "grab_bits": [
+          "40243f35ba6e72c7",
+          "40267819485912c9",
+          "4028b0fcd38be9ea"
+        ],
+        "position_bits": [
+          "40341f9add373964",
+          "40353c0ca42c8964",
+          "4036587e69c5f4f4"
+        ],
+        "rotation_bits": [
+          "3fbf9add3739635f",
+          "bfef9add3c0e56b8",
+          "3fd5555554f9b516",
+          "bea07111652d2b5c"
+        ],
+        "touch_st_bits": [
+          "40440fcd60000000",
+          "40449e0660000000",
+          "40452c3f40000000"
+        ],
+        "face": 13
+      },
+      "inner_entries": 1,
+      "inner_replacement": {
+        "name": "inner replacement detector",
+        "grab_bits": [
+          "405b87e6b74dce59",
+          "405bcf03290b2259",
+          "405c161f9a717d3e"
+        ],
+        "position_bits": [
+          "405e07e6b74dce59",
+          "405e4f03290b2259",
+          "405e961f9a717d3e"
+        ],
+        "rotation_bits": [
+          "3fd0000000000000",
+          "3fd8000000000000",
+          "3fe0000000000000",
+          "3fe4000000000000"
+        ],
+        "touch_st_bits": [
+          "406183f360000000",
+          "4061a781a0000000",
+          "4061cb0fc0000000"
+        ],
+        "face": 13
+      },
+      "inner_result": 5,
+      "inner_returned": 0,
+      "replacement": {
+        "name": "direct XML detector",
+        "grab_bits": [
+          "406a43f35ba6e72d",
+          "406a67819485912c",
+          "406a8b0fcd38be9f"
+        ],
+        "position_bits": [
+          "406b83f35ba6e72d",
+          "406ba7819485912c",
+          "406bcb0fcd38be9f"
+        ],
+        "rotation_bits": [
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000",
+          "3ff0000000000000"
+        ],
+        "touch_st_bits": [
+          "406e03f360000000",
+          "406e2781a0000000",
+          "406e4b0fc0000000"
+        ],
+        "face": 13
+      },
+      "result": 0,
+      "resumed": 1,
+      "returned": {
+        "name": "inner queued XML detector",
+        "grab_bits": [
+          "407361f9ae0c1765",
+          "407373c0ca600b03",
+          "40738587e6b3fea0"
+        ],
+        "position_bits": [
+          "407401f9ae0c1765",
+          "407413c0ca600b03",
+          "40742587e6b3fea0"
+        ],
+        "rotation_bits": [
+          "3fbf9ae0c1765775",
+          "bfef9adc8fb86f48",
+          "3fd55553ef6b5d46",
+          "8000000000000000"
+        ],
+        "touch_st_bits": [
+          "bff0000000000000",
+          "bff0000000000000",
+          "0000000000000000"
+        ],
+        "face": -1
+      }
+    }
+  }
+]

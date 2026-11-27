@@ -1,0 +1,1 @@
+string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float("-2.5"),"e3");after=1;}}

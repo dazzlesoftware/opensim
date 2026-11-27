@@ -30,17 +30,19 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <mutex>
 #include <unordered_set>
 #include <vector>
+
 namespace opensim::network {
 // Direct port of IncomingPacketHistoryCollection: one ring slot stays unused,
 // so a capacity N archive retains N-1 distinct sequence numbers.
 class IncomingPacketHistoryCollection {
-public:
+  public:
     explicit IncomingPacketHistoryCollection(std::int32_t capacity);
     bool try_enqueue(std::uint32_t sequence);
-private:
+
+  private:
     std::vector<std::uint32_t> items_;
     std::unordered_set<std::uint32_t> set_;
     std::size_t first_ = 0, next_ = 0;
     std::mutex mutex_;
 };
-}
+} // namespace opensim::network

@@ -6,11 +6,13 @@
 #include <cmath>
 #include <limits>
 #include <stdexcept>
+
 namespace opensim::scene {
 namespace {
-using framework::Vector3;
 using framework::Quaternion;
+using framework::Vector3;
 constexpr float gravity = -9.8f;
+
 float clamp(float x, float min, float max) {
     if (x > max)
         return max;
@@ -18,11 +20,13 @@ float clamp(float x, float min, float max) {
         return min;
     return x;
 }
+
 int source_int(float x) {
     if (!std::isfinite(x) || double(x) >= 2147483648. || double(x) < -2147483648.)
         return std::numeric_limits<int>::min();
     return static_cast<int>(x);
 }
+
 Quaternion inverse(Quaternion q) {
     float n = (q.x * q.x + q.y * q.y) + (q.z * q.z + q.w * q.w);
     if (n < 1.e-6f)
@@ -30,17 +34,19 @@ Quaternion inverse(Quaternion q) {
     float m = -1.f / n;
     return {q.x * m, q.y * m, q.z * m, (0.f - q.w) * m};
 }
+
 Vector3 rotate(Vector3 v, Quaternion q) {
     float a = q.x + q.x, b = q.y + q.y, c = q.z + q.z;
-    float d = q.w * a, e = q.w * b, f = q.w * c, g = q.x * a, h = q.x * b, i = q.x * c, j = q.y * b,
-          k = q.y * c, l = q.z * c;
+    float d = q.w * a, e = q.w * b, f = q.w * c, g = q.x * a, h = q.x * b, i = q.x * c, j = q.y * b, k = q.y * c,
+          l = q.z * c;
     a = v.x;
     b = v.y;
     c = v.z;
     return {a * (1.f - j - l) + b * (h - f) + c * (i + e), a * (h + f) + b * (1.f - g - l) + c * (k - d),
             a * (i - e) + b * (k + d) + c * (1.f - g - j)};
 }
-}
+} // namespace
+
 std::shared_ptr<PosCharacter> PosPhysicsScene::add_avatar(Vector3 p, Vector3, Vector3, bool flying) {
     auto c = std::make_shared<PosCharacter>();
     c->position = p;
@@ -48,21 +54,25 @@ std::shared_ptr<PosCharacter> PosPhysicsScene::add_avatar(Vector3 p, Vector3, Ve
     characters_.push_back(c);
     return c;
 }
+
 std::shared_ptr<PosPrim> PosPhysicsScene::add_prim(Vector3 p, Vector3 s, Quaternion q) {
     auto prim = std::make_shared<PosPrim>(PosPrim{p, s, q});
     prims_.push_back(prim);
     return prim;
 }
-void PosPhysicsScene::remove_avatar(const std::shared_ptr<PosCharacter>& c) {
+
+void PosPhysicsScene::remove_avatar(const std::shared_ptr<PosCharacter> &c) {
     auto i = std::find(characters_.begin(), characters_.end(), c);
     if (i != characters_.end())
         characters_.erase(i);
 }
-void PosPhysicsScene::remove_prim(const std::shared_ptr<PosPrim>& p) {
+
+void PosPhysicsScene::remove_prim(const std::shared_ptr<PosPrim> &p) {
     auto i = std::find(prims_.begin(), prims_.end(), p);
     if (i != prims_.end())
         prims_.erase(i);
 }
+
 float PosPhysicsScene::height_at(Vector3 p) const {
     auto x = std::bit_cast<std::uint32_t>(source_int(p.x));
     auto y = std::bit_cast<std::uint32_t>(source_int(p.y));
@@ -71,25 +81,27 @@ float PosPhysicsScene::height_at(Vector3 p) const {
         throw std::out_of_range("POS heightmap index");
     return heights_[index];
 }
-bool PosPhysicsScene::intersects(const PosCharacter& c, const PosPrim& p) {
+
+bool PosPhysicsScene::intersects(const PosCharacter &c, const PosPrim &p) {
     auto q = inverse(p.orientation);
-    auto r =
-        rotate({c.position.x - p.position.x, c.position.y - p.position.y, c.position.z - p.position.z}, q);
+    auto r = rotate({c.position.x - p.position.x, c.position.y - p.position.y, c.position.z - p.position.z}, q);
     auto s = rotate(c.size(), q);
-    return std::abs(r.x) < (p.size.x * .5 + std::abs(s.x)) &&
-           std::abs(r.y) < (p.size.y * .5 + std::abs(s.y)) && std::abs(r.z) < (p.size.z * .5 + std::abs(s.z));
+    return std::abs(r.x) < (p.size.x * .5 + std::abs(s.x)) && std::abs(r.y) < (p.size.y * .5 + std::abs(s.y)) &&
+           std::abs(r.z) < (p.size.z * .5 + std::abs(s.z));
 }
-bool PosPhysicsScene::colliding(const PosCharacter& c) const {
-    for (auto& p : prims_)
+
+bool PosPhysicsScene::colliding(const PosCharacter &c) const {
+    for (auto &p : prims_)
         if (intersects(c, *p))
             return true;
     return false;
 }
+
 float PosPhysicsScene::simulate(float timeStep) {
 
     for (std::size_t i = 0; i < characters_.size(); ++i) {
 
-        auto& character = *characters_[i];
+        auto &character = *characters_[i];
 
         float oldposX = character.position.x;
         float oldposY = character.position.y;
@@ -173,4 +185,4 @@ float PosPhysicsScene::simulate(float timeStep) {
     return 1.0f;
 }
 
-}
+} // namespace opensim::scene

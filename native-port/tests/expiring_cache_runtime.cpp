@@ -7,10 +7,12 @@
 #include <iostream>
 using namespace opensim::framework;
 using namespace std::chrono_literals;
-void check(bool value, const char* message) {
+
+void check(bool value, const char *message) {
     if (!value)
         throw std::runtime_error(message);
 }
+
 int main() {
     try {
         ExpiringCacheOS<int, int> cache(500);
@@ -20,8 +22,7 @@ int main() {
         while (cache.count() != 1 && std::chrono::steady_clock::now() < deadline)
             std::this_thread::sleep_for(5ms);
         int value = 0;
-        check(cache.count() == 1 && !cache.try_get_value(1, value) && cache.try_get_value(2, value) &&
-                  value == 8,
+        check(cache.count() == 1 && !cache.try_get_value(1, value) && cache.try_get_value(2, value) && value == 8,
               "real one-shot timer purges expired entry and retains immortal entry");
         cache.clear();
         std::vector<std::thread> threads;
@@ -40,7 +41,7 @@ int main() {
                         cache.remove(key);
                 }
             });
-        for (auto& thread : threads)
+        for (auto &thread : threads)
             thread.join();
         check(good, "parallel independent writers/readers/touches");
         cache.clear();
@@ -86,10 +87,9 @@ int main() {
         check(done.wait_for(3s) == std::future_status::ready, "cancelled in-flight callback completes");
         done.get();
         check(cancel.count() == 0, "timer disposal returns before the blocked callback is released");
-        std::cout
-            << "PASS: real cache timer, concurrent operations, reference arrays and nonblocking timer disposal\n";
+        std::cout << "PASS: real cache timer, concurrent operations, reference arrays and nonblocking timer disposal\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << "\n";
         return 1;
     }

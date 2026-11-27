@@ -1,0 +1,2524 @@
+[
+  {
+    "mode": "fresh_allocated",
+    "limit": 0,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 0,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": -4,
+      "globalIntegers": [
+        0
+      ],
+      "lists": [
+        null
+      ],
+      "objects": [],
+      "classes": [
+        null
+      ]
+    },
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=4, newtotal=4, limit=0",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.ClearOldArrays() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 346\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 188\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.MigrateIn(BinaryReader mir) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1814\r\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-class-old-global-clear-phase38-reference\\Reference.cs:line 605",
+      "inner": null
+    },
+    "after": {
+      "heapLimit": 0,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": -4,
+      "globalIntegers": null,
+      "lists": null,
+      "objects": null,
+      "classes": null
+    }
+  },
+  {
+    "mode": "fresh_allocated",
+    "limit": 1,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 1,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": -3,
+      "globalIntegers": [
+        0
+      ],
+      "lists": [
+        null
+      ],
+      "objects": [],
+      "classes": [
+        null
+      ]
+    },
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=4, newtotal=4, limit=1",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.ClearOldArrays() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 346\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 188\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.MigrateIn(BinaryReader mir) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1814\r\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-class-old-global-clear-phase38-reference\\Reference.cs:line 605",
+      "inner": null
+    },
+    "after": {
+      "heapLimit": 1,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": -3,
+      "globalIntegers": null,
+      "lists": null,
+      "objects": null,
+      "classes": null
+    }
+  },
+  {
+    "mode": "fresh_allocated",
+    "limit": 2,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 2,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": -2,
+      "globalIntegers": [
+        0
+      ],
+      "lists": [
+        null
+      ],
+      "objects": [],
+      "classes": [
+        null
+      ]
+    },
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=4, newtotal=4, limit=2",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.ClearOldArrays() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 346\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 188\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.MigrateIn(BinaryReader mir) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1814\r\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-class-old-global-clear-phase38-reference\\Reference.cs:line 605",
+      "inner": null
+    },
+    "after": {
+      "heapLimit": 2,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": -2,
+      "globalIntegers": null,
+      "lists": null,
+      "objects": null,
+      "classes": null
+    }
+  },
+  {
+    "mode": "fresh_allocated",
+    "limit": 3,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 3,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": -1,
+      "globalIntegers": [
+        0
+      ],
+      "lists": [
+        null
+      ],
+      "objects": [],
+      "classes": [
+        null
+      ]
+    },
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=4, newtotal=4, limit=3",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.ClearOldArrays() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 346\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 188\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.MigrateIn(BinaryReader mir) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1814\r\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-class-old-global-clear-phase38-reference\\Reference.cs:line 605",
+      "inner": null
+    },
+    "after": {
+      "heapLimit": 3,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": -1,
+      "globalIntegers": null,
+      "lists": null,
+      "objects": null,
+      "classes": null
+    }
+  },
+  {
+    "mode": "fresh_allocated",
+    "limit": 4,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 4,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 0,
+      "globalIntegers": [
+        0
+      ],
+      "lists": [
+        null
+      ],
+      "objects": [],
+      "classes": [
+        null
+      ]
+    },
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=0, newtotal=16, limit=4",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 284\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj.Restore(XMRInstAbstract inst, Recver recvValue) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRSDTypeClObj.cs:line 272\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.RecvObjValue() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1967\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.RecvObjValue() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1911\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 272\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.MigrateIn(BinaryReader mir) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1814\r\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-class-old-global-clear-phase38-reference\\Reference.cs:line 605",
+      "inner": null
+    },
+    "after": {
+      "heapLimit": 4,
+      "globalUsage": 0,
+      "localsUsage": 0,
+      "heapUsed": 0,
+      "heapLeft": 4,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": null
+    }
+  },
+  {
+    "mode": "fresh_allocated",
+    "limit": 9,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 9,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 5,
+      "globalIntegers": [
+        0
+      ],
+      "lists": [
+        null
+      ],
+      "objects": [],
+      "classes": [
+        null
+      ]
+    },
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=0, newtotal=16, limit=9",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 284\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj.Restore(XMRInstAbstract inst, Recver recvValue) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRSDTypeClObj.cs:line 272\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.RecvObjValue() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1967\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.RecvObjValue() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1911\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 272\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.MigrateIn(BinaryReader mir) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1814\r\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-class-old-global-clear-phase38-reference\\Reference.cs:line 605",
+      "inner": null
+    },
+    "after": {
+      "heapLimit": 9,
+      "globalUsage": 0,
+      "localsUsage": 0,
+      "heapUsed": 0,
+      "heapLeft": 9,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": null
+    }
+  },
+  {
+    "mode": "fresh_allocated",
+    "limit": 10,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 10,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 6,
+      "globalIntegers": [
+        0
+      ],
+      "lists": [
+        null
+      ],
+      "objects": [],
+      "classes": [
+        null
+      ]
+    },
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=0, newtotal=16, limit=10",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 284\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj.Restore(XMRInstAbstract inst, Recver recvValue) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRSDTypeClObj.cs:line 272\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.RecvObjValue() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1967\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.RecvObjValue() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1911\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 272\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.MigrateIn(BinaryReader mir) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1814\r\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-class-old-global-clear-phase38-reference\\Reference.cs:line 605",
+      "inner": null
+    },
+    "after": {
+      "heapLimit": 10,
+      "globalUsage": 0,
+      "localsUsage": 0,
+      "heapUsed": 0,
+      "heapLeft": 10,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": null
+    }
+  },
+  {
+    "mode": "fresh_allocated",
+    "limit": 11,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 11,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 7,
+      "globalIntegers": [
+        0
+      ],
+      "lists": [
+        null
+      ],
+      "objects": [],
+      "classes": [
+        null
+      ]
+    },
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=0, newtotal=16, limit=11",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 284\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj.Restore(XMRInstAbstract inst, Recver recvValue) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRSDTypeClObj.cs:line 272\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.RecvObjValue() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1967\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.RecvObjValue() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1911\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 272\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.MigrateIn(BinaryReader mir) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1814\r\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-class-old-global-clear-phase38-reference\\Reference.cs:line 605",
+      "inner": null
+    },
+    "after": {
+      "heapLimit": 11,
+      "globalUsage": 0,
+      "localsUsage": 0,
+      "heapUsed": 0,
+      "heapLeft": 11,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": null
+    }
+  },
+  {
+    "mode": "fresh_allocated",
+    "limit": 13,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 13,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 9,
+      "globalIntegers": [
+        0
+      ],
+      "lists": [
+        null
+      ],
+      "objects": [],
+      "classes": [
+        null
+      ]
+    },
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=0, newtotal=16, limit=13",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 284\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj.Restore(XMRInstAbstract inst, Recver recvValue) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRSDTypeClObj.cs:line 272\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.RecvObjValue() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1967\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.RecvObjValue() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1911\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 272\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.MigrateIn(BinaryReader mir) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1814\r\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-class-old-global-clear-phase38-reference\\Reference.cs:line 605",
+      "inner": null
+    },
+    "after": {
+      "heapLimit": 13,
+      "globalUsage": 0,
+      "localsUsage": 0,
+      "heapUsed": 0,
+      "heapLeft": 13,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": null
+    }
+  },
+  {
+    "mode": "fresh_allocated",
+    "limit": 14,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 14,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 10,
+      "globalIntegers": [
+        0
+      ],
+      "lists": [
+        null
+      ],
+      "objects": [],
+      "classes": [
+        null
+      ]
+    },
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=0, newtotal=16, limit=14",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 284\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj.Restore(XMRInstAbstract inst, Recver recvValue) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRSDTypeClObj.cs:line 272\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.RecvObjValue() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1967\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.RecvObjValue() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1911\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 272\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.MigrateIn(BinaryReader mir) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1814\r\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-class-old-global-clear-phase38-reference\\Reference.cs:line 605",
+      "inner": null
+    },
+    "after": {
+      "heapLimit": 14,
+      "globalUsage": 0,
+      "localsUsage": 0,
+      "heapUsed": 0,
+      "heapLeft": 14,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": null
+    }
+  },
+  {
+    "mode": "fresh_allocated",
+    "limit": 15,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 15,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 11,
+      "globalIntegers": [
+        0
+      ],
+      "lists": [
+        null
+      ],
+      "objects": [],
+      "classes": [
+        null
+      ]
+    },
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=0, newtotal=16, limit=15",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 284\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj.Restore(XMRInstAbstract inst, Recver recvValue) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRSDTypeClObj.cs:line 272\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.RecvObjValue() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1967\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.RecvObjValue() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1911\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 272\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.MigrateIn(BinaryReader mir) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1814\r\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-class-old-global-clear-phase38-reference\\Reference.cs:line 605",
+      "inner": null
+    },
+    "after": {
+      "heapLimit": 15,
+      "globalUsage": 0,
+      "localsUsage": 0,
+      "heapUsed": 0,
+      "heapLeft": 15,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": null
+    }
+  },
+  {
+    "mode": "fresh_allocated",
+    "limit": 16,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 16,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 12,
+      "globalIntegers": [
+        0
+      ],
+      "lists": [
+        null
+      ],
+      "objects": [],
+      "classes": [
+        null
+      ]
+    },
+    "error": null,
+    "after": {
+      "heapLimit": 16,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": 2,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "mode": "fresh_allocated",
+    "limit": 19,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 19,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 15,
+      "globalIntegers": [
+        0
+      ],
+      "lists": [
+        null
+      ],
+      "objects": [],
+      "classes": [
+        null
+      ]
+    },
+    "error": null,
+    "after": {
+      "heapLimit": 19,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": 5,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "mode": "fresh_allocated",
+    "limit": 20,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 20,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 16,
+      "globalIntegers": [
+        0
+      ],
+      "lists": [
+        null
+      ],
+      "objects": [],
+      "classes": [
+        null
+      ]
+    },
+    "error": null,
+    "after": {
+      "heapLimit": 20,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": 6,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "mode": "fresh_allocated",
+    "limit": 33,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 33,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 29,
+      "globalIntegers": [
+        0
+      ],
+      "lists": [
+        null
+      ],
+      "objects": [],
+      "classes": [
+        null
+      ]
+    },
+    "error": null,
+    "after": {
+      "heapLimit": 33,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": 19,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "mode": "fresh_allocated",
+    "limit": 34,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 34,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 30,
+      "globalIntegers": [
+        0
+      ],
+      "lists": [
+        null
+      ],
+      "objects": [],
+      "classes": [
+        null
+      ]
+    },
+    "error": null,
+    "after": {
+      "heapLimit": 34,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": 20,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "mode": "fresh_allocated",
+    "limit": 35,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 35,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 31,
+      "globalIntegers": [
+        0
+      ],
+      "lists": [
+        null
+      ],
+      "objects": [],
+      "classes": [
+        null
+      ]
+    },
+    "error": null,
+    "after": {
+      "heapLimit": 35,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": 21,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "mode": "fresh_allocated",
+    "limit": 36,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 36,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 32,
+      "globalIntegers": [
+        0
+      ],
+      "lists": [
+        null
+      ],
+      "objects": [],
+      "classes": [
+        null
+      ]
+    },
+    "error": null,
+    "after": {
+      "heapLimit": 36,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": 22,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "mode": "fresh_allocated",
+    "limit": 53,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 53,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 49,
+      "globalIntegers": [
+        0
+      ],
+      "lists": [
+        null
+      ],
+      "objects": [],
+      "classes": [
+        null
+      ]
+    },
+    "error": null,
+    "after": {
+      "heapLimit": 53,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": 39,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "mode": "fresh_allocated",
+    "limit": 54,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 54,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 50,
+      "globalIntegers": [
+        0
+      ],
+      "lists": [
+        null
+      ],
+      "objects": [],
+      "classes": [
+        null
+      ]
+    },
+    "error": null,
+    "after": {
+      "heapLimit": 54,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": 40,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "mode": "fresh_allocated",
+    "limit": 100000000,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 100000000,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 99999996,
+      "globalIntegers": [
+        0
+      ],
+      "lists": [
+        null
+      ],
+      "objects": [],
+      "classes": [
+        null
+      ]
+    },
+    "error": null,
+    "after": {
+      "heapLimit": 100000000,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": 99999986,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "mode": "same_instance",
+    "limit": 0,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 0,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": -14,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    },
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=14, newtotal=34, limit=0",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.ClearOldArrays() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 346\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 188\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.MigrateIn(BinaryReader mir) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1814\r\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-class-old-global-clear-phase38-reference\\Reference.cs:line 605",
+      "inner": null
+    },
+    "after": {
+      "heapLimit": 0,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": -14,
+      "globalIntegers": null,
+      "lists": null,
+      "objects": null,
+      "classes": null
+    }
+  },
+  {
+    "mode": "same_instance",
+    "limit": 1,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 1,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": -13,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    },
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=14, newtotal=34, limit=1",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.ClearOldArrays() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 346\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 188\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.MigrateIn(BinaryReader mir) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1814\r\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-class-old-global-clear-phase38-reference\\Reference.cs:line 605",
+      "inner": null
+    },
+    "after": {
+      "heapLimit": 1,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": -13,
+      "globalIntegers": null,
+      "lists": null,
+      "objects": null,
+      "classes": null
+    }
+  },
+  {
+    "mode": "same_instance",
+    "limit": 2,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 2,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": -12,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    },
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=14, newtotal=34, limit=2",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.ClearOldArrays() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 346\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 188\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.MigrateIn(BinaryReader mir) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1814\r\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-class-old-global-clear-phase38-reference\\Reference.cs:line 605",
+      "inner": null
+    },
+    "after": {
+      "heapLimit": 2,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": -12,
+      "globalIntegers": null,
+      "lists": null,
+      "objects": null,
+      "classes": null
+    }
+  },
+  {
+    "mode": "same_instance",
+    "limit": 3,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 3,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": -11,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    },
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=14, newtotal=34, limit=3",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.ClearOldArrays() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 346\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 188\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.MigrateIn(BinaryReader mir) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1814\r\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-class-old-global-clear-phase38-reference\\Reference.cs:line 605",
+      "inner": null
+    },
+    "after": {
+      "heapLimit": 3,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": -11,
+      "globalIntegers": null,
+      "lists": null,
+      "objects": null,
+      "classes": null
+    }
+  },
+  {
+    "mode": "same_instance",
+    "limit": 4,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 4,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": -10,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    },
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=14, newtotal=34, limit=4",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.ClearOldArrays() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 346\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 188\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.MigrateIn(BinaryReader mir) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1814\r\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-class-old-global-clear-phase38-reference\\Reference.cs:line 605",
+      "inner": null
+    },
+    "after": {
+      "heapLimit": 4,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": -10,
+      "globalIntegers": null,
+      "lists": null,
+      "objects": null,
+      "classes": null
+    }
+  },
+  {
+    "mode": "same_instance",
+    "limit": 9,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 9,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": -5,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    },
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=14, newtotal=34, limit=9",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.ClearOldArrays() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 346\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 188\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.MigrateIn(BinaryReader mir) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1814\r\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-class-old-global-clear-phase38-reference\\Reference.cs:line 605",
+      "inner": null
+    },
+    "after": {
+      "heapLimit": 9,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": -5,
+      "globalIntegers": null,
+      "lists": null,
+      "objects": null,
+      "classes": null
+    }
+  },
+  {
+    "mode": "same_instance",
+    "limit": 10,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 10,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": -4,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    },
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=14, newtotal=34, limit=10",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.ClearOldArrays() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 346\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 188\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.MigrateIn(BinaryReader mir) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1814\r\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-class-old-global-clear-phase38-reference\\Reference.cs:line 605",
+      "inner": null
+    },
+    "after": {
+      "heapLimit": 10,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": -4,
+      "globalIntegers": null,
+      "lists": null,
+      "objects": null,
+      "classes": null
+    }
+  },
+  {
+    "mode": "same_instance",
+    "limit": 11,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 11,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": -3,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    },
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=14, newtotal=34, limit=11",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.ClearOldArrays() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 346\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 188\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.MigrateIn(BinaryReader mir) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1814\r\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-class-old-global-clear-phase38-reference\\Reference.cs:line 605",
+      "inner": null
+    },
+    "after": {
+      "heapLimit": 11,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": -3,
+      "globalIntegers": null,
+      "lists": null,
+      "objects": null,
+      "classes": null
+    }
+  },
+  {
+    "mode": "same_instance",
+    "limit": 13,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 13,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": -1,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    },
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=14, newtotal=34, limit=13",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.ClearOldArrays() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 346\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 188\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.MigrateIn(BinaryReader mir) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1814\r\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-class-old-global-clear-phase38-reference\\Reference.cs:line 605",
+      "inner": null
+    },
+    "after": {
+      "heapLimit": 13,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": -1,
+      "globalIntegers": null,
+      "lists": null,
+      "objects": null,
+      "classes": null
+    }
+  },
+  {
+    "mode": "same_instance",
+    "limit": 14,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 14,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": 0,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    },
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=14, newtotal=34, limit=14",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.ClearOldArrays() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 346\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 188\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.MigrateIn(BinaryReader mir) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1814\r\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-class-old-global-clear-phase38-reference\\Reference.cs:line 605",
+      "inner": null
+    },
+    "after": {
+      "heapLimit": 14,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": 0,
+      "globalIntegers": null,
+      "lists": null,
+      "objects": null,
+      "classes": null
+    }
+  },
+  {
+    "mode": "same_instance",
+    "limit": 15,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 15,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": 1,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    },
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=14, newtotal=34, limit=15",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.ClearOldArrays() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 346\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 188\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.MigrateIn(BinaryReader mir) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1814\r\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-class-old-global-clear-phase38-reference\\Reference.cs:line 605",
+      "inner": null
+    },
+    "after": {
+      "heapLimit": 15,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": 1,
+      "globalIntegers": null,
+      "lists": null,
+      "objects": null,
+      "classes": null
+    }
+  },
+  {
+    "mode": "same_instance",
+    "limit": 16,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 16,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": 2,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    },
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=14, newtotal=34, limit=16",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.ClearOldArrays() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 346\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 188\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.MigrateIn(BinaryReader mir) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1814\r\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-class-old-global-clear-phase38-reference\\Reference.cs:line 605",
+      "inner": null
+    },
+    "after": {
+      "heapLimit": 16,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": 2,
+      "globalIntegers": null,
+      "lists": null,
+      "objects": null,
+      "classes": null
+    }
+  },
+  {
+    "mode": "same_instance",
+    "limit": 19,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 19,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": 5,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    },
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=14, newtotal=34, limit=19",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.ClearOldArrays() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 346\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 188\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.MigrateIn(BinaryReader mir) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1814\r\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-class-old-global-clear-phase38-reference\\Reference.cs:line 605",
+      "inner": null
+    },
+    "after": {
+      "heapLimit": 19,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": 5,
+      "globalIntegers": null,
+      "lists": null,
+      "objects": null,
+      "classes": null
+    }
+  },
+  {
+    "mode": "same_instance",
+    "limit": 20,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 20,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": 6,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    },
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=14, newtotal=34, limit=20",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.ClearOldArrays() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 346\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 188\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.MigrateIn(BinaryReader mir) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1814\r\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-class-old-global-clear-phase38-reference\\Reference.cs:line 605",
+      "inner": null
+    },
+    "after": {
+      "heapLimit": 20,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": 6,
+      "globalIntegers": null,
+      "lists": null,
+      "objects": null,
+      "classes": null
+    }
+  },
+  {
+    "mode": "same_instance",
+    "limit": 33,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 33,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": 19,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    },
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=14, newtotal=34, limit=33",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.ClearOldArrays() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 346\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 188\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.MigrateIn(BinaryReader mir) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1814\r\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-class-old-global-clear-phase38-reference\\Reference.cs:line 605",
+      "inner": null
+    },
+    "after": {
+      "heapLimit": 33,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": 19,
+      "globalIntegers": null,
+      "lists": null,
+      "objects": null,
+      "classes": null
+    }
+  },
+  {
+    "mode": "same_instance",
+    "limit": 34,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 34,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": 20,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    },
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=20, newtotal=36, limit=34",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 284\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj.Restore(XMRInstAbstract inst, Recver recvValue) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRSDTypeClObj.cs:line 272\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.RecvObjValue() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1967\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.RecvObjValue() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1911\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 272\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.MigrateIn(BinaryReader mir) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1814\r\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-class-old-global-clear-phase38-reference\\Reference.cs:line 605",
+      "inner": null
+    },
+    "after": {
+      "heapLimit": 34,
+      "globalUsage": 20,
+      "localsUsage": 0,
+      "heapUsed": 20,
+      "heapLeft": 14,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": null
+    }
+  },
+  {
+    "mode": "same_instance",
+    "limit": 35,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 35,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": 21,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    },
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=20, newtotal=36, limit=35",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 284\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj.Restore(XMRInstAbstract inst, Recver recvValue) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRSDTypeClObj.cs:line 272\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.RecvObjValue() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1967\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.RecvObjValue() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1911\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 272\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.MigrateIn(BinaryReader mir) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1814\r\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-class-old-global-clear-phase38-reference\\Reference.cs:line 605",
+      "inner": null
+    },
+    "after": {
+      "heapLimit": 35,
+      "globalUsage": 20,
+      "localsUsage": 0,
+      "heapUsed": 20,
+      "heapLeft": 15,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": null
+    }
+  },
+  {
+    "mode": "same_instance",
+    "limit": 36,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 36,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": 22,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    },
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=20, newtotal=54, limit=36",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 284\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.MigrateIn(BinaryReader mir) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1814\r\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-class-old-global-clear-phase38-reference\\Reference.cs:line 605",
+      "inner": null
+    },
+    "after": {
+      "heapLimit": 36,
+      "globalUsage": 20,
+      "localsUsage": 0,
+      "heapUsed": 20,
+      "heapLeft": 16,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "mode": "same_instance",
+    "limit": 53,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 53,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": 39,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    },
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=20, newtotal=54, limit=53",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 284\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.MigrateIn(BinaryReader mir) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1814\r\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-class-old-global-clear-phase38-reference\\Reference.cs:line 605",
+      "inner": null
+    },
+    "after": {
+      "heapLimit": 53,
+      "globalUsage": 20,
+      "localsUsage": 0,
+      "heapUsed": 20,
+      "heapLeft": 33,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "mode": "same_instance",
+    "limit": 54,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 54,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": 40,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    },
+    "error": null,
+    "after": {
+      "heapLimit": 54,
+      "globalUsage": 34,
+      "localsUsage": 0,
+      "heapUsed": 34,
+      "heapLeft": 20,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "mode": "same_instance",
+    "limit": 100000000,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 100000000,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": 99999986,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    },
+    "error": null,
+    "after": {
+      "heapLimit": 100000000,
+      "globalUsage": 34,
+      "localsUsage": 0,
+      "heapUsed": 34,
+      "heapLeft": 99999966,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "mode": "same_instance_repeat",
+    "limit": 100000000,
+    "iteration": 1,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 100000000,
+      "globalUsage": 14,
+      "localsUsage": 0,
+      "heapUsed": 14,
+      "heapLeft": 99999986,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    },
+    "error": null,
+    "after": {
+      "heapLimit": 100000000,
+      "globalUsage": 34,
+      "localsUsage": 0,
+      "heapUsed": 34,
+      "heapLeft": 99999966,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "mode": "same_instance_repeat",
+    "limit": 100000000,
+    "iteration": 2,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 100000000,
+      "globalUsage": 34,
+      "localsUsage": 0,
+      "heapUsed": 34,
+      "heapLeft": 99999966,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    },
+    "error": null,
+    "after": {
+      "heapLimit": 100000000,
+      "globalUsage": 54,
+      "localsUsage": 0,
+      "heapUsed": 54,
+      "heapLeft": 99999946,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "mode": "same_instance_repeat",
+    "limit": 100000000,
+    "iteration": 3,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 100000000,
+      "globalUsage": 54,
+      "localsUsage": 0,
+      "heapUsed": 54,
+      "heapLeft": 99999946,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    },
+    "error": null,
+    "after": {
+      "heapLimit": 100000000,
+      "globalUsage": 74,
+      "localsUsage": 0,
+      "heapUsed": 74,
+      "heapLeft": 99999926,
+      "globalIntegers": [
+        7
+      ],
+      "lists": [
+        {
+          "size": 10,
+          "values": [
+            "x"
+          ]
+        }
+      ],
+      "objects": [],
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

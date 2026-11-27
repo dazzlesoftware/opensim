@@ -1,0 +1,1 @@
+YOption chars;integer input=-1;integer result;integer after;default{state_entry(){result=(char)input;after=1;}}

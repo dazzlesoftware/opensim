@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "fullParityVerified": false,
+  "nativeParityVerified": false,
+  "scope": "Actual original source-generated Object/String/List/Object-array whitespace heap and retained class-frame restore pressure; no backend storage injection.",
+  "generatorSha256": "99e370b121bb82c5f1651985e492cadd18e13c7b951a432c5e8c3ae135e6b265",
+  "generatorAssemblySha256": "761139d7ca8ef2f11f3bdd104a1207f86da1b3ea259be06441d17d48f080da25",
+  "verifierSha256": "ab4f2c1414e6253259b3e59161607dcd72b21be18356f0c2637a7c20f520242f",
+  "originalBackendAssemblySha256": {
+    "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+    "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+    "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a"
+  },
+  "originalSourceSha256": {
+    "XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+    "XMRHeapTracker.cs": "c04982ce71c32699438ad3e9aa5821a7262fe8ba65e6684db02171dec0489ef3",
+    "XMRSDTypeClObj.cs": "526bcaa0bac500bdce6bc0ada35eb22f1bef5d4f645f71f73ea0113ed8e9811c"
+  },
+  "platforms": {
+    "windows": {
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "cases": [
+        {
+          "name": "constructor_pressure",
+          "sourceSha256": "c314e8fade2e5846034a9aea242b3e235f98a0bc2405bf8cd050082b8e18f661",
+          "snapshotSha256": "0adae45ddbd1546fb17aec5c1d523d3907ec74814c5d37d52230df78cade6e65",
+          "objectSha256": "3ab5ec19241bad9a4604a4d069ae8a38a5970f0a289fac88d4738f1cb9f17858",
+          "metadataSha256": "ca03b3483c63718e781781a0506fa8c5fcff3299c02601d684b25445c610a6db",
+          "externalMigrationAccepted": false,
+          "externalFault": {
+            "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+            "message": "(OWNER)oldtotal=128, newtotal=148, limit=128"
+          }
+        },
+        {
+          "name": "whitespace_values",
+          "sourceSha256": "0481a65fd5d9ae89eceb56341b602d95ab3adff118953c8b5b040cadd891fdb4",
+          "snapshotSha256": "c38310445b48c73cb7dd4483e099e0150e56edb40898883317cf69f41e507a00",
+          "objectSha256": "38879b098668d8dd4b770d36f45a84d5493a459799a3676777ed19ee78a11964",
+          "metadataSha256": "b935296dde27043f671e68d234724ed6bde7ce1fb7914420ec719b20bb434a0f",
+          "externalMigrationAccepted": true,
+          "externalFault": null
+        },
+        {
+          "name": "whitespace_object_array",
+          "sourceSha256": "3c424e81783b12656ed60603f9a44389c63815255caa76c5c65e8f3999d9bc3e",
+          "snapshotSha256": "9ba6a970192fb48698638ff45f65d033118d4413c164d03f0071197e688f176b",
+          "objectSha256": "ec8a18c8427a32aaed3d9085cb9f2f6c680e5dc420078042be6eda6fe24da6dd",
+          "metadataSha256": "7c70c043e577ec8b30455e24d0c6dd6d0cb2d7f89804a162693d6eef8d8d59ff",
+          "externalMigrationAccepted": true,
+          "externalFault": null
+        }
+      ]
+    },
+    "linux": {
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "cases": [
+        {
+          "name": "constructor_pressure",
+          "sourceSha256": "c314e8fade2e5846034a9aea242b3e235f98a0bc2405bf8cd050082b8e18f661",
+          "snapshotSha256": "0adae45ddbd1546fb17aec5c1d523d3907ec74814c5d37d52230df78cade6e65",
+          "objectSha256": "3ab5ec19241bad9a4604a4d069ae8a38a5970f0a289fac88d4738f1cb9f17858",
+          "metadataSha256": "2da126c51e78f0fad494f1bbf7903743c9f5b9fabdd6f44aa5c15ce69186129c",
+          "externalMigrationAccepted": false,
+          "externalFault": {
+            "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+            "message": "(OWNER)oldtotal=128, newtotal=148, limit=128"
+          }
+        },
+        {
+          "name": "whitespace_values",
+          "sourceSha256": "0481a65fd5d9ae89eceb56341b602d95ab3adff118953c8b5b040cadd891fdb4",
+          "snapshotSha256": "c38310445b48c73cb7dd4483e099e0150e56edb40898883317cf69f41e507a00",
+          "objectSha256": "38879b098668d8dd4b770d36f45a84d5493a459799a3676777ed19ee78a11964",
+          "metadataSha256": "55a172e4693d6e8051bc968ea59812a809033c64fd5bc56d2a180a1c466c3bba",
+          "externalMigrationAccepted": true,
+          "externalFault": null
+        },
+        {
+          "name": "whitespace_object_array",
+          "sourceSha256": "3c424e81783b12656ed60603f9a44389c63815255caa76c5c65e8f3999d9bc3e",
+          "snapshotSha256": "9ba6a970192fb48698638ff45f65d033118d4413c164d03f0071197e688f176b",
+          "objectSha256": "ec8a18c8427a32aaed3d9085cb9f2f6c680e5dc420078042be6eda6fe24da6dd",
+          "metadataSha256": "a14b005c0b506121f98e172301e4c74c8eab3573486299e42a103e9ae69383fe",
+          "externalMigrationAccepted": true,
+          "externalFault": null
+        }
+      ]
+    }
+  },
+  "findings": [
+    "Three whitespace UTF16units cost6bytes in Object,0 in typedString,and14includingonepointer inList.",
+    "Object[] child String whitespace costs6; mutation leaves globalledgerstale, assigningaliasadds6; externalrestore rebuilds32 versuslive26.",
+    "56spaces Object costs112 plus16integerglobalbytes=128; liveconstructor-retained own20 stillresumes, externalframeclassrestore rejects old128,new148,limit128."
+  ],
+  "observerHistory": "Initial non-pressure source used reserved identifier base; compile-rejected initial Windows output preserved. Final sources use baseline; three cases all compile bothOS.",
+  "pending": [
+    "Native whitespace source/import parity not exercised by this reference harness.",
+    "No macOS/ARM64 scope."
+  ]
+}

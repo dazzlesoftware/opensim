@@ -6,6 +6,7 @@
 #include <sstream>
 using namespace opensim;
 using services::Caps;
+
 std::string hex(std::string_view s) {
     std::string r;
     for (unsigned char c : s) {
@@ -14,107 +15,132 @@ std::string hex(std::string_view s) {
     }
     return r;
 }
+
 template <class F> std::string run(F f) {
     try {
         return f();
-    } catch (const std::exception&) {
+    } catch (const std::exception &) {
         return "EX";
     }
 }
+
 struct Context {
     std::string trace, fail;
-    void log(const std::string& s) {
+
+    void log(const std::string &s) {
         trace += s + ";";
         if (s == fail)
             throw std::runtime_error("injected");
     }
 };
+
 struct Event : services::CapabilityActivation {
-    Context& c;
+    Context &c;
     bool active = false;
-    explicit Event(Context& ctx) : c(ctx) {
-    }
+
+    explicit Event(Context &ctx) : c(ctx) {}
+
     void reset() override {
         c.log("reset");
         active = false;
     }
+
     void set() override {
         c.log("set");
         active = true;
     }
+
     bool wait(int ms) override {
         c.log("wait" + std::to_string(ms));
         return active;
     }
+
     void dispose() override {
         c.log("dispose");
     }
 };
+
 struct Handler : server::CapabilityStreamHandler, server::CapabilitySimpleHandler {
     std::string value;
-    explicit Handler(std::string s) : value(std::move(s)) {
-    }
+
+    explicit Handler(std::string s) : value(std::move(s)) {}
+
     std::optional<std::string> path() const override {
         return value;
     }
+
     std::string method() const override {
         return "POST";
     }
-    network::HttpResponse handle(const network::HttpRequest&) override {
+
+    network::HttpResponse handle(const network::HttpRequest &) override {
         return {};
     }
 };
+
 struct Listener : services::CapabilityRuntimeListener {
-    Context& c;
+    Context &c;
     bool ssl;
     std::string label;
-    Listener(Context& ctx, bool s, std::string l) : c(ctx), ssl(s), label(std::move(l)) {
-    }
+
+    Listener(Context &ctx, bool s, std::string l) : c(ctx), ssl(s), label(std::move(l)) {}
+
     bool use_ssl() const override {
         c.log(label + ".ssl");
         return ssl;
     }
+
     std::uint32_t port() const override {
         c.log(label + ".port");
         return 8080;
     }
+
     std::uint32_t ssl_port() const override {
         c.log(label + ".sslport");
         return label == "L" ? 9443 : 8443;
     }
+
     std::optional<std::string> ssl_common_name() const override {
         c.log(label + ".name");
         return label == "L" ? "listener" : "main";
     }
-    void add_stream(const std::shared_ptr<server::CapabilityStreamHandler>&) override {
+
+    void add_stream(const std::shared_ptr<server::CapabilityStreamHandler> &) override {
         c.log("stream+");
     }
-    void remove_stream(const std::string& m, const std::optional<std::string>&) override {
+
+    void remove_stream(const std::string &m, const std::optional<std::string> &) override {
         c.log("stream-" + m);
     }
-    void add_simple(const std::shared_ptr<server::CapabilitySimpleHandler>&) override {
+
+    void add_simple(const std::shared_ptr<server::CapabilitySimpleHandler> &) override {
         c.log("simple+");
     }
-    void remove_simple(const std::optional<std::string>&) override {
+
+    void remove_simple(const std::optional<std::string> &) override {
         c.log("simple-");
     }
-    void add_poll(const std::shared_ptr<services::CapabilityPollHandler>&) override {
+
+    void add_poll(const std::shared_ptr<services::CapabilityPollHandler> &) override {
         c.log("poll+");
     }
-    void remove_poll(const std::optional<std::string>&) override {
+
+    void remove_poll(const std::optional<std::string> &) override {
         c.log("poll-");
     }
 };
-std::string dump(const services::CapabilityPaths& map) {
+
+std::string dump(const services::CapabilityPaths &map) {
     std::vector<std::string> a;
-    for (const auto& e : map)
+    for (const auto &e : map)
         a.push_back(hex(e.first) + ":" + (e.second ? hex(*e.second) : "-"));
     std::sort(a.begin(), a.end());
     std::string r;
-    for (const auto& s : a)
+    for (const auto &s : a)
         r += s + ",";
     return r;
 }
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -123,8 +149,7 @@ int main() {
         in >> ssl >> mainssl >> setup >> action >> failure;
         Context ctx;
         auto l = std::make_shared<Listener>(ctx, ssl != 0, "L");
-        std::shared_ptr<Listener> main =
-            mainssl == 2 ? nullptr : std::make_shared<Listener>(ctx, mainssl != 0, "M");
+        std::shared_ptr<Listener> main = mainssl == 2 ? nullptr : std::make_shared<Listener>(ctx, mainssl != 0, "M");
         std::shared_ptr<Caps> caps;
         auto poll = std::make_shared<services::CapabilityPollHandler>();
         poll->url = "/poll<&'\"";
@@ -137,7 +162,7 @@ int main() {
                     ctx.log("main");
                     return main;
                 },
-                std::make_shared<Event>(ctx), [&](const std::string& s) { ctx.log("error:" + hex(s)); });
+                std::make_shared<Event>(ctx), [&](const std::string &s) { ctx.log("error:" + hex(s)); });
             caps->register_handler("SEED", h);
             if (setup & 2)
                 caps->register_simple("X", simple, false);
@@ -149,9 +174,9 @@ int main() {
                 caps->register_external("X", "https://external/?<&'\"");
             caps->flags = Caps::PBR;
             ctx.trace.clear();
-            ctx.fail = std::vector<std::string>{"",      "stream-POST", "stream-PUT", "simple-",
-                                                "poll-", "poll+",       "dispose",    "set"}
-                           .at(failure);
+            ctx.fail =
+                std::vector<std::string>{"", "stream-POST", "stream-PUT", "simple-", "poll-", "poll+", "dispose", "set"}
+                    .at(failure);
             switch (action) {
             case 1:
                 caps->register_poll("X", poll);
@@ -237,8 +262,8 @@ int main() {
             return hex(host.value_or("")) + ":" + std::to_string(port) + ":" + hex(base.value_or("")) + ":" +
                    (ssl ? "1" : "0") + ":" + hex(common.value_or(""));
         });
-        std::cout << result << "|" << all << "|" << requested << "|" << xmlstatus << ":" << hex(xml) << "|"
-                  << nullxml << "|" << has << ":" << (got == poll ? 1 : 0) << "|" << caps->flags << "|"
-                  << metadata << "|" << hex(ctx.trace) << "\n";
+        std::cout << result << "|" << all << "|" << requested << "|" << xmlstatus << ":" << hex(xml) << "|" << nullxml
+                  << "|" << has << ":" << (got == poll ? 1 : 0) << "|" << caps->flags << "|" << metadata << "|"
+                  << hex(ctx.trace) << "\n";
     }
 }

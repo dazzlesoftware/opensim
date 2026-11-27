@@ -4,47 +4,59 @@
 #include "opensim/framework/text.hpp"
 #include <algorithm>
 #include <bit>
+
 namespace opensim::framework {
 namespace {
 using K = DotnetRegexNodeKind;
 using Text = DotnetRegexNodeText;
 using namespace std::literals;
 #include "dotnet_regex_parser_resources.inc"
+
 [[noreturn]] void parser_null() {
     throw DotnetRegexClassError("System.NullReferenceException", 0x80004003u,
                                 "Object reference not set to an instance of an object.");
 }
+
 [[noreturn]] void parser_index() {
     throw DotnetRegexClassError("System.IndexOutOfRangeException", 0x80131508u,
                                 "Index was outside the bounds of the array.");
 }
+
 Text text(std::u16string value) {
     return value.empty() ? runtime_empty_text() : std::make_shared<const std::u16string>(std::move(value));
 }
+
 std::u16string number(int value) {
     return utf16(std::to_string(value));
 }
+
 bool digit(char16_t c) {
     return c >= u'0' && c <= u'9';
 }
-constexpr std::uint8_t category[] = {
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    1, 0, 0, 2, 3, 0, 0, 0, 3, 3, 4, 4, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 0, 3, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 3, 0, 0, 0};
+
+constexpr std::uint8_t category[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                     0, 0, 0, 0, 0, 0, 1, 0, 0, 2, 3, 0, 0, 0, 3, 3, 4, 4, 0, 0, 3, 0, 0, 0, 0, 0,
+                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 3, 0, 0, 0};
+
 bool special(char16_t c) {
     return c < 128 && category[c] >= 3;
 }
+
 bool special_space(char16_t c) {
     return c < 128 && category[c] >= 1;
 }
+
 bool quantifier(char16_t c) {
     return c < 128 && category[c] >= 4;
 }
+
 bool space(char16_t c) {
     return c < 128 && category[c] == 1;
 }
-}
+} // namespace
+
 class DotnetRegexParser {
     std::u16string pattern_;
     int pos_ = 0, options_, autocap_ = 0, capcount_ = 0, captop_ = 0;
@@ -62,17 +74,21 @@ class DotnetRegexParser {
     std::shared_ptr<DotnetRegexNodeArena> arena_ = std::make_shared<DotnetRegexNodeArena>();
     DotnetRegexNode *stack_ = nullptr, *group_ = nullptr, *alternation_ = nullptr, *concatenation_ = nullptr,
                     *unit_ = nullptr;
+
     bool ecma() const {
         return (options_ & 256) != 0;
     }
+
     int length() const {
         return static_cast<int>(pattern_.size());
     }
+
     char16_t at(int index) const {
         if (index < 0 || index >= length())
             parser_index();
         return pattern_[index];
     }
+
     [[noreturn]] void fail(int code, std::u16string argument = {}) const {
         auto message = std::u16string(parse_messages[code]);
         auto offset = message.find(u"{0}");
@@ -81,27 +97,34 @@ class DotnetRegexParser {
         throw DotnetRegexParseException(
             code, u"Invalid pattern '" + pattern_ + u"' at offset " + number(pos_) + u". " + message, pos_);
     }
-    void add(DotnetRegexNode* parent, DotnetRegexNode* child) {
+
+    void add(DotnetRegexNode *parent, DotnetRegexNode *child) {
         parent->add_child(child, execution_stack_);
     }
-    DotnetRegexNode* one(char16_t c) {
+
+    DotnetRegexNode *one(char16_t c) {
         return arena_->create_one_with_case_conversion(c, options_, culture_, case_behavior_);
     }
-    DotnetRegexNode* node(K kind) {
+
+    DotnetRegexNode *node(K kind) {
         return arena_->create(kind, options_);
     }
-    DotnetRegexNode* set(std::u16string value) {
+
+    DotnetRegexNode *set(std::u16string value) {
         return arena_->create(K::Set, options_ & ~1, text(std::move(value)));
     }
+
     bool capture_slot(int slot) const {
         return caps_present_ ? caps_.contains(slot) : slot >= 0 && slot < capsize_;
     }
-    int capture_name(const std::u16string& name) const {
+
+    int capture_name(const std::u16string &name) const {
         if (!capnames_)
             return -1;
         auto found = capnames_->find(name);
         return found == capnames_->end() ? -1 : found->second;
     }
+
     void note_slot(int slot, int position) {
         if (caps_.emplace(slot, position).second) {
             ++capcount_;
@@ -109,6 +132,7 @@ class DotnetRegexParser {
                 captop_ = slot == 2147483647 ? slot : slot + 1;
         }
     }
+
     void note_name(std::u16string name, int position) {
         if (!capnames_) {
             capnames_.emplace();
@@ -117,6 +141,7 @@ class DotnetRegexParser {
         if (capnames_->emplace(name, position).second)
             capnamelist_->push_back(std::move(name));
     }
+
     std::u16string scan_capname() {
         int start = pos_;
         while (pos_ < length()) {
@@ -127,6 +152,7 @@ class DotnetRegexParser {
         }
         return pattern_.substr(start, pos_ - start);
     }
+
     int scan_decimal() {
         int value = 0;
         while (pos_ < length() && digit(at(pos_))) {
@@ -137,6 +163,7 @@ class DotnetRegexParser {
         }
         return value;
     }
+
     char16_t scan_octal() {
         int remaining = std::min(3, length() - pos_), value = 0;
         while (remaining > 0 && static_cast<unsigned>(at(pos_) - u'0') <= 7) {
@@ -147,6 +174,7 @@ class DotnetRegexParser {
         }
         return static_cast<char16_t>(value & 255);
     }
+
     char16_t scan_hex(int count) {
         int value = 0;
         if (pos_ + count <= length()) {
@@ -166,6 +194,7 @@ class DotnetRegexParser {
             fail(8);
         return static_cast<char16_t>(value);
     }
+
     char16_t scan_control() {
         if (pos_ == length())
             fail(7);
@@ -177,6 +206,7 @@ class DotnetRegexParser {
             return c;
         fail(6);
     }
+
     char16_t scan_char_escape() {
         auto c = at(pos_++);
         if (c >= u'0' && c <= u'7') {
@@ -212,6 +242,7 @@ class DotnetRegexParser {
             return c;
         }
     }
+
     void scan_options() {
         bool remove = false;
         while (pos_ < length()) {
@@ -249,6 +280,7 @@ class DotnetRegexParser {
             ++pos_;
         }
     }
+
     std::u16string parse_property() {
         if (pos_ + 2 >= length())
             fail(3);
@@ -267,6 +299,7 @@ class DotnetRegexParser {
             fail(3);
         return result;
     }
+
     void scan_blank() {
         for (;;) {
             if (options_ & 32)
@@ -289,6 +322,7 @@ class DotnetRegexParser {
             return;
         }
     }
+
     bool true_quantifier() const {
         int start = pos_, cursor = pos_, remaining = length() - pos_;
         auto c = at(cursor);
@@ -306,20 +340,22 @@ class DotnetRegexParser {
         }
         return remaining > 0 && c == u'}';
     }
+
     std::shared_ptr<DotnetRegexClassBuilder> scan_char_class(bool insensitive, bool scan_only);
-    DotnetRegexNode* scan_basic_backslash(bool scan_only);
-    DotnetRegexNode* scan_backslash(bool scan_only);
-    DotnetRegexNode* scan_group_open();
-    DotnetRegexNode* scan_dollar();
-    DotnetRegexNode* scan_regex();
+    DotnetRegexNode *scan_basic_backslash(bool scan_only);
+    DotnetRegexNode *scan_backslash(bool scan_only);
+    DotnetRegexNode *scan_group_open();
+    DotnetRegexNode *scan_dollar();
+    DotnetRegexNode *scan_regex();
     void count_captures();
     void assign_name_slots();
+
     void add_to_concatenate(int start, int count, bool replacement = false) {
         if (count == 0)
             return;
         if (count == 1) {
-            add(concatenation_, replacement ? arena_->create_one_with_case_conversion(
-                                                  at(start), options_ & ~1, culture_, case_behavior_)
+            add(concatenation_, replacement ? arena_->create_one_with_case_conversion(at(start), options_ & ~1,
+                                                                                      culture_, case_behavior_)
                                             : one(at(start)));
             return;
         }
@@ -332,12 +368,14 @@ class DotnetRegexParser {
         for (auto c : value)
             add(concatenation_, one(c));
     }
+
     void push_group() {
         group_->parent_ = stack_;
         alternation_->parent_ = group_;
         concatenation_->parent_ = alternation_;
         stack_ = concatenation_;
     }
+
     void pop_group() {
         concatenation_ = stack_;
         alternation_ = concatenation_->parent_;
@@ -350,18 +388,22 @@ class DotnetRegexParser {
             unit_ = nullptr;
         }
     }
-    void start_group(DotnetRegexNode* open) {
+
+    void start_group(DotnetRegexNode *open) {
         group_ = open;
         alternation_ = node(K::Alternate);
         concatenation_ = node(K::Concatenate);
     }
+
     bool conditional() const {
         return group_->kind() == K::BackreferenceConditional || group_->kind() == K::ExpressionConditional;
     }
+
     void add_alternate() {
         add(conditional() ? group_ : alternation_, concatenation_->reverse_concatenation_if_right_to_left());
         concatenation_ = node(K::Concatenate);
     }
+
     void add_group() {
         if (conditional()) {
             add(group_, concatenation_->reverse_concatenation_if_right_to_left());
@@ -376,13 +418,13 @@ class DotnetRegexParser {
     }
 
   public:
-    DotnetRegexParser(Text pattern, int options, DotnetRegexCultureName culture,
-                      DotnetRegexExecutionStack stack)
+    DotnetRegexParser(Text pattern, int options, DotnetRegexCultureName culture, DotnetRegexExecutionStack stack)
         : options_(options), culture_(std::move(culture)), execution_stack_(std::move(stack)) {
         if (!pattern)
             parser_null();
         pattern_ = *pattern;
     }
+
     DotnetRegexParsedPattern parse() {
         int original_options = options_;
         count_captures();
@@ -411,6 +453,7 @@ class DotnetRegexParser {
             result.backreference_culture = culture_;
         return result;
     }
+
     Text unescape(Text input) {
         auto first = input->find(u'\\');
         if (first == std::u16string::npos)
@@ -430,9 +473,9 @@ class DotnetRegexParser {
         } while (cursor < length());
         return text(std::move(result));
     }
-    DotnetRegexParsedReplacement replacement(Text original, const std::optional<std::map<int, int>>& captures,
-                                             int size,
-                                             const std::optional<std::map<std::u16string, int>>& names) {
+
+    DotnetRegexParsedReplacement replacement(Text original, const std::optional<std::map<int, int>> &captures, int size,
+                                             const std::optional<std::map<std::u16string, int>> &names) {
         caps_present_ = captures.has_value();
         if (captures)
             caps_ = *captures;
@@ -479,8 +522,7 @@ class DotnetRegexParser {
                         parser_null();
                     slot = found->second;
                 }
-                result.rules.push_back(
-                    std::bit_cast<std::int32_t>(0u - 5u - static_cast<std::uint32_t>(slot)));
+                result.rules.push_back(std::bit_cast<std::int32_t>(0u - 5u - static_cast<std::uint32_t>(slot)));
                 result.has_backreferences = true;
                 break;
             }
@@ -492,7 +534,8 @@ class DotnetRegexParser {
         return result;
     }
 };
-DotnetRegexNode* DotnetRegexParser::scan_dollar() {
+
+DotnetRegexNode *DotnetRegexParser::scan_dollar() {
     if (pos_ == length())
         return one(u'$');
     auto c = at(pos_);
@@ -566,9 +609,10 @@ DotnetRegexNode* DotnetRegexParser::scan_dollar() {
     pos_ = start;
     return one(u'$');
 }
+
 void DotnetRegexParser::assign_name_slots() {
     if (capnames_)
-        for (auto& name : *capnamelist_) {
+        for (auto &name : *capnamelist_) {
             while (capture_slot(autocap_))
                 ++autocap_;
             int position = capnames_->at(name);
@@ -595,8 +639,7 @@ void DotnetRegexParser::assign_name_slots() {
         int slot = capnumlist_ ? (*capnumlist_)[i] : i;
         if (next_named == slot) {
             capnamelist_->push_back((*named)[name_index++]);
-            next_named =
-                name_index == static_cast<int>(named->size()) ? -1 : capnames_->at((*named)[name_index]);
+            next_named = name_index == static_cast<int>(named->size()) ? -1 : capnames_->at((*named)[name_index]);
         } else {
             auto value = number(slot);
             capnamelist_->push_back(value);
@@ -604,6 +647,7 @@ void DotnetRegexParser::assign_name_slots() {
         }
     }
 }
+
 void DotnetRegexParser::count_captures() {
     note_slot(0, 0);
     autocap_ = 1;
@@ -669,8 +713,8 @@ void DotnetRegexParser::count_captures() {
     }
     assign_name_slots();
 }
-std::shared_ptr<DotnetRegexClassBuilder> DotnetRegexParser::scan_char_class(bool insensitive,
-                                                                            bool scan_only) {
+
+std::shared_ptr<DotnetRegexClassBuilder> DotnetRegexParser::scan_char_class(bool insensitive, bool scan_only) {
     char16_t range_start = 0;
     bool range = false, first = true, closed = false;
     auto builder = scan_only ? nullptr : std::make_shared<DotnetRegexClassBuilder>();
@@ -691,8 +735,7 @@ std::shared_ptr<DotnetRegexClassBuilder> DotnetRegexParser::scan_char_class(bool
             }
         } else if (c == u'\\' && pos_ < length()) {
             c = at(pos_++);
-            if (c == u'd' || c == u'D' || c == u's' || c == u'S' || c == u'w' || c == u'W' || c == u'p' ||
-                c == u'P') {
+            if (c == u'd' || c == u'D' || c == u's' || c == u'S' || c == u'w' || c == u'W' || c == u'p' || c == u'P') {
                 if (!scan_only) {
                     if (range)
                         fail(25, std::u16string(1, c));
@@ -771,7 +814,8 @@ std::shared_ptr<DotnetRegexClassBuilder> DotnetRegexParser::scan_char_class(bool
         builder->add_case_equivalences(culture_);
     return builder;
 }
-DotnetRegexNode* DotnetRegexParser::scan_backslash(bool scan_only) {
+
+DotnetRegexNode *DotnetRegexParser::scan_backslash(bool scan_only) {
     auto c = at(pos_);
     switch (c) {
     case u'A':
@@ -853,7 +897,8 @@ DotnetRegexNode* DotnetRegexParser::scan_backslash(bool scan_only) {
     }
     }
 }
-DotnetRegexNode* DotnetRegexParser::scan_basic_backslash(bool scan_only) {
+
+DotnetRegexNode *DotnetRegexParser::scan_basic_backslash(bool scan_only) {
     int start = pos_;
     char16_t end = 0;
     bool named = false;
@@ -923,7 +968,8 @@ DotnetRegexNode* DotnetRegexParser::scan_basic_backslash(bool scan_only) {
     c = scan_char_escape();
     return scan_only ? nullptr : one(c);
 }
-DotnetRegexNode* DotnetRegexParser::scan_group_open() {
+
+DotnetRegexNode *DotnetRegexParser::scan_group_open() {
     if (pos_ == length() || at(pos_) != u'?' || (pos_ + 1 < length() && at(pos_ + 1) == u')')) {
         if ((options_ & 4) || ignore_next_paren_) {
             ignore_next_paren_ = false;
@@ -1025,8 +1071,8 @@ DotnetRegexNode* DotnetRegexParser::scan_group_open() {
             if (pos_ + 2 < length() && at(pos_ + 1) == u'?') {
                 if (at(pos_ + 2) == u'#')
                     fail(17);
-                if (at(pos_ + 2) == u'\'' || (pos_ + 3 < length() && at(pos_ + 2) == u'<' &&
-                                              at(pos_ + 3) != u'!' && at(pos_ + 3) != u'='))
+                if (at(pos_ + 2) == u'\'' ||
+                    (pos_ + 3 < length() && at(pos_ + 2) == u'<' && at(pos_ + 3) != u'!' && at(pos_ + 3) != u'='))
                     fail(16);
             }
             return node(K::ExpressionConditional);
@@ -1047,7 +1093,8 @@ DotnetRegexNode* DotnetRegexParser::scan_group_open() {
     }
     fail(15);
 }
-DotnetRegexNode* DotnetRegexParser::scan_regex() {
+
+DotnetRegexNode *DotnetRegexParser::scan_regex() {
     bool previous_quantifier = false;
     start_group(arena_->create(K::Capture, options_ & ~1, 0, -1));
     while (pos_ < length()) {
@@ -1116,9 +1163,9 @@ DotnetRegexNode* DotnetRegexParser::scan_regex() {
             unit_ = node((options_ & 2) ? K::Eol : K::EndZ);
             break;
         case u'.':
-            unit_ = (options_ & 16) ? arena_->create(K::Set, options_ & ~1,
-                                                     dotnet_regex_class_literal(std::u16string{0, 1, 0, 0}))
-                                    : arena_->create(K::Notone, options_ & ~1, u'\n');
+            unit_ = (options_ & 16)
+                        ? arena_->create(K::Set, options_ & ~1, dotnet_regex_class_literal(std::u16string{0, 1, 0, 0}))
+                        : arena_->create(K::Notone, options_ & ~1, u'\n');
             break;
         case u'*':
         case u'+':
@@ -1194,10 +1241,12 @@ DotnetRegexNode* DotnetRegexParser::scan_regex() {
     add_group();
     return unit_->final_optimize(execution_stack_);
 }
-DotnetRegexParsedPattern dotnet_regex_parse(Text pattern, int options, const DotnetRegexCultureName& culture,
-                                            const DotnetRegexExecutionStack& stack) {
+
+DotnetRegexParsedPattern dotnet_regex_parse(Text pattern, int options, const DotnetRegexCultureName &culture,
+                                            const DotnetRegexExecutionStack &stack) {
     return DotnetRegexParser(std::move(pattern), options, culture, stack).parse();
 }
+
 Text dotnet_regex_escape(Text input) {
     if (!input)
         return input;
@@ -1231,22 +1280,24 @@ Text dotnet_regex_escape(Text input) {
     }
     return text(std::move(result));
 }
+
 Text dotnet_regex_unescape(Text input) {
     if (!input)
         parser_null();
     return DotnetRegexParser(input, 0, [] { return std::u16string{}; }, {}).unescape(input);
 }
-DotnetRegexParsedReplacement
-dotnet_regex_parse_replacement(Text pattern, int options, const std::optional<std::map<int, int>>& caps,
-                               int capsize, const std::optional<std::map<std::u16string, int>>& names,
-                               const DotnetRegexCultureName& culture,
-                               const DotnetRegexExecutionStack& stack) {
-    DotnetRegexCultureName target =
-        (options & 512) ? DotnetRegexCultureName([] { return std::u16string{}; }) : culture;
+
+DotnetRegexParsedReplacement dotnet_regex_parse_replacement(Text pattern, int options,
+                                                            const std::optional<std::map<int, int>> &caps, int capsize,
+                                                            const std::optional<std::map<std::u16string, int>> &names,
+                                                            const DotnetRegexCultureName &culture,
+                                                            const DotnetRegexExecutionStack &stack) {
+    DotnetRegexCultureName target = (options & 512) ? DotnetRegexCultureName([] { return std::u16string{}; }) : culture;
     return DotnetRegexParser(pattern, options, std::move(target), stack)
         .replacement(std::move(pattern), caps, capsize, names);
 }
-int dotnet_regex_map_capture_number(int number, const std::optional<std::map<int, int>>& caps) {
+
+int dotnet_regex_map_capture_number(int number, const std::optional<std::map<int, int>> &caps) {
     if (number == -1 || !caps)
         return number;
     auto found = caps->find(number);
@@ -1254,9 +1305,10 @@ int dotnet_regex_map_capture_number(int number, const std::optional<std::map<int
         parser_null();
     return found->second;
 }
-std::u16string dotnet_regex_group_name_from_number(const std::optional<std::map<int, int>>& caps,
-                                                   const std::optional<std::vector<std::u16string>>& names,
-                                                   int size, int slot) {
+
+std::u16string dotnet_regex_group_name_from_number(const std::optional<std::map<int, int>> &caps,
+                                                   const std::optional<std::vector<std::u16string>> &names, int size,
+                                                   int slot) {
     if (!names) {
         if (static_cast<std::uint32_t>(slot) < static_cast<std::uint32_t>(size))
             return utf16(std::to_string(static_cast<std::uint32_t>(slot)));
@@ -1274,7 +1326,8 @@ std::u16string dotnet_regex_group_name_from_number(const std::optional<std::map<
     }
     return {};
 }
-DotnetRegexCultureName dotnet_regex_target_culture(int options, const DotnetRegexCultureName& current) {
+
+DotnetRegexCultureName dotnet_regex_target_culture(int options, const DotnetRegexCultureName &current) {
     return (options & 512) ? DotnetRegexCultureName([] { return std::u16string{}; }) : current;
 }
-}
+} // namespace opensim::framework

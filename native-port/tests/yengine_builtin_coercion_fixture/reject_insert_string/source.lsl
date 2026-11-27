@@ -1,0 +1,1 @@
+string result;integer after;default{state_entry(){result=llInsertString("abc","1","x");after=1;}}

@@ -3,6 +3,7 @@
 #include <sstream>
 using namespace opensim;
 using Id = framework::Uuid;
+
 std::string hex(std::string_view s) {
     constexpr char d[] = "0123456789abcdef";
     std::string r;
@@ -12,16 +13,19 @@ std::string hex(std::string_view s) {
     }
     return r;
 }
-std::string nullable(const std::optional<std::string>& s) {
+
+std::string nullable(const std::optional<std::string> &s) {
     return s.value_or("_");
 }
-std::string snapshot(const services::UserAccount& a) {
-    std::string s = a.principal_id + ":" + a.scope_id + ":" + nullable(a.first_name) + ":" +
-                    nullable(a.last_name) + ":" + nullable(a.email) + ":" + std::to_string(a.created) + ":";
-    for (const auto& [k, v] : *a.service_urls)
+
+std::string snapshot(const services::UserAccount &a) {
+    std::string s = a.principal_id + ":" + a.scope_id + ":" + nullable(a.first_name) + ":" + nullable(a.last_name) +
+                    ":" + nullable(a.email) + ":" + std::to_string(a.created) + ":";
+    for (const auto &[k, v] : *a.service_urls)
         s += k + "=" + framework::service_url_object_text(v) + ",";
     return s;
 }
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -36,10 +40,9 @@ int main() {
             trace += "lookup:" + scope.str() + ":" + first + ":" + last + ";";
             if (fault == 1)
                 throw std::runtime_error("lookup");
-            return fault == 16 ? std::make_shared<services::UserAccount>()
-                               : std::shared_ptr<services::UserAccount>{};
+            return fault == 16 ? std::make_shared<services::UserAccount>() : std::shared_ptr<services::UserAccount>{};
         };
-        ops.store = [&](auto& a) {
+        ops.store = [&](auto &a) {
             trace += "store:" + snapshot(a) + ";";
             if (fault == 3)
                 throw std::runtime_error("store");
@@ -76,12 +79,10 @@ int main() {
             };
         if (mask & 4)
             ops.set_home = [&](auto id, Id region, auto position, auto look) {
-                trace += "home:" + id + ":" + region.str() + ":" +
-                         std::to_string(static_cast<int>(position.x)) + "," +
+                trace += "home:" + id + ":" + region.str() + ":" + std::to_string(static_cast<int>(position.x)) + "," +
                          std::to_string(static_cast<int>(position.y)) + "," +
-                         std::to_string(static_cast<int>(position.z)) + ":" +
-                         std::to_string(static_cast<int>(look.x)) + "," +
-                         std::to_string(static_cast<int>(look.y)) + "," +
+                         std::to_string(static_cast<int>(position.z)) + ":" + std::to_string(static_cast<int>(look.x)) +
+                         "," + std::to_string(static_cast<int>(look.y)) + "," +
                          std::to_string(static_cast<int>(look.z)) + ";";
                 if (fault == 11)
                     throw std::runtime_error("home");

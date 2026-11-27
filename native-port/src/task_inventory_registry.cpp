@@ -4,21 +4,26 @@
 #include <map>
 #include <mutex>
 #include <stdexcept>
+
 namespace opensim::scene {
 struct TaskInventoryRegistry::Impl {
     using Item = TaskInventoryRegistry::Item;
+
     struct Slots {
         struct Entry {
             framework::Uuid key;
             Item value;
         };
+
         std::map<framework::Uuid, std::size_t> index;
         std::vector<Entry> entries;
         std::vector<std::size_t> free;
+
         Item find(framework::Uuid key) const {
             auto i = index.find(key);
             return i == index.end() ? Item{} : entries[i->second].value;
         }
+
         bool set(framework::Uuid key, Item value, bool overwrite) {
             auto i = index.find(key);
             if (i != index.end()) {
@@ -38,6 +43,7 @@ struct TaskInventoryRegistry::Impl {
             index.emplace(key, slot);
             return true;
         }
+
         Item erase(framework::Uuid key) {
             auto i = index.find(key);
             if (i == index.end())
@@ -48,6 +54,7 @@ struct TaskInventoryRegistry::Impl {
             free.push_back(slot);
             return value;
         }
+
         std::vector<Item> values() const {
             std::vector<Item> out;
             out.reserve(index.size());
@@ -57,17 +64,20 @@ struct TaskInventoryRegistry::Impl {
             return out;
         }
     } items;
+
     std::optional<Slots> scripts;
     TaskInventoryRegistryHooks hooks;
     mutable std::recursive_mutex mutex;
     std::uint32_t serial = 0;
     bool changed = false;
+
     bool contains_name(const std::optional<std::string> &name) const {
         for (const auto &[key, slot] : items.index)
             if (items.entries[slot].value->name == name)
                 return true;
         return false;
     }
+
     std::optional<std::string> available_name(const std::optional<std::string> &name) const {
         if (!contains_name(name))
             return name;
@@ -79,14 +89,16 @@ struct TaskInventoryRegistry::Impl {
         return std::string{};
     }
 };
-TaskInventoryRegistry::TaskInventoryRegistry(TaskInventoryRegistryHooks hooks)
-    : impl_(std::make_unique<Impl>()) {
+
+TaskInventoryRegistry::TaskInventoryRegistry(TaskInventoryRegistryHooks hooks) : impl_(std::make_unique<Impl>()) {
     if (!hooks.part || !hooks.changed || !hooks.aggregate_permissions || !hooks.deep_permissions ||
         !hooks.clear_scripted || !hooks.schedule_full || !hooks.group_changed || !hooks.remove_script)
         throw std::invalid_argument("Incomplete task inventory registry hooks");
     impl_->hooks = std::move(hooks);
 }
+
 TaskInventoryRegistry::~TaskInventoryRegistry() = default;
+
 bool TaskInventoryRegistry::add(Item item, bool drop) {
     auto &s = *impl_;
     std::lock_guard lock(s.mutex);
@@ -116,6 +128,7 @@ bool TaskInventoryRegistry::add(Item item, bool drop) {
     s.hooks.group_changed();
     return true;
 }
+
 void TaskInventoryRegistry::restore(const std::vector<Item> &items) {
     auto &s = *impl_;
     bool restored = false;
@@ -137,6 +150,7 @@ void TaskInventoryRegistry::restore(const std::vector<Item> &items) {
     if (restored)
         s.hooks.aggregate_permissions();
 }
+
 bool TaskInventoryRegistry::update(Item item, bool fire, bool consider) {
     auto &s = *impl_;
     std::lock_guard lock(s.mutex);
@@ -173,6 +187,7 @@ bool TaskInventoryRegistry::update(Item item, bool fire, bool consider) {
     }
     return true;
 }
+
 int TaskInventoryRegistry::remove(framework::Uuid key) {
     auto &s = *impl_;
     std::lock_guard lock(s.mutex);
@@ -202,36 +217,55 @@ int TaskInventoryRegistry::remove(framework::Uuid key) {
         s.hooks.changed(1, {});
     return type;
 }
+
 TaskInventoryRegistry::Item TaskInventoryRegistry::find(framework::Uuid key) const {
     std::lock_guard lock(impl_->mutex);
     return impl_->items.find(key);
 }
+
 std::vector<TaskInventoryRegistry::Item> TaskInventoryRegistry::items() const {
     std::lock_guard lock(impl_->mutex);
     return impl_->items.values();
 }
+
 std::vector<TaskInventoryRegistry::Item> TaskInventoryRegistry::scripts() const {
     std::lock_guard lock(impl_->mutex);
     return impl_->scripts ? impl_->scripts->values() : std::vector<Item>{};
 }
+
 bool TaskInventoryRegistry::has_script_dictionary() const {
     std::lock_guard lock(impl_->mutex);
     return bool(impl_->scripts);
 }
+
 std::uint32_t TaskInventoryRegistry::serial() const {
     std::lock_guard lock(impl_->mutex);
     return impl_->serial;
 }
+
 void TaskInventoryRegistry::serial(std::uint32_t v) {
     std::lock_guard lock(impl_->mutex);
     impl_->serial = v;
 }
+
+void TaskInventoryRegistry::assign_group(framework::Uuid group, bool attachment) {
+    std::lock_guard lock(impl_->mutex);
+    if (impl_->items.index.empty())
+        return;
+    ++impl_->serial;
+    if (!attachment)
+        impl_->changed = true;
+    for (const auto &item : impl_->items.values())
+        item->group_id = group;
+}
+
 bool TaskInventoryRegistry::inventory_changed() const {
     std::lock_guard lock(impl_->mutex);
     return impl_->changed;
 }
+
 void TaskInventoryRegistry::inventory_changed(bool v) {
     std::lock_guard lock(impl_->mutex);
     impl_->changed = v;
 }
-}
+} // namespace opensim::scene

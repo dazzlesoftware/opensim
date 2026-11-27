@@ -1,0 +1,1 @@
+string value;integer equal;integer different;integer self;integer after;default{state_entry(){value=llComputeHash("payload","unsupported");equal=(value=="");different=(value!="");self=(value==value);after=1;}}

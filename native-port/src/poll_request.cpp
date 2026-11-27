@@ -6,38 +6,42 @@
 #include "opensim/network/osd_value.hpp"
 #include <bit>
 #include <chrono>
+
 namespace opensim::services {
 CapabilityPollHandler::CapabilityPollHandler(RequestMethod incoming, server::PollName path, HasEvents has,
                                              GetEvents get, GetEvents no, Drop discard, framework::Uuid key,
                                              std::int32_t timeout)
-    : request(std::move(incoming)), url(std::move(path)), has_events(std::move(has)),
-      get_events(std::move(get)), no_events(std::move(no)), drop(std::move(discard)), id(key),
-      timeout_ms(timeout) {
-}
-}
+    : request(std::move(incoming)), url(std::move(path)), has_events(std::move(has)), get_events(std::move(get)),
+      no_events(std::move(no)), drop(std::move(discard)), id(key), timeout_ms(timeout) {}
+} // namespace opensim::services
+
 namespace opensim::server {
 namespace {
-template <class T> T& require(const std::shared_ptr<T>& value) {
+template <class T> T &require(const std::shared_ptr<T> &value) {
     if (!value)
         throw std::invalid_argument("Null poll dependency");
     return *value;
 }
-template <class T> T cast(const std::any& value) {
+
+template <class T> T cast(const std::any &value) {
     if (auto p = std::any_cast<T>(&value))
         return *p;
     throw std::invalid_argument("Invalid poll response value type");
 }
-PollName text(const std::any& value) {
+
+PollName text(const std::any &value) {
     if (poll_object_null(value))
         return {};
     return cast<std::string>(value);
 }
-template <class T> std::shared_ptr<T> reference(const std::any& value) {
+
+template <class T> std::shared_ptr<T> reference(const std::any &value) {
     if (poll_object_null(value))
         return {};
     return cast<std::shared_ptr<T>>(value);
 }
-PollName object_text(const std::any& value) {
+
+PollName object_text(const std::any &value) {
     if (poll_object_null(value))
         throw std::invalid_argument("Null poll header value");
     if (auto p = std::any_cast<PollStringObject>(&value))
@@ -52,8 +56,9 @@ PollName object_text(const std::any& value) {
         return "OpenSim.Framework.Servers.HttpServer.OSHttpResponse";
     return framework::service_url_object_text(value);
 }
-}
-bool poll_object_null(const std::any& value) {
+} // namespace
+
+bool poll_object_null(const std::any &value) {
     if (!value.has_value() || value.type() == typeid(std::nullptr_t))
         return true;
     if (auto p = std::any_cast<PollBytes>(&value))
@@ -64,20 +69,23 @@ bool poll_object_null(const std::any& value) {
         return !*p;
     return false;
 }
-bool PollTable::contains(const std::string& name) const {
-    for (const auto& [key, value] : entries_)
+
+bool PollTable::contains(const std::string &name) const {
+    for (const auto &[key, value] : entries_)
         if (auto s = std::any_cast<std::string>(&key); s && *s == name)
             return true;
     return false;
 }
-std::any PollTable::get(const std::string& name) const {
-    for (const auto& [key, value] : entries_)
+
+std::any PollTable::get(const std::string &name) const {
+    for (const auto &[key, value] : entries_)
         if (auto s = std::any_cast<std::string>(&key); s && *s == name)
             return value;
     return {};
 }
-void PollTable::set(const std::string& name, std::any value) {
-    for (auto& [key, existing] : entries_)
+
+void PollTable::set(const std::string &name, std::any value) {
+    for (auto &[key, existing] : entries_)
         if (auto s = std::any_cast<std::string>(&key); s && *s == name) {
             existing = std::move(value);
             ++version_;
@@ -86,6 +94,7 @@ void PollTable::set(const std::string& name, std::any value) {
     entries_.emplace_back(name, std::move(value));
     ++version_;
 }
+
 void PollTable::add_key(std::any key, std::any value) {
     if (poll_object_null(key))
         throw std::invalid_argument("Null Hashtable key");
@@ -96,7 +105,8 @@ void PollTable::add_key(std::any key, std::any value) {
     entries_.emplace_back(std::move(key), std::move(value));
     ++version_;
 }
-void PollTable::for_each_key(const std::function<void(const std::any&)>& visitor) const {
+
+void PollTable::for_each_key(const std::function<void(const std::any &)> &visitor) const {
     const auto version = version_;
     for (std::size_t i = 0; i < entries_.size(); ++i) {
         auto key = entries_[i].first;
@@ -105,18 +115,20 @@ void PollTable::for_each_key(const std::function<void(const std::any&)>& visitor
             throw std::runtime_error("Hashtable changed during enumeration");
     }
 }
+
 std::int32_t PollRequestBackend::tick_count() const {
-    auto count = std::chrono::duration_cast<std::chrono::milliseconds>(
-                     std::chrono::steady_clock::now().time_since_epoch())
-                     .count();
+    auto count =
+        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch())
+            .count();
     return std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(count));
 }
+
 PollServiceHttpRequest::PollServiceHttpRequest(std::shared_ptr<services::CapabilityPollHandler> args,
                                                std::shared_ptr<PollIncomingRequest> incoming,
-                                               PollRequestBackend& backend)
+                                               PollRequestBackend &backend)
     : poll_args(std::move(args)), request(std::move(incoming)), request_time(backend.tick_count()),
-      request_id(backend.random_id()), backend_(backend) {
-}
+      request_id(backend.random_id()), backend_(backend) {}
+
 void PollServiceHttpRequest::do_http_grunt_work(PollTablePtr data) {
     auto body = require(request).body();
     if (require(body).can_read())
@@ -173,11 +185,10 @@ void PollServiceHttpRequest::do_http_grunt_work(PollTablePtr data) {
         response->status_description(text(data->get("error_status_text")));
     if (data->contains("access_control_allow_origin"))
         response->add_header("Access-Control-Allow-Origin", text(data->get("access_control_allow_origin")));
-    response->add_header("Content-Type",
-                         !content_type || content_type->empty() ? PollName("text/html") : content_type);
+    response->add_header("Content-Type", !content_type || content_type->empty() ? PollName("text/html") : content_type);
     if (data->contains("headers")) {
         auto headers = reference<PollTable>(data->get("headers"));
-        require(headers).for_each_key([&](const std::any& item) {
+        require(headers).for_each_key([&](const std::any &item) {
             auto name = cast<std::string>(item);
             response->add_header(name, object_text(headers->get(name)));
         });
@@ -204,8 +215,8 @@ void PollServiceHttpRequest::do_http_grunt_work(PollTablePtr data) {
         start = 0;
     if (length < 0)
         length = size;
-    else if (std::bit_cast<std::int32_t>(std::bit_cast<std::uint32_t>(length) +
-                                         std::bit_cast<std::uint32_t>(start)) > size)
+    else if (std::bit_cast<std::int32_t>(std::bit_cast<std::uint32_t>(length) + std::bit_cast<std::uint32_t>(start)) >
+             size)
         length = size - start;
     response->content_length(length);
     try {
@@ -216,13 +227,14 @@ void PollServiceHttpRequest::do_http_grunt_work(PollTablePtr data) {
         }
         bytes = nullptr;
         response->send();
-    } catch (const std::exception& error) {
-        auto socket = dynamic_cast<const PollSocketError*>(&error);
+    } catch (const std::exception &error) {
+        auto socket = dynamic_cast<const PollSocketError *>(&error);
         if (!socket || !socket->connection_reset)
             backend_.warn("[POLL SERVICE WORKER THREAD]: Error ", error);
     }
     require(poll_args).requests_handled++;
 }
+
 void PollServiceHttpRequest::send_no_content_error(PollResponsePtr response) {
     require(response).content_length(0);
     response->utf8_encoding();
@@ -232,6 +244,7 @@ void PollServiceHttpRequest::send_no_content_error(PollResponsePtr response) {
     } catch (...) {
     }
 }
+
 void PollServiceHttpRequest::do_http_stop() {
     auto response = backend_.make_response(request);
     auto body = require(request).body();
@@ -246,4 +259,4 @@ void PollServiceHttpRequest::do_http_stop() {
     } catch (...) {
     }
 }
-}
+} // namespace opensim::server

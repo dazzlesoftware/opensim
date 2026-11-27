@@ -4,11 +4,13 @@
 #include <sstream>
 #include <string>
 using namespace opensim::framework;
+
 void require(bool value) {
     if (!value)
         throw std::runtime_error("XML character kernel unit failed");
 }
-int main(int argc, char**) {
+
+int main(int argc, char **) {
     if (argc == 1) {
         require(nini_xml_character_properties(u'a') == 254);
         require(nini_xml_parse_ncname(u"a:b") == 1);

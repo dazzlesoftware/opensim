@@ -4,28 +4,32 @@
 #include "opensim/framework/text.hpp"
 #include "opensim/network/service_protocol.hpp"
 #include <stdexcept>
+
 namespace opensim::server {
 namespace {
-const std::string& key(const HttpRouteRegistry::Name& name) {
+const std::string &key(const HttpRouteRegistry::Name &name) {
     if (!name)
         throw std::invalid_argument("Null HTTP route key");
     return *name;
 }
-template <class T> T& require(const std::shared_ptr<T>& value) {
+
+template <class T> T &require(const std::shared_ptr<T> &value) {
     if (!value)
         throw std::invalid_argument("Null HTTP route handler");
     return *value;
 }
-}
-template <class V> std::vector<std::string> HttpRouteRegistry::keys(const Map<V>& map) {
+} // namespace
+
+template <class V> std::vector<std::string> HttpRouteRegistry::keys(const Map<V> &map) {
     std::lock_guard lock(map.mutex);
     std::vector<std::string> result;
-    for (const auto& item : map.values)
+    for (const auto &item : map.values)
         result.push_back(item.first);
     return result;
 }
-template <class V> bool HttpRouteRegistry::get(const Map<V>& map, const Name& name, V& value) {
-    const auto& k = key(name);
+
+template <class V> bool HttpRouteRegistry::get(const Map<V> &map, const Name &name, V &value) {
+    const auto &k = key(name);
     std::lock_guard lock(map.mutex);
     auto i = map.values.find(k);
     if (i == map.values.end()) {
@@ -35,13 +39,15 @@ template <class V> bool HttpRouteRegistry::get(const Map<V>& map, const Name& na
     value = i->second;
     return true;
 }
-template <class V> bool HttpRouteRegistry::add(Map<V>& map, const Name& name, const V& value) {
-    const auto& k = key(name);
+
+template <class V> bool HttpRouteRegistry::add(Map<V> &map, const Name &name, const V &value) {
+    const auto &k = key(name);
     std::lock_guard lock(map.mutex);
     return map.values.emplace(k, value).second;
 }
-template <class V> bool HttpRouteRegistry::erase(Map<V>& map, const Name& name) {
-    const auto& k = key(name);
+
+template <class V> bool HttpRouteRegistry::erase(Map<V> &map, const Name &name) {
+    const auto &k = key(name);
     V removed;
     {
         std::lock_guard lock(map.mutex);
@@ -53,6 +59,7 @@ template <class V> bool HttpRouteRegistry::erase(Map<V>& map, const Name& name) 
     }
     return true;
 }
+
 void HttpRouteRegistry::add_stream(Stream handler) {
     auto path = require(handler).path();
     if (key(path) == "/") {
@@ -69,50 +76,60 @@ void HttpRouteRegistry::add_stream(Stream handler) {
     auto route = handler->path();
     add(streams_, handler_key(method, route), handler);
 }
+
 void HttpRouteRegistry::add_generic_stream(Stream handler) {
     auto path = require(handler).path();
     if (!path || framework::trim_utf8(*path).empty())
         return;
     add(streams_, handler->path(), handler);
 }
+
 void HttpRouteRegistry::add_simple(Simple handler, bool variable) {
     auto path = require(handler).path();
     add(variable ? simple_variable_ : simple_, path, handler);
 }
-bool HttpRouteRegistry::add_poll(const Name& url, const Poll& handler) {
+
+bool HttpRouteRegistry::add_poll(const Name &url, const Poll &handler) {
     return add(poll_, url, handler);
 }
+
 bool HttpRouteRegistry::add_poll(Poll handler) {
     return add(poll_, require(handler).url, handler);
 }
+
 bool HttpRouteRegistry::add_poll_variable(Poll handler) {
     return add(poll_variable_, require(handler).url, handler);
 }
-void HttpRouteRegistry::remove_stream(const Name& method, const Name& path) {
+
+void HttpRouteRegistry::remove_stream(const Name &method, const Name &path) {
     if (erase(streams_, path))
         return;
     erase(streams_, handler_key(method, path));
 }
-void HttpRouteRegistry::remove_stream(const Name& path) {
+
+void HttpRouteRegistry::remove_stream(const Name &path) {
     erase(streams_, path);
 }
-void HttpRouteRegistry::remove_simple(const Name& path) {
+
+void HttpRouteRegistry::remove_simple(const Name &path) {
     if (erase(simple_, path))
         return;
     erase(simple_variable_, path);
 }
-void HttpRouteRegistry::remove_poll(const Name& path) {
+
+void HttpRouteRegistry::remove_poll(const Name &path) {
     if (!erase(poll_, path))
         erase(poll_variable_, path);
 }
-bool HttpRouteRegistry::try_stream(const Name& name, Stream& handler) const {
+
+bool HttpRouteRegistry::try_stream(const Name &name, Stream &handler) const {
     if (get(streams_, name, handler))
         return true;
     std::optional<std::string> best;
     std::size_t length = 0;
     {
         std::lock_guard scan(stream_scan_mutex_);
-        for (const auto& pattern : keys(streams_))
+        for (const auto &pattern : keys(streams_))
             if (prefix_(key(name), pattern)) {
                 auto units = framework::utf16_replacing(pattern).size();
                 if (!best || units > length) {
@@ -129,7 +146,8 @@ bool HttpRouteRegistry::try_stream(const Name& name, Stream& handler) const {
     handler = nullptr;
     return false;
 }
-bool HttpRouteRegistry::try_simple(const Name& path, Simple& handler) const {
+
+bool HttpRouteRegistry::try_simple(const Name &path, Simple &handler) const {
     if (get(simple_, path, handler))
         return true;
     handler = nullptr;
@@ -141,7 +159,8 @@ bool HttpRouteRegistry::try_simple(const Name& path, Simple& handler) const {
         return false;
     return get(simple_variable_, framework::utf8(std::u16string_view(units).substr(0, at)), handler);
 }
-bool HttpRouteRegistry::try_poll(const Name& path, Poll& handler) const {
+
+bool HttpRouteRegistry::try_poll(const Name &path, Poll &handler) const {
     if (get(poll_, path, handler))
         return true;
     bool any;
@@ -159,28 +178,33 @@ bool HttpRouteRegistry::try_poll(const Name& path, Poll& handler) const {
     handler = nullptr;
     return false;
 }
+
 HttpRouteRegistry::Stream HttpRouteRegistry::root_get() const {
     std::lock_guard lock(root_mutex_);
     return root_;
 }
+
 std::vector<std::string> HttpRouteRegistry::stream_keys() const {
     return keys(streams_);
 }
+
 std::vector<std::string> HttpRouteRegistry::simple_keys() const {
     auto result = keys(simple_);
     auto extra = keys(simple_variable_);
     result.insert(result.end(), extra.begin(), extra.end());
     return result;
 }
+
 std::vector<std::string> HttpRouteRegistry::poll_keys() const {
     auto result = keys(poll_);
     auto extra = keys(poll_variable_);
     result.insert(result.end(), extra.begin(), extra.end());
     return result;
 }
-network::HttpResponse RegistryCapabilityListener::dispatch(const network::HttpRequest& request,
-                                                           const network::HttpServer::Handler& fallback,
-                                                           const PollRequest& poll_request) const {
+
+network::HttpResponse RegistryCapabilityListener::dispatch(const network::HttpRequest &request,
+                                                           const network::HttpServer::Handler &fallback,
+                                                           const PollRequest &poll_request) const {
     auto path = request.path;
     if (path.size() > 1 && path.back() == '/')
         path.pop_back();
@@ -244,4 +268,4 @@ network::HttpResponse RegistryCapabilityListener::dispatch(const network::HttpRe
     response.status = 404;
     return response;
 }
-}
+} // namespace opensim::server

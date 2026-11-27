@@ -20,22 +20,25 @@ struct IdnaInfo {
     std::uint32_t errors = 0;
     std::int32_t reserved2 = 0, reserved3 = 0;
 };
+
 struct Idna {
-    using Open = void* (*)(std::uint32_t, std::int32_t*);
-    using Close = void (*)(void*);
-    using Convert = std::int32_t (*)(const void*, const char16_t*, std::int32_t, char16_t*, std::int32_t,
-                                     IdnaInfo*, std::int32_t*);
+    using Open = void *(*)(std::uint32_t, std::int32_t *);
+    using Close = void (*)(void *);
+    using Convert = std::int32_t (*)(const void *, const char16_t *, std::int32_t, char16_t *, std::int32_t, IdnaInfo *,
+                                     std::int32_t *);
     Open open = nullptr;
     Close close = nullptr;
     Convert convert = nullptr;
 #ifdef _WIN32
     HMODULE module = nullptr;
-    void* symbol(const std::string& s) {
-        return reinterpret_cast<void*>(GetProcAddress(module, s.c_str()));
+
+    void *symbol(const std::string &s) {
+        return reinterpret_cast<void *>(GetProcAddress(module, s.c_str()));
     }
 #else
-    void* module = nullptr;
-    void* symbol(const std::string& s) {
+    void *module = nullptr;
+
+    void *symbol(const std::string &s) {
         return dlsym(module, s.c_str());
     }
 #endif
@@ -62,21 +65,21 @@ struct Idna {
         close = reinterpret_cast<Close>(symbol("uidna_close" + suffix));
         convert = reinterpret_cast<Convert>(symbol("uidna_nameToASCII" + suffix));
     }
+
     // ICU's normalization services own process-wide caches. Keep the selected
     // module resident, as the runtime globalization shim does; unloading its
     // globals would orphan those caches while other providers may still use it.
     std::u16string tls_ascii(std::u16string input, bool ascii_fallback = true) {
         auto safe = [](std::u16string_view s) {
             for (auto c : s)
-                if (!((c >= u'A' && c <= u'Z') || (c >= u'a' && c <= u'z') || (c >= u'0' && c <= u'9') ||
-                      c == u'-' || c == u'.' || c == u'_'))
+                if (!((c >= u'A' && c <= u'Z') || (c >= u'a' && c <= u'z') || (c >= u'0' && c <= u'9') || c == u'-' ||
+                      c == u'.' || c == u'_'))
                     return false;
             return true;
         };
         auto invalid = [](std::u16string message) -> void {
-            throw ConfigUriComponentsError("System.ArgumentException",
-                                           std::move(message) + u" (Parameter 'unicode')", 0x80070057,
-                                           u"unicode");
+            throw ConfigUriComponentsError("System.ArgumentException", std::move(message) + u" (Parameter 'unicode')",
+                                           0x80070057, u"unicode");
         };
         try {
             if (input.empty())
@@ -95,13 +98,16 @@ struct Idna {
             auto idna = open(8 | 16, &error);
             if (!idna || error > 0)
                 throw std::runtime_error("Selected ICU UIDNA initialization failed");
+
             struct Guard {
                 Close close;
-                void* value;
+                void *value;
+
                 ~Guard() {
                     close(value);
                 }
             } guard{close, idna};
+
             IdnaInfo info;
             std::u16string result(512, u'\0');
             auto count = convert(idna, input.data(), static_cast<std::int32_t>(input.size()), result.data(),
@@ -110,23 +116,24 @@ struct Idna {
                 error = 0;
                 info = IdnaInfo{};
                 result.resize(count);
-                count = convert(idna, input.data(), static_cast<std::int32_t>(input.size()), result.data(),
-                                count, &info, &error);
+                count = convert(idna, input.data(), static_cast<std::int32_t>(input.size()), result.data(), count,
+                                &info, &error);
             }
             info.errors &= ~0x20u;
             if (error > 0 || info.errors || count <= 0)
                 invalid(u"Decoded string is not a valid IDN name.");
             result.resize(count);
-            const auto& casing = file_system_name::pinned_case_backend();
+            const auto &casing = file_system_name::pinned_case_backend();
             if (input.size() == result.size() && casing.ordinal_ignore_case_ends_with(input, result))
                 return input;
             return result;
-        } catch (const ConfigUriComponentsError& e) {
+        } catch (const ConfigUriComponentsError &e) {
             if (ascii_fallback && e.source_type == "System.ArgumentException" && safe(input))
                 return input;
             throw;
         }
     }
+
     ConfigUriText ascii(ConfigUriText input) {
         bool ascii = true;
         for (auto c : *input)
@@ -147,15 +154,15 @@ struct Idna {
             error = 0;
             info = IdnaInfo{};
             result.resize(count);
-            count = convert(idna, input->data(), static_cast<std::int32_t>(input->size()), result.data(),
-                            count, &info, &error);
+            count = convert(idna, input->data(), static_cast<std::int32_t>(input->size()), result.data(), count, &info,
+                            &error);
         }
         close(idna);
         info.errors &= ~0x20u;
         if (error > 0 || info.errors || count <= 0)
-            throw ConfigUriComponentsError(
-                "System.UriFormatException",
-                u"An invalid Unicode character by IDN standards was specified in the host.", 0x80131537);
+            throw ConfigUriComponentsError("System.UriFormatException",
+                                           u"An invalid Unicode character by IDN standards was specified in the host.",
+                                           0x80131537);
         result.resize(count);
         for (auto c : result)
             if (std::u16string_view(u"\\/?@#:[]").find(c) != std::u16string_view::npos)
@@ -165,7 +172,8 @@ struct Idna {
         return std::make_shared<const std::u16string>(std::move(result));
     }
 };
-}
+} // namespace
+
 std::shared_ptr<ConfigUriComponentsBackend> native_config_uri_components_backend() {
     auto b = std::make_shared<ConfigUriComponentsBackend>();
     b->unicode = native_config_uri_unicode_backend();
@@ -176,6 +184,7 @@ std::shared_ptr<ConfigUriComponentsBackend> native_config_uri_components_backend
     };
     return b;
 }
+
 std::u16string config_http_normalize_tls_host(std::optional<std::u16string_view> input) {
     if (!input || input->empty())
         return {};
@@ -185,8 +194,9 @@ std::u16string config_http_normalize_tls_host(std::optional<std::u16string_view>
     static Idna idna;
     return idna.tls_ascii(std::move(value));
 }
+
 std::u16string config_http_certificate_idn_ascii(std::u16string_view input) {
     static Idna idna;
     return idna.tls_ascii(std::u16string(input), false);
 }
-}
+} // namespace opensim::framework

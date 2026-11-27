@@ -1,8 +1,11 @@
 cmake_minimum_required(VERSION 3.20)
 project(OpenSimNative VERSION 0.1.0 LANGUAGES C CXX)
+set(OPENSIM_NWC_RUNTIME_DOTNET "" CACHE FILEPATH "Optional runtime host for pinned Nwc network references; DOTNET_EXECUTABLE remains the SDK host")
 
 add_library(opensim_framework
     src/expiring_cache.cpp
+    src/background_task_queue.cpp
+    src/udp_endpoint_cache.cpp
     src/certificate_policy_chain.cpp
     src/dotnet_regex_case.cpp
     src/dotnet_regex_char_class.cpp
@@ -38,6 +41,9 @@ add_library(opensim_framework
     src/full_path.cpp
     src/invariant_datetime_parse.cpp
     src/invariant_number_parse.cpp
+    src/invariant_number_format.cpp
+    src/installed_fonts.cpp
+    src/sdk_utf8.cpp
     src/nini_reader.cpp
     src/nini_writer.cpp
     src/nini_document.cpp
@@ -98,6 +104,8 @@ add_library(opensim_framework
     src/config_http_environment_proxy_native.cpp
     src/config_http_credential_cache.cpp
     src/config_http_cookies.cpp
+    src/dotnet_string_hash.cpp
+    src/dotnet_identity_hash.cpp
     src/config_http_cookies_native.cpp
     src/config_cookie_uri.cpp
     src/config_http_write_error.cpp
@@ -234,6 +242,7 @@ add_library(opensim_server_core
     src/local_simulation.cpp
     src/scene_access.cpp
     src/scene_admission.cpp
+    src/entity_transfer_state.cpp
     src/scene_client_verification.cpp
     src/capabilities_module.cpp
     src/caps_handlers.cpp
@@ -255,6 +264,11 @@ add_library(opensim_server_core
     src/osd_value.cpp
     src/avatar_wearable_osd.cpp
     src/account_store.cpp
+    src/remote_accounts.cpp
+    src/remote_avatars.cpp
+    src/remote_inventory.cpp
+    src/hg_inventory_broker.cpp
+    src/user_server_urls.cpp
     src/config_xml_startup.cpp
     src/config.cpp
     src/rpc.cpp
@@ -312,17 +326,47 @@ target_sources(opensim_server_core PRIVATE
     src/pos_physics.cpp
     src/viewer_region.cpp
     src/region_runtime.cpp
+    src/appearance_notecard.cpp
+    src/primitive_parameter_query.cpp
+    src/keyframed_motion_command.cpp
+    src/keyframed_motion.cpp
+    src/keyframed_motion_nrbf.cpp
+    src/group_position.cpp
+    src/primitive_parameter_rules.cpp
+    src/primitive_parameter_values.cpp
+    src/avatar_parameter_values.cpp
+    src/primitive_parameter_selection.cpp
+    src/primitive_parameter_scene.cpp
+    src/local_region_router.cpp
 )
 target_sources(opensim_server_core PRIVATE src/object_asset_xml.cpp)
 target_sources(opensim_server_core PRIVATE
     src/chat_packet.cpp
     src/lsl_runtime.cpp
+    src/lsl_string_value.cpp
+    src/lsl_fixed_array.cpp
+    src/lsl_script_class.cpp
+    src/lsl_script_array_copy.cpp
+    src/lsl_script_array_to_list.cpp
+    src/lsl_list_to_script_array.cpp
+    src/ossl_aes.cpp
+    src/ossl_format.cpp
+    src/object_teleport_motion.cpp
+    src/object_teleport_access.cpp
+    src/object_teleport.cpp
+    src/parcel_prim_limits.cpp
+    src/object_crossing_destination.cpp
+    src/crossing_ban_cache.cpp
     src/http_request_throttle.cpp
     src/script_http_transport.cpp
     src/script_http_proxy.cpp
     src/script_http_module.cpp
     src/lsl_checkpoint.cpp
+    src/yengine_xml_values.cpp
+    src/yengine_reference_projection.cpp
     src/yengine_snapshot.cpp
+    src/yengine_object_code.cpp
+    src/yengine_continuation.cpp
 )
 target_sources(opensim_server_core PRIVATE src/movement.cpp)
 target_sources(opensim_server_core PRIVATE
@@ -407,7 +451,7 @@ target_sources(opensim_server_core PRIVATE src/http_range.cpp src/get_assets.cpp
 target_sources(opensim_server_core PRIVATE src/object_job_engine.cpp src/get_assets_module.cpp)
 target_sources(opensim_server_core PRIVATE src/local_asset_connector.cpp)
 target_sources(opensim_server_core PRIVATE src/stored_asset_service.cpp src/sqlite_asset_store.cpp)
-target_sources(opensim_framework PRIVATE src/sha1.cpp src/sha256.cpp)
+target_sources(opensim_framework PRIVATE src/sha1.cpp src/sha256.cpp src/sha512.cpp)
 target_sources(opensim_server_core PRIVATE src/fs_asset_files.cpp src/fs_asset_service.cpp)
 target_sources(opensim_framework PRIVATE src/unicode_regex.cpp)
 target_sources(opensim_server_core PRIVATE src/migration.cpp)
@@ -639,7 +683,15 @@ add_library(opensim_map_labels STATIC src/map_labels.cpp)
 target_compile_features(opensim_map_labels PRIVATE cxx_std_20)
 target_link_libraries(opensim_map_labels PRIVATE opensim_framework Freetype::Freetype)
 target_link_libraries(opensim_server_core PRIVATE JPEG::JPEG PNG::PNG opensim_map_labels)
-add_executable(opensim-native src/main.cpp)
+add_executable(opensim-native
+    src/main.cpp
+    src/freeswitch_config.cpp
+    src/local_region_settings.cpp
+)
+if(MSVC)
+    # Nested LSL expressions must fit in the simulator's Windows thread stack.
+    target_link_options(opensim-native PRIVATE /STACK:4194304)
+endif()
 if(MSVC)
     target_compile_options(opensim-native PRIVATE /bigobj)
     set_property(SOURCE src/region_runtime.cpp APPEND PROPERTY COMPILE_OPTIONS /bigobj)
@@ -655,7 +707,7 @@ endif()
 if(PostgreSQL_FOUND)
     target_compile_definitions(opensim-native PRIVATE OPENSIM_HAVE_POSTGRESQL)
 endif()
-target_link_libraries(opensim-native PRIVATE opensim_server_core)
+target_link_libraries(opensim-native PRIVATE opensim_server_core native_xml)
 if(MINGW)
     target_link_options(opensim-native PRIVATE -municode)
 endif()
@@ -692,6 +744,24 @@ if(WIN32)
 elseif(APPLE)
     set(OPENSIM_UBODE_LIBRARY "${CMAKE_CURRENT_SOURCE_DIR}/../bin/lib64/libubode.dylib")
     set(OPENSIM_OPENJPEG_LIBRARY "${CMAKE_CURRENT_SOURCE_DIR}/../bin/lib64/libopenjpeg-dotnet.dylib")
+    find_program(OPENSIM_LIPO lipo REQUIRED)
+    set(opensim_macos_architectures ${CMAKE_OSX_ARCHITECTURES})
+    if(NOT opensim_macos_architectures)
+        set(opensim_macos_architectures "${CMAKE_SYSTEM_PROCESSOR}")
+    endif()
+    foreach(library IN ITEMS "${OPENSIM_UBODE_LIBRARY}" "${OPENSIM_OPENJPEG_LIBRARY}")
+        execute_process(
+            COMMAND "${OPENSIM_LIPO}" "${library}" -verify_arch ${opensim_macos_architectures}
+            RESULT_VARIABLE architecture_check
+            ERROR_VARIABLE architecture_error
+        )
+        if(NOT architecture_check STREQUAL "0")
+            message(FATAL_ERROR
+                "Native runtime library ${library} must support the requested macOS architectures.\n"
+                "Requested: ${opensim_macos_architectures}\n"
+                "lipo result: ${architecture_check}\n${architecture_error}")
+        endif()
+    endforeach()
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64|ARM64")
     set(OPENSIM_UBODE_LIBRARY "${CMAKE_CURRENT_SOURCE_DIR}/../bin/lib64/libubode-arm64.so")
     set(OPENSIM_OPENJPEG_LIBRARY "${CMAKE_CURRENT_SOURCE_DIR}/../bin/lib64/libopenjpeg-dotnet-arm64.so")
@@ -724,6 +794,7 @@ install(FILES third_party/httplib/LICENSE DESTINATION share/opensim-native/licen
 install(FILES third_party/pugixml/LICENSE.md DESTINATION share/opensim-native/licenses RENAME pugixml-LICENSE)
 install(FILES third_party/dotnet_zlib_intel/LICENSE DESTINATION share/opensim-native/licenses RENAME dotnet-zlib-intel-LICENSE)
 install(FILES third_party/dotnet_collation/LICENSE DESTINATION share/opensim-native/licenses RENAME dotnet-collation-LICENSE)
+install(FILES third_party/dotnet_hashcode/LICENSE.txt DESTINATION share/opensim-native/licenses RENAME dotnet-hashcode-LICENSE)
 install(FILES third_party/nini/LICENSE DESTINATION share/opensim-native/licenses RENAME nini-LICENSE)
 install(FILES third_party/zlib/LICENSE DESTINATION share/opensim-native/licenses RENAME zlib-LICENSE)
 install(FILES third_party/httplib/opensim-raw-requests.patch DESTINATION share/opensim-native/licenses)
@@ -807,9 +878,90 @@ if(BUILD_TESTING)
     add_executable(avatar_packets_tests tests/avatar_packets_tests.cpp)
     add_executable(chat_packet_tests tests/chat_packet_tests.cpp)
     add_executable(lsl_runtime_tests tests/lsl_runtime_tests.cpp)
+    add_executable(moving_script_events_tests tests/moving_script_events_tests.cpp)
+    target_link_libraries(moving_script_events_tests PRIVATE opensim_server_core)
+    add_test(NAME moving_script_events_tests COMMAND moving_script_events_tests)
+    add_executable(ossl_format_tests tests/ossl_format_tests.cpp)
+    add_executable(ossl_console_tests tests/ossl_console_tests.cpp)
+    target_link_libraries(ossl_console_tests PRIVATE opensim_server_core)
+    add_test(NAME ossl_console_tests COMMAND ossl_console_tests)
+    add_executable(ossl_console_probe tests/ossl_console_probe.cpp)
+    add_executable(object_teleport_motion_probe tests/object_teleport_motion_probe.cpp)
+    add_executable(object_teleport_access_probe tests/object_teleport_access_probe.cpp)
+    add_executable(object_teleport_probe tests/object_teleport_probe.cpp)
+    add_executable(object_teleport_world_tests tests/object_teleport_world_tests.cpp)
+    add_executable(keyframed_motion_command_probe tests/keyframed_motion_command_probe.cpp)
+    add_executable(keyframed_motion_probe tests/keyframed_motion_probe.cpp)
+    add_executable(keyframed_motion_world_tests tests/keyframed_motion_world_tests.cpp)
+    add_executable(keyframed_motion_runtime_tests tests/keyframed_motion_runtime_tests.cpp)
+    add_executable(keyframed_motion_asset_tests tests/keyframed_motion_asset_tests.cpp)
+    add_executable(keyframed_motion_duplicate_tests tests/keyframed_motion_duplicate_tests.cpp)
+    target_link_libraries(keyframed_motion_duplicate_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(keyframed_motion_duplicate_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME keyframed_motion_duplicate_tests COMMAND keyframed_motion_duplicate_tests)
+    set_tests_properties(keyframed_motion_duplicate_tests PROPERTIES TIMEOUT 20)
+    target_link_libraries(keyframed_motion_asset_tests PRIVATE opensim_server_core native_xml)
+    add_test(NAME keyframed_motion_asset_tests COMMAND keyframed_motion_asset_tests)
+    target_link_libraries(keyframed_motion_runtime_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(keyframed_motion_runtime_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME keyframed_motion_runtime_tests COMMAND keyframed_motion_runtime_tests)
+    set_tests_properties(keyframed_motion_runtime_tests PROPERTIES TIMEOUT 20)
+    add_executable(group_position_probe tests/group_position_probe.cpp)
+    target_link_libraries(group_position_probe PRIVATE opensim_server_core)
+    target_link_libraries(keyframed_motion_world_tests PRIVATE opensim_server_core)
+    add_test(NAME keyframed_motion_world_tests COMMAND keyframed_motion_world_tests)
+    target_link_libraries(keyframed_motion_probe PRIVATE opensim_server_core)
+    target_link_libraries(keyframed_motion_command_probe PRIVATE opensim_server_core)
+    add_executable(object_teleport_runtime_tests tests/object_teleport_runtime_tests.cpp)
+    target_link_libraries(object_teleport_runtime_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(object_teleport_runtime_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME object_teleport_runtime_tests COMMAND object_teleport_runtime_tests)
+    set_tests_properties(object_teleport_runtime_tests PROPERTIES TIMEOUT 20)
+    add_test(NAME object_teleport_physical_rider_tests COMMAND object_teleport_runtime_tests
+        --physical "${OPENSIM_UBODE_LIBRARY}" "${CMAKE_CURRENT_SOURCE_DIR}/../bin/data/avataranimations.xml")
+    set_tests_properties(object_teleport_physical_rider_tests PROPERTIES TIMEOUT 20)
+    add_executable(parcel_prim_limits_probe tests/parcel_prim_limits_probe.cpp)
+    add_executable(object_crossing_completion_probe tests/object_crossing_completion_probe.cpp)
+    add_executable(object_crossing_destination_probe tests/object_crossing_destination_probe.cpp)
+    target_link_libraries(object_crossing_destination_probe PRIVATE opensim_server_core)
+    add_executable(crossing_ban_cache_probe tests/crossing_ban_cache_probe.cpp)
+    target_link_libraries(crossing_ban_cache_probe PRIVATE opensim_server_core)
+    add_executable(world_crossing_removal_tests tests/world_crossing_removal_tests.cpp)
+    target_link_libraries(world_crossing_removal_tests PRIVATE opensim_server_core)
+    add_test(NAME world_crossing_removal_tests COMMAND world_crossing_removal_tests)
+    target_link_libraries(object_crossing_completion_probe PRIVATE opensim_server_core)
+    target_link_libraries(parcel_prim_limits_probe PRIVATE opensim_server_core)
+    target_link_libraries(object_teleport_world_tests PRIVATE opensim_server_core)
+    add_test(NAME object_teleport_world_tests COMMAND object_teleport_world_tests)
+    add_executable(object_teleport_physics_tests tests/object_teleport_physics_tests.cpp)
+    target_link_libraries(object_teleport_physics_tests PRIVATE opensim_server_core)
+    add_test(NAME object_teleport_physics_tests COMMAND object_teleport_physics_tests
+        "${OPENSIM_UBODE_LIBRARY}" "${CMAKE_CURRENT_SOURCE_DIR}/../bin/data/avataranimations.xml")
+    set_tests_properties(object_teleport_physics_tests PROPERTIES TIMEOUT 20)
+    target_link_libraries(object_teleport_probe PRIVATE opensim_server_core)
+    target_link_libraries(object_teleport_access_probe PRIVATE opensim_server_core)
+    target_link_libraries(object_teleport_motion_probe PRIVATE opensim_server_core)
+    target_link_libraries(ossl_console_probe PRIVATE opensim_server_core)
+    target_link_libraries(ossl_format_tests PRIVATE opensim_server_core)
+    add_test(NAME ossl_format_tests COMMAND ossl_format_tests)
+    add_executable(ossl_format_probe tests/ossl_format_probe.cpp)
+    target_link_libraries(ossl_format_probe PRIVATE opensim_server_core)
+    if(OpenSSL_FOUND)
+        add_executable(ossl_aes_tests tests/ossl_aes_tests.cpp)
+        target_link_libraries(ossl_aes_tests PRIVATE opensim_server_core)
+        add_test(NAME ossl_aes_tests COMMAND ossl_aes_tests)
+        add_executable(ossl_aes_probe tests/ossl_aes_probe.cpp)
+        target_link_libraries(ossl_aes_probe PRIVATE opensim_server_core)
+    endif()
     if(MSVC)
         # The fixture keeps hundreds of script cases in one function and also exercises nested evaluation.
-        target_link_options(lsl_runtime_tests PRIVATE /STACK:2097152)
+        target_link_options(lsl_runtime_tests PRIVATE /STACK:4194304)
     endif()
     add_executable(inventory_packets_tests tests/inventory_packets_tests.cpp)
     target_link_libraries(inventory_packets_tests PRIVATE opensim_server_core)
@@ -1108,7 +1260,32 @@ if(BUILD_TESTING)
     add_executable(region_asset_runtime_tests tests/region_asset_runtime_tests.cpp)
     target_link_libraries(region_asset_runtime_tests PRIVATE opensim_server_core native_sqlite)
     add_test(NAME region_asset_runtime_tests COMMAND region_asset_runtime_tests)
-    add_executable(region_runtime_tests tests/region_runtime_tests.cpp)
+    add_executable(appearance_notecard_tests tests/appearance_notecard_tests.cpp)
+    target_link_libraries(appearance_notecard_tests PRIVATE opensim_server_core)
+    add_test(NAME appearance_notecard_tests COMMAND appearance_notecard_tests)
+    add_executable(primitive_parameter_query_tests tests/primitive_parameter_query_tests.cpp)
+    target_link_libraries(primitive_parameter_query_tests PRIVATE opensim_server_core)
+    add_test(NAME primitive_parameter_query_tests COMMAND primitive_parameter_query_tests)
+    add_executable(primitive_parameter_rules_tests tests/primitive_parameter_rules_tests.cpp)
+    target_link_libraries(primitive_parameter_rules_tests PRIVATE opensim_server_core)
+    add_test(NAME primitive_parameter_rules_tests COMMAND primitive_parameter_rules_tests)
+    add_executable(primitive_parameter_values_tests tests/primitive_parameter_values_tests.cpp)
+    target_link_libraries(primitive_parameter_values_tests PRIVATE opensim_server_core)
+    add_test(NAME primitive_parameter_values_tests COMMAND primitive_parameter_values_tests)
+    add_executable(avatar_parameter_values_tests tests/avatar_parameter_values_tests.cpp)
+    target_link_libraries(avatar_parameter_values_tests PRIVATE opensim_server_core)
+    add_test(NAME avatar_parameter_values_tests COMMAND avatar_parameter_values_tests)
+    add_executable(primitive_parameter_selection_tests tests/primitive_parameter_selection_tests.cpp)
+    target_link_libraries(primitive_parameter_selection_tests PRIVATE opensim_server_core)
+    add_test(NAME primitive_parameter_selection_tests COMMAND primitive_parameter_selection_tests)
+    add_executable(primitive_parameter_scene_tests tests/primitive_parameter_scene_tests.cpp)
+    target_link_libraries(primitive_parameter_scene_tests PRIVATE opensim_server_core)
+    add_test(NAME primitive_parameter_scene_tests COMMAND primitive_parameter_scene_tests)
+    add_executable(sdk_vector_rotation_tests tests/sdk_vector_rotation_tests.cpp)
+    target_link_libraries(sdk_vector_rotation_tests PRIVATE opensim_server_core)
+    add_test(NAME sdk_vector_rotation_tests COMMAND sdk_vector_rotation_tests)
+    add_executable(region_runtime_tests tests/region_runtime_tests.cpp tests/appearance_save_probe.cpp
+        tests/object_details_color_probe.cpp tests/primitive_parameter_runtime_probe.cpp)
     add_executable(movement_tests tests/movement_tests.cpp)
     add_executable(movement_animation_tests tests/movement_animation_tests.cpp)
     target_link_libraries(movement_animation_tests PRIVATE opensim_server_core)
@@ -1123,7 +1300,62 @@ if(BUILD_TESTING)
     target_link_libraries(movement_tests PRIVATE opensim_server_core)
     add_test(NAME movement_tests COMMAND movement_tests)
     target_link_libraries(region_runtime_tests PRIVATE opensim_server_core)
+    add_executable(crossing_snapshot_runtime_tests tests/crossing_snapshot_runtime_tests.cpp)
+    target_link_libraries(crossing_snapshot_runtime_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(crossing_snapshot_runtime_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME crossing_snapshot_runtime_tests COMMAND crossing_snapshot_runtime_tests)
+    set_tests_properties(crossing_snapshot_runtime_tests PROPERTIES TIMEOUT 20)
+    add_executable(admission_restart_tests tests/admission_restart_tests.cpp)
+    target_link_libraries(admission_restart_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(admission_restart_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME admission_restart_tests COMMAND admission_restart_tests)
+    set_tests_properties(admission_restart_tests PROPERTIES TIMEOUT 30)
+
+    add_executable(removing_overlap_runtime_tests tests/removing_overlap_runtime_tests.cpp)
+    target_link_libraries(removing_overlap_runtime_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(removing_overlap_runtime_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME removing_overlap_runtime_tests COMMAND removing_overlap_runtime_tests)
+    set_tests_properties(removing_overlap_runtime_tests PROPERTIES TIMEOUT 30)
+    add_executable(child_lease_tests tests/child_lease_tests.cpp)
+    add_executable(transfer_runtime_tests tests/transfer_runtime_tests.cpp)
+    target_link_libraries(transfer_runtime_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(transfer_runtime_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME transfer_runtime_tests COMMAND transfer_runtime_tests)
+    set_tests_properties(transfer_runtime_tests PROPERTIES TIMEOUT 40)
+    target_link_libraries(child_lease_tests PRIVATE opensim_server_core)
+    add_executable(entity_transfer_state_probe tests/entity_transfer_state_probe.cpp)
+    target_link_libraries(entity_transfer_state_probe PRIVATE opensim_server_core)
+    add_executable(friends_online_cache_probe tests/friends_online_cache_probe.cpp)
+    target_link_libraries(friends_online_cache_probe PRIVATE opensim_server_core)
+    add_executable(entity_transfer_state_tests tests/entity_transfer_state_tests.cpp)
+    target_link_libraries(entity_transfer_state_tests PRIVATE opensim_server_core)
+    add_test(NAME entity_transfer_state_tests COMMAND entity_transfer_state_tests)
+    set_tests_properties(entity_transfer_state_tests PROPERTIES TIMEOUT 20)
+    if(MSVC)
+        target_link_options(child_lease_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME child_lease_tests COMMAND child_lease_tests)
+    set_tests_properties(child_lease_tests PROPERTIES TIMEOUT 30)
+    if(MSVC)
+        target_link_options(region_runtime_tests PRIVATE /STACK:4194304)
+    endif()
     add_test(NAME region_runtime_tests COMMAND region_runtime_tests "${OPENSIM_UBODE_LIBRARY}" "${CMAKE_CURRENT_SOURCE_DIR}/../bin/data/avataranimations.xml")
+    add_test(NAME region_runtime_local_calling_card
+        COMMAND region_runtime_tests "${OPENSIM_UBODE_LIBRARY}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/../bin/data/avataranimations.xml" local_calling_card)
+    set_tests_properties(region_runtime_local_calling_card PROPERTIES TIMEOUT 20)
+    add_test(NAME region_runtime_no_prim_collisions
+        COMMAND region_runtime_tests "${OPENSIM_UBODE_LIBRARY}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/../bin/data/avataranimations.xml" no_prim_collisions)
+    set_tests_properties(region_runtime_no_prim_collisions PROPERTIES TIMEOUT 20)
     foreach(spawn_routing IN ITEMS sequence random)
         add_test(NAME region_runtime_telehub_${spawn_routing}
             COMMAND region_runtime_tests "${OPENSIM_UBODE_LIBRARY}"
@@ -1151,8 +1383,39 @@ if(BUILD_TESTING)
     target_link_libraries(scene_world_tests PRIVATE opensim_server_core)
     add_test(NAME scene_world_tests COMMAND scene_world_tests)
     add_executable(viewer_region_tests tests/viewer_region_tests.cpp)
+    add_executable(circuit_trace_probe tests/circuit_trace_probe.cpp)
+    target_link_libraries(circuit_trace_probe PRIVATE opensim_server_core)
+    add_executable(remote_accounts_tests tests/remote_accounts_tests.cpp)
+    target_link_libraries(remote_accounts_tests PRIVATE opensim_server_core)
+    add_test(NAME remote_accounts_tests COMMAND remote_accounts_tests)
+    add_executable(remote_avatars_tests tests/remote_avatars_tests.cpp)
+    target_link_libraries(remote_avatars_tests PRIVATE opensim_server_core)
+    add_test(NAME remote_avatars_tests COMMAND remote_avatars_tests)
+    add_executable(remote_inventory_tests tests/remote_inventory_tests.cpp)
+    target_link_libraries(remote_inventory_tests PRIVATE opensim_server_core)
+    add_test(NAME remote_inventory_tests COMMAND remote_inventory_tests)
+    add_executable(remote_inventory_decode_probe tests/remote_inventory_decode_probe.cpp)
+    target_link_libraries(remote_inventory_decode_probe PRIVATE opensim_server_core)
+    add_executable(remote_inventory_error_probe tests/remote_inventory_error_probe.cpp)
+    target_link_libraries(remote_inventory_error_probe PRIVATE opensim_server_core)
+    add_executable(hg_inventory_broker_tests tests/hg_inventory_broker_tests.cpp)
+    target_link_libraries(hg_inventory_broker_tests PRIVATE opensim_server_core)
+    add_test(NAME hg_inventory_broker_tests COMMAND hg_inventory_broker_tests)
+    add_executable(user_server_urls_tests tests/user_server_urls_tests.cpp)
+    target_link_libraries(user_server_urls_tests PRIVATE opensim_server_core)
+    add_test(NAME user_server_urls_tests COMMAND user_server_urls_tests)
+    add_executable(pending_login_close_tests tests/pending_login_close_tests.cpp)
+    target_link_libraries(pending_login_close_tests PRIVATE opensim_server_core)
+    add_test(NAME pending_login_close_tests COMMAND pending_login_close_tests)
+    set_tests_properties(pending_login_close_tests PROPERTIES TIMEOUT 45)
     add_executable(viewer_session_probe tests/viewer_session_probe.cpp tests/legacy_inventory_probe.cpp tests/task_inventory_probe.cpp tests/inventory_script_rez_probe.cpp tests/user_inventory_probe.cpp tests/generic_asset_probe.cpp)
     target_link_libraries(viewer_session_probe PRIVATE opensim_server_core)
+    if(WIN32)
+        add_executable(windows_thread_stack_probe tests/windows_thread_stack_probe.cpp)
+        target_compile_features(windows_thread_stack_probe PRIVATE cxx_std_17)
+        target_link_libraries(windows_thread_stack_probe PRIVATE dbghelp)
+        add_dependencies(viewer_session_probe windows_thread_stack_probe)
+    endif()
     target_link_libraries(viewer_region_tests PRIVATE opensim_server_core)
     add_test(NAME viewer_region_tests COMMAND viewer_region_tests)
     add_executable(simulator_features_probe tests/simulator_features_probe.cpp)
@@ -1444,10 +1707,17 @@ if(BUILD_TESTING)
     add_executable(queue_tests tests/queue_tests.cpp)
     target_link_libraries(queue_tests PRIVATE opensim_framework)
     add_test(NAME queue_tests COMMAND queue_tests)
+    add_executable(background_task_queue_tests tests/background_task_queue_tests.cpp)
+    target_link_libraries(background_task_queue_tests PRIVATE opensim_framework)
+    add_test(NAME background_task_queue_tests COMMAND background_task_queue_tests)
+    set_tests_properties(background_task_queue_tests PROPERTIES TIMEOUT 20)
     add_executable(transport_tests tests/transport_tests.cpp)
     target_link_libraries(transport_tests PRIVATE opensim_framework)
     add_test(NAME transport_tests COMMAND transport_tests)
     set_tests_properties(transport_tests PROPERTIES TIMEOUT 20)
+    add_executable(pending_admission_probe tests/pending_admission_probe.cpp)
+    target_link_libraries(pending_admission_probe PRIVATE opensim_framework)
+    add_test(NAME pending_admission_tests COMMAND pending_admission_probe --self-test)
     add_executable(udp_state_tests tests/udp_state_tests.cpp)
     target_link_libraries(udp_state_tests PRIVATE opensim_framework)
     add_test(NAME udp_state_tests COMMAND udp_state_tests)
@@ -1456,6 +1726,32 @@ if(BUILD_TESTING)
     add_test(NAME circuit_tests COMMAND circuit_tests)
     find_package(Python3 QUIET COMPONENTS Interpreter)
     if(Python3_FOUND)
+        add_test(NAME viewer_access_network COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/viewer_access_network.py"
+            --native "$<TARGET_FILE:opensim-native>"
+            --work "${CMAKE_CURRENT_BINARY_DIR}/viewer-access-network")
+        set_tests_properties(viewer_access_network PROPERTIES TIMEOUT 180)
+        add_test(NAME transfer_callback_network COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/transfer_callback_network.py"
+            --native "$<TARGET_FILE:opensim-native>"
+            --work "${CMAKE_CURRENT_BINARY_DIR}/transfer-callback-network")
+        set_tests_properties(transfer_callback_network PROPERTIES TIMEOUT 120)
+        add_test(NAME multi_region_return_network COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/multi_region_return_network.py"
+            --native "$<TARGET_FILE:opensim-native>"
+            --work "${CMAKE_CURRENT_BINARY_DIR}/multi-region-return-network")
+        set_tests_properties(multi_region_return_network PROPERTIES TIMEOUT 180)
+        add_test(NAME separate_process_return_network COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/multi_region_return_network.py"
+            --native "$<TARGET_FILE:opensim-native>" --separate-processes
+            --work "${CMAKE_CURRENT_BINARY_DIR}/separate-process-return-network")
+        set_tests_properties(separate_process_return_network PROPERTIES TIMEOUT 180)
+        add_test(NAME preview_endpoint_recovery_network COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/preview_entry_network.py"
+            --native "$<TARGET_FILE:opensim-native>" --viewer "$<TARGET_FILE:viewer_session_probe>"
+            --endpoint-recovery-cycles 3 --login-cycles 5
+            --work "${CMAKE_CURRENT_BINARY_DIR}/preview-endpoint-recovery-network")
+        set_tests_properties(preview_endpoint_recovery_network PROPERTIES TIMEOUT 180)
         add_test(NAME vendored_dependency_integrity COMMAND "${Python3_EXECUTABLE}"
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/verify_dependencies.py")
         add_test(NAME poll_http_network COMMAND "${Python3_EXECUTABLE}"
@@ -1502,6 +1798,28 @@ if(BUILD_TESTING)
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/server_network.py" --native "$<TARGET_FILE:opensim-native>"
             --work "${CMAKE_CURRENT_BINARY_DIR}/network-tests")
         set_tests_properties(server_network PROPERTIES TIMEOUT 90)
+        add_test(NAME circuit_trace_network COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/circuit_trace_network.py" --native "$<TARGET_FILE:circuit_trace_probe>")
+        set_tests_properties(circuit_trace_network PROPERTIES TIMEOUT 45)
+        add_test(NAME hg_inventory_visitor_network COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/hg_inventory_network.py"
+            --native "$<TARGET_FILE:opensim-native>" --work "${CMAKE_CURRENT_BINARY_DIR}/hg-inventory-visitor-network")
+        set_tests_properties(hg_inventory_visitor_network PROPERTIES TIMEOUT 90)
+        add_test(NAME hg_inventory_offline_network COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/hg_inventory_network.py"
+            --native "$<TARGET_FILE:opensim-native>" --offline
+            --work "${CMAKE_CURRENT_BINARY_DIR}/hg-inventory-offline-network")
+        set_tests_properties(hg_inventory_offline_network PROPERTIES TIMEOUT 90)
+        add_test(NAME foreign_profile_directory_network COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/hg_inventory_network.py"
+            --native "$<TARGET_FILE:opensim-native>" --foreign-profiles
+            --work "${CMAKE_CURRENT_BINARY_DIR}/foreign-profile-directory-network")
+        set_tests_properties(foreign_profile_directory_network PROPERTIES TIMEOUT 90)
+        add_test(NAME shared_profile_inventory_network COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/hg_inventory_network.py"
+            --native "$<TARGET_FILE:opensim-native>" --shared-profiles
+            --work "${CMAKE_CURRENT_BINARY_DIR}/shared-profile-inventory-network")
+        set_tests_properties(shared_profile_inventory_network PROPERTIES TIMEOUT 90)
         add_test(NAME foreign_agent_network COMMAND "${Python3_EXECUTABLE}"
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/foreign_agent_network.py" "$<TARGET_FILE:opensim-native>")
         add_test(NAME foreign_agent_telehub_denied_network COMMAND "${Python3_EXECUTABLE}"
@@ -1554,6 +1872,9 @@ if(BUILD_TESTING)
     set_tests_properties(expiring_cache_runtime PROPERTIES TIMEOUT 20)
     add_executable(expiring_cache_probe tests/expiring_cache_probe.cpp)
     target_link_libraries(expiring_cache_probe PRIVATE opensim_server_core)
+    add_executable(udp_endpoint_cache_probe tests/udp_endpoint_cache_probe.cpp)
+    target_link_libraries(udp_endpoint_cache_probe PRIVATE opensim_framework)
+    add_test(NAME udp_endpoint_cache_tests COMMAND udp_endpoint_cache_probe --self-test)
     add_executable(fake_parcel_probe tests/fake_parcel_probe.cpp)
     target_link_libraries(fake_parcel_probe PRIVATE opensim_framework)
     add_executable(sdk_vector3d_text_probe tests/sdk_vector3d_text_probe.cpp)
@@ -1654,6 +1975,12 @@ if(BUILD_TESTING)
     add_executable(remote_console_http_server tests/remote_console_http_server.cpp)
     target_link_libraries(remote_console_http_server PRIVATE opensim_server_core)
     if(Python3_Interpreter_FOUND)
+        if(WIN32)
+            add_test(NAME windows_thread_stack_probe_tests COMMAND "${Python3_EXECUTABLE}"
+                "${CMAKE_CURRENT_SOURCE_DIR}/tests/windows_thread_stack_probe_tests.py"
+                --probe "$<TARGET_FILE:windows_thread_stack_probe>")
+            set_tests_properties(windows_thread_stack_probe_tests PROPERTIES TIMEOUT 30)
+        endif()
         add_test(NAME script_http_transport_network COMMAND "${Python3_EXECUTABLE}"
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/script_http_transport_network.py" "$<TARGET_FILE:lsl_runtime_tests>")
         set_tests_properties(script_http_transport_network PROPERTIES TIMEOUT 30)
@@ -1719,7 +2046,11 @@ if(BUILD_TESTING)
     target_link_libraries(login_forwarded_probe PRIVATE opensim_server_core)
     add_executable(server_tests tests/server_tests.cpp)
     target_link_libraries(server_tests PRIVATE opensim_server_core native_sqlite)
-    add_test(NAME server_tests COMMAND server_tests)
+    add_test(NAME server_tests COMMAND server_tests "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures")
+    if(OpenSSL_FOUND)
+        target_compile_definitions(server_tests PRIVATE OPENSIM_TEST_TLS)
+        target_link_libraries(server_tests PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+    endif()
     add_executable(login_probe tests/login_probe.cpp)
     target_link_libraries(login_probe PRIVATE opensim_server_core)
     add_executable(login_access_probe tests/login_access_probe.cpp)
@@ -1745,11 +2076,170 @@ if(BUILD_TESTING)
     add_test(NAME native_tests COMMAND native_tests)
 
     add_executable(parity_probe tests/parity_probe.cpp)
+    add_executable(parity_compile_probe tools/parity_compile_probe.cpp)
+    target_link_libraries(parity_compile_probe PRIVATE opensim_server_core)
     target_link_libraries(parity_probe PRIVATE opensim_framework)
     option(OPENSIM_DIFFERENTIAL_TESTS "Compare port with original C# sources (requires .NET SDK and Python)" OFF)
     if(OPENSIM_DIFFERENTIAL_TESTS)
         find_package(Python3 REQUIRED COMPONENTS Interpreter)
         find_program(DOTNET_EXECUTABLE dotnet REQUIRED)
+        add_test(NAME object_crossing_destination_source_parity COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_object_crossing_destination.py" --native "$<TARGET_FILE:object_crossing_destination_probe>"
+            --dotnet "${DOTNET_EXECUTABLE}" --work "${CMAKE_CURRENT_BINARY_DIR}/object-crossing-destination-source-reference")
+        set_tests_properties(object_crossing_destination_source_parity PROPERTIES TIMEOUT 90)
+        add_test(NAME crossing_ban_cache_source_parity COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_crossing_ban_cache.py" --native "$<TARGET_FILE:crossing_ban_cache_probe>"
+            --dotnet "${DOTNET_EXECUTABLE}" --work "${CMAKE_CURRENT_BINARY_DIR}/crossing-ban-cache-source-reference")
+        set_tests_properties(crossing_ban_cache_source_parity PROPERTIES TIMEOUT 90)
+        add_test(NAME object_crossing_completion_source_parity COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_object_crossing_completion.py" --native "$<TARGET_FILE:object_crossing_completion_probe>"
+            --dotnet "${DOTNET_EXECUTABLE}" --work "${CMAKE_CURRENT_BINARY_DIR}/object-crossing-completion-source-reference")
+        set_tests_properties(object_crossing_completion_source_parity PROPERTIES TIMEOUT 90)
+        add_test(NAME parcel_prim_limits_source_parity COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_parcel_prim_limits.py" --native "$<TARGET_FILE:parcel_prim_limits_probe>"
+            --dotnet "${DOTNET_EXECUTABLE}" --work "${CMAKE_CURRENT_BINARY_DIR}/parcel-prim-limits-source-reference")
+        set_tests_properties(parcel_prim_limits_source_parity PROPERTIES TIMEOUT 90)
+        add_test(NAME object_teleport_storage_source_parity COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_object_teleport_storage.py" --native "$<TARGET_FILE:object_teleport_motion_probe>"
+            --dotnet "${DOTNET_EXECUTABLE}" --work "${CMAKE_CURRENT_BINARY_DIR}/object-teleport-storage-source-reference")
+        set_tests_properties(object_teleport_storage_source_parity PROPERTIES TIMEOUT 90)
+        add_test(NAME keyframed_motion_world_storage_source_parity COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_object_teleport_storage.py"
+            --native "$<TARGET_FILE:object_teleport_motion_probe>" --keyframed-world
+            --dotnet "${DOTNET_EXECUTABLE}" --work "${CMAKE_CURRENT_BINARY_DIR}/keyframed-motion-world-storage-reference")
+        set_tests_properties(keyframed_motion_world_storage_source_parity PROPERTIES TIMEOUT 90)
+        add_test(NAME group_position_source_parity COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_group_position.py" --native "$<TARGET_FILE:group_position_probe>"
+            --dotnet "${DOTNET_EXECUTABLE}" --work "${CMAKE_CURRENT_BINARY_DIR}/group-position-reference")
+        set_tests_properties(group_position_source_parity PROPERTIES TIMEOUT 90)
+        add_test(NAME object_teleport_source_parity COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_object_teleport.py" --native "$<TARGET_FILE:object_teleport_probe>"
+            --dotnet "${DOTNET_EXECUTABLE}" --work "${CMAKE_CURRENT_BINARY_DIR}/object-teleport-source-reference")
+        set_tests_properties(object_teleport_source_parity PROPERTIES TIMEOUT 90)
+        add_test(NAME keyframed_motion_command_source_parity COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_keyframed_motion_command.py"
+            --native "$<TARGET_FILE:keyframed_motion_command_probe>" --dotnet "${DOTNET_EXECUTABLE}"
+            --work "${CMAKE_CURRENT_BINARY_DIR}/keyframed-motion-command-reference")
+        set_tests_properties(keyframed_motion_command_source_parity PROPERTIES TIMEOUT 90)
+        add_test(NAME keyframed_motion_source_parity COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_keyframed_motion.py"
+            --native "$<TARGET_FILE:keyframed_motion_probe>" --dotnet "${DOTNET_EXECUTABLE}"
+            --work "${CMAKE_CURRENT_BINARY_DIR}/keyframed-motion-reference")
+        set_tests_properties(keyframed_motion_source_parity PROPERTIES TIMEOUT 90)
+        # This oracle intentionally loads the original compiled simulator class.
+        # Source-only native builds do not necessarily have that assembly.
+        if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../bin/OpenSim.Region.Framework.dll")
+            add_test(NAME keyframed_motion_serialization_source_parity COMMAND "${Python3_EXECUTABLE}"
+                "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_keyframed_motion_serialization.py"
+                --native "$<TARGET_FILE:keyframed_motion_probe>" --dotnet "${DOTNET_EXECUTABLE}"
+                --work "${CMAKE_CURRENT_BINARY_DIR}/keyframed-motion-serialization-reference"
+                --output "${CMAKE_CURRENT_BINARY_DIR}/keyframed-motion-serialization-results.json")
+            set_tests_properties(keyframed_motion_serialization_source_parity PROPERTIES TIMEOUT 90)
+        endif()
+        add_test(NAME object_teleport_access_source_parity COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_object_teleport_access.py" --native "$<TARGET_FILE:object_teleport_access_probe>"
+            --dotnet "${DOTNET_EXECUTABLE}" --work "${CMAKE_CURRENT_BINARY_DIR}/object-teleport-access-source-reference")
+        set_tests_properties(object_teleport_access_source_parity PROPERTIES TIMEOUT 90)
+        add_test(NAME object_teleport_motion_source_parity COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_object_teleport_motion.py" --native "$<TARGET_FILE:object_teleport_motion_probe>"
+            --dotnet "${DOTNET_EXECUTABLE}" --work "${CMAKE_CURRENT_BINARY_DIR}/object-teleport-motion-source-reference")
+        set_tests_properties(object_teleport_motion_source_parity PROPERTIES TIMEOUT 90)
+        add_test(NAME ossl_console_source_parity COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_ossl_console.py" --native "$<TARGET_FILE:ossl_console_probe>"
+            --dotnet "${DOTNET_EXECUTABLE}" --work "${CMAKE_CURRENT_BINARY_DIR}/ossl-console-source-reference")
+        set_tests_properties(ossl_console_source_parity PROPERTIES TIMEOUT 90)
+        add_test(NAME ossl_format_source_parity COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_ossl_format.py" --native "$<TARGET_FILE:ossl_format_probe>"
+            --dotnet "${DOTNET_EXECUTABLE}" --work "${CMAKE_CURRENT_BINARY_DIR}/ossl-format-source-reference")
+        set_tests_properties(ossl_format_source_parity PROPERTIES TIMEOUT 90)
+        if(TARGET ossl_aes_probe)
+            add_test(NAME ossl_aes_source_parity COMMAND "${Python3_EXECUTABLE}"
+                "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_ossl_aes.py" --native "$<TARGET_FILE:ossl_aes_probe>"
+                --dotnet "${DOTNET_EXECUTABLE}" --work "${CMAKE_CURRENT_BINARY_DIR}/ossl-aes-source-reference")
+            set_tests_properties(ossl_aes_source_parity PROPERTIES TIMEOUT 90)
+        endif()
+        add_test(NAME inventory_multiple_items_source_parity COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_inventory_multiple_items.py"
+            --native "$<TARGET_FILE:remote_inventory_decode_probe>" --dotnet "${DOTNET_EXECUTABLE}"
+            --work "${CMAKE_CURRENT_BINARY_DIR}/inventory-item-cache-sequences-reference")
+        set_tests_properties(inventory_multiple_items_source_parity PROPERTIES TIMEOUT 90)
+        add_test(NAME inventory_collections_source_parity COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_inventory_collections.py"
+            --native "$<TARGET_FILE:remote_inventory_decode_probe>" --dotnet "${DOTNET_EXECUTABLE}"
+            --work "${CMAKE_CURRENT_BINARY_DIR}/inventory-collections-reference")
+        set_tests_properties(inventory_collections_source_parity PROPERTIES TIMEOUT 90)
+        add_test(NAME inventory_single_folder_source_parity COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_inventory_single_folder.py"
+            --native "$<TARGET_FILE:remote_inventory_decode_probe>" --dotnet "${DOTNET_EXECUTABLE}"
+            --work "${CMAKE_CURRENT_BINARY_DIR}/inventory-single-folder-reference")
+        set_tests_properties(inventory_single_folder_source_parity PROPERTIES TIMEOUT 90)
+        add_test(NAME inventory_request_errors_source_parity COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_inventory_request_errors.py"
+            --native "$<TARGET_FILE:remote_inventory_error_probe>" --dotnet "${DOTNET_EXECUTABLE}"
+            --work "${CMAKE_CURRENT_BINARY_DIR}/inventory-request-errors-reference")
+        set_tests_properties(inventory_request_errors_source_parity PROPERTIES TIMEOUT 90)
+        add_test(NAME inventory_skeleton_response_source_parity COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_inventory_skeleton.py"
+            --native "$<TARGET_FILE:remote_inventory_decode_probe>" --dotnet "${DOTNET_EXECUTABLE}"
+            --work "${CMAKE_CURRENT_BINARY_DIR}/inventory-skeleton-reference")
+        set_tests_properties(inventory_skeleton_response_source_parity PROPERTIES TIMEOUT 90)
+        add_test(NAME inventory_item_decode_source_parity COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_inventory_item_decode.py"
+            --native "$<TARGET_FILE:remote_inventory_decode_probe>" --dotnet "${DOTNET_EXECUTABLE}"
+            --work "${CMAKE_CURRENT_BINARY_DIR}/inventory-item-decode-reference")
+        set_tests_properties(inventory_item_decode_source_parity PROPERTIES TIMEOUT 90)
+        add_test(NAME inventory_folder_decode_source_parity COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_inventory_folder_decode.py"
+            --native "$<TARGET_FILE:remote_inventory_decode_probe>" --dotnet "${DOTNET_EXECUTABLE}"
+            --work "${CMAKE_CURRENT_BINARY_DIR}/inventory-folder-decode-reference")
+        set_tests_properties(inventory_folder_decode_source_parity PROPERTIES TIMEOUT 90)
+        add_test(NAME inventory_permission_reply_source_parity COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_inventory_permissions.py"
+            --native "$<TARGET_FILE:remote_inventory_tests>" --dotnet "${DOTNET_EXECUTABLE}"
+            --work "${CMAKE_CURRENT_BINARY_DIR}/inventory-permission-reply-reference")
+        set_tests_properties(inventory_permission_reply_source_parity PROPERTIES TIMEOUT 90)
+        add_test(NAME udp_endpoint_cache_source_parity COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_udp_endpoint_cache.py"
+            --native "$<TARGET_FILE:udp_endpoint_cache_probe>" --dotnet "${DOTNET_EXECUTABLE}"
+            --work "${CMAKE_CURRENT_BINARY_DIR}/udp-endpoint-cache-reference")
+        add_test(NAME pending_admission_source_parity COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_pending_admission.py"
+            --native "$<TARGET_FILE:pending_admission_probe>" --dotnet "${DOTNET_EXECUTABLE}"
+            --work "${CMAKE_CURRENT_BINARY_DIR}/pending-admission-reference")
+        add_test(NAME client_replacement_source_parity COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_client_replacement.py"
+            --native "$<TARGET_FILE:transport_tests>" --dotnet "${DOTNET_EXECUTABLE}"
+            --work "${CMAKE_CURRENT_BINARY_DIR}/client-replacement-reference")
+        add_test(NAME primitive_material_cache_source_parity COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_primitive_material_cache.py"
+            --native "$<TARGET_FILE:primitive_parameter_scene_tests>" --dotnet "${DOTNET_EXECUTABLE}"
+            --work "${CMAKE_CURRENT_BINARY_DIR}/primitive-material-cache-reference")
+        add_test(NAME primitive_parameter_constants_source_parity COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_primitive_parameter_constants.py"
+            --native "$<TARGET_FILE:primitive_parameter_scene_tests>")
+        add_test(NAME primitive_parameter_selection_source_parity COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_primitive_parameter_selection.py"
+            --native "$<TARGET_FILE:primitive_parameter_selection_tests>" --dotnet "${DOTNET_EXECUTABLE}"
+            --work "${CMAKE_CURRENT_BINARY_DIR}/primitive-parameter-selection-reference")
+        add_test(NAME sdk_vector_rotation_source_parity COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_sdk_vector_rotation.py"
+            --native "$<TARGET_FILE:sdk_vector_rotation_tests>" --dotnet "${DOTNET_EXECUTABLE}"
+            --work "${CMAKE_CURRENT_BINARY_DIR}/sdk-vector-rotation-reference")
+        add_test(NAME avatar_parameter_values_source_parity COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_avatar_parameter_values.py"
+            --native "$<TARGET_FILE:avatar_parameter_values_tests>" --dotnet "${DOTNET_EXECUTABLE}"
+            --work "${CMAKE_CURRENT_BINARY_DIR}/avatar-parameter-values-reference")
+        add_test(NAME primitive_parameter_values_source_parity COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_primitive_parameter_values.py"
+            --native "$<TARGET_FILE:primitive_parameter_values_tests>" --dotnet "${DOTNET_EXECUTABLE}"
+            --work "${CMAKE_CURRENT_BINARY_DIR}/primitive-parameter-values-reference")
+        add_test(NAME primitive_parameter_query_source_parity COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_primitive_parameter_query.py"
+            --native "$<TARGET_FILE:primitive_parameter_query_tests>" --dotnet "${DOTNET_EXECUTABLE}"
+            --work "${CMAKE_CURRENT_BINARY_DIR}/primitive-parameter-query-reference")
+        add_test(NAME primitive_parameter_rules_source_coverage COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_primitive_parameter_rules.py"
+            --native "$<TARGET_FILE:primitive_parameter_rules_tests>")
         add_test(NAME dotnet_regex_interpreter_source_parity COMMAND "${Python3_EXECUTABLE}"
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_dotnet_regex_interpreter.py" --native "$<TARGET_FILE:dotnet_regex_interpreter_tests>"
             --dotnet "${DOTNET_EXECUTABLE}" --work "${CMAKE_CURRENT_BINARY_DIR}/dotnet-regex-interpreter-reference")
@@ -1889,8 +2379,17 @@ if(BUILD_TESTING)
         add_test(NAME user_agent_connector_source_parity COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_user_agent_connector.py" --native "$<TARGET_FILE:user_agent_connector_probe>" --dotnet "${DOTNET_EXECUTABLE}" --work "${CMAKE_CURRENT_BINARY_DIR}/user-agent-connector-reference")
         add_test(NAME xml_rpc_diagnostics_source_parity COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_xml_rpc_diagnostics.py" --native "$<TARGET_FILE:xml_rpc_diagnostics_probe>" --dotnet "${DOTNET_EXECUTABLE}" --work "${CMAKE_CURRENT_BINARY_DIR}/xml-rpc-diagnostics-reference")
         add_test(NAME xml_rpc_requester_source_parity COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_xml_rpc_requester.py" --native "$<TARGET_FILE:xml_rpc_requester_probe>" --dotnet "${DOTNET_EXECUTABLE}" --work "${CMAKE_CURRENT_BINARY_DIR}/xml-rpc-requester-reference")
-        add_test(NAME nwc_http_network_source_parity COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_nwc_http.py" --native "$<TARGET_FILE:nwc_http_probe>" --dotnet "${DOTNET_EXECUTABLE}" --work "${CMAKE_CURRENT_BINARY_DIR}/nwc-http-reference")
-        add_test(NAME nwc_global_http_network_source_parity COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_nwc_http.py" --native "$<TARGET_FILE:nwc_http_probe>" --dotnet "${DOTNET_EXECUTABLE}" --work "${CMAKE_CURRENT_BINARY_DIR}/nwc-global-http-reference" --global-client)
+        set(_nwc_runtime_args)
+        if(OPENSIM_NWC_RUNTIME_DOTNET)
+            list(APPEND _nwc_runtime_args --runtime-dotnet "${OPENSIM_NWC_RUNTIME_DOTNET}")
+        endif()
+        add_test(NAME nwc_http_network_source_parity COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_nwc_http.py" --native "$<TARGET_FILE:nwc_http_probe>" --dotnet "${DOTNET_EXECUTABLE}" --work "${CMAKE_CURRENT_BINARY_DIR}/nwc-http-reference" ${_nwc_runtime_args})
+        add_test(NAME nwc_global_http_network_source_parity COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_nwc_http.py" --native "$<TARGET_FILE:nwc_http_probe>" --dotnet "${DOTNET_EXECUTABLE}" --work "${CMAKE_CURRENT_BINARY_DIR}/nwc-global-http-reference" --global-client ${_nwc_runtime_args})
+        add_test(NAME nwc_connection_reset_source_parity COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_nwc_connection_reset.py"
+            --native "$<TARGET_FILE:nwc_http_probe>" --dotnet "${DOTNET_EXECUTABLE}"
+            --work "${CMAKE_CURRENT_BINARY_DIR}/nwc-connection-reset-reference")
+        set_tests_properties(nwc_connection_reset_source_parity PROPERTIES TIMEOUT 90)
         set_tests_properties(nwc_global_http_network_source_parity PROPERTIES TIMEOUT 180)
         add_test(NAME nwc_xml_rpc_serializer_source_parity COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_nwc_xml_rpc_serializer.py" --native "$<TARGET_FILE:nwc_xml_rpc_serializer_probe>" --dotnet "${DOTNET_EXECUTABLE}" --work "${CMAKE_CURRENT_BINARY_DIR}/nwc-xml-rpc-serializer-reference")
         add_test(NAME nwc_xml_rpc_stream_source_parity COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_nwc_xml_rpc_stream.py" --native "$<TARGET_FILE:nwc_xml_rpc_probe>" --dotnet "${DOTNET_EXECUTABLE}" --work "${CMAKE_CURRENT_BINARY_DIR}/nwc-xml-rpc-stream-reference")
@@ -2117,6 +2616,18 @@ if(BUILD_TESTING)
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_scene_admission.py" --native "$<TARGET_FILE:scene_admission_probe>"
             --dotnet "${DOTNET_EXECUTABLE}" --work "${CMAKE_CURRENT_BINARY_DIR}/scene-admission-reference")
         set_tests_properties(scene_admission_source_parity PROPERTIES PASS_REGULAR_EXPRESSION "PASS: .*scene admission source observations")
+        add_test(NAME entity_transfer_state_source_parity COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_entity_transfer_state.py"
+            --native "$<TARGET_FILE:entity_transfer_state_probe>" --dotnet "${DOTNET_EXECUTABLE}"
+            --work "${CMAKE_CURRENT_BINARY_DIR}/entity-transfer-state-reference")
+        set_tests_properties(entity_transfer_state_source_parity PROPERTIES TIMEOUT 120
+            PASS_REGULAR_EXPRESSION "PASS: .*original transfer-state observations")
+        add_test(NAME friends_online_cache_source_parity COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_friends_online_cache.py"
+            --native "$<TARGET_FILE:friends_online_cache_probe>" --dotnet "${DOTNET_EXECUTABLE}"
+            --work "${CMAKE_CURRENT_BINARY_DIR}/friends-online-cache-reference")
+        set_tests_properties(friends_online_cache_source_parity PROPERTIES TIMEOUT 120
+            PASS_REGULAR_EXPRESSION "PASS: .*original friend-online cache observations")
         add_test(NAME scene_access_network COMMAND "${Python3_EXECUTABLE}"
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/scene_access_network.py" --server "$<TARGET_FILE:local_simulation_server>"
             --work "${CMAKE_CURRENT_BINARY_DIR}/scene-access-network")
@@ -2217,8 +2728,13 @@ if(BUILD_TESTING)
         set_tests_properties(friends_connector_source_parity PROPERTIES PASS_REGULAR_EXPRESSION "PASS: .*friends connector source observations")
         add_test(NAME service_xml_source_parity COMMAND "${Python3_EXECUTABLE}"
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_service_xml.py" --native "$<TARGET_FILE:service_xml_probe>"
-            --dotnet "${DOTNET_EXECUTABLE}" --work "${CMAKE_CURRENT_BINARY_DIR}/service-xml-reference")
+            --dotnet "${DOTNET_EXECUTABLE}" --work "${CMAKE_CURRENT_BINARY_DIR}/service-xml-declaration-string-reference")
         set_tests_properties(service_xml_source_parity PROPERTIES PASS_REGULAR_EXPRESSION "PASS: .*service XML source observations")
+        add_test(NAME service_xml_stream_source_parity COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_service_xml.py" --native "$<TARGET_FILE:service_xml_probe>"
+            --dotnet "${DOTNET_EXECUTABLE}" --stream --work "${CMAKE_CURRENT_BINARY_DIR}/service-xml-declaration-stream-reference")
+        set_tests_properties(service_xml_stream_source_parity PROPERTIES TIMEOUT 90
+            PASS_REGULAR_EXPRESSION "PASS: .*service XML source observations")
         add_test(NAME friends_endpoint_source_parity COMMAND "${Python3_EXECUTABLE}"
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_friends_endpoint.py" --native "$<TARGET_FILE:friends_endpoint_probe>"
             --dotnet "${DOTNET_EXECUTABLE}" --work "${CMAKE_CURRENT_BINARY_DIR}/friends-endpoint-reference")
@@ -2398,6 +2914,10 @@ if(BUILD_TESTING)
             --default-native "$<TARGET_FILE:rest_forms_default_probe>"
             --dotnet "${DOTNET_EXECUTABLE}" --work "${CMAKE_CURRENT_BINARY_DIR}/rest-forms-reference")
         set_tests_properties(rest_forms_source_parity PROPERTIES TIMEOUT 120)
+        add_test(NAME rest_forms_raw_response_bytes COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/rest_forms_raw_bytes.py" --native "$<TARGET_FILE:rest_forms_probe>"
+            --work "${CMAKE_CURRENT_BINARY_DIR}/rest-forms-raw-bytes")
+        set_tests_properties(rest_forms_raw_response_bytes PROPERTIES TIMEOUT 90)
         add_test(NAME rest_redirects_source_parity COMMAND "${Python3_EXECUTABLE}"
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_rest_redirects.py" --native "$<TARGET_FILE:rest_forms_probe>"
             --dotnet "${DOTNET_EXECUTABLE}" --work "${CMAKE_CURRENT_BINARY_DIR}/rest-redirects-reference")
@@ -2496,7 +3016,7 @@ if(BUILD_TESTING)
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/native_startup_network.py" --native "$<TARGET_FILE:opensim-native>"
             --work "${CMAKE_CURRENT_BINARY_DIR}/native-installed-startup-network"
             --install "${CMAKE_COMMAND}" "${CMAKE_CURRENT_BINARY_DIR}" "$<CONFIG>")
-        set_tests_properties(native_installed_startup_network PROPERTIES TIMEOUT 240)
+        set_tests_properties(native_installed_startup_network PROPERTIES TIMEOUT 420)
         add_test(NAME basic_profile_disabled_network COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/connected_region_network.py" --native "$<TARGET_FILE:opensim-native>" --viewer "$<TARGET_FILE:viewer_session_probe>" --profiles-disabled --work "${CMAKE_CURRENT_BINARY_DIR}/basic-profile-disabled-network")
         add_test(NAME remote_asset_network COMMAND "${Python3_EXECUTABLE}"
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/remote_asset_network.py" "$<TARGET_FILE:asset_service_probe>")
@@ -2592,6 +3112,29 @@ if(BUILD_TESTING)
             --viewer "$<TARGET_FILE:viewer_session_probe>" --touch --script-email ${OPENSIM_SCRIPT_SMTP_TEST_ARGS}
             --work "${CMAKE_CURRENT_BINARY_DIR}/connected-region-touch-network")
         set_tests_properties(connected_region_touch_network PROPERTIES TIMEOUT 180)
+        add_test(NAME preview_entry_network COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/preview_entry_network.py" --native "$<TARGET_FILE:opensim-native>"
+            --viewer "$<TARGET_FILE:viewer_session_probe>"
+            --work "${CMAKE_CURRENT_BINARY_DIR}/preview-entry-network")
+        set_tests_properties(preview_entry_network PROPERTIES TIMEOUT 120)
+        add_test(NAME preview_handshake_packet_loss_network COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/preview_entry_network.py" --native "$<TARGET_FILE:opensim-native>"
+            --handshake-drops 2 --login-cycles 1
+            --work "${CMAKE_CURRENT_BINARY_DIR}/preview-handshake-packet-loss-network")
+        set_tests_properties(preview_handshake_packet_loss_network PROPERTIES TIMEOUT 120)
+        add_test(NAME seated_crossing_network COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/seated_crossing_network.py" --native "$<TARGET_FILE:opensim-native>"
+            --work "${CMAKE_CURRENT_BINARY_DIR}/scripted-seated-crossing-network")
+        set_tests_properties(seated_crossing_network PROPERTIES TIMEOUT 120)
+        option(OPENSIM_ENABLE_LSL_USER_FUNCTION_RESTART_NETWORK_TEST
+            "Register the full application user-function restart protocol test" OFF)
+        if(OPENSIM_ENABLE_LSL_USER_FUNCTION_RESTART_NETWORK_TEST)
+            add_test(NAME lsl_user_function_restart_network COMMAND "${Python3_EXECUTABLE}"
+                "${CMAKE_CURRENT_SOURCE_DIR}/tests/lsl_user_function_restart_network.py"
+                --native "$<TARGET_FILE:opensim-native>"
+                --work "${CMAKE_CURRENT_BINARY_DIR}/lsl-user-function-restart-network")
+            set_tests_properties(lsl_user_function_restart_network PROPERTIES TIMEOUT 120)
+        endif()
         add_test(NAME connected_region_remote_data_network COMMAND "${Python3_EXECUTABLE}"
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/connected_region_network.py" --native "$<TARGET_FILE:opensim-native>"
             --viewer "$<TARGET_FILE:viewer_session_probe>" --touch --remote-data
@@ -2697,6 +3240,11 @@ if(BUILD_TESTING)
             --native "$<TARGET_FILE:opensim-native>" --force-owner
             --work "${CMAKE_CURRENT_BINARY_DIR}/parcel-ownership-network")
         set_tests_properties(parcel_ownership_network PROPERTIES TIMEOUT 90)
+        add_test(NAME hypergrid_local_group_directory_network COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/default_parcel_persistence_network.py"
+            --native "$<TARGET_FILE:opensim-native>" --force-owner --hypergrid-groups
+            --work "${CMAKE_CURRENT_BINARY_DIR}/hypergrid-local-group-directory-network")
+        set_tests_properties(hypergrid_local_group_directory_network PROPERTIES TIMEOUT 90)
         add_test(NAME large_llraw_upload_network COMMAND "${Python3_EXECUTABLE}"
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/default_parcel_persistence_network.py"
             --native "$<TARGET_FILE:opensim-native>" --large-terrain
@@ -2732,6 +3280,21 @@ if(BUILD_TESTING)
             --viewer "$<TARGET_FILE:viewer_session_probe>" --touch --os-landing
             --work "${CMAKE_CURRENT_BINARY_DIR}/os-parcel-landing-network")
         set_tests_properties(os_parcel_landing_network PROPERTIES TIMEOUT 90)
+        add_test(NAME viewer_basic_group_network COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/connected_region_network.py" --native "$<TARGET_FILE:opensim-native>"
+            --viewer "$<TARGET_FILE:viewer_session_probe>" --touch --os-landing --basic-group-names
+            --work "${CMAKE_CURRENT_BINARY_DIR}/viewer-basic-group-network")
+        set_tests_properties(viewer_basic_group_network PROPERTIES TIMEOUT 90)
+        add_test(NAME hypergrid_remote_group_directory_network COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/connected_region_network.py" --native "$<TARGET_FILE:opensim-native>"
+            --viewer "$<TARGET_FILE:viewer_session_probe>" --touch --os-landing --hypergrid-groups
+            --work "${CMAKE_CURRENT_BINARY_DIR}/hypergrid-remote-group-directory-network")
+        set_tests_properties(hypergrid_remote_group_directory_network PROPERTIES TIMEOUT 90)
+        add_test(NAME viewer_name_management_disabled_network COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/connected_region_network.py" --native "$<TARGET_FILE:opensim-native>"
+            --viewer "$<TARGET_FILE:viewer_session_probe>" --touch --os-landing --disable-user-management
+            --work "${CMAKE_CURRENT_BINARY_DIR}/viewer-name-management-disabled-network")
+        set_tests_properties(viewer_name_management_disabled_network PROPERTIES TIMEOUT 90)
         add_test(NAME map_tile_refresh_network COMMAND "${Python3_EXECUTABLE}"
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/connected_region_network.py" --native "$<TARGET_FILE:opensim-native>"
             --viewer "$<TARGET_FILE:viewer_session_probe>" --touch --map-tile-refresh
@@ -2998,7 +3561,81 @@ if(BUILD_TESTING)
             --work "${CMAKE_CURRENT_BINARY_DIR}/file_system_name-invariant-reference" --globalization-invariant)
         set_tests_properties(file_system_name_source_parity file_system_name_globalization_invariant_source_parity
             PROPERTIES TIMEOUT 600)
-        foreach(scene_component IN ITEMS primitive_base_shape nini_writer nini_document invariant_datetime_parse prim_geometry nini_reader stream_reader_text status_date_format flotsam_expiring_entries flotsam_console_files time_span full_path native_flotsam_config flotsam_cache_console console_parser hg_uuid_gatherer flotsam_cache_config flotsam_cache_maintenance uuid_gatherer flotsam_cache_cleanup flotsam_cache_module flotsam_cache flotsam_file_access flotsam_file_store asset_nrbf flotsam_memory_cache baked_texture_caps inventory_asset_caps scene_inventory_asset_update inventory_asset_update animation_set inventory_new part_script_events inventory_copy user_inventory_operations inventory_drop_permission task_inventory_update task_inventory_move task_inventory_remove agent_inventory_add inventory_notifications inventory_item_create script_instance_create field_string task_inventory_item task_inventory_registry inventory_script_rez script_control script_asset_text object_properties script_task_caps script_task_update script_running task_inventory_file xfer_download scene_world_terrain terrain_layer avatar_update avatar_packets object_update rez_location pos_physics chat_packet movement movement_animation avatar_animation root_position inventory_caps inventory_descendents library_inventory_caps library_descendents inventory_packets legacy_inventory_requests)
+        foreach(scene_component IN ITEMS
+            primitive_base_shape
+            nini_writer
+            nini_document
+            invariant_datetime_parse
+            prim_geometry
+            nini_reader
+            stream_reader_text
+            status_date_format
+            flotsam_expiring_entries
+            flotsam_console_files
+            time_span
+            full_path
+            native_flotsam_config
+            flotsam_cache_console
+            console_parser
+            hg_uuid_gatherer
+            flotsam_cache_config
+            flotsam_cache_maintenance
+            uuid_gatherer
+            flotsam_cache_cleanup
+            flotsam_cache_module
+            flotsam_cache
+            flotsam_file_access
+            flotsam_file_store
+            asset_nrbf
+            flotsam_memory_cache
+            baked_texture_caps
+            inventory_asset_caps
+            scene_inventory_asset_update
+            inventory_asset_update
+            animation_set
+            inventory_new
+            part_script_events
+            inventory_copy
+            user_inventory_operations
+            inventory_drop_permission
+            task_inventory_update
+            task_inventory_move
+            task_inventory_remove
+            agent_inventory_add
+            inventory_notifications
+            inventory_item_create
+            script_instance_create
+            field_string
+            task_inventory_item
+            task_inventory_registry
+            inventory_script_rez
+            script_control
+            script_asset_text
+            object_properties
+            script_task_caps
+            script_task_update
+            script_running
+            task_inventory_file
+            xfer_download
+            scene_world_terrain
+            terrain_layer
+            avatar_update
+            avatar_packets
+            object_update
+            rez_location
+            pos_physics
+            chat_packet
+            movement
+            movement_animation
+            avatar_animation
+            root_position
+            inventory_caps
+            inventory_descendents
+            library_inventory_caps
+            library_descendents
+            inventory_packets
+            legacy_inventory_requests
+        )
             if(scene_component STREQUAL "scene_world_terrain")
                 set(scene_probe scene_world_tests)
             else()
@@ -3077,4 +3714,756 @@ if(BUILD_TESTING)
         set_tests_properties(${native_registered_tests} PROPERTIES
             FAIL_REGULAR_EXPRESSION "Traceback [(]most recent call last[)];AssertionError;ERROR: AddressSanitizer")
     endif()
+endif()
+
+if(BUILD_TESTING)
+    add_executable(keyframed_motion_physics_tests tests/keyframed_motion_physics_tests.cpp)
+    target_link_libraries(keyframed_motion_physics_tests PRIVATE opensim_server_core)
+    add_test(NAME keyframed_motion_physics_tests COMMAND keyframed_motion_physics_tests
+        "${OPENSIM_UBODE_LIBRARY}" "${CMAKE_CURRENT_SOURCE_DIR}/../bin/data/avataranimations.xml")
+    set_tests_properties(keyframed_motion_physics_tests PROPERTIES TIMEOUT 20)
+    add_executable(selected_physics_actor_tests tests/selected_physics_actor_tests.cpp)
+    target_link_libraries(selected_physics_actor_tests PRIVATE opensim_server_core)
+    add_test(NAME selected_physics_actor_tests COMMAND selected_physics_actor_tests
+        "${OPENSIM_UBODE_LIBRARY}" "${CMAKE_CURRENT_SOURCE_DIR}/../bin/data/avataranimations.xml")
+    set_tests_properties(selected_physics_actor_tests PROPERTIES TIMEOUT 30)
+    add_executable(keyframed_motion_attachment_selection_tests tests/keyframed_motion_attachment_selection_tests.cpp)
+    target_link_libraries(keyframed_motion_attachment_selection_tests PRIVATE opensim_server_core)
+    add_executable(keyframed_motion_seated_wearer_tests tests/keyframed_motion_seated_wearer_tests.cpp)
+    target_link_libraries(keyframed_motion_seated_wearer_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(keyframed_motion_attachment_selection_tests PRIVATE /STACK:4194304)
+        target_link_options(keyframed_motion_seated_wearer_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME keyframed_motion_attachment_selection_tests COMMAND keyframed_motion_attachment_selection_tests)
+    add_test(NAME keyframed_motion_seated_wearer_tests COMMAND keyframed_motion_seated_wearer_tests)
+    set_tests_properties(keyframed_motion_attachment_selection_tests keyframed_motion_seated_wearer_tests PROPERTIES TIMEOUT 30)
+    add_executable(keyframed_motion_attachment_asset_tests tests/keyframed_motion_attachment_asset_tests.cpp)
+    target_link_libraries(keyframed_motion_attachment_asset_tests PRIVATE opensim_server_core native_xml)
+    add_test(NAME keyframed_motion_attachment_asset_tests COMMAND keyframed_motion_attachment_asset_tests)
+    add_executable(keyframed_motion_attachment_runtime_tests tests/keyframed_motion_attachment_runtime_tests.cpp)
+    target_link_libraries(keyframed_motion_attachment_runtime_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(keyframed_motion_attachment_runtime_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME keyframed_motion_attachment_runtime_tests COMMAND keyframed_motion_attachment_runtime_tests)
+    set_tests_properties(keyframed_motion_attachment_runtime_tests PROPERTIES TIMEOUT 30)
+    add_executable(keyframed_motion_viewer_flags_tests tests/keyframed_motion_viewer_flags_tests.cpp)
+    target_link_libraries(keyframed_motion_viewer_flags_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(keyframed_motion_viewer_flags_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME keyframed_motion_viewer_flags_tests COMMAND keyframed_motion_viewer_flags_tests
+        "${OPENSIM_UBODE_LIBRARY}" "${CMAKE_CURRENT_SOURCE_DIR}/../bin/data/avataranimations.xml")
+    set_tests_properties(keyframed_motion_viewer_flags_tests PROPERTIES TIMEOUT 30)
+    add_executable(keyframed_motion_status_tests tests/keyframed_motion_status_tests.cpp)
+    target_link_libraries(keyframed_motion_status_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(keyframed_motion_status_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME keyframed_motion_status_tests COMMAND keyframed_motion_status_tests
+        "${OPENSIM_UBODE_LIBRARY}" "${CMAKE_CURRENT_SOURCE_DIR}/../bin/data/avataranimations.xml")
+    set_tests_properties(keyframed_motion_status_tests PROPERTIES TIMEOUT 30)
+    add_executable(keyframed_motion_script_tests tests/keyframed_motion_script_tests.cpp)
+    target_link_libraries(keyframed_motion_script_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(keyframed_motion_script_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME keyframed_motion_script_tests COMMAND keyframed_motion_script_tests)
+    set_tests_properties(keyframed_motion_script_tests PROPERTIES TIMEOUT 20)
+    add_executable(ossl_teleport_object_tests tests/ossl_teleport_object_tests.cpp)
+    target_link_libraries(ossl_teleport_object_tests PRIVATE opensim_server_core)
+    add_test(NAME ossl_teleport_object_tests COMMAND ossl_teleport_object_tests)
+    set_tests_properties(ossl_teleport_object_tests PROPERTIES TIMEOUT 10)
+    add_executable(ossl_teleport_object_runtime_tests tests/ossl_teleport_object_runtime_tests.cpp)
+    target_link_libraries(ossl_teleport_object_runtime_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(ossl_teleport_object_tests PRIVATE /STACK:4194304)
+        target_link_options(ossl_teleport_object_runtime_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME ossl_teleport_object_runtime_tests COMMAND ossl_teleport_object_runtime_tests)
+    set_tests_properties(ossl_teleport_object_runtime_tests PROPERTIES TIMEOUT 30)
+    add_executable(lsl_user_function_tests tests/lsl_user_function_tests.cpp)
+    target_link_libraries(lsl_user_function_tests PRIVATE opensim_server_core)
+    add_test(NAME lsl_user_function_tests COMMAND lsl_user_function_tests)
+    set_tests_properties(lsl_user_function_tests PROPERTIES TIMEOUT 20)
+    add_executable(lsl_user_function_runtime_tests tests/lsl_user_function_runtime_tests.cpp)
+    target_link_libraries(lsl_user_function_runtime_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(lsl_user_function_tests PRIVATE /STACK:4194304)
+        target_link_options(lsl_user_function_runtime_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME lsl_user_function_runtime_tests COMMAND lsl_user_function_runtime_tests)
+    set_tests_properties(lsl_user_function_runtime_tests PROPERTIES TIMEOUT 30)
+    add_executable(lsl_user_function_compile_probe tests/lsl_user_function_compile_probe.cpp)
+    target_link_libraries(lsl_user_function_compile_probe PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(lsl_user_function_compile_probe PRIVATE /STACK:4194304)
+    endif()
+    add_executable(yengine_managed_frame_tests tests/yengine_managed_frame_tests.cpp)
+    target_link_libraries(yengine_managed_frame_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_managed_frame_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_managed_frame_tests COMMAND yengine_managed_frame_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_managed_frame_fixture")
+    set_tests_properties(yengine_managed_frame_tests PROPERTIES TIMEOUT 30)
+    add_executable(yengine_object_code_tests tests/yengine_object_code_tests.cpp)
+    target_link_libraries(yengine_object_code_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_object_code_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_object_code_tests COMMAND yengine_object_code_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_managed_frame_fixture")
+    set_tests_properties(yengine_object_code_tests PROPERTIES TIMEOUT 30)
+    add_executable(yengine_continuation_tests tests/yengine_continuation_tests.cpp)
+    target_link_libraries(yengine_continuation_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_continuation_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_continuation_tests COMMAND yengine_continuation_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_managed_frame_fixture")
+    set_tests_properties(yengine_continuation_tests PROPERTIES TIMEOUT 30)
+    add_executable(yengine_continuation_runtime_tests tests/yengine_continuation_runtime_tests.cpp)
+    target_link_libraries(yengine_continuation_runtime_tests PRIVATE opensim_server_core native_xml)
+    if(MSVC)
+        target_link_options(yengine_continuation_runtime_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_continuation_runtime_tests COMMAND yengine_continuation_runtime_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_managed_frame_fixture")
+    set_tests_properties(yengine_continuation_runtime_tests PROPERTIES TIMEOUT 30)
+    add_executable(yengine_attachment_state_tests tests/yengine_attachment_state_tests.cpp)
+    target_link_libraries(yengine_attachment_state_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_attachment_state_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_attachment_state_tests COMMAND yengine_attachment_state_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_managed_frame_fixture")
+    set_tests_properties(yengine_attachment_state_tests PROPERTIES TIMEOUT 30)
+    add_executable(yengine_restore_scheduling_tests tests/yengine_restore_scheduling_tests.cpp)
+    target_link_libraries(yengine_restore_scheduling_tests PRIVATE opensim_server_core native_xml)
+    if(MSVC)
+        target_link_options(yengine_restore_scheduling_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_restore_scheduling_tests COMMAND yengine_restore_scheduling_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_managed_frame_fixture")
+    set_tests_properties(yengine_restore_scheduling_tests PROPERTIES TIMEOUT 30)
+    add_executable(yengine_reduced_stack_tests tests/yengine_reduced_stack_tests.cpp)
+    target_link_libraries(yengine_reduced_stack_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_reduced_stack_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_reduced_stack_tests COMMAND yengine_reduced_stack_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_reduced_stack_fixture")
+    set_tests_properties(yengine_reduced_stack_tests PROPERTIES TIMEOUT 30)
+    add_executable(xmr_event_dequeue_tests tests/xmr_event_dequeue_tests.cpp)
+    target_link_libraries(xmr_event_dequeue_tests PRIVATE opensim_server_core native_xml)
+    add_executable(lsl_checkpoint_wait_tests tests/lsl_checkpoint_wait_tests.cpp)
+    target_link_libraries(lsl_checkpoint_wait_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(xmr_event_dequeue_tests PRIVATE /STACK:4194304)
+        target_link_options(lsl_checkpoint_wait_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME xmr_event_dequeue_tests COMMAND xmr_event_dequeue_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/xmr_event_dequeue_fixture")
+    add_test(NAME lsl_checkpoint_wait_tests COMMAND lsl_checkpoint_wait_tests)
+    set_tests_properties(xmr_event_dequeue_tests lsl_checkpoint_wait_tests PROPERTIES TIMEOUT 30)
+    add_executable(xmr_event_helpers_tests tests/xmr_event_helpers_tests.cpp)
+    target_link_libraries(xmr_event_helpers_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(xmr_event_helpers_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME xmr_event_helpers_tests COMMAND xmr_event_helpers_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_event_helpers_fixture")
+    set_tests_properties(xmr_event_helpers_tests PROPERTIES TIMEOUT 30)
+    add_executable(yengine_global_event_tests tests/yengine_global_event_tests.cpp)
+    target_link_libraries(yengine_global_event_tests PRIVATE opensim_server_core native_xml)
+    if(MSVC)
+        target_link_options(yengine_global_event_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_global_event_tests COMMAND yengine_global_event_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_global_event_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_global_event_scene_fixture")
+    set_tests_properties(yengine_global_event_tests PROPERTIES TIMEOUT 30)
+    add_executable(yengine_event_call_handler_tests tests/yengine_event_call_handler_tests.cpp)
+    target_link_libraries(yengine_event_call_handler_tests PRIVATE opensim_server_core native_xml)
+    if(MSVC)
+        target_link_options(yengine_event_call_handler_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_event_call_handler_tests COMMAND yengine_event_call_handler_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_event_call_handler_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_event_call_handler_extended_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_event_call_handler_scheduler_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_event_call_handler_composition_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_event_call_handler_timeslice_fixture")
+    set_tests_properties(yengine_event_call_handler_tests PROPERTIES TIMEOUT 30)
+    add_executable(yengine_strict_conversion_tests tests/yengine_strict_conversion_tests.cpp)
+    target_link_libraries(yengine_strict_conversion_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_strict_conversion_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_strict_conversion_tests COMMAND yengine_strict_conversion_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_strict_conversion_fixture")
+    set_tests_properties(yengine_strict_conversion_tests PROPERTIES TIMEOUT 30)
+    add_executable(yengine_heap_compare_tests tests/yengine_heap_compare_tests.cpp)
+    target_link_libraries(yengine_heap_compare_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_heap_compare_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_heap_compare_tests COMMAND yengine_heap_compare_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_heap_compare_fixture")
+    set_tests_properties(yengine_heap_compare_tests PROPERTIES TIMEOUT 30)
+    add_executable(invariant_number_format_tests tests/invariant_number_format_tests.cpp)
+    target_link_libraries(invariant_number_format_tests PRIVATE opensim_server_core)
+    add_test(NAME invariant_number_format_tests COMMAND invariant_number_format_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_numeric_format_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_numeric_format_extended_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_numeric_format_zero_section_fixture")
+    set_tests_properties(invariant_number_format_tests PROPERTIES TIMEOUT 30)
+    add_executable(yengine_numeric_format_tests tests/yengine_numeric_format_tests.cpp)
+    target_link_libraries(yengine_numeric_format_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_numeric_format_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_numeric_format_tests COMMAND yengine_numeric_format_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_numeric_format_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_numeric_format_extended_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_numeric_format_zero_section_fixture")
+    set_tests_properties(yengine_numeric_format_tests PROPERTIES TIMEOUT 30)
+    add_executable(yengine_truth_conversion_tests tests/yengine_truth_conversion_tests.cpp)
+    target_link_libraries(yengine_truth_conversion_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_truth_conversion_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_truth_conversion_tests COMMAND yengine_truth_conversion_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_truth_conversion_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_rotation_zero_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_rotation_arithmetic_fixture")
+    set_tests_properties(yengine_truth_conversion_tests PROPERTIES TIMEOUT 30)
+    add_executable(yengine_ordinary_text_tests tests/yengine_ordinary_text_tests.cpp)
+    target_link_libraries(yengine_ordinary_text_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_ordinary_text_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_ordinary_text_tests COMMAND yengine_ordinary_text_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_ordinary_text_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_ordinary_chat_fixture/implicit_owner_say_list"
+        "${CMAKE_CURRENT_SOURCE_DIR}/parity-evidence/region-stats-boxing-original.json"
+        "${CMAKE_CURRENT_SOURCE_DIR}/parity-evidence/physics-json-boxing-original.json")
+    set_tests_properties(yengine_ordinary_text_tests PROPERTIES TIMEOUT 30)
+    add_executable(yengine_builtin_coercion_tests tests/yengine_builtin_coercion_tests.cpp)
+    target_link_libraries(yengine_builtin_coercion_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_builtin_coercion_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_builtin_coercion_tests COMMAND yengine_builtin_coercion_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_builtin_coercion_fixture")
+    set_tests_properties(yengine_builtin_coercion_tests PROPERTIES TIMEOUT 30)
+    add_executable(yengine_mixed_operators_tests tests/yengine_mixed_operators_tests.cpp)
+    target_link_libraries(yengine_mixed_operators_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_mixed_operators_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_mixed_operators_tests COMMAND yengine_mixed_operators_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_mixed_operators_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_deferred_operator_fixture")
+    set_tests_properties(yengine_mixed_operators_tests PROPERTIES TIMEOUT 30)
+    add_executable(installed_fonts_tests tests/installed_fonts_tests.cpp)
+    target_link_libraries(installed_fonts_tests PRIVATE opensim_server_core)
+    add_executable(installed_fonts_runtime_probe tests/installed_fonts_runtime_probe.cpp)
+    target_link_libraries(installed_fonts_runtime_probe PRIVATE opensim_server_core)
+    if(WIN32)
+        add_test(NAME installed_fonts_tests COMMAND installed_fonts_tests
+            "${CMAKE_CURRENT_SOURCE_DIR}/parity-evidence/fonts-available-original-windows.json"
+            "${CMAKE_CURRENT_SOURCE_DIR}/..")
+        set_tests_properties(installed_fonts_tests PROPERTIES TIMEOUT 30)
+    endif()
+    add_executable(yengine_numeric_hash_tests tests/yengine_numeric_hash_tests.cpp)
+    target_link_libraries(yengine_numeric_hash_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_numeric_hash_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_numeric_hash_tests COMMAND yengine_numeric_hash_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_numeric_hash_fixture")
+    set_tests_properties(yengine_numeric_hash_tests PROPERTIES TIMEOUT 30)
+    add_executable(lsl_character_checkpoint_tests tests/lsl_character_checkpoint_tests.cpp)
+    target_link_libraries(lsl_character_checkpoint_tests PRIVATE opensim_server_core)
+    add_test(NAME lsl_character_checkpoint_tests COMMAND lsl_character_checkpoint_tests)
+    set_tests_properties(lsl_character_checkpoint_tests PROPERTIES TIMEOUT 30)
+    add_executable(yengine_char_tests tests/yengine_char_tests.cpp)
+    target_link_libraries(yengine_char_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_char_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_char_tests COMMAND yengine_char_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_char_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_char_expression_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_char_dynamic_fixture")
+    set_tests_properties(yengine_char_tests PROPERTIES TIMEOUT 30)
+    add_executable(yengine_switch_tests tests/yengine_switch_tests.cpp)
+    target_link_libraries(yengine_switch_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_switch_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_switch_tests COMMAND yengine_switch_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_switch_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_switch_sleep_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_switch_bool_fixture")
+    set_tests_properties(yengine_switch_tests PROPERTIES TIMEOUT 30)
+    add_executable(yengine_character_import_tests tests/yengine_character_import_tests.cpp)
+    target_link_libraries(yengine_character_import_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_character_import_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_character_import_tests COMMAND yengine_character_import_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_character_process_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_switch_sleep_fixture")
+    set_tests_properties(yengine_character_import_tests PROPERTIES TIMEOUT 30)
+    add_executable(lsl_utf16_checkpoint_tests tests/lsl_utf16_checkpoint_tests.cpp)
+    target_link_libraries(lsl_utf16_checkpoint_tests PRIVATE opensim_server_core)
+    add_test(NAME lsl_utf16_checkpoint_tests COMMAND lsl_utf16_checkpoint_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_utf16_migration_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_character_migration_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_utf16_detector_fixture")
+    set_tests_properties(lsl_utf16_checkpoint_tests PROPERTIES TIMEOUT 30)
+    add_executable(yengine_utf16_string_tests tests/yengine_utf16_string_tests.cpp)
+    target_link_libraries(yengine_utf16_string_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_utf16_string_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_utf16_string_tests COMMAND yengine_utf16_string_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_char_string_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_utf16_composition_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_utf16_constant_island_fixture")
+    set_tests_properties(yengine_utf16_string_tests PROPERTIES TIMEOUT 30)
+    add_executable(yengine_char_api_tests tests/yengine_char_api_tests.cpp)
+    target_link_libraries(yengine_char_api_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_char_api_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_char_api_tests COMMAND yengine_char_api_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_char_api_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_char_integer_boundary_fixture")
+    set_tests_properties(yengine_char_api_tests PROPERTIES TIMEOUT 30)
+    add_executable(sdk_object_text_world_tests tests/sdk_object_text_world_tests.cpp)
+    target_link_libraries(sdk_object_text_world_tests PRIVATE opensim_server_core)
+    add_test(NAME sdk_object_text_world_tests COMMAND sdk_object_text_world_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/object_text_utf8_fixture")
+    set_tests_properties(sdk_object_text_world_tests PROPERTIES TIMEOUT 30)
+    add_executable(yengine_utf16_format_tests tests/yengine_utf16_format_tests.cpp)
+    target_link_libraries(yengine_utf16_format_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_utf16_format_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_utf16_format_tests COMMAND yengine_utf16_format_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_utf16_format_fixture")
+    set_tests_properties(yengine_utf16_format_tests PROPERTIES TIMEOUT 30)
+    add_executable(sdk_object_text_xml_tests tests/sdk_object_text_xml_tests.cpp)
+    target_link_libraries(sdk_object_text_xml_tests PRIVATE opensim_server_core)
+    add_test(NAME sdk_object_text_xml_tests COMMAND sdk_object_text_xml_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/object_text_utf8_fixture")
+    set_tests_properties(sdk_object_text_xml_tests PROPERTIES TIMEOUT 30)
+    add_executable(yengine_utf16_detector_tests tests/yengine_utf16_detector_tests.cpp)
+    target_link_libraries(yengine_utf16_detector_tests PRIVATE opensim_server_core)
+    add_test(NAME yengine_utf16_detector_tests COMMAND yengine_utf16_detector_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_utf16_detector_fixture")
+    set_tests_properties(yengine_utf16_detector_tests PROPERTIES TIMEOUT 30)
+    add_executable(yengine_utf16_original_import_tests tests/yengine_utf16_original_import_tests.cpp)
+    target_link_libraries(yengine_utf16_original_import_tests PRIVATE opensim_server_core)
+    add_test(NAME yengine_utf16_original_import_tests COMMAND yengine_utf16_original_import_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_utf16_migration_fixture")
+    set_tests_properties(yengine_utf16_original_import_tests PROPERTIES TIMEOUT 30)
+    add_executable(yengine_crypto_utf16_tests tests/yengine_crypto_utf16_tests.cpp)
+    target_link_libraries(yengine_crypto_utf16_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_crypto_utf16_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_crypto_utf16_tests COMMAND yengine_crypto_utf16_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_crypto_utf16_fixture")
+    set_tests_properties(yengine_crypto_utf16_tests PROPERTIES TIMEOUT 60)
+    add_executable(yengine_nullable_string_tests tests/yengine_nullable_string_tests.cpp)
+    target_link_libraries(yengine_nullable_string_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_nullable_string_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_nullable_string_tests COMMAND yengine_nullable_string_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_nullable_string_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_crypto_utf16_fixture")
+    set_tests_properties(yengine_nullable_string_tests PROPERTIES TIMEOUT 60)
+    add_executable(lsl_nullable_checkpoint_tests tests/lsl_nullable_checkpoint_tests.cpp)
+    target_link_libraries(lsl_nullable_checkpoint_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(lsl_nullable_checkpoint_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME lsl_nullable_checkpoint_tests COMMAND lsl_nullable_checkpoint_tests)
+    set_tests_properties(lsl_nullable_checkpoint_tests PROPERTIES TIMEOUT 30)
+    add_executable(yengine_nullable_api_tests tests/yengine_nullable_api_tests.cpp)
+    target_link_libraries(yengine_nullable_api_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_nullable_api_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_nullable_api_tests COMMAND yengine_nullable_api_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_nullable_api_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_nullable_hmac_guard_fixture")
+    set_tests_properties(yengine_nullable_api_tests PROPERTIES TIMEOUT 60)
+    add_executable(yengine_constructor_null_tests tests/yengine_constructor_null_tests.cpp)
+    target_link_libraries(yengine_constructor_null_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_constructor_null_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_constructor_null_tests COMMAND yengine_constructor_null_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_constructor_null_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_constructor_null_supplement_fixture")
+    set_tests_properties(yengine_constructor_null_tests PROPERTIES TIMEOUT 60)
+    add_executable(lsl_nullable_list_checkpoint_tests tests/lsl_nullable_list_checkpoint_tests.cpp)
+    target_link_libraries(lsl_nullable_list_checkpoint_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(lsl_nullable_list_checkpoint_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME lsl_nullable_list_checkpoint_tests COMMAND lsl_nullable_list_checkpoint_tests)
+    set_tests_properties(lsl_nullable_list_checkpoint_tests PROPERTIES TIMEOUT 30)
+    add_executable(lsl_rotation_persistence_tests tests/lsl_rotation_persistence_tests.cpp)
+    target_link_libraries(lsl_rotation_persistence_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(lsl_rotation_persistence_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME lsl_rotation_persistence_tests COMMAND lsl_rotation_persistence_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_signed_zero_migration_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_detector_xml_numeric_fixture")
+    set_tests_properties(lsl_rotation_persistence_tests PROPERTIES TIMEOUT 30)
+    add_executable(lsl_detector_xml_persistence_tests tests/lsl_detector_xml_persistence_tests.cpp)
+    target_link_libraries(lsl_detector_xml_persistence_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(lsl_detector_xml_persistence_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME lsl_detector_xml_persistence_tests COMMAND lsl_detector_xml_persistence_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_detector_xml_numeric_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_detector_xml_extreme_fixture")
+    set_tests_properties(lsl_detector_xml_persistence_tests PROPERTIES TIMEOUT 30)
+    add_executable(yengine_bg_detector_identity_tests tests/yengine_bg_detector_identity_tests.cpp)
+    target_link_libraries(yengine_bg_detector_identity_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_bg_detector_identity_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_bg_detector_identity_tests COMMAND yengine_bg_detector_identity_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_bg_detector_identity_fixture")
+    set_tests_properties(yengine_bg_detector_identity_tests PROPERTIES TIMEOUT 60)
+    add_executable(yengine_float_literal_tests tests/yengine_float_literal_tests.cpp)
+    target_link_libraries(yengine_float_literal_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_float_literal_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_float_literal_tests COMMAND yengine_float_literal_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_float_literal_fixture")
+    set_tests_properties(yengine_float_literal_tests PROPERTIES TIMEOUT 60)
+    add_executable(yengine_queue_xml_tests tests/yengine_queue_xml_tests.cpp)
+    target_link_libraries(yengine_queue_xml_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_queue_xml_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_queue_xml_tests COMMAND yengine_queue_xml_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_event_queue_arguments_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_event_queue_xml_reload_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_event_queue_integer_edge_fixture")
+    set_tests_properties(yengine_queue_xml_tests PROPERTIES TIMEOUT 60)
+    add_executable(yengine_raw_event_payload_tests tests/yengine_raw_event_payload_tests.cpp)
+    target_link_libraries(yengine_raw_event_payload_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_raw_event_payload_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_raw_event_payload_tests COMMAND yengine_raw_event_payload_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_raw_event_payload_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_raw_single_binary_fixture")
+    set_tests_properties(yengine_raw_event_payload_tests PROPERTIES TIMEOUT 60)
+    add_executable(lsl_raw_event_checkpoint_tests tests/lsl_raw_event_checkpoint_tests.cpp)
+    target_link_libraries(lsl_raw_event_checkpoint_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(lsl_raw_event_checkpoint_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME lsl_raw_event_checkpoint_tests COMMAND lsl_raw_event_checkpoint_tests)
+    set_tests_properties(lsl_raw_event_checkpoint_tests PROPERTIES TIMEOUT 30)
+    add_executable(yengine_string_hash_tests tests/yengine_string_hash_tests.cpp)
+    target_link_libraries(yengine_string_hash_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_string_hash_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_string_hash_tests COMMAND yengine_string_hash_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_string_hash_fixture")
+    set_tests_properties(yengine_string_hash_tests PROPERTIES TIMEOUT 60)
+    add_executable(lsl_object_reference_checkpoint_tests tests/lsl_object_reference_checkpoint_tests.cpp)
+    target_link_libraries(lsl_object_reference_checkpoint_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(lsl_object_reference_checkpoint_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME lsl_object_reference_checkpoint_tests COMMAND lsl_object_reference_checkpoint_tests)
+    set_tests_properties(lsl_object_reference_checkpoint_tests PROPERTIES TIMEOUT 30)
+    add_executable(dotnet_identity_hash_tests tests/dotnet_identity_hash_tests.cpp)
+    target_link_libraries(dotnet_identity_hash_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(dotnet_identity_hash_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME dotnet_identity_hash_tests COMMAND dotnet_identity_hash_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/dotnet_identity_hash_fixture")
+    set_tests_properties(dotnet_identity_hash_tests PROPERTIES TIMEOUT 30)
+    add_executable(yengine_object_values_tests tests/yengine_object_values_tests.cpp)
+    target_link_libraries(yengine_object_values_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_object_values_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_object_values_tests COMMAND yengine_object_values_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_object_value_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_object_string_conversion_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_object_event_queue_fixture")
+    set_tests_properties(yengine_object_values_tests PROPERTIES TIMEOUT 180)
+    add_executable(yengine_script_class_projection_tests tests/yengine_script_class_projection_tests.cpp)
+    target_link_libraries(yengine_script_class_projection_tests PRIVATE opensim_server_core)
+    add_test(NAME yengine_script_class_projection_tests COMMAND yengine_script_class_projection_tests)
+    set_tests_properties(yengine_script_class_projection_tests PROPERTIES TIMEOUT 60)
+    add_executable(yengine_script_class_continuation_tests tests/yengine_script_class_continuation_tests.cpp)
+    target_link_libraries(yengine_script_class_continuation_tests PRIVATE opensim_server_core)
+    add_test(NAME yengine_script_class_continuation_tests COMMAND yengine_script_class_continuation_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_script_array_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_script_array_lvalue_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_script_array_receiver_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_script_array_heap_fixture")
+    set_tests_properties(yengine_script_class_continuation_tests PROPERTIES TIMEOUT 180)
+    add_executable(yengine_script_array_import_tests tests/yengine_script_array_import_tests.cpp)
+    target_link_libraries(yengine_script_array_import_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_script_array_import_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_script_array_import_tests COMMAND yengine_script_array_import_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_script_array_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_script_array_lvalue_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_script_array_heap_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_script_array_receiver_fixture")
+    set_tests_properties(yengine_script_array_import_tests PROPERTIES TIMEOUT 300)
+    add_executable(yengine_script_class_restore_heap_tests tests/yengine_script_class_restore_heap_tests.cpp)
+    target_link_libraries(yengine_script_class_restore_heap_tests PRIVATE opensim_server_core)
+    add_test(NAME yengine_script_class_restore_heap_tests COMMAND yengine_script_class_restore_heap_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_script_class_restore_heap_fixture")
+    set_tests_properties(yengine_script_class_restore_heap_tests PROPERTIES TIMEOUT 120)
+    add_executable(yengine_script_array_constructor_import_tests tests/yengine_script_array_constructor_import_tests.cpp)
+    target_link_libraries(yengine_script_array_constructor_import_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_script_array_constructor_import_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_script_array_constructor_import_tests COMMAND yengine_script_array_constructor_import_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_script_array_constructor_fixture")
+    set_tests_properties(yengine_script_array_constructor_import_tests PROPERTIES TIMEOUT 120)
+    add_executable(yengine_script_class_eventargs_heap_tests tests/yengine_script_class_eventargs_heap_tests.cpp)
+    target_link_libraries(yengine_script_class_eventargs_heap_tests PRIVATE opensim_server_core)
+    add_test(NAME yengine_script_class_eventargs_heap_tests COMMAND yengine_script_class_eventargs_heap_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_script_class_eventargs_heap_fixture")
+    set_tests_properties(yengine_script_class_eventargs_heap_tests PROPERTIES TIMEOUT 120)
+    add_executable(yengine_script_class_covariance_tests tests/yengine_script_class_covariance_tests.cpp)
+    target_link_libraries(yengine_script_class_covariance_tests PRIVATE opensim_server_core)
+    add_test(NAME yengine_script_class_covariance_tests COMMAND yengine_script_class_covariance_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_script_class_covariance_fixture")
+    set_tests_properties(yengine_script_class_covariance_tests PROPERTIES TIMEOUT 120)
+    add_executable(yengine_object_whitespace_heap_tests tests/yengine_object_whitespace_heap_tests.cpp)
+    target_link_libraries(yengine_object_whitespace_heap_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_object_whitespace_heap_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_object_whitespace_heap_tests COMMAND yengine_object_whitespace_heap_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_object_whitespace_heap_fixture")
+    set_tests_properties(yengine_object_whitespace_heap_tests PROPERTIES TIMEOUT 180)
+    add_executable(yengine_script_class_old_global_clear_tests tests/yengine_script_class_old_global_clear_tests.cpp)
+    target_link_libraries(yengine_script_class_old_global_clear_tests PRIVATE opensim_server_core)
+    add_test(NAME yengine_script_class_old_global_clear_tests COMMAND yengine_script_class_old_global_clear_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_script_class_old_global_clear_fixture")
+    set_tests_properties(yengine_script_class_old_global_clear_tests PROPERTIES TIMEOUT 180)
+    add_executable(lsl_heap_policy_tests tests/lsl_heap_policy_tests.cpp)
+    target_link_libraries(lsl_heap_policy_tests PRIVATE opensim_server_core)
+    add_test(NAME lsl_heap_policy_tests COMMAND lsl_heap_policy_tests)
+    set_tests_properties(lsl_heap_policy_tests PROPERTIES TIMEOUT 60)
+    add_executable(yengine_script_class_old_local_heap_tests tests/yengine_script_class_old_local_heap_tests.cpp)
+    target_link_libraries(yengine_script_class_old_local_heap_tests PRIVATE opensim_server_core)
+    add_test(NAME yengine_script_class_old_local_heap_tests COMMAND yengine_script_class_old_local_heap_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_script_class_old_local_heap_fixture")
+    set_tests_properties(yengine_script_class_old_local_heap_tests PROPERTIES TIMEOUT 180)
+    add_executable(yengine_script_array_float_tests tests/yengine_script_array_float_tests.cpp)
+    target_link_libraries(yengine_script_array_float_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_script_array_float_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_script_array_float_tests COMMAND yengine_script_array_float_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_script_array_float_fixture")
+    set_tests_properties(yengine_script_array_float_tests PROPERTIES TIMEOUT 300)
+    add_executable(yengine_script_array_char_tests tests/yengine_script_array_char_tests.cpp)
+    target_link_libraries(yengine_script_array_char_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_script_array_char_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_script_array_char_tests COMMAND yengine_script_array_char_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_script_array_char_fixture")
+    set_tests_properties(yengine_script_array_char_tests PROPERTIES TIMEOUT 300)
+    add_executable(yengine_script_array_foreign_element_tests tests/yengine_script_array_foreign_element_tests.cpp)
+    target_link_libraries(yengine_script_array_foreign_element_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_script_array_foreign_element_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_script_array_foreign_element_tests COMMAND yengine_script_array_foreign_element_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_script_array_foreign_element_fixture")
+    set_tests_properties(yengine_script_array_foreign_element_tests PROPERTIES TIMEOUT 300)
+    add_executable(yengine_script_char_conversion_eval_tests tests/yengine_script_char_conversion_eval_tests.cpp)
+    target_link_libraries(yengine_script_char_conversion_eval_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_script_char_conversion_eval_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_script_char_conversion_eval_tests COMMAND yengine_script_char_conversion_eval_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_script_char_conversion_eval_fixture")
+    set_tests_properties(yengine_script_char_conversion_eval_tests PROPERTIES TIMEOUT 300)
+    add_executable(yengine_char_conversion_range_tests tests/yengine_char_conversion_range_tests.cpp)
+    target_link_libraries(yengine_char_conversion_range_tests PRIVATE opensim_server_core)
+    add_test(NAME yengine_char_conversion_range_tests COMMAND yengine_char_conversion_range_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_char_conversion_range_fixture")
+    set_tests_properties(yengine_char_conversion_range_tests PROPERTIES TIMEOUT 180)
+    add_executable(yengine_script_array_copy_tests tests/yengine_script_array_copy_tests.cpp)
+    target_link_libraries(yengine_script_array_copy_tests PRIVATE opensim_server_core)
+    add_test(NAME yengine_script_array_copy_tests COMMAND yengine_script_array_copy_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_script_array_copy_fixture")
+    set_tests_properties(yengine_script_array_copy_tests PROPERTIES TIMEOUT 300)
+    add_executable(yengine_script_array_to_list_tests tests/yengine_script_array_to_list_tests.cpp)
+    target_link_libraries(yengine_script_array_to_list_tests PRIVATE opensim_server_core)
+    add_test(NAME yengine_script_array_to_list_tests COMMAND yengine_script_array_to_list_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_script_array_to_list_fixture")
+    set_tests_properties(yengine_script_array_to_list_tests PROPERTIES TIMEOUT 300)
+    add_executable(yengine_list_to_script_array_tests tests/yengine_list_to_script_array_tests.cpp)
+    target_link_libraries(yengine_list_to_script_array_tests PRIVATE opensim_server_core)
+    add_test(NAME yengine_list_to_script_array_tests COMMAND yengine_list_to_script_array_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_list_to_script_array_fixture")
+    set_tests_properties(yengine_list_to_script_array_tests PROPERTIES TIMEOUT 300)
+    add_executable(lsl_class_typename_checkpoint_tests tests/lsl_class_typename_checkpoint_tests.cpp)
+    target_link_libraries(lsl_class_typename_checkpoint_tests PRIVATE opensim_server_core)
+    add_test(NAME lsl_class_typename_checkpoint_tests COMMAND lsl_class_typename_checkpoint_tests)
+    set_tests_properties(lsl_class_typename_checkpoint_tests PROPERTIES TIMEOUT 60)
+    add_executable(yengine_script_array_typename_tests tests/yengine_script_array_typename_tests.cpp)
+    target_link_libraries(yengine_script_array_typename_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_script_array_typename_tests PRIVATE /STACK:4194304)
+    endif()
+    set(class_typename_fixture "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_script_array_typename_fixture")
+    set(class_typename_checkpoint "${CMAKE_CURRENT_BINARY_DIR}/script-array-typename-phase35.checkpoint")
+    add_test(NAME yengine_script_array_typename_tests COMMAND yengine_script_array_typename_tests
+        "${class_typename_fixture}")
+    add_test(NAME yengine_script_array_typename_capture_tests COMMAND yengine_script_array_typename_tests
+        --capture "${class_typename_fixture}" "${class_typename_checkpoint}")
+    add_test(NAME yengine_script_array_typename_resume_tests COMMAND yengine_script_array_typename_tests
+        --resume "${class_typename_fixture}" "${class_typename_checkpoint}")
+    add_test(NAME yengine_script_array_typename_internal_resume_tests COMMAND yengine_script_array_typename_tests
+        --resume-internal "${class_typename_fixture}" "${class_typename_checkpoint}.internal")
+    set_tests_properties(yengine_script_array_typename_capture_tests PROPERTIES
+        FIXTURES_SETUP class_typename_fresh_process TIMEOUT 60)
+    set_tests_properties(yengine_script_array_typename_resume_tests
+        yengine_script_array_typename_internal_resume_tests PROPERTIES
+        FIXTURES_REQUIRED class_typename_fresh_process TIMEOUT 60)
+    set_tests_properties(yengine_script_array_typename_tests PROPERTIES TIMEOUT 60)
+    add_executable(yengine_script_array_source_tests tests/yengine_script_array_source_tests.cpp)
+    target_link_libraries(yengine_script_array_source_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_script_array_source_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_script_array_source_tests COMMAND yengine_script_array_source_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_script_array_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_script_array_lvalue_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_script_array_receiver_fixture")
+    set_tests_properties(yengine_script_array_source_tests PROPERTIES TIMEOUT 300)
+    add_executable(yengine_script_array_heap_tests tests/yengine_script_array_heap_tests.cpp)
+    target_link_libraries(yengine_script_array_heap_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_script_array_heap_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_script_array_heap_tests COMMAND yengine_script_array_heap_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_script_array_heap_fixture")
+    set_tests_properties(yengine_script_array_heap_tests PROPERTIES TIMEOUT 300)
+    add_executable(yengine_script_array_heap_limit_tests tests/yengine_script_array_heap_limit_tests.cpp)
+    target_link_libraries(yengine_script_array_heap_limit_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_script_array_heap_limit_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_script_array_heap_limit_tests COMMAND yengine_script_array_heap_limit_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_script_array_heap_limit_fixture")
+    set_tests_properties(yengine_script_array_heap_limit_tests PROPERTIES TIMEOUT 300)
+    add_executable(lsl_script_class_queue_tests tests/lsl_script_class_queue_tests.cpp)
+    target_link_libraries(lsl_script_class_queue_tests PRIVATE opensim_server_core)
+    add_test(NAME lsl_script_class_queue_tests COMMAND lsl_script_class_queue_tests)
+    set_tests_properties(lsl_script_class_queue_tests PROPERTIES TIMEOUT 30)
+    add_executable(lsl_script_class_tests tests/lsl_script_class_tests.cpp)
+    target_link_libraries(lsl_script_class_tests PRIVATE opensim_server_core)
+    add_test(NAME lsl_script_class_tests COMMAND lsl_script_class_tests)
+    set_tests_properties(lsl_script_class_tests PROPERTIES TIMEOUT 30)
+    add_executable(lsl_script_class_checkpoint_tests tests/lsl_script_class_checkpoint_tests.cpp)
+    target_link_libraries(lsl_script_class_checkpoint_tests PRIVATE opensim_server_core)
+    add_test(NAME lsl_script_class_checkpoint_tests COMMAND lsl_script_class_checkpoint_tests)
+    set_tests_properties(lsl_script_class_checkpoint_tests PROPERTIES TIMEOUT 30)
+    add_executable(lsl_fixed_array_checkpoint_tests tests/lsl_fixed_array_checkpoint_tests.cpp)
+    target_link_libraries(lsl_fixed_array_checkpoint_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(lsl_fixed_array_checkpoint_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME lsl_fixed_array_checkpoint_tests COMMAND lsl_fixed_array_checkpoint_tests)
+    set_tests_properties(lsl_fixed_array_checkpoint_tests PROPERTIES TIMEOUT 30)
+    add_executable(yengine_fixed_array_tests tests/yengine_fixed_array_tests.cpp)
+    target_link_libraries(yengine_fixed_array_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_fixed_array_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_fixed_array_tests COMMAND yengine_fixed_array_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_fixed_array_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_fixed_array_heap_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_fixed_array_elements_fixture"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_fixed_array_temporary_fixture")
+    set_tests_properties(yengine_fixed_array_tests PROPERTIES TIMEOUT 180)
+    add_executable(yengine_large_fixed_array_tests tests/yengine_large_fixed_array_tests.cpp)
+    target_link_libraries(yengine_large_fixed_array_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_large_fixed_array_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_large_fixed_array_tests COMMAND yengine_large_fixed_array_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_large_fixed_array_fixture")
+    set_tests_properties(yengine_large_fixed_array_tests PROPERTIES TIMEOUT 180)
+    add_executable(yengine_capacity_tests tests/yengine_capacity_tests.cpp)
+    target_link_libraries(yengine_capacity_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_capacity_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_capacity_tests COMMAND yengine_capacity_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_capacity_fixture")
+    set_tests_properties(yengine_capacity_tests PROPERTIES TIMEOUT 180)
+    add_executable(yengine_collection_capacity_tests tests/yengine_collection_capacity_tests.cpp)
+    target_link_libraries(yengine_collection_capacity_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_collection_capacity_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_collection_capacity_tests COMMAND yengine_collection_capacity_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_collection_capacity_fixture")
+    set_tests_properties(yengine_collection_capacity_tests PROPERTIES TIMEOUT 300)
+    add_executable(yengine_queue_capacity_tests tests/yengine_queue_capacity_tests.cpp)
+    target_link_libraries(yengine_queue_capacity_tests PRIVATE opensim_server_core native_xml)
+    if(MSVC)
+        target_link_options(yengine_queue_capacity_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_queue_capacity_tests COMMAND yengine_queue_capacity_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_queue_capacity_fixture")
+    set_tests_properties(yengine_queue_capacity_tests PROPERTIES TIMEOUT 180)
+    add_executable(yengine_queue_dag_import_tests tests/yengine_queue_dag_import_tests.cpp)
+    target_link_libraries(yengine_queue_dag_import_tests PRIVATE opensim_server_core native_xml)
+    if(MSVC)
+        target_link_options(yengine_queue_dag_import_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_queue_dag_import_tests COMMAND yengine_queue_dag_import_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_queue_dag_capacity_fixture")
+    set_tests_properties(yengine_queue_dag_import_tests PROPERTIES TIMEOUT 300)
+
+    add_executable(yengine_script_class_snapshot_tests tests/yengine_script_class_snapshot_tests.cpp)
+    target_link_libraries(yengine_script_class_snapshot_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(yengine_script_class_snapshot_tests PRIVATE /STACK:4194304)
+    endif()
+    add_test(NAME yengine_script_class_snapshot_tests COMMAND yengine_script_class_snapshot_tests
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/yengine_script_array_fixture")
+    set_tests_properties(yengine_script_class_snapshot_tests PROPERTIES TIMEOUT 180)
+
 endif()

@@ -13,22 +13,24 @@
 namespace opensim::framework {
 namespace {
 struct Icu {
-    using Open = void* (*)(const char*, std::int32_t*);
-    using Close = void (*)(void*);
-    using Elements = void* (*)(const void*, const char16_t*, std::int32_t, std::int32_t*);
-    using Next = std::int32_t (*)(void*, std::int32_t*);
+    using Open = void *(*)(const char *, std::int32_t *);
+    using Close = void (*)(void *);
+    using Elements = void *(*)(const void *, const char16_t *, std::int32_t, std::int32_t *);
+    using Next = std::int32_t (*)(void *, std::int32_t *);
     Open open = nullptr;
     Close close = nullptr, close_elements = nullptr;
     Elements elements = nullptr;
     Next next = nullptr;
 #ifdef _WIN32
     HMODULE module = nullptr;
-    void* symbol(const std::string& n) {
-        return reinterpret_cast<void*>(GetProcAddress(module, n.c_str()));
+
+    void *symbol(const std::string &n) {
+        return reinterpret_cast<void *>(GetProcAddress(module, n.c_str()));
     }
 #else
-    void* module = nullptr;
-    void* symbol(const std::string& n) {
+    void *module = nullptr;
+
+    void *symbol(const std::string &n) {
         return dlsym(module, n.c_str());
     }
 #endif
@@ -57,6 +59,7 @@ struct Icu {
         close_elements = reinterpret_cast<Close>(symbol("ucol_closeElements" + suffix));
         next = reinterpret_cast<Next>(symbol("ucol_next" + suffix));
     }
+
     ~Icu() {
 #ifdef _WIN32
         if (module)
@@ -67,14 +70,17 @@ struct Icu {
 #endif
     }
 };
-Icu& icu() {
+
+Icu &icu() {
     static Icu a;
     return a;
 }
+
 struct Collator {
-    void* value = nullptr;
+    void *value = nullptr;
+
     Collator() {
-        auto& a = icu();
+        auto &a = icu();
         if (!a.open || !a.close || !a.elements || !a.close_elements || !a.next)
             throw std::runtime_error("Selected ICU is required for invariant configuration Include- prefix");
         std::int32_t status = 0;
@@ -85,13 +91,16 @@ struct Collator {
             throw std::runtime_error("Cannot create invariant configuration collator");
         }
     }
+
     ~Collator() {
         icu().close(value);
     }
 };
+
 struct Iterator {
-    void* value = nullptr;
-    Iterator(void* collator, const char16_t* s, std::int32_t n) {
+    void *value = nullptr;
+
+    Iterator(void *collator, const char16_t *s, std::int32_t n) {
         std::int32_t status = 0;
         value = icu().elements(collator, s, n, &status);
         if (status > 0 || !value) {
@@ -100,9 +109,11 @@ struct Iterator {
             throw std::runtime_error("Cannot create invariant configuration collation iterator");
         }
     }
+
     ~Iterator() {
         icu().close_elements(value);
     }
+
     std::int32_t next() {
         std::int32_t status = 0;
         auto n = icu().next(value, &status);
@@ -111,7 +122,8 @@ struct Iterator {
         return n;
     }
 };
-}
+} // namespace
+
 bool startup_invariant_configuration_include_key(ConfigurationCultureText text) {
     if (!text)
         throw ConfigurationCultureNullError();
@@ -121,8 +133,7 @@ bool startup_invariant_configuration_include_key(ConfigurationCultureText text) 
         throw std::length_error("Configuration Include- key exceeds Int32 length");
     thread_local Collator collator;
     static constexpr char16_t prefix[] = u"Include-";
-    Iterator pattern(collator.value, prefix, 8),
-        source(collator.value, text->data(), std::int32_t(text->size()));
+    Iterator pattern(collator.value, prefix, 8), source(collator.value, text->data(), std::int32_t(text->size()));
     bool move_pattern = true, move_source = true;
     std::int32_t p = 0, s = 0;
     for (;;) {
@@ -146,4 +157,4 @@ bool startup_invariant_configuration_include_key(ConfigurationCultureText text) 
             return false;
     }
 }
-}
+} // namespace opensim::framework

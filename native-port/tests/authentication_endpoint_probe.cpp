@@ -6,6 +6,7 @@
 #include "osd_fixture_value.hpp"
 #include <iostream>
 using namespace opensim;
+
 std::string hex(std::string_view s) {
     constexpr char d[] = "0123456789abcdef";
     std::string r;
@@ -15,11 +16,12 @@ std::string hex(std::string_view s) {
     }
     return r;
 }
-std::string info(const std::shared_ptr<services::AuthInfo>& a) {
+
+std::string info(const std::shared_ptr<services::AuthInfo> &a) {
     if (!a)
         return "null";
     std::string r;
-    for (auto& [k, v] : a->to_key_value_pairs())
+    for (auto &[k, v] : a->to_key_value_pairs())
         r += hex(k) + "=" +
              (!v.has_value()                        ? "N"
               : v.type() == typeid(framework::Uuid) ? "U" + std::any_cast<framework::Uuid>(v).str()
@@ -27,13 +29,14 @@ std::string info(const std::shared_ptr<services::AuthInfo>& a) {
              ",";
     return r;
 }
-std::string record(const std::shared_ptr<services::AuthenticationRecord>& a) {
+
+std::string record(const std::shared_ptr<services::AuthenticationRecord> &a) {
     if (!a)
         return "null";
     std::string r = a->principal.str() + ":";
     if (!a->data)
         return r + "null";
-    for (auto& [k, v] : *a->data)
+    for (auto &[k, v] : *a->data)
         r += hex(k) + "=" +
              (!v.has_value()                    ? "N"
               : v.type() == typeid(std::string) ? "S" + hex(std::any_cast<std::string>(v))
@@ -41,7 +44,8 @@ std::string record(const std::shared_ptr<services::AuthenticationRecord>& a) {
              ",";
     return r;
 }
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     try {
         auto base = framework::utf8_path(argv[1]);
         std::string line;
@@ -84,10 +88,9 @@ int main(int argc, char** argv) {
                     if (!touch(id))
                         return {};
                     auto a = std::make_shared<services::AuthInfo>();
-                    a->principal =
-                        id.str().back() == '4'   ? framework::Uuid("00000000-0000-0000-0000-000000000008")
-                        : id.str().back() == '5' ? framework::Uuid("00000000-0000-0000-0000-000000000009")
-                                                 : id;
+                    a->principal = id.str().back() == '4'   ? framework::Uuid("00000000-0000-0000-0000-000000000008")
+                                   : id.str().back() == '5' ? framework::Uuid("00000000-0000-0000-0000-000000000009")
+                                                            : id;
                     if (!id.is_zero()) {
                         a->account_type = "Type<&>";
                         a->password_hash = "hash\r\n\t";
@@ -102,9 +105,7 @@ int main(int argc, char** argv) {
                 };
                 server::AuthenticationEndpoint endpoint(std::move(ops), config);
                 try {
-                    value =
-                        hex(endpoint.handle({"POST", j.get("path").text, fixture::unhex(j.get("body").text)})
-                                .body);
+                    value = hex(endpoint.handle({"POST", j.get("path").text, fixture::unhex(j.get("body").text)}).body);
                 } catch (...) {
                     status = "EX";
                 }
@@ -116,14 +117,13 @@ int main(int argc, char** argv) {
                     row->principal = framework::Uuid("00000000-0000-0000-0000-000000000011");
                     if (mode != 1) {
                         row->data = std::make_shared<framework::OrderedDictionary<std::string, std::any>>();
-                        const char* keys[] = {"accountType", "passwordHash", "passwordSalt", "webLoginKey"};
+                        const char *keys[] = {"accountType", "passwordHash", "passwordSalt", "webLoginKey"};
                         for (int i = 0; i < 4; ++i) {
                             if (mode == i + 3)
                                 continue;
-                            (*row->data)[keys[i]] = mode == i + 7 ? std::any(17)
-                                                    : mode == i + 11
-                                                        ? std::any{}
-                                                        : std::any(std::string("value<&>è©¦é¨“\r\n\t"));
+                            (*row->data)[keys[i]] = mode == i + 7    ? std::any(17)
+                                                    : mode == i + 11 ? std::any{}
+                                                                     : std::any(std::string("value<&>è©¦é¨“\r\n\t"));
                         }
                     }
                 }
@@ -163,7 +163,7 @@ int main(int argc, char** argv) {
             std::cout << status << '|' << value << '|' << hex(trace) << '\n';
         }
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what();
         return 1;
     }

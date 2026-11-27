@@ -1,0 +1,92 @@
+  state[0] = default
+  numGblArrays       0
+  numGblChars        0
+  numGblFloats       0
+  numGblIntegers     2
+  numGblLists        0
+  numGblObjects      0
+  numGblRotations    0
+  numGblStrings      0
+  numGblVectors      0
+  numGblSDTClObjs    0
+  numGblSDTIntfObjs  0
+  result = iarIntegers[0]
+  calls = iarIntegers[1]
+  delegate void $anondel$void()();
+
+Void $globalvarinit() (FunctionExecutionReferenceInstance)
+{
+  0000    ldarg.0     
+  0001    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0006    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  000B    ldc.i4.0    
+  000C    ldc.i4.0    
+  000D    stelem.i4   
+  000E    ldarg.0     
+  000F    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0014    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  0019    ldc.i4.1    
+  001A    ldc.i4.0    
+  001B    stelem.i4   
+  001C    leave       __retlbl$0   (label)
+  0021  __retlbl$0:
+  0021    ret         
+}
+
+Void default state_entry (XMRInstAbstract)
+{
+          xmrsuper    __xmrinst$0
+  0000    ldarg.0     
+  0001    castclass   FunctionExecutionReferenceInstance   (type)
+  0006    stloc       __xmrinst$0   (local)
+  0007    ldloc       __xmrinst$0   (local)
+  0008    ldfld       XMRInstAbstract:m_localsHeapUsed -> Int32   (field)
+          int         __curHeap$1
+  000D    stloc       __curHeap$1   (local)
+          string      tmp$1$2
+  000E    ldloc       __xmrinst$0   (local)
+  000F    ldfld       XMRInstAbstract:doGblInit -> Boolean   (field)
+  0014    brfalse     __skipGblInit$1   (label)
+  0019    ldloc       __xmrinst$0   (local)
+  001A    call        $globalvarinit()(FunctionExecutionReferenceInstance) -> Void
+  001F    ldloc       __xmrinst$0   (local)
+  0020    ldc.i4.0    
+  0021    stfld       XMRInstAbstract:doGblInit -> Boolean   (field)
+  0026  __skipGblInit$1:
+  0026    ldstr       "b"   (string)
+  002B    dup         
+  002C    stloc       tmp$1$2   (local)
+  002D    ldstr       "a"   (string)
+  0032    call        BinOpStr:StringCompareOrdinal(String,String) -> Int32
+  0037    ldc.i4.0    
+  0038    blt         case$4   (label)
+  003D    ldloc       tmp$1$2   (local)
+  003E    ldstr       "c"   (string)
+  0043    call        BinOpStr:StringCompareOrdinal(String,String) -> Int32
+  0048    ldc.i4.0    
+  0049    ble         case$3   (label)
+  004E    br          case$4   (label)
+  0053  case$3:
+  0053    ldloc       __xmrinst$0   (local)
+  0054    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0059    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  005E    ldc.i4.0    
+  005F    ldc.i4.7    
+  0060    stelem.i4   
+  0061    br          switchbreak_function-execution-reference_0_84$2   (label)
+  0066  case$4:
+  0066    ldloc       __xmrinst$0   (local)
+  0067    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  006C    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  0071    ldc.i4.0    
+  0072    ldc.i4.s    9   (int)
+  0074    stelem.i4   
+  0075  switchbreak_function-execution-reference_0_84$2:
+  0075    leave       __retlbl$0   (label)
+  007A  __retlbl$0:
+  007A    ldloc       __xmrinst$0   (local)
+  007B    ldloc       __curHeap$1   (local)
+  007C    stfld       XMRInstAbstract:m_localsHeapUsed -> Int32   (field)
+  0081    ret         
+}
+TheEnd.

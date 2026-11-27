@@ -3,6 +3,7 @@
 #pragma once
 #include "opensim/services/script_task_caps.hpp"
 #include "opensim/services/scene_capability_events.hpp"
+
 namespace opensim::services {
 struct RegionScriptTaskBackend {
     std::function<bool(framework::Uuid)> object_exists;
@@ -13,6 +14,7 @@ struct RegionScriptTaskBackend {
         update;
     std::function<void(std::string)> log;
 };
+
 // Registers the two source aliases on each Caps, plus real one-shot binary
 // upload routes and 30-second expiration. Quiesce HTTP before stop; Caps owns
 // initial routes. Backend scene/asset/compiler dependencies must outlive stop.
@@ -20,8 +22,8 @@ class RegionScriptTaskRuntime {
   public:
     RegionScriptTaskRuntime(std::shared_ptr<SceneCapabilityEvents>, RegionScriptTaskBackend);
     ~RegionScriptTaskRuntime();
-    RegionScriptTaskRuntime(const RegionScriptTaskRuntime&) = delete;
-    RegionScriptTaskRuntime& operator=(const RegionScriptTaskRuntime&) = delete;
+    RegionScriptTaskRuntime(const RegionScriptTaskRuntime &) = delete;
+    RegionScriptTaskRuntime &operator=(const RegionScriptTaskRuntime &) = delete;
     void stop();
     std::size_t pending_uploads() const;
 
@@ -29,4 +31,4 @@ class RegionScriptTaskRuntime {
     struct State;
     std::shared_ptr<State> state_;
 };
-}
+} // namespace opensim::services

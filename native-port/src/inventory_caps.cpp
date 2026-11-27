@@ -9,12 +9,14 @@
 #include <bit>
 #include <limits>
 #include <stdexcept>
+
 namespace opensim::services {
 InventoryBadRequests::InventoryBadRequests(std::function<std::int32_t()> clock, TimerObserver timer)
     : clock_(std::move(clock)), timer_(std::move(timer)) {
     if (!clock_)
         throw std::invalid_argument("Null inventory expiry clock");
 }
+
 InventoryBadRequests::~InventoryBadRequests() {
     try {
         std::lock_guard lock(mutex_);
@@ -22,6 +24,7 @@ InventoryBadRequests::~InventoryBadRequests() {
     } catch (...) {
     }
 }
+
 void InventoryBadRequests::disarm() {
     if (timer_active_) {
         if (timer_)
@@ -29,11 +32,11 @@ void InventoryBadRequests::disarm() {
         timer_active_ = false;
     }
 }
+
 void InventoryBadRequests::add(framework::Uuid key, std::int32_t expire_ms) {
-    auto now = expire_ms > 0
-                   ? std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(clock_()) +
-                                                 static_cast<std::uint32_t>(std::max(expire_ms, 30000)))
-                   : std::numeric_limits<std::int32_t>::min();
+    auto now = expire_ms > 0 ? std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(clock_()) +
+                                                           static_cast<std::uint32_t>(std::max(expire_ms, 30000)))
+                             : std::numeric_limits<std::int32_t>::min();
     std::lock_guard lock(mutex_);
     entries_[key] = now;
     if (!timer_active_) {
@@ -42,10 +45,12 @@ void InventoryBadRequests::add(framework::Uuid key, std::int32_t expire_ms) {
         timer_active_ = true;
     }
 }
+
 bool InventoryBadRequests::contains(framework::Uuid key) const {
     std::lock_guard lock(mutex_);
     return entries_.contains(key);
 }
+
 void InventoryBadRequests::purge() {
     std::lock_guard lock(mutex_);
     if (entries_.empty()) {
@@ -63,12 +68,14 @@ void InventoryBadRequests::purge() {
     else if (timer_)
         timer_(TimerEvent::Rearm, 30000);
 }
+
 namespace {
 void key(std::string &out, std::string_view name) {
     out += "<key>";
     out += name;
     out += "</key>";
 }
+
 void number(std::string &out, std::string_view name, std::int32_t value) {
     key(out, name);
     if (!value)
@@ -76,10 +83,12 @@ void number(std::string &out, std::string_view name, std::int32_t value) {
     else
         out += "<integer>" + std::to_string(value) + "</integer>";
 }
+
 void uuid(std::string &out, std::string_view name, framework::Uuid value) {
     key(out, name);
     out += value.is_zero() ? "<uuid />" : "<uuid>" + value.str() + "</uuid>";
 }
+
 std::string escape(std::string_view value) {
     std::string out;
     for (unsigned char c : value)
@@ -104,11 +113,13 @@ std::string escape(std::string_view value) {
         }
     return out;
 }
+
 void string(std::string &out, std::string_view name, const std::string &value) {
     key(out, name);
     out += value.empty() ? "<string />" : "<string>" + escape(value) + "</string>";
 }
-}
+} // namespace
+
 std::string inventory_item_llsd(const InventoryItem &item, std::uint32_t flags_mask) {
     std::string out = "<map>";
     uuid(out, "parent_id", item.parent);
@@ -153,11 +164,13 @@ std::string inventory_item_llsd(const InventoryItem &item, std::uint32_t flags_m
     out += "</map>";
     return out;
 }
+
 FetchInventory2Core::FetchInventory2Core(framework::Uuid agent, GetMultipleItems get)
     : agent_(agent), get_(std::move(get)) {
     if (!get_)
         throw std::invalid_argument("Null inventory item provider");
 }
+
 network::HttpResponse FetchInventory2Core::handle(const network::Value &request_map,
                                                   InventoryBadRequests *bad_requests) const {
     network::HttpResponse response;
@@ -201,17 +214,19 @@ network::HttpResponse FetchInventory2Core::handle(const network::Value &request_
     response.body += "</map></llsd>";
     return response;
 }
+
 FetchInventory2Route::FetchInventory2Route(std::string path, std::shared_ptr<FetchInventory2Core> core,
-                                           std::shared_ptr<InventoryBadRequests> bad_requests,
-                                           Deserialize deserialize)
+                                           std::shared_ptr<InventoryBadRequests> bad_requests, Deserialize deserialize)
     : path_(std::move(path)), core_(std::move(core)), bad_requests_(std::move(bad_requests)),
       deserialize_(deserialize ? std::move(deserialize) : deserialize_xml_json) {
     if (!core_)
         throw std::invalid_argument("Null inventory capability core");
 }
+
 network::Value FetchInventory2Route::deserialize_xml_json(std::string_view body) {
     return network::deserialize_sdk_osd_stream(body);
 }
+
 network::HttpResponse FetchInventory2Route::handle(const network::HttpRequest &request) {
     ++requests_received;
     network::HttpResponse response;
@@ -238,4 +253,4 @@ network::HttpResponse FetchInventory2Route::handle(const network::HttpRequest &r
     ++requests_handled;
     return response;
 }
-}
+} // namespace opensim::services

@@ -8,6 +8,5 @@
 
 namespace opensim::server {
 std::string asset_console_flags(std::int32_t flags);
-void asset_console_hex(std::span<const std::uint8_t> data,
-                       const std::function<void(const std::string&)>& output);
-}
+void asset_console_hex(std::span<const std::uint8_t> data, const std::function<void(const std::string &)> &output);
+} // namespace opensim::server

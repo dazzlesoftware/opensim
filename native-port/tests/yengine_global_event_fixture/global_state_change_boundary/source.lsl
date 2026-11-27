@@ -1,0 +1,1 @@
+integer calls;integer value=init();integer init(){calls++;state other;return 7;}default{state_entry(){calls+=100;}state_exit(){}}state other{state_entry(){calls+=1000;}}

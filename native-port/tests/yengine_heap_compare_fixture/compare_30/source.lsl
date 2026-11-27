@@ -1,0 +1,1 @@
+integer result;integer after;default{state_entry(){result=xmrStringCompare("ä","z");after=1;}}

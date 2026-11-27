@@ -1,0 +1,1 @@
+string result;integer after;default{state_entry(){result=llHMAC("key",llGetSubString("😀",1,1),"unknown");after=1;}}

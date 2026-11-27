@@ -12,9 +12,11 @@
 #include <algorithm>
 #include <mutex>
 #include <set>
+
 namespace opensim::framework {
 namespace {
 using Stamp = std::optional<std::int64_t>;
+
 bool stat_path(const std::filesystem::path &path, bool directory, Stamp &stamp) {
     stamp.reset();
     struct stat info{};
@@ -23,9 +25,11 @@ bool stat_path(const std::filesystem::path &path, bool directory, Stamp &stamp) 
     stamp = static_cast<std::int64_t>(info.st_mtim.tv_sec) * 10000000 + info.st_mtim.tv_nsec / 100;
     return true;
 }
+
 std::filesystem::path fullpath(const char *path) {
     return std::filesystem::absolute(utf8(utf16_replacing(path))).lexically_normal();
 }
+
 std::u16string name(X509_NAME *value) {
     const int length = i2d_X509_NAME(value, nullptr);
     if (length < 0)
@@ -36,12 +40,14 @@ std::u16string name(X509_NAME *value) {
         throw ConfigHttpLinuxCertificateError();
     return config_http_linux_x500_name(der);
 }
+
 struct Identity {
     std::uint32_t hash;
     std::u16string issuer;
     CertificateDer serial;
     auto operator<=>(const Identity &) const = default;
 };
+
 Identity identity(X509 *cert, std::u16string issuer) {
     unsigned char digest[EVP_MAX_MD_SIZE];
     unsigned size = 0;
@@ -50,13 +56,15 @@ Identity identity(X509 *cert, std::u16string issuer) {
     auto *serial = X509_get_serialNumber(cert);
     auto *data = ASN1_STRING_get0_data(serial);
     const int length = ASN1_STRING_length(serial);
-    return {(std::uint32_t(digest[0]) << 24) | (std::uint32_t(digest[1]) << 16) |
-                (std::uint32_t(digest[2]) << 8) | digest[3],
+    return {(std::uint32_t(digest[0]) << 24) | (std::uint32_t(digest[1]) << 16) | (std::uint32_t(digest[2]) << 8) |
+                digest[3],
             std::move(issuer), CertificateDer(data, data + length)};
 }
+
 struct Loader {
     ConfigHttpLinuxSystemStoreSnapshot output;
     std::set<Identity> roots, intermediates;
+
     bool file(const std::filesystem::path &path, Stamp &modified, bool skip_stat = false) {
         modified.reset();
         if (!skip_stat && !stat_path(path, false, modified))
@@ -97,6 +105,7 @@ struct Loader {
         }
         return any;
     }
+
     bool directory(const std::filesystem::path &path, Stamp &modified) {
         if (!stat_path(path, true, modified))
             return false;
@@ -111,7 +120,8 @@ struct Loader {
         return any;
     }
 };
-}
+} // namespace
+
 struct ConfigHttpLinuxSystemStore::State {
     Clock clock;
     std::mutex mutex;
@@ -122,7 +132,9 @@ struct ConfigHttpLinuxSystemStore::State {
     Stamp file_modified;
     std::vector<Stamp> directory_modified;
     bool default_directory = false;
+
     explicit State(Clock time) : clock(std::move(time)) {}
+
     void paths() {
         const char *dirs = std::getenv(X509_get_default_cert_dir_env());
         default_directory = dirs == nullptr;
@@ -148,6 +160,7 @@ struct ConfigHttpLinuxSystemStore::State {
             file = fullpath(filename);
         directory_modified.resize(directories.size());
     }
+
     bool changed() {
         Stamp stamp;
         if (file) {
@@ -162,6 +175,7 @@ struct ConfigHttpLinuxSystemStore::State {
         }
         return false;
     }
+
     Snapshot load() {
         const bool first = !snapshot;
         if (first)
@@ -182,9 +196,12 @@ struct ConfigHttpLinuxSystemStore::State {
         return snapshot;
     }
 };
+
 ConfigHttpLinuxSystemStore::ConfigHttpLinuxSystemStore(Clock clock)
     : state_(std::make_unique<State>(std::move(clock))) {}
+
 ConfigHttpLinuxSystemStore::~ConfigHttpLinuxSystemStore() = default;
+
 ConfigHttpLinuxSystemStore::Snapshot ConfigHttpLinuxSystemStore::collection() {
     auto &s = *state_;
     std::lock_guard lock(s.mutex);
@@ -195,4 +212,4 @@ ConfigHttpLinuxSystemStore::Snapshot ConfigHttpLinuxSystemStore::collection() {
         return s.load();
     return s.snapshot;
 }
-}
+} // namespace opensim::framework

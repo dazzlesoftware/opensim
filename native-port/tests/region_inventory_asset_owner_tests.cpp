@@ -1,3 +1,4 @@
+#include "teleport_event_probe.hpp"
 #include "opensim/framework/agent_data.hpp"
 #include "opensim/framework/text.hpp"
 #include "opensim/framework/texture_entry.hpp"
@@ -25,12 +26,14 @@ using namespace opensim;
 using namespace scene;
 using namespace services;
 using framework::Uuid;
+
 namespace {
 void check(bool value, const char *text) {
     if (!value)
         throw std::runtime_error(text);
 }
-std::vector<std::uint8_t> serialize_object_asset(const ObjectAssetPart& root,
+
+std::vector<std::uint8_t> serialize_object_asset(const ObjectAssetPart &root,
                                                  std::span<const ObjectAssetPart> children = {}) {
     std::u16string xml;
     framework::XmlTextWriterIo io;
@@ -39,17 +42,14 @@ std::vector<std::uint8_t> serialize_object_asset(const ObjectAssetPart& root,
         if (text)
             xml.append(*text);
     };
-    io.write_array = [&](auto data, int offset, int count) {
-        xml.append(data->data() + offset, count);
-    };
-    io.write_whole_array = [&](auto data) {
-        xml.append(data->data(), data->size());
-    };
+    io.write_array = [&](auto data, int offset, int count) { xml.append(data->data() + offset, count); };
+    io.write_whole_array = [&](auto data) { xml.append(data->data(), data->size()); };
     framework::NativeXmlTextWriter writer(std::move(io));
     write_object_asset_xml(writer, root, children);
     const auto utf8 = framework::utf8(xml);
     return {utf8.begin(), utf8.end()};
 }
+
 void check_attachment_asset_round_trip() {
     ObjectAssetPart attachment;
     attachment.object.id = Uuid::random();
@@ -59,30 +59,35 @@ void check_attachment_asset_round_trip() {
     const auto restored = read_object_asset_xml(serialize_object_asset(attachment));
     check(restored && restored->linksets.size() == 1 && restored->linksets.front().parts.size() == 1,
           "read serialized attachment");
-    const auto& part = restored->linksets.front().parts.front();
+    const auto &part = restored->linksets.front().parts.front();
     check(part.object.shape.state == 5, "preserve current attachment point");
     check(part.last_attachment_point == 6, "preserve last attachment point");
     check(part.attachment_position == attachment.attachment_position, "preserve saved attachment offset");
 }
+
 std::string path(const std::filesystem::path &p) {
     auto u = p.u8string();
     return {reinterpret_cast<const char *>(u.data()), u.size()};
 }
+
 std::vector<std::uint8_t> wire(const std::string &text) {
     std::vector<std::uint8_t> data(text.begin(), text.end());
     data.push_back(0);
     return data;
 }
+
 std::string field(const network::lludp::Packet &p, const char *block, const char *key) {
     auto b = std::get<std::vector<std::uint8_t>>(p.block(block).at(key));
     return {b.begin(), std::find(b.begin(), b.end(), 0)};
 }
+
 void run(bool wear_replaces_all, bool attachments_enabled = true) {
-    auto directory =
-        std::filesystem::temp_directory_path() / ("opensim-region-asset-owner-" + Uuid::random().str());
+    auto directory = std::filesystem::temp_directory_path() / ("opensim-region-asset-owner-" + Uuid::random().str());
     check(std::filesystem::create_directory(directory), "unique directory");
+
     struct Cleanup {
         std::filesystem::path path;
+
         ~Cleanup() {
             if (path.parent_path() == std::filesystem::temp_directory_path() &&
                 path.filename().string().starts_with("opensim-region-asset-owner-")) {
@@ -91,6 +96,7 @@ void run(bool wear_replaces_all, bool attachments_enabled = true) {
             }
         }
     } cleanup{directory};
+
     InventoryFolderStore folders(path(directory / "inventory.db"), true);
     InventoryService inventory(folders);
     StoredAssetService assets(std::make_shared<SqliteAssetStore>(path(directory / "assets.db"), true));
@@ -123,10 +129,9 @@ void run(bool wear_replaces_all, bool attachments_enabled = true) {
     check(inventory.add_item(note), "real note");
     InventoryItem disabled_wear;
     if (!attachments_enabled) {
-        const std::string xml =
-            "<SceneObjectGroup><SceneObjectPart><UUID>" + Uuid::random().str() +
-            "</UUID><Shape><PCode>9</PCode><LastAttachPoint>5</LastAttachPoint></Shape>"
-            "</SceneObjectPart></SceneObjectGroup>";
+        const std::string xml = "<SceneObjectGroup><SceneObjectPart><UUID>" + Uuid::random().str() +
+                                "</UUID><Shape><PCode>9</PCode><LastAttachPoint>5</LastAttachPoint></Shape>"
+                                "</SceneObjectPart></SceneObjectGroup>";
         auto asset = std::make_shared<framework::AssetBase>(Uuid::random(), "Disabled wear fixture", 6, "");
         asset->data = std::make_shared<std::vector<std::uint8_t>>(xml.begin(), xml.end());
         check(assets.store(asset).has_value(), "store disabled attachment asset");
@@ -171,17 +176,88 @@ default
         {
             if (inventory_rez)
                 llSay(0, "Inventory on_rez preceded attach");
+            else
+                llSay(0, "Child received ground attach");
             inventory_rez = FALSE;
             ++wear_count;
-            if (wear_count == 2)
+            if (wear_count == 2) {
+                if (llLinksetDataRead("k") == "v" &&
+                    llLinksetDataWriteProtected("worn", "child", "pass") == LINKSETDATA_OK)
+                    llSay(0, "Worn child updated the root store");
                 llSay(0, "Inventory attachment resumed its script");
-            else if (wear_count == 4)
+            } else if (wear_count == 4) {
+                if (llLinksetDataReadProtected("worn", "pass") == "child" &&
+                    llLinksetDataReadProtected("worn", "wrong") == "")
+                    llSay(0, "Reworn child found the saved protected value");
                 llSay(0, "Inventory attachment resumed after manual detach");
-            else if (wear_count == 6)
+            } else if (wear_count == 6)
                 llSay(0, "Inventory attachment resumed after replacement");
-            else
-                llSay(0, "Inventory attachment child received wear");
+            else {
+                list wearer_counts = llGetObjectDetails(avatar,
+                    [OBJECT_RUNNING_SCRIPT_COUNT, OBJECT_TOTAL_SCRIPT_COUNT, OBJECT_SCRIPT_MEMORY,
+                     OBJECT_PRIM_EQUIVALENCE, OBJECT_STREAMING_COST, OBJECT_PATHFINDING_TYPE,
+                     OBJECT_PHYSICS_COST, OBJECT_PRIM_COUNT, OBJECT_ATTACHED_SLOTS_AVAILABLE,
+                     OBJECT_RENDER_WEIGHT, OBJECT_ACCOUNT_LEVEL, OBJECT_TOTAL_INVENTORY_COUNT,
+                     OBJECT_SIT_COUNT, OBJECT_ANIMATED_COUNT, OBJECT_ANIMATED_SLOTS_AVAILABLE]);
+                if (llList2Integer(wearer_counts, 0) == 2 &&
+                    llList2Integer(wearer_counts, 1) == 2 &&
+                    llList2Integer(wearer_counts, 2) == 32768 &&
+                    llList2Integer(wearer_counts, 3) == 1 &&
+                    llList2Float(wearer_counts, 4) == 0.0 &&
+                    llList2Integer(wearer_counts, 5) == OPT_AVATAR &&
+                    llList2Float(wearer_counts, 6) == 0.0 &&
+                    llList2Integer(wearer_counts, 7) == 4 &&
+                    llList2Integer(wearer_counts, 8) == 36 &&
+                    llList2Integer(wearer_counts, 9) == -1 &&
+                    llList2Integer(wearer_counts, 10) == 1 &&
+                    llList2Integer(wearer_counts, 11) == 2 &&
+                    llList2Integer(wearer_counts, 12) == 0 &&
+                    llList2Integer(wearer_counts, 13) == 1 &&
+                    llList2Integer(wearer_counts, 14) == 1)
+                    llSay(0, "Inventory attachment child received wear with both scripts counted");
+                if (wear_count == 1)
+                    llSetTimerEvent(0.1);
+            }
+            list details = llGetObjectDetails(llGetKey(),
+                [" +46 ", OBJECT_ROOT, 999, OBJECT_PERMS, OBJECT_VOLUME_DETECT,
+                 OBJECT_ATTACHED_POINT, OBJECT_PHYSICS, OBJECT_PHANTOM, OBJECT_TEMP_ATTACHED,
+                 OBJECT_HEALTH, OBJECT_DAMAGE, OBJECT_DAMAGE_TYPE]);
+            list counts = llGetObjectDetails(llGetKey(),
+                [OBJECT_RUNNING_SCRIPT_COUNT, OBJECT_TOTAL_SCRIPT_COUNT, OBJECT_SCRIPT_MEMORY]);
+            list costs = llGetObjectDetails(llGetKey(),
+                [OBJECT_PRIM_EQUIVALENCE, OBJECT_SERVER_COST, OBJECT_STREAMING_COST,
+                 OBJECT_CHARACTER_TIME, OBJECT_PATHFINDING_TYPE, OBJECT_TOTAL_INVENTORY_COUNT,
+                 OBJECT_SIT_COUNT, OBJECT_CREATION_TIME, OBJECT_REZ_TIME,
+                 OBJECT_BODY_SHAPE_TYPE, OBJECT_ANIMATED_COUNT, OBJECT_ANIMATED_SLOTS_AVAILABLE]);
+            string rez_time = llList2String(costs, 8);
+            if (llLinksetDataRead("k") == "v" && llList2Integer(details, 0) == 2 &&
+                llList2String(details, 1) == (string)llGetLinkKey(LINK_ROOT) &&
+                llList2Integer(details, 2) == OBJECT_UNKNOWN_DETAIL &&
+                llGetListLength(details) == 16 && llList2Integer(details, 8) == 0 &&
+                llList2Integer(details, 9) == 5 && llList2Integer(details, 10) == 0 &&
+                llList2Integer(details, 11) == 0 && llList2Integer(details, 12) == 0 &&
+                llList2Integer(details, 13) == OBJECT_UNKNOWN_DETAIL &&
+                llList2Integer(details, 14) == OBJECT_UNKNOWN_DETAIL &&
+                llList2Integer(details, 15) == OBJECT_UNKNOWN_DETAIL &&
+                llList2Integer(counts, 0) == 1 && llList2Integer(counts, 1) == 1 &&
+                llList2Integer(counts, 2) == 16384 &&
+                llList2Integer(costs, 0) == 2 && llList2Float(costs, 1) == 0.0 &&
+                llList2Float(costs, 2) == 1.0 && llList2Float(costs, 3) == 0.0 &&
+                llList2Integer(costs, 4) == OPT_OTHER && llList2Integer(costs, 5) == 1 &&
+                llList2Integer(costs, 6) == 0 &&
+                llList2String(costs, 7) == "2000-01-01T00:00:00Z" &&
+                llStringLength(rez_time) == 27 && llGetSubString(rez_time, 19, 19) == "." &&
+                llGetSubString(rez_time, 26, 26) == "Z" &&
+                llList2Float(costs, 9) == -1.0 && llList2Integer(costs, 10) == 0 &&
+                llList2Integer(costs, 11) == 0)
+                llSay(0, "Worn child found the root store");
         }
+    }
+
+    linkset_data(integer action, string name, string value)
+    {
+        if (action == LINKSETDATA_UPDATE && name == "worn" && value == "" && llGetLinkNumber() == 2)
+            llSay(0, "Worn child received the protected update event");
     }
 
     listen(integer channel, string name, key sender, string message)
@@ -200,6 +276,14 @@ default
             llSay(0, "Direct prim listener received");
         if (channel == 4714)
             llRegionSayTo(sender, 4713, "Direct attachment chat");
+        if (channel == 4715 && llGetAttached() == 6 && llGetLinkNumber() == 2)
+        {
+            list motion = llGetObjectDetails(llGetKey(), [OBJECT_ROT, OBJECT_VELOCITY]);
+            list seat = llGetObjectDetails((key)message, [OBJECT_SIT_COUNT]);
+            if (llList2Rot(motion, 0) == <0, 0, 1, 0> &&
+                llList2Vector(motion, 1) == <7, 8, 9> && llList2Integer(seat, 0) == 1)
+                llSay(0, "Seated attachment reports world motion");
+        }
         if (channel == 4713)
         {
             if (llGetAttached() == 6 && llGetLinkNumber() == 2)
@@ -212,7 +296,10 @@ default
     state_entry()
     {
         if (llGetAttached() == 6)
+        {
             llSetTimerEvent(0.05);
+            llListen(4715, "", llGetOwner(), "");
+        }
 
         if (llGetAttached() == 0
             && llGetLinkNumber() == 0
@@ -324,6 +411,16 @@ default
 
     timer()
     {
+        if (llGetAttached() == 5)
+        {
+            llSetTimerEvent(0.0);
+            list own = llGetObjectDetails(llGetKey(), [OBJECT_SCRIPT_TIME]);
+            list wearer = llGetObjectDetails(llGetOwner(), [OBJECT_SCRIPT_TIME]);
+            float own_time = llList2Float(own, 0);
+            if (own_time > 0.0 && llList2Float(wearer, 0) >= own_time)
+                llSay(0, "Worn script execution time reported");
+            return;
+        }
         rotation q = llGetRot();
         if (q.z > 0.707 && q.s > 0.707 && q == llGetRootRotation() && !saw_camera)
         {
@@ -347,6 +444,10 @@ default
     std::atomic<bool> mute_avatar_sounds = false;
     std::atomic<bool> god_mode = false;
     RegionPolicies policies;
+    policies.background_admission = false;
+    if (wear_replaces_all)
+        policies.sample_economy_data = network::lludp::make_packet("EconomyData");
+    policies.scene_linkset_data_limit = 12;
     policies.auto_grant_attach_permissions = wear_replaces_all;
     policies.auto_grant_all_script_permissions = !wear_replaces_all;
     policies.physical_linkset_capacity = 2;
@@ -357,7 +458,7 @@ default
     policies.enforce_parcel_rez_permissions = true;
     policies.max_prims_per_user = 1;
     policies.script_parcel_capacity = [&](std::int32_t) { return drop_parcel_capacity.load(); };
-    policies.can_rez = [&](Uuid, framework::Vector3, std::string&) {
+    policies.can_rez = [&](Uuid, framework::Vector3, std::string &) {
         ++drop_permission_checks;
         return allow_drop_rez;
     };
@@ -432,11 +533,14 @@ default
     attachment_table.execute("CREATE TABLE native_attachment_scripts ("
                              "owner_id TEXT NOT NULL, item_id TEXT NOT NULL, asset_id TEXT NOT NULL, "
                              "script_id TEXT NOT NULL, checkpoint BLOB NOT NULL, "
-                             "PRIMARY KEY (owner_id,item_id,script_id))", {});
+                             "PRIMARY KEY (owner_id,item_id,script_id))",
+                             {});
     attachment_table.execute("INSERT INTO native_attachment_scripts "
                              "VALUES (:owner,:item,:asset,:script,X'0001FF')",
-                             {{":owner", legacy_owner.str()}, {":item", legacy_item.str()},
-                              {":asset", legacy_asset.str()}, {":script", legacy_script.str()}});
+                             {{":owner", legacy_owner.str()},
+                              {":item", legacy_item.str()},
+                              {":asset", legacy_asset.str()},
+                              {":script", legacy_script.str()}});
     SqliteAttachmentScriptStore attachment_scripts(attachment_database);
     const services::AttachmentScriptStates legacy_states{{legacy_script, {0, 1, 255}}};
     check(attachment_scripts.load(legacy_owner, legacy_item, legacy_asset) == legacy_states,
@@ -450,7 +554,7 @@ default
     policies.load_attachment_scripts = [&](Uuid agent, Uuid item, Uuid asset) {
         return attachment_scripts.load(agent, item, asset);
     };
-    policies.save_attachment_scripts = [&](Uuid agent, Uuid item, Uuid asset, const auto& states) {
+    policies.save_attachment_scripts = [&](Uuid agent, Uuid item, Uuid asset, const auto &states) {
         attachment_scripts.save(agent, item, asset, states);
     };
     std::atomic<int> appearance_saves = 0;
@@ -476,7 +580,10 @@ default
     policies.estate_manager = [&, owner = circuit->agent_id](Uuid agent) { return estate_access && agent == owner; };
     const auto permission_group = Uuid::random();
     const auto offline_owner = Uuid::random();
+    const auto failed_lookup = Uuid::random();
     policies.script_account = [&](Uuid id) -> std::optional<UserAccount> {
+        if (id == failed_lookup)
+            throw std::runtime_error("fixture account service failure");
         if (id != offline_owner)
             return {};
         UserAccount account(id);
@@ -489,6 +596,7 @@ default
             return "Permission Test Group";
         return {};
     };
+    policies.inventory_group_member = [&](Uuid, Uuid id) { return id == permission_group; };
     GridRegion permission_destination;
     permission_destination.id = Uuid::random();
     permission_destination.x = descriptor.x + 256;
@@ -499,21 +607,21 @@ default
             return permission_destination;
         return {};
     };
-    policies.teleport_access = [](auto&, const auto&, auto, bool, auto&) { return std::string{}; };
-    policies.teleport_create = [](const auto&, auto&, auto& destination, const auto& viewer,
-                                  auto, auto, auto&, const auto&, std::uint32_t flags,
-                                  const auto*, auto&) -> std::optional<network::lludp::Packet> {
+    policies.teleport_access = [](auto &, const auto &, auto, bool, auto &) { return std::string{}; };
+    policies.teleport_create = [](const auto &, auto &, auto &destination, const auto &viewer, auto, auto, auto &,
+                                  const auto &, std::uint32_t flags, const auto *, auto &,
+                                  auto &) -> std::optional<network::lludp::Packet> {
         auto finish = network::lludp::make_packet("TeleportFinish");
-        auto& info = finish.block("Info");
+        auto &info = finish.block("Info");
         info["AgentID"] = viewer.circuit->agent_id;
         info["RegionHandle"] = destination.handle();
         info["TeleportFlags"] = std::uint64_t{flags};
         return finish;
     };
-    policies.cancel_teleport_destination = [&](auto&, Uuid, Uuid) { permission_teleport_cancelled = true; };
+    policies.cancel_teleport_destination = [&](auto &, Uuid, Uuid) { permission_teleport_cancelled = true; };
     RegionRuntime runtime(descriptor, presence, std::move(policies));
-    auto endpoint = runtime.start(std::make_shared<server::RegistryCapabilityListener>(
-        server::CapabilityListenerInfo{false, 19009, 0, {}}));
+    auto endpoint = runtime.start(
+        std::make_shared<server::RegistryCapabilityListener>(server::CapabilityListenerInfo{false, 19009, 0, {}}));
     presence.login(circuit->agent_id.str(), circuit->session_id, circuit->secure_session_id);
     LoginTransferContext context;
     std::string reason;
@@ -557,29 +665,32 @@ default
         if (!predicate())
             throw std::runtime_error("region owner/UDP deadline at fixture line " + std::to_string(caller.line()));
     };
-    const auto await_ack = [&](std::uint32_t sequence,
-                               std::source_location caller = std::source_location::current()) {
-        pump([&] {
-            std::lock_guard lock(received_mutex);
-            return std::ranges::any_of(received, [&](const auto& packet) {
-                if (std::ranges::find(packet.acknowledgements, sequence) != packet.acknowledgements.end())
-                    return true;
-                if (packet.spec->name != "PacketAck")
-                    return false;
-                return std::ranges::any_of(packet.blocks.at("Packets"), [&](const auto& row) {
-                    return std::get<std::uint64_t>(row.at("ID")) == sequence;
+    const auto await_ack = [&](std::uint32_t sequence, std::source_location caller = std::source_location::current()) {
+        pump(
+            [&] {
+                std::lock_guard lock(received_mutex);
+                return std::ranges::any_of(received, [&](const auto &packet) {
+                    if (std::ranges::find(packet.acknowledgements, sequence) != packet.acknowledgements.end())
+                        return true;
+                    if (packet.spec->name != "PacketAck")
+                        return false;
+                    return std::ranges::any_of(packet.blocks.at("Packets"), [&](const auto &row) {
+                        return std::get<std::uint64_t>(row.at("ID")) == sequence;
+                    });
                 });
-            });
-        }, caller);
+            },
+            caller);
     };
     auto transferred = std::make_shared<framework::AgentData>();
+    transferred->region_id = Uuid::random();
     transferred->agent_id = circuit->agent_id;
     transferred->session_id = circuit->session_id;
     transferred->circuit_code = circuit->circuit_code;
     transferred->position = circuit->start_position;
-    transferred->active_group_id = Uuid::random();
-    if (attachments_enabled)
-        check(runtime.update_agent(descriptor, transferred, context), "incoming active group update");
+    transferred->appearance = std::make_shared<framework::AvatarAppearance>(circuit->appearance.get());
+    transferred->active_group_id = permission_group;
+    transferred->active_group_title = "Permission Test Group";
+
     auto initial_root = SceneObject::primitive(circuit->agent_id, {130, 130, 70});
     initial_root.id = Uuid("ffffffff-ffff-ffff-ffff-ffffffffffff");
     initial_root.group_mask = 0x4000;
@@ -601,6 +712,8 @@ default
     use.block("CircuitCode")["Code"] = std::uint64_t(42);
     send(use);
     pump([&] { return runtime.viewers().agent(circuit->agent_id).has_value(); });
+    if (attachments_enabled)
+        check(runtime.update_agent(descriptor, transferred, context), "incoming active group update");
     send(make("RegionHandshakeReply"));
     auto complete = make("CompleteAgentMovement");
     complete.block("AgentData")["CircuitCode"] = std::uint64_t(42);
@@ -665,8 +778,7 @@ default
     check(runtime.world().object(initial_child.id)->position == framework::Vector3{131, 130, 70},
           "viewer delink preserves child world position");
     const auto detached_child = runtime.world().object(initial_child.id);
-    check(detached_child->last_owner == initial_root.last_owner &&
-              detached_child->rezzer == initial_root.rezzer,
+    check(detached_child->last_owner == initial_root.last_owner && detached_child->rezzer == initial_root.rezzer,
           "viewer delink copies root ownership history");
     auto link = make("ObjectLink");
     for (const auto local : {initial_parent->local_id, initial_part->local_id}) {
@@ -674,10 +786,8 @@ default
         part["ObjectLocalID"] = std::uint64_t(local);
         link.blocks["ObjectData"].push_back(std::move(part));
     }
-    const auto foreign_part =
-        runtime.world().add(SceneObject::primitive(Uuid::random(), {130, 130, 70}), false);
-    const auto control_part =
-        runtime.world().add(SceneObject::primitive(circuit->agent_id, {130, 131, 70}), false);
+    const auto foreign_part = runtime.world().add(SceneObject::primitive(Uuid::random(), {130, 130, 70}), false);
+    const auto control_part = runtime.world().add(SceneObject::primitive(circuit->agent_id, {130, 131, 70}), false);
     check(foreign_part && control_part, "mixed-owner link test objects");
     auto mixed_link = link;
     auto foreign_block = network::lludp::make_block(link.spec->blocks.at(1));
@@ -692,11 +802,24 @@ default
     check(runtime.world().object(initial_child.id)->parent_id == 0 &&
               runtime.world().object(foreign_part->id)->parent_id == 0,
           "mixed-owner request leaves even the first editable child unlinked");
+    check(runtime.world().set_linkset_data(initial_root.id, {1, 64, 0, 0, 0, 0, 0, 0}),
+          "seed a saved target store with zero records");
+    check(runtime.world().set_linkset_data(initial_child.id, {1, 64,  3,   1,   'b', 1, 'v', 0, 1,   'a', 1,   'v',
+                                                              4, 'p', 'a', 's', 's', 1, 'c', 3, 'v', 'a', 'l', 0}),
+          "seed incoming linkset data");
     link.sequence = ++sequence;
     send(link);
-    pump([&] { return runtime.world().object(initial_child.id)->parent_id == initial_parent->local_id; });
+    pump([&] {
+        return runtime.world().object(initial_child.id)->parent_id == initial_parent->local_id &&
+               runtime.world().object(initial_root.id)->linkset_data_free.has_value();
+    });
     check(runtime.world().object(initial_child.id)->position == framework::Vector3{1, 0, 0},
           "viewer link restores the child offset");
+    check(runtime.world().object(initial_root.id)->linkset_data ==
+              std::vector<std::uint8_t>{1, 12, 1, 1, 'a', 1, 'v', 4, 'p', 'a', 's', 's'},
+          "capacity-constrained merge counts the protected entry password twice");
+    check(runtime.world().object(initial_root.id)->linkset_data_free == 2,
+          "linked store retains the managed capacity accounting");
     auto family = make("RequestObjectPropertiesFamily");
     family.block("ObjectData")["ObjectID"] = initial_child.id;
     family.block("ObjectData")["RequestFlags"] = std::uint64_t(4);
@@ -765,15 +888,11 @@ default
         send(move_group);
     };
     send_transform(9, {133, 130, 70});
-    pump([&] {
-        return runtime.world().object(initial_root.id)->position == framework::Vector3{133, 130, 70};
-    });
+    pump([&] { return runtime.world().object(initial_root.id)->position == framework::Vector3{133, 130, 70}; });
     check(runtime.world().object(initial_child.id)->position == framework::Vector3{1, 0, 0},
           "group movement addressed to child preserves the child offset");
     send_transform(10, {0, 0, 1});
-    pump([&] {
-        return runtime.world().object(initial_root.id)->rotation == framework::Quaternion{0, 0, 1, 0};
-    });
+    pump([&] { return runtime.world().object(initial_root.id)->rotation == framework::Quaternion{0, 0, 1, 0}; });
     send_transform(11, {134, 131, 70, 0, 1, 0});
     pump([&] {
         const auto root = runtime.world().object(initial_root.id);
@@ -797,8 +916,7 @@ default
     pump([&] {
         const auto root = runtime.world().object(initial_root.id);
         const auto child = runtime.world().object(initial_child.id);
-        return root->position == framework::Vector3{136, 132, 70} &&
-               root->scale == framework::Vector3{.5f, .5f, .5f} &&
+        return root->position == framework::Vector3{136, 132, 70} && root->scale == framework::Vector3{.5f, .5f, .5f} &&
                child->position == framework::Vector3{1, 0, 0} && child->scale == framework::Vector3{1, 2, 3};
     });
     pump([&] {
@@ -848,16 +966,12 @@ default
     const auto offset_before = runtime.world().object(initial_child.id)->position.x;
     move_group.block("ObjectData")["ObjectLocalID"] = std::uint64_t(initial_parent->local_id);
     send_transform(1, {137, 132, 70});
-    pump([&] {
-        return runtime.world().object(initial_root.id)->position == framework::Vector3{137, 132, 70};
-    });
+    pump([&] { return runtime.world().object(initial_root.id)->position == framework::Vector3{137, 132, 70}; });
     const auto offset_after = runtime.world().object(initial_child.id)->position.x;
     check(offset_after > offset_before + .999f && offset_after < offset_before + 1.001f,
           "root-only position edit offsets the child to preserve its world position");
     send_transform(2, {0, 0, 0});
-    pump([&] {
-        return runtime.world().object(initial_root.id)->rotation == framework::Quaternion{0, 0, 0, 1};
-    });
+    pump([&] { return runtime.world().object(initial_root.id)->rotation == framework::Quaternion{0, 0, 0, 1}; });
     const auto rotated_child = runtime.world().object(initial_child.id);
     check(rotated_child->position == framework::Vector3{-offset_after, 0, 0} &&
               rotated_child->rotation == framework::Quaternion{0, 1, 0, 0},
@@ -874,33 +988,24 @@ default
     pump([&] {
         const auto root = runtime.world().object(initial_root.id);
         const auto child = runtime.world().object(initial_child.id);
-        return root->scale.x > .499f && root->scale.x < .501f && child->scale.z > 2.999f &&
-               child->scale.z < 3.001f;
+        return root->scale.x > .499f && root->scale.x < .501f && child->scale.z > 2.999f && child->scale.z < 3.001f;
     });
     const auto legacy_child = runtime.world().object(initial_child.id);
     send_legacy_transform("ObjectPosition", "Position", {138, 133, 70});
-    pump([&] {
-        return runtime.world().object(initial_root.id)->position == framework::Vector3{138, 133, 70};
-    });
+    pump([&] { return runtime.world().object(initial_root.id)->position == framework::Vector3{138, 133, 70}; });
     send_legacy_transform("ObjectRotation", "Rotation", {0, 0, 1, 0});
-    pump([&] {
-        return runtime.world().object(initial_root.id)->rotation == framework::Quaternion{0, 0, 1, 0};
-    });
+    pump([&] { return runtime.world().object(initial_root.id)->rotation == framework::Quaternion{0, 0, 1, 0}; });
     const auto legacy_result = runtime.world().object(initial_child.id);
-    check(legacy_result->position == legacy_child->position &&
-              legacy_result->rotation == legacy_child->rotation,
+    check(legacy_result->position == legacy_child->position && legacy_result->rotation == legacy_child->rotation,
           "legacy group movement and rotation preserve the child local transform");
     const auto move_only_root = runtime.world().object(initial_root.id);
     allow_edit = false;
     move_group.block("ObjectData")["ObjectLocalID"] = std::uint64_t(initial_part->local_id);
     send_transform(13, {139, 134, 70, 2, 2, 2});
-    pump([&] {
-        return runtime.world().object(initial_root.id)->position == framework::Vector3{139, 134, 70};
-    });
+    pump([&] { return runtime.world().object(initial_root.id)->position == framework::Vector3{139, 134, 70}; });
     const auto move_only_child = runtime.world().object(initial_child.id);
     check(runtime.world().object(initial_root.id)->scale == move_only_root->scale &&
-              move_only_child->scale == legacy_result->scale &&
-              move_only_child->position == legacy_result->position,
+              move_only_child->scale == legacy_result->scale && move_only_child->position == legacy_result->position,
           "move-only permission strips scaling and applies group position");
     allow_edit = true;
     auto metadata_child = SceneObject::primitive(Uuid::random(), {0, 1, 0});
@@ -915,8 +1020,7 @@ default
     description.blocks["ObjectData"].push_back(std::move(description_part));
     send(description);
     pump([&] { return runtime.world().object(metadata_part->id)->description == prefix; });
-    for (const auto &edit :
-         {std::pair{"ObjectMaterial", "Material"}, std::pair{"ObjectClickAction", "ClickAction"}}) {
+    for (const auto &edit : {std::pair{"ObjectMaterial", "Material"}, std::pair{"ObjectClickAction", "ClickAction"}}) {
         auto packet = make(edit.first);
         auto part = network::lludp::make_block(packet.spec->blocks.at(1));
         part["ObjectLocalID"] = std::uint64_t(metadata_part->local_id);
@@ -965,12 +1069,10 @@ default
     };
     std::vector<std::uint8_t> raw{'N', 0, 255, 'Z'};
     auto asset = update(circuit->agent_id, note.id, {}, raw);
-    check(!asset.is_zero() && agent_stores == 1 &&
-              inventory.item(circuit->agent_id, note.id)->asset_id == asset &&
+    check(!asset.is_zero() && agent_stores == 1 && inventory.item(circuit->agent_id, note.id)->asset_id == asset &&
               *assets.get_data(asset.str()) == raw,
           "queued real agent update persists exact raw data");
-    check(inventory.item(circuit->agent_id, note.id)->inventory_type == 263,
-          "raw stored InventoryType retained");
+    check(inventory.item(circuit->agent_id, note.id)->inventory_type == 263, "raw stored InventoryType retained");
     auto packet_seen = [&](const char *name, const char *text) {
         std::lock_guard lock(received_mutex);
         return std::any_of(received.begin(), received.end(), [&](const auto &p) {
@@ -984,8 +1086,7 @@ default
     check(update(circuit->agent_id, note.id, {}, raw).is_zero() && agent_stores == 1,
           "owner policy denial before store");
     pump([&] { return packet_seen("AgentAlertMessage", "/Insufficient permissions to edit notecard"); });
-    check(update(Uuid::random(), note.id, {}, raw).is_zero() && agent_stores == 1,
-          "missing scene presence rejected");
+    check(update(Uuid::random(), note.id, {}, raw).is_zero() && agent_stores == 1, "missing scene presence rejected");
     const Uuid other_owner("00000000-0000-4000-8000-000000000456");
     auto target = SceneObject::primitive(other_owner, runtime.viewers().agent(circuit->agent_id)->position);
     target.group = transferred->active_group_id;
@@ -1012,6 +1113,8 @@ default
     auto hud = attachment;
     hud.id = Uuid::random();
     hud.shape.state = 31;
+    // One mesh flags extra parameter with the animation flag set.
+    hud.extra_params = {1, 112, 0, 4, 0, 0, 0, 1, 0, 0, 0};
     check(runtime.world().add(hud, false).has_value(), "private attachment for script query");
     auto script_position = runtime.viewers().agent(circuit->agent_id)->position;
     script_position.x += 5;
@@ -1049,9 +1152,8 @@ default
     auto previous = chats();
     auto stores_before = task_stores;
     auto task_asset = update(circuit->agent_id, script, object->id, raw);
-    check(!task_asset.is_zero() && task_stores == stores_before + 1 &&
-              *assets.get_data(task_asset.str()) == raw && runtime.active_script_count() == 1 &&
-              script_checks == 0,
+    check(!task_asset.is_zero() && task_stores == stores_before + 1 && *assets.get_data(task_asset.str()) == raw &&
+              runtime.active_script_count() == 1 && script_checks == 0,
           "generic task update does not invoke script editor policy or restart native VM");
     auto reset = make("ScriptReset");
     reset.block("Script")["ObjectID"] = object->id;
@@ -1063,8 +1165,7 @@ default
     pump([&] {
         std::lock_guard lock(received_mutex);
         for (const auto &packet : received)
-            if (packet.spec->name == "ChatFromSimulator" &&
-                field(packet, "ChatData", "Message") == other_owner.str())
+            if (packet.spec->name == "ChatFromSimulator" && field(packet, "ChatData", "Message") == other_owner.str())
                 return true;
         return false;
     });
@@ -1072,8 +1173,7 @@ default
         std::set<std::uint32_t> ids;
         std::lock_guard lock(received_mutex);
         for (const auto &packet : received)
-            if (packet.spec->name == "ChatFromSimulator" &&
-                field(packet, "ChatData", "Message") == "Inventory changed")
+            if (packet.spec->name == "ChatFromSimulator" && field(packet, "ChatData", "Message") == "Inventory changed")
                 ids.insert(packet.sequence);
         return ids.size();
     };
@@ -1146,8 +1246,7 @@ default
         });
     });
     const auto sibling = runtime.world().add(SceneObject::primitive(other_owner, target.position), false);
-    check(sibling && runtime.world().link_prim(sibling->id, target.id),
-          "link another prim while child script runs");
+    check(sibling && runtime.world().link_prim(sibling->id, target.id), "link another prim while child script runs");
     pump([&] {
         std::lock_guard lock(received_mutex);
         return std::any_of(received.begin(), received.end(), [&](const auto &packet) {
@@ -1166,8 +1265,7 @@ default
     const auto heard = [&](const char *message) {
         std::lock_guard lock(received_mutex);
         return std::any_of(received.begin(), received.end(), [&](const auto &packet) {
-            return packet.spec->name == "ChatFromSimulator" &&
-                   field(packet, "ChatData", "Message") == message;
+            return packet.spec->name == "ChatFromSimulator" && field(packet, "ChatData", "Message") == message;
         });
     };
     pump([&] { return heard("Attachment sees camera"); });
@@ -1176,7 +1274,7 @@ default
     send(camera);
     pump([&] { return heard("Attachment sees body again"); });
     auto viewer_chat = make("ChatFromViewer");
-    auto& viewer_chat_data = viewer_chat.block("ChatData");
+    auto &viewer_chat_data = viewer_chat.block("ChatData");
     viewer_chat_data["Type"] = std::uint64_t(1);
     viewer_chat_data["Channel"] = std::int64_t(4711);
     viewer_chat_data["Message"] = wire("Viewer listener input");
@@ -1188,11 +1286,11 @@ default
         bool nearby_whisper = false;
         bool distant_shout = false;
         bool direct_viewer = false;
-        for (const auto& packet : received) {
+        for (const auto &packet : received) {
             if (packet.spec->name != "ChatFromSimulator")
                 continue;
             const auto message = field(packet, "ChatData", "Message");
-            const auto& chat = packet.blocks.at("ChatData").front();
+            const auto &chat = packet.blocks.at("ChatData").front();
             const auto type = std::get<std::uint64_t>(chat.at("ChatType"));
             const auto owner = std::get<Uuid>(chat.at("OwnerID"));
             nearby_whisper |= message == "Nearby whisper" && type == 0 && owner == circuit->agent_id;
@@ -1206,8 +1304,8 @@ default
     }
 
     const auto wearer = runtime.viewers().agent(circuit->agent_id);
-    check(wearer && runtime.viewers().update_physics(circuit->agent_id, circuit->session_id,
-                                                    wearer->position, {3, 0, 0}, {}, false),
+    check(wearer && runtime.viewers().update_physics(circuit->agent_id, circuit->session_id, wearer->position,
+                                                     {3, 0, 0}, {}, false),
           "wearer has world velocity");
     auto worn_child = SceneObject::primitive(circuit->agent_id, {1, 0, 0});
     worn_child.parent_id = runtime.world().object(attachment.id)->local_id;
@@ -1225,6 +1323,89 @@ default
     send(viewer_chat);
     pump([&] { return heard("Direct attachment listener received"); });
     check(!heard("Direct attachment listener leaked"), "avatar-targeted chat stays within its attachments");
+
+    auto moving_seat = SceneObject::primitive(circuit->agent_id, wearer->position);
+    moving_seat.name = "Moving seat";
+    moving_seat.rotation = {0, 0, 1, 0};
+    const auto live_seat = runtime.world().add(moving_seat, false);
+    check(live_seat && runtime.world().update_motion(live_seat->id, {7, 8, 9}, {}, {}),
+          "create a rotated seat with world velocity");
+    check(runtime.viewers()
+              .update_seat(circuit->agent_id, circuit->session_id,
+                           ViewerAgent::Seat{live_seat->id, live_seat->local_id, {}, {0, 0, 0, 1}}, wearer->position)
+              .has_value(),
+          "seat the wearer");
+    viewer_chat.sequence = ++sequence;
+    viewer_chat_data["Channel"] = std::int64_t(4715);
+    viewer_chat_data["Message"] = wire(live_seat->id.str());
+    send(viewer_chat);
+    pump([&] { return heard("Seated attachment reports world motion"); });
+    const std::string sitter_source = R"LSL(default {
+        state_entry() {
+            if (osGetRezzingObject() != NULL_KEY)
+                return;
+            if (osGetSitTargetPos() != ZERO_VECTOR || osGetSitTargetRot() != ZERO_ROTATION)
+                return;
+            llSitTarget(<1, 2, 3>, <0, 0, 1, 0>);
+            if (osGetSitTargetPos() != <1, 2, 3> || osGetSitTargetRot() != <0, 0, 1, 0>)
+                return;
+            if (llGetNumberOfPrims() == 2 && llGetLinkNumber() == 0 &&
+                llGetLinkKey(2) == llGetOwner() && llGetLinkName(2) == "Native Owner" &&
+                osGetPrimCount() == 1 && osGetPrimCount(llGetKey()) == 1 &&
+                osGetSittingAvatarsCount() == 1 && osGetSittingAvatarsCount(llGetKey()) == 1 &&
+                osGetLinkNumber("Moving seat") == 0 && osGetLinkNumber("Native Owner") == 2 &&
+                osGetLinkNumber("native owner") == -1 && osGetLinkNumber("Object") == -1 &&
+                osGetPrimCount(NULL_KEY) == 0 && osGetSittingAvatarsCount("invalid") == 0)
+                llSay(0, "Single prim reports seated avatar as link two");
+        }
+        changed(integer mask) {
+            if ((mask & CHANGED_LINK) && llGetNumberOfPrims() == 1 &&
+                llGetLinkKey(2) == NULL_KEY && llGetLinkName(2) == (string)NULL_KEY &&
+                osGetPrimCount() == 1 && osGetSittingAvatarsCount() == 0)
+                llSay(0, "Standing removes the avatar link");
+        }
+        touch_start(integer count) {
+            if (osGetLinkNumber("Duplicate prim") == 2)
+                llSay(0, "Duplicate names resolve to the first child");
+            if (osGetLinkNumber("Duplicate prim") == 3 && osGetLinkNumber("Renamed prim") == 2)
+                llSay(0, "Renamed child updates the name lookup");
+        }
+    })LSL";
+    auto sitter_asset =
+        std::make_shared<framework::AssetBase>(Uuid::random(), "Sitter links", 10, circuit->agent_id.str());
+    sitter_asset->data = std::make_shared<std::vector<std::uint8_t>>(sitter_source.begin(), sitter_source.end());
+    check(assets.store(sitter_asset).has_value(), "store sitter link probe script");
+    auto sitter_task = std::make_shared<framework::TaskInventoryItem>();
+    sitter_task->item_id = Uuid::random();
+    sitter_task->asset_id = sitter_asset->full_id();
+    sitter_task->parent_id = sitter_task->parent_part_id = live_seat->id;
+    sitter_task->owner_id = sitter_task->creator_id = circuit->agent_id;
+    sitter_task->type = sitter_task->inventory_type = 10;
+    sitter_task->name = "Sitter links";
+    runtime.restore_task_inventory(live_seat->id, {sitter_task});
+    pump([&] { return heard("Single prim reports seated avatar as link two"); });
+    camera.sequence = ++sequence;
+    camera_data["ControlFlags"] = std::uint64_t(0x10000);
+    send(camera);
+    pump([&] { return heard("Standing removes the avatar link"); });
+    {
+        auto duplicate_child = SceneObject::primitive(circuit->agent_id, {});
+        duplicate_child.parent_id = live_seat->local_id;
+        duplicate_child.name = "Duplicate prim";
+        const auto first_duplicate = runtime.world().add(duplicate_child, false);
+        duplicate_child.id = Uuid::random();
+        check(first_duplicate && runtime.world().add(duplicate_child, false), "add two equally named children");
+        auto grab_seat = make("ObjectGrab");
+        grab_seat.block("ObjectData")["LocalID"] = std::uint64_t(live_seat->local_id);
+        grab_seat.block("ObjectData")["GrabOffset"] = std::vector<double>{0, 0, 0};
+        send(grab_seat);
+        pump([&] { return heard("Duplicate names resolve to the first child"); });
+        check(runtime.world().update_object_text(first_duplicate->id, false, "Renamed prim"), "rename the first child");
+        grab_seat.sequence = ++sequence;
+        send(grab_seat);
+        pump([&] { return heard("Renamed child updates the name lookup"); });
+    }
+    runtime.world().remove(live_seat->id, false);
 
     auto hud_child = SceneObject::primitive(circuit->agent_id, {});
     hud_child.parent_id = runtime.world().object(hud.id)->local_id;
@@ -1258,8 +1439,7 @@ default
     listing.block("ObjectData")["SaleType"] = std::uint64_t(2);
     listing.block("ObjectData")["SalePrice"] = std::int64_t(99);
     send(listing);
-    pump(
-        [&] { return packet_seen("AgentAlertMessage", "/You don't have permission to set object on sale"); });
+    pump([&] { return packet_seen("AgentAlertMessage", "/You don't have permission to set object on sale"); });
     check(runtime.world().object(initial_root.id)->sale_price == 42,
           "no-copy inventory in a child prevents changing the root to a copy sale");
     god_mode = true;
@@ -1282,12 +1462,10 @@ default
                    std::get<std::int64_t>(data.at("SalePrice")) == -7;
         });
     });
-    const std::string restored_source =
-        "default { state_entry() { llSay(0, \"Restored task script runs\"); } }";
-    auto restored_asset = std::make_shared<framework::AssetBase>(Uuid::random(), "Restored script", 10,
-                                                                 circuit->agent_id.str());
-    restored_asset->data =
-        std::make_shared<std::vector<std::uint8_t>>(restored_source.begin(), restored_source.end());
+    const std::string restored_source = "default { state_entry() { llSay(0, \"Restored task script runs\"); } }";
+    auto restored_asset =
+        std::make_shared<framework::AssetBase>(Uuid::random(), "Restored script", 10, circuit->agent_id.str());
+    restored_asset->data = std::make_shared<std::vector<std::uint8_t>>(restored_source.begin(), restored_source.end());
     check(assets.store(restored_asset).has_value(), "stored asset for restored script");
     auto restored_task = std::make_shared<framework::TaskInventoryItem>();
     restored_task->item_id = Uuid::random();
@@ -1329,8 +1507,7 @@ default
     temporary.id = Uuid::random();
     temporary.from_inventory_item = Uuid::random();
     circuit->appearance->set_attachment(6, temporary.from_inventory_item, Uuid::random());
-    check(avatars.set_appearance(circuit->agent_id, circuit->appearance.get()),
-          "persist initial worn attachment");
+    check(avatars.set_appearance(circuit->agent_id, circuit->appearance.get()), "persist initial worn attachment");
     const auto inventory_worn = runtime.world().add(temporary, false);
     check(inventory_worn.has_value(), "inventory-backed attachment for viewer detach");
     auto detach = make("ObjectDetach");
@@ -1346,8 +1523,7 @@ default
     detach_item.block("ObjectData")["ItemID"] = inventory_worn->from_inventory_item;
     send(detach_item);
     pump([&] { return appearance_saves == 1; });
-    check(runtime.world().object(inventory_worn->id).has_value() &&
-              circuit->appearance->attachments().size() == 1,
+    check(runtime.world().object(inventory_worn->id).has_value() && circuit->appearance->attachments().size() == 1,
           "failed appearance save preserves worn attachment");
     check(avatars.get_appearance(circuit->agent_id)->attachments().size() == 1,
           "rollback preserves previously saved worn attachment");
@@ -1355,8 +1531,8 @@ default
     send(detach_item);
     pump([&] { return !runtime.world().object(inventory_worn->id); });
     const auto detached_viewer = runtime.viewers().agent(circuit->agent_id);
-    check(!runtime.world().object(inventory_worn->id) && appearance_saves == 2 &&
-              detached_viewer && detached_viewer->appearance()->attachments().empty(),
+    check(!runtime.world().object(inventory_worn->id) && appearance_saves == 2 && detached_viewer &&
+              detached_viewer->appearance()->attachments().empty(),
           "unchanged inventory attachment detaches and persists appearance");
     SqliteAvatarStore reopened_store(avatar_database);
     AvatarService reopened_avatars(reopened_store);
@@ -1369,8 +1545,9 @@ default
     temporary.changed = true;
     auto visitor_appearance = std::make_shared<framework::AvatarAppearance>(*detached_viewer->appearance());
     visitor_appearance->set_attachment(6, temporary.from_inventory_item, Uuid::random());
-    check(runtime.viewers().update_appearance(circuit->agent_id, circuit->session_id,
-                                              std::move(visitor_appearance)).has_value(),
+    check(runtime.viewers()
+              .update_appearance(circuit->agent_id, circuit->session_id, std::move(visitor_appearance))
+              .has_value(),
           "set the live visitor appearance");
     const auto visitor_worn = runtime.world().add(temporary, false);
     check(visitor_worn.has_value(), "edited visitor attachment for detach");
@@ -1392,14 +1569,19 @@ default
     wear_fixture = true;
     auto wear_asset = std::make_shared<framework::AssetBase>(Uuid::random(), "Wear fixture", 6, "");
     const auto owner_key = circuit->agent_id.str();
-    const auto xml = "<SceneObjectGroup><SceneObjectPart><UUID>" + Uuid::random().str() +
-        "</UUID><OwnerID>" + owner_key + "</OwnerID><Shape><PCode>9</PCode><LastAttachPoint>5</LastAttachPoint>"
+    const auto xml =
+        "<SceneObjectGroup><SceneObjectPart><UUID>" + Uuid::random().str() + "</UUID><OwnerID>" + owner_key +
+        "</OwnerID><InventorySerial>37</InventorySerial>"
+        "<CreationDate>946684800</CreationDate>"
+        "<Shape><PCode>9</PCode><LastAttachPoint>5</LastAttachPoint>"
         "</Shape><AttachedPos><X>0.25</X><Y>0</Y><Z>0</Z></AttachedPos></SceneObjectPart>"
-        "<OtherParts><SceneObjectPart><UUID>" + Uuid::random().str() + "</UUID><OwnerID>" + owner_key +
-        "</OwnerID><Shape><PCode>9</PCode></Shape><TaskInventory><TaskInventoryItem><ItemID>" +
-        Uuid::random().str() + "</ItemID><AssetID>" + initial->full_id().str() + "</AssetID><OwnerID>" +
-        owner_key + "</OwnerID><Type>10</Type><InvType>10</InvType><Name>Wear script</Name>"
-        "</TaskInventoryItem></TaskInventory></SceneObjectPart></OtherParts></SceneObjectGroup>";
+        "<OtherParts><SceneObjectPart><UUID>" +
+        Uuid::random().str() + "</UUID><OwnerID>" + owner_key +
+        "</OwnerID><Shape><PCode>9</PCode></Shape><TaskInventory><TaskInventoryItem><ItemID>" + Uuid::random().str() +
+        "</ItemID><AssetID>" + initial->full_id().str() + "</AssetID><OwnerID>" + owner_key +
+        "</OwnerID><Type>10</Type><InvType>10</InvType><Name>Wear script</Name>"
+        "</TaskInventoryItem></TaskInventory></SceneObjectPart></OtherParts>"
+        "<lnkstdt>AUABAWsBdgA=</lnkstdt></SceneObjectGroup>";
     wear_asset->data = std::make_shared<std::vector<std::uint8_t>>(xml.begin(), xml.end());
     assets.store(wear_asset);
     InventoryItem wear_item;
@@ -1413,7 +1595,10 @@ default
     auto wear = make("RezSingleAttachmentFromInv");
     wear.block("ObjectData")["ItemID"] = wear_item.id;
     send(wear);
-    pump([&] { return heard("Inventory attachment child received wear"); });
+    // The HUD script is still attached, so the avatar query spans two linksets.
+    pump([&] { return heard("Inventory attachment child received wear with both scripts counted"); });
+    pump([&] { return heard("Worn child found the root store"); });
+    pump([&] { return heard("Worn script execution time reported"); });
     check(heard("Inventory on_rez preceded attach"), "inventory wear posts on_rez before attach");
     const auto wearer_after_rez = runtime.viewers().agent(circuit->agent_id);
     const auto saved_wear = reopened_avatars.get_appearance(circuit->agent_id)->attachment_for_item(wear_item.id);
@@ -1424,6 +1609,32 @@ default
     const auto edited_attachment = std::ranges::find(worn_objects, wear_item.id, &SceneObject::from_inventory_item);
     check(edited_attachment != worn_objects.end() && edited_attachment->position == framework::Vector3{.25f, 0, 0},
           "wear restores the asset attachment offset");
+    const auto check_worn_serial = [&](const SceneObject &part, std::int64_t expected) {
+        auto select_worn = make("ObjectSelect");
+        auto selected_part = network::lludp::make_block(select_worn.spec->blocks.at(1));
+        selected_part["ObjectLocalID"] = std::uint64_t(part.local_id);
+        select_worn.blocks["ObjectData"].push_back(std::move(selected_part));
+        send(select_worn);
+        pump([&] {
+            std::lock_guard lock(received_mutex);
+            for (const auto &packet : received) {
+                if (packet.spec->name != "ObjectProperties")
+                    continue;
+                for (const auto &entry : packet.blocks.at("ObjectData")) {
+                    if (std::get<Uuid>(entry.at("ObjectID")) != part.id)
+                        continue;
+                    check(std::get<std::int64_t>(entry.at("InventorySerial")) == expected,
+                          "wear reports the serial after loading inventory and resetting item IDs");
+                    return true;
+                }
+            }
+            return false;
+        });
+    };
+    check_worn_serial(*edited_attachment, 37);
+    const auto scripted_worn_part = runtime.world().object(runtime.world().link_key(edited_attachment->id, 2));
+    check(scripted_worn_part.has_value(), "find the worn child with inventory");
+    check_worn_serial(*scripted_worn_part, 2);
     const std::string worn_description = "Edited while worn";
     auto worn_edit = make("ObjectDescription");
     auto worn_edit_part = network::lludp::make_block(worn_edit.spec->blocks.at(1));
@@ -1455,8 +1666,7 @@ default
     check(bool(batch_appearance), "read persisted batch appearance");
     const auto batch_second = batch_appearance->attachment_for_item(second_item.id);
     const auto batch_third = batch_appearance->attachment_for_item(third_item.id);
-    check(batch_appearance->attachments().size() == 3 &&
-              batch_appearance->attachment_for_item(wear_item.id) &&
+    check(batch_appearance->attachments().size() == 3 && batch_appearance->attachment_for_item(wear_item.id) &&
               batch_second && batch_second->point == 5 && batch_third && batch_third->point == 5,
           "batch appends both valid items and ignores duplicate, missing, and compound header fields");
     check(runtime.close_agent_session(circuit->agent_id, circuit->session_id.str()), "close wearer's first session");
@@ -1489,13 +1699,14 @@ default
     send(enter_again);
     pump([&] {
         const auto avatar = runtime.viewers().agent(circuit->agent_id);
-        if (!avatar || !avatar->root || !heard("Inventory attachment resumed its script"))
+        if (!avatar || !avatar->root || !heard("Inventory attachment resumed its script") ||
+            !heard("Worn child updated the root store") || !heard("Worn child received the protected update event"))
             return false;
         const auto attachments = runtime.world().attachments(avatar->local_id);
-        return attachments.size() == 3 && std::ranges::any_of(attachments, [&](const auto& part) {
-            return part.from_inventory_item == wear_item.id && part.description == worn_description &&
-                   part.position == framework::Vector3{.25f, 0, 0};
-        });
+        return attachments.size() == 3 && std::ranges::any_of(attachments, [&](const auto &part) {
+                   return part.from_inventory_item == wear_item.id && part.description == worn_description &&
+                          part.position == framework::Vector3{.25f, 0, 0};
+               });
     });
     check(appearance_saves == saves_before_batch + 2, "login restores attachments without rewriting saved appearance");
     check(inventory.item(circuit->agent_id, second_item.id)->asset_id == wear_asset->full_id(),
@@ -1518,10 +1729,10 @@ default
           "manual detach saves edits and the script checkpoint after the detach event");
     pump([&] {
         std::lock_guard lock(received_mutex);
-        return std::ranges::any_of(received, [&](const auto& packet) {
+        return std::ranges::any_of(received, [&](const auto &packet) {
             if (packet.spec->name != "UpdateCreateInventoryItem")
                 return false;
-            const auto& data = packet.block("InventoryData");
+            const auto &data = packet.block("InventoryData");
             return std::get<Uuid>(data.at("ItemID")) == wear_item.id &&
                    std::get<Uuid>(data.at("AssetID")) == detached_item->asset_id &&
                    std::get<std::uint64_t>(data.at("CallbackID")) == 0;
@@ -1535,10 +1746,12 @@ default
     rewear.block("ObjectData")["AttachmentPt"] = std::uint64_t(128 | 5);
     send(rewear);
     pump([&] { return heard("Inventory attachment resumed after manual detach"); });
+    check(heard("Reworn child found the saved protected value"),
+          "manual detach and rewear preserve the protected linkset entry");
     const auto current_parts = runtime.world().objects();
-    check(std::ranges::any_of(current_parts, [](const auto& part) {
-              return part.description == "Edited by detach event";
-          }), "rewear restores the edit made by the detach event");
+    check(std::ranges::any_of(current_parts,
+                              [](const auto &part) { return part.description == "Edited by detach event"; }),
+          "rewear restores the edit made by the detach event");
     auto replacement_item = wear_item;
     replacement_item.id = Uuid::random();
     check(inventory.add_item(replacement_item), "store replacement attachment");
@@ -1574,7 +1787,8 @@ default
     const auto after_replacement = runtime.world().attachments(reconnected->local_id);
     const auto worn_again = std::ranges::find(after_replacement, wear_item.id, &SceneObject::from_inventory_item);
     check(worn_again != after_replacement.end(), "find reworn attachment for failed save");
-    const auto drop_target = std::ranges::find(after_replacement, replacement_item.id, &SceneObject::from_inventory_item);
+    const auto drop_target =
+        std::ranges::find(after_replacement, replacement_item.id, &SceneObject::from_inventory_item);
     check(drop_target != after_replacement.end(), "find replacement attachment for drop");
     const auto drop_child = runtime.world().link_key(drop_target->id, 2);
     auto drop = make("ObjectDrop");
@@ -1588,16 +1802,17 @@ default
               inventory.item(circuit->agent_id, replacement_item.id).has_value(),
           "parcel denial preserves the attachment and inventory item");
     allow_drop_rez = true;
-    const auto expect_drop_denied = [&](const char* message) {
+    const auto expect_drop_denied = [&](const char *message) {
         const auto checks = drop_permission_checks;
         drop.sequence = ++sequence;
         send(drop);
         pump([&] { return drop_permission_checks > checks; });
         check(runtime.world().object(drop_target->id)->is_attachment &&
-                  inventory.item(circuit->agent_id, replacement_item.id).has_value(), message);
+                  inventory.item(circuit->agent_id, replacement_item.id).has_value(),
+              message);
     };
     int parcel_prims = 0;
-    for (const auto& group : runtime.world().land_prim_groups())
+    for (const auto &group : runtime.world().land_prim_groups())
         parcel_prims += group.prims;
     drop_parcel_capacity = parcel_prims + 1;
     expect_drop_denied("one free prim does not admit a two-prim attachment");
@@ -1612,16 +1827,20 @@ default
     pump([&] { return heard("Child received drop"); });
     const auto dropped = runtime.world().object(drop_target->id);
     const auto child = runtime.world().object(drop_child);
+    // The active AttachmentsModule.DetachSingleAttachmentToGround path leaves
+    // RootPart.AttachedPos unchanged for the following ground reattachment.
+    const auto expected_attachment_offset = drop_target->position;
     check(dropped && child && child->parent_id == dropped->local_id && dropped->parent_id == 0 &&
               !dropped->is_attachment && dropped->attached_to_backup && dropped->shape.state == 0 &&
-              dropped->last_attachment_point == 5 && dropped->saved_attachment_position == drop_target->position &&
-              !inventory.item(circuit->agent_id, replacement_item.id),
+              dropped->last_attachment_point == 5 && !inventory.item(circuit->agent_id, replacement_item.id),
           "drop preserves the linked scene object and consumes its inventory item");
+    check(dropped->saved_attachment_position == expected_attachment_offset,
+          "viewer drop preserves the live AttachedPos for subsequent ground reattachment");
     check(!reopened_avatars.get_appearance(circuit->agent_id)->attachment_for_item(replacement_item.id),
           "drop removes the item from the saved appearance");
     pump([&] {
         std::lock_guard lock(received_mutex);
-        return std::ranges::any_of(received, [&](const auto& packet) {
+        return std::ranges::any_of(received, [&](const auto &packet) {
             return packet.spec->name == "RemoveInventoryItem" &&
                    std::get<Uuid>(packet.block("InventoryData").at("ItemID")) == replacement_item.id;
         });
@@ -1636,15 +1855,13 @@ default
         received.clear();
     }
     send(attach_ground);
-    pump([&] {
-        return runtime.world().object(dropped->id)->is_attachment && heard("Inventory attachment resumed its script");
-    });
+    pump([&] { return runtime.world().object(dropped->id)->is_attachment && heard("Child received ground attach"); });
     const auto attached = runtime.world().object(dropped->id);
     const auto ground_item = inventory.item(circuit->agent_id, attached->from_inventory_item);
     const auto ground_appearance = reopened_avatars.get_appearance(circuit->agent_id);
     check(ground_item && ground_item->id != replacement_item.id && attached->local_id == dropped->local_id &&
               !attached->attached_to_backup && attached->shape.state == 5 &&
-              attached->position == drop_target->position &&
+              attached->position == expected_attachment_offset &&
               runtime.world().object(drop_child)->parent_id == attached->local_id &&
               ground_appearance->attachment_for_item(ground_item->id),
           "ground attach keeps the live linkset, restores the point and offset, and creates a worn inventory item");
@@ -1654,10 +1871,10 @@ default
     duplicate_child.parent_id = duplicate_source->local_id;
     check(runtime.world().add(duplicate_child).has_value(), "link second prim to duplication capacity fixture");
     int occupied_prims = 0;
-    for (const auto& group : runtime.world().land_prim_groups())
+    for (const auto &group : runtime.world().land_prim_groups())
         occupied_prims += group.prims;
-    const auto expect_rez_denial = [&](const auto& packet, const char* message,
-                                      const char* alert_message = "Unable to rez object because the parcel is full") {
+    const auto expect_rez_denial = [&](const auto &packet, const char *message,
+                                       const char *alert_message = "Unable to rez object because the parcel is full") {
         const auto object_count = runtime.world().size();
         {
             std::lock_guard lock(received_mutex);
@@ -1681,7 +1898,7 @@ default
     check(inventory.item(circuit->agent_id, ground_item->id).has_value(), "capacity denial preserves inventory");
     drop_parcel_capacity = occupied_prims;
     auto add = make("ObjectAdd");
-    auto& add_shape = add.block("ObjectData");
+    auto &add_shape = add.block("ObjectData");
     add_shape["PCode"] = std::uint64_t{9};
     add_shape["PathCurve"] = std::uint64_t{16};
     add_shape["ProfileCurve"] = std::uint64_t{1};
@@ -1701,17 +1918,15 @@ default
     std::optional<SceneObject> rezzed_tree;
     pump([&] {
         const auto objects = runtime.world().objects();
-        const auto found = std::ranges::find_if(objects, [](const auto& object) {
-            return object.shape.pcode == 111;
-        });
+        const auto found = std::ranges::find_if(objects, [](const auto &object) { return object.shape.pcode == 111; });
         if (found == objects.end())
             return false;
         rezzed_tree = *found;
         std::lock_guard lock(received_mutex);
-        return std::ranges::any_of(received, [&](const auto& packet) {
+        return std::ranges::any_of(received, [&](const auto &packet) {
             if (packet.spec->name != "ObjectUpdate")
                 return false;
-            return std::ranges::any_of(packet.blocks.at("ObjectData"), [&](const auto& row) {
+            return std::ranges::any_of(packet.blocks.at("ObjectData"), [&](const auto &row) {
                 return std::get<Uuid>(row.at("FullID")) == rezzed_tree->id &&
                        std::get<std::vector<std::uint8_t>>(row.at("Data")) == std::vector<std::uint8_t>{7};
             });
@@ -1722,7 +1937,7 @@ default
           "Cypress rez preserves the managed scale, phantom flag, and last attachment point");
     auto rez_above_tree = add;
     rez_above_tree.sequence = ++sequence;
-    auto& ray = rez_above_tree.block("ObjectData");
+    auto &ray = rez_above_tree.block("ObjectData");
     ray["RayTargetID"] = Uuid::random(); // An unavailable target triggers the scene-wide fallback.
     ray["RayEndIsIntersection"] = std::uint64_t{0};
     ray["RayStart"] = std::vector<double>{170, 170, 48};
@@ -1732,7 +1947,7 @@ default
     Uuid ray_prim;
     pump([&] {
         const auto objects = runtime.world().objects();
-        for (const auto& object : objects) {
+        for (const auto &object : objects) {
             if (std::ranges::find(before_tree_ray, object.id, &SceneObject::id) != before_tree_ray.end())
                 continue;
             check(object.position.z == rezzed_tree->position.z + 5.f,
@@ -1746,8 +1961,8 @@ default
     runtime.world().remove(rezzed_tree->id);
     ObjectAssetPart plant_asset_part;
     plant_asset_part.object = *rezzed_tree;
-    const auto plant_asset = std::make_shared<framework::AssetBase>(
-        Uuid::random(), "Cypress", 6, circuit->agent_id.str());
+    const auto plant_asset =
+        std::make_shared<framework::AssetBase>(Uuid::random(), "Cypress", 6, circuit->agent_id.str());
     plant_asset->data = std::make_shared<std::vector<std::uint8_t>>(serialize_object_asset(plant_asset_part));
     const auto stored_plant = assets.store(plant_asset);
     check(stored_plant.has_value(), "store Cypress asset");
@@ -1763,8 +1978,7 @@ default
     plant_item.current_permissions |= 1u << 15;
     check(inventory.add_item(plant_item), "store Cypress inventory item");
     const auto loaded_plant = inventory.item(circuit->agent_id, plant_item.id);
-    check(loaded_plant && loaded_plant->asset_type == 6 &&
-              assets.get_asset(loaded_plant->asset_id.str()),
+    check(loaded_plant && loaded_plant->asset_type == 6 && assets.get_asset(loaded_plant->asset_id.str()),
           "Cypress inventory item resolves to a stored object asset");
     auto rez_plant = make("RezObject");
     rez_plant.block("InventoryData")["ItemID"] = plant_item.id;
@@ -1781,17 +1995,16 @@ default
     pump([&] {
         {
             std::lock_guard lock(received_mutex);
-            for (const auto& packet : received) {
+            for (const auto &packet : received) {
                 if (packet.spec->name != "AlertMessage")
                     continue;
-                const auto& bytes = std::get<std::vector<std::uint8_t>>(packet.block("AlertData").at("Message"));
+                const auto &bytes = std::get<std::vector<std::uint8_t>>(packet.block("AlertData").at("Message"));
                 throw std::runtime_error("Cypress inventory rez: " + std::string(bytes.begin(), bytes.end()));
             }
         }
         const auto objects = runtime.world().objects();
-        const auto found = std::ranges::find_if(objects, [&](const auto& object) {
-            return object.shape.pcode == 111 && object.id != rezzed_tree->id;
-        });
+        const auto found = std::ranges::find_if(
+            objects, [&](const auto &object) { return object.shape.pcode == 111 && object.id != rezzed_tree->id; });
         if (found == objects.end())
             return false;
         check(found->shape.state == 7 && found->scale == framework::Vector3{4, 4, 10},
@@ -1827,7 +2040,7 @@ default
     send(add);
     pump([&] { return runtime.world().size() == before_public_rez.size() + 1; });
     const auto after_public_rez = runtime.world().objects();
-    const auto public_prim = std::ranges::find_if(after_public_rez, [&](const auto& part) {
+    const auto public_prim = std::ranges::find_if(after_public_rez, [&](const auto &part) {
         return std::ranges::find(before_public_rez, part.id, &SceneObject::id) == before_public_rez.end();
     });
     check(public_prim != after_public_rez.end() && public_prim->owner == circuit->agent_id,
@@ -1838,8 +2051,7 @@ default
     rez_linkset.sequence = ++sequence;
     expect_rez_denial(rez_linkset, "public parcel rejects inventory linkset above the per-user limit",
                       "Unable to rez object because you have reached your limit");
-    check(inventory.item(circuit->agent_id, ground_item->id).has_value(),
-          "per-user limit denial preserves inventory");
+    check(inventory.item(circuit->agent_id, ground_item->id).has_value(), "per-user limit denial preserves inventory");
     check(runtime.world().remove(public_prim->id), "remove the prim added at the per-user limit");
     add_shape["RayStart"] = std::vector<double>{170, 170, 40};
     add_shape["RayEnd"] = std::vector<double>{170, 170, 30};
@@ -1859,9 +2071,7 @@ default
     move_to_parcel.sequence = ++sequence;
     move_to_parcel.block("ObjectData")["Position"] = std::vector<double>{171, 170, 30};
     send(move_to_parcel);
-    pump([&] {
-        return runtime.world().object(duplicate_source->id)->position == framework::Vector3{171, 170, 30};
-    });
+    pump([&] { return runtime.world().object(duplicate_source->id)->position == framework::Vector3{171, 170, 30}; });
     const std::string entry_script_source = R"LSL(
 default
 {
@@ -1872,10 +2082,10 @@ default
     }
 }
 )LSL";
-    auto entry_script = std::make_shared<framework::AssetBase>(
-        Uuid::random(), "Parcel entry script", 10, circuit->agent_id.str());
-    entry_script->data = std::make_shared<std::vector<std::uint8_t>>(
-        entry_script_source.begin(), entry_script_source.end());
+    auto entry_script =
+        std::make_shared<framework::AssetBase>(Uuid::random(), "Parcel entry script", 10, circuit->agent_id.str());
+    entry_script->data =
+        std::make_shared<std::vector<std::uint8_t>>(entry_script_source.begin(), entry_script_source.end());
     check(assets.store(entry_script).has_value(), "store parcel entry script");
     auto entry_task = std::make_shared<framework::TaskInventoryItem>();
     entry_task->item_id = Uuid::random();
@@ -1903,8 +2113,8 @@ default
     check(bool(transfer), "deserialize incoming two-prim linkset");
     const framework::Vector3 arrival{181, 172, 30};
     drop_parcel_capacity = occupied_prims + 1;
-    check(!runtime.create_object(&descriptor, arrival, transfer, true) &&
-              !runtime.world().object(arriving_root) && !runtime.world().object(arriving_child),
+    check(!runtime.create_object(&descriptor, arrival, transfer, true) && !runtime.world().object(arriving_root) &&
+              !runtime.world().object(arriving_child),
           "one free prim slot rejects an entire two-prim transfer");
     drop_parcel_capacity = occupied_prims + 2;
     check(runtime.create_object(&descriptor, arrival, transfer, true), "two free slots admit the same transfer");
@@ -1919,8 +2129,8 @@ default
     crossing_plant.object = *rezzed_tree;
     const auto crossing_plant_bytes = serialize_object_asset(crossing_plant);
     const std::string crossing_plant_xml(crossing_plant_bytes.begin(), crossing_plant_bytes.end());
-    const auto plant_transfer = std::dynamic_pointer_cast<SimulationObject>(
-        transfer_scene->deserialize_object(crossing_plant_xml));
+    const auto plant_transfer =
+        std::dynamic_pointer_cast<SimulationObject>(transfer_scene->deserialize_object(crossing_plant_xml));
     check(plant_transfer && runtime.create_object(&descriptor, arrival, plant_transfer, true),
           "destination accepts a standalone Cypress transfer");
     const auto arrived_plant = runtime.world().object(rezzed_tree->id);
@@ -1929,7 +2139,7 @@ default
               (arrived_plant->flags & 0x400u),
           "incoming vegetation preserves species, scale, position and phantom status");
     runtime.world().remove(rezzed_tree->id);
-    const auto store_script = [&](const std::string& name, std::string_view source) {
+    const auto store_script = [&](const std::string &name, std::string_view source) {
         auto asset = std::make_shared<framework::AssetBase>(Uuid::random(), name, 10, circuit->agent_id.str());
         asset->data = std::make_shared<std::vector<std::uint8_t>>(source.begin(), source.end());
         check(assets.store(asset).has_value(), "store scripted rez fixture source");
@@ -1940,7 +2150,9 @@ default
 {
     on_rez(integer parameter)
     {
-        if (parameter == llGetStartParameter() && (parameter == 17 || parameter == 19))
+        if (parameter == llGetStartParameter() && (parameter == 17 || parameter == 19) &&
+            osGetRezzingObject() != NULL_KEY &&
+            osGetRezzingObject() == llList2Key(llGetObjectDetails(llGetKey(), [OBJECT_REZZER_KEY]), 0))
             llSetObjectDesc("Rez parameter verified");
         else if (parameter == 0)
             llSetObjectDesc("Unexpected viewer on_rez");
@@ -1957,21 +2169,21 @@ default
     const auto spawned_script = store_script("Rez parameter", spawned_source);
     const auto owner_text = circuit->agent_id.str();
     const std::string scripted_asset_xml =
-        "<SceneObjectGroup><SceneObjectPart><UUID>" + Uuid::random().str() +
-        "</UUID><OwnerID>" + owner_text + "</OwnerID><Shape><PCode>9</PCode></Shape>"
-        "<TaskInventory><TaskInventoryItem><ItemID>" + Uuid::random().str() + "</ItemID><AssetID>" +
-        spawned_script.str() + "</AssetID><OwnerID>" + owner_text +
+        "<SceneObjectGroup><SceneObjectPart><UUID>" + Uuid::random().str() + "</UUID><OwnerID>" + owner_text +
+        "</OwnerID><Shape><PCode>9</PCode></Shape>"
+        "<TaskInventory><TaskInventoryItem><ItemID>" +
+        Uuid::random().str() + "</ItemID><AssetID>" + spawned_script.str() + "</AssetID><OwnerID>" + owner_text +
         "</OwnerID><Type>10</Type><InvType>10</InvType><Name>Rez parameter</Name>"
         "</TaskInventoryItem></TaskInventory></SceneObjectPart><OtherParts><SceneObjectPart><UUID>" +
         Uuid::random().str() + "</UUID><OwnerID>" + owner_text +
         "</OwnerID><Shape><PCode>9</PCode></Shape><OffsetPosition><X>2</X><Y>0</Y><Z>0</Z></OffsetPosition>"
         "</SceneObjectPart></OtherParts></SceneObjectGroup>";
     auto scripted_asset = std::make_shared<framework::AssetBase>(Uuid::random(), "Scripted linkset", 6, owner_text);
-    auto parsed_scripted_asset = read_object_asset_xml({
-        reinterpret_cast<const std::uint8_t*>(scripted_asset_xml.data()), scripted_asset_xml.size()});
+    auto parsed_scripted_asset = read_object_asset_xml(
+        {reinterpret_cast<const std::uint8_t *>(scripted_asset_xml.data()), scripted_asset_xml.size()});
     check(parsed_scripted_asset && parsed_scripted_asset->linksets.front().parts.size() == 2,
           "read scripted rez linkset");
-    auto& scripted_parts = parsed_scripted_asset->linksets.front().parts;
+    auto &scripted_parts = parsed_scripted_asset->linksets.front().parts;
     auto stopped_task = scripted_parts.front().inventory.front();
     stopped_task.reset_ids(scripted_parts.back().object.id);
     stopped_task.script_running = false;
@@ -1987,7 +2199,7 @@ default
     scripted_asset->data = std::make_shared<std::vector<std::uint8_t>>(
         serialize_object_asset(scripted_parts.front(), std::span(scripted_parts).subspan(1)));
     check(assets.store(scripted_asset).has_value(), "store scripted rez object");
-    const auto rez_task = [&](const std::string& name, Uuid asset, std::int32_t type, std::uint32_t permissions) {
+    const auto rez_task = [&](const std::string &name, Uuid asset, std::int32_t type, std::uint32_t permissions) {
         auto item = std::make_shared<framework::TaskInventoryItem>();
         item->item_id = Uuid::random();
         item->asset_id = asset;
@@ -1999,13 +2211,14 @@ default
         return item;
     };
     const std::string permission = wear_replaces_all ? "PERMISSION_ATTACH" : "PERMISSION_TRIGGER_ANIMATION";
-    const auto permission_script = store_script("Automatic permission grant",
-        "default { state_entry() { llRequestPermissions(llGetOwner(), " + permission + "); }"
-        " run_time_permissions(integer mask) { if (mask == " + permission +
-        " && llGetPermissions() == mask && llGetPermissionsKey() == llGetOwner())"
-        " llSetObjectDesc(\"Automatic permission granted\"); } }");
-    const auto permission_object = runtime.world().add(
-        SceneObject::primitive(circuit->agent_id, {194, 170, 30}));
+    const auto permission_script = store_script(
+        "Automatic permission grant", "default { state_entry() { llRequestPermissions(llGetOwner(), " + permission +
+                                          "); }"
+                                          " run_time_permissions(integer mask) { if (mask == " +
+                                          permission +
+                                          " && llGetPermissions() == mask && llGetPermissionsKey() == llGetOwner())"
+                                          " llSetObjectDesc(\"Automatic permission granted\"); } }");
+    const auto permission_object = runtime.world().add(SceneObject::primitive(circuit->agent_id, {194, 170, 30}));
     check(permission_object.has_value(), "add automatic permission test object");
     const auto permission_task = rez_task("Automatic permission grant", permission_script, 10, 0);
     permission_task->reset_ids(permission_object->id);
@@ -2057,14 +2270,19 @@ default {
             return std::chrono::steady_clock::now() >= check_at && has_description("Permission retained");
         });
         auto teleport = make("TeleportLocationRequest");
-        auto& destination = teleport.block("Info");
+        auto &destination = teleport.block("Info");
         destination["RegionHandle"] = permission_destination.handle();
         destination["Position"] = std::vector<double>{128, 128, 30};
         destination["LookAt"] = std::vector<double>{0, 1, 0};
         send(teleport);
+        std::optional<std::uint64_t> event_teleport_finish;
         pump([&] {
+            if (!event_teleport_finish)
+                event_teleport_finish = tests::take_teleport_event(runtime, circuit->agent_id);
+            if (event_teleport_finish)
+                return *event_teleport_finish == permission_destination.handle();
             std::lock_guard lock(received_mutex);
-            return std::ranges::any_of(received, [&](const auto& packet) {
+            return std::ranges::any_of(received, [&](const auto &packet) {
                 return packet.spec->name == "TeleportFinish" &&
                        std::get<std::uint64_t>(packet.block("Info").at("RegionHandle")) ==
                            permission_destination.handle();
@@ -2087,13 +2305,16 @@ default {
         runtime.world().remove(object->id);
     }
     if (wear_replaces_all) {
-        const auto release_script = store_script("Control permission reassignment",
-            "default { state_entry() { llRequestPermissions(llGetOwner(), PERMISSION_TAKE_CONTROLS); }"
-            " run_time_permissions(integer mask) {"
-            " if (mask & PERMISSION_TAKE_CONTROLS) {"
-            " llTakeControls(CONTROL_FWD, TRUE, FALSE);"
-            " llRequestPermissions(\"" + offline_owner.str() + "\", PERMISSION_TAKE_CONTROLS);"
-            " } else if (llGetPermissions() == 0) { llSetObjectDesc(\"Controls released\"); } } }");
+        const auto release_script =
+            store_script("Control permission reassignment",
+                         "default { state_entry() { llRequestPermissions(llGetOwner(), PERMISSION_TAKE_CONTROLS); }"
+                         " run_time_permissions(integer mask) {"
+                         " if (mask & PERMISSION_TAKE_CONTROLS) {"
+                         " llTakeControls(CONTROL_FWD, TRUE, FALSE);"
+                         " llRequestPermissions(\"" +
+                             offline_owner.str() +
+                             "\", PERMISSION_TAKE_CONTROLS);"
+                             " } else if (llGetPermissions() == 0) { llSetObjectDesc(\"Controls released\"); } } }");
         const auto object = runtime.world().add(SceneObject::primitive(circuit->agent_id, {194, 170, 30}));
         check(object.has_value(), "add control reassignment test object");
         const auto task = rez_task("Control permission reassignment", release_script, 10, 0);
@@ -2101,7 +2322,7 @@ default {
         runtime.restore_task_inventory(object->id, {task});
         pump([&] {
             std::lock_guard lock(received_mutex);
-            return std::ranges::any_of(received, [&](const auto& packet) {
+            return std::ranges::any_of(received, [&](const auto &packet) {
                 return packet.spec->name == "ScriptQuestion" &&
                        std::get<Uuid>(packet.block("Data").at("ItemID")) == task->item_id;
             });
@@ -2140,8 +2361,7 @@ default {
     run_time_permissions(integer mask) { llSetObjectName((string)mask); }
 }
 )LSL");
-        const auto control_object = runtime.world().add(
-            SceneObject::primitive(circuit->agent_id, {194, 170, 30}));
+        const auto control_object = runtime.world().add(SceneObject::primitive(circuit->agent_id, {194, 170, 30}));
         check(control_object.has_value(), "add control permission test object");
         const auto control_task = rez_task("Control permission denial", control_script, 10, 0);
         control_task->reset_ids(control_object->id);
@@ -2153,13 +2373,13 @@ default {
             first_packet = received.size();
         }
         runtime.restore_task_inventory(control_object->id, {control_task, companion_task});
-        const auto question_count = [&](const Uuid& item_id) {
-            return std::count_if(received.begin() + first_packet, received.end(), [&](const auto& packet) {
+        const auto question_count = [&](const Uuid &item_id) {
+            return std::count_if(received.begin() + first_packet, received.end(), [&](const auto &packet) {
                 return packet.spec->name == "ScriptQuestion" &&
                        std::get<Uuid>(packet.block("Data").at("ItemID")) == item_id;
             });
         };
-        const auto answer = [&](const Uuid& task_id, const Uuid& item_id, int permissions) {
+        const auto answer = [&](const Uuid &task_id, const Uuid &item_id, int permissions) {
             auto packet = make("ScriptAnswerYes");
             packet.block("Data")["TaskID"] = task_id;
             packet.block("Data")["ItemID"] = item_id;
@@ -2172,8 +2392,7 @@ default {
             if (!object || object->name != "0")
                 return false;
             std::lock_guard lock(received_mutex);
-            return question_count(control_task->item_id) == 1 &&
-                   question_count(companion_task->item_id) == 1;
+            return question_count(control_task->item_id) == 1 && question_count(companion_task->item_id) == 1;
         });
         constexpr int take_controls_permission = 4;
         constexpr int trigger_animation_permission = 16;
@@ -2189,10 +2408,10 @@ default {
                 return false;
             std::lock_guard lock(received_mutex);
             return question_count(control_task->item_id) >= 2 &&
-                   std::any_of(received.begin() + first_packet, received.end(), [&](const auto& packet) {
+                   std::any_of(received.begin() + first_packet, received.end(), [&](const auto &packet) {
                        if (packet.spec->name != "ScriptControlChange")
                            return false;
-                       const auto& data = packet.blocks.at("Data").front();
+                       const auto &data = packet.blocks.at("Data").front();
                        return std::get<std::uint64_t>(data.at("Controls")) == forward_control &&
                               std::get<bool>(data.at("TakeControls"));
                    });
@@ -2207,10 +2426,10 @@ default {
             if (!object || object->description != "Control permission denied")
                 return false;
             std::lock_guard lock(received_mutex);
-            return std::any_of(received.begin() + first_packet, received.end(), [&](const auto& packet) {
+            return std::any_of(received.begin() + first_packet, received.end(), [&](const auto &packet) {
                 if (packet.spec->name != "ScriptControlChange")
                     return false;
-                const auto& data = packet.blocks.at("Data").front();
+                const auto &data = packet.blocks.at("Data").front();
                 return std::get<std::uint64_t>(data.at("Controls")) == forward_control &&
                        !std::get<bool>(data.at("TakeControls"));
             });
@@ -2218,8 +2437,8 @@ default {
         runtime.world().remove(control_object->id);
 
         const auto owner_script = store_script("Permission prompt owner",
-            "default { state_entry() { llRequestPermissions(\"" + circuit->agent_id.str() +
-            "\", PERMISSION_TRIGGER_ANIMATION); } }");
+                                               "default { state_entry() { llRequestPermissions(\"" +
+                                                   circuit->agent_id.str() + "\", PERMISSION_TRIGGER_ANIMATION); } }");
         const auto check_prompt_owner = [&](Uuid owner, Uuid group, std::u16string_view expected_name) {
             auto prim = SceneObject::primitive(owner, {194, 170, 30});
             prim.group = group;
@@ -2231,10 +2450,10 @@ default {
             runtime.restore_task_inventory(object->id, {task});
             pump([&] {
                 std::lock_guard lock(received_mutex);
-                return std::ranges::any_of(received, [&](const auto& packet) {
+                return std::ranges::any_of(received, [&](const auto &packet) {
                     if (packet.spec->name != "ScriptQuestion")
                         return false;
-                    const auto& data = packet.block("Data");
+                    const auto &data = packet.block("Data");
                     return std::get<Uuid>(data.at("ItemID")) == task->item_id &&
                            framework::sdk_bytes_to_string(
                                std::get<std::vector<std::uint8_t>>(data.at("ObjectOwner"))) == expected_name;
@@ -2261,31 +2480,29 @@ default
     }
 }
 )LSL");
-    runtime.restore_task_inventory(duplicate_source->id,
-        {rez_task("Centered", scripted_asset->full_id(), 6, 0),
-         rez_task("Rooted", scripted_asset->full_id(), 6, 1u << 15),
-         rez_task("Scripted rez", spawner, 10, 0)});
+    runtime.restore_task_inventory(duplicate_source->id, {rez_task("Centered", scripted_asset->full_id(), 6, 0),
+                                                          rez_task("Rooted", scripted_asset->full_id(), 6, 1u << 15),
+                                                          rez_task("Scripted rez", spawner, 10, 0)});
     pump([&] {
         const auto root = runtime.world().object(duplicate_source->id);
         if (root->description != "Script received both object_rez events")
             return false;
         const auto objects = runtime.world().objects();
         const auto placed = [&](framework::Vector3 position) {
-            return std::ranges::any_of(objects, [&](const auto& part) {
-                return part.parent_id == 0 && part.rezzer == duplicate_source->id &&
-                       part.position == position && part.description == "Rez parameter verified";
+            return std::ranges::any_of(objects, [&](const auto &part) {
+                return part.parent_id == 0 && part.rezzer == duplicate_source->id && part.position == position &&
+                       part.description == "Rez parameter verified";
             });
         };
         return placed({173, 170, 30}) && placed({175, 170, 30});
     });
     const auto source_inventory = runtime.snapshot_task_inventory(duplicate_source->id);
-    check(source_inventory && std::ranges::none_of(*source_inventory, [](const auto& item) {
-              return item.name == "Centered";
-          }) && std::ranges::any_of(*source_inventory, [](const auto& item) {
-              return item.name == "Rooted";
-          }), "scripted rez consumes only the no-copy task item");
+    check(source_inventory &&
+              std::ranges::none_of(*source_inventory, [](const auto &item) { return item.name == "Centered"; }) &&
+              std::ranges::any_of(*source_inventory, [](const auto &item) { return item.name == "Rooted"; }),
+          "scripted rez consumes only the no-copy task item");
     const auto rezzed_parts = runtime.world().objects();
-    const auto checkpoint_root = std::ranges::find_if(rezzed_parts, [&](const auto& part) {
+    const auto checkpoint_root = std::ranges::find_if(rezzed_parts, [&](const auto &part) {
         return part.rezzer == duplicate_source->id && part.position == framework::Vector3{173, 170, 30};
     });
     check(checkpoint_root != rezzed_parts.end(), "find centered object for script restore");
@@ -2305,8 +2522,8 @@ default
     auto restarted_task = std::make_shared<framework::TaskInventoryItem>(checkpoint_tasks->front());
     restarted_task->reset_ids(restored_part->id);
     runtime.restore_task_inventory(restored_part->id, {restarted_task},
-        {{restarted_task->item_id, checkpoint_states.begin()->second}},
-        RegionRuntime::TaskInventoryRestoreSource::RegionStart);
+                                   {{restarted_task->item_id, checkpoint_states.begin()->second}},
+                                   RegionRuntime::TaskInventoryRestoreSource::RegionStart);
     pump([&] { return runtime.world().object(restored_part->id)->description == "Restart restored rez parameter"; });
 
     auto deferred_item = *ground_item;
@@ -2323,7 +2540,7 @@ default
     send(deferred_rez);
     Uuid deferred_root;
     pump([&] {
-        for (const auto& part : runtime.world().objects()) {
+        for (const auto &part : runtime.world().objects()) {
             if (part.name == deferred_item.name) {
                 deferred_root = part.id;
                 return true;
@@ -2344,7 +2561,7 @@ default
     runtime.world().remove(deferred_root);
 
     check(checkpoint_root->die_at_edge, "script-rezzed root defaults to die at edge");
-    const auto override_root = std::ranges::find_if(rezzed_parts, [&](const auto& part) {
+    const auto override_root = std::ranges::find_if(rezzed_parts, [&](const auto &part) {
         return part.rezzer == duplicate_source->id && part.position == framework::Vector3{175, 170, 30};
     });
     check(override_root != rezzed_parts.end(), "find second script-rezzed root for status override");
@@ -2387,16 +2604,15 @@ default
     status_task->reset_ids(override_child);
     runtime.restore_task_inventory(override_child, {status_task});
     pump([&] { return runtime.world().object(override_child)->description == "Child changed root edge status"; });
-    check(!runtime.world().object(override_root->id)->die_at_edge,
-          "child script changes the root edge flag");
+    check(!runtime.world().object(override_root->id)->die_at_edge, "child script changes the root edge flag");
     check(!(runtime.world().object(override_root->id)->flags & World::cast_shadows_flag),
           "cast shadows affects the script's child prim");
     pump([&] {
         std::lock_guard lock(received_mutex);
-        for (const auto& packet : received) {
+        for (const auto &packet : received) {
             if (packet.spec->name != "ObjectUpdate")
                 continue;
-            for (const auto& part : packet.blocks.at("ObjectData")) {
+            for (const auto &part : packet.blocks.at("ObjectData")) {
                 if (std::get<Uuid>(part.at("FullID")) == override_child &&
                     (std::get<std::uint64_t>(part.at("UpdateFlags")) & World::cast_shadows_flag))
                     return true;
@@ -2427,17 +2643,15 @@ default
     auto count_task = rez_task("Physics shape count", count_script, 10, 0);
     count_task->reset_ids(extra_shape_part->id);
     runtime.restore_task_inventory(extra_shape_part->id, {count_task});
-    pump([&] {
-        return runtime.world().object(extra_shape_part->id)->description == "Physics shape count rejected";
-    });
+    pump([&] { return runtime.world().object(extra_shape_part->id)->description == "Physics shape count rejected"; });
     auto physics_request = make("ObjectFlagUpdate");
-    auto& physics_flags = physics_request.block("AgentData");
+    auto &physics_flags = physics_request.block("AgentData");
     physics_flags["ObjectLocalID"] = std::uint64_t{extra_shape_part->local_id};
     physics_flags["UsePhysics"] = true;
     send(physics_request);
     pump([&] {
-        return packet_seen("AlertMessage",
-            "Object physics cancelled because it exceeds limits for physical prims, either size or number of primswith shape type not set to None");
+        return packet_seen("AlertMessage", "Object physics cancelled because it exceeds limits for physical prims, "
+                                           "either size or number of primswith shape type not set to None");
     });
     check((runtime.world().object(override_root->id)->flags & 1u) == 0,
           "viewer cannot enable physics with three collision shapes and a limit of two");
@@ -2469,9 +2683,7 @@ default
     edge_part["Position"] = std::vector<double>{257, 170, 30};
     edge_move.blocks["ObjectData"].push_back(std::move(edge_part));
     send(edge_move);
-    pump([&] {
-        return !runtime.world().object(checkpoint_root->id) && !runtime.world().object(edge_child);
-    });
+    pump([&] { return !runtime.world().object(checkpoint_root->id) && !runtime.world().object(edge_child); });
     const auto return_script = store_script("Return at edge", R"LSL(
 default
 {
@@ -2486,32 +2698,33 @@ default
     auto return_task = rez_task("Return at edge", return_script, 10, 0);
     return_task->reset_ids(override_child);
     runtime.restore_task_inventory(override_child, {return_task});
-    pump([&] {
-        return runtime.world().object(override_child)->description == "Return at edge enabled";
-    });
+    pump([&] { return runtime.world().object(override_child)->description == "Return at edge enabled"; });
     const auto lost_and_found = inventory.for_type(circuit->agent_id, 16);
     check(lost_and_found.has_value(), "find Lost and Found for the edge return");
-    const auto previously_returned = inventory.folder_items(circuit->agent_id, lost_and_found->id);
+    const auto previously_returned = inventory.folder_items(circuit->agent_id, lost_and_found->id).value();
     edge_move.sequence = ++sequence;
     edge_move.block("ObjectData")["ObjectLocalID"] = std::uint64_t{override_root->local_id};
     send(edge_move);
     pump([&] { return !runtime.world().object(override_root->id); });
-    const auto returned = inventory.folder_items(circuit->agent_id, lost_and_found->id);
-    const auto edge_item = std::ranges::find_if(returned, [&](const auto& item) {
+    const auto returned = inventory.folder_items(circuit->agent_id, lost_and_found->id).value();
+    const auto edge_item = std::ranges::find_if(returned, [&](const auto &item) {
         return std::ranges::find(previously_returned, item.id, &InventoryItem::id) == previously_returned.end();
     });
     check(returned.size() == previously_returned.size() + 1 && edge_item != returned.end(),
           "edge return deposits a single item in Lost and Found");
     const auto edge_asset = assets.get_asset(edge_item->asset_id.str());
-    const auto returned_linkset = edge_asset && edge_asset->data ? read_object_asset_xml(*edge_asset->data)
-                                                               : std::nullopt;
+    const auto returned_linkset =
+        edge_asset && edge_asset->data ? read_object_asset_xml(*edge_asset->data) : std::nullopt;
     check(returned_linkset && returned_linkset->linksets.size() == 1 &&
-              returned_linkset->linksets.front().parts.size() == 4 &&
-              !runtime.world().object(override_child) && !runtime.world().object(additional_root->id),
+              returned_linkset->linksets.front().parts.size() == 4 && !runtime.world().object(override_child) &&
+              !runtime.world().object(additional_root->id),
           "edge return saves and removes the complete linked object");
-    check(std::ranges::any_of(returned_linkset->linksets.front().parts, [&](const auto& part) {
-              return part.object.id == override_child && (part.object.flags & World::cast_shadows_flag);
-          }), "returned object asset preserves the child shadow flag");
+    check(std::ranges::any_of(returned_linkset->linksets.front().parts,
+                              [&](const auto &part) {
+                                  return part.object.id == override_child &&
+                                         (part.object.flags & World::cast_shadows_flag);
+                              }),
+          "returned object asset preserves the child shadow flag");
     const auto sandbox_script = store_script("Sandbox status", R"LSL(
 default
 {
@@ -2542,11 +2755,8 @@ default
     }
 }
 )LSL");
-    runtime.restore_task_inventory(duplicate_source->id,
-        {rez_task("Sandbox move", sandbox_move_script, 10, 0)});
-    pump([&] {
-        return runtime.world().object(duplicate_source->id)->description == "Sandbox script move attempted";
-    });
+    runtime.restore_task_inventory(duplicate_source->id, {rez_task("Sandbox move", sandbox_move_script, 10, 0)});
+    pump([&] { return runtime.world().object(duplicate_source->id)->description == "Sandbox script move attempted"; });
     check(runtime.world().object(duplicate_source->id)->position == framework::Vector3{181, 170, 30},
           "sandbox rejects a script move past the viewer-clamped boundary");
     const auto grab_root = runtime.world().add(SceneObject::primitive(circuit->agent_id, {190, 170, 30}));
@@ -2555,9 +2765,9 @@ default
     grab_child_part.parent_id = grab_root->local_id;
     const auto grab_child = runtime.world().add(grab_child_part);
     check(grab_child.has_value(), "add grab test child");
-    const auto set_grab_status = [&](std::string_view code, const std::string& marker) {
-        const auto source = "default {\n    state_entry() {\n" + std::string(code) +
-                            "        llSetObjectDesc(\"" + marker + "\");\n    }\n}\n";
+    const auto set_grab_status = [&](std::string_view code, const std::string &marker) {
+        const auto source = "default {\n    state_entry() {\n" + std::string(code) + "        llSetObjectDesc(\"" +
+                            marker + "\");\n    }\n}\n";
         auto task = rez_task(marker, store_script(marker, source), 10, 0);
         task->reset_ids(grab_child->id);
         runtime.restore_task_inventory(grab_child->id, {task});
@@ -2582,7 +2792,8 @@ default
     set_grab_status(R"LSL(        llSetStatus(STATUS_BLOCK_GRAB, 1);
         if (!llGetStatus(STATUS_BLOCK_GRAB))
             return;
-)LSL", "Child blocks grab");
+)LSL",
+                    "Child blocks grab");
     expect_blocked_grab(grab_child->id, 190, 191);
     drag(grab_root->id, 192);
     expect_grab_position(192);
@@ -2590,17 +2801,146 @@ default
         llSetStatus(STATUS_BLOCK_GRAB_OBJECT, 1);
         if (llGetStatus(STATUS_BLOCK_GRAB) || !llGetStatus(STATUS_BLOCK_GRAB_OBJECT))
             return;
-)LSL", "Linkset blocks grab");
+)LSL",
+                    "Linkset blocks grab");
     expect_blocked_grab(grab_root->id, 192, 193);
     expect_blocked_grab(grab_child->id, 192, 194);
     set_grab_status(R"LSL(        llSetStatus(STATUS_BLOCK_GRAB_OBJECT, 0);
         if (llGetStatus(STATUS_BLOCK_GRAB_OBJECT))
             return;
-)LSL", "Linkset allows grab");
+)LSL",
+                    "Linkset allows grab");
     drag(grab_child->id, 195);
     expect_grab_position(195);
     const auto debug_host = runtime.world().add(SceneObject::primitive(circuit->agent_id, {170, 168, 30}));
     check(debug_host.has_value(), "add estate scripting toggle fixture");
+    const auto transfer_source = store_script("Transfer result", R"LSL(
+        key invalid_request;
+        key positive_request;
+        default {
+            state_entry() {
+                invalid_request = llTransferLindenDollars(llGetOwner(), 0);
+                positive_request = llTransferLindenDollars(llGetOwner(), 1);
+            }
+            transaction_result(string id, integer success, string data) {
+                if (success != 0 || (key)id == NULL_KEY)
+                    return;
+                if ((key)id == invalid_request && data == "INVALID_AMOUNT")
+                    llSetObjectDesc(data);
+                if ((key)id == positive_request && llGetObjectDesc() == "INVALID_AMOUNT")
+                    llSetObjectDesc(data);
+            }
+        }
+    )LSL");
+    auto transfer_task = rez_task("Transfer result", transfer_source, 10, 0);
+    transfer_task->reset_ids(debug_host->id);
+    runtime.restore_task_inventory(debug_host->id, {transfer_task});
+    const auto expected_transfer_error = wear_replaces_all ? "MISSING_PERMISSION_DEBIT" : "TRANSFERS_DISABLED";
+    pump([&] { return runtime.world().object(debug_host->id)->description == expected_transfer_error; });
+    check(runtime.world().remove(debug_host->id), "remove transfer fixture");
+    if (wear_replaces_all) {
+        auto recipient_circuit = std::make_shared<framework::AgentCircuitData>();
+        recipient_circuit->agent_id = offline_owner;
+        recipient_circuit->session_id = Uuid::random();
+        recipient_circuit->secure_session_id = Uuid::random();
+        recipient_circuit->circuit_code = circuit->circuit_code + 1;
+        recipient_circuit->caps_path = "transfer-recipient";
+        recipient_circuit->first_name = "Offline";
+        recipient_circuit->last_name = "Owner";
+        recipient_circuit->start_position = {170, 168, 30};
+        presence.login(offline_owner.str(), recipient_circuit->session_id, recipient_circuit->secure_session_id);
+        check(runtime.create_agent(nullptr, descriptor, recipient_circuit, 128, context, reason),
+              "admit transfer recipient");
+        std::mutex recipient_mutex;
+        std::set<Uuid> recipient_notifications;
+        network::UdpSocket recipient_socket({"127.0.0.1", 0}, [&](const auto &, auto datagram) {
+            const auto packet = network::lludp::decode_datagram(datagram, 65536, false);
+            if (packet.spec->name != "MoneyBalanceReply")
+                return;
+            const auto &money = packet.block("MoneyData");
+            if (std::get<Uuid>(money.at("AgentID")) == offline_owner &&
+                field(packet, "MoneyData", "Description") == "Object Transfer payer pays Offline Owner") {
+                std::lock_guard lock(recipient_mutex);
+                recipient_notifications.insert(std::get<Uuid>(money.at("TransactionID")));
+            }
+        });
+        recipient_socket.start();
+        auto recipient_use = make("UseCircuitCode");
+        recipient_use.block("CircuitCode")["ID"] = offline_owner;
+        recipient_use.block("CircuitCode")["SessionID"] = recipient_circuit->session_id;
+        recipient_use.block("CircuitCode")["Code"] = std::uint64_t{recipient_circuit->circuit_code};
+        recipient_socket.send_to(endpoint, network::lludp::encode_datagram(recipient_use));
+        pump([&] { return runtime.viewers().agent(offline_owner).has_value(); });
+        auto recipient_complete = make("CompleteAgentMovement");
+        recipient_complete.block("AgentData")["AgentID"] = offline_owner;
+        recipient_complete.block("AgentData")["SessionID"] = recipient_circuit->session_id;
+        recipient_complete.block("AgentData")["CircuitCode"] = std::uint64_t{recipient_circuit->circuit_code};
+        recipient_socket.send_to(endpoint, network::lludp::encode_datagram(recipient_complete));
+        pump([&] {
+            const auto viewer = runtime.viewers().agent(offline_owner);
+            return viewer && viewer->root;
+        });
+        auto payer = SceneObject::primitive(circuit->agent_id, {170, 168, 30});
+        payer.name = "Transfer payer";
+        const auto payer_part = runtime.world().add(payer);
+        check(payer_part.has_value(), "add transfer payer");
+        const auto recipient = offline_owner.str();
+        const auto source =
+            "key request; key failed; key missing; default { state_entry() { llRequestPermissions(llGetOwner(), "
+            "PERMISSION_DEBIT); }"
+            " run_time_permissions(integer mask) { if (mask & PERMISSION_DEBIT) {"
+            " if (llGiveMoney((key)\"" +
+            recipient +
+            "\", 5) != 0) return;"
+            " request = llTransferLindenDollars((key)\"" +
+            recipient + "\", 5); failed = llTransferLindenDollars((key)\"" + failed_lookup.str() +
+            "\", 5); missing = llTransferLindenDollars(NULL_KEY, 5);"
+            " } } transaction_result(string id, integer success, string data) {"
+            " if ((key)id == request && success == 1 && data == \"" +
+            recipient +
+            ",5\") llSetObjectDesc(\"Transfer succeeded\");"
+            " if ((key)id == failed && success == 0 && data == \"UnKnownError\" &&"
+            " llGetObjectDesc() == \"Transfer succeeded\") llSetObjectDesc(\"Lookup failure reported\");"
+            " if ((key)id == missing && success == 0 && data == \"LINDENDOLLAR_ENTITYDOESNOTEXIST\" &&"
+            " llGetObjectDesc() == \"Lookup failure reported\") llSetObjectDesc(\"Missing recipient reported\"); } }";
+        auto task = rez_task("Successful transfer", store_script("Successful transfer", source), 10, 0);
+        task->reset_ids(payer_part->id);
+        runtime.restore_task_inventory(payer_part->id, {task});
+        pump([&] {
+            std::lock_guard lock(received_mutex);
+            return std::ranges::any_of(received, [&](const auto &packet) {
+                return packet.spec->name == "ScriptQuestion" &&
+                       std::get<Uuid>(packet.block("Data").at("ItemID")) == task->item_id;
+            });
+        });
+        auto grant = make("ScriptAnswerYes");
+        grant.block("Data")["TaskID"] = payer_part->id;
+        grant.block("Data")["ItemID"] = task->item_id;
+        grant.block("Data")["Questions"] = std::int64_t{2};
+        send(grant);
+        pump([&] { return runtime.world().object(payer_part->id)->description == "Missing recipient reported"; });
+        pump([&] {
+            std::lock_guard lock(received_mutex);
+            std::set<Uuid> notifications;
+            for (const auto &packet : received) {
+                if (packet.spec->name == "MoneyBalanceReply" &&
+                    field(packet, "MoneyData", "Description") == "Object Transfer payer pays Offline Owner")
+                    notifications.insert(std::get<Uuid>(packet.block("MoneyData").at("TransactionID")));
+            }
+            return notifications.size() == 2;
+        });
+        check(runtime.world().remove(payer_part->id), "remove successful transfer fixture");
+        pump([&] {
+            std::lock_guard lock(recipient_mutex);
+            return recipient_notifications.size() == 2;
+        });
+        check(runtime.close_agent_session(offline_owner, recipient_circuit->session_id.str()),
+              "close transfer recipient session");
+        pump([&] { return !runtime.viewers().agent(offline_owner); });
+        recipient_socket.stop();
+    }
+    const auto estate_host = runtime.world().add(SceneObject::primitive(circuit->agent_id, {170, 168, 30}));
+    check(estate_host.has_value(), "add independent estate scripting toggle fixture");
     const auto debug_source = store_script("Estate scripting toggle", R"LSL(
 default
 {
@@ -2613,14 +2953,14 @@ default
 }
 )LSL");
     auto debug_task = rez_task("Estate scripting toggle", debug_source, 10, 0);
-    debug_task->reset_ids(debug_host->id);
-    runtime.restore_task_inventory(debug_host->id, {debug_task});
-    pump([&] { return runtime.world().object(debug_host->id)->description == "Estate script started"; });
+    debug_task->reset_ids(estate_host->id);
+    runtime.restore_task_inventory(estate_host->id, {debug_task});
+    pump([&] { return runtime.world().object(estate_host->id)->description == "Estate script started"; });
 
     const auto set_estate_scripting = [&](bool enabled) {
         auto request = make("EstateOwnerMessage");
         request.block("MethodData")["Method"] = wire("setregiondebug");
-        for (const auto* value : {enabled ? "false" : "true", "false", "false"}) {
+        for (const auto *value : {enabled ? "false" : "true", "false", "false"}) {
             auto parameter = network::lludp::make_block(request.spec->blocks.at(2));
             parameter["Parameter"] = wire(value);
             request.blocks["ParamList"].push_back(std::move(parameter));
@@ -2629,14 +2969,14 @@ default
     };
     estate_access = true;
     set_estate_scripting(false);
-    pump([&] { return runtime.snapshot_task_script_states(debug_host->id).empty(); });
-    const auto debug_inventory = runtime.snapshot_task_inventory(debug_host->id);
+    pump([&] { return runtime.snapshot_task_script_states(estate_host->id).empty(); });
+    const auto debug_inventory = runtime.snapshot_task_inventory(estate_host->id);
     check(debug_inventory && debug_inventory->size() == 1,
           "disabling estate scripting removes the instance and keeps the inventory item");
     set_estate_scripting(true);
-    pump([&] { return runtime.world().object(debug_host->id)->description == "Estate script restarted"; });
+    pump([&] { return runtime.world().object(estate_host->id)->description == "Estate script restarted"; });
     estate_access = false;
-    runtime.world().remove(debug_host->id);
+    runtime.world().remove(estate_host->id);
 
     auto final_edit = make("ObjectDescription");
     auto final_edit_part = network::lludp::make_block(final_edit.spec->blocks.at(1));
@@ -2647,7 +2987,8 @@ default
     pump([&] { return runtime.world().object(worn_again->id)->description == "Edit with a failed checkpoint"; });
     const auto previous_checkpoint = attachment_scripts.load(circuit->agent_id, wear_item.id, detached_item->asset_id);
     attachment_table.execute("CREATE TRIGGER fail_attachment_checkpoint BEFORE INSERT ON native_attachment_scripts "
-                             "BEGIN SELECT RAISE(ABORT, 'injected checkpoint write failure'); END", {});
+                             "BEGIN SELECT RAISE(ABORT, 'injected checkpoint write failure'); END",
+                             {});
     check(runtime.close_agent_session(circuit->agent_id, circuit->session_id.str()), "close session with failed save");
     pump([&] { return !runtime.world().object(worn_again->id); });
     check(inventory.item(circuit->agent_id, wear_item.id)->asset_id == detached_item->asset_id &&
@@ -2657,7 +2998,8 @@ default
     client.stop();
     runtime.stop();
 }
-}
+} // namespace
+
 int main() {
     try {
         check_attachment_asset_round_trip();

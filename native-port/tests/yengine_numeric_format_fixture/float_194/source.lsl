@@ -1,0 +1,1 @@
+string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float("-1234.567"),"0.00E-00");after=1;}}

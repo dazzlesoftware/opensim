@@ -1,0 +1,32 @@
+{
+  "accepted": true,
+  "executed": true,
+  "globals": {
+    "a": {
+      "type": "null"
+    },
+    "result": {
+      "type": "integer",
+      "clr": "System.Int32",
+      "value": 0
+    }
+  },
+  "errors": [],
+  "exception": "Arithmetic operation resulted in an overflow.",
+  "exceptionType": "System.OverflowException",
+  "stackSize": 1000000,
+  "stackLimit": 1024,
+  "finalStackLeft": 1000000,
+  "stackSamples": [],
+  "name": "negative_O",
+  "source": "YOption arrays;object a;integer result;default{state_entry(){a=xmrFixedArrayAllocO(-1);}}",
+  "methodology": "Actual original CodeGen/CallSEH; scheduler CheckRunWork no-op. Separate process per case. No migration claim.",
+  "sha256": {
+    "original.il.txt": "3294eae2c9ea602f2a2b11af6700138990cc8910b51d9bdb226d77d3680c484c",
+    "original.yobj": "c0d2415bb363988df7940a319b9b3ab53c2c66fa4251b2e779f66ab76d0889db",
+    "source.lsl": "e74afd8d549c8e3b87dabf3c0ab927279290fe8c917b839844439838d6750f54",
+    "source_hash.txt": "c302143a73289be9b28c0ad7351724be658fb79aeb172352f841ec30f648b5d4",
+    "generator_source": "d86517a13d8f4094e933279614d487a0e69d44a49f2296c4af7562bf7386d651",
+    "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056"
+  }
+}

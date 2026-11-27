@@ -1,0 +1,1 @@
+string result;integer after;default{state_entry(){result=llXorBase64StringsCorrect(" Q Q = = ","A A = =");after=1;}}

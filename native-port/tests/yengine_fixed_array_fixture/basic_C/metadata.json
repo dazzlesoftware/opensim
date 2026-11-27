@@ -1,0 +1,46 @@
+{
+  "accepted": true,
+  "executed": true,
+  "globals": {
+    "a": {
+      "type": "array",
+      "clr": "System.Char[]",
+      "id": 0,
+      "entries": [
+        {
+          "type": "char",
+          "clr": "System.Char",
+          "utf16": 0
+        },
+        {
+          "type": "char",
+          "clr": "System.Char",
+          "utf16": 65
+        }
+      ]
+    },
+    "result": {
+      "type": "char",
+      "clr": "System.Char",
+      "utf16": 65
+    }
+  },
+  "errors": [],
+  "exception": null,
+  "exceptionType": null,
+  "stackSize": 1000000,
+  "stackLimit": 1024,
+  "finalStackLeft": 1000000,
+  "stackSamples": [],
+  "name": "basic_C",
+  "source": "YOption arrays;YOption chars;object a;char result;default{state_entry(){a=xmrFixedArrayAllocC(2);xmrFixedArraySetC(a,1,'A');result=xmrFixedArrayGetC(a,1);}}",
+  "methodology": "Actual original CodeGen/CallSEH; scheduler CheckRunWork no-op. Separate process per case. No migration claim.",
+  "sha256": {
+    "original.il.txt": "df4e9596a0c6ac237fa410f09ea9dec72ad611680f9fa92ecbce568a32487032",
+    "original.yobj": "df9e1faa3f4bad555ffe1175f38143f54e2a794b7f7b9bf106e8e34fe1d6f9b8",
+    "source.lsl": "b5e5b77850087b8f7925883a0a7586cfb675ab7f3ddf39a5628878ffe6ff21e3",
+    "source_hash.txt": "0afddc9cf0dff00da271c43dde8a76ca15e019a447fc4cbe5d397858573a6410",
+    "generator_source": "d86517a13d8f4094e933279614d487a0e69d44a49f2296c4af7562bf7386d651",
+    "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056"
+  }
+}

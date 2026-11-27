@@ -5,6 +5,7 @@
 #include <sstream>
 #include <vector>
 using namespace opensim::framework;
+
 namespace {
 std::u16string decode(std::string_view text) {
     std::u16string out;
@@ -17,6 +18,7 @@ std::u16string decode(std::string_view text) {
     }
     return out;
 }
+
 std::string hex(std::u16string_view text) {
     std::string out;
     for (auto c : text)
@@ -26,53 +28,63 @@ std::string hex(std::u16string_view text) {
         }
     return out.empty() ? "." : out;
 }
-std::string hex(const std::u16string& text) {
+
+std::string hex(const std::u16string &text) {
     return hex(std::u16string_view(text));
 }
-std::string hex(const std::optional<std::u16string>& text) {
+
+std::string hex(const std::optional<std::u16string> &text) {
     return text ? hex(std::u16string_view(*text)) : "-";
 }
+
 struct FaultReader : NiniTextReader {
     std::shared_ptr<NiniTextReader> inner;
-    std::vector<std::string>& trace;
+    std::vector<std::string> &trace;
     int point, nth, seen = 0;
-    FaultReader(std::u16string text, std::vector<std::string>& log, int p, int n)
+
+    FaultReader(std::u16string text, std::vector<std::string> &log, int p, int n)
         : inner(nini_string_reader(std::move(text))), trace(log), point(p), nth(n) {}
-    void hit(int p, const char* name) {
+
+    void hit(int p, const char *name) {
         trace.emplace_back(name);
         if (point == p && ++seen == nth)
             throw std::runtime_error("fault");
     }
+
     int peek() override {
         hit(1, "P");
         return inner->peek();
     }
+
     int read() override {
         hit(2, "R");
         return inner->read();
     }
+
     void close() override {
         hit(3, "C");
         inner->close();
     }
 };
+
 std::string error(std::exception_ptr saved) {
     if (!saved)
         return "-";
     try {
         std::rethrow_exception(saved);
-    } catch (const NiniReaderError& e) {
-        return std::string(e.source_type()) + ":" + std::to_string(static_cast<std::uint32_t>(e.hresult())) +
-               ":" + hex(e.message_utf16()) + ":" +
+    } catch (const NiniReaderError &e) {
+        return std::string(e.source_type()) + ":" + std::to_string(static_cast<std::uint32_t>(e.hresult())) + ":" +
+               hex(e.message_utf16()) + ":" +
                std::to_string(e.kind == NiniReaderError::Kind::Ini ? e.position->line : 0) + ":" +
                std::to_string(e.kind == NiniReaderError::Kind::Ini ? e.position->column : 0);
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::string text = e.what();
-        return "System.Exception:" + std::to_string(0x80131500u) + ":" +
-               hex(std::u16string(text.begin(), text.end())) + ":0:0";
+        return "System.Exception:" + std::to_string(0x80131500u) + ":" + hex(std::u16string(text.begin(), text.end())) +
+               ":0:0";
     }
 }
-std::string run(const std::string& line) {
+
+std::string run(const std::string &line) {
     std::istringstream input(line);
     std::string text, operations;
     int flags, point, nth;
@@ -116,12 +128,10 @@ std::string run(const std::string& line) {
                 if (!copy.empty())
                     copy[0] = u'!';
             } else if (op.starts_with("sc")) {
-                comments =
-                    op.substr(2) == "-" ? nullptr : std::make_shared<std::u16string>(decode(op.substr(2)));
+                comments = op.substr(2) == "-" ? nullptr : std::make_shared<std::u16string>(decode(op.substr(2)));
                 reader.comment_delimiters(comments);
             } else if (op.starts_with("sa")) {
-                assign =
-                    op.substr(2) == "-" ? nullptr : std::make_shared<std::u16string>(decode(op.substr(2)));
+                assign = op.substr(2) == "-" ? nullptr : std::make_shared<std::u16string>(decode(op.substr(2)));
                 reader.assign_delimiters(assign);
             } else if (op == "mc") {
                 if (comments && !comments->empty())
@@ -155,18 +165,19 @@ std::string run(const std::string& line) {
         if (!output.empty())
             output += '|';
         output += result + "/" + std::to_string(static_cast<int>(reader.type())) + "," +
-                  std::to_string(static_cast<int>(reader.state())) + "," + std::to_string(reader.line()) +
-                  "," + std::to_string(reader.column()) + "," + hex(reader.name()) + "," +
-                  hex(reader.value()) + "," + hex(reader.comment()) + "," + hex(reader.comment_delimiters()) +
-                  "," + hex(reader.assign_delimiters()) + "," + std::to_string(bits) + "/" + error(saved);
+                  std::to_string(static_cast<int>(reader.state())) + "," + std::to_string(reader.line()) + "," +
+                  std::to_string(reader.column()) + "," + hex(reader.name()) + "," + hex(reader.value()) + "," +
+                  hex(reader.comment()) + "," + hex(reader.comment_delimiters()) + "," +
+                  hex(reader.assign_delimiters()) + "," + std::to_string(bits) + "/" + error(saved);
     }
     output += "/IO:";
-    for (auto& event : trace)
+    for (auto &event : trace)
         output += event;
     return output;
 }
-}
-int main(int argc, char** argv) {
+} // namespace
+
+int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string_view(argv[1]) == "--probe") {
             for (std::string line; std::getline(std::cin, line);)
@@ -188,7 +199,7 @@ int main(int argc, char** argv) {
             throw std::runtime_error("Delimiter array identity");
         std::cout << "PASS: native Nini reader tokens/state/quotes/delimiter ownership\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

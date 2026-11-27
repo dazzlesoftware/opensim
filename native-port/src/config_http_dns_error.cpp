@@ -14,6 +14,7 @@ namespace {
 struct DnsErrorCodes {
     int native, socket;
 };
+
 DnsErrorCodes dns_error_codes(int resolver_error) {
 #ifdef _WIN32
     switch (resolver_error) {
@@ -59,16 +60,17 @@ DnsErrorCodes dns_error_codes(int resolver_error) {
 #endif
     throw std::logic_error("Exact DNS failure provider is required for this resolver code");
 }
+
 std::u16string dns_error_message(DnsErrorCodes codes) {
 #ifdef _WIN32
-    wchar_t* raw = nullptr;
-    auto count = FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
-                                    FORMAT_MESSAGE_IGNORE_INSERTS,
-                                nullptr, codes.native, 0, reinterpret_cast<wchar_t*>(&raw), 0, nullptr);
+    wchar_t *raw = nullptr;
+    auto count =
+        FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                       nullptr, codes.native, 0, reinterpret_cast<wchar_t *>(&raw), 0, nullptr);
     std::unique_ptr<wchar_t, decltype(&LocalFree)> buffer(raw, &LocalFree);
     if (!count)
         throw std::system_error(GetLastError(), std::system_category(), "DNS socket message lookup");
-    std::u16string message(reinterpret_cast<const char16_t*>(buffer.get()), count);
+    std::u16string message(reinterpret_cast<const char16_t *>(buffer.get()), count);
     while (!message.empty() && message.back() <= u' ')
         message.pop_back();
     return message;
@@ -84,16 +86,17 @@ std::u16string dns_error_message(DnsErrorCodes codes) {
     throw std::logic_error("Exact DNS failure metadata has not been verified on this platform");
 #endif
 }
-}
+} // namespace
+
 std::exception_ptr config_http_dns_error(std::string host, int port, int resolver_error) {
     auto codes = dns_error_codes(resolver_error);
     auto message = dns_error_message(codes);
     auto cause = std::make_exception_ptr(ConfigHttpSocketError(message, codes.native, codes.socket));
     if (host.find(':') != host.npos && !host.starts_with('['))
         host = '[' + host + ']';
-    ConfigHttpConnectionError error(
-        message + u" (" + utf16_replacing(host + ":" + std::to_string(port)) + u")", std::move(cause));
+    ConfigHttpConnectionError error(message + u" (" + utf16_replacing(host + ":" + std::to_string(port)) + u")",
+                                    std::move(cause));
     error.request_error = (codes.socket == 11001 || codes.socket == 11002) ? 1 : 2;
     return std::make_exception_ptr(error);
 }
-}
+} // namespace opensim::framework

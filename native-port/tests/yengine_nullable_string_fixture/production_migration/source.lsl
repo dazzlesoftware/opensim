@@ -1,0 +1,1 @@
+string global;string result;list items;integer after;integer calls;integer pause(string value){string local=value;calls++;llSleep(3.0);result=local;after=1;return 0;}default{state_entry(){global=llComputeHash("payload","unsupported");items=[global];pause(global);}}

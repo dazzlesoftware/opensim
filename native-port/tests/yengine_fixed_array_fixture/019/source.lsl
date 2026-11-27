@@ -1,0 +1,1 @@
+YOption arrays;YOption chars;object a;integer result;default{state_entry(){xmrFixedArrayGetC(a,0);}}

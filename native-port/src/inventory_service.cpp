@@ -30,14 +30,17 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <algorithm>
 #include <stdexcept>
 #include <unordered_set>
+
 namespace opensim::services {
 using framework::Uuid;
+
 namespace {
 InventoryFolder framework_folder(InventoryFolder value) {
     value.type = static_cast<std::int16_t>(static_cast<std::uint16_t>(value.type));
     value.version = static_cast<std::uint16_t>(value.version);
     return value;
 }
+
 std::string creator(const std::string &value) {
     const auto first = value.find(';');
     if (first == std::string::npos)
@@ -48,6 +51,7 @@ std::string creator(const std::string &value) {
     const auto third = value.find(';', second + 1);
     return value.substr(0, third);
 }
+
 InventoryItem framework_item(InventoryItem value) {
     value.sale_type = static_cast<std::uint8_t>(value.sale_type);
     value.group_owned = value.group_owned != 0 ? 1 : 0;
@@ -56,49 +60,54 @@ InventoryItem framework_item(InventoryItem value) {
         value.description.clear();
     return value;
 }
-}
+} // namespace
+
 std::optional<InventoryFolder> InventoryService::folder(const Uuid &, const Uuid &id) {
     auto values = store_.folders({{"folderID", id.str()}});
     return values.empty() ? std::nullopt : std::optional{framework_folder(values.front())};
 }
+
 std::optional<InventoryItem> InventoryService::item(const Uuid &, const Uuid &id) {
     auto values = store_.items({{"inventoryID", id.str()}});
     return values.empty() ? std::nullopt : std::optional{framework_item(values.front())};
 }
-std::vector<InventoryItem> InventoryService::folder_items(const Uuid &, const Uuid &id) {
+
+std::optional<std::vector<InventoryItem>> InventoryService::folder_items(const Uuid &, const Uuid &id) {
     auto values = store_.items({{"parentFolderID", id.str()}});
     for (auto &value : values)
         value = framework_item(std::move(value));
     return values;
 }
-InventoryCollection InventoryService::content(const Uuid &principal, const Uuid &id) {
+
+std::optional<InventoryCollection> InventoryService::content(const Uuid &principal, const Uuid &id) {
     InventoryCollection result;
     result.owner = principal;
     result.folder = id;
     result.folders = store_.folders({{"parentFolderID", id.str()}});
     for (auto &value : result.folders)
         value = framework_folder(std::move(value));
-    result.items = folder_items(principal, id);
+    result.items = folder_items(principal, id).value();
     if (const auto parent = folder(principal, id)) {
         result.owner = parent->owner;
         result.version = parent->version;
     }
     return result;
 }
-std::vector<InventoryCollection> InventoryService::multiple_content(const Uuid &principal,
-                                                                    const std::vector<Uuid> &ids) {
-    std::vector<InventoryCollection> result;
+
+InventoryCollections InventoryService::multiple_content(const Uuid &principal, const std::vector<Uuid> &ids) {
+    std::vector<std::optional<InventoryCollection>> result;
     for (const auto &id : ids)
         result.push_back(content(principal, id));
     return result;
 }
-std::vector<std::optional<InventoryItem>> InventoryService::multiple_items(const Uuid &principal,
-                                                                           const std::vector<Uuid> &ids) {
+
+InventoryItemResults InventoryService::multiple_items(const Uuid &principal, const std::vector<Uuid> &ids) {
     std::vector<std::optional<InventoryItem>> result;
     for (const auto &id : ids)
         result.push_back(item(principal, id));
     return result;
 }
+
 bool InventoryService::add_folder(InventoryFolder value) {
     value = framework_folder(std::move(value));
     if (folder(value.owner, value.id))
@@ -112,6 +121,7 @@ bool InventoryService::add_folder(InventoryFolder value) {
     }
     return store_.store(value, false);
 }
+
 bool InventoryService::update_folder(InventoryFolder value) {
     value = framework_folder(std::move(value));
     auto existing = folder(value.owner, value.id);
@@ -127,13 +137,16 @@ bool InventoryService::update_folder(InventoryFolder value) {
     value.id = existing->id;
     return store_.store(value);
 }
+
 bool InventoryService::move_folder(const InventoryFolder &value) {
     return store_.move(value.id, value.parent);
 }
+
 bool InventoryService::add_item(const InventoryItem &value) {
     auto copy = framework_item(value);
     return store_.store(copy);
 }
+
 bool InventoryService::update_item(InventoryItem &value) {
     if (!allow_delete_ && (value.asset_type == 24 || value.asset_type == 25))
         return false;
@@ -160,11 +173,13 @@ bool InventoryService::update_item(InventoryItem &value) {
     auto copy = framework_item(value);
     return store_.store(copy);
 }
+
 bool InventoryService::move_items(const Uuid &, const std::vector<InventoryItem> &values) {
     for (const auto &value : values)
         store_.move_item(value.id, value.parent);
     return true;
 }
+
 bool InventoryService::delete_items(const Uuid &, const std::vector<Uuid> &ids) {
     for (const auto &id : ids) {
         if (allow_delete_)
@@ -174,6 +189,7 @@ bool InventoryService::delete_items(const Uuid &, const std::vector<Uuid> &ids) 
     }
     return true;
 }
+
 bool InventoryService::parent_is_trash_or_lost(const Uuid &id) {
     auto values = store_.folders({{"folderID", id.str()}});
     if (values.empty())
@@ -199,6 +215,7 @@ bool InventoryService::parent_is_trash_or_lost(const Uuid &id) {
     }
     return false;
 }
+
 bool InventoryService::purge_folder(const Uuid &id, bool only_if_trash) {
     if (!allow_delete_ || (only_if_trash && !parent_is_trash_or_lost(id)))
         return false;
@@ -218,6 +235,7 @@ bool InventoryService::purge_folder(const Uuid &id, bool only_if_trash) {
     purge(purge, id);
     return true;
 }
+
 bool InventoryService::delete_folders(const Uuid &, const std::vector<Uuid> &ids, bool only_if_trash) {
     if (!allow_delete_)
         return false;
@@ -229,13 +247,15 @@ bool InventoryService::delete_folders(const Uuid &, const std::vector<Uuid> &ids
     }
     return true;
 }
-std::vector<InventoryItem> InventoryService::active_gestures(const Uuid &principal) {
+
+std::optional<std::vector<InventoryItem>> InventoryService::active_gestures(const Uuid &principal) {
     auto values = store_.active_gestures(principal);
     for (auto &value : values)
         value = framework_item(std::move(value));
     return values;
 }
+
 int InventoryService::asset_permissions(const Uuid &principal, const Uuid &asset) {
     return store_.asset_permissions(principal, asset);
 }
-}
+} // namespace opensim::services

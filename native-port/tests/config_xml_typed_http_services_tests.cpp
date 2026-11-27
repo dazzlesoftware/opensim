@@ -5,6 +5,7 @@
 #include "opensim/framework/config_http_cookies_native.hpp"
 #include <stdexcept>
 using namespace opensim::framework;
+
 int main() {
     ConfigXmlUriObjects objects;
     auto uris = *native_config_uri_object_backend();
@@ -16,9 +17,8 @@ int main() {
         ++created;
         return native_invariant_config_http_cookies_backend();
     });
-    auto uri =
-        objects.wrap(uris.create(std::make_shared<const std::u16string>(u"HTTP://127.1:81/a/../b?q#base"),
-                                 ConfigUriObjectKind::Absolute));
+    auto uri = objects.wrap(uris.create(std::make_shared<const std::u16string>(u"HTTP://127.1:81/a/../b?q#base"),
+                                        ConfigUriObjectKind::Absolute));
     auto address = services.address(uri);
     if (address.host != "127.0.0.1" || address.port != 81 || address.target != "/b?q" || address.tls)
         return 1;
@@ -36,37 +36,37 @@ int main() {
     bool required = false;
     try {
         config_xml_bind_typed_http(policy, objects, uris, {});
-    } catch (const std::invalid_argument&) {
+    } catch (const std::invalid_argument &) {
         required = true;
     }
     if (!required)
         return 6;
     required = false;
-    auto missing = config_xml_bind_typed_http(
-        {}, objects, uris, []() { return native_invariant_config_http_cookies_backend(); });
+    auto missing =
+        config_xml_bind_typed_http({}, objects, uris, []() { return native_invariant_config_http_cookies_backend(); });
     try {
         config_xml_native_http_backend(missing);
-    } catch (const std::invalid_argument&) {
+    } catch (const std::invalid_argument &) {
         required = true;
     }
     if (!required)
         return 7;
-    auto null_factory = config_xml_bind_typed_http(
-        policy, objects, uris, []() { return std::shared_ptr<ConfigHttpCookiesBackend>{}; });
+    auto null_factory =
+        config_xml_bind_typed_http(policy, objects, uris, []() { return std::shared_ptr<ConfigHttpCookiesBackend>{}; });
     required = false;
     try {
         null_factory.cookies();
-    } catch (const std::invalid_argument&) {
+    } catch (const std::invalid_argument &) {
         required = true;
     }
     if (!required)
         return 8;
-    auto no_port = objects.wrap(uris.create(std::make_shared<const std::u16string>(u"a+b://127.0.0.1/path"),
-                                            ConfigUriObjectKind::Absolute));
+    auto no_port = objects.wrap(
+        uris.create(std::make_shared<const std::u16string>(u"a+b://127.0.0.1/path"), ConfigUriObjectKind::Absolute));
     bool port_error = false;
     try {
         services.address(no_port);
-    } catch (const ConfigHttpArgumentOutOfRangeError& e) {
+    } catch (const ConfigHttpArgumentOutOfRangeError &e) {
         port_error = e.actual_value == -1 && e.parameter == std::optional<std::u16string>(u"port") &&
                      e.source_type == "System.ArgumentOutOfRangeException";
     }

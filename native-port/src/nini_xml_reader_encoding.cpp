@@ -4,9 +4,11 @@
 // native-port/third_party/dotnet_collation/LICENSE.
 #include "opensim/framework/nini_xml_reader_encoding.hpp"
 #include <algorithm>
+
 namespace opensim::framework {
 namespace {
 using Kind = NiniXmlEncodingKind;
+
 std::uint32_t scalar(std::span<const std::uint8_t> b, Kind kind) {
     if (kind == Kind::Ucs4BE || kind == Kind::Utf32BE)
         return (std::uint32_t(b[0]) << 24) | (std::uint32_t(b[1]) << 16) | (std::uint32_t(b[2]) << 8) | b[3];
@@ -16,7 +18,8 @@ std::uint32_t scalar(std::span<const std::uint8_t> b, Kind kind) {
         return (std::uint32_t(b[2]) << 24) | (std::uint32_t(b[3]) << 16) | (std::uint32_t(b[0]) << 8) | b[1];
     return (std::uint32_t(b[3]) << 24) | (std::uint32_t(b[2]) << 16) | (std::uint32_t(b[1]) << 8) | b[0];
 }
-void append_scalar(std::u16string& text, std::uint32_t value, bool custom) {
+
+void append_scalar(std::u16string &text, std::uint32_t value, bool custom) {
     if (value <= 65535)
         text += static_cast<char16_t>(
             value); // Preserve Ucs4Decoder.Ucs4ToUTF16 literally: the plane term is added without a 6-bit shift.
@@ -31,7 +34,8 @@ void append_scalar(std::u16string& text, std::uint32_t value, bool custom) {
         text += static_cast<char16_t>(0xdc00 + (value & 1023));
     }
 }
-}
+} // namespace
+
 NiniXmlEncoding nini_xml_detect_encoding(std::span<const std::uint8_t> bytes) {
     NiniXmlEncoding e;
     if (bytes.size() < 2)
@@ -70,22 +74,24 @@ NiniXmlEncoding nini_xml_detect_encoding(std::span<const std::uint8_t> bytes) {
             e = {Kind::Utf8Strict, 3, "utf-8"};
         break;
     }
-    if (e.kind == Kind::SafeAscii && bytes.size() >= 3 && bytes[0] == 0xef && bytes[1] == 0xbb &&
-        bytes[2] == 0xbf)
+    if (e.kind == Kind::SafeAscii && bytes.size() >= 3 && bytes[0] == 0xef && bytes[1] == 0xbb && bytes[2] == 0xbf)
         e.preamble = 3;
     if (e.preamble > bytes.size())
         e.preamble = 0;
     return e;
 }
+
 std::optional<NiniXmlEncoding> nini_xml_builtin_encoding(std::u16string_view name) {
     std::u16string lower(name);
-    for (auto& c : lower)
+    for (auto &c : lower)
         if (c >= u'A' && c <= u'Z')
             c += 32;
+
     struct Entry {
         std::u16string_view name;
         int page;
     };
+
     static constexpr Entry entries[] = {{u"ansi_x3.4-1968", 20127},
                                         {u"ansi_x3.4-1986", 20127},
                                         {u"ascii", 20127},
@@ -144,13 +150,13 @@ std::optional<NiniXmlEncoding> nini_xml_builtin_encoding(std::u16string_view nam
             case 28591:
                 return NiniXmlEncoding{Kind::Latin1, 0, "iso-8859-1"};
             case 65001:
-                return NiniXmlEncoding{lower == u"utf-8" ? Kind::Utf8Strict : Kind::Utf8Replacement, 0,
-                                       "utf-8"};
+                return NiniXmlEncoding{lower == u"utf-8" ? Kind::Utf8Strict : Kind::Utf8Replacement, 0, "utf-8"};
             default:
                 return {};
             }
     return {};
 }
+
 std::size_t nini_xml_encoded_byte_count(std::u16string_view text, Kind kind) {
     if (kind == Kind::Utf16LE || kind == Kind::Utf16BE)
         return text.size() * 2;
@@ -175,8 +181,7 @@ std::size_t nini_xml_encoded_byte_count(std::u16string_view text, Kind kind) {
             ++count;
         else if (c < 2048)
             count += 2;
-        else if (c >= 0xd800 && c <= 0xdbff && i + 1 < text.size() && text[i + 1] >= 0xdc00 &&
-                 text[i + 1] <= 0xdfff) {
+        else if (c >= 0xd800 && c <= 0xdbff && i + 1 < text.size() && text[i + 1] >= 0xdc00 && text[i + 1] <= 0xdfff) {
             count += 4;
             ++i;
         } else
@@ -184,6 +189,7 @@ std::size_t nini_xml_encoded_byte_count(std::u16string_view text, Kind kind) {
     }
     return count;
 }
+
 NiniXmlDecodeResult NiniXmlDecoder::convert(std::span<const std::uint8_t> input, std::size_t maximum) {
     NiniXmlDecodeResult out;
     if (maximum == 0)
@@ -311,4 +317,4 @@ NiniXmlDecodeResult NiniXmlDecoder::convert(std::span<const std::uint8_t> input,
     }
     return out;
 }
-}
+} // namespace opensim::framework

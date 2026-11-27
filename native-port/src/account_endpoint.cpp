@@ -2,38 +2,44 @@
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/server/account_endpoint.hpp"
 #include "opensim/framework/text.hpp"
+
 namespace opensim::server {
 using namespace network;
+
 namespace {
-constexpr const char* failure =
-    "<?xml version =\"1.0\"?><ServerResponse><result>Failure</result></ServerResponse>";
-std::string text(const FormValue& value) {
+constexpr const char *failure = "<?xml version =\"1.0\"?><ServerResponse><result>Failure</result></ServerResponse>";
+
+std::string text(const FormValue &value) {
     if (auto p = std::get_if<std::string>(&value))
         return *p;
     return "System.Collections.Generic.List`1[System.String]";
 }
-bool scope(const Form& fields, framework::Uuid& id) {
+
+bool scope(const Form &fields, framework::Uuid &id) {
     auto i = fields.find("ScopeID");
     return i == fields.end() || framework::try_parse_sdk_uuid(text(i->second), id);
 }
-ServiceXmlValue account_value(const services::UserAccount& account) {
+
+ServiceXmlValue account_value(const services::UserAccount &account) {
     auto pairs = account.to_key_value_pairs();
     auto result = ServiceXmlValue::object({});
-    for (const auto& [key, value] : *pairs)
+    for (const auto &[key, value] : *pairs)
         if (value.has_value() && value.type() != typeid(std::nullptr_t))
             result.fields.push_back({key, framework::service_url_object_text(value)});
     return result;
 }
-std::string single(const AccountOperations::Account& account) {
+
+std::string single(const AccountOperations::Account &account) {
     return service_xml(
         ServiceXmlValue::object({{"result", account ? account_value(*account) : ServiceXmlValue("null")}}));
 }
-std::string many(const AccountOperations::Accounts& accounts, bool skip_null) {
+
+std::string many(const AccountOperations::Accounts &accounts, bool skip_null) {
     auto result = ServiceXmlValue::object({});
     if (accounts.empty())
         result.fields.push_back({"result", "null"});
     std::size_t index = 0;
-    for (const auto& account : accounts) {
+    for (const auto &account : accounts) {
         if (!account) {
             if (skip_null)
                 continue;
@@ -43,8 +49,9 @@ std::string many(const AccountOperations::Accounts& accounts, bool skip_null) {
     }
     return service_xml(result);
 }
-}
-HttpResponse AccountEndpoint::handle(const HttpRequest& request) {
+} // namespace
+
+HttpResponse AccountEndpoint::handle(const HttpRequest &request) {
     HttpResponse response;
     response.content_type = "application/xml";
     response.headers["Cache-Control"] = "no-store";
@@ -80,8 +87,7 @@ HttpResponse AccountEndpoint::handle(const HttpRequest& request) {
             } else if (fields.contains("Email"))
                 account = operations_.by_email(scope_id, text(fields.at("Email")));
             else if (fields.contains("FirstName") && fields.contains("LastName"))
-                account =
-                    operations_.by_name(scope_id, text(fields.at("FirstName")), text(fields.at("LastName")));
+                account = operations_.by_name(scope_id, text(fields.at("FirstName")), text(fields.at("LastName")));
             response.body = single(account);
         } else if (name == "getaccounts") {
             if (!fields.contains("query") || !scope(fields, scope_id))
@@ -98,7 +104,7 @@ HttpResponse AccountEndpoint::handle(const HttpRequest& request) {
             if (!ids)
                 return response;
             std::vector<std::string> valid;
-            for (const auto& s : *ids) {
+            for (const auto &s : *ids) {
                 framework::Uuid id;
                 if (framework::try_parse_sdk_uuid(s, id))
                     valid.push_back(s);
@@ -116,12 +122,12 @@ HttpResponse AccountEndpoint::handle(const HttpRequest& request) {
             auto account = operations_.by_id(scope_id, principal);
             if (!account)
                 return response;
-            auto string = [&](const char* key, std::optional<std::string>& out) {
+            auto string = [&](const char *key, std::optional<std::string> &out) {
                 auto value = fields.find(key);
                 if (value != fields.end())
                     out = text(value->second);
             };
-            auto integer = [&](const char* key, int& out) {
+            auto integer = [&](const char *key, int &out) {
                 auto value = fields.find(key);
                 std::int32_t parsed = 0;
                 if (value != fields.end() && services::parse_account_integer(text(value->second), parsed))
@@ -137,20 +143,20 @@ HttpResponse AccountEndpoint::handle(const HttpRequest& request) {
             if (operations_.store(*account))
                 response.body = single(account);
         } else if (name == "createuser" && allow_create_ && operations_.create) {
-            if (!fields.contains("FirstName") || !fields.contains("LastName") ||
-                !fields.contains("Password") || !scope(fields, scope_id))
+            if (!fields.contains("FirstName") || !fields.contains("LastName") || !fields.contains("Password") ||
+                !scope(fields, scope_id))
                 return response;
             auto principal = framework::Uuid::random();
             auto id = fields.find("PrincipalID");
             if (id != fields.end() && !framework::try_parse_sdk_uuid(text(id->second), principal))
                 return response;
-            auto optional = [&](const char* key) {
+            auto optional = [&](const char *key) {
                 auto i = fields.find(key);
                 return i == fields.end() ? std::string{} : text(i->second);
             };
-            auto account = operations_.create(scope_id, principal, text(fields.at("FirstName")),
-                                              text(fields.at("LastName")), text(fields.at("Password")),
-                                              optional("Email"), optional("Model"));
+            auto account =
+                operations_.create(scope_id, principal, text(fields.at("FirstName")), text(fields.at("LastName")),
+                                   text(fields.at("Password")), optional("Email"), optional("Model"));
             if (account)
                 response.body = single(account);
         }
@@ -159,4 +165,4 @@ HttpResponse AccountEndpoint::handle(const HttpRequest& request) {
     }
     return response;
 }
-}
+} // namespace opensim::server

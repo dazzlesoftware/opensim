@@ -1,0 +1,1 @@
+list input;list alias;integer same;integer after;default{state_entry(){input=[19];integer i;for(i=0;i<16;i++)input+=input;input+=[-7];alias=input;llSleep(0.1);same=(llGetListLength(input)==65537);after=1;}}

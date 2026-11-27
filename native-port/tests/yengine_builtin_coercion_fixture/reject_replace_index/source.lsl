@@ -1,0 +1,1 @@
+list result;integer after;default{state_entry(){result=llListReplaceList([1],[2],"0",0);after=1;}}

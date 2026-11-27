@@ -1,0 +1,1 @@
+integer received;default{state_entry(){}touch_start(integer n){received=n;}timer(){}listen(integer c,string n,key k,string m){}attach(key k){}state_exit(){}}state other{changed(integer f){}touch_end(integer n){}}

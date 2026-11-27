@@ -9,13 +9,12 @@
 namespace opensim::services {
 namespace {
 struct MysqlQueryError : std::runtime_error {
-    explicit MysqlQueryError(unsigned code)
-        : std::runtime_error("MySQL OfflineIM query failed"), code(code) {}
+    explicit MysqlQueryError(unsigned code) : std::runtime_error("MySQL OfflineIM query failed"), code(code) {}
+
     unsigned code;
 };
 
-std::string literal(std::string_view value)
-{
+std::string literal(std::string_view value) {
     constexpr char digits[] = "0123456789abcdef";
     std::string result = "X'";
     for (const unsigned char byte : value) {
@@ -24,16 +23,15 @@ std::string literal(std::string_view value)
     }
     return result + "'";
 }
-}
+} // namespace
 
 struct MysqlOfflineImStore::State {
     std::unique_ptr<MYSQL, decltype(&mysql_close)> connection{nullptr, mysql_close};
     std::string table;
     std::mutex mutex;
 
-    auto run(const std::string& sql)
-    {
-        auto* db = connection.get();
+    auto run(const std::string &sql) {
+        auto *db = connection.get();
         if (mysql_real_query(db, sql.data(), static_cast<unsigned long>(sql.size())) != 0)
             throw MysqlQueryError(mysql_errno(db));
         std::unique_ptr<MYSQL_RES, decltype(&mysql_free_result)> rows(mysql_store_result(db), mysql_free_result);
@@ -42,52 +40,52 @@ struct MysqlOfflineImStore::State {
         return rows;
     }
 
-    template<class Operation>
-    auto transaction(Operation operation)
-    {
+    template <class Operation> auto transaction(Operation operation) {
         std::lock_guard lock(mutex);
-        for (int attempt = 0; ; ++attempt) {
+        for (int attempt = 0;; ++attempt) {
             run("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE");
             run("START TRANSACTION");
             try {
                 auto result = operation();
                 run("COMMIT");
                 return result;
-            } catch (const MysqlQueryError& error) {
+            } catch (const MysqlQueryError &error) {
                 run("ROLLBACK");
                 if (error.code != ER_LOCK_DEADLOCK || attempt == 3)
                     throw;
             } catch (...) {
-                try { run("ROLLBACK"); } catch (...) {}
+                try {
+                    run("ROLLBACK");
+                } catch (...) {
+                }
                 throw;
             }
         }
     }
 };
 
-MysqlOfflineImStore::MysqlOfflineImStore(const std::string& connection, const std::string& realm)
-    : state_(std::make_unique<State>())
-{
-    if (realm.empty() || realm.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_") != std::string::npos)
+MysqlOfflineImStore::MysqlOfflineImStore(const std::string &connection, const std::string &realm)
+    : state_(std::make_unique<State>()) {
+    if (realm.empty() ||
+        realm.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_") != std::string::npos)
         throw std::invalid_argument("Invalid OfflineIM realm");
-    auto& s = *state_;
+    auto &s = *state_;
     s.table = "`" + realm + "`";
     s.connection = connect_mysql(connection);
     s.run("CREATE TABLE IF NOT EXISTS " + s.table +
-        " (ID mediumint NOT NULL AUTO_INCREMENT PRIMARY KEY, PrincipalID char(36) NOT NULL,"
-        " FromID char(36) NOT NULL, Message text NOT NULL, TMStamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP"
-        " ON UPDATE CURRENT_TIMESTAMP, KEY (PrincipalID), KEY (FromID)) ENGINE=InnoDB DEFAULT CHARSET=utf8");
+          " (ID mediumint NOT NULL AUTO_INCREMENT PRIMARY KEY, PrincipalID char(36) NOT NULL,"
+          " FromID char(36) NOT NULL, Message text NOT NULL, TMStamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP"
+          " ON UPDATE CURRENT_TIMESTAMP, KEY (PrincipalID), KEY (FromID)) ENGINE=InnoDB DEFAULT CHARSET=utf8");
     s.run("DELETE FROM " + s.table + " WHERE TMStamp < NOW() - INTERVAL 2 WEEK");
 }
 
 MysqlOfflineImStore::~MysqlOfflineImStore() = default;
 
-bool MysqlOfflineImStore::store(framework::Uuid recipient, const network::ServiceXmlValue& message, int limit)
-{
-    auto& s = *state_;
+bool MysqlOfflineImStore::store(framework::Uuid recipient, const network::ServiceXmlValue &message, int limit) {
+    auto &s = *state_;
     const auto id = literal(recipient.str());
     auto sender = framework::Uuid{}.str();
-    for (const auto& [key, value] : message.fields)
+    for (const auto &[key, value] : message.fields)
         if (key == "FromAgentID")
             sender = value.text;
     const auto xml = literal(write_legacy_offline_im(message));
@@ -95,15 +93,14 @@ bool MysqlOfflineImStore::store(framework::Uuid recipient, const network::Servic
         const auto existing = s.run("SELECT ID FROM " + s.table + " WHERE PrincipalID=" + id + " FOR UPDATE");
         if (limit <= 0 || mysql_num_rows(existing.get()) >= static_cast<unsigned>(limit))
             return false;
-        s.run("INSERT INTO " + s.table + " (PrincipalID, FromID, Message) VALUES (" +
-              id + ", " + literal(sender) + ", " + xml + ")");
+        s.run("INSERT INTO " + s.table + " (PrincipalID, FromID, Message) VALUES (" + id + ", " + literal(sender) +
+              ", " + xml + ")");
         return true;
     });
 }
 
-std::vector<network::ServiceXmlValue> MysqlOfflineImStore::drain(framework::Uuid recipient)
-{
-    auto& s = *state_;
+std::vector<network::ServiceXmlValue> MysqlOfflineImStore::drain(framework::Uuid recipient) {
+    auto &s = *state_;
     const auto predicate = " WHERE PrincipalID=" + literal(recipient.str());
     return s.transaction([&] {
         const auto rows = s.run("SELECT Message FROM " + s.table + predicate + " ORDER BY ID FOR UPDATE");
@@ -115,10 +112,9 @@ std::vector<network::ServiceXmlValue> MysqlOfflineImStore::drain(framework::Uuid
     });
 }
 
-void MysqlOfflineImStore::erase(framework::Uuid recipient)
-{
-    auto& s = *state_;
+void MysqlOfflineImStore::erase(framework::Uuid recipient) {
+    auto &s = *state_;
     std::lock_guard lock(s.mutex);
     s.run("DELETE FROM " + s.table + " WHERE PrincipalID=" + literal(recipient.str()));
 }
-}
+} // namespace opensim::services

@@ -1,37 +1,44 @@
 #include "opensim/server/http_route_registry.hpp"
 #include <iostream>
 using namespace opensim;
+
 struct Handler : server::CapabilityStreamHandler, server::CapabilitySimpleHandler {
     std::string name, route, verb;
     bool is_streamed;
+
     Handler(std::string n, std::string p, std::string m = "GET", bool streamed = true)
         : name(std::move(n)), route(std::move(p)), verb(std::move(m)), is_streamed(streamed) {}
+
     std::optional<std::string> path() const override {
         return route;
     }
+
     std::string method() const override {
         return verb;
     }
+
     bool streamed() const override {
         return is_streamed;
     }
-    network::HttpResponse handle(const network::HttpRequest& r) override {
+
+    network::HttpResponse handle(const network::HttpRequest &r) override {
         network::HttpResponse response;
         response.status = 418;
         response.body = name + "|simple|" + r.path + "|" + r.method + "|" + r.body;
         return response;
     }
-    network::HttpResponse handle_stream(const std::string& path, const network::HttpRequest& r) override {
+
+    network::HttpResponse handle_stream(const std::string &path, const network::HttpRequest &r) override {
         network::HttpResponse response;
         response.status = 418;
         response.body = name + "|" + path + "|" + r.path + "|" + r.method + "|" + r.body;
         return response;
     }
 };
+
 int main() {
     try {
-        auto listener =
-            std::make_shared<server::RegistryCapabilityListener>(server::CapabilityListenerInfo{});
+        auto listener = std::make_shared<server::RegistryCapabilityListener>(server::CapabilityListenerInfo{});
         listener->routes.add_stream(std::make_shared<Handler>("root", "/"));
         listener->routes.add_stream(std::make_shared<Handler>("normal", "/normal"));
         listener->routes.add_stream(std::make_shared<Handler>("specific", "/normal/deep"));
@@ -44,7 +51,7 @@ int main() {
         listener->routes.add_poll("/null-poll", nullptr);
         network::HttpServerOptions options;
         options.port = 0;
-        network::HttpServer http(options, [&](const network::HttpRequest& r) {
+        network::HttpServer http(options, [&](const network::HttpRequest &r) {
             if (r.path == "/control/root-nonstreamed") {
                 listener->routes.add_stream(std::make_shared<Handler>("not-streamed", "/", "GET", false));
                 return network::HttpResponse{};
@@ -56,14 +63,13 @@ int main() {
             }
             return listener->dispatch(
                 r,
-                [](const network::HttpRequest& request) {
+                [](const network::HttpRequest &request) {
                     network::HttpResponse response;
                     response.status = 404;
                     response.body = "fallback:" + request.path;
                     return response;
                 },
-                [](const std::shared_ptr<services::CapabilityPollHandler>& p,
-                   const network::HttpRequest& request) {
+                [](const std::shared_ptr<services::CapabilityPollHandler> &p, const network::HttpRequest &request) {
                     network::HttpResponse response;
                     response.body = "poll:" + p->url.value_or("") + ":" + request.method;
                     return response;
@@ -74,7 +80,7 @@ int main() {
         std::getline(std::cin, line);
         http.stop();
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what();
         return 1;
     }

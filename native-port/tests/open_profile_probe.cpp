@@ -11,7 +11,8 @@ using framework::UserProfileProperties;
 using framework::Uuid;
 using network::Value;
 using Text = std::optional<std::u16string>;
-std::string H(const Text& t) {
+
+std::string H(const Text &t) {
     if (!t)
         return "-";
     if (t->empty())
@@ -25,22 +26,24 @@ std::string H(const Text& t) {
     }
     return o;
 }
-Text D(const std::string& h) {
+
+Text D(const std::string &h) {
     if (h == "-")
         return {};
     if (h == ".")
         return u"";
     std::u16string o;
     for (std::size_t i = 0; i < h.size(); i += 4)
-        o += char16_t(std::stoi(h.substr(i, 2), nullptr, 16) |
-                      (std::stoi(h.substr(i + 2, 2), nullptr, 16) << 8));
+        o += char16_t(std::stoi(h.substr(i, 2), nullptr, 16) | (std::stoi(h.substr(i + 2, 2), nullptr, 16) << 8));
     return o;
 }
+
 Uuid Id(int n) {
     std::ostringstream s;
     s << "00000000-0000-0000-0000-" << std::hex << std::setfill('0') << std::setw(12) << n;
     return Uuid(s.str());
 }
+
 std::shared_ptr<UserProfileProperties> Seed(int n) {
     auto p = std::make_shared<UserProfileProperties>();
     p->UserId = Id(n);
@@ -59,16 +62,17 @@ std::shared_ptr<UserProfileProperties> Seed(int n) {
     p->PublishMature = true;
     return p;
 }
-std::string Dump(const std::shared_ptr<UserProfileProperties>& p) {
+
+std::string Dump(const std::shared_ptr<UserProfileProperties> &p) {
     if (!p)
         return "N";
-    return p->UserId.str() + ":" + p->PartnerId.str() + ":" + p->ImageId.str() + ":" +
-           p->FirstLifeImageId.str() + ":" + H(p->WebUrl) + ":" + H(p->AboutText) + ":" +
-           H(p->FirstLifeText) + ":" + std::to_string(p->WantToMask) + ":" + H(p->WantToText) + ":" +
-           std::to_string(p->SkillsMask) + ":" + H(p->SkillsText) + ":" + H(p->Language) + ":" +
-           (p->PublishProfile ? "True" : "False") + ":" + (p->PublishMature ? "True" : "False");
+    return p->UserId.str() + ":" + p->PartnerId.str() + ":" + p->ImageId.str() + ":" + p->FirstLifeImageId.str() + ":" +
+           H(p->WebUrl) + ":" + H(p->AboutText) + ":" + H(p->FirstLifeText) + ":" + std::to_string(p->WantToMask) +
+           ":" + H(p->WantToText) + ":" + std::to_string(p->SkillsMask) + ":" + H(p->SkillsText) + ":" +
+           H(p->Language) + ":" + (p->PublishProfile ? "True" : "False") + ":" + (p->PublishMature ? "True" : "False");
 }
-Value Atom(int kind, const Text& payload) {
+
+Value Atom(int kind, const Text &payload) {
     Value v;
     auto s = framework::utf8(payload.value_or(u""));
     switch (kind) {
@@ -110,6 +114,7 @@ Value Atom(int kind, const Text& payload) {
         throw std::runtime_error("kind");
     }
 }
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -121,7 +126,7 @@ int main() {
         std::string trace;
         auto props = flags & 1 ? nullptr : Seed(1), initial = props;
         auto atom = Atom(kind, payload);
-        const char* keys[] = {"ProfileUrl",     "AboutText",  "FirstLifeAboutText", "Image",
+        const char *keys[] = {"ProfileUrl",     "AboutText",  "FirstLifeAboutText", "Image",
                               "FirstLifeImage", "Partner",    "wantmask",           "wanttext",
                               "skillsmask",     "skillstext", "languages"};
         auto row = Value::object({{"ProfileUrl", "url"},
@@ -154,10 +159,9 @@ int main() {
         if (mode == 5)
             data = atom;
         if (mode != 0)
-            response =
-                std::make_shared<Value>(mode == 1 ? Value::object({}) : Value::object({{"data", data}}));
-        services::OpenProfileClient::Requester request = [&](const Value& r, std::u16string_view method,
-                                                             const Text& server) {
+            response = std::make_shared<Value>(mode == 1 ? Value::object({}) : Value::object({{"data", data}}));
+        services::OpenProfileClient::Requester request = [&](const Value &r, std::u16string_view method,
+                                                             const Text &server) {
             trace += "rpc:" + r.get("avatar_id").text + ":" + H(Text(method)) + ":" + H(server) + ";";
             if (flags & 2)
                 throw std::runtime_error("request");
@@ -169,7 +173,7 @@ int main() {
         };
         services::OpenProfileClient::ObjectText text;
         if (kind == 10)
-            text = [&](const Value& v) -> Text {
+            text = [&](const Value &v) -> Text {
                 if (v.kind == Value::Kind::Uri) {
                     trace += "text;";
                     if (flags & 32)
@@ -186,12 +190,12 @@ int main() {
         try {
             bool ok = services::OpenProfileClient(uri, request, text).request_avatar_properties(props);
             result = ok ? "B:1" : "B:0";
-        } catch (const framework::InvariantNumberError& e) {
+        } catch (const framework::InvariantNumberError &e) {
             result = "E:" + H(e.message);
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
             result = "E:" + H(framework::utf16_replacing(e.what()));
         }
-        std::cout << result << '|' << trace << '|' << (initial == props ? "same" : "new") << '|'
-                  << Dump(props) << '|' << Dump(initial) << '\n';
+        std::cout << result << '|' << trace << '|' << (initial == props ? "same" : "new") << '|' << Dump(props) << '|'
+                  << Dump(initial) << '\n';
     }
 }

@@ -51,13 +51,13 @@ WarpTerrainMesh build_warp_terrain_mesh(std::span<const float> terrain, std::uin
     return mesh;
 }
 
-WarpMapProjection project_warp_map_vertex(const WarpTerrainVertex& vertex, std::uint32_t region_height,
-                                         float camera_height) {
+WarpMapProjection project_warp_map_vertex(const WarpTerrainVertex &vertex, std::uint32_t region_height,
+                                          float camera_height) {
     const auto truncate = [](float value) {
         if (!std::isfinite(value))
             return std::int32_t{0};
-        return static_cast<std::int32_t>(std::clamp<double>(
-            value, std::numeric_limits<std::int32_t>::min(), std::numeric_limits<std::int32_t>::max()));
+        return static_cast<std::int32_t>(std::clamp<double>(value, std::numeric_limits<std::int32_t>::min(),
+                                                            std::numeric_limits<std::int32_t>::max()));
     };
     float camera_depth = camera_height - vertex.elevation;
     // The managed orthographic projection gives visible vertices a minimum depth.
@@ -65,8 +65,7 @@ WarpMapProjection project_warp_map_vertex(const WarpTerrainVertex& vertex, std::
     if (camera_depth >= 0.f)
         camera_depth = std::max(camera_depth, .001f);
     camera_depth = std::clamp(camera_depth, -32768.f, 32768.f);
-    return {truncate(vertex.x), truncate(float(region_height) - vertex.y),
-            truncate(camera_depth * 65536.f)};
+    return {truncate(vertex.x), truncate(float(region_height) - vertex.y), truncate(camera_depth * 65536.f)};
 }
 
 } // namespace opensim::scene

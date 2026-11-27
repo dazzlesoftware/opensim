@@ -5,13 +5,11 @@
 #include <algorithm>
 
 namespace opensim::scene {
-ScriptMailbox::ScriptMailbox(int owner_per_hour, int recipient_per_hour,
-                             int smtp_per_day, int smtp_recipient_per_hour)
-    : owner_per_hour_(owner_per_hour), recipient_per_hour_(recipient_per_hour),
-      smtp_per_day_(smtp_per_day), smtp_recipient_per_hour_(smtp_recipient_per_hour),
-      smtp_daily_{double(smtp_per_day), Clock::now()} {}
+ScriptMailbox::ScriptMailbox(int owner_per_hour, int recipient_per_hour, int smtp_per_day, int smtp_recipient_per_hour)
+    : owner_per_hour_(owner_per_hour), recipient_per_hour_(recipient_per_hour), smtp_per_day_(smtp_per_day),
+      smtp_recipient_per_hour_(smtp_recipient_per_hour), smtp_daily_{double(smtp_per_day), Clock::now()} {}
 
-bool ScriptMailbox::consume(Throttle& throttle, int limit, Clock::time_point now) {
+bool ScriptMailbox::consume(Throttle &throttle, int limit, Clock::time_point now) {
     const auto elapsed = std::chrono::duration<double>(now - throttle.last).count();
     throttle.remaining += elapsed * (limit / 3600.0);
     throttle.last = now;
@@ -31,8 +29,8 @@ bool ScriptMailbox::allow_owner(framework::Uuid owner, Clock::time_point now) {
 
 bool ScriptMailbox::allow_recipient(std::string address, Clock::time_point now) {
     std::lock_guard lock(mutex_);
-    const auto [entry, inserted] = recipients_.try_emplace(
-        std::move(address), Throttle{double(recipient_per_hour_), now});
+    const auto [entry, inserted] =
+        recipients_.try_emplace(std::move(address), Throttle{double(recipient_per_hour_), now});
     return inserted || consume(entry->second, recipient_per_hour_, now);
 }
 
@@ -48,8 +46,8 @@ bool ScriptMailbox::allow_smtp(std::string address, Clock::time_point now) {
         return false;
     --smtp_daily_.remaining;
 
-    const auto [entry, inserted] = smtp_recipients_.try_emplace(
-        std::move(address), Throttle{double(smtp_recipient_per_hour_), now});
+    const auto [entry, inserted] =
+        smtp_recipients_.try_emplace(std::move(address), Throttle{double(smtp_recipient_per_hour_), now});
     return inserted || consume(entry->second, smtp_recipient_per_hour_, now);
 }
 
@@ -73,12 +71,12 @@ void ScriptMailbox::insert(framework::Uuid part, ScriptEmail message, Clock::tim
     expires_[part] = now + timeout;
 }
 
-std::optional<ScriptEmail> ScriptMailbox::next(framework::Uuid part, std::string_view sender,
-                                               std::string_view subject, Clock::time_point now) {
+std::optional<ScriptEmail> ScriptMailbox::next(framework::Uuid part, std::string_view sender, std::string_view subject,
+                                               Clock::time_point now) {
     std::lock_guard lock(mutex_);
-    const auto expire_throttles = [&](auto& entries, auto& next_expiry) {
+    const auto expire_throttles = [&](auto &entries, auto &next_expiry) {
         if (!entries.empty() && now > next_expiry) {
-            std::erase_if(entries, [&](const auto& entry) { return entry.second.last < now - throttle_window; });
+            std::erase_if(entries, [&](const auto &entry) { return entry.second.last < now - throttle_window; });
             next_expiry = now + throttle_window;
         }
     };
@@ -87,7 +85,7 @@ std::optional<ScriptEmail> ScriptMailbox::next(framework::Uuid part, std::string
     expire_throttles(smtp_recipients_, next_smtp_recipient_expiry_);
     expires_[part] = now + timeout;
     if (expires_.size() > 1 && now > next_expiry_) {
-        std::erase_if(expires_, [&](const auto& expiry) {
+        std::erase_if(expires_, [&](const auto &expiry) {
             if (expiry.second >= now)
                 return false;
             queues_[expiry.first].clear();
@@ -98,12 +96,12 @@ std::optional<ScriptEmail> ScriptMailbox::next(framework::Uuid part, std::string
     const auto queue = queues_.find(part);
     if (queue == queues_.end())
         return std::nullopt;
-    auto& messages = queue->second;
-    const auto found = std::ranges::find_if(messages, [&](const ScriptEmail& message) {
+    auto &messages = queue->second;
+    const auto found = std::ranges::find_if(messages, [&](const ScriptEmail &message) {
         // The original condition ignores the subject when no sender is supplied.
         return sender.empty() ||
-            (framework::invariant_equals_ignore_case(sender, message.sender) &&
-             (subject.empty() || framework::invariant_equals_ignore_case(subject, message.subject)));
+               (framework::invariant_equals_ignore_case(sender, message.sender) &&
+                (subject.empty() || framework::invariant_equals_ignore_case(subject, message.subject)));
     });
     if (found == messages.end())
         return std::nullopt;
@@ -114,4 +112,4 @@ std::optional<ScriptEmail> ScriptMailbox::next(framework::Uuid part, std::string
         expires_.erase(part);
     return message;
 }
-}
+} // namespace opensim::scene

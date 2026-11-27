@@ -81,6 +81,8 @@ class InventoryServiceStub
         Trace.Add("C" + agent + "," + folder);
         if ((Mode & 256) != 0)
             throw new Exception();
+        if ((Mode & 4096) != 0)
+            return null;
         return LegacyReference.Contents(folder, Mode);
     }
     public InventoryFolderBase GetFolder(UUID agent, UUID folder)

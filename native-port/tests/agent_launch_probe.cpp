@@ -6,34 +6,40 @@
 #include <iomanip>
 using namespace opensim;
 using namespace services;
+
 framework::Uuid id(int n) {
     std::ostringstream out;
     out << "00000000-0000-0000-0000-" << std::hex << std::setw(12) << std::setfill('0') << n;
     return framework::Uuid(out.str());
 }
-std::string n(const GridRegion& region) {
+
+std::string n(const GridRegion &region) {
     return region.id.str();
 }
+
 struct Trace {
     int seed, attempt = 0;
     std::string events;
     std::shared_ptr<framework::AgentCircuitData> circuit;
-    void add(const std::string& value) {
+
+    void add(const std::string &value) {
         events += value + ";";
     }
+
     bool passed() {
         return seed % 4 == 0 || (seed % 4 == 1 && attempt == 2) || (seed % 4 == 3 && attempt == 3);
     }
 };
+
 struct Direct : ISimulationLogin {
-    Trace& trace;
+    Trace &trace;
     std::string label;
-    Direct(Trace& t, std::string value) : trace(t), label(std::move(value)) {
-    }
-    bool query_access(GridRegion& region, const framework::Uuid& agent,
-                      const std::optional<std::string>& home, bool teleport,
-                      const framework::Vector3& position, std::vector<framework::Uuid>& features,
-                      LoginTransferContext& context, std::string& reason) override {
+
+    Direct(Trace &t, std::string value) : trace(t), label(std::move(value)) {}
+
+    bool query_access(GridRegion &region, const framework::Uuid &agent, const std::optional<std::string> &home,
+                      bool teleport, const framework::Vector3 &position, std::vector<framework::Uuid> &features,
+                      LoginTransferContext &context, std::string &reason) override {
         const auto packed = context.pack();
         const bool valid_context = packed.map.size() == 3 &&
                                    packed.get("InboundVersion").kind == network::Value::Kind::Real &&
@@ -54,9 +60,10 @@ struct Direct : ISimulationLogin {
             throw std::runtime_error("query");
         return !((trace.seed % 4 == 1 && trace.attempt == 1) || (trace.seed % 4 == 3 && trace.attempt == 2));
     }
-    bool create_agent(const GridRegion* source, GridRegion& region,
-                      const std::shared_ptr<framework::AgentCircuitData>& circuit, std::uint32_t flags,
-                      LoginTransferContext& context, std::string& reason) override {
+
+    bool create_agent(const GridRegion *source, GridRegion &region,
+                      const std::shared_ptr<framework::AgentCircuitData> &circuit, std::uint32_t flags,
+                      LoginTransferContext &context, std::string &reason) override {
         trace.add(label + "-create:" + n(region) + ":" + std::to_string(flags) + ":" +
                   std::to_string(circuit->teleport_flags) + ":" +
                   std::to_string(!source && circuit == trace.circuit && context.outbound_version == 0.7f &&
@@ -68,17 +75,18 @@ struct Direct : ISimulationLogin {
         return trace.passed();
     }
 };
+
 struct Indirect : IUserAgentLogin {
-    Trace& trace;
-    Indirect(Trace& t) : trace(t) {
-    }
-    bool login_agent_to_grid(const GridRegion* source,
-                             const std::shared_ptr<framework::AgentCircuitData>& circuit, GridRegion& gate,
-                             GridRegion& destination, bool via, std::string& reason) override {
+    Trace &trace;
+
+    Indirect(Trace &t) : trace(t) {}
+
+    bool login_agent_to_grid(const GridRegion *source, const std::shared_ptr<framework::AgentCircuitData> &circuit,
+                             GridRegion &gate, GridRegion &destination, bool via, std::string &reason) override {
         ++trace.attempt;
         trace.add("hg:" + n(destination) + ":" + gate.external_host.value_or("-") + ":" +
-                  std::to_string(gate.http_port) + ":" + gate.server_uri() + ":" + gate.scope.str() + ":" +
-                  gate.token + ":" + std::to_string(circuit->teleport_flags) + ":" +
+                  std::to_string(gate.http_port) + ":" + gate.server_uri() + ":" + gate.scope.str() + ":" + gate.token +
+                  ":" + std::to_string(circuit->teleport_flags) + ":" +
                   std::to_string(!source && via && circuit == trace.circuit));
         if (trace.seed & 128) {
             ++gate.internal_endpoint->port;
@@ -91,7 +99,8 @@ struct Indirect : IUserAgentLogin {
         return trace.passed();
     }
 };
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     try {
         const int seed = std::stoi(argv[1]);
         Trace trace{seed};
@@ -123,10 +132,9 @@ int main(int argc, char** argv) {
         std::string uri = seed % 3 == 0   ? "http://GATE.example:8002/"
                           : seed % 3 == 1 ? "https://[::1]:8443/"
                                           : "bad/path";
-        AgentLauncher launcher(seed & 8 ? nullptr : &grid,
-                               mode == 1 || mode == 3 || mode == 4 ? &local : nullptr,
-                               mode == 2 || mode == 3 || mode == 4 ? &remote : nullptr,
-                               mode == 4 ? &indirect : nullptr, uri, [&] {
+        AgentLauncher launcher(seed & 8 ? nullptr : &grid, mode == 1 || mode == 3 || mode == 4 ? &local : nullptr,
+                               mode == 2 || mode == 3 || mode == 4 ? &remote : nullptr, mode == 4 ? &indirect : nullptr,
+                               uri, [&] {
                                    trace.add("code");
                                    return 1234u;
                                });
@@ -143,7 +151,7 @@ int main(int argc, char** argv) {
             request.gatekeeper->scope = id(7);
             request.gatekeeper->token = "provided-token";
         }
-        request.make_agent = [&](const GridRegion& region, std::uint32_t code) {
+        request.make_agent = [&](const GridRegion &region, std::uint32_t code) {
             trace.add("make:" + n(region) + ":" + std::to_string(code));
             if (seed % 11 == 0)
                 throw std::runtime_error("make");
@@ -159,14 +167,14 @@ int main(int argc, char** argv) {
         try {
             const auto value = launcher.launch(request);
             result = (value.circuit ? "OK" : "FAIL") + std::string("|") +
-                     (value.destination ? n(*value.destination) : "-") + "|" + value.where + "|" +
-                     value.reason + "|" + std::to_string(value.circuit && value.circuit == trace.circuit);
-        } catch (const std::exception&) {
+                     (value.destination ? n(*value.destination) : "-") + "|" + value.where + "|" + value.reason + "|" +
+                     std::to_string(value.circuit && value.circuit == trace.circuit);
+        } catch (const std::exception &) {
             result = "EX";
         }
         std::cout << result << '|' << trace.events << '\n';
         return 0;
-    } catch (const std::exception& error) {
+    } catch (const std::exception &error) {
         std::cerr << error.what() << '\n';
         return 1;
     }

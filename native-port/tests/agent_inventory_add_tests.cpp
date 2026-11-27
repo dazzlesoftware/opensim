@@ -4,11 +4,13 @@
 #include <iostream>
 using namespace opensim;
 using namespace scene;
+
 namespace {
 framework::Uuid id(int n) {
     auto s = std::to_string(n);
     return framework::Uuid("11223344-5566-7788-99aa-" + std::string(12 - s.size(), '0') + s);
 }
+
 std::string probe(int kind, int mode, int asset, int failure) {
     std::string trace;
     int adds = 0;
@@ -36,8 +38,7 @@ std::string probe(int kind, int mode, int asset, int failure) {
         c.bulk_item = [&](auto i) { step(12, "BULK:" + i->item.owner.str() + ":" + i->item.parent.str()); };
         c.alert = [&](auto text, bool modal) { step(13, "ALERT:" + text + ":" + (modal ? "1" : "0")); };
         c.create_update = [&](auto i, auto callback) {
-            step(14, "CREATE:" + i->item.owner.str() + ":" + i->item.parent.str() + ":" +
-                         std::to_string(callback));
+            step(14, "CREATE:" + i->item.owner.str() + ":" + i->item.parent.str() + ":" + std::to_string(callback));
         };
         return c;
     };
@@ -97,10 +98,11 @@ std::string probe(int kind, int mode, int asset, int failure) {
     } catch (...) {
         result = "THROW";
     }
-    return result + ":" + std::to_string(adds) + ":" + value->item.owner.str() + ":" +
-           value->item.parent.str() + ":" + value->item.creator_id + trace;
+    return result + ":" + std::to_string(adds) + ":" + value->item.owner.str() + ":" + value->item.parent.str() + ":" +
+           value->item.creator_id + trace;
 }
-}
+} // namespace
+
 int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string_view(argv[1]) == "--probe") {

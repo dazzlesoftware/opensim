@@ -1,0 +1,1 @@
+key result;integer count;key inner(){count++;return llGenerateKey();}default{state_entry(){result=inner();}}

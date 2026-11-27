@@ -1,0 +1,130 @@
+[
+  {
+    "name": "missing_option",
+    "source": "object a;integer result;default{state_entry(){a=xmrFixedArrayAllocI(2);}}"
+  },
+  {
+    "name": "objects_not_arrays",
+    "source": "YOption objects;object a;integer result;default{state_entry(){a=xmrFixedArrayAllocI(2);}}"
+  },
+  {
+    "name": "basic_I",
+    "source": "YOption arrays;object a;integer result;default{state_entry(){a=xmrFixedArrayAllocI(2);xmrFixedArraySetI(a,1,7);result=xmrFixedArrayGetI(a,1);}}"
+  },
+  {
+    "name": "zero_I",
+    "source": "YOption arrays;object a;integer result;default{state_entry(){a=xmrFixedArrayAllocI(0);}}"
+  },
+  {
+    "name": "negative_I",
+    "source": "YOption arrays;object a;integer result;default{state_entry(){a=xmrFixedArrayAllocI(-1);}}"
+  },
+  {
+    "name": "get_bounds_I",
+    "source": "YOption arrays;object a;integer result;default{state_entry(){a=xmrFixedArrayAllocI(1);xmrFixedArrayGetI(a,1);}}"
+  },
+  {
+    "name": "set_bounds_I",
+    "source": "YOption arrays;object a;integer result;default{state_entry(){a=xmrFixedArrayAllocI(1);xmrFixedArraySetI(a,-1,7);}}"
+  },
+  {
+    "name": "null_I",
+    "source": "YOption arrays;object a;integer result;default{state_entry(){xmrFixedArrayGetI(a,0);}}"
+  },
+  {
+    "name": "basic_F",
+    "source": "YOption arrays;object a;float result;default{state_entry(){a=xmrFixedArrayAllocF(2);xmrFixedArraySetF(a,1,1.25);result=xmrFixedArrayGetF(a,1);}}"
+  },
+  {
+    "name": "zero_F",
+    "source": "YOption arrays;object a;integer result;default{state_entry(){a=xmrFixedArrayAllocF(0);}}"
+  },
+  {
+    "name": "negative_F",
+    "source": "YOption arrays;object a;integer result;default{state_entry(){a=xmrFixedArrayAllocF(-1);}}"
+  },
+  {
+    "name": "get_bounds_F",
+    "source": "YOption arrays;object a;integer result;default{state_entry(){a=xmrFixedArrayAllocF(1);xmrFixedArrayGetF(a,1);}}"
+  },
+  {
+    "name": "set_bounds_F",
+    "source": "YOption arrays;object a;integer result;default{state_entry(){a=xmrFixedArrayAllocF(1);xmrFixedArraySetF(a,-1,1.25);}}"
+  },
+  {
+    "name": "null_F",
+    "source": "YOption arrays;object a;integer result;default{state_entry(){xmrFixedArrayGetF(a,0);}}"
+  },
+  {
+    "name": "basic_C",
+    "source": "YOption arrays;YOption chars;object a;char result;default{state_entry(){a=xmrFixedArrayAllocC(2);xmrFixedArraySetC(a,1,'A');result=xmrFixedArrayGetC(a,1);}}"
+  },
+  {
+    "name": "zero_C",
+    "source": "YOption arrays;YOption chars;object a;integer result;default{state_entry(){a=xmrFixedArrayAllocC(0);}}"
+  },
+  {
+    "name": "negative_C",
+    "source": "YOption arrays;YOption chars;object a;integer result;default{state_entry(){a=xmrFixedArrayAllocC(-1);}}"
+  },
+  {
+    "name": "get_bounds_C",
+    "source": "YOption arrays;YOption chars;object a;integer result;default{state_entry(){a=xmrFixedArrayAllocC(1);xmrFixedArrayGetC(a,1);}}"
+  },
+  {
+    "name": "set_bounds_C",
+    "source": "YOption arrays;YOption chars;object a;integer result;default{state_entry(){a=xmrFixedArrayAllocC(1);xmrFixedArraySetC(a,-1,'A');}}"
+  },
+  {
+    "name": "null_C",
+    "source": "YOption arrays;YOption chars;object a;integer result;default{state_entry(){xmrFixedArrayGetC(a,0);}}"
+  },
+  {
+    "name": "basic_O",
+    "source": "YOption arrays;object a;object result;default{state_entry(){a=xmrFixedArrayAllocO(2);xmrFixedArraySetO(a,1,(object)7);result=xmrFixedArrayGetO(a,1);}}"
+  },
+  {
+    "name": "zero_O",
+    "source": "YOption arrays;object a;integer result;default{state_entry(){a=xmrFixedArrayAllocO(0);}}"
+  },
+  {
+    "name": "negative_O",
+    "source": "YOption arrays;object a;integer result;default{state_entry(){a=xmrFixedArrayAllocO(-1);}}"
+  },
+  {
+    "name": "get_bounds_O",
+    "source": "YOption arrays;object a;integer result;default{state_entry(){a=xmrFixedArrayAllocO(1);xmrFixedArrayGetO(a,1);}}"
+  },
+  {
+    "name": "set_bounds_O",
+    "source": "YOption arrays;object a;integer result;default{state_entry(){a=xmrFixedArrayAllocO(1);xmrFixedArraySetO(a,-1,(object)7);}}"
+  },
+  {
+    "name": "null_O",
+    "source": "YOption arrays;object a;integer result;default{state_entry(){xmrFixedArrayGetO(a,0);}}"
+  },
+  {
+    "name": "wrong_array_type",
+    "source": "YOption arrays;object a;integer result;default{state_entry(){a=xmrFixedArrayAllocF(1);result=xmrFixedArrayGetI(a,0);}}"
+  },
+  {
+    "name": "alias",
+    "source": "YOption arrays;object a;object b;integer result;default{state_entry(){a=xmrFixedArrayAllocI(1);b=a;xmrFixedArraySetI(b,0,9);result=xmrFixedArrayGetI(a,0);}}"
+  },
+  {
+    "name": "self_cycle",
+    "source": "YOption arrays;object a;object b;default{state_entry(){a=xmrFixedArrayAllocO(1);xmrFixedArraySetO(a,0,a);b=xmrFixedArrayGetO(a,0);}}"
+  },
+  {
+    "name": "mutual_cycle",
+    "source": "YOption arrays;object a;object b;default{state_entry(){a=xmrFixedArrayAllocO(1);b=xmrFixedArrayAllocO(1);xmrFixedArraySetO(a,0,b);xmrFixedArraySetO(b,0,a);}}"
+  },
+  {
+    "name": "invalid_length_float",
+    "source": "YOption arrays;object a;integer result;default{state_entry(){a=xmrFixedArrayAllocI(1.5);}}"
+  },
+  {
+    "name": "invalid_index_string",
+    "source": "YOption arrays;object a;integer result;default{state_entry(){a=xmrFixedArrayAllocI(1);result=xmrFixedArrayGetI(a,\"0\");}}"
+  }
+]

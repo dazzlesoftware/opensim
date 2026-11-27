@@ -1,0 +1,1 @@
+float value=Infinity;integer done;default{state_entry(){done=1;}}

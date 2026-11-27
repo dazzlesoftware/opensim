@@ -9,8 +9,7 @@
 namespace opensim::server {
 using namespace network;
 
-HttpResponse OfflineImEndpoint::handle(const HttpRequest& request)
-{
+HttpResponse OfflineImEndpoint::handle(const HttpRequest &request) {
     HttpResponse response;
     response.content_type = "application/xml";
     if (request.method != "POST") {
@@ -24,38 +23,35 @@ HttpResponse OfflineImEndpoint::handle(const HttpRequest& request)
     return response;
 }
 
-std::string OfflineImEndpoint::process(std::string_view body)
-{
+std::string OfflineImEndpoint::process(std::string_view body) {
     auto result = ServiceXmlValue::object({{"RESULT", "False"}});
     try {
         const auto form = parse_service_form(framework::trim_utf8(read_service_body(body)));
-        const auto field = [&](const char* name) -> const std::string* {
+        const auto field = [&](const char *name) -> const std::string * {
             const auto item = form.find(name);
             return item == form.end() ? nullptr : std::get_if<std::string>(&item->second);
         };
-        const auto* method = field("METHOD");
+        const auto *method = field("METHOD");
         if (method && *method == "GET") {
-            const auto* principal = field("PrincipalID");
+            const auto *principal = field("PrincipalID");
             framework::Uuid id;
             if (!form.contains("PrincipalID")) {
                 result = ServiceXmlValue::object({{"RESULT", "NULL"}, {"REASON", "Bad network data"}});
             } else if (principal && framework::try_parse_sdk_uuid(*principal, id)) {
                 auto messages = ServiceXmlValue::object({});
-                for (auto& row : operations_.get(id))
+                for (auto &row : operations_.get(id))
                     messages.fields.emplace_back("im-" + std::to_string(messages.fields.size()), std::move(row));
                 result = ServiceXmlValue::object({{"RESULT", std::move(messages)}});
             }
         } else if (method && *method == "STORE") {
             auto row = ServiceXmlValue::object({});
             framework::Uuid recipient;
-            constexpr const char* message_fields[] = {
-                "BinaryBucket", "Dialog", "FromAgentID", "FromAgentName", "FromGroup",
-                "SessionID", "Message", "Offline", "EstateID", "Position", "RegionID",
-                "Timestamp", "ToAgentID"
-            };
+            constexpr const char *message_fields[] = {
+                "BinaryBucket", "Dialog",   "FromAgentID", "FromAgentName", "FromGroup", "SessionID", "Message",
+                "Offline",      "EstateID", "Position",    "RegionID",      "Timestamp", "ToAgentID"};
             for (const std::string_view name : message_fields) {
                 const auto key = std::string(name);
-                const auto* value = field(key.c_str());
+                const auto *value = field(key.c_str());
                 std::string normalized = value ? *value : "";
                 if (name.ends_with("ID") && name != "EstateID") {
                     framework::Uuid id;
@@ -79,7 +75,8 @@ std::string OfflineImEndpoint::process(std::string_view body)
                     }
                     normalized = std::to_string(number);
                 } else if (name == "Position") {
-                    normalized = framework::vector3_string(value ? framework::parse_sdk_vector3(*value) : framework::Vector3{});
+                    normalized =
+                        framework::vector3_string(value ? framework::parse_sdk_vector3(*value) : framework::Vector3{});
                 } else if (name == "BinaryBucket") {
                     normalized.clear();
                     std::size_t digits = 0;
@@ -110,16 +107,16 @@ std::string OfflineImEndpoint::process(std::string_view body)
             else
                 result.fields.emplace_back("REASON", reason);
         } else if (method && *method == "DELETE") {
-            const auto* user = field("UserID");
+            const auto *user = field("UserID");
             framework::Uuid id;
             if (user && framework::try_parse_sdk_uuid(*user, id)) {
                 operations_.erase(id);
                 result = ServiceXmlValue::object({{"RESULT", "True"}});
             }
         }
-    } catch (const std::exception&) {
+    } catch (const std::exception &) {
         result = ServiceXmlValue::object({{"RESULT", "False"}});
     }
     return service_xml(result);
 }
-}
+} // namespace opensim::server

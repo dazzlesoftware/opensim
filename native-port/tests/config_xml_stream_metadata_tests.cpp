@@ -3,6 +3,7 @@
 #include <sstream>
 #include <iomanip>
 using namespace opensim::framework;
+
 std::string hex(std::u16string_view s) {
     std::ostringstream o;
     o << std::hex << std::setfill('0');
@@ -10,27 +11,33 @@ std::string hex(std::u16string_view s) {
         o << std::setw(4) << unsigned(c);
     return s.empty() ? "-" : o.str();
 }
-std::string error(const ConfigXmlStreamError& e) {
+
+std::string error(const ConfigXmlStreamError &e) {
     std::ostringstream o;
     o << e.source_type << ":" << std::hex << e.hresult << ":" << hex(e.message) << ":" << hex(*e.object_name);
     return o.str();
 }
+
 struct Live : ConfigXmlStream {
     mutable std::string trace;
     bool seek = false;
     bool fault = false;
     int closes = 0;
+
     std::int32_t read(std::span<std::uint8_t>) override {
         trace += "R";
         return 0;
     }
+
     void close() override {
         ++closes;
     }
+
     bool can_seek() const override {
         trace += "S";
         return seek;
     }
+
     std::int64_t length() const override {
         trace += "L";
         if (fault)
@@ -38,7 +45,8 @@ struct Live : ConfigXmlStream {
         return 9000000000;
     }
 };
-int main(int argc, char**) {
+
+int main(int argc, char **) {
     if (argc == 1) {
         auto memory = config_xml_memory_stream({1, 2});
         if (!memory->can_seek() || memory->length() != 2 || memory->position() != 0)
@@ -55,7 +63,7 @@ int main(int argc, char**) {
         bool disposed = false;
         try {
             memory->length();
-        } catch (const ConfigXmlStreamError& e) {
+        } catch (const ConfigXmlStreamError &e) {
             disposed = e.source_type == "System.ObjectDisposedException" && e.hresult == 0x80131622;
         }
         if (!disposed)
@@ -72,7 +80,7 @@ int main(int argc, char**) {
         bool forwarded = false;
         try {
             dynamic->length_hint();
-        } catch (const std::runtime_error& e) {
+        } catch (const std::runtime_error &e) {
             forwarded = std::string(e.what()) == "length-fault";
         }
         if (!forwarded)
@@ -120,7 +128,7 @@ int main(int argc, char**) {
                         std::cout << std::hex << std::setfill('0') << std::setw(2) << unsigned(out[i]);
                     std::cout << std::dec;
                 }
-            } catch (const ConfigXmlStreamError& e) {
+            } catch (const ConfigXmlStreamError &e) {
                 std::cout << error(e);
             }
         }

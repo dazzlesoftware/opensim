@@ -6,12 +6,14 @@
 #include <iostream>
 #include <sstream>
 using namespace opensim;
-std::string decode(const std::string& value) {
+
+std::string decode(const std::string &value) {
     std::u16string text;
     for (std::size_t i = 0; i < value.size(); i += 4)
         text.push_back(static_cast<char16_t>(std::stoul(value.substr(i, 4), nullptr, 16)));
     return framework::utf8(text);
 }
+
 int main() {
     services::AccountStore accounts(":memory:", ":memory:", true);
     for (std::string line; std::getline(std::cin, line);) {
@@ -28,7 +30,7 @@ int main() {
             if (fields.size() != 12)
                 throw std::invalid_argument("Expected twelve login access fields");
             server::IniConfig config;
-            const char* keys[] = {"DeniedMacs", "DeniedID0s", "AllowedClients", "DeniedClients"};
+            const char *keys[] = {"DeniedMacs", "DeniedID0s", "AllowedClients", "DeniedClients"};
             for (int i = 0; i < 8; ++i)
                 if (fields[i] != "-")
                     config.set(i % 2 ? "LoginService" : "AccessControl", keys[i / 2], decode(fields[i]));
@@ -44,7 +46,7 @@ int main() {
             auto response = service.login(request);
             auto reason = response.get("reason").as_string();
             std::cout << (reason == "presence" ? "blocked" : reason == "key" ? "user" : "error") << '\n';
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
             std::cout << "EXCEPTION:" << e.what() << '\n';
         }
     }

@@ -10,6 +10,7 @@ using namespace opensim;
 using namespace framework;
 using namespace network;
 using namespace services;
+
 std::string H(std::string_view s) {
     std::string r;
     for (unsigned char c : s) {
@@ -18,19 +19,22 @@ std::string H(std::string_view s) {
     }
     return r;
 }
+
 std::string U(std::string_view s) {
     std::string r;
     for (std::size_t i = 0; i < s.size(); i += 2)
         r += static_cast<char>(std::stoi(std::string(s.substr(i, 2)), nullptr, 16));
     return r;
 }
-std::string snap(const std::shared_ptr<Value>& v) {
+
+std::string snap(const std::shared_ptr<Value> &v) {
     return v ? H(osd_json(*v, true)) : "N";
 }
-template <class T> void nulls(const std::shared_ptr<T>& value, const Value& data) {
+
+template <class T> void nulls(const std::shared_ptr<T> &value, const Value &data) {
     if (!data.contains("NullFields"))
         return;
-    for (auto& field : data.get("NullFields").view().array) {
+    for (auto &field : data.get("NullFields").view().array) {
         auto name = osd_string(field);
         if constexpr (requires { value->AboutText.reset(); }) {
             if (name == "AboutText")
@@ -130,10 +134,10 @@ template <class T> void nulls(const std::shared_ptr<T>& value, const Value& data
         }
     }
 }
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     std::string log, line;
-    SqliteProfilesData store(argc > 1 ? argv[1] : "Data Source=:memory:",
-                             [&](auto text) { log += utf8(text) + "\n"; });
+    SqliteProfilesData store(argc > 1 ? argv[1] : "Data Source=:memory:", [&](auto text) { log += utf8(text) + "\n"; });
     auto db = store.database()->handle();
     while (std::getline(std::cin, line)) {
         std::istringstream in(line);
@@ -150,7 +154,7 @@ int main(int argc, char** argv) {
                 in >> raw;
                 auto sql = U(raw);
                 if (op == "X") {
-                    char* error = nullptr;
+                    char *error = nullptr;
                     int code = sqlite3_exec(db, sql.c_str(), nullptr, nullptr, &error);
                     if (code != SQLITE_OK) {
                         std::string message = std::string(sqlite3_errstr(code & 255)) +
@@ -165,7 +169,7 @@ int main(int argc, char** argv) {
                     }
                     std::cout << "X\n";
                 } else {
-                    sqlite3_stmt* statement = nullptr;
+                    sqlite3_stmt *statement = nullptr;
                     if (sqlite3_prepare_v2(db, sql.c_str(), -1, &statement, nullptr) != SQLITE_OK)
                         throw std::runtime_error(sqlite3_errmsg(db));
                     Value rows;
@@ -193,43 +197,38 @@ int main(int argc, char** argv) {
             switch (method) {
             case 0:
                 status = "O";
-                snapshot =
-                    snap(store.GetClassifiedRecords(values ? osd_uuid(values->get("QueryId")) : Uuid{}));
+                snapshot = snap(store.GetClassifiedRecords(values ? osd_uuid(values->get("QueryId")) : Uuid{}));
                 break;
             case 1: {
-                auto value =
-                    values ? std::make_shared<UserClassifiedAdd>() : std::shared_ptr<UserClassifiedAdd>{};
+                auto value = values ? std::make_shared<UserClassifiedAdd>() : std::shared_ptr<UserClassifiedAdd>{};
                 if (value) {
                     value->deserialize_members(*values);
                     nulls(value, *values);
                 }
                 try {
                     status = store.UpdateClassifiedRecord(value, result) ? "1" : "0";
-                } catch (const std::exception& e) {
+                } catch (const std::exception &e) {
                     status = "EX:" + H(e.what());
                 }
                 snapshot = value ? H(osd_json(value->serialize_members(), true)) : "N";
                 break;
             }
             case 2: {
-                auto value =
-                    values ? std::make_shared<UserClassifiedAdd>() : std::shared_ptr<UserClassifiedAdd>{};
+                auto value = values ? std::make_shared<UserClassifiedAdd>() : std::shared_ptr<UserClassifiedAdd>{};
                 if (value) {
                     value->deserialize_members(*values);
                     nulls(value, *values);
                 }
                 try {
                     status = store.GetClassifiedInfo(value, result) ? "1" : "0";
-                } catch (const std::exception& e) {
+                } catch (const std::exception &e) {
                     status = "EX:" + H(e.what());
                 }
                 snapshot = value ? H(osd_json(value->serialize_members(), true)) : "N";
                 break;
             }
             case 3:
-                status = store.DeleteClassifiedRecord(values ? osd_uuid(values->get("QueryId")) : Uuid{})
-                             ? "1"
-                             : "0";
+                status = store.DeleteClassifiedRecord(values ? osd_uuid(values->get("QueryId")) : Uuid{}) ? "1" : "0";
                 break;
             case 4:
                 status = "O";
@@ -243,124 +242,118 @@ int main(int argc, char** argv) {
                 break;
             }
             case 6: {
-                auto value =
-                    values ? std::make_shared<UserProfilePick>() : std::shared_ptr<UserProfilePick>{};
+                auto value = values ? std::make_shared<UserProfilePick>() : std::shared_ptr<UserProfilePick>{};
                 if (value) {
                     value->deserialize_members(*values);
                     nulls(value, *values);
                 }
                 try {
                     status = store.UpdatePicksRecord(value) ? "1" : "0";
-                } catch (const std::exception& e) {
+                } catch (const std::exception &e) {
                     status = "EX:" + H(e.what());
                 }
                 snapshot = value ? H(osd_json(value->serialize_members(), true)) : "N";
                 break;
             }
             case 7:
-                status =
-                    store.DeletePicksRecord(values ? osd_uuid(values->get("QueryId")) : Uuid{}) ? "1" : "0";
+                status = store.DeletePicksRecord(values ? osd_uuid(values->get("QueryId")) : Uuid{}) ? "1" : "0";
                 break;
             case 8: {
-                auto value =
-                    values ? std::make_shared<UserProfileNotes>() : std::shared_ptr<UserProfileNotes>{};
+                auto value = values ? std::make_shared<UserProfileNotes>() : std::shared_ptr<UserProfileNotes>{};
                 if (value) {
                     value->deserialize_members(*values);
                     nulls(value, *values);
                 }
                 try {
                     status = store.GetAvatarNotes(value) ? "1" : "0";
-                } catch (const std::exception& e) {
+                } catch (const std::exception &e) {
                     status = "EX:" + H(e.what());
                 }
                 snapshot = value ? H(osd_json(value->serialize_members(), true)) : "N";
                 break;
             }
             case 9: {
-                auto value =
-                    values ? std::make_shared<UserProfileNotes>() : std::shared_ptr<UserProfileNotes>{};
+                auto value = values ? std::make_shared<UserProfileNotes>() : std::shared_ptr<UserProfileNotes>{};
                 if (value) {
                     value->deserialize_members(*values);
                     nulls(value, *values);
                 }
                 try {
                     status = store.UpdateAvatarNotes(value, result) ? "1" : "0";
-                } catch (const std::exception& e) {
+                } catch (const std::exception &e) {
                     status = "EX:" + H(e.what());
                 }
                 snapshot = value ? H(osd_json(value->serialize_members(), true)) : "N";
                 break;
             }
             case 10: {
-                auto value = values ? std::make_shared<UserProfileProperties>()
-                                    : std::shared_ptr<UserProfileProperties>{};
+                auto value =
+                    values ? std::make_shared<UserProfileProperties>() : std::shared_ptr<UserProfileProperties>{};
                 if (value) {
                     value->deserialize_members(*values);
                     nulls(value, *values);
                 }
                 try {
                     status = store.GetAvatarProperties(value, result) ? "1" : "0";
-                } catch (const std::exception& e) {
+                } catch (const std::exception &e) {
                     status = "EX:" + H(e.what());
                 }
                 snapshot = value ? H(osd_json(value->serialize_members(), true)) : "N";
                 break;
             }
             case 11: {
-                auto value = values ? std::make_shared<UserProfileProperties>()
-                                    : std::shared_ptr<UserProfileProperties>{};
+                auto value =
+                    values ? std::make_shared<UserProfileProperties>() : std::shared_ptr<UserProfileProperties>{};
                 if (value) {
                     value->deserialize_members(*values);
                     nulls(value, *values);
                 }
                 try {
                     status = store.UpdateAvatarProperties(value, result) ? "1" : "0";
-                } catch (const std::exception& e) {
+                } catch (const std::exception &e) {
                     status = "EX:" + H(e.what());
                 }
                 snapshot = value ? H(osd_json(value->serialize_members(), true)) : "N";
                 break;
             }
             case 12: {
-                auto value = values ? std::make_shared<UserProfileProperties>()
-                                    : std::shared_ptr<UserProfileProperties>{};
+                auto value =
+                    values ? std::make_shared<UserProfileProperties>() : std::shared_ptr<UserProfileProperties>{};
                 if (value) {
                     value->deserialize_members(*values);
                     nulls(value, *values);
                 }
                 try {
                     status = store.UpdateAvatarInterests(value, result) ? "1" : "0";
-                } catch (const std::exception& e) {
+                } catch (const std::exception &e) {
                     status = "EX:" + H(e.what());
                 }
                 snapshot = value ? H(osd_json(value->serialize_members(), true)) : "N";
                 break;
             }
             case 13: {
-                auto value =
-                    values ? std::make_shared<UserPreferences>() : std::shared_ptr<UserPreferences>{};
+                auto value = values ? std::make_shared<UserPreferences>() : std::shared_ptr<UserPreferences>{};
                 if (value) {
                     value->deserialize_members(*values);
                     nulls(value, *values);
                 }
                 try {
                     status = store.UpdateUserPreferences(value, result) ? "1" : "0";
-                } catch (const std::exception& e) {
+                } catch (const std::exception &e) {
                     status = "EX:" + H(e.what());
                 }
                 snapshot = value ? H(osd_json(value->serialize_members(), true)) : "N";
                 break;
             }
             case 14: {
-                auto value =
-                    values ? std::make_shared<UserPreferences>() : std::shared_ptr<UserPreferences>{};
+                auto value = values ? std::make_shared<UserPreferences>() : std::shared_ptr<UserPreferences>{};
                 if (value) {
                     value->deserialize_members(*values);
                     nulls(value, *values);
                 }
                 try {
                     status = store.GetUserPreferences(value, result) ? "1" : "0";
-                } catch (const std::exception& e) {
+                } catch (const std::exception &e) {
                     status = "EX:" + H(e.what());
                 }
                 snapshot = value ? H(osd_json(value->serialize_members(), true)) : "N";
@@ -378,7 +371,7 @@ int main(int argc, char** argv) {
                 }
                 try {
                     status = store.GetUserAppData(value, result) ? "1" : "0";
-                } catch (const std::exception& e) {
+                } catch (const std::exception &e) {
                     status = "EX:" + H(e.what());
                 }
                 snapshot = value ? H(osd_json(value->serialize_members(), true)) : "N";
@@ -392,16 +385,15 @@ int main(int argc, char** argv) {
                 }
                 try {
                     status = store.SetUserAppData(value, result) ? "1" : "0";
-                } catch (const std::exception& e) {
+                } catch (const std::exception &e) {
                     status = "EX:" + H(e.what());
                 }
                 snapshot = value ? H(osd_json(value->serialize_members(), true)) : "N";
                 break;
             }
             }
-            std::cout << status << "|" << (result ? H(utf8(*result)) : "N") << "|" << snapshot << "|"
-                      << H(log) << "\n";
-        } catch (const std::exception& e) {
+            std::cout << status << "|" << (result ? H(utf8(*result)) : "N") << "|" << snapshot << "|" << H(log) << "\n";
+        } catch (const std::exception &e) {
             std::cout << "EX:" << H(e.what()) << "|" << H(log) << "\n";
         }
     }

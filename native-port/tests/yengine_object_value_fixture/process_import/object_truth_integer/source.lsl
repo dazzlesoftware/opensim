@@ -1,0 +1,1 @@
+YOption arrays;object input=(object)7;integer result;default{state_entry(){if(input)result=1;}}

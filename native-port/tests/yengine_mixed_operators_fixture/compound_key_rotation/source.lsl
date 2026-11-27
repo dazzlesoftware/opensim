@@ -1,0 +1,1 @@
+key left=(key)"bad";rotation right=<0,0,0,1>;default{state_entry(){left+=right;}}

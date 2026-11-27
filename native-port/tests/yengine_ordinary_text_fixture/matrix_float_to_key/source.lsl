@@ -1,0 +1,1 @@
+float item=1.25;key result;default{state_entry(){result=(key)item;}}

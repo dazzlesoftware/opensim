@@ -4,18 +4,20 @@
 #include "opensim/framework/uuid.hpp"
 #include "opensim/framework/quaternion_text.hpp"
 #include <cstdint>
+
 namespace opensim::framework {
 struct PrimContactMaterial {
     float friction = .6f;
     float restitution = .5f;
-    bool operator==(const PrimContactMaterial&) const = default;
+    bool operator==(const PrimContactMaterial &) const = default;
 };
+
 struct PrimInertiaOverride {
     float mass = 0.f;
     Vector3 center;
     Vector3 diagonal;
     Quaternion rotation{0, 0, 0, 1};
-    bool operator==(const PrimInertiaOverride&) const = default;
+    bool operator==(const PrimInertiaOverride &) const = default;
 };
 
 struct PrimInertiaData {
@@ -29,32 +31,39 @@ struct PrimHover {
     float height = 0.f;
     float tau = 0.f;
     bool above_water = false;
-    bool active() const { return height != 0.f && tau != 0.f; }
-    bool operator==(const PrimHover&) const = default;
+
+    bool active() const {
+        return height != 0.f && tau != 0.f;
+    }
+
+    bool operator==(const PrimHover &) const = default;
 };
+
 struct PrimMoveTarget {
     Vector3 position;
     float tau = 0.f;
-    bool active() const { return tau > 0.f; }
-    bool operator==(const PrimMoveTarget&) const = default;
+
+    bool active() const {
+        return tau > 0.f;
+    }
+
+    bool operator==(const PrimMoveTarget &) const = default;
 };
+
 struct PrimLookAt {
     Quaternion rotation{0, 0, 0, 1};
     float strength = 0.f;
-    bool active() const { return strength >= .04f; }
-    bool operator==(const PrimLookAt&) const = default;
+    bool enabled = true;
+
+    bool active() const {
+        return enabled && strength >= .04f;
+    }
+
+    bool operator==(const PrimLookAt &) const = default;
 };
 
-enum class PrimType : int {
-    Box = 0,
-    Cylinder = 1,
-    Prism = 2,
-    Sphere = 3,
-    Torus = 4,
-    Tube = 5,
-    Ring = 6,
-    Sculpt = 7
-};
+enum class PrimType : int { Box = 0, Cylinder = 1, Prism = 2, Sphere = 3, Torus = 4, Tube = 5, Ring = 6, Sculpt = 7 };
+
 struct LinearPrimPath {
     float begin = 0.f, end = 1.f;
     float taper_x = 0.f, taper_y = 0.f;
@@ -65,8 +74,9 @@ struct LinearPrimPath {
     float hole_x = 1.f, hole_y = 1.f;
     float radius_offset = 0.f, skew = 0.f;
     float revolutions = 1.f;
-    bool operator==(const LinearPrimPath&) const = default;
+    bool operator==(const LinearPrimPath &) const = default;
 };
+
 // Exact values exposed by PrimitiveBaseShape getters. This is not a packet decoder:
 // ProfileCurve setter normalization and sculpt extra-parameter decoding belong to callers.
 // The existing scene::PrimShape omits sculpt fields, so it cannot represent this closure.
@@ -78,7 +88,8 @@ struct PrimGeometry {
                 path_radius_offset = 0;
     std::uint8_t path_revolutions = 0;
 };
-PrimType get_prim_type(const PrimGeometry&, bool ignore_sculpt = false) noexcept;
+
+PrimType get_prim_type(const PrimGeometry &, bool ignore_sculpt = false) noexcept;
 // Preserves source results even for out-of-viewer-range ushort cuts (including negative counts).
-int get_number_of_sides(const PrimGeometry&) noexcept;
-}
+int get_number_of_sides(const PrimGeometry &) noexcept;
+} // namespace opensim::framework

@@ -1,6 +1,7 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/framework/glob.hpp"
+
 namespace opensim::framework {
 namespace {
 std::vector<std::u16string> split(const std::u16string &text, char16_t a, char16_t b, bool two = false) {
@@ -23,10 +24,12 @@ std::vector<std::u16string> split(const std::u16string &text, char16_t a, char16
     }
     return out;
 }
+
 DirectoryEntriesText text(const std::u16string &value) {
     return std::make_shared<const std::u16string>(value);
 }
-}
+} // namespace
+
 std::vector<std::u16string> glob(const std::optional<std::u16string> &input, const GlobBackend &backend) {
     if (!input)
         throw GlobNullInputError();
@@ -63,6 +66,7 @@ std::vector<std::u16string> glob(const std::optional<std::u16string> &input, con
     }
     return found;
 }
+
 GlobBackend native_glob_backend(std::shared_ptr<DirectoryEntriesBackend> backend) {
     if (!backend)
         backend = native_directory_entries_backend();
@@ -82,9 +86,7 @@ GlobBackend native_glob_backend(std::shared_ptr<DirectoryEntriesBackend> backend
             values.push_back(*entry);
         return values;
     };
-    result.directories = [enumerate](const auto &p, const auto &pattern) {
-        return enumerate(p, pattern, true);
-    };
+    result.directories = [enumerate](const auto &p, const auto &pattern) { return enumerate(p, pattern, true); };
     result.files = [enumerate](const auto &p, const auto &pattern) { return enumerate(p, pattern, false); };
     result.combine = [windows](const std::u16string &first, const std::u16string &second) {
         if (second.empty())
@@ -105,7 +107,8 @@ GlobBackend native_glob_backend(std::shared_ptr<DirectoryEntriesBackend> backend
     };
     return result;
 }
+
 std::vector<std::u16string> glob(const std::optional<std::u16string> &path) {
     return glob(path, native_glob_backend());
 }
-}
+} // namespace opensim::framework

@@ -1,0 +1,38 @@
+{
+  "name": "raw_tab",
+  "input": {
+    "clr": "System.String",
+    "value": "a\tb",
+    "utf16": [
+      97,
+      9,
+      98
+    ]
+  },
+  "append_exception": null,
+  "outer_xml_exception": null,
+  "load_xml_exception": null,
+  "restore_event_queue_exception": null,
+  "restored": {
+    "clr": "System.String",
+    "value": "a\tb",
+    "utf16": [
+      97,
+      9,
+      98
+    ]
+  },
+  "strict_xml_reader_control_exception": null,
+  "strict_xml_reader_control_restored": {
+    "clr": "System.String",
+    "value": "a\tb",
+    "utf16": [
+      97,
+      9,
+      98
+    ]
+  },
+  "sha256": {
+    "serialized.xml": "2f29d337ee8ebf2495530d9accdbd3b45f0b742fff37b5f4142acd8674b65ce2"
+  }
+}

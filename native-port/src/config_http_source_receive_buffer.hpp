@@ -10,6 +10,7 @@
 #include <stdexcept>
 #include <utility>
 #include <cstdint>
+
 namespace opensim::framework {
 class ConfigHttpSourceReceiveBuffer {
     using Clock = std::chrono::steady_clock;
@@ -17,33 +18,39 @@ class ConfigHttpSourceReceiveBuffer {
     std::vector<std::uint8_t> bytes_ = std::vector<std::uint8_t>(4096);
     std::optional<Clock::time_point> pending_;
 
-public:
+  public:
     void begin_drain() {
         std::lock_guard lock(mutex_);
         pending_ = Clock::now() + std::chrono::seconds(2);
     }
+
     bool expired(Clock::time_point now) const {
         std::lock_guard lock(mutex_);
         return pending_ && now >= *pending_;
     }
+
     std::optional<Clock::time_point> deadline() const {
         std::lock_guard lock(mutex_);
         return pending_;
     }
+
     std::optional<Clock::time_point> take_pending() {
         std::lock_guard lock(mutex_);
         return std::exchange(pending_, {});
     }
+
     void observe(std::span<const std::uint8_t> bytes) {
         std::lock_guard lock(mutex_);
         while (bytes_.size() < bytes.size())
             bytes_.resize(bytes_.size() * 2);
         std::copy(bytes.begin(), bytes.end(), bytes_.begin());
     }
+
     std::size_t capacity() const {
         std::lock_guard lock(mutex_);
         return bytes_.size();
     }
+
     std::vector<std::uint8_t> overlapping_fills(std::span<const std::uint8_t> drain,
                                                 std::span<const std::uint8_t> synchronous) {
         std::lock_guard lock(mutex_);
@@ -56,4 +63,4 @@ public:
         return {bytes_.begin(), bytes_.begin() + drain.size() + synchronous.size()};
     }
 };
-}
+} // namespace opensim::framework

@@ -1,0 +1,4748 @@
+[
+  {
+    "name": "normal",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "57438459DD1364BF2046127779C12F3D",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 7
+        }
+      },
+      "event_code": "None",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 7
+        }
+      },
+      "event_code": "None",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual unchanged original xmrEventCallHandler inline/direct delegate invocation; no handwritten helper frame manufactured. Capturing CheckRunWork yields only frames produced by original code; normal control may ignore scheduler suspension (sleep_uninterrupted). ScriptResetException is propagated by original CallSEH and recorded before outer engine ResetLocked, not modeled as completed reset. Actual unchanged CodeGen/XMRInstance helpers/API/engine instance lookup/PostEvent/Running setter/MigrateOut/MigrateIn/CallSEH. Only CheckRunWork scheduler capture is overridden. Scene resource cleanup is not replaced; real minimal Scene and empty original async plugin resources supplied; no StateChange override. Uninterrupted and captured reentrant cases are separate actual executions.",
+    "sha256": {
+      "cache_key.txt": "c3011eaeb1b0ebaccb8bef7db48c2b0cf241c821074c556df619e1079a70edf1",
+      "original.il.txt": "070941af87d3d3584461b3c5f59a5a96ef44998b8400baf394cc2fbc5c42f473",
+      "original.yobj": "ce91780a7c5e94548e367ac0543450fda56c39a9e6a02ae69ed77ec3986c5105",
+      "source.lsl": "1b54456cf494e0504b3ac02b39f1f5e82c9e89c63a91ce0544e6eecd239b29f9",
+      "generator_source": "a4ca0fd30ba0d2b6f0dc541e11872310fd61de65df4babc72e58093efe87f7be",
+      "generator_assembly": "df5548aff348933eac3346e7567eec62a6c4a32a753123cdcbd1d25c8946c842",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "absent",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "03A4B619B247C19FB105268262FD28AA",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        }
+      },
+      "event_code": "None",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        }
+      },
+      "event_code": "None",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual unchanged original xmrEventCallHandler inline/direct delegate invocation; no handwritten helper frame manufactured. Capturing CheckRunWork yields only frames produced by original code; normal control may ignore scheduler suspension (sleep_uninterrupted). ScriptResetException is propagated by original CallSEH and recorded before outer engine ResetLocked, not modeled as completed reset. Actual unchanged CodeGen/XMRInstance helpers/API/engine instance lookup/PostEvent/Running setter/MigrateOut/MigrateIn/CallSEH. Only CheckRunWork scheduler capture is overridden. Scene resource cleanup is not replaced; real minimal Scene and empty original async plugin resources supplied; no StateChange override. Uninterrupted and captured reentrant cases are separate actual executions.",
+    "sha256": {
+      "cache_key.txt": "75a2aeb948e57575f0f1cc4cc6a21e46dc2cc1d385323a6ae1b820ed928747a4",
+      "original.il.txt": "046231c1775c28ffa1ffc1e7fb6a59640248c30553fc699e1650e1e81b0adfd4",
+      "original.yobj": "f6425a1b6281e585c447df3000270b3af03ba1a78a244058e58a8f22d2caf409",
+      "source.lsl": "dceb7f04494f274e8b1978b336ace6c568f8c2e11fc82512f95d9d9bded97f00",
+      "generator_source": "a4ca0fd30ba0d2b6f0dc541e11872310fd61de65df4babc72e58093efe87f7be",
+      "generator_assembly": "df5548aff348933eac3346e7567eec62a6c4a32a753123cdcbd1d25c8946c842",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "extra",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "642A5873A56ABEBEA17B1D0EAFE1D6C6",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 7
+        }
+      },
+      "event_code": "None",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 7
+        }
+      },
+      "event_code": "None",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual unchanged original xmrEventCallHandler inline/direct delegate invocation; no handwritten helper frame manufactured. Capturing CheckRunWork yields only frames produced by original code; normal control may ignore scheduler suspension (sleep_uninterrupted). ScriptResetException is propagated by original CallSEH and recorded before outer engine ResetLocked, not modeled as completed reset. Actual unchanged CodeGen/XMRInstance helpers/API/engine instance lookup/PostEvent/Running setter/MigrateOut/MigrateIn/CallSEH. Only CheckRunWork scheduler capture is overridden. Scene resource cleanup is not replaced; real minimal Scene and empty original async plugin resources supplied; no StateChange override. Uninterrupted and captured reentrant cases are separate actual executions.",
+    "sha256": {
+      "cache_key.txt": "fa9f62ebd530f6dd9ac4ae19117429e29ce5f192f915ab6a17870d373b6d7bc8",
+      "original.il.txt": "087d78b6e086cbb5fc2a5f101e63bbd531fccac7d4dd1fb3331bc0b18910810a",
+      "original.yobj": "bc873f703f19a6f1aa144786863447c6453bfef1a278e48db679e8c37e64aaab",
+      "source.lsl": "a1c476cee641a84ca2c762fed5bd485881dd49fbe1ba1097603478dcd0a7eabc",
+      "generator_source": "a4ca0fd30ba0d2b6f0dc541e11872310fd61de65df4babc72e58093efe87f7be",
+      "generator_assembly": "df5548aff348933eac3346e7567eec62a6c4a32a753123cdcbd1d25c8946c842",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "missing",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "1344F596AF936640C14C3D0CD325456C",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": {
+      "type": "System.IndexOutOfRangeException",
+      "message": "Index was outside the bounds of the array.",
+      "stack": "   at default touch_start(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrEventCallHandler(list ev) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 837\r\n   at default state_entry(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 558\r\n   at EventCallHandlerReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\tests\\yengine_event_call_handler_reference.cs:line 560"
+    },
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      },
+      "event_code": "touch_start",
+      "event_arguments": [],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      },
+      "event_code": "touch_start",
+      "event_arguments": [],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual unchanged original xmrEventCallHandler inline/direct delegate invocation; no handwritten helper frame manufactured. Capturing CheckRunWork yields only frames produced by original code; normal control may ignore scheduler suspension (sleep_uninterrupted). ScriptResetException is propagated by original CallSEH and recorded before outer engine ResetLocked, not modeled as completed reset. Actual unchanged CodeGen/XMRInstance helpers/API/engine instance lookup/PostEvent/Running setter/MigrateOut/MigrateIn/CallSEH. Only CheckRunWork scheduler capture is overridden. Scene resource cleanup is not replaced; real minimal Scene and empty original async plugin resources supplied; no StateChange override. Uninterrupted and captured reentrant cases are separate actual executions.",
+    "sha256": {
+      "cache_key.txt": "fae70e78c055a0be5ba5ad36bb9aec1f62832ddf67cc54cf1cff3f9ae61f5d2c",
+      "original.il.txt": "668213a46edf2937108860ccf9d1fe03e5a4eda1dbc25ae76b7f49136ed15e38",
+      "original.yobj": "ca8f7143abe6f10effae006f7aeff6129caa0f36541974146609bda0ac9e9ec2",
+      "source.lsl": "1b31ae29c0c9ea511c03a68032899497105445436f2659779d0e517e52e6d7f4",
+      "generator_source": "a4ca0fd30ba0d2b6f0dc541e11872310fd61de65df4babc72e58093efe87f7be",
+      "generator_assembly": "df5548aff348933eac3346e7567eec62a6c4a32a753123cdcbd1d25c8946c842",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "wrong_type",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "DAF4C9FB7B5000D454D4A57C5887DE27",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": {
+      "type": "System.InvalidCastException",
+      "message": "Unable to cast object of type \u0027LSLString\u0027 to type \u0027System.Int32\u0027.",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.TypeCast.EHArgUnwrapInteger(Object x) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\MMRScriptTypeCast.cs:line 952\r\n   at default touch_start(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrEventCallHandler(list ev) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 837\r\n   at default state_entry(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 558\r\n   at EventCallHandlerReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\tests\\yengine_event_call_handler_reference.cs:line 560"
+    },
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      },
+      "event_code": "touch_start",
+      "event_arguments": [
+        {
+          "type": "string",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+          "value": "bad"
+        }
+      ],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      },
+      "event_code": "touch_start",
+      "event_arguments": [
+        {
+          "type": "string",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+          "value": "bad"
+        }
+      ],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual unchanged original xmrEventCallHandler inline/direct delegate invocation; no handwritten helper frame manufactured. Capturing CheckRunWork yields only frames produced by original code; normal control may ignore scheduler suspension (sleep_uninterrupted). ScriptResetException is propagated by original CallSEH and recorded before outer engine ResetLocked, not modeled as completed reset. Actual unchanged CodeGen/XMRInstance helpers/API/engine instance lookup/PostEvent/Running setter/MigrateOut/MigrateIn/CallSEH. Only CheckRunWork scheduler capture is overridden. Scene resource cleanup is not replaced; real minimal Scene and empty original async plugin resources supplied; no StateChange override. Uninterrupted and captured reentrant cases are separate actual executions.",
+    "sha256": {
+      "cache_key.txt": "0a86ad0b3044c8d021fa0b74905d3a7ea28432eb4cf3a390bd496d6350c94774",
+      "original.il.txt": "bbd417253c9a533a1243f78296c1a418b64726c4028ecc38ac3cfda829c4ce34",
+      "original.yobj": "2fe6eb004278ba2907c966238dc21adb1ec078683f7d852f57e16f2b8b41177c",
+      "source.lsl": "00b4c90abd2b6e7e164983bfcfe6bcc73dee49f591832f7bb35b427fe8c6531e",
+      "generator_source": "a4ca0fd30ba0d2b6f0dc541e11872310fd61de65df4babc72e58093efe87f7be",
+      "generator_assembly": "df5548aff348933eac3346e7567eec62a6c4a32a753123cdcbd1d25c8946c842",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "empty",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "185DDFA529F0745554BE1CDF5EF6C433",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": {
+      "type": "System.IndexOutOfRangeException",
+      "message": "Index was outside the bounds of the array.",
+      "stack": "   at OpenSim.Region.ScriptEngine.Shared.LSL_Types.list.GetIntegerItem(Int32 itemIndex) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\Shared\\LSL_Types.cs:line 1034\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrEventCallHandler(list ev) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 823\r\n   at default state_entry(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 558\r\n   at EventCallHandlerReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\tests\\yengine_event_call_handler_reference.cs:line 560"
+    },
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      },
+      "event_code": "state_entry",
+      "event_arguments": [],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      },
+      "event_code": "state_entry",
+      "event_arguments": [],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual unchanged original xmrEventCallHandler inline/direct delegate invocation; no handwritten helper frame manufactured. Capturing CheckRunWork yields only frames produced by original code; normal control may ignore scheduler suspension (sleep_uninterrupted). ScriptResetException is propagated by original CallSEH and recorded before outer engine ResetLocked, not modeled as completed reset. Actual unchanged CodeGen/XMRInstance helpers/API/engine instance lookup/PostEvent/Running setter/MigrateOut/MigrateIn/CallSEH. Only CheckRunWork scheduler capture is overridden. Scene resource cleanup is not replaced; real minimal Scene and empty original async plugin resources supplied; no StateChange override. Uninterrupted and captured reentrant cases are separate actual executions.",
+    "sha256": {
+      "cache_key.txt": "50c60405d1e0a6b682158712b0f81c80f1ba44c27e149fa837947dfca7e9ebe3",
+      "original.il.txt": "d8216d6a72e223f2e4870299528de5ac096d7cf79e77622dc45d3169667defae",
+      "original.yobj": "fda029d81987719b5e825a4a637d40dba9077b63580874f7b63763d132bb31be",
+      "source.lsl": "25ee73661c6621da135d3d56ca897433eebc6734d4e60363d057e95d51a7689d",
+      "generator_source": "a4ca0fd30ba0d2b6f0dc541e11872310fd61de65df4babc72e58093efe87f7be",
+      "generator_assembly": "df5548aff348933eac3346e7567eec62a6c4a32a753123cdcbd1d25c8946c842",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "invalid_code",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "9CEE8A7DB4FFE1B98E1443AE65519A19",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": {
+      "type": "System.IndexOutOfRangeException",
+      "message": "Index was outside the bounds of the array.",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrEventCallHandler(list ev) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 824\r\n   at default state_entry(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 558\r\n   at EventCallHandlerReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\tests\\yengine_event_call_handler_reference.cs:line 560"
+    },
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      },
+      "event_code": "state_entry",
+      "event_arguments": [],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      },
+      "event_code": "state_entry",
+      "event_arguments": [],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual unchanged original xmrEventCallHandler inline/direct delegate invocation; no handwritten helper frame manufactured. Capturing CheckRunWork yields only frames produced by original code; normal control may ignore scheduler suspension (sleep_uninterrupted). ScriptResetException is propagated by original CallSEH and recorded before outer engine ResetLocked, not modeled as completed reset. Actual unchanged CodeGen/XMRInstance helpers/API/engine instance lookup/PostEvent/Running setter/MigrateOut/MigrateIn/CallSEH. Only CheckRunWork scheduler capture is overridden. Scene resource cleanup is not replaced; real minimal Scene and empty original async plugin resources supplied; no StateChange override. Uninterrupted and captured reentrant cases are separate actual executions.",
+    "sha256": {
+      "cache_key.txt": "8ad843fec600d84c321486cab8fabd79f2f2b1e377900bc6915601895f9876d4",
+      "original.il.txt": "27b66148f905dd291d4cfbb101c9fbbafb6b5ddeb39f14dcb37279d0665c6439",
+      "original.yobj": "0ab97aedb8d193620ee555407ea14393f8e6f1f4b74eb9641c047fdf2f36a9d9",
+      "source.lsl": "b0e666d719a138a1446d58eab4a2e0d2a1bc97147627c349e7e5cddb29f95e76",
+      "generator_source": "a4ca0fd30ba0d2b6f0dc541e11872310fd61de65df4babc72e58093efe87f7be",
+      "generator_assembly": "df5548aff348933eac3346e7567eec62a6c4a32a753123cdcbd1d25c8946c842",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "string_code",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "5C2D0100E8D0836DC13EBA8951A0F5AE",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 7
+        }
+      },
+      "event_code": "None",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 7
+        }
+      },
+      "event_code": "None",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual unchanged original xmrEventCallHandler inline/direct delegate invocation; no handwritten helper frame manufactured. Capturing CheckRunWork yields only frames produced by original code; normal control may ignore scheduler suspension (sleep_uninterrupted). ScriptResetException is propagated by original CallSEH and recorded before outer engine ResetLocked, not modeled as completed reset. Actual unchanged CodeGen/XMRInstance helpers/API/engine instance lookup/PostEvent/Running setter/MigrateOut/MigrateIn/CallSEH. Only CheckRunWork scheduler capture is overridden. Scene resource cleanup is not replaced; real minimal Scene and empty original async plugin resources supplied; no StateChange override. Uninterrupted and captured reentrant cases are separate actual executions.",
+    "sha256": {
+      "cache_key.txt": "f9d0ea13915673ef4ddea360f6fe80edc3bb26d3c3fc1b1def5f0768e2be1ffc",
+      "original.il.txt": "534a43fd3874cce36e67571ee43f0b6b989424a7e7aee827d1c427be66d7cb84",
+      "original.yobj": "614e5b68e7a9c2b480ba9c2a30f76c79716d9770d1e86c5c45f7d670ca276941",
+      "source.lsl": "77f4c0d046ec1e65b3041c9897df20417fa0116589aef869631076b3ddc3f93f",
+      "generator_source": "a4ca0fd30ba0d2b6f0dc541e11872310fd61de65df4babc72e58093efe87f7be",
+      "generator_assembly": "df5548aff348933eac3346e7567eec62a6c4a32a753123cdcbd1d25c8946c842",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "nested",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "2AC18E48E89FE251DD2C4961BB7F4053",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 116
+        }
+      },
+      "event_code": "None",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 116
+        }
+      },
+      "event_code": "None",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual unchanged original xmrEventCallHandler inline/direct delegate invocation; no handwritten helper frame manufactured. Capturing CheckRunWork yields only frames produced by original code; normal control may ignore scheduler suspension (sleep_uninterrupted). ScriptResetException is propagated by original CallSEH and recorded before outer engine ResetLocked, not modeled as completed reset. Actual unchanged CodeGen/XMRInstance helpers/API/engine instance lookup/PostEvent/Running setter/MigrateOut/MigrateIn/CallSEH. Only CheckRunWork scheduler capture is overridden. Scene resource cleanup is not replaced; real minimal Scene and empty original async plugin resources supplied; no StateChange override. Uninterrupted and captured reentrant cases are separate actual executions.",
+    "sha256": {
+      "cache_key.txt": "849878d2e2d3adb8f26270e868d900654ec4d780c58d2be27dedbac273fd9e3d",
+      "original.il.txt": "087ce242dc0cbe8789abac3f22e92c2365189d66e4862cdd5eb8cd32475b1f93",
+      "original.yobj": "3df450e7cffa0e5114fd51a20733c5c6a83ab6cd0dea397204ac0654a14bfe72",
+      "source.lsl": "eb26ea31faa54449dd4e48376db0c49a1f36e92afde9a0329c453bf744233ee9",
+      "generator_source": "a4ca0fd30ba0d2b6f0dc541e11872310fd61de65df4babc72e58093efe87f7be",
+      "generator_assembly": "df5548aff348933eac3346e7567eec62a6c4a32a753123cdcbd1d25c8946c842",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "detector_persistence",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "FADEDCCBAA5B728E53C9962C1AEA1527",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "string",
+          "clr": "System.String",
+          "value": ""
+        },
+        "before": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "original rich detector 3"
+        },
+        "inside": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "original rich detector 3"
+        }
+      },
+      "event_code": "None",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "after": {
+          "type": "string",
+          "clr": "System.String",
+          "value": ""
+        },
+        "before": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "original rich detector 3"
+        },
+        "inside": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "original rich detector 3"
+        }
+      },
+      "event_code": "None",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual unchanged original xmrEventCallHandler inline/direct delegate invocation; no handwritten helper frame manufactured. Capturing CheckRunWork yields only frames produced by original code; normal control may ignore scheduler suspension (sleep_uninterrupted). ScriptResetException is propagated by original CallSEH and recorded before outer engine ResetLocked, not modeled as completed reset. Actual unchanged CodeGen/XMRInstance helpers/API/engine instance lookup/PostEvent/Running setter/MigrateOut/MigrateIn/CallSEH. Only CheckRunWork scheduler capture is overridden. Scene resource cleanup is not replaced; real minimal Scene and empty original async plugin resources supplied; no StateChange override. Uninterrupted and captured reentrant cases are separate actual executions.",
+    "sha256": {
+      "cache_key.txt": "cd9ce1c8aff0dc5957a59bf66bae2c385a5d6471594afdd415fcc24802b61b6b",
+      "original.il.txt": "19bcbf0156d6efebd47cf4878043e16cfbff2730a2b65217737fbbd54bd8a81d",
+      "original.yobj": "d6f91dac7a73e9b669d0123bd7f8035e3af73913954c4628545da0b0ae355e1e",
+      "source.lsl": "608d10866d9ac073535edacdd6acd6e033cde28b540110a94f1bcb2490612503",
+      "generator_source": "a4ca0fd30ba0d2b6f0dc541e11872310fd61de65df4babc72e58093efe87f7be",
+      "generator_assembly": "df5548aff348933eac3346e7567eec62a6c4a32a753123cdcbd1d25c8946c842",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "sleep",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "9304E8E6D062B424FFC80A201692A340",
+    "compiled_version": -11,
+    "suspended": true,
+    "migrated": true,
+    "initial_exception": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 7
+        }
+      },
+      "event_code": "touch_start",
+      "event_arguments": [
+        {
+          "type": "integer",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+          "value": 7
+        }
+      ],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default touch_start",
+          "call_no": 1,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        }
+      ]
+    },
+    "after_followup": null,
+    "after_load": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 7
+        }
+      },
+      "event_code": "touch_start",
+      "event_arguments": [
+        {
+          "type": "integer",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+          "value": 7
+        }
+      ],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default touch_start",
+          "call_no": 1,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        }
+      ]
+    },
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 107
+        }
+      },
+      "event_code": "None",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual unchanged original xmrEventCallHandler inline/direct delegate invocation; no handwritten helper frame manufactured. Capturing CheckRunWork yields only frames produced by original code; normal control may ignore scheduler suspension (sleep_uninterrupted). ScriptResetException is propagated by original CallSEH and recorded before outer engine ResetLocked, not modeled as completed reset. Actual unchanged CodeGen/XMRInstance helpers/API/engine instance lookup/PostEvent/Running setter/MigrateOut/MigrateIn/CallSEH. Only CheckRunWork scheduler capture is overridden. Scene resource cleanup is not replaced; real minimal Scene and empty original async plugin resources supplied; no StateChange override. Uninterrupted and captured reentrant cases are separate actual executions.",
+    "sha256": {
+      "cache_key.txt": "99190bbad1fcdad376d775c91f472141d8125b90e64e3451167a77a30722a50f",
+      "event-queue.xml": "09030ac3a8d5dbaa452ef2076d8c8a18f45eb5608570c79b134fc4ffc843309e",
+      "original.il.txt": "b69ca9b45ef3d5b33f968d4e363cb776e58a89134f19cc4e768e700c3fbf97f9",
+      "original.yobj": "ce9c762fbbd4f14a950cea7757dbd4b39ca7b94a90eca5288e7a6c2ab74afb3e",
+      "snapshot.bin": "6a72dd418f1d484d0d4e058d3424928b947010ae4dadbfa3d1534c6901b32044",
+      "source.lsl": "2a6fc536806ea858cb62d7ebfab356425f4eb4a9900ef0d3d23815f5aa496826",
+      "generator_source": "a4ca0fd30ba0d2b6f0dc541e11872310fd61de65df4babc72e58093efe87f7be",
+      "generator_assembly": "df5548aff348933eac3346e7567eec62a6c4a32a753123cdcbd1d25c8946c842",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "wait",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "99E64D1030DEA7AE9F44BD544DE9350F",
+    "compiled_version": -11,
+    "suspended": true,
+    "migrated": true,
+    "initial_exception": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 7
+        },
+        "result": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": []
+        }
+      },
+      "event_code": "touch_start",
+      "event_arguments": [
+        {
+          "type": "integer",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+          "value": 7
+        }
+      ],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default touch_start",
+          "call_no": 1,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        },
+        {
+          "function": "xmrEventDequeue",
+          "call_no": 0,
+          "slots": 9,
+          "slot_types": [
+            "System.String",
+            "System.Int32",
+            "System.Int32",
+            "System.Int32",
+            "System.Int32",
+            null,
+            null,
+            null,
+            null
+          ]
+        }
+      ]
+    },
+    "after_followup": null,
+    "after_load": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 7
+        },
+        "result": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": []
+        }
+      },
+      "event_code": "touch_start",
+      "event_arguments": [
+        {
+          "type": "integer",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+          "value": 7
+        }
+      ],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default touch_start",
+          "call_no": 1,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        },
+        {
+          "function": "xmrEventDequeue",
+          "call_no": 0,
+          "slots": 9,
+          "slot_types": [
+            "System.String",
+            "System.Int32",
+            "System.Int32",
+            "System.Int32",
+            "System.Int32",
+            null,
+            null,
+            null,
+            null
+          ]
+        }
+      ]
+    },
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 107
+        },
+        "result": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": []
+        }
+      },
+      "event_code": "None",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual unchanged original xmrEventCallHandler inline/direct delegate invocation; no handwritten helper frame manufactured. Capturing CheckRunWork yields only frames produced by original code; normal control may ignore scheduler suspension (sleep_uninterrupted). ScriptResetException is propagated by original CallSEH and recorded before outer engine ResetLocked, not modeled as completed reset. Actual unchanged CodeGen/XMRInstance helpers/API/engine instance lookup/PostEvent/Running setter/MigrateOut/MigrateIn/CallSEH. Only CheckRunWork scheduler capture is overridden. Scene resource cleanup is not replaced; real minimal Scene and empty original async plugin resources supplied; no StateChange override. Uninterrupted and captured reentrant cases are separate actual executions.",
+    "sha256": {
+      "cache_key.txt": "4ae3956ed0f20aa4d073150014f89a5cc5e3d70b140cba2f722ca03cdbedf3c8",
+      "event-queue.xml": "09030ac3a8d5dbaa452ef2076d8c8a18f45eb5608570c79b134fc4ffc843309e",
+      "original.il.txt": "40fb188f6d8692cfff44fc0207eb87aae7f759046137d3b9bc21dbd457232e31",
+      "original.yobj": "fa9fbe521f00b087f0ad0a45038a1e54504940cceadd3e94f87842bdb37f1511",
+      "snapshot.bin": "a89ac4a29032032b03a0eb768f825b351fe601e5c71a81957472554f6774b53e",
+      "source.lsl": "d845ae62fee9a399604100b9bc9a713d68fb4a5b9277cbef34d97c60acf449d2",
+      "generator_source": "a4ca0fd30ba0d2b6f0dc541e11872310fd61de65df4babc72e58093efe87f7be",
+      "generator_assembly": "df5548aff348933eac3346e7567eec62a6c4a32a753123cdcbd1d25c8946c842",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "state_change",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "B6AEC3D7E1467F930C81071E6862B41E",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1017
+        }
+      },
+      "event_code": "None",
+      "event_arguments": null,
+      "state_index": 1,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1017
+        }
+      },
+      "event_code": "None",
+      "event_arguments": null,
+      "state_index": 1,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual unchanged original xmrEventCallHandler inline/direct delegate invocation; no handwritten helper frame manufactured. Capturing CheckRunWork yields only frames produced by original code; normal control may ignore scheduler suspension (sleep_uninterrupted). ScriptResetException is propagated by original CallSEH and recorded before outer engine ResetLocked, not modeled as completed reset. Actual unchanged CodeGen/XMRInstance helpers/API/engine instance lookup/PostEvent/Running setter/MigrateOut/MigrateIn/CallSEH. Only CheckRunWork scheduler capture is overridden. Scene resource cleanup is not replaced; real minimal Scene and empty original async plugin resources supplied; no StateChange override. Uninterrupted and captured reentrant cases are separate actual executions.",
+    "sha256": {
+      "cache_key.txt": "0bbe7f305cae9d6fa1f78585c85e22cc9ae782126305fdaa894b8239d77c0b84",
+      "original.il.txt": "13e212784828e5e6e892886378ebb41574791e245c1ff38f1963a1b18a41c20d",
+      "original.yobj": "ec1e91514f1f1894efdb176e77471b08165be3fbbae30f16a0efebf6afb73040",
+      "source.lsl": "60fe7e466eae05139d852672e68c13659b9b15d49695778e7659065a5cf8955d",
+      "generator_source": "a4ca0fd30ba0d2b6f0dc541e11872310fd61de65df4babc72e58093efe87f7be",
+      "generator_assembly": "df5548aff348933eac3346e7567eec62a6c4a32a753123cdcbd1d25c8946c842",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "reset",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "08C826B963523F8BEF1BB8479E494EE1",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.ScriptResetException",
+      "message": "Exception of type \u0027OpenSim.Region.ScriptEngine.Yengine.ScriptResetException\u0027 was thrown.",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstance.ApiReset() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstBackend.cs:line 238\r\n   at OpenSim.Region.ScriptEngine.Shared.Api.LSL_Api.llResetScript() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\Shared\\Api\\Implementation\\LSL_Api.cs:line 586\r\n   at default touch_start(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrEventCallHandler(list ev) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 837\r\n   at default state_entry(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 558\r\n   at EventCallHandlerReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\tests\\yengine_event_call_handler_reference.cs:line 560"
+    },
+    "direct_reset_scheduler_boundary": true,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 7
+        }
+      },
+      "event_code": "touch_start",
+      "event_arguments": [
+        {
+          "type": "integer",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+          "value": 7
+        }
+      ],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 7
+        }
+      },
+      "event_code": "touch_start",
+      "event_arguments": [
+        {
+          "type": "integer",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+          "value": 7
+        }
+      ],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual unchanged original xmrEventCallHandler inline/direct delegate invocation; no handwritten helper frame manufactured. Capturing CheckRunWork yields only frames produced by original code; normal control may ignore scheduler suspension (sleep_uninterrupted). ScriptResetException is propagated by original CallSEH and recorded before outer engine ResetLocked, not modeled as completed reset. Actual unchanged CodeGen/XMRInstance helpers/API/engine instance lookup/PostEvent/Running setter/MigrateOut/MigrateIn/CallSEH. Only CheckRunWork scheduler capture is overridden. Scene resource cleanup is not replaced; real minimal Scene and empty original async plugin resources supplied; no StateChange override. Uninterrupted and captured reentrant cases are separate actual executions.",
+    "sha256": {
+      "cache_key.txt": "0f79cd141e79c07402663617bd498209266478a371ee57b1cfcb717e71dbe980",
+      "original.il.txt": "883aeb6a43266583dcf12cb3f13313be944cc3b3860e80858303439ba9f73c1c",
+      "original.yobj": "eaf4f6bc28a9d350e4e204e72372c311c706f20b8907b34ef45baf490bcdd0e6",
+      "source.lsl": "5c98c57dfec6e92a2aacec7dde6d9aba4af7249e06d4cf4ce2682eb8dcb5ed0f",
+      "generator_source": "a4ca0fd30ba0d2b6f0dc541e11872310fd61de65df4babc72e58093efe87f7be",
+      "generator_assembly": "df5548aff348933eac3346e7567eec62a6c4a32a753123cdcbd1d25c8946c842",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "float_code",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "7B28353D4722D34E37AA4F7F71605CD1",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 7
+        }
+      },
+      "event_code": "None",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 7
+        }
+      },
+      "event_code": "None",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual unchanged original xmrEventCallHandler inline/direct delegate invocation; no handwritten helper frame manufactured. Capturing CheckRunWork yields only frames produced by original code; normal control may ignore scheduler suspension (sleep_uninterrupted). ScriptResetException is propagated by original CallSEH and recorded before outer engine ResetLocked, not modeled as completed reset. Actual unchanged CodeGen/XMRInstance helpers/API/engine instance lookup/PostEvent/Running setter/MigrateOut/MigrateIn/CallSEH. Only CheckRunWork scheduler capture is overridden. Scene resource cleanup is not replaced; real minimal Scene and empty original async plugin resources supplied; no StateChange override. Uninterrupted and captured reentrant cases are separate actual executions.",
+    "sha256": {
+      "cache_key.txt": "fa5e7c8d2c772b1833ba9796a9237aa7aa249ea83c6c7a8035927938b3f015eb",
+      "original.il.txt": "37010487380f86047f9e8cb19bc46610b2ca844815d737a520a874eb319d9b5d",
+      "original.yobj": "272f492b01d1105821b7257beec60d816e78ce708185ecf9decf341f5e40c5ac",
+      "source.lsl": "9645f898b8d96a5b50166db19f9ba106afc7dd71a56977e0b845a75db189b2cb",
+      "generator_source": "a4ca0fd30ba0d2b6f0dc541e11872310fd61de65df4babc72e58093efe87f7be",
+      "generator_assembly": "df5548aff348933eac3346e7567eec62a6c4a32a753123cdcbd1d25c8946c842",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "bad_string_code",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "4C1B1FFD26B2C8B27B442FECB5B89F65",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": {
+      "type": "System.FormatException",
+      "message": "The input string \u0027bad\u0027 was not in a correct format.",
+      "stack": "   at System.Number.ThrowFormatException[TChar](ReadOnlySpan\u00601 value)\r\n   at System.Convert.ToInt32(String value)\r\n   at OpenSim.Region.ScriptEngine.Shared.LSL_Types.list.GetIntegerItem(Int32 itemIndex) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\Shared\\LSL_Types.cs:line 1046\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrEventCallHandler(list ev) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 823\r\n   at default state_entry(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 558\r\n   at EventCallHandlerReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\tests\\yengine_event_call_handler_reference.cs:line 560"
+    },
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      },
+      "event_code": "state_entry",
+      "event_arguments": [],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      },
+      "event_code": "state_entry",
+      "event_arguments": [],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual unchanged original xmrEventCallHandler inline/direct delegate invocation; no handwritten helper frame manufactured. Capturing CheckRunWork yields only frames produced by original code; normal control may ignore scheduler suspension (sleep_uninterrupted). ScriptResetException is propagated by original CallSEH and recorded before outer engine ResetLocked, not modeled as completed reset. Actual unchanged CodeGen/XMRInstance helpers/API/engine instance lookup/PostEvent/Running setter/MigrateOut/MigrateIn/CallSEH. Only CheckRunWork scheduler capture is overridden. Scene resource cleanup is not replaced; real minimal Scene and empty original async plugin resources supplied; no StateChange override. Uninterrupted and captured reentrant cases are separate actual executions.",
+    "sha256": {
+      "cache_key.txt": "090fc91a0bda26d0b6edd9cad20ca8d12845a6a3ef09b33ee4d8ebb962fded62",
+      "original.il.txt": "7e293b022cb0e16e3e8766cb157f5b13ec27e13b0bd25f8e577fa0d6a0803c1d",
+      "original.yobj": "c473b913ea9bc4c4c76a207a8faae76faf1c6de88c56f9a3e0cf5a1e44532bc3",
+      "source.lsl": "d44f23294ac2ee1c9347f7ee444419b25253bcc5e3ae7d200184d43eb61288fa",
+      "generator_source": "a4ca0fd30ba0d2b6f0dc541e11872310fd61de65df4babc72e58093efe87f7be",
+      "generator_assembly": "df5548aff348933eac3346e7567eec62a6c4a32a753123cdcbd1d25c8946c842",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "negative_code",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "E82FF7FF5E3E4D7BB0543182356123DC",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": {
+      "type": "System.IndexOutOfRangeException",
+      "message": "Index was outside the bounds of the array.",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrEventCallHandler(list ev) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 824\r\n   at default state_entry(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 558\r\n   at EventCallHandlerReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\tests\\yengine_event_call_handler_reference.cs:line 560"
+    },
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {},
+      "event_code": "state_entry",
+      "event_arguments": [],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": true,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {},
+      "event_code": "state_entry",
+      "event_arguments": [],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": true,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual unchanged original xmrEventCallHandler inline/direct delegate invocation; no handwritten helper frame manufactured. Capturing CheckRunWork yields only frames produced by original code; normal control may ignore scheduler suspension (sleep_uninterrupted). ScriptResetException is propagated by original CallSEH and recorded before outer engine ResetLocked, not modeled as completed reset. Actual unchanged CodeGen/XMRInstance helpers/API/engine instance lookup/PostEvent/Running setter/MigrateOut/MigrateIn/CallSEH. Only CheckRunWork scheduler capture is overridden. Scene resource cleanup is not replaced; real minimal Scene and empty original async plugin resources supplied; no StateChange override. Uninterrupted and captured reentrant cases are separate actual executions.",
+    "sha256": {
+      "cache_key.txt": "474f59874af5c60fedd293158faae20518f8d78f57b3184faae51656ca86c59c",
+      "original.il.txt": "c69ac289657323a6fa27b154842cc10184125ab39f4b9dd6c5a0f3a8d5dbddb7",
+      "original.yobj": "7fca78b507db7b7a4e8e1ba06f8b66e95c64f67ee0e674f0e793e27e3dddea61",
+      "source.lsl": "48e25759103bd0c62025790f3a66d4d5c030b668329c28037531c2fbb582ed11",
+      "generator_source": "a4ca0fd30ba0d2b6f0dc541e11872310fd61de65df4babc72e58093efe87f7be",
+      "generator_assembly": "df5548aff348933eac3346e7567eec62a6c4a32a753123cdcbd1d25c8946c842",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "vector_code",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "ED35E71BDA13AA356F9ED961D9E51D3F",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": {
+      "type": "System.InvalidCastException",
+      "message": "LSLInteger expected but Vector3 given",
+      "stack": "   at OpenSim.Region.ScriptEngine.Shared.LSL_Types.list.GetIntegerItem(Int32 itemIndex) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\Shared\\LSL_Types.cs:line 1048\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrEventCallHandler(list ev) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 823\r\n   at default state_entry(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 558\r\n   at EventCallHandlerReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\tests\\yengine_event_call_handler_reference.cs:line 560"
+    },
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {},
+      "event_code": "state_entry",
+      "event_arguments": [],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": true,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {},
+      "event_code": "state_entry",
+      "event_arguments": [],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": true,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual unchanged original xmrEventCallHandler inline/direct delegate invocation; no handwritten helper frame manufactured. Capturing CheckRunWork yields only frames produced by original code; normal control may ignore scheduler suspension (sleep_uninterrupted). ScriptResetException is propagated by original CallSEH and recorded before outer engine ResetLocked, not modeled as completed reset. Actual unchanged CodeGen/XMRInstance helpers/API/engine instance lookup/PostEvent/Running setter/MigrateOut/MigrateIn/CallSEH. Only CheckRunWork scheduler capture is overridden. Scene resource cleanup is not replaced; real minimal Scene and empty original async plugin resources supplied; no StateChange override. Uninterrupted and captured reentrant cases are separate actual executions.",
+    "sha256": {
+      "cache_key.txt": "3e6fd9205398d15018f37e5e531d1b6a379e370d0ab9414852c91b2b8392e472",
+      "original.il.txt": "5716a35c04df56c003fc8aa2cb6ed0ff89cf72fd2f5e48478102b1f9a80157f8",
+      "original.yobj": "d33d21cab02e735a4e99f3fcf39c50cdd917d0872d5a5dcacae4479e6a2b210e",
+      "source.lsl": "59949cfe296a093302753392a1fd1b0e7808babf36587fbcf77d93256cb931fe",
+      "generator_source": "a4ca0fd30ba0d2b6f0dc541e11872310fd61de65df4babc72e58093efe87f7be",
+      "generator_assembly": "df5548aff348933eac3346e7567eec62a6c4a32a753123cdcbd1d25c8946c842",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "absent_wrong_arguments",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "C563D3ABA02D57BDACBEF64903F577C4",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        }
+      },
+      "event_code": "None",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        }
+      },
+      "event_code": "None",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual unchanged original xmrEventCallHandler inline/direct delegate invocation; no handwritten helper frame manufactured. Capturing CheckRunWork yields only frames produced by original code; normal control may ignore scheduler suspension (sleep_uninterrupted). ScriptResetException is propagated by original CallSEH and recorded before outer engine ResetLocked, not modeled as completed reset. Actual unchanged CodeGen/XMRInstance helpers/API/engine instance lookup/PostEvent/Running setter/MigrateOut/MigrateIn/CallSEH. Only CheckRunWork scheduler capture is overridden. Scene resource cleanup is not replaced; real minimal Scene and empty original async plugin resources supplied; no StateChange override. Uninterrupted and captured reentrant cases are separate actual executions.",
+    "sha256": {
+      "cache_key.txt": "caf010b9aaf1dd26d2dedd9695aff22349811a7c5ec92d61f27f1f1e3bec2706",
+      "original.il.txt": "7161503026e94cab72e7d4b195045e7060e30720af04a6b2847c2b32f1db4f05",
+      "original.yobj": "ef86914c4d12a68f2feb8e8ff1da9382086908e8ec5072f239dd2daab7dcc72f",
+      "source.lsl": "828bb8f63150be2f059432fa2835c75d512562eba6ad9c49e9f67fa700af7baf",
+      "generator_source": "a4ca0fd30ba0d2b6f0dc541e11872310fd61de65df4babc72e58093efe87f7be",
+      "generator_assembly": "df5548aff348933eac3346e7567eec62a6c4a32a753123cdcbd1d25c8946c842",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "sleep_uninterrupted",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "9304E8E6D062B424FFC80A201692A340",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 107
+        }
+      },
+      "event_code": "None",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 107
+        }
+      },
+      "event_code": "None",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual unchanged original xmrEventCallHandler inline/direct delegate invocation; no handwritten helper frame manufactured. Capturing CheckRunWork yields only frames produced by original code; normal control may ignore scheduler suspension (sleep_uninterrupted). ScriptResetException is propagated by original CallSEH and recorded before outer engine ResetLocked, not modeled as completed reset. Actual unchanged CodeGen/XMRInstance helpers/API/engine instance lookup/PostEvent/Running setter/MigrateOut/MigrateIn/CallSEH. Only CheckRunWork scheduler capture is overridden. Scene resource cleanup is not replaced; real minimal Scene and empty original async plugin resources supplied; no StateChange override. Uninterrupted and captured reentrant cases are separate actual executions.",
+    "sha256": {
+      "cache_key.txt": "99190bbad1fcdad376d775c91f472141d8125b90e64e3451167a77a30722a50f",
+      "original.il.txt": "b69ca9b45ef3d5b33f968d4e363cb776e58a89134f19cc4e768e700c3fbf97f9",
+      "original.yobj": "ce9c762fbbd4f14a950cea7757dbd4b39ca7b94a90eca5288e7a6c2ab74afb3e",
+      "source.lsl": "2a6fc536806ea858cb62d7ebfab356425f4eb4a9900ef0d3d23815f5aa496826",
+      "generator_source": "a4ca0fd30ba0d2b6f0dc541e11872310fd61de65df4babc72e58093efe87f7be",
+      "generator_assembly": "df5548aff348933eac3346e7567eec62a6c4a32a753123cdcbd1d25c8946c842",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "nested_sleep",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "240A77C93F0A415E09C371E4D8057EB1",
+    "compiled_version": -11,
+    "suspended": true,
+    "migrated": true,
+    "initial_exception": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 16
+        }
+      },
+      "event_code": "touch_end",
+      "event_arguments": [
+        {
+          "type": "integer",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+          "value": 9
+        }
+      ],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default touch_end",
+          "call_no": 1,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        }
+      ]
+    },
+    "after_followup": null,
+    "after_load": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 16
+        }
+      },
+      "event_code": "touch_end",
+      "event_arguments": [
+        {
+          "type": "integer",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+          "value": 9
+        }
+      ],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default touch_end",
+          "call_no": 1,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        }
+      ]
+    },
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1016
+        }
+      },
+      "event_code": "None",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual unchanged original xmrEventCallHandler inline/direct delegate invocation; no handwritten helper frame manufactured. Capturing CheckRunWork yields only frames produced by original code; normal control may ignore scheduler suspension (sleep_uninterrupted). ScriptResetException is propagated by original CallSEH and recorded before outer engine ResetLocked, not modeled as completed reset. Actual unchanged CodeGen/XMRInstance helpers/API/engine instance lookup/PostEvent/Running setter/MigrateOut/MigrateIn/CallSEH. Only CheckRunWork scheduler capture is overridden. Scene resource cleanup is not replaced; real minimal Scene and empty original async plugin resources supplied; no StateChange override. Uninterrupted and captured reentrant cases are separate actual executions.",
+    "sha256": {
+      "cache_key.txt": "f13f3981db48360ed133a4c6293b06dafd78440a2a3d3d7511045b001af7dc76",
+      "event-queue.xml": "09030ac3a8d5dbaa452ef2076d8c8a18f45eb5608570c79b134fc4ffc843309e",
+      "original.il.txt": "d62669e0ec4acc61614b71e52ae0b45c20bc1025b8f863cfd6dbbb6f9c77b843",
+      "original.yobj": "7d3489165060f97263e31ca31d121cfdfcec46436f3356d6adc38d55a4051036",
+      "snapshot.bin": "55fb30adaeaa52e973cb9a885f2b3fdff2d004cf19abe1459d18d67ebfcecf21",
+      "source.lsl": "48996ce99c68f65dd80a02787917bb961ddc8343d2b88485799d7f57430948b4",
+      "generator_source": "a4ca0fd30ba0d2b6f0dc541e11872310fd61de65df4babc72e58093efe87f7be",
+      "generator_assembly": "df5548aff348933eac3346e7567eec62a6c4a32a753123cdcbd1d25c8946c842",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "global_sleep",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "D99BB636ED76DCAF053516F185D7C4E4",
+    "compiled_version": -11,
+    "suspended": true,
+    "migrated": true,
+    "initial_exception": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 8
+        },
+        "value": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      },
+      "event_code": "touch_start",
+      "event_arguments": [
+        {
+          "type": "integer",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+          "value": 7
+        }
+      ],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": true,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default touch_start",
+          "call_no": 1,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        }
+      ]
+    },
+    "after_followup": null,
+    "after_load": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 8
+        },
+        "value": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      },
+      "event_code": "touch_start",
+      "event_arguments": [
+        {
+          "type": "integer",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+          "value": 7
+        }
+      ],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": true,
+      "running": true,
+      "detectors": [],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default touch_start",
+          "call_no": 1,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        }
+      ]
+    },
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1008
+        },
+        "value": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      },
+      "event_code": "None",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": true,
+      "running": true,
+      "detectors": [],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual unchanged original xmrEventCallHandler inline/direct delegate invocation; no handwritten helper frame manufactured. Capturing CheckRunWork yields only frames produced by original code; normal control may ignore scheduler suspension (sleep_uninterrupted). ScriptResetException is propagated by original CallSEH and recorded before outer engine ResetLocked, not modeled as completed reset. Actual unchanged CodeGen/XMRInstance helpers/API/engine instance lookup/PostEvent/Running setter/MigrateOut/MigrateIn/CallSEH. Only CheckRunWork scheduler capture is overridden. Scene resource cleanup is not replaced; real minimal Scene and empty original async plugin resources supplied; no StateChange override. Uninterrupted and captured reentrant cases are separate actual executions.",
+    "sha256": {
+      "cache_key.txt": "c8be148f4be16e2d4d7a925c2682b6608f50f48839383eedc4427555d192bd73",
+      "event-queue.xml": "09030ac3a8d5dbaa452ef2076d8c8a18f45eb5608570c79b134fc4ffc843309e",
+      "original.il.txt": "5c221be31cabe4e511995d055792b65a812caa9a47718afb696b88f227012386",
+      "original.yobj": "0fa5b65b090b08f3dad951c489911489e611f13a053400e675141d2bbb83529c",
+      "snapshot.bin": "fdd5475d0ae7873a5838631663b7092ce93d62192ed3383051d804f1d78548e3",
+      "source.lsl": "88bd18ecbb6fbe50adbc3f16c1ef3fbd2ae6892a34a18b21605b08a4b1c45fce",
+      "generator_source": "a4ca0fd30ba0d2b6f0dc541e11872310fd61de65df4babc72e58093efe87f7be",
+      "generator_assembly": "df5548aff348933eac3346e7567eec62a6c4a32a753123cdcbd1d25c8946c842",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "queue_unchanged",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "90DE4D1B38B7895C469B5E2533C1C937",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 7
+        }
+      },
+      "event_code": "None",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [
+        {
+          "name": "touch_start",
+          "arguments": [
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 99
+            }
+          ],
+          "detectors": [
+            {
+              "key": "11111111-2222-3333-4444-555555555555",
+              "owner": "22222222-3333-4444-5555-666666666666",
+              "group": "33333333-4444-5555-6666-777777777777",
+              "name": "original rich detector 3",
+              "link_number": 5,
+              "type": 11,
+              "grab": [
+                3.125,
+                3.25,
+                3.5
+              ],
+              "position": [
+                13.00000003,
+                14.00000003,
+                15.00000003
+              ],
+              "rotation": [
+                0.125,
+                0.25,
+                0.5,
+                0.875
+              ],
+              "velocity": [
+                23.00000003,
+                24.00000003,
+                25.00000003
+              ],
+              "touch_st": [
+                4.00000003,
+                5.00000003,
+                6.00000003
+              ],
+              "touch_normal": [
+                7.00000003,
+                8.000000029999999,
+                9.000000029999999
+              ],
+              "touch_binormal": [
+                10.000000029999999,
+                11.000000029999999,
+                12.000000029999999
+              ],
+              "touch_pos": [
+                13.000000029999999,
+                14.000000029999999,
+                15.000000029999999
+              ],
+              "touch_uv": [
+                16.00000003,
+                17.00000003,
+                18.00000003
+              ],
+              "touch_face": 6
+            }
+          ]
+        }
+      ],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 7
+        }
+      },
+      "event_code": "None",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [
+        {
+          "name": "touch_start",
+          "arguments": [
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 99
+            }
+          ],
+          "detectors": [
+            {
+              "key": "11111111-2222-3333-4444-555555555555",
+              "owner": "22222222-3333-4444-5555-666666666666",
+              "group": "33333333-4444-5555-6666-777777777777",
+              "name": "original rich detector 3",
+              "link_number": 5,
+              "type": 11,
+              "grab": [
+                3.125,
+                3.25,
+                3.5
+              ],
+              "position": [
+                13.00000003,
+                14.00000003,
+                15.00000003
+              ],
+              "rotation": [
+                0.125,
+                0.25,
+                0.5,
+                0.875
+              ],
+              "velocity": [
+                23.00000003,
+                24.00000003,
+                25.00000003
+              ],
+              "touch_st": [
+                4.00000003,
+                5.00000003,
+                6.00000003
+              ],
+              "touch_normal": [
+                7.00000003,
+                8.000000029999999,
+                9.000000029999999
+              ],
+              "touch_binormal": [
+                10.000000029999999,
+                11.000000029999999,
+                12.000000029999999
+              ],
+              "touch_pos": [
+                13.000000029999999,
+                14.000000029999999,
+                15.000000029999999
+              ],
+              "touch_uv": [
+                16.00000003,
+                17.00000003,
+                18.00000003
+              ],
+              "touch_face": 6
+            }
+          ]
+        }
+      ],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual unchanged original xmrEventCallHandler inline/direct delegate invocation; no handwritten helper frame manufactured. Capturing CheckRunWork yields only frames produced by original code; normal control may ignore scheduler suspension (sleep_uninterrupted). ScriptResetException is propagated by original CallSEH and recorded before outer engine ResetLocked, not modeled as completed reset. Actual unchanged CodeGen/XMRInstance helpers/API/engine instance lookup/PostEvent/Running setter/MigrateOut/MigrateIn/CallSEH. Only CheckRunWork scheduler capture is overridden. Scene resource cleanup is not replaced; real minimal Scene and empty original async plugin resources supplied; no StateChange override. Uninterrupted and captured reentrant cases are separate actual executions.",
+    "sha256": {
+      "cache_key.txt": "8938ce048abafeed5c5139ca898e9603e519c77d8860798583fe2184c71809ed",
+      "original.il.txt": "7806e7bcceb83c392228b76d67176cce0050ad7f761e1b7a8436a04d3c572557",
+      "original.yobj": "a8528a92e9d2f01e387dcef39baff248ba7424a456a49ba696164e9bd25fc8cd",
+      "source.lsl": "329e1c5ef57cb7ebdc96d311275d74136bbd6267680e300731d7b3154d78cd77",
+      "generator_source": "a4ca0fd30ba0d2b6f0dc541e11872310fd61de65df4babc72e58093efe87f7be",
+      "generator_assembly": "df5548aff348933eac3346e7567eec62a6c4a32a753123cdcbd1d25c8946c842",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  }
+]

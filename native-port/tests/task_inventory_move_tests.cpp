@@ -5,11 +5,13 @@
 #include <iostream>
 using namespace opensim;
 using namespace scene;
+
 namespace {
 framework::Uuid id(int n) {
     auto t = std::to_string(n);
     return framework::Uuid("11223344-5566-7788-99aa-" + std::string(12 - t.size(), '0') + t);
 }
+
 std::string text(const std::optional<std::string> &s) {
     if (!s)
         return "NULL";
@@ -20,17 +22,18 @@ std::string text(const std::optional<std::string> &s) {
     }
     return out;
 }
+
 std::string dump(const TaskInventoryAgentItem &v) {
     const auto &i = v.item;
     auto u = [](int n) { return std::to_string(static_cast<std::uint32_t>(n)); };
-    return i.id.str() + ":" + i.owner.str() + ":" + i.asset_id.str() + ":" + i.creator_id + ":" +
-           text(v.creator_data) + ":" + text(i.name) + ":" + text(i.description) + ":" +
-           std::to_string(i.asset_type) + ":" + std::to_string(i.inventory_type) + ":" +
-           u(i.base_permissions) + ":" + u(i.current_permissions) + ":" + u(i.next_permissions) + ":" +
-           u(i.everyone_permissions) + ":" + u(i.group_permissions) + ":" + u(i.flags) + ":" +
-           std::to_string(i.creation_date) + ":" + i.group_id.str() + ":" + std::to_string(i.group_owned) +
-           ":" + std::to_string(i.sale_price) + ":" + std::to_string(i.sale_type) + ":" + i.parent.str();
+    return i.id.str() + ":" + i.owner.str() + ":" + i.asset_id.str() + ":" + i.creator_id + ":" + text(v.creator_data) +
+           ":" + text(i.name) + ":" + text(i.description) + ":" + std::to_string(i.asset_type) + ":" +
+           std::to_string(i.inventory_type) + ":" + u(i.base_permissions) + ":" + u(i.current_permissions) + ":" +
+           u(i.next_permissions) + ":" + u(i.everyone_permissions) + ":" + u(i.group_permissions) + ":" + u(i.flags) +
+           ":" + std::to_string(i.creation_date) + ":" + i.group_id.str() + ":" + std::to_string(i.group_owned) + ":" +
+           std::to_string(i.sale_price) + ":" + std::to_string(i.sale_type) + ":" + i.parent.str();
 }
+
 std::string probe(int kind, int mode, int perm, int failure) {
     std::string trace;
     bool present = true;
@@ -156,7 +159,8 @@ std::string probe(int kind, int mode, int perm, int failure) {
     }
     return result + ":" + (present ? "1" : "0") + ":" + std::to_string(stored) + trace;
 }
-}
+} // namespace
+
 int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string_view(argv[1]) == "--probe") {
@@ -173,8 +177,7 @@ int main(int argc, char **argv) {
         };
         check(probe(2, 256, 240, 0).find("|REMOVE:") == std::string::npos, "copy kept");
         check(probe(2, 256 | 32, 240, 0).find("|EVENTS:") != std::string::npos, "no-copy script removed");
-        check(probe(2, 256 | 32 | 16, 240, 0).find("|REMOVE:") == std::string::npos,
-              "bypass retains no-copy");
+        check(probe(2, 256 | 32 | 16, 240, 0).find("|REMOVE:") == std::string::npos, "bypass retains no-copy");
         check(probe(0, 1 | 64, 240, 0).starts_with("NULL:Item doesn't have the Transfer permission."),
               "transfer required");
         check(probe(2, 0, 240, 5).starts_with("THROW:1:0"), "addexception preserves source");

@@ -7,7 +7,8 @@
 using namespace opensim;
 using namespace network;
 using Text = std::u16string;
-std::string H(const Text& t) {
+
+std::string H(const Text &t) {
     if (t.empty())
         return ".";
     std::string o;
@@ -18,10 +19,12 @@ std::string H(const Text& t) {
         }
     return o;
 }
+
 struct Host {
     int level, number, elapsed, kind, mutate, compact = 0;
     std::string fail;
     Text events;
+
     Text hit(Text stage) {
         if (!events.empty())
             events += u'\n';
@@ -31,18 +34,22 @@ struct Host {
         return stage;
     }
 };
+
 Text N(int n) {
     return framework::utf16(std::to_string(n));
 }
+
 struct Client : XmlRpcRequesterClient {
-    Host& h;
-    Client(Host& x) : h(x) {
-    }
+    Host &h;
+
+    Client(Host &x) : h(x) {}
+
     void close() override {
         h.hit(u"close");
     }
-    std::shared_ptr<NwcXmlRpcResponse> send(const std::shared_ptr<NwcXmlRpcRequest>&,
-                                            const std::optional<Text>&) override {
+
+    std::shared_ptr<NwcXmlRpcResponse> send(const std::shared_ptr<NwcXmlRpcRequest> &,
+                                            const std::optional<Text> &) override {
         h.hit(u"send");
         if (h.kind == 4)
             return {};
@@ -57,6 +64,7 @@ struct Client : XmlRpcRequesterClient {
         return r;
     }
 };
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -95,16 +103,16 @@ int main() {
             h.hit(u"client:" + N(n));
             return std::make_shared<Client>(h);
         };
-        s.debug = [&](const Text& t) { h.hit(u"debug:" + t); };
-        s.error = [&](const Text& t) { h.hit(u"error:" + t); };
-        s.info = [&](const Text& t) { h.hit(u"info:" + t); };
-        s.outgoing_detail = [&](int n, const Text& t) {
+        s.debug = [&](const Text &t) { h.hit(u"debug:" + t); };
+        s.error = [&](const Text &t) { h.hit(u"error:" + t); };
+        s.info = [&](const Text &t) { h.hit(u"info:" + t); };
+        s.outgoing_detail = [&](int n, const Text &t) {
             h.hit(u"out:" + N(n) + u":" + t);
             if (h.mutate)
                 h.level = h.mutate;
         };
-        s.response_detail = [&](int n, const Text& t) { h.hit(u"response:" + N(n) + u":" + t); };
-        s.compact_xml = [&](const Text& t) {
+        s.response_detail = [&](int n, const Text &t) { h.hit(u"response:" + N(n) + u":" + t); };
+        s.compact_xml = [&](const Text &t) {
             h.hit(u"compact" + N(++h.compact));
             return u"compact:" + t;
         };
@@ -117,12 +125,11 @@ int main() {
         };
         std::string result;
         try {
-            auto r = XmlRpcRequester(s).send_request(std::make_shared<Value>(Value::object({})), u"method",
-                                                     u"url");
+            auto r = XmlRpcRequester(s).send_request(std::make_shared<Value>(Value::object({})), u"method", u"url");
             result = r ? "M" : "N";
-        } catch (const NwcXmlRpcError& e) {
+        } catch (const NwcXmlRpcError &e) {
             result = e.source_type + ":" + H(e.message);
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
             result = "UNEXPECTED:" + std::string(e.what());
         }
         std::cout << result << '|' << h.number << '|' << H(h.events) << '\n';

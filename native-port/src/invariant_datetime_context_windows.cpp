@@ -19,10 +19,12 @@
 #include <cstring>
 #include <optional>
 #include <stdexcept>
+
 namespace opensim::framework::invariant_datetime_platform {
 namespace {
 constexpr wchar_t hive[] = L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Time Zones";
 constexpr std::int64_t minute = 600000000ll, day = 864000000000ll;
+
 struct MissingOrInvalid : std::runtime_error {
     enum class Reason { Invalid, Missing };
     Reason reason;
@@ -31,14 +33,15 @@ struct MissingOrInvalid : std::runtime_error {
                               std::shared_ptr<const NativeTimeZoneError> e = {})
         : std::runtime_error(std::move(m)), reason(r), source(std::move(e)) {};
 };
+
 MissingOrInvalid argument(std::u16string message, std::optional<std::u16string> parameter = {}) {
     if (parameter)
         message += u" (Parameter '" + *parameter + u"')";
     return MissingOrInvalid("Invalid timezone registry data", MissingOrInvalid::Reason::Invalid,
-                            std::make_shared<NativeTimeZoneError>("System.ArgumentOutOfRangeException",
-                                                                  0x80131502u, std::move(message),
-                                                                  std::move(parameter)));
+                            std::make_shared<NativeTimeZoneError>("System.ArgumentOutOfRangeException", 0x80131502u,
+                                                                  std::move(message), std::move(parameter)));
 }
+
 std::u16string span_string(std::int64_t ticks) {
     bool neg = ticks < 0;
     auto n = static_cast<std::uint64_t>(neg ? -ticks : ticks) / 10000000;
@@ -57,13 +60,15 @@ std::u16string span_string(std::int64_t ticks) {
 struct Key {
     HKEY key = nullptr;
     Key() = default;
-    Key(const Key&) = delete;
-    Key& operator=(const Key&) = delete;
+    Key(const Key &) = delete;
+    Key &operator=(const Key &) = delete;
+
     ~Key() {
         if (key)
             RegCloseKey(key);
     }
-    bool open(HKEY root, const std::wstring& name) {
+
+    bool open(HKEY root, const std::wstring &name) {
         auto e = RegOpenKeyExW(root, name.c_str(), 0, KEY_READ, &key);
         if (e == ERROR_SUCCESS)
             return true;
@@ -73,12 +78,15 @@ struct Key {
         return false;
     }
 };
+
 struct Tzi {
     LONG Bias, StandardBias, DaylightBias;
     SYSTEMTIME StandardDate, DaylightDate;
 };
+
 static_assert(sizeof(Tzi) == 44);
-std::optional<std::vector<std::byte>> value(Key& key, const std::wstring& name, DWORD& type) {
+
+std::optional<std::vector<std::byte>> value(Key &key, const std::wstring &name, DWORD &type) {
     DWORD n = 0;
     auto e = RegQueryValueExW(key.key, name.c_str(), nullptr, &type, nullptr, &n);
     if (e != ERROR_SUCCESS)
@@ -88,8 +96,7 @@ std::optional<std::vector<std::byte>> value(Key& key, const std::wstring& name, 
     std::vector<std::byte> out(n);
     for (;;) {
         DWORD len = static_cast<DWORD>(out.size());
-        e = RegQueryValueExW(key.key, name.c_str(), nullptr, &type, reinterpret_cast<BYTE*>(out.data()),
-                             &len);
+        e = RegQueryValueExW(key.key, name.c_str(), nullptr, &type, reinterpret_cast<BYTE *>(out.data()), &len);
         if (e == ERROR_MORE_DATA) {
             out.resize(len);
             continue;
@@ -100,7 +107,8 @@ std::optional<std::vector<std::byte>> value(Key& key, const std::wstring& name, 
         return out;
     }
 }
-Tzi tzi(Key& key, const std::wstring& name) {
+
+Tzi tzi(Key &key, const std::wstring &name) {
     DWORD type = 0;
     auto bytes = value(key, name, type);
     if (!bytes ||
@@ -112,7 +120,8 @@ Tzi tzi(Key& key, const std::wstring& name) {
     std::memcpy(&out, bytes->data(), sizeof out);
     return out;
 }
-int integer(Key& key, const wchar_t* name) {
+
+int integer(Key &key, const wchar_t *name) {
     DWORD type = 0;
     auto bytes = value(key, name, type);
     if (!bytes)
@@ -139,7 +148,8 @@ int integer(Key& key, const wchar_t* name) {
                                                                  u"Unable to cast object of type '" + from +
                                                                      u"' to type 'System.Int32'."));
 }
-std::optional<std::wstring> string_value(Key& key, const wchar_t* name) {
+
+std::optional<std::wstring> string_value(Key &key, const wchar_t *name) {
     DWORD type = 0;
     auto bytes = value(key, name, type);
     if (!bytes)
@@ -148,7 +158,7 @@ std::optional<std::wstring> string_value(Key& key, const wchar_t* name) {
         return {};
     if (bytes->size() % 2)
         bytes->push_back(std::byte{});
-    std::wstring out(reinterpret_cast<const wchar_t*>(bytes->data()), bytes->size() / sizeof(wchar_t));
+    std::wstring out(reinterpret_cast<const wchar_t *>(bytes->data()), bytes->size() / sizeof(wchar_t));
     if (!out.empty() && out.back() == 0)
         out.pop_back();
     if (type == REG_EXPAND_SZ) {
@@ -164,27 +174,30 @@ std::optional<std::wstring> string_value(Key& key, const wchar_t* name) {
     }
     return out;
 }
+
 std::int64_t date(int y, int m, int d) {
     using namespace std::chrono;
     if (y < 1 || y > 9999)
         throw argument(u"Year, Month, and Day parameters describe an un-representable DateTime.");
-    return (sys_days{year(y) / static_cast<unsigned>(m) / static_cast<unsigned>(d)} -
-            sys_days{year(1) / 1 / 1})
+    return (sys_days{year(y) / static_cast<unsigned>(m) / static_cast<unsigned>(d)} - sys_days{year(1) / 1 / 1})
                .count() *
            day;
 }
+
 std::int64_t negate32(std::int32_t n) {
     return std::bit_cast<std::int32_t>(0u - static_cast<std::uint32_t>(n));
 }
+
 std::int64_t subtract32(std::int32_t a, std::int32_t b) {
     return std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(a) - static_cast<std::uint32_t>(b));
 }
-bool same(const SYSTEMTIME& a, const SYSTEMTIME& b) {
+
+bool same(const SYSTEMTIME &a, const SYSTEMTIME &b) {
     return a.wYear == b.wYear && a.wMonth == b.wMonth && a.wDayOfWeek == b.wDayOfWeek && a.wDay == b.wDay &&
-           a.wHour == b.wHour && a.wMinute == b.wMinute && a.wSecond == b.wSecond &&
-           a.wMilliseconds == b.wMilliseconds;
+           a.wHour == b.wHour && a.wMinute == b.wMinute && a.wSecond == b.wSecond && a.wMilliseconds == b.wMilliseconds;
 }
-InvariantTimeZoneTransition transition(const SYSTEMTIME& t) {
+
+InvariantTimeZoneTransition transition(const SYSTEMTIME &t) {
     InvariantTimeZoneTransition out;
     out.time_of_day_ticks =
         (std::int64_t(t.wHour) * 3600 + t.wMinute * 60 + t.wSecond) * 10000000ll + t.wMilliseconds * 10000ll;
@@ -207,11 +220,13 @@ InvariantTimeZoneTransition transition(const SYSTEMTIME& t) {
         throw argument(u"The DayOfWeek enumeration must be in the range 0 through 6.", u"dayOfWeek");
     return out;
 }
-bool same(const InvariantTimeZoneTransition& a, const InvariantTimeZoneTransition& b) {
+
+bool same(const InvariantTimeZoneTransition &a, const InvariantTimeZoneTransition &b) {
     return a.time_of_day_ticks == b.time_of_day_ticks && a.month == b.month && a.fixed_date == b.fixed_date &&
            (a.fixed_date ? a.day == b.day : a.week == b.week && a.day_of_week == b.day_of_week);
 }
-void append(ZoneModel& model, const Tzi& t, std::int64_t start, std::int64_t end, int base_bias) {
+
+void append(ZoneModel &model, const Tzi &t, std::int64_t start, std::int64_t end, int base_bias) {
     InvariantTimeZoneRule r;
     r.start = AssetDateTime(start, 0);
     r.end = AssetDateTime(end, 0);
@@ -239,33 +254,33 @@ void append(ZoneModel& model, const Tzi& t, std::int64_t start, std::int64_t end
     if (r.daylight_delta_ticks < -23 * 60 * minute || r.daylight_delta_ticks > 14 * 60 * minute)
         throw MissingOrInvalid(
             "Invalid timezone daylight delta", MissingOrInvalid::Reason::Invalid,
-            std::make_shared<NativeTimeZoneError>(
-                "System.ArgumentOutOfRangeException", 0x80131502u,
-                u"The TimeSpan parameter must be within plus or minus 14.0 hours. (Parameter 'daylightDelta')\r\nActual value was " +
-                    span_string(r.daylight_delta_ticks) + u".",
-                u"daylightDelta"));
+            std::make_shared<NativeTimeZoneError>("System.ArgumentOutOfRangeException", 0x80131502u,
+                                                  u"The TimeSpan parameter must be within plus or minus 14.0 hours. "
+                                                  u"(Parameter 'daylightDelta')\r\nActual value was " +
+                                                      span_string(r.daylight_delta_ticks) + u".",
+                                                  u"daylightDelta"));
     model.rules.push_back(r);
 }
-void validate(const ZoneModel& model) {
-    if (model.base_offset < -14 * 60 * minute || model.base_offset > 14 * 60 * minute ||
-        model.base_offset % minute)
+
+void validate(const ZoneModel &model) {
+    if (model.base_offset < -14 * 60 * minute || model.base_offset > 14 * 60 * minute || model.base_offset % minute)
         throw argument(u"The TimeSpan parameter must be within plus or minus 14.0 hours.", u"baseUtcOffset");
-    const InvariantTimeZoneRule* prev = nullptr;
-    for (auto& r : model.rules) {
+    const InvariantTimeZoneRule *prev = nullptr;
+    for (auto &r : model.rules) {
         bool dst = r.daylight_delta_ticks != 0 || r.daylight_start.time_of_day_ticks != 0 ||
                    r.daylight_end.time_of_day_ticks != 10000;
         auto offset = model.base_offset + r.base_offset_delta_ticks + (dst ? r.daylight_delta_ticks : 0);
-        if (offset < -14 * 60 * minute || offset > 14 * 60 * minute ||
-            (prev && r.start.ticks() <= prev->end.ticks()))
+        if (offset < -14 * 60 * minute || offset > 14 * 60 * minute || (prev && r.start.ticks() <= prev->end.ticks()))
             throw MissingOrInvalid(
                 "Invalid timezone adjustment rules", MissingOrInvalid::Reason::Invalid,
-                std::make_shared<NativeTimeZoneError>(
-                    "System.InvalidTimeZoneException", 0x80131500u,
-                    u"The sum of the BaseUtcOffset and DaylightDelta properties must within plus or minus 14.0 hours."));
+                std::make_shared<NativeTimeZoneError>("System.InvalidTimeZoneException", 0x80131500u,
+                                                      u"The sum of the BaseUtcOffset and DaylightDelta properties must "
+                                                      u"within plus or minus 14.0 hours."));
         prev = &r;
     }
 }
-ZoneModel from_current(const TIME_ZONE_INFORMATION& z, bool disabled) {
+
+ZoneModel from_current(const TIME_ZONE_INFORMATION &z, bool disabled) {
     ZoneModel m;
     m.base_offset = negate32(z.Bias) * minute;
     if (!disabled) {
@@ -275,19 +290,21 @@ ZoneModel from_current(const TIME_ZONE_INFORMATION& z, bool disabled) {
     validate(m);
     return m;
 }
-ZoneModel current_fallback(const TIME_ZONE_INFORMATION& z, bool disabled) {
+
+ZoneModel current_fallback(const TIME_ZONE_INFORMATION &z, bool disabled) {
     try {
         return from_current(z, disabled);
-    } catch (const MissingOrInvalid&) {
+    } catch (const MissingOrInvalid &) {
     }
     if (!disabled)
         try {
             return from_current(z, true);
-        } catch (const MissingOrInvalid&) {
+        } catch (const MissingOrInvalid &) {
         }
     return {};
 }
-std::optional<std::wstring> find_id(const TIME_ZONE_INFORMATION& z) {
+
+std::optional<std::wstring> find_id(const TIME_ZONE_INFORMATION &z) {
     Key root;
     if (!root.open(HKEY_LOCAL_MACHINE, hive))
         return {};
@@ -310,7 +327,7 @@ std::optional<std::wstring> find_id(const TIME_ZONE_INFORMATION& z) {
         Tzi t;
         try {
             t = tzi(key, L"TZI");
-        } catch (const MissingOrInvalid&) {
+        } catch (const MissingOrInvalid &) {
             continue;
         }
         if (z.Bias != t.Bias || z.StandardBias != t.StandardBias || !same(z.StandardDate, t.StandardDate))
@@ -323,8 +340,9 @@ std::optional<std::wstring> find_id(const TIME_ZONE_INFORMATION& z) {
             return name;
     }
 }
-}
-ZoneModel windows_registry_zone(const std::wstring& name, bool disabled) {
+} // namespace
+
+ZoneModel windows_registry_zone(const std::wstring &name, bool disabled) {
     Key key;
     if (!key.open(HKEY_LOCAL_MACHINE, std::wstring(hive) + L"\\" + name))
         throw MissingOrInvalid("Timezone registry key not found", MissingOrInvalid::Reason::Missing);
@@ -345,8 +363,7 @@ ZoneModel windows_registry_zone(const std::wstring& name, bool disabled) {
             append(model, first_tzi, 0, date(first, 12, 31), base.Bias);
             for (int y = first + 1; y < last; ++y)
                 append(model, tzi(dynamic, std::to_wstring(y)), date(y, 1, 1), date(y, 12, 31), base.Bias);
-            append(model, tzi(dynamic, std::to_wstring(last)), date(last, 1, 1), date(9999, 12, 31),
-                   base.Bias);
+            append(model, tzi(dynamic, std::to_wstring(last)), date(last, 1, 1), date(9999, 12, 31), base.Bias);
         }
     }
     validate(model);
@@ -354,10 +371,11 @@ ZoneModel windows_registry_zone(const std::wstring& name, bool disabled) {
         model.rules.clear();
     return model;
 }
-std::optional<ZoneModel> windows_registry_zone_lookup(const std::wstring& name) {
+
+std::optional<ZoneModel> windows_registry_zone_lookup(const std::wstring &name) {
     try {
         return windows_registry_zone(name, false);
-    } catch (const MissingOrInvalid& e) {
+    } catch (const MissingOrInvalid &e) {
         if (e.reason == MissingOrInvalid::Reason::Missing)
             return {};
         if (e.source)
@@ -366,39 +384,40 @@ std::optional<ZoneModel> windows_registry_zone_lookup(const std::wstring& name) 
                                   u"Object reference not set to an instance of an object.");
     }
 }
+
 std::optional<std::u16string> windows_system_iana_to_windows(std::u16string_view input) {
     if (input.find_first_of(u"\\\n\r") != input.npos)
         return {};
+
     struct Icu {
         HMODULE module = LoadLibraryExW(L"icu.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
-        using Convert = std::int32_t (*)(const char16_t*, std::int32_t, char16_t*, std::int32_t,
-                                         std::int32_t*);
-        Convert convert = module
-                              ? reinterpret_cast<Convert>(GetProcAddress(module, "ucal_getWindowsTimeZoneID"))
-                              : nullptr; /* The source ICU loader retains its module for process lifetime. */
+        using Convert = std::int32_t (*)(const char16_t *, std::int32_t, char16_t *, std::int32_t, std::int32_t *);
+        Convert convert = module ? reinterpret_cast<Convert>(GetProcAddress(module, "ucal_getWindowsTimeZoneID"))
+                                 : nullptr; /* The source ICU loader retains its module for process lifetime. */
     };
+
     static Icu icu;
     if (!icu.convert)
         return {};
     std::u16string terminated(input);
     std::array<char16_t, 100> buffer{};
     std::int32_t status = 0;
-    auto length =
-        icu.convert(terminated.c_str(), -1, buffer.data(), static_cast<std::int32_t>(buffer.size()), &status);
+    auto length = icu.convert(terminated.c_str(), -1, buffer.data(), static_cast<std::int32_t>(buffer.size()), &status);
     if (status > 0 || length <= 0 || length > static_cast<int>(buffer.size()))
         return {};
     return std::u16string(buffer.data(), static_cast<std::size_t>(length));
 }
+
 ZoneModel windows_local_zone(bool invariant, bool use_nls,
                              std::function<std::optional<std::u16string>(std::u16string_view)> converter) {
-    auto lookup = [&](const std::wstring& id, bool disabled) -> std::optional<ZoneModel> {
+    auto lookup = [&](const std::wstring &id, bool disabled) -> std::optional<ZoneModel> {
         try {
             return windows_registry_zone(id, disabled);
-        } catch (const MissingOrInvalid&) {
+        } catch (const MissingOrInvalid &) {
         }
         if (invariant || use_nls)
             return {};
-        auto input = std::u16string_view(reinterpret_cast<const char16_t*>(id.data()), id.size());
+        auto input = std::u16string_view(reinterpret_cast<const char16_t *>(id.data()), id.size());
         if (input.find_first_of(u"\\\n\r") != input.npos)
             return {};
         auto alternative = converter ? converter(input) : windows_system_iana_to_windows(input);
@@ -406,7 +425,7 @@ ZoneModel windows_local_zone(bool invariant, bool use_nls,
             return {};
         try {
             return windows_registry_zone(std::wstring(alternative->begin(), alternative->end()), disabled);
-        } catch (const MissingOrInvalid&) {
+        } catch (const MissingOrInvalid &) {
             return {};
         }
     };
@@ -429,9 +448,10 @@ ZoneModel windows_local_zone(bool invariant, bool use_nls,
             return *found;
     return current_fallback(z, false);
 }
+
 ZoneModel windows_current_year_zone() {
     TIME_ZONE_INFORMATION z{};
     return GetTimeZoneInformation(&z) == TIME_ZONE_ID_INVALID ? ZoneModel{} : current_fallback(z, false);
 }
-}
+} // namespace opensim::framework::invariant_datetime_platform
 #endif

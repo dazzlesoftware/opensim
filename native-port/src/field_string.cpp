@@ -3,6 +3,7 @@
 #include "opensim/framework/field_string.hpp"
 #include <algorithm>
 #include <stdexcept>
+
 namespace opensim::framework {
 std::string field_to_string(std::span<const std::uint8_t> bytes, std::optional<std::string_view> name) {
     if (bytes.empty())
@@ -25,7 +26,7 @@ std::string field_to_string(std::span<const std::uint8_t> bytes, std::optional<s
         std::size_t end = 0;
         while (end < count && bytes[end] && bytes[end] != 13 && bytes[end] != 10)
             ++end;
-        output.append(reinterpret_cast<const char*>(bytes.data()), end);
+        output.append(reinterpret_cast<const char *>(bytes.data()), end);
         return output;
     }
     constexpr char digits[] = "0123456789ABCDEF";
@@ -54,4 +55,4 @@ std::string field_to_string(std::span<const std::uint8_t> bytes, std::optional<s
     }
     return output;
 }
-}
+} // namespace opensim::framework

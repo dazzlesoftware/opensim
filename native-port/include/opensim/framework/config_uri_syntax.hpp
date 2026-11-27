@@ -3,6 +3,7 @@
 #pragma once
 #include "opensim/framework/config_uri.hpp"
 #include <cstdint>
+
 namespace opensim::framework {
 enum class ConfigUriSyntaxFlags : std::uint64_t {
     None = 0ull,
@@ -35,15 +36,19 @@ enum class ConfigUriSyntaxFlags : std::uint64_t {
     AllowIdn = 67108864ull,
     AllowIriParsing = 268435456ull,
 };
+
 constexpr ConfigUriSyntaxFlags operator|(ConfigUriSyntaxFlags a, ConfigUriSyntaxFlags b) {
     return static_cast<ConfigUriSyntaxFlags>(static_cast<std::uint64_t>(a) | static_cast<std::uint64_t>(b));
 }
+
 struct ConfigUriSyntax {
     ConfigUriText scheme;
     std::int32_t default_port;
     std::uint64_t flags;
 };
+
 using ConfigUriSyntaxPtr = std::shared_ptr<const ConfigUriSyntax>;
+
 // Input is the already validated lower-case scheme passed by CheckSchemeSyntax.
 // No public UriParser registration/custom-parser substitute is supplied here.
 class NativeConfigUriSyntaxCatalog {
@@ -56,5 +61,6 @@ class NativeConfigUriSyntaxCatalog {
     ConfigUriSyntaxPtr find_or_fetch(ConfigUriText);
     static ConfigUriSyntaxPtr unix_file();
 };
-NativeConfigUriSyntaxCatalog& native_config_uri_syntax_catalog();
-}
+
+NativeConfigUriSyntaxCatalog &native_config_uri_syntax_catalog();
+} // namespace opensim::framework

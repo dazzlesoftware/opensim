@@ -20,27 +20,33 @@ namespace opensim::services {
 namespace {
 using Path = std::filesystem::path;
 using Asset = std::shared_ptr<framework::AssetBase>;
-std::string text(const Path& path) {
+
+std::string text(const Path &path) {
     return framework::utf8(path.u16string());
 }
+
 std::shared_ptr<FlotsamFileState> shared_state() {
     static auto state = std::make_shared<FlotsamFileState>();
     return state;
 }
-void warning(const std::shared_ptr<FlotsamFileBackend>& backend, const std::string& message) {
+
+void warning(const std::shared_ptr<FlotsamFileBackend> &backend, const std::string &message) {
     if (backend->warn)
         backend->warn(message);
 }
-std::string asset_id(const Asset& asset) {
+
+std::string asset_id(const Asset &asset) {
     if (!asset)
         throw std::invalid_argument("Null cache asset");
     return asset->id();
 }
+
 bool io(FlotsamFileFailure kind) {
     return kind == FlotsamFileFailure::Io || kind == FlotsamFileFailure::MissingFile ||
            kind == FlotsamFileFailure::MissingDirectory;
 }
-[[noreturn]] void error(const std::error_code& code) {
+
+[[noreturn]] void error(const std::error_code &code) {
     auto kind = (code == std::errc::permission_denied || code == std::errc::operation_not_permitted ||
                  code == std::errc::is_a_directory)
                     ? FlotsamFileFailure::Unauthorized
@@ -57,20 +63,24 @@ bool io(FlotsamFileFailure kind) {
                                             : FlotsamFileFailure::Io;
     throw FlotsamFileError(kind, std::system_category().message(static_cast<int>(e)));
 }
+
 struct Handle {
     HANDLE h = INVALID_HANDLE_VALUE;
+
     ~Handle() {
         if (h != INVALID_HANDLE_VALUE)
             CloseHandle(h);
     }
 };
-void delete_native_file(const Path& path) {
+
+void delete_native_file(const Path &path) {
     if (!DeleteFileW(path.c_str())) {
         if (GetLastError() != ERROR_FILE_NOT_FOUND)
             win_error();
     }
 }
-void delete_native_tree(const Path& path, bool top = true) {
+
+void delete_native_tree(const Path &path, bool top = true) {
     auto attributes = GetFileAttributesW(path.c_str());
     if (attributes == INVALID_FILE_ATTRIBUTES) {
         if (!top && (GetLastError() == ERROR_FILE_NOT_FOUND || GetLastError() == ERROR_PATH_NOT_FOUND))
@@ -125,13 +135,14 @@ void delete_native_tree(const Path& path, bool top = true) {
 #else
 struct Handle {
     int fd = -1;
+
     ~Handle() {
         if (fd >= 0)
             ::close(fd);
     }
 };
 #endif
-void write_native(const Path& path, const Asset& asset) {
+void write_native(const Path &path, const Asset &asset) {
 #ifdef _WIN32
     Handle file{CreateFileW(path.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS,
                             FILE_ATTRIBUTE_NORMAL, nullptr)};
@@ -170,11 +181,12 @@ void write_native(const Path& path, const Asset& asset) {
 #endif
     }
 }
-FlotsamFileReader read_native(const Path& path) {
+
+FlotsamFileReader read_native(const Path &path) {
     auto file = std::make_shared<Handle>();
 #ifdef _WIN32
-    file->h = CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING,
-                          FILE_ATTRIBUTE_NORMAL, nullptr);
+    file->h = CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,
+                          nullptr);
     if (file->h == INVALID_HANDLE_VALUE)
         win_error();
 #else
@@ -233,8 +245,7 @@ FlotsamFileReader read_native(const Path& path) {
         data.resize(offset);
         Asset asset;
         if (!framework::AssetNrbfCodec::decode_file(data, asset))
-            throw FlotsamFileError(FlotsamFileFailure::Serialization,
-                                   "Invalid or unsupported AssetBase serialization");
+            throw FlotsamFileError(FlotsamFileFailure::Serialization, "Invalid or unsupported AssetBase serialization");
         return asset;
     };
     reader.close = [file] {
@@ -252,23 +263,24 @@ FlotsamFileReader read_native(const Path& path) {
     };
     return reader;
 }
-}
+} // namespace
+
 FlotsamFileStore::FlotsamFileStore(Options options, std::shared_ptr<FlotsamFileBackend> backend,
-                                   std::shared_ptr<FlotsamFileState> state,
-                                   std::function<Options()> live_options)
+                                   std::shared_ptr<FlotsamFileState> state, std::function<Options()> live_options)
     : options_(std::move(options)), live_options_(std::move(live_options)), backend_(std::move(backend)),
       state_(state ? std::move(state) : shared_state()) {
     options_.tiers = std::clamp(options_.tiers, 1, 3);
     options_.tier_length = std::clamp(options_.tier_length, 1, 4);
     if (!backend_ || (options_.update_access && !backend_->touch_access) || !backend_->worker_available ||
-        !backend_->enqueue || !backend_->file_exists || !backend_->directory_exists ||
-        !backend_->random_file_name || !backend_->create_directory || !backend_->remove_file ||
-        !backend_->move_file || !backend_->write_asset || !backend_->open_read)
+        !backend_->enqueue || !backend_->file_exists || !backend_->directory_exists || !backend_->random_file_name ||
+        !backend_->create_directory || !backend_->remove_file || !backend_->move_file || !backend_->write_asset ||
+        !backend_->open_read)
         throw std::invalid_argument("Incomplete Flotsam file backend");
 }
-std::u16string FlotsamFileStore::file_name_text(const std::string& id) const {
+
+std::u16string FlotsamFileStore::file_name_text(const std::string &id) const {
     auto value = framework::utf16_replacing(id);
-    for (auto& c : value) {
+    for (auto &c : value) {
 #ifdef _WIN32
         if (c < 32 || std::u16string_view(u"<>:\"/\\|?*").find(c) != std::u16string_view::npos)
             c = u'_';
@@ -285,8 +297,7 @@ std::u16string FlotsamFileStore::file_name_text(const std::string& id) const {
         throw std::out_of_range("Short cache ID tier span");
     std::u16string relative;
     for (int tier = 0; tier < tiers; ++tier) {
-        relative += value.substr(static_cast<std::size_t>(tier * tier_length),
-                                 static_cast<std::size_t>(tier_length));
+        relative += value.substr(static_cast<std::size_t>(tier * tier_length), static_cast<std::size_t>(tier_length));
         relative += static_cast<char16_t>(Path::preferred_separator);
     }
     relative += value;
@@ -299,7 +310,8 @@ std::u16string FlotsamFileStore::file_name_text(const std::string& id) const {
     return root + relative;
 #endif
 }
-Path FlotsamFileStore::file_name(const std::string& id) const {
+
+Path FlotsamFileStore::file_name(const std::string &id) const {
     auto value = file_name_text(id);
 #ifdef _WIN32
     return Path(value);
@@ -308,7 +320,8 @@ Path FlotsamFileStore::file_name(const std::string& id) const {
     return Path(std::u8string(encoded.begin(), encoded.end()));
 #endif
 }
-void FlotsamFileStore::cache(const std::string& id, Asset asset, bool replace) {
+
+void FlotsamFileStore::cache(const std::string &id, Asset asset, bool replace) {
     if (!backend_->worker_available())
         return;
     auto filename = file_name(id);
@@ -331,17 +344,19 @@ void FlotsamFileStore::cache(const std::string& id, Asset asset, bool replace) {
                 }
             });
         }
-    } catch (const std::exception& e) {
-        warning(backend_, "[FLOTSAM ASSET CACHE]: Failed to update cache for asset " + asset_id(asset) +
-                              ": " + e.what());
+    } catch (const std::exception &e) {
+        warning(backend_,
+                "[FLOTSAM ASSET CACHE]: Failed to update cache for asset " + asset_id(asset) + ": " + e.what());
     }
 }
-void FlotsamFileStore::write(const Path& filename, Asset asset, bool replace, bool access,
-                             const std::shared_ptr<FlotsamFileBackend>& b,
-                             const std::shared_ptr<FlotsamFileState>& state) {
+
+void FlotsamFileStore::write(const Path &filename, Asset asset, bool replace, bool access,
+                             const std::shared_ptr<FlotsamFileBackend> &b,
+                             const std::shared_ptr<FlotsamFileState> &state) {
     struct Finish {
         std::shared_ptr<FlotsamFileState> state;
         Path file;
+
         ~Finish() {
             try {
                 std::lock_guard lock(state->mutex);
@@ -350,6 +365,7 @@ void FlotsamFileStore::write(const Path& filename, Asset asset, bool replace, bo
             }
         }
     } finish{state, filename};
+
     auto exists = b->file_exists(filename);
     if (!replace && exists) {
         if (access && b->touch_access)
@@ -364,11 +380,11 @@ void FlotsamFileStore::write(const Path& filename, Asset asset, bool replace, bo
         b->write_asset(temp, asset);
         if (b->note_access)
             b->note_access(filename, 900000);
-    } catch (const FlotsamFileError& e) {
+    } catch (const FlotsamFileError &e) {
         if (io(e.kind)) {
-            warning(b, "[FLOTSAM ASSET CACHE]: Failed to write asset " + asset_id(asset) +
-                           " to temporary location " + text(temp) + " (final " + text(filename) +
-                           ") on cache in " + text(directory) + ": " + e.what());
+            warning(b, "[FLOTSAM ASSET CACHE]: Failed to write asset " + asset_id(asset) + " to temporary location " +
+                           text(temp) + " (final " + text(filename) + ") on cache in " + text(directory) + ": " +
+                           e.what());
             return;
         }
         if (e.kind != FlotsamFileFailure::Unauthorized)
@@ -385,7 +401,8 @@ void FlotsamFileStore::write(const Path& filename, Asset asset, bool replace, bo
         }
     }
 }
-Asset FlotsamFileStore::get(const std::string& id) {
+
+Asset FlotsamFileStore::get(const std::string &id) {
     auto filename = file_name(id);
     {
         std::lock_guard lock(state_->mutex);
@@ -422,38 +439,41 @@ Asset FlotsamFileStore::get(const std::string& id) {
             std::rethrow_exception(failure);
         if (empty)
             return {};
-    } catch (const FlotsamFileError& e) {
+    } catch (const FlotsamFileError &e) {
         if (e.kind == FlotsamFileFailure::MissingFile || e.kind == FlotsamFileFailure::MissingDirectory)
             return asset;
-        warning(backend_, "[FLOTSAM ASSET CACHE]: Failed to get file " + text(filename) + " for asset " + id +
-                              ": " + e.what());
+        warning(backend_,
+                "[FLOTSAM ASSET CACHE]: Failed to get file " + text(filename) + " for asset " + id + ": " + e.what());
         if (e.kind == FlotsamFileFailure::Serialization)
             backend_->remove_file(filename);
-    } catch (const std::exception& e) {
-        warning(backend_, "[FLOTSAM ASSET CACHE]: Failed to get file " + text(filename) + " for asset " + id +
-                              ": " + e.what());
+    } catch (const std::exception &e) {
+        warning(backend_,
+                "[FLOTSAM ASSET CACHE]: Failed to get file " + text(filename) + " for asset " + id + ": " + e.what());
     }
     return asset;
 }
-bool FlotsamFileStore::check(const std::string& id) const {
+
+bool FlotsamFileStore::check(const std::string &id) const {
     try {
         return backend_->file_exists(file_name(id));
     } catch (...) {
         return false;
     }
 }
+
 FlotsamFileStore::Statistics FlotsamFileStore::statistics() const {
     std::lock_guard lock(statistics_mutex_);
     return statistics_;
 }
-bool FlotsamFileStore::writing(const std::string& id) const {
+
+bool FlotsamFileStore::writing(const std::string &id) const {
     auto file = file_name(id);
     std::lock_guard lock(state_->mutex);
     return state_->writing.contains(file.u16string());
 }
-std::shared_ptr<FlotsamFileBackend>
-native_flotsam_file_backend(std::shared_ptr<framework::ObjectJobQueue> queue,
-                            std::function<void(const std::string&)> warn) {
+
+std::shared_ptr<FlotsamFileBackend> native_flotsam_file_backend(std::shared_ptr<framework::ObjectJobQueue> queue,
+                                                                std::function<void(const std::string &)> warn) {
     auto b = std::make_shared<FlotsamFileBackend>();
     std::weak_ptr<framework::ObjectJobQueue> weak = queue;
     b->worker_available = [weak] { return !weak.expired(); };
@@ -461,12 +481,12 @@ native_flotsam_file_backend(std::shared_ptr<framework::ObjectJobQueue> queue,
         if (auto queue = weak.lock())
             queue->enqueue(std::move(task));
     };
-    b->file_exists = [](const Path& path) {
+    b->file_exists = [](const Path &path) {
         std::error_code ec;
         auto status = std::filesystem::status(path, ec);
         return !ec && std::filesystem::exists(status) && !std::filesystem::is_directory(status);
     };
-    b->directory_exists = [](const Path& path) {
+    b->directory_exists = [](const Path &path) {
         std::error_code ec;
         return std::filesystem::is_directory(path, ec);
     };
@@ -475,13 +495,13 @@ native_flotsam_file_backend(std::shared_ptr<framework::ObjectJobQueue> queue,
         s.erase(std::remove(s.begin(), s.end(), '-'), s.end());
         return Path(s.substr(0, 8) + "." + s.substr(8, 3));
     };
-    b->create_directory = [](const Path& path) {
+    b->create_directory = [](const Path &path) {
         std::error_code ec;
         std::filesystem::create_directories(path, ec);
         if (ec)
             error(ec);
     };
-    b->remove_file = [](const Path& path) {
+    b->remove_file = [](const Path &path) {
 #ifdef _WIN32
         delete_native_file(path);
 #else
@@ -495,7 +515,7 @@ native_flotsam_file_backend(std::shared_ptr<framework::ObjectJobQueue> queue,
             error(ec);
 #endif
     };
-    b->move_file = [](const Path& source, const Path& target) {
+    b->move_file = [](const Path &source, const Path &target) {
 #ifdef _WIN32
         if (!MoveFileW(source.c_str(), target.c_str()))
             win_error();
@@ -506,7 +526,7 @@ native_flotsam_file_backend(std::shared_ptr<framework::ObjectJobQueue> queue,
             error({errno, std::generic_category()});
 #endif
     };
-    b->list_directories = [](const Path& root) {
+    b->list_directories = [](const Path &root) {
         std::error_code ec;
         std::vector<Path> result;
         std::filesystem::directory_iterator it(root, ec), end;
@@ -524,7 +544,7 @@ native_flotsam_file_backend(std::shared_ptr<framework::ObjectJobQueue> queue,
         }
         return result;
     };
-    b->remove_directory_tree = [](const Path& path) {
+    b->remove_directory_tree = [](const Path &path) {
 #ifdef _WIN32
         delete_native_tree(path);
 #else
@@ -539,4 +559,4 @@ native_flotsam_file_backend(std::shared_ptr<framework::ObjectJobQueue> queue,
     b->warn = std::move(warn);
     return b;
 }
-}
+} // namespace opensim::services

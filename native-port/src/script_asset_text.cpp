@@ -7,20 +7,22 @@
 #include <array>
 #include "opensim/services/user_account.hpp"
 #include <stdexcept>
+
 namespace opensim::script {
 std::string asset_text(std::span<const std::uint8_t> bytes) {
     return framework::utf8(framework::sdk_bytes_to_string(bytes));
 }
-std::string asset_text(const framework::AssetBytes& bytes) {
+
+std::string asset_text(const framework::AssetBytes &bytes) {
     if (!bytes)
         throw std::invalid_argument("Null script asset data");
     return asset_text(std::span<const std::uint8_t>(*bytes));
 }
 
-std::vector<std::string> notecard_lines(const framework::AssetBytes& bytes) {
+std::vector<std::string> notecard_lines(const framework::AssetBytes &bytes) {
     if (!bytes || bytes->size() < 79 || (*bytes)[58] != '0' || (*bytes)[59] != '\n')
         return {};
-    const std::string_view raw(reinterpret_cast<const char*>(bytes->data()), bytes->size());
+    const std::string_view raw(reinterpret_cast<const char *>(bytes->data()), bytes->size());
     const auto header = framework::utf16_replacing(raw);
     if (header.size() < 60 || header.substr(0, 21) != u"Linden text version 2" ||
         header.substr(24, 25) != u"LLEmbeddedItems version 1" || header.substr(52, 5) != u"count")
@@ -52,14 +54,14 @@ std::vector<std::string> notecard_lines(const framework::AssetBytes& bytes) {
     return lines;
 }
 
-LandmarkAsset parse_landmark(const framework::AssetBytes& bytes) {
+LandmarkAsset parse_landmark(const framework::AssetBytes &bytes) {
     if (!bytes || bytes->empty())
         throw std::invalid_argument("Empty landmark asset");
-    const std::string_view raw(reinterpret_cast<const char*>(bytes->data()), bytes->size());
+    const std::string_view raw(reinterpret_cast<const char *>(bytes->data()), bytes->size());
     const auto text = framework::utf16_replacing(framework::trim_utf8(raw));
     std::u16string_view remaining = text;
     std::array<std::u16string_view, 4> fields;
-    for (auto& field : fields) {
+    for (auto &field : fields) {
         const auto end = remaining.find(u'\n');
         field = remaining.substr(0, end);
         remaining = end == std::u16string_view::npos ? std::u16string_view{} : remaining.substr(end + 1);
@@ -70,11 +72,11 @@ LandmarkAsset parse_landmark(const framework::AssetBytes& bytes) {
     LandmarkAsset landmark;
     framework::try_parse_sdk_uuid(framework::utf8(fields[1].substr(10, 36)), landmark.region);
     auto scalars = fields[2].substr(10);
-    for (auto* component : {&landmark.position.x, &landmark.position.y, &landmark.position.z}) {
+    for (auto *component : {&landmark.position.x, &landmark.position.y, &landmark.position.z}) {
         const auto end = scalars.find(u' ');
         try {
             *component = framework::invariant_convert_to_single(std::u16string(scalars.substr(0, end)));
-        } catch (const framework::InvariantNumberError&) {
+        } catch (const framework::InvariantNumberError &) {
             // Single.TryParse leaves invalid components at zero.
         }
         if (end == std::u16string_view::npos)
@@ -85,11 +87,10 @@ LandmarkAsset parse_landmark(const framework::AssetBytes& bytes) {
     return landmark;
 }
 
-framework::Vector3d landmark_position_relative_to(const framework::AssetBytes& bytes,
-                                                 std::uint32_t region_x, std::uint32_t region_y) {
+framework::Vector3d landmark_position_relative_to(const framework::AssetBytes &bytes, std::uint32_t region_x,
+                                                  std::uint32_t region_y) {
     const auto landmark = parse_landmark(bytes);
     return {double(landmark.handle >> 32) - region_x + landmark.position.x,
-            double(static_cast<std::uint32_t>(landmark.handle)) - region_y + landmark.position.y,
-            landmark.position.z};
+            double(static_cast<std::uint32_t>(landmark.handle)) - region_y + landmark.position.y, landmark.position.z};
 }
-}
+} // namespace opensim::script

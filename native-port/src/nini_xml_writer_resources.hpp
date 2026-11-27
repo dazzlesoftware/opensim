@@ -1,9 +1,9 @@
 // Actual pinned .NET8.0.31 System.Xml English resource strings; MIT runtime license.
 #pragma once
 #include <string_view>
+
 namespace opensim::framework::xml_writer_resources {
-inline constexpr std::u16string_view Xml_CanNotBindToReservedNamespace =
-    u"Cannot bind to the reserved namespace.";
+inline constexpr std::u16string_view Xml_CanNotBindToReservedNamespace = u"Cannot bind to the reserved namespace.";
 inline constexpr std::u16string_view Xml_Closed = u"The Writer is closed.";
 inline constexpr std::u16string_view Xml_ClosedOrError = u"The Writer is closed or in error state.";
 inline constexpr std::u16string_view Xml_DupXmlDecl =
@@ -14,10 +14,10 @@ inline constexpr std::u16string_view Xml_InvalidCommentChars =
 inline constexpr std::u16string_view Xml_InvalidNameChars = u"Invalid name character in '{0}'.";
 inline constexpr std::u16string_view Xml_InvalidOperation =
     u"Operation is not valid due to the current state of the object.";
-inline constexpr std::u16string_view Xml_InvalidPiChars =
-    u"Cannot have '?>' inside an XML processing instruction.";
+inline constexpr std::u16string_view Xml_InvalidPiChars = u"Cannot have '?>' inside an XML processing instruction.";
 inline constexpr std::u16string_view Xml_InvalidPrefix =
-    u"Prefixes beginning with \"xml\" (regardless of whether the characters are uppercase, lowercase, or some combination thereof) are reserved for use by XML.";
+    u"Prefixes beginning with \"xml\" (regardless of whether the characters are uppercase, lowercase, or some "
+    u"combination thereof) are reserved for use by XML.";
 inline constexpr std::u16string_view Xml_InvalidQuote =
     u"Invalid XML attribute quote character. Valid attribute quote characters are ' and \".";
 inline constexpr std::u16string_view Xml_InvalidXmlSpace = u"'{0}' is an invalid xml:space value.";
@@ -34,4 +34,4 @@ inline constexpr std::u16string_view Xml_WrongToken =
     u"Token {0} in state {1} would result in an invalid XML document.";
 inline constexpr std::u16string_view Xml_XmlnsBelongsToReservedNs =
     u"The 'xmlns' attribute is bound to the reserved namespace 'http://www.w3.org/2000/xmlns/'.";
-}
+} // namespace opensim::framework::xml_writer_resources

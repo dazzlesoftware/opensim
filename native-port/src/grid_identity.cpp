@@ -33,8 +33,9 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "opensim/framework/text.hpp"
 #include <algorithm>
 #include <stdexcept>
+
 namespace opensim::server {
-std::string script_grid_service_value(const IniConfig& config, const network::WebHttpClients& clients,
+std::string script_grid_service_value(const IniConfig &config, const network::WebHttpClients &clients,
                                       std::string_view key) {
     const auto configured = config.get("GridInfoService", std::string(key));
     if (!configured.empty())
@@ -50,17 +51,17 @@ std::string script_grid_service_value(const IniConfig& config, const network::We
         auto stream = clients.get_new_global_client(3000)->send_headers(uri, {}, true);
         const auto body = stream->copy_to_memory();
         stream->close();
-        const auto result = network::parse_osd_json(
-            {reinterpret_cast<const char*>(body.data()), body.size()});
+        const auto result = network::parse_osd_json({reinterpret_cast<const char *>(body.data()), body.size()});
         if (result.kind == network::Value::Kind::Map)
             return network::osd_string(result.get(key));
-    } catch (const std::exception&) {
+    } catch (const std::exception &) {
         return "Get GridInfo Failed!";
     }
     return "Get GridInfo Failed!";
 }
+
 namespace {
-std::vector<std::string> split(const std::string& value) {
+std::vector<std::string> split(const std::string &value) {
     std::vector<std::string> result;
     std::size_t start = 0;
     while (start <= value.size()) {
@@ -72,20 +73,21 @@ std::vector<std::string> split(const std::string& value) {
     }
     return result;
 }
-void add(std::vector<framework::HttpHost>& aliases, const std::string& value) {
+
+void add(std::vector<framework::HttpHost> &aliases, const std::string &value) {
     framework::HttpHost host(framework::trim_utf8(value));
-    if (host.valid() &&
-        std::none_of(aliases.begin(), aliases.end(), [&](const auto& old) { return old.equals(host); }))
+    if (host.valid() && std::none_of(aliases.begin(), aliases.end(), [&](const auto &old) { return old.equals(host); }))
         aliases.push_back(host);
 }
-}
-GridIdentity::GridIdentity(const IniConfig& config, const std::optional<std::string>& fallback,
-                           framework::RegionUri::Resolver resolver,
-                           std::function<void(std::u16string_view)> error_log, Role role)
+} // namespace
+
+GridIdentity::GridIdentity(const IniConfig &config, const std::optional<std::string> &fallback,
+                           framework::RegionUri::Resolver resolver, std::function<void(std::u16string_view)> error_log,
+                           Role role)
     : resolver_(std::move(resolver)) {
-    const auto sections = [&](const std::string& key, std::initializer_list<const char*> names,
+    const auto sections = [&](const std::string &key, std::initializer_list<const char *> names,
                               std::optional<std::string> value = std::string{}) {
-        for (const auto* name : names) {
+        for (const auto *name : names) {
             if (auto section = config.native_section(name)) {
                 auto found = section->get_string(framework::nini_writer_text(framework::utf16(key)),
                                                  value ? framework::nini_writer_text(framework::utf16(*value))
@@ -137,8 +139,7 @@ GridIdentity::GridIdentity(const IniConfig& config, const std::optional<std::str
     if (!home_ || !home_->resolved()) {
         if (!ignore_missing) {
             if (error_log)
-                error_log(home_ && home_->valid() ? u"Could not resolve HomeURI"
-                                                  : u"HomeURI is a invalid host");
+                error_log(home_ && home_->valid() ? u"Could not resolve HomeURI" : u"HomeURI is a invalid host");
             throw GridIdentityError("HomeURI configuration error");
         }
     } else if (ignore_missing) {
@@ -147,7 +148,7 @@ GridIdentity::GridIdentity(const IniConfig& config, const std::optional<std::str
     }
     const auto homes = sections("HomeURIAlias", {"Const", "Startup", "Hypergrid"}).value_or("");
     if (!framework::trim_utf8(homes).empty())
-        for (const auto& value : split(homes))
+        for (const auto &value : split(homes))
             add(home_aliases_, value);
     name = sections("GridName", {"Const", "GridInfo", "SimulatorFeatures"}).value_or("");
     if (name.empty())
@@ -155,14 +156,13 @@ GridIdentity::GridIdentity(const IniConfig& config, const std::optional<std::str
     nick = sections("GridNick", {"Const", "GridInfo", "SimulatorFeatures"}).value_or("");
     if (name.empty())
         name = "Another bad configured grid";
-    const auto uri = [&](const std::string& value, const char* error) {
+    const auto uri = [&](const std::string &value, const char *error) {
         framework::HttpUri parsed(framework::trim_utf8(value), true, resolver_);
         if (!parsed.resolved()) {
             auto key = std::string(error);
             key.resize(key.find(" configuration error"));
             if (error_log)
-                error_log(framework::utf16(parsed.valid() ? "Could not resolve " + key
-                                                          : key + " is a invalid host"));
+                error_log(framework::utf16(parsed.valid() ? "Could not resolve " + key : key + " is a invalid host"));
             throw GridIdentityError(error);
         }
         return parsed.uri;
@@ -170,43 +170,46 @@ GridIdentity::GridIdentity(const IniConfig& config, const std::optional<std::str
     search_url = sections("SearchServerURI", {"Const", "GridInfo", "SimulatorFeatures"}).value_or("");
     if (!search_url.empty())
         search_url = uri(search_url, "SearchServerURI configuration error");
-    destination_url =
-        sections("DestinationGuideURI", {"Const", "GridInfo", "SimulatorFeatures"}).value_or("");
+    destination_url = sections("DestinationGuideURI", {"Const", "GridInfo", "SimulatorFeatures"}).value_or("");
     if (destination_url.empty())
-        destination_url =
-            sections("DestinationGuide", {"Const", "GridInfo", "SimulatorFeatures"}).value_or("");
+        destination_url = sections("DestinationGuide", {"Const", "GridInfo", "SimulatorFeatures"}).value_or("");
     if (!destination_url.empty())
         destination_url = uri(destination_url, "DestinationGuideURL configuration error");
     economy_url = sections("economy", {"Economy", "GridInfo"}, std::nullopt);
     if (economy_url && !economy_url->empty())
         economy_url = uri(*economy_url, "economyURL configuration error");
-    const auto stun =
-        sections("StunServers", {"Const", "Startup", "GridInfo", "SimulatorFeatures"}).value_or("");
+    const auto stun = sections("StunServers", {"Const", "Startup", "GridInfo", "SimulatorFeatures"}).value_or("");
     if (!framework::trim_utf8(stun).empty())
         set_stuns(split(stun));
 }
+
 std::optional<std::string> GridIdentity::gate_uri() const {
     return gate_ ? std::optional{gate_->uri} : std::nullopt;
 }
+
 std::string GridIdentity::gate_uri_slash() const {
     return gate_ ? gate_->uri_slash() : "";
 }
+
 std::optional<std::string> GridIdentity::home_uri() const {
     return home_ ? std::optional{home_->uri} : std::nullopt;
 }
+
 std::string GridIdentity::home_uri_slash() const {
     return home_ ? home_->uri_slash() : "";
 }
-int GridIdentity::is_local_grid(const framework::HttpHost& value) const {
+
+int GridIdentity::is_local_grid(const framework::HttpHost &value) const {
     if (!value.valid())
         return (value.flags & framework::HttpHost::Empty) == 0 ? -1 : 1;
     if (gate_ && value.equals(*gate_))
         return 1;
-    for (const auto& alias : gate_aliases_)
+    for (const auto &alias : gate_aliases_)
         if (value.equals(alias))
             return 1;
     return 0;
 }
+
 bool GridIdentity::accepts_gatekeeper_token(std::string_view token) const {
     const auto separator = token.find(';');
     if (separator == std::string_view::npos)
@@ -214,9 +217,10 @@ bool GridIdentity::accepts_gatekeeper_token(std::string_view token) const {
     const framework::HttpHost destination{std::string(token.substr(0, separator))};
     return destination.valid() && is_local_grid(destination) == 1;
 }
-bool authenticate_gatekeeper_agent(const GridIdentity& grid, std::string_view token,
-                                   std::string_view client_ip, std::string_view home_uri,
-                                   const std::function<bool(const framework::HttpHost&, bool)>& verify,
+
+bool authenticate_gatekeeper_agent(const GridIdentity &grid, std::string_view token, std::string_view client_ip,
+                                   std::string_view home_uri,
+                                   const std::function<bool(const framework::HttpHost &, bool)> &verify,
                                    framework::RegionUri::Resolver resolver) {
     if (!grid.accepts_gatekeeper_token(token) || client_ip.empty())
         return false;
@@ -226,70 +230,78 @@ bool authenticate_gatekeeper_agent(const GridIdentity& grid, std::string_view to
     const framework::HttpHost gate{grid.gate_uri()};
     try {
         return verify(home, home.equals(gate));
-    } catch (const std::exception&) {
+    } catch (const std::exception &) {
         return false;
     }
 }
-int GridIdentity::is_local_grid(const std::optional<std::string>& value, bool resolve_check) const {
+
+int GridIdentity::is_local_grid(const std::optional<std::string> &value, bool resolve_check) const {
     framework::HttpHost host(value);
     const auto result = is_local_grid(host);
     if (result != 0 || !resolve_check)
         return result;
     return host.resolve_dns(resolver_) ? 0 : -2;
 }
-int GridIdentity::is_local_home(const std::optional<std::string>& value, bool resolve_check) const {
+
+int GridIdentity::is_local_home(const std::optional<std::string> &value, bool resolve_check) const {
     framework::HttpHost host(value);
     if (!host.valid())
         return (host.flags & framework::HttpHost::Empty) == 0 ? -1 : 1;
     if (home_ && host.equals(*home_))
         return 1;
-    for (const auto& alias : home_aliases_)
+    for (const auto &alias : home_aliases_)
         if (host.equals(alias))
             return 1;
     return resolve_check && !host.resolve_dns(resolver_) ? -2 : 0;
 }
-void GridIdentity::add_grid_aliases(const std::optional<std::vector<std::string>>& values) {
+
+void GridIdentity::add_grid_aliases(const std::optional<std::vector<std::string>> &values) {
     if (!values)
         throw std::invalid_argument("Null aliases");
     if (values->empty())
         return;
-    for (const auto& value : *values)
+    for (const auto &value : *values)
         add(gate_aliases_, value);
     if (!gate_aliases_.empty()) {
         grid_aliases = std::vector<std::string>{};
-        for (const auto& alias : gate_aliases_)
+        for (const auto &alias : gate_aliases_)
             grid_aliases->push_back(alias.uri);
     }
 }
-void GridIdentity::set_stuns(const std::optional<std::vector<std::string>>& values) {
+
+void GridIdentity::set_stuns(const std::optional<std::vector<std::string>> &values) {
     if (!values)
         throw std::invalid_argument("Null STUN servers");
     std::vector<std::string> result;
-    for (const auto& value : *values) {
+    for (const auto &value : *values) {
         framework::HttpHost host(framework::trim_utf8(value));
         if (host.valid())
             result.push_back("stun:" + host.host_port());
     }
     stun_servers = result.empty() ? std::nullopt : std::optional{result};
 }
-void GridIdentity::set_grid_url(const std::optional<std::string>& value) {
+
+void GridIdentity::set_grid_url(const std::optional<std::string> &value) {
     framework::HttpHost host(value, true, resolver_);
     if (host.resolved())
         grid_url = host.uri;
 }
-void GridIdentity::set_search_url(const std::optional<std::string>& value) {
+
+void GridIdentity::set_search_url(const std::optional<std::string> &value) {
     framework::HttpUri uri(value, true, resolver_);
     if (uri.resolved())
         search_url = uri.uri;
 }
-void GridIdentity::set_destination_url(const std::optional<std::string>& value) {
+
+void GridIdentity::set_destination_url(const std::optional<std::string> &value) {
     framework::HttpUri uri(value, true, resolver_);
     if (uri.resolved())
         destination_url = uri.uri;
 }
-void GridIdentity::set_economy_url(const std::optional<std::string>& value) {
+
+void GridIdentity::set_economy_url(const std::optional<std::string> &value) {
     framework::HttpUri uri(value, true, resolver_);
     if (uri.resolved())
         economy_url = uri.uri;
 }
-}
+} // namespace opensim::server

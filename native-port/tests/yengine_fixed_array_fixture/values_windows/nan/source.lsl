@@ -1,0 +1,1 @@
+YOption arrays;object input;float result;integer after;default{state_entry(){input=xmrFixedArrayAllocF(1);xmrFixedArraySetF(input,0,xmrString2Float("NaN"));llSleep(0.1);result=xmrFixedArrayGetF(input,0);after=1;}}

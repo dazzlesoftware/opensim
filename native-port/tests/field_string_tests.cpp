@@ -2,6 +2,7 @@
 #include <iostream>
 #include <vector>
 using namespace opensim::framework;
+
 std::string hex(std::string_view s) {
     std::string out;
     constexpr char h[] = "0123456789abcdef";
@@ -11,6 +12,7 @@ std::string hex(std::string_view s) {
     }
     return out;
 }
+
 std::string probe(int size, int seed, int mode, int label) {
     std::vector<std::uint8_t> bytes(size);
     for (int i = 0; i < size; ++i) {
@@ -36,7 +38,8 @@ std::string probe(int size, int seed, int mode, int label) {
         return "ERROR";
     }
 }
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string_view(argv[1]) == "--probe") {
             int n, s, m, l;
@@ -56,7 +59,7 @@ int main(int argc, char** argv) {
         require(probe(1, 0, 0, 3) == "ERROR");
         std::cout << "PASS:6 source field string checks\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

@@ -1,0 +1,1 @@
+rotation copied;integer before;integer after;probe(rotation value){value.x=xmrString2Float("-0");value.y=xmrString2Float("-0");value.s=xmrString2Float("-0");before=xmrRotationToBool(value);llSleep(1.0);after=xmrRotationToBool(value);copied=value;}default{state_entry(){probe(<0,0,0,1>);}}

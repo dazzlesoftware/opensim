@@ -1,5 +1,6 @@
 #include "opensim/framework/config_uri_network_identity.hpp"
 #include "opensim/framework/config_generic_uri_object.hpp"
+
 namespace opensim::framework {
 ConfigUriNetworkIdentity native_config_uri_network_identity(ConfigUriObjectPtr uri) {
     if (!uri)
@@ -21,4 +22,4 @@ ConfigUriNetworkIdentity native_config_uri_network_identity(ConfigUriObjectPtr u
                                             native_config_uri_components_backend(), windows);
     return config_generic_uri_network_identity(mirror);
 }
-}
+} // namespace opensim::framework

@@ -4,6 +4,7 @@
 #include "opensim/network/osd_value.hpp"
 #include "opensim/framework/ip_address.hpp"
 #include <stdexcept>
+
 namespace opensim::services {
 namespace {
 std::string escape(std::string_view s) {
@@ -24,32 +25,38 @@ std::string escape(std::string_view s) {
         }
     return r;
 }
+
 std::string str(std::string_view s) {
     return s.empty() ? "<string />" : "<string>" + escape(s) + "</string>";
 }
+
 std::string error(std::string_view s) {
     return "<llsd><map><key>message</key>" + str(s) +
            "<key>identifier</key><uuid>00000000-0000-0000-0000-000000000000</uuid></map></llsd>";
 }
+
 network::HttpResponse response() {
     network::HttpResponse r;
     r.content_type = "text/html;charset=UTF-8";
     return r;
 }
-}
-TaskScriptUpload::TaskScriptUpload(framework::Uuid a, framework::Uuid i, framework::Uuid o, bool run,
-                                   std::string p, std::string ip, ScriptTaskCapsBackend b)
+} // namespace
+
+TaskScriptUpload::TaskScriptUpload(framework::Uuid a, framework::Uuid i, framework::Uuid o, bool run, std::string p,
+                                   std::string ip, ScriptTaskCapsBackend b)
     : agent_(a), item_(i), object_(o), running_(run), path_(std::move(p)), remote_ip_(std::move(ip)),
       backend_(std::move(b)) {
     if (backend_.timer)
         backend_.timer(path_, 30000);
 }
+
 TaskScriptUpload::~TaskScriptUpload() {
     try {
         expire();
     } catch (...) {
     }
 }
+
 bool TaskScriptUpload::stop() {
     {
         std::lock_guard lock(mutex_);
@@ -64,14 +71,17 @@ bool TaskScriptUpload::stop() {
         backend_.timer(path_, 0);
     return true;
 }
+
 void TaskScriptUpload::expire() {
     stop();
 }
+
 bool TaskScriptUpload::active() const {
     std::lock_guard lock(mutex_);
     return active_;
 }
-network::HttpResponse TaskScriptUpload::handle(const network::HttpRequest& req) {
+
+network::HttpResponse TaskScriptUpload::handle(const network::HttpRequest &req) {
     auto r = response();
     if (req.method != "POST") {
         r.status = 404;
@@ -91,8 +101,7 @@ network::HttpResponse TaskScriptUpload::handle(const network::HttpRequest& req) 
             return r;
         }
         // Remote addresses must be canonical IPAddress strings supplied by transport.
-        auto ip = framework::IpAddress::parse(req.remote_ip),
-             expected = framework::IpAddress::parse(remote_ip_);
+        auto ip = framework::IpAddress::parse(req.remote_ip), expected = framework::IpAddress::parse(remote_ip_);
         if (!ip || !expected || ip->v6() != expected->v6() || ip->bytes() != expected->bytes() ||
             (ip->v6() && ip->scope_id() != expected->scope_id())) {
             r.status = 401;
@@ -103,7 +112,7 @@ network::HttpResponse TaskScriptUpload::handle(const network::HttpRequest& req) 
             return r;
         }
         try {
-            auto bytes = std::span(reinterpret_cast<const std::uint8_t*>(req.body.data()), req.body.size());
+            auto bytes = std::span(reinterpret_cast<const std::uint8_t *>(req.body.data()), req.body.size());
             auto errors = backend_.update(agent_, item_, object_, running_, bytes);
             std::string out = "<llsd><map><key>new_asset</key><uuid>" + item_.str() +
                               "</uuid><key>compiled</key><boolean>" + (errors.empty() ? "1" : "0") +
@@ -112,7 +121,7 @@ network::HttpResponse TaskScriptUpload::handle(const network::HttpRequest& req) 
                 out += "<array />";
             else {
                 out += "<array>";
-                for (const auto& e : errors)
+                for (const auto &e : errors)
                     out += str(e);
                 out += "</array>";
             }
@@ -128,15 +137,15 @@ network::HttpResponse TaskScriptUpload::handle(const network::HttpRequest& req) 
     }
     return r;
 }
+
 UpdateScriptTaskCore::UpdateScriptTaskCore(framework::Uuid a, std::string origin, ScriptTaskCapsBackend b)
     : agent_(a), origin_(std::move(origin)), backend_(std::move(b)) {
-    if (!backend_.object_exists || !backend_.can_edit_inventory || !backend_.can_edit_script ||
-        !backend_.new_path || !backend_.register_upload || !backend_.remove_upload || !backend_.timer ||
-        !backend_.update)
+    if (!backend_.object_exists || !backend_.can_edit_inventory || !backend_.can_edit_script || !backend_.new_path ||
+        !backend_.register_upload || !backend_.remove_upload || !backend_.timer || !backend_.update)
         throw std::invalid_argument("Incomplete script task capability backend");
 }
-network::HttpResponse UpdateScriptTaskCore::handle(const network::HttpRequest& req,
-                                                   const network::Value& map) const {
+
+network::HttpResponse UpdateScriptTaskCore::handle(const network::HttpRequest &req, const network::Value &map) const {
     auto r = response();
     try {
         framework::Uuid item, object;
@@ -167,18 +176,17 @@ network::HttpResponse UpdateScriptTaskCore::handle(const network::HttpRequest& r
             return r;
         }
         auto path = backend_.new_path();
-        auto upload =
-            std::make_shared<TaskScriptUpload>(agent_, item, object, run, path, req.remote_ip, backend_);
+        auto upload = std::make_shared<TaskScriptUpload>(agent_, item, object, run, path, req.remote_ip, backend_);
         backend_.register_upload(upload);
-        r.body =
-            "<llsd><map><key>uploader</key>" + str(origin_ + path) +
-            "<key>state</key><string>upload</string><key>upload_price</key><integer>0</integer></map></llsd>";
+        r.body = "<llsd><map><key>uploader</key>" + str(origin_ + path) +
+                 "<key>state</key><string>upload</string><key>upload_price</key><integer>0</integer></map></llsd>";
     } catch (...) {
         if (backend_.log)
             backend_.log("[UpdateScriptTaskInventory]: backend exception");
     }
     return r;
 }
+
 UpdateScriptTaskRoute::UpdateScriptTaskRoute(std::string p, std::shared_ptr<UpdateScriptTaskCore> c,
                                              Deserialize decoder)
     : path_(std::move(p)), core_(std::move(c)),
@@ -186,7 +194,8 @@ UpdateScriptTaskRoute::UpdateScriptTaskRoute(std::string p, std::shared_ptr<Upda
     if (!core_)
         throw std::invalid_argument("Null script task capability core");
 }
-network::HttpResponse UpdateScriptTaskRoute::handle(const network::HttpRequest& req) {
+
+network::HttpResponse UpdateScriptTaskRoute::handle(const network::HttpRequest &req) {
     ++requests_received;
     auto r = response();
     if (req.method != "POST") {
@@ -210,4 +219,4 @@ network::HttpResponse UpdateScriptTaskRoute::handle(const network::HttpRequest& 
     ++requests_handled;
     return r;
 }
-}
+} // namespace opensim::services

@@ -5,14 +5,17 @@
 using namespace opensim;
 using namespace scene;
 using namespace services;
+
 namespace {
 framework::Uuid id(int n) {
     auto s = std::to_string(n);
     return framework::Uuid("11223344-5566-7788-99aa-" + std::string(12 - s.size(), '0') + s);
 }
+
 int number(framework::Uuid key) {
     return std::stoi(key.str().substr(24));
 }
+
 std::string hex(std::span<const std::uint8_t> bytes) {
     std::string out;
     constexpr char d[] = "0123456789abcdef";
@@ -22,6 +25,7 @@ std::string hex(std::span<const std::uint8_t> bytes) {
     }
     return out;
 }
+
 InventoryItem item(int key, int asset = 500, int type = 6, int owner = 200) {
     InventoryItem i;
     i.id = id(key);
@@ -34,6 +38,7 @@ InventoryItem item(int key, int asset = 500, int type = 6, int owner = 200) {
     i.name = "item" + std::to_string(key);
     return i;
 }
+
 InventoryCollection contents(framework::Uuid folder, int mode) {
     InventoryCollection c;
     c.owner = id(250);
@@ -52,6 +57,7 @@ InventoryCollection contents(framework::Uuid folder, int mode) {
         c.items.push_back(item(201 + n, targets[n], 24, 200 + n));
     return c;
 }
+
 std::string probe(int kind, int count, int folder_number, int mode, int flags) {
     std::vector<std::string> trace;
     auto add = [&](const std::string &s) { trace.push_back(s); };
@@ -65,10 +71,12 @@ std::string probe(int kind, int count, int folder_number, int mode, int flags) {
             return {};
         return item((mode & 16) && k == 500 ? 777 : k, 500, k == 501 ? 24 : k == 502 ? 25 : 6);
     };
-    backend.content = [&](auto agent, auto folder) {
+    backend.content = [&](auto agent, auto folder) -> std::optional<InventoryCollection> {
         add("C" + agent.str() + "," + folder.str());
         if (mode & 256)
             throw std::runtime_error("content provider");
+        if (mode & 4096)
+            return std::nullopt;
         return contents(folder, mode);
     };
     backend.folder = [&](auto agent, auto folder) -> std::optional<InventoryFolder> {
@@ -112,8 +120,8 @@ std::string probe(int kind, int count, int folder_number, int mode, int flags) {
             } catch (...) {
             }
         } else {
-            LegacyFolderRequest request{folder_number ? id(folder_number) : framework::Uuid{},
-                                        bool(flags & 1), bool(flags & 2)};
+            LegacyFolderRequest request{folder_number ? id(folder_number) : framework::Uuid{}, bool(flags & 1),
+                                        bool(flags & 2)};
             auto disposition = core.receive_folder(id(42), request, sink);
             if (disposition == LegacyFolderDisposition::Queued) {
                 add("Q");
@@ -137,24 +145,29 @@ std::string probe(int kind, int count, int folder_number, int mode, int flags) {
     }
     return result;
 }
+
 int checks = 0;
+
 void check(bool value, const char *label) {
     ++checks;
     if (!value)
         throw std::runtime_error(label);
 }
+
 void run() {
     check(probe(0, 1, 2, 32, 3) == "A0", "inactive item requests skipped");
     check(probe(1, 0, 0, 0, 3).empty(), "zero folder ignored before providers");
     check(probe(1, 0, 2, 0, 3) == "Q", "ordinary receive only queues");
     check(probe(2, 0, 2, 32, 3) == "Q|A0", "inactive queued folder skipped without sleep");
-    check(probe(2, 0, 2, 1 | 32, 3).starts_with("L"),
-          "library immediate branch does not require activity callback");
+    check(probe(2, 0, 2, 1 | 32, 3).starts_with("L"), "library immediate branch does not require activity callback");
     check(probe(2, 0, 2, 4, 3).ends_with("|S50"), "missing ordinary folder still reaches queue gate");
     check(probe(2, 0, 2, 8, 3).ends_with("|E"), "provider error precedes sleep gate");
+    check(probe(2, 0, 2, 4096, 3).ends_with("|E"), "null contents with an existing folder must fail");
+    check(probe(2, 0, 2, 4096 | 4, 3).ends_with("|S50"), "missing folder returns before accessing null contents");
     check(probe(0, 3, 2, 64, 3).find("L") == std::string::npos, "item path never queries library");
 }
-}
+} // namespace
+
 int main(int argc, char **argv) {
     try {
         if (argc == 2 && std::string_view(argv[1]) == "--probe") {

@@ -4,15 +4,16 @@
 #include <iostream>
 using namespace opensim;
 using namespace scene;
+
 namespace {
 framework::Uuid id(int n) {
-    return framework::Uuid(n == 1 ? "11223344-5566-7788-99aa-000000000001"
-                                  : "11223344-5566-7788-99aa-000000000002");
+    return framework::Uuid(n == 1 ? "11223344-5566-7788-99aa-000000000001" : "11223344-5566-7788-99aa-000000000002");
 }
+
 std::string probe(int command, int mode, int fail) {
     std::string trace;
     bool run = false, itemrun = false;
-    auto step = [&](int point, const std::string& value) {
+    auto step = [&](int point, const std::string &value) {
         trace += "|" + value;
         if (point == fail)
             throw std::runtime_error("injected");
@@ -32,7 +33,7 @@ std::string probe(int command, int mode, int fail) {
         step(3, "RESETCHECK:" + o.str() + ":" + i.str() + ":" + a.str());
         return !(mode & 4);
     };
-    ScriptControlController* controller = nullptr;
+    ScriptControlController *controller = nullptr;
     backend.start = [&](auto local, auto item) {
         step(4, "START:" + std::to_string(local) + ":" + item.str());
         controller->on_start(local, item);
@@ -62,9 +63,7 @@ std::string probe(int command, int mode, int fail) {
         instance.reset = [&] { step(13, "INSTANCE_RESET"); };
         return instance;
     };
-    backend.trace_reset = [&](auto local, auto item) {
-        step(10, "TRACE:" + std::to_string(local) + ":" + item.str());
-    };
+    backend.trace_reset = [&](auto local, auto item) { step(10, "TRACE:" + std::to_string(local) + ":" + item.str()); };
     backend.release_urls = [&](auto item) {
         step(11, "URL_MODULE");
         if (!(mode & 32))
@@ -102,6 +101,7 @@ std::string probe(int command, int mode, int fail) {
     }
     return result + ":" + (run ? "1" : "0") + ":" + (itemrun ? "1" : "0") + trace;
 }
+
 std::string execution(int state, int run, int active, int suspend, int count, int fail) {
     ScriptExecutionControl control;
     control.state = static_cast<ScriptExecutionState>(state);
@@ -109,24 +109,25 @@ std::string execution(int state, int run, int active, int suspend, int count, in
     control.suspend_count = suspend;
     control.pending_events = static_cast<std::size_t>(count);
     std::string trace;
-    auto step = [&](int point, const char* s) {
+    auto step = [&](int point, const char *s) {
         trace += std::string("|") + s;
         if (point == fail)
             throw std::runtime_error("injected");
     };
-    ScriptExecutionQueues queues{[&] { step(1, "YIELD"); }, [&] { step(2, "START"); },
-                                 [&] { step(3, "REMOVE_SLEEP"); }, [&] { step(4, "EMPTY"); }};
+    ScriptExecutionQueues queues{[&] { step(1, "YIELD"); }, [&] { step(2, "START"); }, [&] { step(3, "REMOVE_SLEEP"); },
+                                 [&] { step(4, "EMPTY"); }};
     std::string result = "OK";
     try {
         script_set_running(control, bool(run), queues);
     } catch (...) {
         result = "THROW";
     }
-    return result + ":" + std::to_string(static_cast<int>(control.state)) + ":" +
-           (control.running ? "1" : "0") + ":" + std::to_string(control.pending_events) + trace;
+    return result + ":" + std::to_string(static_cast<int>(control.state)) + ":" + (control.running ? "1" : "0") + ":" +
+           std::to_string(control.pending_events) + trace;
 }
-}
-int main(int argc, char** argv) {
+} // namespace
+
+int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string_view(argv[1]) == "--probe") {
             int kind;
@@ -138,8 +139,7 @@ int main(int argc, char** argv) {
                     control.state = static_cast<ScriptExecutionState>(s);
                     control.running = bool(r);
                     control.pending_events = n;
-                    std::cout << static_cast<int>(stopped_script_event(control, bool(k), bool(h), bool(e)))
-                              << '\n';
+                    std::cout << static_cast<int>(stopped_script_event(control, bool(k), bool(h), bool(e))) << '\n';
                 } else if (!kind) {
                     int c, m, f;
                     std::cin >> c >> m >> f;
@@ -152,7 +152,7 @@ int main(int argc, char** argv) {
             return 0;
         }
         int checks = 0;
-        auto check = [&](bool v, const char* s) {
+        auto check = [&](bool v, const char *s) {
             ++checks;
             if (!v)
                 throw std::runtime_error(s);
@@ -168,15 +168,13 @@ int main(int argc, char** argv) {
         c.running = false;
         check(stopped_script_event(c, true, true, true) == StoppedScriptEvent::QueueStateEntry,
               "stopped resetstateentry");
-        check(stopped_script_event(c, true, true, false) == StoppedScriptEvent::Ignore,
-              "stopped touchignored");
+        check(stopped_script_event(c, true, true, false) == StoppedScriptEvent::Ignore, "stopped touchignored");
         c.pending_events = 1;
-        check(stopped_script_event(c, true, true, true) == StoppedScriptEvent::Ignore,
-              "one stoppedstateentry");
+        check(stopped_script_event(c, true, true, true) == StoppedScriptEvent::Ignore, "one stoppedstateentry");
         check(stopped_script_event(c, false, true, true) == StoppedScriptEvent::Reject, "unknown rejected");
         std::cout << "PASS: " << checks << " script control checks\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

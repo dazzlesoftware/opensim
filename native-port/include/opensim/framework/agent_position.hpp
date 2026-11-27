@@ -5,6 +5,7 @@
 #include "opensim/framework/agent_transfer.hpp"
 #include "opensim/framework/ordered_dictionary.hpp"
 #include "opensim/network/osd_value.hpp"
+
 namespace opensim::framework {
 struct ChildAgentDataUpdate {
     Uuid active_group_id, agent_id;
@@ -15,6 +16,7 @@ struct ChildAgentDataUpdate {
     std::uint64_t region_handle = 0;
     network::BinaryData throttles;
 };
+
 class AgentPosition : public IAgentData {
   public:
     Uuid agent_id, session_id;
@@ -27,21 +29,27 @@ class AgentPosition : public IAgentData {
     network::BinaryData throttles;
     using ChildrenSeeds = OrderedDictionary<std::uint64_t, std::optional<std::string>>;
     std::shared_ptr<ChildrenSeeds> children_cap_seeds;
+
     Uuid agent_uuid() const override {
         return agent_id;
     }
-    void agent_uuid(const Uuid& value) override {
+
+    void agent_uuid(const Uuid &value) override {
         agent_id = value;
     }
-    network::Value pack(EntityTransferContext* context = nullptr) override {
-        return static_cast<const AgentPosition&>(*this).pack(context);
+
+    network::Value pack(EntityTransferContext *context = nullptr) override {
+        return static_cast<const AgentPosition &>(*this).pack(context);
     }
-    network::Value pack(EntityTransferContext* context = nullptr) const;
-    void unpack(network::Value& args, AgentTransferScene*, EntityTransferContext* context) override {
+
+    network::Value pack(EntityTransferContext *context = nullptr) const;
+
+    void unpack(network::Value &args, AgentTransferScene *, EntityTransferContext *context) override {
         unpack(args, context);
     }
+
     // Promotes retained OSD data to shared nodes, preserving caller mutations.
-    void unpack(network::Value& args, EntityTransferContext* context = nullptr);
-    void copy_from(const ChildAgentDataUpdate* child, const Uuid& session);
+    void unpack(network::Value &args, EntityTransferContext *context = nullptr);
+    void copy_from(const ChildAgentDataUpdate *child, const Uuid &session);
 };
-}
+} // namespace opensim::framework

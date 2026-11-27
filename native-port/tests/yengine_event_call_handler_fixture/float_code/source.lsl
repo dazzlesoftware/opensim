@@ -1,0 +1,1 @@
+integer count;default{state_entry(){xmrEventCallHandler([21.9,7]);}touch_start(integer n){count+=n;}}

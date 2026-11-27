@@ -1,0 +1,1 @@
+YOption arrays;YOption chars;object input=(object)(key)"11111111-2222-3333-4444-555555555555";object alias=input;object other=(object)(key)"11111111-2222-3333-4444-555555555555";integer result;integer alias_equal;integer value_equal;default{state_entry(){alias_equal=(input==alias);result=(input==other);value_equal=((string)input==(string)other);}}

@@ -5,16 +5,19 @@
 #include <memory>
 #include <optional>
 #include <vector>
+
 namespace opensim::network {
 struct Value;
 }
+
 namespace opensim::framework {
 struct WearableItem {
     Uuid item, asset;
-    bool operator==(const WearableItem&) const = default;
+    bool operator==(const WearableItem &) const = default;
 };
+
 class AvatarWearable {
-public:
+  public:
     enum : int {
         Body = 0,
         Skin = 1,
@@ -36,6 +39,7 @@ public:
         Physics = 15,
         Universal = 16
     };
+
     inline static int max_wearables_pv7 = 16, max_wearables = 17;
     inline static const Uuid default_body_item{"66c41e39-38f9-f75a-024e-585989bfaba9"},
         default_body_asset{"66c41e39-38f9-f75a-024e-585989bfab73"};
@@ -54,37 +58,44 @@ public:
     inline static const Uuid default_tattoo_item{"c47e22bd-3021-4ba4-82aa-2b5cb34d35e1"},
         default_tattoo_asset{"00000000-0000-2222-3333-100000001007"};
     AvatarWearable() = default;
-    AvatarWearable(const Uuid& item, const Uuid& asset) {
+
+    AvatarWearable(const Uuid &item, const Uuid &asset) {
         wear(item, asset);
     }
-    explicit AvatarWearable(const network::Value& array);
+
+    explicit AvatarWearable(const network::Value &array);
+
     std::size_t count() const noexcept {
         return ids_.size();
     }
-    void add(const Uuid& item, const Uuid& asset);
-    void wear(const Uuid& item, const Uuid& asset) {
+
+    void add(const Uuid &item, const Uuid &asset);
+
+    void wear(const Uuid &item, const Uuid &asset) {
         clear();
         add(item, asset);
     }
-    void wear(const WearableItem& item) {
+
+    void wear(const WearableItem &item) {
         wear(item.item, item.asset);
     }
+
     void clear();
-    void remove_item(const Uuid& item);
-    void remove_asset(const Uuid& asset);
+    void remove_item(const Uuid &item);
+    void remove_asset(const Uuid &asset);
     WearableItem at(int index) const;
-    Uuid asset(const Uuid& item) const;
+    Uuid asset(const Uuid &item) const;
     network::Value pack() const;
-    void unpack(const network::Value& array);
-    void unpack(const network::Value* array);
+    void unpack(const network::Value &array);
+    void unpack(const network::Value *array);
     static std::vector<std::shared_ptr<AvatarWearable>> defaults();
 
-private:
-    std::optional<std::size_t> slot(const Uuid& item) const;
+  private:
+    std::optional<std::size_t> slot(const Uuid &item) const;
     // .NET Dictionary enumeration reuses removed slots; RemoveAsset observes
     // that order rather than the independent wearable presentation order.
     std::vector<std::optional<WearableItem>> slots_;
     std::vector<std::size_t> free_;
     std::vector<Uuid> ids_;
 };
-}
+} // namespace opensim::framework

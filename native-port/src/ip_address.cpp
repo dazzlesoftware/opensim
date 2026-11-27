@@ -24,7 +24,8 @@ int nibble(char c) {
            : c >= 'A' && c <= 'F' ? c - 'A' + 10
                                   : -1;
 }
-bool ipv4(std::string_view text, std::uint32_t& value) {
+
+bool ipv4(std::string_view text, std::uint32_t &value) {
     std::uint32_t parts[4]{};
     std::size_t count = 0, start = 0;
     while (true) {
@@ -75,11 +76,13 @@ bool ipv4(std::string_view text, std::uint32_t& value) {
         value |= parts[i] << (24 - i * 8);
     return true;
 }
+
 std::string dotted(std::uint32_t value) {
     return std::to_string(value >> 24) + "." + std::to_string((value >> 16) & 255) + "." +
            std::to_string((value >> 8) & 255) + "." + std::to_string(value & 255);
 }
-bool embedded_ipv4(std::string& value) {
+
+bool embedded_ipv4(std::string &value) {
     if (value.find('.') == std::string::npos)
         return true;
     const auto colon = value.rfind(':');
@@ -112,7 +115,8 @@ bool embedded_ipv4(std::string& value) {
     value += normalized;
     return true;
 }
-std::string groups(const std::array<std::uint16_t, 8>& numbers, std::size_t count) {
+
+std::string groups(const std::array<std::uint16_t, 8> &numbers, std::size_t count) {
     std::size_t best = count, best_length = 1;
     for (std::size_t i = 0; i < count;) {
         if (numbers[i]) {
@@ -142,8 +146,9 @@ std::string groups(const std::array<std::uint16_t, 8>& numbers, std::size_t coun
     }
     return result;
 }
-}
-IpAddress IpAddress::from_bytes(const std::array<std::uint8_t, 16>& bytes, bool v6, std::uint32_t scope) {
+} // namespace
+
+IpAddress IpAddress::from_bytes(const std::array<std::uint8_t, 16> &bytes, bool v6, std::uint32_t scope) {
     IpAddress result;
     result.v6_ = v6;
     result.bytes_ = bytes;
@@ -152,7 +157,8 @@ IpAddress IpAddress::from_bytes(const std::array<std::uint8_t, 16>& bytes, bool 
                                   (std::uint32_t(bytes[2]) << 16) | (std::uint32_t(bytes[3]) << 24));
     return result;
 }
-std::optional<IpAddress> IpAddress::parse(const std::optional<std::string>& value) {
+
+std::optional<IpAddress> IpAddress::parse(const std::optional<std::string> &value) {
     if (!value)
         return {};
     auto text = std::string_view(*value);
@@ -204,6 +210,7 @@ std::optional<IpAddress> IpAddress::parse(const std::optional<std::string>& valu
         return {};
     return from_bytes(bytes, true, scope);
 }
+
 std::array<std::uint8_t, 16> IpAddress::bytes() const {
     if (v6_)
         return bytes_;
@@ -213,11 +220,13 @@ std::array<std::uint8_t, 16> IpAddress::bytes() const {
         result[i] = static_cast<std::uint8_t>(value >> (i * 8));
     return result;
 }
+
 std::uint32_t IpAddress::scope_id() const {
     if (!v6_)
         throw std::invalid_argument("IPv4 address has no scope");
     return number_.load();
 }
+
 void IpAddress::scope_id(std::int64_t value) {
     if (!v6_)
         throw std::invalid_argument("IPv4 address has no scope");
@@ -225,26 +234,29 @@ void IpAddress::scope_id(std::int64_t value) {
         throw std::out_of_range("Invalid IPv6 scope");
     number_.store(static_cast<std::uint32_t>(value));
 }
+
 std::uint32_t IpAddress::ipv4_address() const {
     if (v6_)
         throw std::invalid_argument("IPv6 address has no IPv4 value");
     return number_.load();
 }
+
 void IpAddress::ipv4_address(std::int64_t value) {
     if (v6_)
         throw std::invalid_argument("IPv6 address has no IPv4 value");
     number_.store(static_cast<std::uint32_t>(value));
 }
+
 bool IpAddress::unspecified() const {
     if (!v6_)
         return number_.load() == 0;
     return number_.load() == 0 && std::all_of(bytes_.begin(), bytes_.end(), [](auto c) { return c == 0; });
 }
+
 std::string IpAddress::str() const {
     if (!v6_) {
         const auto b = bytes();
-        return dotted((std::uint32_t(b[0]) << 24) | (std::uint32_t(b[1]) << 16) | (std::uint32_t(b[2]) << 8) |
-                      b[3]);
+        return dotted((std::uint32_t(b[0]) << 24) | (std::uint32_t(b[1]) << 16) | (std::uint32_t(b[2]) << 8) | b[3]);
     }
     std::array<std::uint16_t, 8> n{};
     for (int i = 0; i < 8; ++i)
@@ -263,9 +275,10 @@ std::string IpAddress::str() const {
         result += '%' + std::to_string(scope);
     return result;
 }
+
 std::string IpEndpoint::str() const {
     if (!address)
         throw std::invalid_argument("Null endpoint address");
     return (address->v6() ? "[" + address->str() + "]" : address->str()) + ":" + std::to_string(port);
 }
-}
+} // namespace opensim::framework

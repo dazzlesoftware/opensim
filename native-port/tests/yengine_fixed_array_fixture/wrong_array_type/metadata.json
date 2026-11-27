@@ -1,0 +1,42 @@
+{
+  "accepted": true,
+  "executed": true,
+  "globals": {
+    "a": {
+      "type": "array",
+      "clr": "System.Double[]",
+      "id": 0,
+      "entries": [
+        {
+          "type": "float",
+          "clr": "System.Double",
+          "bits": "0000000000000000",
+          "text": "0"
+        }
+      ]
+    },
+    "result": {
+      "type": "integer",
+      "clr": "System.Int32",
+      "value": 0
+    }
+  },
+  "errors": [],
+  "exception": "Unable to cast object of type 'System.Double[]' to type 'System.Int32[]'.",
+  "exceptionType": "System.InvalidCastException",
+  "stackSize": 1000000,
+  "stackLimit": 1024,
+  "finalStackLeft": 1000000,
+  "stackSamples": [],
+  "name": "wrong_array_type",
+  "source": "YOption arrays;object a;integer result;default{state_entry(){a=xmrFixedArrayAllocF(1);result=xmrFixedArrayGetI(a,0);}}",
+  "methodology": "Actual original CodeGen/CallSEH; scheduler CheckRunWork no-op. Separate process per case. No migration claim.",
+  "sha256": {
+    "original.il.txt": "8f9dc017ec26436966fc9972c1db045f5932556de5e76ec3da9b1d5e3a5a4e87",
+    "original.yobj": "48737362644c113b45c8aeffbcd2964265d11de9375bbde536d750fc89621ed3",
+    "source.lsl": "0279f3186131babec7b1172e677963b220c0320079678753a9f769b43474ee0d",
+    "source_hash.txt": "29442e9076ee971aa70bcc27cec133cc5fcf8f2a8ba3b90b3c801523bf011c6f",
+    "generator_source": "d86517a13d8f4094e933279614d487a0e69d44a49f2296c4af7562bf7386d651",
+    "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056"
+  }
+}

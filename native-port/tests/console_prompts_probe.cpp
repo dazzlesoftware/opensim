@@ -5,7 +5,8 @@
 #include <sstream>
 using namespace opensim::framework;
 using Text = ConsolePrompts::Text;
-std::vector<std::string> split(const std::string& value, char delimiter) {
+
+std::vector<std::string> split(const std::string &value, char delimiter) {
     std::vector<std::string> out;
     std::size_t at = 0;
     while (true) {
@@ -16,7 +17,8 @@ std::vector<std::string> split(const std::string& value, char delimiter) {
         at = end + 1;
     }
 }
-Text decode(const std::string& value) {
+
+Text decode(const std::string &value) {
     if (value == "~")
         return {};
     std::u16string out;
@@ -24,24 +26,28 @@ Text decode(const std::string& value) {
         out += static_cast<char16_t>(std::stoul(value.substr(at, 4), nullptr, 16));
     return out;
 }
-std::string hex(const Text& value) {
+
+std::string hex(const Text &value) {
     if (!value)
         return "~";
-    const char* digits = "0123456789abcdef";
+    const char *digits = "0123456789abcdef";
     std::string out;
     for (auto c : *value)
         for (int shift : {12, 8, 4, 0})
             out += digits[(c >> shift) & 15];
     return out;
 }
-std::vector<Text> list(const std::string& value) {
+
+std::vector<Text> list(const std::string &value) {
     std::vector<Text> out;
     if (value != "!")
-        for (const auto& item : split(value.substr(1), ','))
+        for (const auto &item : split(value.substr(1), ','))
             out.push_back(decode(item));
     return out;
 }
+
 struct Limit {};
+
 int main() {
     std::string row;
     while (std::getline(std::cin, row)) {
@@ -49,7 +55,7 @@ int main() {
         auto input = list(f.at(6));
         std::size_t at = 0;
         std::string logs;
-        auto log = [&](const std::string& value) {
+        auto log = [&](const std::string &value) {
             if (!logs.empty())
                 logs += ';';
             logs += value;
@@ -62,7 +68,7 @@ int main() {
         ConsolePrompts::Options options;
         if (f[4] != "~")
             options = list(f[4]);
-        auto mutate = [&](const std::string& action) {
+        auto mutate = [&](const std::string &action) {
             if (action.empty())
                 return;
             auto parts = split(action, ':');
@@ -91,7 +97,7 @@ int main() {
         };
         bool read_mutated = false, diag_mutated = false;
         ConsolePrompts prompts(
-            [&](const auto& text, bool command, bool echo) -> Text {
+            [&](const auto &text, bool command, bool echo) -> Text {
                 if (at >= 32)
                     throw Limit();
                 log("read:" + hex(text) + ":" + (command ? "1" : "0") + ":" + (echo ? "1" : "0"));
@@ -101,7 +107,7 @@ int main() {
                 }
                 return at < input.size() ? input[at++] : (++at, Text{});
             },
-            [&](const auto& text) {
+            [&](const auto &text) {
                 log("diag:" + hex(text));
                 if (!diag_mutated && f.size() > 8) {
                     diag_mutated = true;
@@ -129,11 +135,11 @@ int main() {
                 break;
             }
             result = "ok:" + hex(value);
-        } catch (const ConsolePromptListModifiedError&) {
+        } catch (const ConsolePromptListModifiedError &) {
             result = "err:InvalidOperationException";
-        } catch (const ConsolePromptNullError&) {
+        } catch (const ConsolePromptNullError &) {
             result = "err:NullReferenceException";
-        } catch (const Limit&) {
+        } catch (const Limit &) {
             result = "err:Limit";
         }
         std::cout << result << "|" << logs << "\n";

@@ -3,18 +3,21 @@
 #include <limits>
 #include <stdexcept>
 using namespace opensim::framework;
-void check(bool value, const char* message) {
+
+void check(bool value, const char *message) {
     if (!value)
         throw std::runtime_error(message);
 }
+
 template <class F> void rejects(F action) {
     try {
         action();
-    } catch (const std::out_of_range&) {
+    } catch (const std::out_of_range &) {
         return;
     }
     throw std::runtime_error("Malformed texture input accepted");
 }
+
 int main() {
     try {
         TextureEntry entry(TextureEntry::white_texture);
@@ -38,12 +41,12 @@ int main() {
         // All truncated prefixes and a deterministic byte-mutation corpus must
         // terminate cleanly, regardless of whether a legacy optional tail parses.
         std::size_t cases = 0;
-        auto exercise = [&](const std::vector<std::uint8_t>& input) {
+        auto exercise = [&](const std::vector<std::uint8_t> &input) {
             try {
                 TextureEntry model(input);
                 (void)model.bytes();
                 (void)model.bakes_bytes();
-            } catch (const std::out_of_range&) {
+            } catch (const std::out_of_range &) {
             }
             ++cases;
         };
@@ -61,7 +64,7 @@ int main() {
         check(!empty.default_texture && empty.bytes().empty(), "Empty texture entry");
         std::cout << "PASS: texture framing, bounds, clean decoding and " << cases << " malformed inputs\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

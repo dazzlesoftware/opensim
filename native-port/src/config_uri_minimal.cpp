@@ -1,10 +1,11 @@
 // Native .NET8.0.31 Uri.PrivateParseMinimal; .NET Foundation MIT license.
 #include "opensim/framework/config_uri_minimal.hpp"
 #include <stdexcept>
+
 namespace opensim::framework {
-ConfigUriMinimalResult config_uri_parse_minimal(std::u16string text, std::u16string_view original,
-                                                std::uint64_t flags, ConfigUriSyntaxPtr syntax, bool windows,
-                                                const ConfigUriUnicodeBackend& unicode) {
+ConfigUriMinimalResult config_uri_parse_minimal(std::u16string text, std::u16string_view original, std::uint64_t flags,
+                                                ConfigUriSyntaxPtr syntax, bool windows,
+                                                const ConfigUriUnicodeBackend &unicode) {
     if (!syntax)
         throw std::invalid_argument("Minimal URI parsing requires validated syntax");
     ConfigUriMinimalResult r;
@@ -50,8 +51,8 @@ ConfigUriMinimalResult config_uri_parse_minimal(std::u16string text, std::u16str
                         r.flags |= 0x100000ull;
                     num = (i == num || i - num == 2) ? i : i - 1;
                 }
-            } else if (has(F::FileLikeUri) && i - num >= 2 && i - num != 3 && i < length &&
-                       input[i] != u'?' && input[i] != u'#') {
+            } else if (has(F::FileLikeUri) && i - num >= 2 && i - num != 3 && i < length && input[i] != u'?' &&
+                       input[i] != u'#') {
                 r.flags |= 0x10000000ull;
                 num = i;
             } else if (!windows && has(F::FileLikeUri) && i > 0 && input[i - 1] == u'/' && i - num == 3) {
@@ -119,4 +120,4 @@ ConfigUriMinimalResult config_uri_parse_minimal(std::u16string text, std::u16str
         r.parse_string = *authority.rewritten_prefix;
     return r;
 }
-}
+} // namespace opensim::framework

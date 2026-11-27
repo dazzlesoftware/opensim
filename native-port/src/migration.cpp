@@ -7,13 +7,15 @@
 #include "opensim/services/user_account.hpp"
 #include <algorithm>
 #include <exception>
+
 namespace opensim::services {
 namespace {
-template <class T> T& required(const std::shared_ptr<T>& value) {
+template <class T> T &required(const std::shared_ptr<T> &value) {
     if (!value)
         throw std::invalid_argument("Null migration reference");
     return *value;
 }
+
 template <class T, class F> void using_dispose(std::shared_ptr<T> value, F action) {
     std::exception_ptr error;
     try {
@@ -30,10 +32,12 @@ template <class T, class F> void using_dispose(std::shared_ptr<T> value, F actio
     if (error)
         std::rethrow_exception(error);
 }
-std::string name(const std::optional<std::string>& value) {
+
+std::string name(const std::optional<std::string> &value) {
     return value.value_or("");
 }
-std::string resource_text(const std::shared_ptr<MigrationResources>& source, const std::string& resource) {
+
+std::string resource_text(const std::shared_ptr<MigrationResources> &source, const std::string &resource) {
     auto bytes = required(source).bytes(resource);
     if (!bytes)
         throw std::invalid_argument("Missing migration resource stream");
@@ -44,53 +48,52 @@ constexpr auto newline = "\r\n";
 #else
 constexpr auto newline = "\n";
 #endif
-}
-Migration::Migration(std::shared_ptr<MigrationDatabase> database,
-                     std::shared_ptr<MigrationResources> resources, std::optional<std::string> type,
-                     MigrationLog log)
-    : Migration(std::move(database), std::move(resources), std::string{}, std::move(type), std::move(log)) {
-}
-Migration::Migration(std::shared_ptr<MigrationDatabase> database,
-                     std::shared_ptr<MigrationResources> resources, std::optional<std::string> subtype,
+} // namespace
+
+Migration::Migration(std::shared_ptr<MigrationDatabase> database, std::shared_ptr<MigrationResources> resources,
                      std::optional<std::string> type, MigrationLog log)
+    : Migration(std::move(database), std::move(resources), std::string{}, std::move(type), std::move(log)) {}
+
+Migration::Migration(std::shared_ptr<MigrationDatabase> database, std::shared_ptr<MigrationResources> resources,
+                     std::optional<std::string> subtype, std::optional<std::string> type, MigrationLog log)
     : log_(std::move(log)) {
     initialize(std::move(database), std::move(resources), std::move(type), std::move(subtype));
 }
-void Migration::initialize(std::shared_ptr<MigrationDatabase> database,
-                           std::shared_ptr<MigrationResources> resources, std::optional<std::string> type,
-                           std::optional<std::string> subtype) {
+
+void Migration::initialize(std::shared_ptr<MigrationDatabase> database, std::shared_ptr<MigrationResources> resources,
+                           std::optional<std::string> type, std::optional<std::string> subtype) {
     type_ = std::move(type);
     database_ = std::move(database);
     resources_ = std::move(resources);
-    old_ =
-        std::make_shared<framework::UnicodeRegex>(name(subtype) + "\\.(\\d\\d\\d)_" + name(type_) + "\\.sql");
+    old_ = std::make_shared<framework::UnicodeRegex>(name(subtype) + "\\.(\\d\\d\\d)_" + name(type_) + "\\.sql");
     auto part = !subtype || subtype->empty() ? name(type_) : name(type_) + "\\." + *subtype;
-    merged_ =
-        std::make_shared<framework::UnicodeRegex>("\\." + part + "\\.migrations(?:\\.(?<ver>\\d+)$|.*)");
+    merged_ = std::make_shared<framework::UnicodeRegex>("\\." + part + "\\.migrations(?:\\.(?<ver>\\d+)$|.*)");
 }
-void Migration::execute_script(std::shared_ptr<MigrationDatabase> database,
-                               const std::vector<std::string>& scripts) {
+
+void Migration::execute_script(std::shared_ptr<MigrationDatabase> database, const std::vector<std::string> &scripts) {
     auto command = required(database).command();
     using_dispose(command, [&] {
         required(command).timeout(0);
-        for (auto& sql : scripts) {
+        for (auto &sql : scripts) {
             command->text(sql);
             try {
                 command->execute();
-            } catch (const std::exception& e) {
+            } catch (const std::exception &e) {
                 throw std::runtime_error(std::string(e.what()) + " in SQL: " + sql);
             }
         }
     });
 }
-void Migration::execute(const std::string& sql) {
+
+void Migration::execute(const std::string &sql) {
     execute_script(database_, {sql});
 }
-void Migration::execute(const std::vector<std::string>& sql) {
+
+void Migration::execute(const std::vector<std::string> &sql) {
     execute_script(database_, sql);
 }
-int32_t Migration::find_version(std::shared_ptr<MigrationDatabase> database,
-                                const std::optional<std::string>& type) {
+
+int32_t Migration::find_version(std::shared_ptr<MigrationDatabase> database, const std::optional<std::string> &type) {
     int32_t value = 0;
     auto command = required(database).command();
     using_dispose(command, [&] {
@@ -109,17 +112,19 @@ int32_t Migration::find_version(std::shared_ptr<MigrationDatabase> database,
     });
     return value;
 }
-void Migration::insert_version(const std::optional<std::string>& type, int32_t value) {
+
+void Migration::insert_version(const std::optional<std::string> &type, int32_t value) {
     if (log_.info)
         log_.info("[MIGRATIONS]: Creating " + name(type) + " at version " + std::to_string(value));
-    execute("insert into migrations(name, version) values('" + name(type) + "', " + std::to_string(value) +
-            ")");
+    execute("insert into migrations(name, version) values('" + name(type) + "', " + std::to_string(value) + ")");
 }
-void Migration::update_version(const std::optional<std::string>& type, int32_t value) {
+
+void Migration::update_version(const std::optional<std::string> &type, int32_t value) {
     if (log_.info)
         log_.info("[MIGRATIONS]: Updating " + name(type) + " to version " + std::to_string(value));
     execute("update migrations set version=" + std::to_string(value) + " where name='" + name(type) + "'");
 }
+
 void Migration::init_migrations_table() {
     auto v = find_version(database_, std::string("migrations"));
     if (v <= 0) {
@@ -128,15 +133,18 @@ void Migration::init_migrations_table() {
         insert_version(std::string("migrations"), 1);
     }
 }
+
 int32_t Migration::version() {
     return find_version(database_, type_);
 }
+
 void Migration::version(int32_t value) {
     if (version() < 1)
         insert_version(type_, value);
     else
         update_version(type_, value);
 }
+
 void Migration::update() {
     init_migrations_table();
     int32_t current = find_version(database_, type_);
@@ -148,16 +156,17 @@ void Migration::update() {
                   std::to_string(scripts.rbegin()->first) + ".");
         log_.info("[MIGRATIONS]: NOTE - this may take a while, don't interrupt this process!");
     }
-    for (auto& [next, batches] : scripts) {
+    for (auto &[next, batches] : scripts) {
         try {
             execute(batches);
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
             if (log_.debug) {
                 std::string message = e.what();
                 std::replace(message.begin(), message.end(), '\n', ' ');
                 log_.debug("[MIGRATIONS]: Cmd was " + message);
                 log_.debug(
-                    "[MIGRATIONS]: An error has occurred in the migration.  If you're running OpenSim for the first time "
+                    "[MIGRATIONS]: An error has occurred in the migration.  If you're running OpenSim for the first "
+                    "time "
                     "then you can probably safely ignore this, since certain migration commands attempt to fetch data "
                     "out of old tables.  However, if you're using an existing database and you see database related "
                     "errors while running OpenSim then you will need to fix these problems manually. Continuing.");
@@ -171,13 +180,14 @@ void Migration::update() {
         current = next;
     }
 }
+
 Migration::Scripts Migration::migrations_after(int32_t after) {
     Scripts migrations;
     auto names = required(resources_).names();
     if (names.empty())
         return migrations;
     std::sort(names.begin(), names.end(),
-              [](const auto& a, const auto& b) { return framework::invariant_compare(a, b) < 0; });
+              [](const auto &a, const auto &b) { return framework::invariant_compare(a, b) < 0; });
     std::optional<std::string> file;
     std::optional<std::vector<std::string>> match;
     for (auto it = names.rbegin(); it != names.rend(); ++it) {
@@ -251,7 +261,7 @@ Migration::Scripts Migration::migrations_after(int32_t after) {
                 after = version;
         }
     }
-    for (auto& resource : names) {
+    for (auto &resource : names) {
         auto value = required(old_).match(resource);
         if (value) {
             if (value->size() < 2)
@@ -268,4 +278,4 @@ Migration::Scripts Migration::migrations_after(int32_t after) {
                    std::to_string(after));
     return migrations;
 }
-}
+} // namespace opensim::services

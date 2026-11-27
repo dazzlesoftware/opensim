@@ -3,11 +3,11 @@
 #pragma once
 #include "opensim/services/inventory_caps.hpp"
 #include "opensim/services/inventory_diagnostics.hpp"
+
 namespace opensim::services {
 struct InventoryDescendentsBackend {
     using Collections = std::vector<std::optional<InventoryCollection>>;
-    std::function<std::optional<Collections>(framework::Uuid, const std::vector<framework::Uuid>&)>
-        multiple_content;
+    std::function<std::optional<Collections>(framework::Uuid, const std::vector<framework::Uuid> &)> multiple_content;
     std::function<std::optional<InventoryFolder>(framework::Uuid, framework::Uuid)> folder;
     FetchInventory2Core::GetMultipleItems multiple_items;
     // Captured from original LibraryRootFolder at handler construction.
@@ -18,14 +18,15 @@ struct InventoryDescendentsBackend {
     std::function<void(std::string)> log;
     InventoryDiagnostic diagnostic;
 };
+
 class FetchInventoryDescendentsCore {
   public:
     explicit FetchInventoryDescendentsCore(InventoryDescendentsBackend);
     // Source FetchInvDescHandler uses XML only, ignores method/content type,
     // returns empty folders on parse errors, and propagates provider failures.
-    network::HttpResponse handle(const network::HttpRequest&, InventoryBadRequests*) const;
+    network::HttpResponse handle(const network::HttpRequest &, InventoryBadRequests *) const;
 
   private:
     InventoryDescendentsBackend backend_;
 };
-}
+} // namespace opensim::services

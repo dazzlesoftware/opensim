@@ -1,0 +1,21 @@
+{
+  "accepted": false,
+  "executed": false,
+  "globals": {},
+  "errors": [
+    "character must be exactly one character"
+  ],
+  "exception": null,
+  "exceptionType": null,
+  "stackSize": 1000000,
+  "stackLimit": 1024,
+  "finalStackLeft": null,
+  "stackSamples": [],
+  "name": "literal_hex_escape",
+  "source": "YOption chars;char value;integer result;default{state_entry(){value='\\x41';result=(integer)value;}}",
+  "sha256": {
+    "source.lsl": "b204146be90ee7e587ac0b36997a44818949dc43a2a6aa760971139dce4b113c",
+    "source_hash.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "generator_source": "d86517a13d8f4094e933279614d487a0e69d44a49f2296c4af7562bf7386d651"
+  }
+}

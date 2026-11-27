@@ -30,9 +30,10 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 using namespace opensim;
 using network::Value;
+
 class Echo final : public services::ILoginService {
-public:
-    Value login(const services::LoginRequest& r) override {
+  public:
+    Value login(const services::LoginRequest &r) override {
         return Value::object({{"first", Value(r.first)},
                               {"last", Value(r.last)},
                               {"passwd", Value(r.password)},
@@ -44,8 +45,8 @@ public:
                               {"id0", Value(r.id0)},
                               {"ip", Value(r.remote_ip)}});
     }
-    Value set_level(std::string_view first, std::string_view last, std::string_view password,
-                    int level) override {
+
+    Value set_level(std::string_view first, std::string_view last, std::string_view password, int level) override {
         return Value::object({{"first", Value(std::string(first))},
                               {"last", Value(std::string(last))},
                               {"passwd", Value(std::string(password))},
@@ -53,6 +54,7 @@ public:
                               {"success", Value(true)}});
     }
 };
+
 int main() {
     Echo echo;
     services::LoginHandlers handlers(echo);
@@ -77,12 +79,11 @@ int main() {
             else {
                 auto call = network::parse_xml_rpc(body);
                 const Value empty;
-                auto& input = call.parameters.empty() ? empty : call.parameters.front();
-                reply =
-                    mode == "level" ? handlers.set_level(input) : handlers.xml_rpc_login(input, "127.0.0.1");
+                auto &input = call.parameters.empty() ? empty : call.parameters.front();
+                reply = mode == "level" ? handlers.set_level(input) : handlers.xml_rpc_login(input, "127.0.0.1");
             }
             std::cout << network::xml_rpc_response(reply) << '\n';
-        } catch (const std::exception&) {
+        } catch (const std::exception &) {
             std::cout << "EXCEPTION\n";
         }
     }

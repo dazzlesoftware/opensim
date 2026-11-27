@@ -1,0 +1,44 @@
+{
+  "name": "sdk_string_4194305",
+  "kind": "string",
+  "length": 4194305,
+  "eventName": "listen",
+  "postAccepted": true,
+  "queuedCount": 1,
+  "restoredCount": 1,
+  "parameterCount": 4,
+  "before": {
+    "kind": "string",
+    "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+    "length": 4194305,
+    "cellsSha256": "3d45c1d2e4d6088e46bc0f63a08eed151ec19b55588f7f6f954bffce040ee9ad",
+    "utf8Bytes": 4194305,
+    "first": 65,
+    "middle": 66,
+    "last": 90
+  },
+  "after": {
+    "kind": "string",
+    "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+    "length": 4194305,
+    "cellsSha256": "3d45c1d2e4d6088e46bc0f63a08eed151ec19b55588f7f6f954bffce040ee9ad",
+    "utf8Bytes": 4194305,
+    "first": 65,
+    "middle": 66,
+    "last": 90
+  },
+  "xmlBytes": 4194704,
+  "xmlSha256": "186d56cd0d9409012fe92f9fda1ea981fad219e9132ab79af3e9c62f1d0e5878",
+  "generatorSha256": "2132dc5e4fdcff23b6cd0ef5fa18238dccd5eedef094388e418ddebac3a70dd9",
+  "originalAssemblySha256": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+  "originalSharedAssemblySha256": "5e8b75269a1c76c15f979166a6ae121da03e5d118532c2ef9616de0b348bba77",
+  "originalSourceSha256": {
+    "XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+    "XMRInstCapture.cs": "775f1d83bd4610f788891269ea9ea08b1f79cf4bf3b44300d926f49c8a277cbd",
+    "XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52"
+  },
+  "runtime": ".NET 8.0.34",
+  "architecture": "X64",
+  "processId": 1,
+  "scope": "Actual unchanged original PostEvent plus production AppendXMLObjectArray/AppendXMLDetectArray and RestoreEventQueue; no source compilation or event dispatch claim"
+}

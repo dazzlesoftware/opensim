@@ -13,35 +13,42 @@
 #include <sstream>
 #include <vector>
 #include <mutex>
+
 namespace opensim::framework {
 namespace {
 using Text = ConfigUriText;
 using V = std::u16string_view;
 using U = std::uint64_t;
+
 int hex(char16_t c) {
     return c >= u'0' && c <= u'9'   ? c - u'0'
            : c >= u'A' && c <= u'F' ? c - u'A' + 10
            : c >= u'a' && c <= u'f' ? c - u'a' + 10
                                     : -1;
 }
+
 bool digit(char16_t c) {
     return c >= u'0' && c <= u'9';
 }
+
 std::u16string number(std::uint32_t n) {
     auto x = std::to_string(n);
     return {x.begin(), x.end()};
 }
+
 Text text(std::u16string value) {
     return value.empty() ? runtime_empty_text() : std::make_shared<const std::u16string>(std::move(value));
 }
+
 [[noreturn]] void parsing_error(int value) {
-    throw ConfigUriComponentsError("System.UriFormatException",
-                                   std::u16string(config_file_uri_error_messages[value]), 0x80131537);
+    throw ConfigUriComponentsError("System.UriFormatException", std::u16string(config_file_uri_error_messages[value]),
+                                   0x80131537);
 }
-Text substring(const Text& source, std::int64_t start, std::int64_t count) {
+
+Text substring(const Text &source, std::int64_t start, std::int64_t count) {
     if (start > static_cast<std::int64_t>(source->size()))
-        throw ConfigFileUriRangeError(
-            u"startIndex cannot be larger than length of string. (Parameter 'startIndex')", u"startIndex");
+        throw ConfigFileUriRangeError(u"startIndex cannot be larger than length of string. (Parameter 'startIndex')",
+                                      u"startIndex");
     if (start < 0 || count < 0) {
         auto name = start < 0 ? u"startIndex" : u"length";
         auto value = start < 0 ? start : count;
@@ -54,8 +61,8 @@ Text substring(const Text& source, std::int64_t start, std::int64_t count) {
             u"\n";
 #endif
         throw ConfigFileUriRangeError(std::u16string(name) + u" ('" + num +
-                                          u"') must be a non-negative value. (Parameter '" + name + u"')" +
-                                          newline + u"Actual value was " + num + u".",
+                                          u"') must be a non-negative value. (Parameter '" + name + u"')" + newline +
+                                          u"Actual value was " + num + u".",
                                       name, value);
     }
     if (count > static_cast<std::int64_t>(source->size()) - start)
@@ -67,6 +74,7 @@ Text substring(const Text& source, std::int64_t start, std::int64_t count) {
         return source;
     return text(source->substr(static_cast<std::size_t>(start), static_cast<std::size_t>(count)));
 }
+
 std::optional<std::u16string> ipv4(V s) {
     std::vector<std::uint64_t> values;
     std::size_t i = 0;
@@ -114,9 +122,9 @@ std::optional<std::u16string> ipv4(V s) {
     std::uint32_t v = static_cast<std::uint32_t>(values.back());
     for (std::size_t n = 0; n + 1 < values.size(); ++n)
         v |= static_cast<std::uint32_t>(values[n]) << (24 - 8 * n);
-    return number(v >> 24) + u"." + number((v >> 16) & 255) + u"." + number((v >> 8) & 255) + u"." +
-           number(v & 255);
+    return number(v >> 24) + u"." + number((v >> 16) & 255) + u"." + number((v >> 8) & 255) + u"." + number(v & 255);
 }
+
 std::pair<std::u16string, std::u16string> ipv6(V source) {
     V s = source.substr(1, source.size() - 2);
     std::u16string scope;
@@ -131,7 +139,7 @@ std::pair<std::u16string, std::u16string> ipv6(V source) {
     std::array<std::uint16_t, 8> nums{};
     std::vector<std::uint16_t> left, right;
     auto gap = s.find(u"::");
-    auto read = [](V part, std::vector<std::uint16_t>& out) {
+    auto read = [](V part, std::vector<std::uint16_t> &out) {
         std::size_t pos = 0;
         while (pos < part.size()) {
             auto stop = part.find(u':', pos);
@@ -181,16 +189,15 @@ std::pair<std::u16string, std::u16string> ipv6(V source) {
         best = -1;
         len = 0;
     }
-    bool v4 =
-        (nums[0] == 0 && nums[1] == 0 && nums[2] == 0 && nums[3] == 0 && nums[6] != 0 &&
-         ((nums[4] == 0 && (nums[5] == 0 || nums[5] == 65535)) || (nums[4] == 65535 && nums[5] == 0))) ||
-        (nums[4] == 0 && nums[5] == 24318);
+    bool v4 = (nums[0] == 0 && nums[1] == 0 && nums[2] == 0 && nums[3] == 0 && nums[6] != 0 &&
+               ((nums[4] == 0 && (nums[5] == 0 || nums[5] == 65535)) || (nums[4] == 65535 && nums[5] == 0))) ||
+              (nums[4] == 0 && nums[5] == 24318);
     std::u16string out = u"[";
     for (int i = 0; i < 8; ++i) {
         if (v4 && i == 6) {
             out += u':';
-            out += number(nums[i] >> 8) + u"." + number(nums[i] & 255) + u"." + number(nums[i + 1] >> 8) +
-                   u"." + number(nums[i + 1] & 255);
+            out += number(nums[i] >> 8) + u"." + number(nums[i] & 255) + u"." + number(nums[i + 1] >> 8) + u"." +
+                   number(nums[i + 1] & 255);
             break;
         }
         if (i == best) {
@@ -211,6 +218,7 @@ std::pair<std::u16string, std::u16string> ipv6(V source) {
     out += u']';
     return {out, scope};
 }
+
 class FileUriObject final : public ConfigUriObject {
     mutable ConfigFileUriState state_;
     Text original_;
@@ -219,23 +227,25 @@ class FileUriObject final : public ConfigUriObject {
     mutable std::recursive_mutex mutex_;
     mutable Text parse_, host_, absolute_, display_, fragment_, query_, path_;
     mutable std::optional<std::u16string> scope_;
+
     void remaining() const {
         if (!(state_.flags & 0x80000000)) {
             bool normalize = (state_.flags & (0x200000000ull | 0x800000000ull)) == 0x200000000ull;
             try {
                 config_file_uri_parse_remaining(state_);
-            } catch (const ConfigFileUriStateError& e) {
+            } catch (const ConfigFileUriStateError &e) {
                 throw ConfigUriComponentsError(e.source_type, utf16_replacing(e.what()), e.hresult);
             }
             if (normalize)
                 parse_ = text(state_.parse_string);
         }
     }
+
     void host() const {
         if (host_)
             return;
         remaining();
-        auto& s = state_;
+        auto &s = state_;
         auto o = s.offsets;
         auto type = s.flags & 0x70000;
         auto raw = (type == 0x50000 && (s.flags & 0x8000000)) || type == 0x70000
@@ -293,6 +303,7 @@ class FileUriObject final : public ConfigUriObject {
         }
         host_ = text(std::move(value));
     }
+
     unsigned mask(int format) const {
         auto flags = state_.flags;
         unsigned result =
@@ -309,6 +320,7 @@ class FileUriObject final : public ConfigUriObject {
         }
         return result;
     }
+
     std::u16string component(bool fragment, int format, unsigned noncanonical) const {
         auto o = state_.offsets;
         auto start = fragment ? o.fragment : o.query;
@@ -320,9 +332,8 @@ class FileUriObject final : public ConfigUriObject {
         int mode = 0;
         if (noncanonical & bit) {
             if (format == 1 && !(state_.flags & 0x80000))
-                return config_uri_escape(raw, true,
-                                         fragment ? ConfigUriEscapeSet::UnreservedReserved
-                                                  : ConfigUriEscapeSet::ExceptHash);
+                return config_uri_escape(
+                    raw, true, fragment ? ConfigUriEscapeSet::UnreservedReserved : ConfigUriEscapeSet::ExceptHash);
             if (format != 1)
                 mode = format == 32767 ? ((state_.flags & 0x80000) ? 6 : 7)
                        : format == 2   ? 10
@@ -330,6 +341,7 @@ class FileUriObject final : public ConfigUriObject {
         }
         return config_uri_unescape(raw, u'#', 0xffff, 0xffff, mode, true, !fragment);
     }
+
     Text whole(int format, unsigned parts = 127) const {
         remaining();
         host();
@@ -360,13 +372,10 @@ class FileUriObject final : public ConfigUriObject {
     }
 
   public:
-    FileUriObject(Text original, ConfigFileUriState state,
-                  std::shared_ptr<ConfigUriComponentsBackend> backend, bool windows, Text parse = {})
-        : state_(std::move(state)), original_(std::move(original)), backend_(std::move(backend)),
-          windows_(windows) {
-        parse_ = parse                             ? std::move(parse)
-                 : (state_.flags & 0x200000000ull) ? text(state_.parse_string)
-                                                   : original_;
+    FileUriObject(Text original, ConfigFileUriState state, std::shared_ptr<ConfigUriComponentsBackend> backend,
+                  bool windows, Text parse = {})
+        : state_(std::move(state)), original_(std::move(original)), backend_(std::move(backend)), windows_(windows) {
+        parse_ = parse ? std::move(parse) : (state_.flags & 0x200000000ull) ? text(state_.parse_string) : original_;
     }
 
     ConfigUriObjectPtr clone_source() const {
@@ -380,20 +389,25 @@ class FileUriObject final : public ConfigUriObject {
         state.offsets = {};
         return std::make_shared<FileUriObject>(original_, std::move(state), backend_, windows_, parse_);
     }
+
     U flags_source() const {
         std::lock_guard lock(mutex_);
         return state_.flags;
     }
+
     bool unix_syntax_source() const {
         return state_.unix_file_syntax;
     }
+
     bool windows_source() const {
         return windows_;
     }
+
     Text parse_source() const {
         std::lock_guard lock(mutex_);
         return parse_;
     }
+
     std::size_t secured_source() const {
         std::lock_guard lock(mutex_);
         remaining();
@@ -402,16 +416,19 @@ class FileUriObject final : public ConfigUriObject {
         auto c = state_.parse_string[state_.offsets.path];
         return c == u'/' || c == u'\\' ? 3 : 2;
     }
+
     Text prefix_parts(int format, unsigned parts) const {
         std::lock_guard lock(mutex_);
         return whole(format, parts);
     }
+
     Text host_parts() const {
         std::lock_guard lock(mutex_);
         remaining();
         host();
         return host_;
     }
+
     Text path_parts(int format) const {
         std::lock_guard lock(mutex_);
         remaining();
@@ -421,6 +438,7 @@ class FileUriObject final : public ConfigUriObject {
         host();
         return text(config_file_uri_canonical_path(state_, u"", format, windows_));
     }
+
     Text absolute_path_parts() const {
         std::lock_guard lock(mutex_);
         if (!path_)
@@ -429,6 +447,7 @@ class FileUriObject final : public ConfigUriObject {
             return substring(path_, 1, path_->size() - 1);
         return path_;
     }
+
     Text query_parts() const {
         std::lock_guard lock(mutex_);
         remaining();
@@ -444,28 +463,34 @@ class FileUriObject final : public ConfigUriObject {
         }
         return query_;
     }
+
     bool is_absolute() const override {
         return true;
     }
+
     Text original_string() const override {
         return original_;
     }
+
     Text scheme() const override {
         static auto file = text(u"file");
         return file;
     }
+
     Text absolute_uri() const override {
         std::lock_guard lock(mutex_);
         if (!absolute_)
             absolute_ = whole(1);
         return absolute_;
     }
+
     Text to_string() const override {
         std::lock_guard lock(mutex_);
         if (!display_)
             display_ = whole(32767);
         return display_;
     }
+
     Text fragment() const override {
         std::lock_guard lock(mutex_);
         remaining();
@@ -481,10 +506,11 @@ class FileUriObject final : public ConfigUriObject {
         }
         return fragment_;
     }
+
     Text local_path() const override {
         std::lock_guard lock(mutex_);
         remaining();
-        auto& s = state_;
+        auto &s = state_;
         auto o = s.offsets;
         bool dos = (s.flags & 0x8000000) != 0, unc = (s.flags & 0x10000000) != 0,
              implicit = (s.flags & 0x20000000) != 0;
@@ -507,7 +533,7 @@ class FileUriObject final : public ConfigUriObject {
                 }
                 if (value->find(u'/') != value->npos) {
                     auto changed = *value;
-                    for (auto& c : changed)
+                    for (auto &c : changed)
                         if (c == u'/')
                             c = u'\\';
                     value = text(std::move(changed));
@@ -522,8 +548,8 @@ class FileUriObject final : public ConfigUriObject {
                 ++start;
             auto secured = dest.size();
             int mode = (s.flags & 16) && !implicit ? 10 : 0;
-            dest += config_uri_unescape(V(s.parse_string).substr(start, o.query - start), 0xffff, 0xffff,
-                                        0xffff, mode, true, true);
+            dest += config_uri_unescape(V(s.parse_string).substr(start, o.query - start), 0xffff, 0xffff, 0xffff, mode,
+                                        true, true);
             if (dest.size() > 1 && dest[1] == u'|')
                 dest[1] = u':';
             if (s.flags & 0x2000) {
@@ -532,7 +558,7 @@ class FileUriObject final : public ConfigUriObject {
                 dest.resize(prefix);
                 dest += compressed;
             }
-            for (auto& c : dest)
+            for (auto &c : dest)
                 if (c == u'/')
                     c = u'\\';
             return text(std::move(dest));
@@ -544,16 +570,17 @@ class FileUriObject final : public ConfigUriObject {
         return text(config_file_uri_canonical_path(s, u"", 2, windows_));
     }
 };
-}
-bool config_file_uri_applies(const ConfigFileUriSchemeScan& scan) {
+} // namespace
+
+bool config_file_uri_applies(const ConfigFileUriSchemeScan &scan) {
     return scan.scheme == u"file" || scan.error == 7;
 }
+
 ConfigUriObjectPtr config_file_uri_create(ConfigUriText input, ConfigUriObjectKind kind,
                                           std::shared_ptr<ConfigUriComponentsBackend> backend, bool windows) {
     if (!input)
-        throw ConfigUriComponentsError("System.ArgumentNullException",
-                                       u"Value cannot be null. (Parameter 'uriString')", 0x80004003,
-                                       u"uriString");
+        throw ConfigUriComponentsError("System.ArgumentNullException", u"Value cannot be null. (Parameter 'uriString')",
+                                       0x80004003, u"uriString");
     auto k = static_cast<std::int32_t>(kind);
     if (k < 0 || k > 2) {
         auto n = std::to_string(k);
@@ -575,8 +602,8 @@ ConfigUriObjectPtr config_file_uri_create(ConfigUriText input, ConfigUriObjectKi
     bool iri = config_uri_has_iri_characters(*input);
     if (iri)
         flags |= 0x200000000ull;
-    auto parsed = config_file_uri_parse_minimal(*input, *input, flags, windows, scan.unix_file_syntax,
-                                                backend->unicode);
+    auto parsed =
+        config_file_uri_parse_minimal(*input, *input, flags, windows, scan.unix_file_syntax, backend->unicode);
     int error = parsed.error;
     if (error && k != 1 && error <= 4)
         return config_uri_relative_object(input, input);
@@ -590,21 +617,21 @@ ConfigUriObjectPtr config_file_uri_create(ConfigUriText input, ConfigUriObjectKi
     if (iri)
         try {
             config_file_uri_parse_remaining(state);
-        } catch (const ConfigFileUriStateError& e) {
+        } catch (const ConfigFileUriStateError &e) {
             throw ConfigUriComponentsError(e.source_type, utf16_replacing(e.what()), e.hresult);
         }
     if (error)
         parsing_error(error);
     return std::make_shared<FileUriObject>(input, std::move(state), std::move(backend), windows);
 }
+
 ConfigUriObjectPtr config_file_uri_try_create(ConfigUriText input, ConfigUriObjectKind kind,
-                                              std::shared_ptr<ConfigUriComponentsBackend> backend,
-                                              bool windows) {
+                                              std::shared_ptr<ConfigUriComponentsBackend> backend, bool windows) {
     if (!input)
         return {};
     try {
         return config_file_uri_create(std::move(input), kind, std::move(backend), windows);
-    } catch (const ConfigUriComponentsError& e) {
+    } catch (const ConfigUriComponentsError &e) {
         if (e.source_type == "System.UriFormatException")
             return {};
         throw;
@@ -612,32 +639,35 @@ ConfigUriObjectPtr config_file_uri_try_create(ConfigUriText input, ConfigUriObje
 }
 
 namespace {
-void validate_base(const ConfigUriObjectPtr& base) {
+void validate_base(const ConfigUriObjectPtr &base) {
     if (!base)
-        throw ConfigUriComponentsError("System.ArgumentNullException",
-                                       u"Value cannot be null. (Parameter 'baseUri')", 0x80004003,
-                                       u"baseUri");
+        throw ConfigUriComponentsError("System.ArgumentNullException", u"Value cannot be null. (Parameter 'baseUri')",
+                                       0x80004003, u"baseUri");
     if (!base->is_absolute())
         throw ConfigUriComponentsError(
             "System.ArgumentOutOfRangeException",
-            u"Specified argument was out of the range of valid values. (Parameter 'baseUri')", 0x80131502,
-            u"baseUri");
+            u"Specified argument was out of the range of valid values. (Parameter 'baseUri')", 0x80131502, u"baseUri");
 }
+
 std::shared_ptr<const FileUriObject> as_file(ConfigUriObjectPtr uri) {
     auto result = std::dynamic_pointer_cast<const FileUriObject>(uri);
     if (!result)
         throw std::invalid_argument("File URI operation requires its native file object");
     return result;
 }
+
 bool whitespace(char16_t c) {
     return c == u' ' || c == u'\t' || c == u'\r' || c == u'\n';
 }
+
 bool slash(char16_t c) {
     return c == u'/' || c == u'\\';
 }
+
 bool alpha(char16_t c) {
     return (c >= u'a' && c <= u'z') || (c >= u'A' && c <= u'Z');
 }
+
 Text trimmed(Text value) {
     std::size_t start = 0, end = value->size();
     while (start < end && whitespace((*value)[start]))
@@ -646,12 +676,12 @@ Text trimmed(Text value) {
         --end;
     return substring(value, start, end - start);
 }
+
 ConfigUriObjectPtr resolve_file(std::shared_ptr<const FileUriObject> base, Text relative,
-                                const ConfigFileUriCreate& create) {
+                                const ConfigFileUriCreate &create) {
     auto value = trimmed(std::move(relative));
     auto flags = base->flags_source();
-    bool implicit = (flags & 0x20000000) != 0, dos = (flags & 0x8000000) != 0,
-         unc = (flags & 0x10000000) != 0;
+    bool implicit = (flags & 0x20000000) != 0, dos = (flags & 0x8000000) != 0, unc = (flags & 0x10000000) != 0;
     if (value->empty())
         return create(base->prefix_parts(3, 127), ConfigUriObjectKind::Absolute);
     if (value->front() == u'#' && !implicit)
@@ -664,8 +694,8 @@ ConfigUriObjectPtr resolve_file(std::shared_ptr<const FileUriObject> base, Text 
             return create(value, ConfigUriObjectKind::Absolute);
         return create(text(u"file:///" + *value), ConfigUriObjectKind::Absolute);
     }
-    for (std::size_t i = 0; i < value->size() && (*value)[i] != u'/' && (*value)[i] != u'\\' &&
-                            (*value)[i] != u'?' && (*value)[i] != u'#';
+    for (std::size_t i = 0;
+         i < value->size() && (*value)[i] != u'/' && (*value)[i] != u'\\' && (*value)[i] != u'?' && (*value)[i] != u'#';
          ++i)
         if ((*value)[i] == u':') {
             if (i < 2)
@@ -678,7 +708,7 @@ ConfigUriObjectPtr resolve_file(std::shared_ptr<const FileUriObject> base, Text 
             if (!valid || i > 1024)
                 break;
             std::u16string scheme = value->substr(0, i);
-            for (auto& c : scheme)
+            for (auto &c : scheme)
                 if (c >= u'A' && c <= u'Z')
                     c += 32;
             if (scheme == u"file" && !base->unix_syntax_source())
@@ -746,9 +776,10 @@ ConfigUriObjectPtr resolve_file(std::shared_ptr<const FileUriObject> base, Text 
     body += compressed;
     return create(text(prefix + body + suffix), ConfigUriObjectKind::Absolute);
 }
-}
+} // namespace
+
 ConfigUriObjectPtr config_file_uri_combine_string(ConfigUriObjectPtr base, ConfigUriText relative,
-                                                  const ConfigFileUriCreate& operation) {
+                                                  const ConfigFileUriCreate &operation) {
     validate_base(base);
     auto create = operation;
     if (!create)
@@ -758,8 +789,9 @@ ConfigUriObjectPtr config_file_uri_combine_string(ConfigUriObjectPtr base, Confi
         return parsed;
     return resolve_file(as_file(std::move(base)), parsed->original_string(), create);
 }
+
 ConfigUriObjectPtr config_file_uri_combine_uri(ConfigUriObjectPtr base, ConfigUriObjectPtr relative,
-                                               const ConfigFileUriCreate& operation) {
+                                               const ConfigFileUriCreate &operation) {
     validate_base(base);
     if (!relative)
         throw ConfigUriComponentsError("System.NullReferenceException",
@@ -771,11 +803,12 @@ ConfigUriObjectPtr config_file_uri_combine_uri(ConfigUriObjectPtr base, ConfigUr
         throw std::invalid_argument("File URI combine requires global constructor dispatch");
     return resolve_file(as_file(std::move(base)), relative->original_string(), create);
 }
+
 ConfigUriObjectPtr config_file_uri_with_fragment(ConfigUriObjectPtr uri, ConfigUriText fragment,
-                                                 const ConfigFileUriCreate& operation) {
+                                                 const ConfigFileUriCreate &operation) {
     if (!uri)
-        throw ConfigUriComponentsError("System.ArgumentNullException",
-                                       u"Value cannot be null. (Parameter 'uri')", 0x80004003, u"uri");
+        throw ConfigUriComponentsError("System.ArgumentNullException", u"Value cannot be null. (Parameter 'uri')",
+                                       0x80004003, u"uri");
     uri->scheme();
     auto file = as_file(uri);
     auto host = file->host_parts();
@@ -804,4 +837,4 @@ ConfigUriObjectPtr config_file_uri_with_fragment(ConfigUriObjectPtr uri, ConfigU
     native->fragment();
     return result;
 }
-}
+} // namespace opensim::framework

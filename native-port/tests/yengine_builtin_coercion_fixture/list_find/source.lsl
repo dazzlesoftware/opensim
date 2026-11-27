@@ -1,0 +1,1 @@
+integer result;integer after;default{state_entry(){result=llListFindList(7,7);after=1;}}

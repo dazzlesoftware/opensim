@@ -1,0 +1,1 @@
+string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float("1.7976931348623157E+308"),"N2");after=1;}}

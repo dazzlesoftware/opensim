@@ -1,0 +1,1 @@
+list shared=[1,2];list alias=shared;integer result;integer leaf(integer n,list l){while(n>0){n--;}return n;}default{state_entry(){}touch_start(integer count){result=leaf(count,shared);}}

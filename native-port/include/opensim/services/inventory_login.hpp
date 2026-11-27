@@ -28,9 +28,11 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 #include "opensim/network/rpc.hpp"
 #include "opensim/services/library_service.hpp"
+
 namespace opensim::services {
 // Builds only inventory-related response fields. This does not admit an agent
 // or declare login success; presence, region and capability work remains required.
-network::Value inventory_login_fields(const std::optional<std::vector<InventoryFolder>>& skeleton,
-    const LibraryService* library,const std::optional<std::vector<InventoryItem>>& gestures);
-}
+network::Value inventory_login_fields(const std::optional<std::vector<InventoryFolder>> &skeleton,
+                                      const LibraryService *library,
+                                      const std::optional<std::vector<InventoryItem>> &gestures);
+} // namespace opensim::services

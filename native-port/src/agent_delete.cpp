@@ -3,6 +3,7 @@
 #include "opensim/server/agent_delete.hpp"
 #include <stdexcept>
 #include "opensim/network/service_protocol.hpp"
+
 namespace opensim::server {
 std::optional<std::string> agent_delete_auth(std::string_view target) {
     while (!target.empty() &&
@@ -20,8 +21,7 @@ std::optional<std::string> agent_delete_auth(std::string_view target) {
         };
         for (std::size_t i = 0; i < value.size(); ++i) {
             const char c = value[i];
-            if (c == '%' &&
-                (i + 2 >= value.size() || !is_hex_digit(value[i + 1]) || !is_hex_digit(value[i + 2])))
+            if (c == '%' && (i + 2 >= value.size() || !is_hex_digit(value[i + 1]) || !is_hex_digit(value[i + 2])))
                 escaped += "%25";
             else
                 escaped += c;
@@ -38,7 +38,7 @@ std::optional<std::string> agent_delete_auth(std::string_view target) {
         if (equals != std::string_view::npos) {
             auto key = decode(term.substr(0, equals));
             auto lower = key;
-            for (auto& c : lower)
+            for (auto &c : lower)
                 if (c >= 'A' && c <= 'Z')
                     c += 32;
             if (lower == "auth") {
@@ -58,10 +58,11 @@ std::optional<std::string> agent_delete_auth(std::string_view target) {
     }
     return result;
 }
-void AgentDeleteHandler::delete_agent(network::HttpResponse& response, const framework::Uuid& agent,
-                                      const std::optional<std::string>& action, const framework::Uuid& region,
-                                      const std::optional<std::string>& auth,
-                                      const std::optional<std::string>& caller_address) {
+
+void AgentDeleteHandler::delete_agent(network::HttpResponse &response, const framework::Uuid &agent,
+                                      const std::optional<std::string> &action, const framework::Uuid &region,
+                                      const std::optional<std::string> &auth,
+                                      const std::optional<std::string> &caller_address) {
     // The original evaluates RemoteIPEndPoint during the empty-action log,
     // even when logging is disabled, before action.Equals and service access.
     if ((!action || action->empty()) && !caller_address)
@@ -87,4 +88,4 @@ void AgentDeleteHandler::delete_agent(network::HttpResponse& response, const fra
     response.status = 200;
     response.body = "OpenSim agent " + agent.str();
 }
-}
+} // namespace opensim::server

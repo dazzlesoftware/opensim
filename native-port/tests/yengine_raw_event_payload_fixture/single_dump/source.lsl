@@ -1,0 +1,1 @@
+string result;integer after;default{state_entry(){llSleep(0.1);result=llDumpList2String(xmrEventDequeue(0.0,2097152,0,0,0),"|");after=1;}touch_start(integer n){}}

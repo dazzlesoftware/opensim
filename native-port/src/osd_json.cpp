@@ -8,6 +8,7 @@
 #include <cmath>
 #include <limits>
 #include <stdexcept>
+
 namespace opensim::network {
 namespace {
 std::string quote(std::u16string_view text) {
@@ -48,8 +49,9 @@ std::string quote(std::u16string_view text) {
     }
     return result + '"';
 }
-bool omitted(const Value& input) {
-    const auto& v = input.view();
+
+bool omitted(const Value &input) {
+    const auto &v = input.view();
     using K = Value::Kind;
     switch (v.kind) {
     case K::Undefined:
@@ -76,8 +78,9 @@ bool omitted(const Value& input) {
         return false;
     }
 }
-std::string serialize(const Value& input, bool preserve, std::size_t depth) {
-    const auto& v = input.view();
+
+std::string serialize(const Value &input, bool preserve, std::size_t depth) {
+    const auto &v = input.view();
     if (depth > 512)
         throw std::invalid_argument("OSD JSON nesting exceeds native limit");
     using K = Value::Kind;
@@ -93,9 +96,8 @@ std::string serialize(const Value& input, bool preserve, std::size_t depth) {
     case K::Long:
         return std::to_string(v.long_value);
     case K::Real: {
-        auto s = std::isinf(v.real) ? (v.real < 0 ? std::string("-Infinity") : std::string("Infinity"))
-                                    : osd_string(v);
-        for (auto& c : s)
+        auto s = std::isinf(v.real) ? (v.real < 0 ? std::string("-Infinity") : std::string("Infinity")) : osd_string(v);
+        for (auto &c : s)
             if (c == 'e')
                 c = 'E';
         if (s.find_first_of(".E") == std::string::npos)
@@ -119,7 +121,7 @@ std::string serialize(const Value& input, bool preserve, std::size_t depth) {
     }
     case K::Array: {
         std::string s = "[";
-        for (const auto& child : v.array) {
+        for (const auto &child : v.array) {
             if (s.size() > 1)
                 s += ',';
             s += serialize(child, preserve, depth + 1);
@@ -128,8 +130,8 @@ std::string serialize(const Value& input, bool preserve, std::size_t depth) {
     }
     case K::Map: {
         std::string s = "{";
-        for (const auto& key : v.ordered_keys()) {
-            const auto& child = v.get(key);
+        for (const auto &key : v.ordered_keys()) {
+            const auto &child = v.get(key);
             if (!preserve && omitted(child))
                 continue;
             if (s.size() > 1)
@@ -142,14 +144,17 @@ std::string serialize(const Value& input, bool preserve, std::size_t depth) {
     return "null";
 }
 
-}
-std::string osd_json(const Value& value, bool preserve_defaults) {
+} // namespace
+
+std::string osd_json(const Value &value, bool preserve_defaults) {
     return serialize(value, preserve_defaults, 0);
 }
+
 Value parse_osd_json_utf16(std::u16string_view text) {
     return read_sdk_json(text);
 }
+
 Value parse_osd_json(std::string_view text) {
     return read_sdk_json(framework::utf16_replacing(text));
 }
-}
+} // namespace opensim::network

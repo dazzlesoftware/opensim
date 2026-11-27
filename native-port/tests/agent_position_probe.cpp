@@ -8,48 +8,55 @@
 #include <sstream>
 using namespace opensim;
 using network::Value;
+
 std::string hex(std::string_view s) {
     std::string out;
-    const char* h = "0123456789abcdef";
+    const char *h = "0123456789abcdef";
     for (unsigned char c : s) {
         out += h[c >> 4];
         out += h[c & 15];
     }
     return out;
 }
-std::string decode(const std::string& s) {
+
+std::string decode(const std::string &s) {
     std::string out;
     for (std::size_t i = 0; i < s.size(); i += 2)
         out += static_cast<char>(std::stoi(s.substr(i, 2), nullptr, 16));
     return out;
 }
+
 framework::Uuid id(int n) {
     return framework::Uuid("00000000-0000-0000-0000-00000000000" + std::to_string(n));
 }
+
 std::string bits(float n) {
     std::ostringstream s;
     s << std::hex << std::setw(8) << std::setfill('0') << std::bit_cast<std::uint32_t>(n);
     return s.str();
 }
-std::string binary(const network::BinaryData& data) {
+
+std::string binary(const network::BinaryData &data) {
     if (!data)
         return "-";
-    return hex(std::string(reinterpret_cast<const char*>(data->data()), data->size()));
+    return hex(std::string(reinterpret_cast<const char *>(data->data()), data->size()));
 }
-std::string state(const framework::AgentPosition& p) {
-    std::string out = p.agent_id.str() + "|" + p.session_id.str() + "|" + std::to_string(p.region_handle) +
-                      "|" + std::to_string(p.circuit_code) + "|" + bits(p.far);
+
+std::string state(const framework::AgentPosition &p) {
+    std::string out = p.agent_id.str() + "|" + p.session_id.str() + "|" + std::to_string(p.region_handle) + "|" +
+                      std::to_string(p.circuit_code) + "|" + bits(p.far);
     for (auto v : {p.position, p.velocity, p.center, p.size, p.at_axis, p.left_axis, p.up_axis})
         out += "|" + bits(v.x) + "," + bits(v.y) + "," + bits(v.z);
-    out += "|" + std::to_string(p.changed_grid) + "|" +
-           (p.god_data ? hex(network::osd_json(*p.god_data, true)) : "-") + "|" + binary(p.throttles) + "|";
+    out += "|" + std::to_string(p.changed_grid) + "|" + (p.god_data ? hex(network::osd_json(*p.god_data, true)) : "-") +
+           "|" + binary(p.throttles) + "|";
     if (!p.children_cap_seeds)
         out += "-";
     else
-        for (auto& [h, s] : *p.children_cap_seeds)
+        for (auto &[h, s] : *p.children_cap_seeds)
             out += std::to_string(h) + ":" + (s ? hex(*s) : "-") + ";";
     return out;
 }
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -75,8 +82,7 @@ int main() {
             p.changed_grid = true;
             p.god_data = std::make_shared<Value>(Value::object({}));
             p.god_data->set("ViewerUiIsGod", Value(false));
-            p.throttles =
-                std::make_shared<std::vector<std::uint8_t>>(std::initializer_list<std::uint8_t>{1, 2, 3});
+            p.throttles = std::make_shared<std::vector<std::uint8_t>>(std::initializer_list<std::uint8_t>{1, 2, 3});
             p.children_cap_seeds = std::make_shared<framework::AgentPosition::ChildrenSeeds>();
             (*p.children_cap_seeds)[9] = "nine";
             (*p.children_cap_seeds)[8] = "eight";
@@ -92,7 +98,7 @@ int main() {
             p.unpack(args);
             if (profile & 2) {
                 if (args.contains("god_data") && args.get("god_data").view().kind == Value::Kind::Map) {
-                    auto& god = args.map.at("god_data");
+                    auto &god = args.map.at("god_data");
                     god.set("ViewerUiIsGod", Value(true));
                     god.set("after", "source");
                     if (network::osd_boolean(args.get("replace_god")))
@@ -118,7 +124,7 @@ int main() {
                 p.copy_from(profile & 32 ? nullptr : &child, id(6));
                 (*child.throttles)[0] = 77;
             }
-        } catch (const std::exception&) {
+        } catch (const std::exception &) {
             unpack_failed = true;
         }
         try {
@@ -130,10 +136,9 @@ int main() {
             if ((profile & 4) && p.throttles && !p.throttles->empty())
                 (*p.throttles)[0] = 55;
             packed = network::osd_json(value, true);
-        } catch (const std::exception&) {
+        } catch (const std::exception &) {
             pack_failed = true;
         }
-        std::cout << unpack_failed << "|" << pack_failed << "|" << hex(packed) << "|" << hex(state(p))
-                  << "\n";
+        std::cout << unpack_failed << "|" << pack_failed << "|" << hex(packed) << "|" << hex(state(p)) << "\n";
     }
 }

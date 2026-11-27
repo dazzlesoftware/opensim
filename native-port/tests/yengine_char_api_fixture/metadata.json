@@ -1,0 +1,3600 @@
+[
+  {
+    "name": "hash_literal",
+    "accepted": false,
+    "diagnostics": [
+      "more than one matching member"
+    ],
+    "compile_exception": null
+  },
+  {
+    "name": "hash_variable",
+    "accepted": false,
+    "diagnostics": [
+      "more than one matching member"
+    ],
+    "compile_exception": null
+  },
+  {
+    "name": "hash_integer_cast",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "09F8DA0D39B0A6D166206BF20D329EB5",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": null,
+    "live_cycles": [],
+    "migrated_cycles": [],
+    "prefix_resume": null,
+    "live_resume_exception": null,
+    "live_resume": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "result": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 65
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "result": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 65
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Exact actual process-driver SOURCE compiled by unchanged original CodeGen, executed by original five truth conversion methods inside global initializers and user function, ordinary bad-key condition and actual boxed helper-result list. Original StartEx/base CheckRunWork captures at actual llSleep(3). Same-live ResumeEx and separate actual MigrateOut/In plus original EventQueue XML resume independently. Real minimal Scene/API objects, no conversion/sleep return substitutes; only scheduler eligibility timing is driven outside RunOne.",
+    "sha256": {
+      "cache_key.txt": "f22f4754df7f12fab38a5ba3c1ce1ef50ab367b7af50375de973486934bdab1f",
+      "original.il.txt": "9cb9f25d74b2bd9f04e83c2e2be3309ec410ce4a21d9a19782d0d30604b6497c",
+      "original.yobj": "4ce80b5956874f1ab59496c6828aceea70a5eec040da6c086cd322286092a19b",
+      "source.lsl": "983b36db956846360ad27fe67d0141d153a45bc91742bc706027d97018c52d85",
+      "generator_source": "695c95bb4983c91b3c81c10c6ee5ce013b43d28633bcac133c4f8780a592d3b4",
+      "generator_assembly": "25b3bb06a02a92b0b98b83370b8b87283d5b20be2ee421eee5a9d60e2bb386c6",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "hash_object_cast",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "82EF81C5B5BED9CBB33340E831130E6A",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": null,
+    "live_cycles": [],
+    "migrated_cycles": [],
+    "prefix_resume": null,
+    "live_resume_exception": null,
+    "live_resume": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "result": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 4259905
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "result": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 4259905
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Exact actual process-driver SOURCE compiled by unchanged original CodeGen, executed by original five truth conversion methods inside global initializers and user function, ordinary bad-key condition and actual boxed helper-result list. Original StartEx/base CheckRunWork captures at actual llSleep(3). Same-live ResumeEx and separate actual MigrateOut/In plus original EventQueue XML resume independently. Real minimal Scene/API objects, no conversion/sleep return substitutes; only scheduler eligibility timing is driven outside RunOne.",
+    "sha256": {
+      "cache_key.txt": "22863b8e1dc45c7d1ca037b4f495af607499ee66e4164631023aede3843b3820",
+      "original.il.txt": "c7f88c1de612e884de4fe78f4da456bb7a0ab862fda48a2310723752266a4c13",
+      "original.yobj": "87994d5ed7349052f8c457d7a99f954f1dadc7833972a5b965caa1c8da4abf61",
+      "source.lsl": "11cd809167c520289a7eb912a748922b6dfe22036107b159c0f230c045faf8b4",
+      "generator_source": "695c95bb4983c91b3c81c10c6ee5ce013b43d28633bcac133c4f8780a592d3b4",
+      "generator_assembly": "25b3bb06a02a92b0b98b83370b8b87283d5b20be2ee421eee5a9d60e2bb386c6",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "integer_format",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "7C1D83C08B73E38CCD7805F8CE7B4156",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": null,
+    "live_cycles": [],
+    "migrated_cycles": [],
+    "prefix_resume": null,
+    "live_resume_exception": null,
+    "live_resume": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "result": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "65",
+          "utf16": [
+            54,
+            53
+          ]
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "result": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "65",
+          "utf16": [
+            54,
+            53
+          ]
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Exact actual process-driver SOURCE compiled by unchanged original CodeGen, executed by original five truth conversion methods inside global initializers and user function, ordinary bad-key condition and actual boxed helper-result list. Original StartEx/base CheckRunWork captures at actual llSleep(3). Same-live ResumeEx and separate actual MigrateOut/In plus original EventQueue XML resume independently. Real minimal Scene/API objects, no conversion/sleep return substitutes; only scheduler eligibility timing is driven outside RunOne.",
+    "sha256": {
+      "cache_key.txt": "a0e13f75180708eae6b28492f9f1b76678c0e55e42387b5cbc334ec09cca9eef",
+      "original.il.txt": "15b71525eded31e84a04b3199427b2eab46bff2150d6e05349ec923e22581985",
+      "original.yobj": "ad77c8fb1e340443eecf6cc54da756260bd93bc8b0dd782921ac71aab95d9f09",
+      "source.lsl": "ecf47df23009688e8cf489892b5d53d17e9ef67ee7197a10007b28dc8ea35d9a",
+      "generator_source": "695c95bb4983c91b3c81c10c6ee5ce013b43d28633bcac133c4f8780a592d3b4",
+      "generator_assembly": "25b3bb06a02a92b0b98b83370b8b87283d5b20be2ee421eee5a9d60e2bb386c6",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "integer_format_char_format",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "FE831470EDBA7CF4DC76AD54CB826C5D",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": null,
+    "live_cycles": [],
+    "migrated_cycles": [],
+    "prefix_resume": null,
+    "live_resume_exception": null,
+    "live_resume": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "result": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "41",
+          "utf16": [
+            52,
+            49
+          ]
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "result": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "41",
+          "utf16": [
+            52,
+            49
+          ]
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Exact actual process-driver SOURCE compiled by unchanged original CodeGen, executed by original five truth conversion methods inside global initializers and user function, ordinary bad-key condition and actual boxed helper-result list. Original StartEx/base CheckRunWork captures at actual llSleep(3). Same-live ResumeEx and separate actual MigrateOut/In plus original EventQueue XML resume independently. Real minimal Scene/API objects, no conversion/sleep return substitutes; only scheduler eligibility timing is driven outside RunOne.",
+    "sha256": {
+      "cache_key.txt": "8f0e3600c43b38ec6fbfd5e3fbf6c1e04d834e7cb09e2c54a6957c97f73d03ab",
+      "original.il.txt": "642e0a7e7d9907b2eb895f6490212069f4e0f633f099ea5f0c722318a41b899f",
+      "original.yobj": "24106e1f3263db93beb3c3e69f13ad4bf46dbcfe332c316c48b3ff0f22cc5e78",
+      "source.lsl": "837ae40faca55a7d75415ee64f8d5b8c447daf325adc8dbbf82f5390cf2a7fbc",
+      "generator_source": "695c95bb4983c91b3c81c10c6ee5ce013b43d28633bcac133c4f8780a592d3b4",
+      "generator_assembly": "25b3bb06a02a92b0b98b83370b8b87283d5b20be2ee421eee5a9d60e2bb386c6",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "integer_format_unknown_alias",
+    "accepted": false,
+    "diagnostics": [
+      "undefined constant/function/variable xmrIntegerToString(char,string)"
+    ],
+    "compile_exception": null
+  },
+  {
+    "name": "abs_literal",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "DF11BC44C60737D4F8341A34C25D8125",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": null,
+    "live_cycles": [],
+    "migrated_cycles": [],
+    "prefix_resume": null,
+    "live_resume_exception": null,
+    "live_resume": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "result": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 65
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "result": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 65
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Exact actual process-driver SOURCE compiled by unchanged original CodeGen, executed by original five truth conversion methods inside global initializers and user function, ordinary bad-key condition and actual boxed helper-result list. Original StartEx/base CheckRunWork captures at actual llSleep(3). Same-live ResumeEx and separate actual MigrateOut/In plus original EventQueue XML resume independently. Real minimal Scene/API objects, no conversion/sleep return substitutes; only scheduler eligibility timing is driven outside RunOne.",
+    "sha256": {
+      "cache_key.txt": "0eec5de11920c1c96dfe4e55312f8bc96a3ea2e76312f029666877592b8a64f7",
+      "original.il.txt": "c5efc61bfe1b6f8194c7e278abf7a7e9417c39a495219399718610107c5ad25f",
+      "original.yobj": "7df0ce04ef7d20fe6da9c2934b28954fae2358e71e543ca58556624b9c95b6bf",
+      "source.lsl": "f647bd5a34bb908a4342a37312d477250389bffb27d762f4d6d31006f6ebe5fc",
+      "generator_source": "695c95bb4983c91b3c81c10c6ee5ce013b43d28633bcac133c4f8780a592d3b4",
+      "generator_assembly": "25b3bb06a02a92b0b98b83370b8b87283d5b20be2ee421eee5a9d60e2bb386c6",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "abs_wrapped_negative",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "6DC4832F0FB1911B293E09ADAA78AA35",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": null,
+    "live_cycles": [],
+    "migrated_cycles": [],
+    "prefix_resume": null,
+    "live_resume_exception": null,
+    "live_resume": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "result": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 65535
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "result": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 65535
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Exact actual process-driver SOURCE compiled by unchanged original CodeGen, executed by original five truth conversion methods inside global initializers and user function, ordinary bad-key condition and actual boxed helper-result list. Original StartEx/base CheckRunWork captures at actual llSleep(3). Same-live ResumeEx and separate actual MigrateOut/In plus original EventQueue XML resume independently. Real minimal Scene/API objects, no conversion/sleep return substitutes; only scheduler eligibility timing is driven outside RunOne.",
+    "sha256": {
+      "cache_key.txt": "ecc6948720bdbe2cb2e20e13949f07e5c2a9bd274c3939d29dfb863ae31daf6a",
+      "original.il.txt": "c3e4bd75e83d33ec63ece85fb8d54a197bfb39eb3163a3a415f40399919a12f5",
+      "original.yobj": "f9eb62b97ed6b903912ff0514163b61761cc48a4eebe9e607046dfe153a3d6ef",
+      "source.lsl": "8f47399776c9c69231ff154adcaeb8047612194079cecb9b52b4e79fd76ccbbe",
+      "generator_source": "695c95bb4983c91b3c81c10c6ee5ce013b43d28633bcac133c4f8780a592d3b4",
+      "generator_assembly": "25b3bb06a02a92b0b98b83370b8b87283d5b20be2ee421eee5a9d60e2bb386c6",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "substring_char_indices",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "1A4D8C9AFA151AA811C94BC796320469",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": null,
+    "live_cycles": [],
+    "migrated_cycles": [],
+    "prefix_resume": null,
+    "live_resume_exception": null,
+    "live_resume": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "result": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "BC",
+          "utf16": [
+            66,
+            67
+          ]
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "result": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "BC",
+          "utf16": [
+            66,
+            67
+          ]
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Exact actual process-driver SOURCE compiled by unchanged original CodeGen, executed by original five truth conversion methods inside global initializers and user function, ordinary bad-key condition and actual boxed helper-result list. Original StartEx/base CheckRunWork captures at actual llSleep(3). Same-live ResumeEx and separate actual MigrateOut/In plus original EventQueue XML resume independently. Real minimal Scene/API objects, no conversion/sleep return substitutes; only scheduler eligibility timing is driven outside RunOne.",
+    "sha256": {
+      "cache_key.txt": "3d0460516d0101b67211e95803f75af545d43e8ae7b92ffa6b37888f4d39d066",
+      "original.il.txt": "b88758b8c5989c6470a66a542315c1155e686507a8a610ca5b73736dcb392cb8",
+      "original.yobj": "4e8a4fca5322f8dcbe88e927d68adc182629df6de732533e75f634ae458c2ab5",
+      "source.lsl": "ad0509cc26005b5f71a0ffe9165a34468f99d4a9ef0896916bec031c8d1b30f5",
+      "generator_source": "695c95bb4983c91b3c81c10c6ee5ce013b43d28633bcac133c4f8780a592d3b4",
+      "generator_assembly": "25b3bb06a02a92b0b98b83370b8b87283d5b20be2ee421eee5a9d60e2bb386c6",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "length_char",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "0C4B9DA29E13C22B865C11CE3A15B298",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": null,
+    "live_cycles": [],
+    "migrated_cycles": [],
+    "prefix_resume": null,
+    "live_resume_exception": null,
+    "live_resume": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "result": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "result": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Exact actual process-driver SOURCE compiled by unchanged original CodeGen, executed by original five truth conversion methods inside global initializers and user function, ordinary bad-key condition and actual boxed helper-result list. Original StartEx/base CheckRunWork captures at actual llSleep(3). Same-live ResumeEx and separate actual MigrateOut/In plus original EventQueue XML resume independently. Real minimal Scene/API objects, no conversion/sleep return substitutes; only scheduler eligibility timing is driven outside RunOne.",
+    "sha256": {
+      "cache_key.txt": "2c4c1009dc0644d040f9da291d3a5d53f7f224e018468b0bd383f2f929819c45",
+      "original.il.txt": "f9931b31be05ee179fbd2c3e9648636a0453dea6a6696e1fe4010715d05b31dc",
+      "original.yobj": "5127f624707528afd5cea9c871f9b95161f2fa1d443e66b38b85aad2d9f5a8b2",
+      "source.lsl": "a28910eef40952eb18efe06188e3720df69144f0fd1ef6559bf4f3a3d494434c",
+      "generator_source": "695c95bb4983c91b3c81c10c6ee5ce013b43d28633bcac133c4f8780a592d3b4",
+      "generator_assembly": "25b3bb06a02a92b0b98b83370b8b87283d5b20be2ee421eee5a9d60e2bb386c6",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "strict_integer_char",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "497B9BB31AFE82CBDF349539FBDDC094",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": null,
+    "live_cycles": [],
+    "migrated_cycles": [],
+    "prefix_resume": null,
+    "live_resume_exception": null,
+    "live_resume": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "result": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 7
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "result": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 7
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Exact actual process-driver SOURCE compiled by unchanged original CodeGen, executed by original five truth conversion methods inside global initializers and user function, ordinary bad-key condition and actual boxed helper-result list. Original StartEx/base CheckRunWork captures at actual llSleep(3). Same-live ResumeEx and separate actual MigrateOut/In plus original EventQueue XML resume independently. Real minimal Scene/API objects, no conversion/sleep return substitutes; only scheduler eligibility timing is driven outside RunOne.",
+    "sha256": {
+      "cache_key.txt": "f18db7696285b240df5dc9cac18ad544c5e414afe5f16a079efa2027f18d78e3",
+      "original.il.txt": "76c1270923d9117130dd37e27166b57445fba2bd8347bc79853b12bdcaafc6ac",
+      "original.yobj": "1f06a80ea3b4b231af8c010f6f289f8844fef2c7c029eeb32bc8032d5949edb7",
+      "source.lsl": "6356c56d9a21b444e77b99197e808d96e716855b2cba56716fd04722f7a4274d",
+      "generator_source": "695c95bb4983c91b3c81c10c6ee5ce013b43d28633bcac133c4f8780a592d3b4",
+      "generator_assembly": "25b3bb06a02a92b0b98b83370b8b87283d5b20be2ee421eee5a9d60e2bb386c6",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "find_char_list",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "433BC96BEECC72149AA44FD0F443B33F",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": null,
+    "live_cycles": [],
+    "migrated_cycles": [],
+    "prefix_resume": null,
+    "live_resume_exception": null,
+    "live_resume": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "result": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "result": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Exact actual process-driver SOURCE compiled by unchanged original CodeGen, executed by original five truth conversion methods inside global initializers and user function, ordinary bad-key condition and actual boxed helper-result list. Original StartEx/base CheckRunWork captures at actual llSleep(3). Same-live ResumeEx and separate actual MigrateOut/In plus original EventQueue XML resume independently. Real minimal Scene/API objects, no conversion/sleep return substitutes; only scheduler eligibility timing is driven outside RunOne.",
+    "sha256": {
+      "cache_key.txt": "07c689b0c3673c621d8a94d351e33f53f7380cfe1db6aa55c6a5c78fbd0978db",
+      "original.il.txt": "b7db3b3a4c9637ab47f8532ab2a337ab5c73a83d8c9f435d10ecd6dbd86fe864",
+      "original.yobj": "dceec07f1b9b213679a06c059242db5c8d0e6c5197fddaa314797abbb7b7425e",
+      "source.lsl": "fb80be74aef0064e910af956ada0bb8cb6c4cfe7c712f816a243d929180180e1",
+      "generator_source": "695c95bb4983c91b3c81c10c6ee5ce013b43d28633bcac133c4f8780a592d3b4",
+      "generator_assembly": "25b3bb06a02a92b0b98b83370b8b87283d5b20be2ee421eee5a9d60e2bb386c6",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "dump_char_list",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "AD1A38B1E006E1B7CF9529A1120B4018",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": null,
+    "live_cycles": [],
+    "migrated_cycles": [],
+    "prefix_resume": null,
+    "live_resume_exception": null,
+    "live_resume": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "result": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "65",
+          "utf16": [
+            54,
+            53
+          ]
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "result": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "65",
+          "utf16": [
+            54,
+            53
+          ]
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Exact actual process-driver SOURCE compiled by unchanged original CodeGen, executed by original five truth conversion methods inside global initializers and user function, ordinary bad-key condition and actual boxed helper-result list. Original StartEx/base CheckRunWork captures at actual llSleep(3). Same-live ResumeEx and separate actual MigrateOut/In plus original EventQueue XML resume independently. Real minimal Scene/API objects, no conversion/sleep return substitutes; only scheduler eligibility timing is driven outside RunOne.",
+    "sha256": {
+      "cache_key.txt": "7dbbc074c23b784afcca09ef41e4ad89b5db560aa7f592213a81e0fa97cf533f",
+      "original.il.txt": "ec0222cbf63e81d0d700993e0c736a9a556b9ba633f8e6eeca21c835053cfb33",
+      "original.yobj": "bf79822a0642b3c4734f190a3655808d44fea0b70572101c70c474f1b24b6b9e",
+      "source.lsl": "8df4706ec206fecdfa65be87ac68b47ed94ab365a6d1572e0206cc09fc9fbf10",
+      "generator_source": "695c95bb4983c91b3c81c10c6ee5ce013b43d28633bcac133c4f8780a592d3b4",
+      "generator_assembly": "25b3bb06a02a92b0b98b83370b8b87283d5b20be2ee421eee5a9d60e2bb386c6",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "dump_char_separator",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "5AE5713DB877D3BCA7E94071B4F93837",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": null,
+    "live_cycles": [],
+    "migrated_cycles": [],
+    "prefix_resume": null,
+    "live_resume_exception": null,
+    "live_resume": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "result": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "1|2",
+          "utf16": [
+            49,
+            124,
+            50
+          ]
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "result": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "1|2",
+          "utf16": [
+            49,
+            124,
+            50
+          ]
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Exact actual process-driver SOURCE compiled by unchanged original CodeGen, executed by original five truth conversion methods inside global initializers and user function, ordinary bad-key condition and actual boxed helper-result list. Original StartEx/base CheckRunWork captures at actual llSleep(3). Same-live ResumeEx and separate actual MigrateOut/In plus original EventQueue XML resume independently. Real minimal Scene/API objects, no conversion/sleep return substitutes; only scheduler eligibility timing is driven outside RunOne.",
+    "sha256": {
+      "cache_key.txt": "b98c3109dd67c72e62903a8379901216495fbd3281a5de81ee5812fbc03fb41c",
+      "original.il.txt": "40cdf8181f34d86cba00239cb4e70f8c1389636c434432a2498fe8c521943a65",
+      "original.yobj": "45c000e7df0c52c52ea650bc1a040fd2bc539edca87f1b71cd7c9bea52e220d1",
+      "source.lsl": "2c557bea9228a7291611e766a6a30030197004b3482168781ca39dcb894abd7c",
+      "generator_source": "695c95bb4983c91b3c81c10c6ee5ce013b43d28633bcac133c4f8780a592d3b4",
+      "generator_assembly": "25b3bb06a02a92b0b98b83370b8b87283d5b20be2ee421eee5a9d60e2bb386c6",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "fabs_char",
+    "accepted": false,
+    "diagnostics": [
+      "illegal to cast from char to float"
+    ],
+    "compile_exception": null
+  },
+  {
+    "name": "sin_char",
+    "accepted": false,
+    "diagnostics": [
+      "illegal to cast from char to float"
+    ],
+    "compile_exception": null
+  },
+  {
+    "name": "float_format_char",
+    "accepted": false,
+    "diagnostics": [
+      "illegal to cast from char to float"
+    ],
+    "compile_exception": null
+  },
+  {
+    "name": "abs_dynamic",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "5FCDD3DBE188A4D74E9095486036150C",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": null,
+    "live_cycles": [],
+    "migrated_cycles": [],
+    "prefix_resume": null,
+    "live_resume_exception": null,
+    "live_resume": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "input": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 65536
+        },
+        "result": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "input": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 65536
+        },
+        "result": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Exact actual process-driver SOURCE compiled by unchanged original CodeGen, executed by original five truth conversion methods inside global initializers and user function, ordinary bad-key condition and actual boxed helper-result list. Original StartEx/base CheckRunWork captures at actual llSleep(3). Same-live ResumeEx and separate actual MigrateOut/In plus original EventQueue XML resume independently. Real minimal Scene/API objects, no conversion/sleep return substitutes; only scheduler eligibility timing is driven outside RunOne.",
+    "sha256": {
+      "cache_key.txt": "e7230a97fa928a81400a1bf5474584bb8bb29202cdc28ddb2e4d91a5d7d20d3b",
+      "original.il.txt": "ab95dba7fc776e43484505953721d6ce7c4ffc4e87342d9be185d6d3bcb4b2eb",
+      "original.yobj": "b96d8ab0fcdcc1eba653589ed4467c7619c5c708b81ac7c96cb0f229df33a9ce",
+      "source.lsl": "ef4922a66ade5ceabac0d1c293d07162a7810697c70d576fdde40b70df39a45d",
+      "generator_source": "695c95bb4983c91b3c81c10c6ee5ce013b43d28633bcac133c4f8780a592d3b4",
+      "generator_assembly": "25b3bb06a02a92b0b98b83370b8b87283d5b20be2ee421eee5a9d60e2bb386c6",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "integer_format_dynamic",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "23CEBDEA3492599DB17F07FFEE7F5B2A",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": null,
+    "live_cycles": [],
+    "migrated_cycles": [],
+    "prefix_resume": null,
+    "live_resume_exception": null,
+    "live_resume": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "input": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 65536
+        },
+        "result": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "0",
+          "utf16": [
+            48
+          ]
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "input": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 65536
+        },
+        "result": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "0",
+          "utf16": [
+            48
+          ]
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Exact actual process-driver SOURCE compiled by unchanged original CodeGen, executed by original five truth conversion methods inside global initializers and user function, ordinary bad-key condition and actual boxed helper-result list. Original StartEx/base CheckRunWork captures at actual llSleep(3). Same-live ResumeEx and separate actual MigrateOut/In plus original EventQueue XML resume independently. Real minimal Scene/API objects, no conversion/sleep return substitutes; only scheduler eligibility timing is driven outside RunOne.",
+    "sha256": {
+      "cache_key.txt": "274cbc88f2f8a0d3d8e94ef3a09d470f69a3f714c78b10ec3e051dbe2f0c2ddf",
+      "original.il.txt": "ffa7519dd3cff49a9d764284c1fbe9423860feccf36d257fa5cc43e6217710f0",
+      "original.yobj": "34b312ee5349eb96e22cb2e19b9b3a7893986fe9ade6f8d2f7a2078ac7ace871",
+      "source.lsl": "d8fdc0c0a2305c8b25a9da5fa556eff30b29cd5bdc7f76874e1fdca919c53d2c",
+      "generator_source": "695c95bb4983c91b3c81c10c6ee5ce013b43d28633bcac133c4f8780a592d3b4",
+      "generator_assembly": "25b3bb06a02a92b0b98b83370b8b87283d5b20be2ee421eee5a9d60e2bb386c6",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "length_dynamic",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "F0018B19A7AFF7BD98BDD5B40E31ED21",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": null,
+    "live_cycles": [],
+    "migrated_cycles": [],
+    "prefix_resume": null,
+    "live_resume_exception": null,
+    "live_resume": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "input": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 65536
+        },
+        "result": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "input": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 65536
+        },
+        "result": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Exact actual process-driver SOURCE compiled by unchanged original CodeGen, executed by original five truth conversion methods inside global initializers and user function, ordinary bad-key condition and actual boxed helper-result list. Original StartEx/base CheckRunWork captures at actual llSleep(3). Same-live ResumeEx and separate actual MigrateOut/In plus original EventQueue XML resume independently. Real minimal Scene/API objects, no conversion/sleep return substitutes; only scheduler eligibility timing is driven outside RunOne.",
+    "sha256": {
+      "cache_key.txt": "71ea2a161fe32b798151ed3717e3bf3efef38596d744cfe878128383307c325d",
+      "original.il.txt": "da5b06b10b9691f5e9ddb74b66d128cf8e59232f53d68ed9d005bb4556d3ee31",
+      "original.yobj": "5cb9975db6efec6e998ce61e4cee6779a5d22602b961ae8b71864ba326cc93c1",
+      "source.lsl": "749ed9474459454483894737c6104bd6eb3e9a3f20ecce2ff8fde69aa29a70ca",
+      "generator_source": "695c95bb4983c91b3c81c10c6ee5ce013b43d28633bcac133c4f8780a592d3b4",
+      "generator_assembly": "25b3bb06a02a92b0b98b83370b8b87283d5b20be2ee421eee5a9d60e2bb386c6",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "list_dynamic",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "A050BCE789A15F356A6095413EF029CB",
+    "compiled_version": -11,
+    "suspended": false,
+    "migrated": false,
+    "initial_exception": null,
+    "live_cycles": [],
+    "migrated_cycles": [],
+    "prefix_resume": null,
+    "live_resume_exception": null,
+    "live_resume": null,
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "input": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 65536
+        },
+        "result": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "0",
+          "utf16": [
+            48
+          ]
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "input": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 65536
+        },
+        "result": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "0",
+          "utf16": [
+            48
+          ]
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Exact actual process-driver SOURCE compiled by unchanged original CodeGen, executed by original five truth conversion methods inside global initializers and user function, ordinary bad-key condition and actual boxed helper-result list. Original StartEx/base CheckRunWork captures at actual llSleep(3). Same-live ResumeEx and separate actual MigrateOut/In plus original EventQueue XML resume independently. Real minimal Scene/API objects, no conversion/sleep return substitutes; only scheduler eligibility timing is driven outside RunOne.",
+    "sha256": {
+      "cache_key.txt": "1e21d941946fd9e742d17a5c9038e8ab5e1ff0dc3a4786caf255c558605e080a",
+      "original.il.txt": "cb8d5d8aa78e5f07cb464bbeb1668878439b24edd676ac84a30a26c4fe897221",
+      "original.yobj": "79ad1c74f5494b200166f110ddef4f72408ba23cb631878c91126512c0c08482",
+      "source.lsl": "3223311bb4d92370afec5e03f63fe4883d9f5070993ac2acdb773ed492375746",
+      "generator_source": "695c95bb4983c91b3c81c10c6ee5ce013b43d28633bcac133c4f8780a592d3b4",
+      "generator_assembly": "25b3bb06a02a92b0b98b83370b8b87283d5b20be2ee421eee5a9d60e2bb386c6",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  }
+]

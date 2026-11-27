@@ -7,6 +7,7 @@
 #include <iostream>
 using namespace opensim;
 using namespace services;
+
 std::string hex(std::string_view s) {
     std::string out;
     for (unsigned char c : s) {
@@ -15,14 +16,16 @@ std::string hex(std::string_view s) {
     }
     return out;
 }
+
 std::string unhex(std::string_view s) {
     std::string out;
     for (size_t i = 0; i < s.size(); i += 2)
         out += char(std::stoi(std::string(s.substr(i, 2)), nullptr, 16));
     return out;
 }
-std::string scalar(sqlite3* db, const char* sql) {
-    sqlite3_stmt* q = nullptr;
+
+std::string scalar(sqlite3 *db, const char *sql) {
+    sqlite3_stmt *q = nullptr;
     if (sqlite3_prepare_v2(db, sql, -1, &q, nullptr) != SQLITE_OK) {
         if (q)
             sqlite3_finalize(q);
@@ -31,21 +34,21 @@ std::string scalar(sqlite3* db, const char* sql) {
     std::string out;
     if (sqlite3_step(q) == SQLITE_ROW && sqlite3_column_type(q, 0) != SQLITE_NULL) {
         auto value = sqlite3_column_text(q, 0);
-        out.assign(reinterpret_cast<const char*>(value), sqlite3_column_bytes(q, 0));
+        out.assign(reinterpret_cast<const char *>(value), sqlite3_column_bytes(q, 0));
     }
     sqlite3_finalize(q);
     return out;
 }
-std::string snapshot(sqlite3* db) {
-    return hex(scalar(
-               db,
-               "SELECT coalesce(group_concat(name||':'||quote(version),'|'),'') FROM (SELECT name,version FROM migrations ORDER BY name,version)")) +
+
+std::string snapshot(sqlite3 *db) {
+    return hex(scalar(db, "SELECT coalesce(group_concat(name||':'||quote(version),'|'),'') FROM (SELECT name,version "
+                          "FROM migrations ORDER BY name,version)")) +
            ":" +
-           hex(scalar(
-               db,
-               "SELECT coalesce(group_concat(PrincipalID||':'||Friend||':'||Flags||':'||Offered,'|'),'') FROM (SELECT * FROM Friends ORDER BY PrincipalID,Friend)"));
+           hex(scalar(db, "SELECT coalesce(group_concat(PrincipalID||':'||Friend||':'||Flags||':'||Offered,'|'),'') "
+                          "FROM (SELECT * FROM Friends ORDER BY PrincipalID,Friend)"));
 }
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     if (argc != 2)
         return 2;
     std::string line;
@@ -61,7 +64,7 @@ int main(int argc, char** argv) {
         if (sqlite3_exec(db, setup.c_str(), nullptr, nullptr, nullptr) != SQLITE_OK)
             return 4;
         std::string trace;
-        auto event = [&](const std::string& level, std::string message) {
+        auto event = [&](const std::string &level, std::string message) {
             if (level == "debug" && message.starts_with("[MIGRATIONS]: Cmd was ")) {
                 auto at = message.find(" in SQL: ");
                 if (at != message.npos)
@@ -77,14 +80,14 @@ int main(int argc, char** argv) {
         auto state = std::make_shared<SqliteGenericState>();
         std::map<int, std::unique_ptr<SqliteFriendsPlugin>> slots;
         std::string output;
-        for (auto& op : input.get("ops").array) {
+        for (auto &op : input.get("ops").array) {
             auto kind = network::osd_string(op.get("op"));
             std::string result = "-";
             int slot = static_cast<int>(network::osd_integer(op.get("slot")));
             try {
                 if (kind == "new") {
                     auto connection = network::osd_string(op.get("connection"));
-                    for (auto& [from, to] :
+                    for (auto &[from, to] :
                          std::vector<std::pair<std::string, std::string>>{{"$DB", path}, {"$OTHER", other}})
                         for (size_t at = connection.find(from); at != connection.npos;
                              at = connection.find(from, at + to.size()))
@@ -96,10 +99,9 @@ int main(int argc, char** argv) {
                         throw std::runtime_error("Missing slot");
                     auto rows = slots[slot]->get(network::osd_string(op.get("principal")));
                     result = std::to_string(rows.size()) + "|";
-                    for (auto& row : rows) {
-                        result +=
-                            hex(row->principal.value_or("")) + ":" + hex(row->friend_id.value_or("")) + ":";
-                        for (auto& [key, value] : *row->data)
+                    for (auto &row : rows) {
+                        result += hex(row->principal.value_or("")) + ":" + hex(row->friend_id.value_or("")) + ":";
+                        for (auto &[key, value] : *row->data)
                             result += hex(key) + "=" + hex(value.value_or("")) + ",";
                         result += ";";
                     }

@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "scope": "Actual original queue backend PostEvent and production XML write/read, no source compilation or dispatch claim",
+  "nativeParityVerified": false,
+  "files": {
+    "generator.cs": "2132dc5e4fdcff23b6cd0ef5fa18238dccd5eedef094388e418ddebac3a70dd9",
+    "linux/list_100000/event-queue.xml": "ff3c801e81f54890b394a092e8470b26e56d71242b6001aafaea5f68cf4e1c85",
+    "linux/list_100000/metadata.json": "8bed6d5feef1fef3ee14a31dee78dc6d6c498876a5db6a7f25edc38db8a4d2f4",
+    "linux/list_65537/event-queue.xml": "ea161ca7a468cce7229b0b616fc2b6e4490f12062063b4af0fb33ec2fae51e6e",
+    "linux/list_65537/metadata.json": "6ae7ac93822576263293c4cb516aaa62641d618de3775465405e0a25c70659a6",
+    "linux/metadata.json": "3f23255a673b8863d1badb34d30bd912b8cccd21ea3ab342b3375aa67f85dead",
+    "linux/raw_string_4194305/event-queue.xml": "6c5f7d8d2f94d4686306efdcf86922db1c4304b9e147ee83ba500c0f9a8ad9a2",
+    "linux/raw_string_4194305/metadata.json": "477546552dd8cdee99acc5f6fe764d0510c8c1a361cf467e1f8df7297fd71c65",
+    "linux/sdk_string_4194305/event-queue.xml": "186d56cd0d9409012fe92f9fda1ea981fad219e9132ab79af3e9c62f1d0e5878",
+    "linux/sdk_string_4194305/metadata.json": "934afe8ec85b8c500598540b9b8284dadea9c0b14aa17c2afbdaea8fe28171c2",
+    "original-verification.json": "69fdec1ba9f9990dd8c7e93e5bae427123c8fc45455f7b9a3faf8b93183a5752",
+    "verify.py": "821d8fcfd6936e3ed4c360fcec48423304b03dd846e1ebceb376001ef851661a",
+    "windows/list_100000/event-queue.xml": "ff3c801e81f54890b394a092e8470b26e56d71242b6001aafaea5f68cf4e1c85",
+    "windows/list_100000/metadata.json": "9d6ce5548729ba734ee4456d7d36289575f4d00d8d2dc6fb4c8a0e461cf3a725",
+    "windows/list_65537/event-queue.xml": "ea161ca7a468cce7229b0b616fc2b6e4490f12062063b4af0fb33ec2fae51e6e",
+    "windows/list_65537/metadata.json": "77c04e06701a542136c97d27c05bd48c460c34096b9da551aefb3dfa139802b8",
+    "windows/metadata.json": "722c84a1f78ebf9d3c4c13e45dd7fee07dd25addb49641f66dd179a98f979e91",
+    "windows/raw_string_4194305/event-queue.xml": "6c5f7d8d2f94d4686306efdcf86922db1c4304b9e147ee83ba500c0f9a8ad9a2",
+    "windows/raw_string_4194305/metadata.json": "02722a464d7f0a57e5c814430d8742ddeec686e3d2473d44826bfc61aa76e3d6",
+    "windows/sdk_string_4194305/event-queue.xml": "186d56cd0d9409012fe92f9fda1ea981fad219e9132ab79af3e9c62f1d0e5878",
+    "windows/sdk_string_4194305/metadata.json": "819c1786914a39a3776e948840dac557cd3afe422b37c3aed5a965a502db18b2"
+  }
+}

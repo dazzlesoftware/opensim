@@ -3,7 +3,8 @@
 #include <iomanip>
 using namespace opensim;
 using namespace scene;
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string(argv[1]) == "--probe") {
             int seed, mode;
@@ -39,7 +40,7 @@ int main(int argc, char** argv) {
             throw std::runtime_error("Source chat header");
         std::cout << "PASS: native chat packet\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

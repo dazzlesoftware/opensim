@@ -2,6 +2,7 @@
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/services/presence_state.hpp"
 #include <stdexcept>
+
 namespace opensim::services {
 std::string presence_state_name(PresenceState state) {
     switch (state) {
@@ -17,6 +18,7 @@ std::string presence_state_name(PresenceState state) {
         return std::to_string(static_cast<std::int32_t>(state));
     }
 }
+
 void PresenceStateMachine::set_state(PresenceState next) {
     bool okay = false;
     {
@@ -39,12 +41,12 @@ void PresenceStateMachine::set_state(PresenceState next) {
         auto name = presence_->presence_name();
         auto previous = get_state();
         auto scene = presence_->scene_name();
-        throw std::runtime_error("Scene presence " + name.value_or("") +
-                                 " is not allowed to move from state " + presence_state_name(previous) +
-                                 " to new state " + presence_state_name(next) + " in " + scene.value_or(""));
+        throw std::runtime_error("Scene presence " + name.value_or("") + " is not allowed to move from state " +
+                                 presence_state_name(previous) + " to new state " + presence_state_name(next) + " in " +
+                                 scene.value_or(""));
     }
     // The original assigns after leaving its validation lock. Keep this boundary;
     // atomic storage permits concurrent observations without a C++ data race.
     state_.store(next, std::memory_order_relaxed);
 }
-}
+} // namespace opensim::services

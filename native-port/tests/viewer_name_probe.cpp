@@ -10,21 +10,24 @@
 #include <sstream>
 using namespace opensim;
 using network::Value;
+
 std::string hex(std::string_view s) {
     std::string out;
-    const char* h = "0123456789abcdef";
+    const char *h = "0123456789abcdef";
     for (unsigned char c : s) {
         out += h[c >> 4];
         out += h[c & 15];
     }
     return out;
 }
+
 std::string decode(std::string_view s) {
     std::string out;
     for (std::size_t i = 0; i < s.size(); i += 2)
         out += static_cast<char>(std::stoi(std::string(s.substr(i, 2)), nullptr, 16));
     return out;
 }
+
 std::string units(std::u16string_view s) {
     std::ostringstream out;
     out << std::hex << std::setfill('0');
@@ -32,13 +35,15 @@ std::string units(std::u16string_view s) {
         out << std::setw(4) << static_cast<unsigned int>(c);
     return out.str();
 }
+
 std::u16string scalar(std::uint32_t c) {
     if (c < 65536)
         return {static_cast<char16_t>(c)};
     c -= 65536;
     return {static_cast<char16_t>(0xd800 + (c >> 10)), static_cast<char16_t>(0xdc00 + (c & 1023))};
 }
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     if (argc > 1 && std::string_view(argv[1]) == "profile") {
         std::cout << "runtime:native\n";
         std::string bits(8192, '\0');
@@ -79,7 +84,7 @@ int main(int argc, char** argv) {
                 continue;
             }
             auto args = network::parse_osd_json(decode(line));
-            auto opt = [&](const char* key) -> std::optional<std::string> {
+            auto opt = [&](const char *key) -> std::optional<std::string> {
                 return args.get(key).kind == Value::Kind::Undefined
                            ? std::nullopt
                            : std::optional<std::string>(network::osd_string(args.get(key)));
@@ -87,10 +92,9 @@ int main(int argc, char** argv) {
             framework::AgentCircuitData agent;
             agent.viewer(opt("viewer"));
             agent.channel = opt("channel");
-            std::cout << hex(framework::viewer_name(network::osd_boolean(args.get("null_agent")) ? nullptr
-                                                                                                 : &agent))
+            std::cout << hex(framework::viewer_name(network::osd_boolean(args.get("null_agent")) ? nullptr : &agent))
                       << "\n";
-        } catch (const std::exception&) {
+        } catch (const std::exception &) {
             std::cout << "EX\n";
         }
     }

@@ -1,0 +1,23 @@
+{
+  "accepted": false,
+  "executed": false,
+  "globals": {},
+  "errors": [
+    "must explicitly cast from float to integer"
+  ],
+  "exception": null,
+  "exceptionType": null,
+  "stackSize": 1000000,
+  "stackLimit": 1024,
+  "finalStackLeft": null,
+  "stackSamples": [],
+  "name": "invalid_length_float",
+  "source": "YOption arrays;object a;integer result;default{state_entry(){a=xmrFixedArrayAllocI(1.5);}}",
+  "methodology": "Actual original CodeGen/CallSEH; scheduler CheckRunWork no-op. Separate process per case. No migration claim.",
+  "sha256": {
+    "source.lsl": "82c1128ae43c5f2a8d52757d170bd1c1c47f064988ae133ec599a188099f5b22",
+    "source_hash.txt": "dc122d6c61b24e12348c4c4d45b20140fe03a7fbe9bbbcbe9983d0bd240cabe0",
+    "generator_source": "d86517a13d8f4094e933279614d487a0e69d44a49f2296c4af7562bf7386d651",
+    "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056"
+  }
+}

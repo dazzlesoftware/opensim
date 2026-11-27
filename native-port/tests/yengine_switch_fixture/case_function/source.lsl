@@ -1,0 +1,1 @@
+YOption advflowctl;YOption chars;integer result;integer calls;integer get(){calls++;return 2;}default{state_entry(){switch(2){case get():result=7;break;}}}

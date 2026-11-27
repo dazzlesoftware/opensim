@@ -1,0 +1,1 @@
+YOption arrays;string text;object input;integer isnull;string result;default{state_entry(){text=llComputeHash("payload","unsupported");input=text;isnull=(input==undef);result=(string)input;}}

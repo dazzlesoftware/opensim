@@ -1,0 +1,1 @@
+integer value=1;integer calls;list result;string mutate(){calls++;value=2;return "c";}default{state_entry(){result=[value+mutate()+value];}}

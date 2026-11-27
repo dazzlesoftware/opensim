@@ -1,0 +1,1 @@
+list result;integer count;list inner(){count++;return llList2List([1,2,3],1,2);}default{state_entry(){result=inner();}}

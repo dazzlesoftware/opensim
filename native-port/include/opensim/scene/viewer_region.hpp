@@ -1,56 +1,90 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
 #pragma once
+#include <atomic>
+#include <chrono>
 #include "opensim/scene/world.hpp"
 #include "opensim/network/circuit_transport.hpp"
 #include <array>
+#include <exception>
+
+namespace opensim::framework {
+class BackgroundTaskQueue;
+}
+
 namespace opensim::scene {
 struct ViewerAgent;
+
+struct RootAvatar {
+    framework::Uuid id;
+    framework::Vector3 position;
+    std::string name;
+};
+
 struct ViewerRegionOptions {
     std::string name = "Native Region", product = "Mainland", channel_version = "OpenSim native";
     std::uint32_t x = 256000, y = 256000, region_flags = 0;
     std::uint8_t access = 13;
     framework::Uuid owner, cache_id;
     float water_height = 20, billable_factor = 1;
+    float default_draw_distance = 255.f, max_draw_distance = 512.f;
     std::function<std::pair<framework::Uuid, float>()> current_estate_owner_and_billable_factor;
     std::function<float()> current_water_height;
     std::array<framework::Uuid, 4> terrain_details{framework::Uuid("b8d3965a-ad78-bf43-699b-bff8eca6c975"),
                                                    framework::Uuid("abb783e6-3e93-26c0-248a-247666855da3"),
                                                    framework::Uuid("179cdabd-398a-9b6b-1391-4dc333ba321f"),
                                                    framework::Uuid("beb169c7-11ea-fff2-efe5-0f24dc881df2")};
+
     struct TerrainTextureHeights {
         std::array<float, 4> low{10, 10, 10, 10}, high{60, 60, 60, 60};
     };
+
     std::function<TerrainTextureHeights()> terrain_texture_heights;
     std::function<std::array<framework::Uuid, 4>(bool)> terrain_texture_assets;
     std::function<std::uint32_t()> unix_time;
     std::function<bool(framework::Uuid)> estate_manager;
     std::function<std::uint32_t()> current_region_flags;
     std::function<std::uint8_t()> current_access;
-    std::function<void(ViewerAgent&, bool local_teleport)> prepare_root;
-    std::function<std::optional<framework::Vector3>(const ViewerAgent&, framework::Vector3, std::uint64_t)>
+    std::function<void(ViewerAgent &, bool local_teleport)> prepare_root;
+    std::function<std::optional<framework::Vector3>(const ViewerAgent &, framework::Vector3, std::uint64_t)>
         route_local_teleport;
-    std::function<void(const ViewerAgent&, bool arrived)> local_teleport_complete;
-    std::function<void(const ViewerAgent&, const ViewerAgent&)> local_seat_exit;
+    std::function<void(const ViewerAgent &, bool arrived)> local_teleport_complete;
+    std::function<void(const ViewerAgent &, const ViewerAgent &)> local_seat_exit;
     std::function<bool(framework::Uuid)> teleport_pending;
-    std::function<bool(const ViewerAgent&)> movement_frozen;
-    std::function<std::string(const ViewerAgent&, framework::Uuid, network::lludp::Packet&)> resolve_landmark;
+    std::function<bool(const ViewerAgent &)> movement_frozen;
+    std::function<std::string(const ViewerAgent &, framework::Uuid, network::lludp::Packet &)> resolve_landmark;
 };
+
 struct ActiveViewerGroup {
     framework::Uuid id;
     std::string name, title;
     std::uint64_t powers = 0;
 };
+
 struct ViewerAgent {
+    std::optional<framework::Uuid> npc_owner;
+    std::u16string npc_profile_about;
+    std::u16string npc_profile_born;
+    framework::Uuid npc_profile_image;
+    bool npc_sense_as_agent = false;
     std::shared_ptr<framework::AgentCircuitData> circuit;
     network::UdpEndpoint endpoint;
     std::uint32_t local_id = 0, viewer_flags = 0, controls = 0;
+    std::uint32_t last_agent_update_sequence = 0;
     std::uint8_t agent_state = 0;
-    bool connected = false, handshake_sent = false, handshake_reply = false, root = false,
-         logout_requested = false;
+    bool connected = false, handshake_sent = false, handshake_reply = false, root = false, logout_requested = false;
     bool mute_collisions = false;
     bool crossed_child = false;
+    bool transfer_child = false;
     bool crossing_arrival_ready = false;
+
+    struct EarlyCrossingCompletion {
+        std::chrono::steady_clock::time_point deadline;
+        network::CircuitConnection connection;
+    };
+
+    std::optional<EarlyCrossingCompletion> early_crossing_completion;
+    std::shared_ptr<framework::AgentCircuitData> retained_crossing_circuit;
     framework::Vector3 position, look_at{1, 0, 0}, velocity, acceleration;
     std::array<float, 4> collision_plane{0, 0, 0, 1};
     framework::Vector3 angular_velocity;
@@ -59,6 +93,7 @@ struct ViewerAgent {
     framework::Vector3 camera_up_axis;
     framework::Quaternion camera_rotation;
     float camera_fov = 1.04f;
+    float draw_distance = 255.f;
     float health = 100.f;
     float heal_rate = .5f;
     float last_heal_health_sent = 0.f;
@@ -66,8 +101,11 @@ struct ViewerAgent {
     std::uint32_t view_width = 640;
     std::uint32_t view_height = 480;
     bool flying = false, always_run = false;
+    float speed_modifier = 1.f;
     framework::Quaternion rotation{0, 0, 0, 1};
+    framework::Quaternion head_rotation{0, 0, 0, 1};
     std::optional<framework::Quaternion> mouselook_rotation;
+
     struct Seat {
         framework::Uuid part;
         std::uint32_t parent_local;
@@ -76,81 +114,127 @@ struct ViewerAgent {
         bool explicit_target = true;
         std::uint64_t order = 0;
     };
+
     std::optional<Seat> seat;
     bool ground_sitting = false;
     std::shared_ptr<framework::AvatarAppearance> appearance_override;
     std::optional<ActiveViewerGroup> active_group_override;
+    bool transfer_group_information = false;
+    std::uint8_t transfer_crossing_flags = 0;
+    framework::Uuid origin_region_id;
+    std::shared_ptr<std::atomic_bool> root_arrival_signal = std::make_shared<std::atomic_bool>(false);
+
     framework::Uuid active_group_id() const {
         return active_group_override ? active_group_override->id : circuit->active_group_id;
     }
+
     std::shared_ptr<framework::AvatarAppearance> appearance() const {
         return appearance_override ? appearance_override : circuit->appearance;
     }
 };
+
 // Viewer packet lifecycle for an owned world. Admission remains an explicit
 // scene-host responsibility; registered circuit credentials alone are not an
 // authorization decision. Terrain/avatar/object/physics streams attach here.
-class ViewerRegion {
+class ViewerRegion : public std::enable_shared_from_this<ViewerRegion> {
   public:
     using Admission = network::CircuitTransport::Admission;
-    using Event = std::function<void(const ViewerAgent&)>;
-    using PacketSink = std::function<void(const ViewerAgent&, const network::lludp::Packet&)>;
-    ViewerRegion(World& world, framework::AgentCircuitManager& circuits,
-                 network::CircuitTransport::Sender sender, Admission admission,
-                 ViewerRegionOptions options = {}, network::CircuitTransportOptions transport_options = {});
+    using Event = std::function<void(const ViewerAgent &)>;
+    using PacketSink = std::function<void(const ViewerAgent &, const network::lludp::Packet &)>;
+    ViewerRegion(World &world, framework::AgentCircuitManager &circuits, network::CircuitTransport::Sender sender,
+                 Admission admission, ViewerRegionOptions options = {},
+                 network::CircuitTransportOptions transport_options = {});
     ~ViewerRegion();
-    void receive(const network::UdpEndpoint& endpoint, std::span<const std::uint8_t> bytes);
+    // The owner pins World and host callback resources while a job is active.
+    void enable_background_admission(const std::shared_ptr<void> &owner,
+                                     std::function<void(std::exception_ptr)> error = {});
+    void receive(const network::UdpEndpoint &endpoint, std::span<const std::uint8_t> bytes);
     void poll();
     std::optional<ViewerAgent> update_appearance(framework::Uuid id, framework::Uuid session,
                                                  std::shared_ptr<framework::AvatarAppearance> appearance);
     void send_terrain(framework::Uuid agent);
-    bool request_teleport(framework::Uuid agent, framework::Uuid session, const network::lludp::Packet&);
+    bool request_teleport(framework::Uuid agent, framework::Uuid session, const network::lludp::Packet &);
     void broadcast_terrain_changes();
+
+    std::size_t users_logging_in() const noexcept {
+        return users_logging_in_.load(std::memory_order_relaxed);
+    }
+
     std::optional<ViewerAgent> agent(framework::Uuid id) const;
+    bool add_npc(const std::shared_ptr<framework::AgentCircuitData> &circuit, framework::Uuid owner,
+                 bool sense_as_agent = false);
+    bool remove_npc(framework::Uuid id);
+    void set_npc_running(framework::Uuid id, bool running);
+    void set_npc_profile(framework::Uuid id, std::optional<std::u16string> about, std::optional<framework::Uuid> image);
+    std::optional<ViewerAgent> set_npc_rotation(framework::Uuid id, framework::Quaternion rotation);
+    std::optional<ViewerAgent> set_agent_rotation(framework::Uuid id, framework::Quaternion rotation);
     bool update_health(framework::Uuid id, framework::Uuid session, float health);
     std::optional<float> heal(framework::Uuid id, framework::Uuid session, float frame_seconds);
     void set_heal_rate(framework::Uuid id, framework::Uuid session, float rate);
+    void set_speed_modifier(framework::Uuid id, float modifier);
+    bool set_transfer_child(framework::Uuid id, framework::Uuid session, bool child,
+                            const std::shared_ptr<framework::AgentCircuitData> &expected_circuit = {});
     std::optional<ViewerAgent> demote_after_crossing(framework::Uuid id, framework::Uuid session);
-    bool stage_crossing_arrival(const std::shared_ptr<framework::AgentCircuitData>& circuit);
-    void cancel_crossing_arrival(framework::Uuid id, framework::Uuid session);
+
+    // Transfer application uses the packet lock before the region reservation
+    // lock, so an early CompleteAgentMovement can be replayed without inversion.
+    std::unique_lock<std::recursive_mutex> lock_packet_dispatch() {
+        return std::unique_lock<std::recursive_mutex>(packet_mutex_);
+    }
+
+    bool stage_crossing_arrival(const std::shared_ptr<framework::AgentCircuitData> &circuit,
+                                framework::Uuid origin_region, bool group_information = false,
+                                std::optional<ActiveViewerGroup> group = std::nullopt,
+                                std::shared_ptr<std::atomic_bool> *root_arrival_signal = nullptr,
+                                std::uint8_t crossing_flags = 0);
+    std::optional<ViewerAgent> update_child_position(const std::shared_ptr<framework::AgentCircuitData> &circuit,
+                                                     framework::Vector3 position, framework::Vector3 camera,
+                                                     float draw_distance);
+    std::shared_ptr<framework::AgentCircuitData> cancel_crossing_arrival(framework::Uuid id, framework::Uuid session);
     std::optional<ViewerAgent> update_seat(framework::Uuid id, framework::Uuid session,
                                            std::optional<ViewerAgent::Seat> seat, framework::Vector3 position,
                                            std::optional<framework::Quaternion> rotation = std::nullopt,
                                            std::optional<std::uint64_t> expected_seat = std::nullopt);
     std::optional<ViewerAgent> update_ground_sit(framework::Uuid id, framework::Uuid session, bool sitting);
-    std::vector<ViewerAgent> refresh_seated_positions();
+    std::vector<ViewerAgent> refresh_seated_positions(framework::Uuid expected_root = {});
     std::optional<ViewerAgent> update_active_group(framework::Uuid id, framework::Uuid session,
                                                    ActiveViewerGroup group);
-    std::optional<ViewerAgent> update_physics(framework::Uuid id, framework::Uuid session,
-                                              framework::Vector3 position, framework::Vector3 velocity,
-                                              framework::Vector3 acceleration, bool flying,
+    std::optional<ViewerAgent> update_physics(framework::Uuid id, framework::Uuid session, framework::Vector3 position,
+                                              framework::Vector3 velocity, framework::Vector3 acceleration, bool flying,
                                               std::optional<framework::Quaternion> rotation = {},
                                               std::array<float, 4> collision_plane = {0, 0, 0, 1},
                                               framework::Vector3 angular_velocity = {});
     std::vector<ViewerAgent> agents() const;
+    std::vector<ViewerAgent> root_presences() const;
     std::vector<std::string> root_agent_names() const;
-    network::CircuitTransport& transport() {
+    std::vector<RootAvatar> root_avatars() const;
+
+    network::CircuitTransport &transport() {
         return transport_;
     }
+
     void callbacks(Event handshake, Event entered, Event logout, Event closed, PacketSink other = {});
     void disconnect(framework::Uuid id);
     void close();
     network::lludp::Packet region_handshake(framework::Uuid agent = {}, bool terrain_pbr = false) const;
-    network::lludp::Packet movement_complete(const ViewerAgent& agent) const;
+    network::lludp::Packet movement_complete(const ViewerAgent &agent) const;
 
   private:
-    bool admit(const std::shared_ptr<framework::AgentCircuitData>& circuit, const framework::Login& login,
-               const network::UdpEndpoint& endpoint);
-    void packet(const network::CircuitConnection& connection, const network::lludp::Packet& packet);
-    void closed(const network::CircuitConnection& connection);
-    void restore_transferred_seat(ViewerAgent& avatar);
+    std::atomic<std::size_t> users_logging_in_{0};
+    bool admit(const std::shared_ptr<framework::AgentCircuitData> &circuit, const framework::Login &login,
+               const network::UdpEndpoint &endpoint);
+    void packet(const network::CircuitConnection &connection, const network::lludp::Packet &packet);
+    void closed(const network::CircuitConnection &connection);
+    void restore_transferred_seat(ViewerAgent &avatar);
     std::uint32_t region_flags() const;
-    World& world_;
-    framework::AgentCircuitManager& circuits_;
+    World &world_;
+    framework::AgentCircuitManager &circuits_;
     Admission admission_;
     ViewerRegionOptions options_;
     mutable std::mutex mutex_;
     std::map<framework::Uuid, ViewerAgent> agents_;
+    bool insert_presence(ViewerAgent value, bool replace);
+    bool insert_presence_locked(ViewerAgent value, bool replace);
     // SceneGraph enumerates its dictionary in slot order, reusing the most
     // recently vacated slot for the next presence.
     std::vector<std::optional<framework::Uuid>> presence_slots_;
@@ -158,6 +242,9 @@ class ViewerRegion {
     std::uint64_t seat_order_ = 0;
     Event handshake_, entered_, logout_, closed_;
     PacketSink other_;
+    std::atomic<bool> closing_{false};
+    std::recursive_mutex packet_mutex_;
+    std::shared_ptr<framework::BackgroundTaskQueue> admission_queue_;
     network::CircuitTransport transport_;
 };
-}
+} // namespace opensim::scene

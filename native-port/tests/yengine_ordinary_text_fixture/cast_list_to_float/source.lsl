@@ -1,0 +1,1 @@
+float result;default{state_entry(){result=(float)[1,2];}}

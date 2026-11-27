@@ -1,0 +1,1 @@
+list item=[1,2];integer result;default{state_entry(){result=(integer)item;}}

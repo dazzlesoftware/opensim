@@ -15,8 +15,8 @@ using sql::Parameters;
 using sql::Result;
 
 class SqlPresenceStore final : public PresenceStore {
-public:
-    SqlPresenceStore(Execute execute, const std::string& realm, bool postgres)
+  public:
+    SqlPresenceStore(Execute execute, const std::string &realm, bool postgres)
         : execute_(std::move(execute)), postgres_(postgres) {
         if (realm.empty() ||
             realm.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_") !=
@@ -25,44 +25,46 @@ public:
         auto table_name = realm;
         if (postgres_) {
             // The original PostgreSQL provider uses unquoted table names.
-            for (auto& character : table_name)
+            for (auto &character : table_name)
                 if (character >= 'A' && character <= 'Z')
                     character = static_cast<char>(character - 'A' + 'a');
         }
         table_ = quote(table_name);
     }
 
-    bool persistent() const override { return true; }
+    bool persistent() const override {
+        return true;
+    }
 
-    bool store(const std::shared_ptr<PresenceData>& data) override {
+    bool store(const std::shared_ptr<PresenceData> &data) override {
         if (!data)
             return false;
         const auto secure = data->data.find("SecureSessionID");
         std::string statement = postgres_ ? "INSERT INTO " : "REPLACE INTO ";
-        statement += table_ + " (" + quote("SessionID") + "," + quote("UserID") + "," +
-                     quote("RegionID") + "," + quote("SecureSessionID") + ") VALUES (?,?,?,?)";
+        statement += table_ + " (" + quote("SessionID") + "," + quote("UserID") + "," + quote("RegionID") + "," +
+                     quote("SecureSessionID") + ") VALUES (?,?,?,?)";
         if (postgres_)
             statement += " ON CONFLICT (\"SessionID\") DO UPDATE SET "
                          "\"UserID\"=EXCLUDED.\"UserID\",\"RegionID\"=EXCLUDED.\"RegionID\","
                          "\"SecureSessionID\"=EXCLUDED.\"SecureSessionID\"";
         return run(statement, {data->session_id.str(), data->user_id, data->region_id.str(),
-                               secure == data->data.end() ? Uuid{}.str() : secure->second}).affected;
+                               secure == data->data.end() ? Uuid{}.str() : secure->second})
+            .affected;
     }
 
-    std::shared_ptr<PresenceData> get(const Uuid& session) override {
+    std::shared_ptr<PresenceData> get(const Uuid &session) override {
         auto rows = get("SessionID", session.str());
         return rows.empty() ? nullptr : std::move(rows.front());
     }
 
-    std::vector<std::shared_ptr<PresenceData>> get(const std::string& field,
-                                                   const std::string& value) override {
+    std::vector<std::shared_ptr<PresenceData>> get(const std::string &field, const std::string &value) override {
         if (!valid_field(field))
             return {};
-        const auto result = run("SELECT " + quote("SessionID") + "," + quote("UserID") + "," +
-                                quote("RegionID") + "," + quote("SecureSessionID") + " FROM " +
-                                table_ + " WHERE " + quote(field) + "=?", {value});
+        const auto result = run("SELECT " + quote("SessionID") + "," + quote("UserID") + "," + quote("RegionID") + "," +
+                                    quote("SecureSessionID") + " FROM " + table_ + " WHERE " + quote(field) + "=?",
+                                {value});
         std::vector<std::shared_ptr<PresenceData>> rows;
-        for (const auto& columns : result.rows) {
+        for (const auto &columns : result.rows) {
             auto row = std::make_shared<PresenceData>();
             row->session_id = Uuid(columns[0]);
             row->user_id = columns[1];
@@ -73,37 +75,37 @@ public:
         return rows;
     }
 
-    bool erase(const std::string& field, const std::string& value) override {
-        return valid_field(field) &&
-               run("DELETE FROM " + table_ + " WHERE " + quote(field) + "=?", {value}).affected;
+    bool erase(const std::string &field, const std::string &value) override {
+        return valid_field(field) && run("DELETE FROM " + table_ + " WHERE " + quote(field) + "=?", {value}).affected;
     }
 
-    bool erase_session_in_region(const Uuid& session, const Uuid& region) override {
-        return run("DELETE FROM " + table_ + " WHERE " + quote("SessionID") + "=? AND " +
-                   quote("RegionID") + "=?", {session.str(), region.str()}).affected;
+    bool erase_session_in_region(const Uuid &session, const Uuid &region) override {
+        return run("DELETE FROM " + table_ + " WHERE " + quote("SessionID") + "=? AND " + quote("RegionID") + "=?",
+                   {session.str(), region.str()})
+            .affected;
     }
 
-    void logout_region(const Uuid& region) override {
+    void logout_region(const Uuid &region) override {
         erase("RegionID", region.str());
     }
 
-    bool report(const Uuid& session, const Uuid& region) override {
+    bool report(const Uuid &session, const Uuid &region) override {
         if (region.is_zero())
             return false;
-        return run("UPDATE " + table_ + " SET " + quote("RegionID") + "=?," +
-                   quote("LastSeen") + "=NOW() WHERE " + quote("SessionID") + "=?",
-                   {region.str(), session.str()}).affected;
+        return run("UPDATE " + table_ + " SET " + quote("RegionID") + "=?," + quote("LastSeen") + "=NOW() WHERE " +
+                       quote("SessionID") + "=?",
+                   {region.str(), session.str()})
+            .affected;
     }
 
-    bool verify(const Uuid& agent, const Uuid& secure_session) override {
+    bool verify(const Uuid &agent, const Uuid &secure_session) override {
         const auto rows = get("SecureSessionID", secure_session.str());
         return !rows.empty() && rows.front()->user_id == agent.str();
     }
 
-private:
+  private:
     static bool valid_field(std::string_view field) {
-        return field == "SessionID" || field == "UserID" || field == "RegionID" ||
-               field == "SecureSessionID";
+        return field == "SessionID" || field == "UserID" || field == "RegionID" || field == "SecureSessionID";
     }
 
     std::string quote(std::string_view identifier) const {
@@ -111,7 +113,7 @@ private:
         return delimiter + std::string(identifier) + delimiter;
     }
 
-    Result run(const std::string& sql, Parameters values) {
+    Result run(const std::string &sql, Parameters values) {
         std::lock_guard lock(mutex_);
         return execute_(sql, values);
     }
@@ -122,11 +124,10 @@ private:
     std::mutex mutex_;
 };
 
-
-}
+} // namespace
 
 #ifdef OPENSIM_HAVE_MYSQL
-std::unique_ptr<PresenceStore> mysql_presence_store(const std::string& connection, const std::string& realm) {
+std::unique_ptr<PresenceStore> mysql_presence_store(const std::string &connection, const std::string &realm) {
     const auto execute = sql::mysql(connection);
     auto store = std::make_unique<SqlPresenceStore>(execute, realm, false);
     constexpr auto lock_name = "SHA2(CONCAT(DATABASE(), ':Presence'), 256)";
@@ -141,7 +142,8 @@ std::unique_ptr<PresenceStore> mysql_presence_store(const std::string& connectio
                 "SecureSessionID char(36) NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',"
                 "LastSeen timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,"
                 "UNIQUE KEY SessionID (SessionID), KEY UserID (UserID), KEY RegionID (RegionID))"
-                " ENGINE=InnoDB DEFAULT CHARSET=latin1", {});
+                " ENGINE=InnoDB DEFAULT CHARSET=latin1",
+                {});
         sql::record_migration(execute, "Presence", version, 4);
     }
     execute(std::string("SELECT RELEASE_LOCK(") + lock_name + ")", {});
@@ -150,7 +152,7 @@ std::unique_ptr<PresenceStore> mysql_presence_store(const std::string& connectio
 #endif
 
 #ifdef OPENSIM_HAVE_POSTGRESQL
-std::unique_ptr<PresenceStore> postgres_presence_store(const std::string& connection, const std::string& realm) {
+std::unique_ptr<PresenceStore> postgres_presence_store(const std::string &connection, const std::string &realm) {
     const auto execute = sql::postgres(connection);
     auto store = std::make_unique<SqlPresenceStore>(execute, realm, true);
     execute("BEGIN", {});
@@ -160,7 +162,8 @@ std::unique_ptr<PresenceStore> postgres_presence_store(const std::string& connec
         execute("CREATE TABLE IF NOT EXISTS Presence ("
                 "\"UserID\" varchar(255) NOT NULL, \"RegionID\" uuid NOT NULL,"
                 "\"SessionID\" uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',"
-                "\"SecureSessionID\" uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000')", {});
+                "\"SecureSessionID\" uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000')",
+                {});
     if (version < 2) {
         execute("CREATE UNIQUE INDEX IF NOT EXISTS SessionID ON Presence (\"SessionID\")", {});
         execute("CREATE INDEX IF NOT EXISTS UserID ON Presence (\"UserID\")", {});
@@ -176,4 +179,4 @@ std::unique_ptr<PresenceStore> postgres_presence_store(const std::string& connec
     return store;
 }
 #endif
-}
+} // namespace opensim::services

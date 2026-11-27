@@ -34,26 +34,28 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "opensim/framework/execution_stack.hpp"
 #include "opensim/framework/text.hpp"
 #include <stdexcept>
+
 namespace opensim::services {
 namespace {
-std::array<std::string, 4> uri_fields(const std::string& value) {
+std::array<std::string, 4> uri_fields(const std::string &value) {
     using namespace framework;
+
     struct Matcher {
         std::mutex mutex;
         DotnetRegexNodeText expression = std::make_shared<const std::u16string>(
             uR"(^uri:(?<region>[^&]+)&(?<x>\d+[.]?\d*)&(?<y>\d+[.]?\d*)&(?<z>\d+[.]?\d*)$)");
-        DotnetRegexInterpreter runner{
-            dotnet_regex_parse(
-                expression, 8, [] { return std::u16string{}; }, sufficient_execution_stack),
-            expression, sufficient_execution_stack};
+        DotnetRegexInterpreter runner{dotnet_regex_parse(
+                                          expression, 8, [] { return std::u16string{}; }, sufficient_execution_stack),
+                                      expression, sufficient_execution_stack};
     };
+
     static Matcher matcher;
     std::lock_guard lock(matcher.mutex);
     auto input = std::make_shared<const std::u16string>(utf16(value));
     const auto match = matcher.runner.scan(input, 0, static_cast<std::int32_t>(input->size()), 0);
     std::array<std::string, 4> fields{};
     if (match.success)
-        for (const auto& group : match.groups) {
+        for (const auto &group : match.groups) {
             const auto slot = group.name == u"region" ? 0
                               : group.name == u"x"    ? 1
                               : group.name == u"y"    ? 2
@@ -64,17 +66,18 @@ std::array<std::string, 4> uri_fields(const std::string& value) {
         }
     return fields;
 }
+
 float clamp(float value, std::int32_t size) {
     const float upper = static_cast<float>(size) - 0.5f;
     if (upper < 0.5f)
         throw std::invalid_argument("Invalid region clamp bounds");
     return std::clamp(value, 0.5f, upper);
 }
-}
-LoginDestination LoginDestinationSelector::find(const framework::Uuid& scope,
-                                                const std::optional<GridUserInfo>& info,
-                                                const std::optional<std::string>& start,
-                                                const std::optional<GridRegion>& home) {
+} // namespace
+
+LoginDestination LoginDestinationSelector::find(const framework::Uuid &scope, const std::optional<GridUserInfo> &info,
+                                                const std::optional<std::string> &start,
+                                                const std::optional<GridRegion> &home) {
     constexpr std::uint32_t via_home = 32, via_region = 4096;
     LoginDestination result;
     if (!grid_)
@@ -142,7 +145,8 @@ LoginDestination LoginDestinationSelector::find(const framework::Uuid& scope,
         result.where = "safe";
     return result;
 }
-std::optional<GridRegion> LoginDestinationSelector::alternative(const framework::Uuid& scope) {
+
+std::optional<GridRegion> LoginDestinationSelector::alternative(const framework::Uuid &scope) {
     const auto fallback = grid_->fallback(scope, 256000, 256000);
     if (!fallback.empty())
         return fallback.front();
@@ -153,4 +157,4 @@ std::optional<GridRegion> LoginDestinationSelector::alternative(const framework:
     }
     return std::nullopt;
 }
-}
+} // namespace opensim::services

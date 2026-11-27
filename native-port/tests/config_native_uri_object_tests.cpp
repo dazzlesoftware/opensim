@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <vector>
 using namespace opensim::framework;
+
 ConfigUriText decode(std::string s) {
     if (s == "~")
         return {};
@@ -18,6 +19,7 @@ ConfigUriText decode(std::string s) {
         v += char16_t(std::stoul(s.substr(i, 4), nullptr, 16));
     return std::make_shared<const std::u16string>(v);
 }
+
 std::string hex(std::u16string_view value) {
     std::string s;
     for (auto c : value)
@@ -25,10 +27,11 @@ std::string hex(std::u16string_view value) {
             s += "0123456789abcdef"[(c >> b) & 15];
     return s.empty() ? "-" : s;
 }
-std::string error(const ConfigUriComponentsError& e) {
-    auto range = dynamic_cast<const ConfigFileUriRangeError*>(&e);
-    return "E:" + e.source_type + ":" + std::to_string(static_cast<std::int32_t>(e.hresult)) + ":" +
-           hex(e.message) + ":" + (e.parameter ? hex(*e.parameter) : "~") + ":" +
+
+std::string error(const ConfigUriComponentsError &e) {
+    auto range = dynamic_cast<const ConfigFileUriRangeError *>(&e);
+    return "E:" + e.source_type + ":" + std::to_string(static_cast<std::int32_t>(e.hresult)) + ":" + hex(e.message) +
+           ":" + (e.parameter ? hex(*e.parameter) : "~") + ":" +
            (range && range->actual_value ? std::to_string(*range->actual_value) : "~");
 }
 
@@ -57,12 +60,12 @@ int copied_backend_unit() {
                 auto prefix = std::u16string(scheme) + u"://host";
                 auto base = copied.create(std::make_shared<const std::u16string>(prefix + u"/a/b"),
                                           ConfigUriObjectKind::Absolute);
-                auto relative = copied.create(std::make_shared<const std::u16string>(u"../c"),
-                                              ConfigUriObjectKind::Relative);
+                auto relative =
+                    copied.create(std::make_shared<const std::u16string>(u"../c"), ConfigUriObjectKind::Relative);
                 if (*copied.combine_uri(base, relative)->absolute_uri() != prefix + u"/c")
                     throw std::runtime_error("Detached URI-object resolution differs");
-                if (*copied.combine_string(base, std::make_shared<const std::u16string>(u"../d"))
-                         ->absolute_uri() != prefix + u"/d")
+                if (*copied.combine_string(base, std::make_shared<const std::u16string>(u"../d"))->absolute_uri() !=
+                    prefix + u"/d")
                     throw std::runtime_error("Detached string resolution differs");
                 if (std::u16string_view(scheme) == u"http") {
                     auto view = base->http_components();
@@ -79,20 +82,21 @@ int copied_backend_unit() {
                     if (!clone->http_components() || *clone->absolute_uri() != prefix + u"/a/b")
                         throw std::runtime_error("Resolved HTTP clone must retain its transport components");
                 }
-                if (*copied.with_fragment(base, std::make_shared<const std::u16string>(u"f"))
-                         ->absolute_uri() != prefix + u"/a/b#f")
+                if (*copied.with_fragment(base, std::make_shared<const std::u16string>(u"f"))->absolute_uri() !=
+                    prefix + u"/a/b#f")
                     throw std::runtime_error("Detached fragment builder differs");
             }
         }
         if (!dependencies.expired())
             throw std::runtime_error("URI callbacks retained an ownership cycle");
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << "Copied URI backend lifetime: " << e.what() << "\n";
         return 10;
     }
 }
-int main(int argc, char**) {
+
+int main(int argc, char **) {
     auto backend = native_config_uri_components_backend();
     bool windows =
 #ifdef _WIN32
@@ -105,8 +109,8 @@ int main(int argc, char**) {
     if (argc == 1) {
         if (auto code = copied_backend_unit())
             return code;
-        auto base = create(decode("0061002b0062003a002f002f0068006f00730074002f0061002f0062"),
-                           ConfigUriObjectKind::Absolute);
+        auto base =
+            create(decode("0061002b0062003a002f002f0068006f00730074002f0061002f0062"), ConfigUriObjectKind::Absolute);
         auto rel = create(std::make_shared<const std::u16string>(u"../c"), ConfigUriObjectKind::Relative);
         auto resolved = operations->combine_uri(base, rel);
         if (*resolved->absolute_uri() != u"a+b://host/c")
@@ -146,7 +150,7 @@ int main(int argc, char**) {
                                     default:
                                         u->fragment();
                                     }
-                                } catch (const ConfigUriComponentsError&) {
+                                } catch (const ConfigUriComponentsError &) {
                                 }
                 result = operations->combine_uri(base, relative);
             } else
@@ -179,13 +183,13 @@ int main(int argc, char**) {
                         value = result->scheme();
                     }
                     std::cout << hex(*value);
-                } catch (const ConfigUriComponentsError& e) {
+                } catch (const ConfigUriComponentsError &e) {
                     std::cout << error(e);
                 }
             }
-        } catch (const ConfigUriComponentsError& e) {
+        } catch (const ConfigUriComponentsError &e) {
             std::cout << error(e);
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
             std::cout << "NATIVE:" << e.what();
         }
         std::cout << "\n";

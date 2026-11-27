@@ -2,6 +2,7 @@
 #include <iostream>
 #include <sstream>
 using namespace opensim::framework;
+
 int main() {
     auto require = [](bool value) {
         if (!value)
@@ -13,7 +14,7 @@ int main() {
     bool threw = false;
     try {
         config_uri_unescape(u"%zz", 0xffff, 0xffff, 0xffff, 26, true, false);
-    } catch (const ConfigUriUnescapeError&) {
+    } catch (const ConfigUriUnescapeError &) {
         threw = true;
     }
     require(threw);
@@ -28,14 +29,13 @@ int main() {
         for (size_t i = 0; i < hex.size(); i += 4)
             s += static_cast<char16_t>(std::stoul(hex.substr(i, 4), nullptr, 16));
         try {
-            auto r = config_uri_unescape(s, sets[set][0], sets[set][1], sets[set][2], mode, syntax != 0,
-                                         query != 0);
+            auto r = config_uri_unescape(s, sets[set][0], sets[set][1], sets[set][2], mode, syntax != 0, query != 0);
             std::string out;
             for (auto c : r)
                 for (int b = 12; b >= 0; b -= 4)
                     out += "0123456789abcdef"[(c >> b) & 15];
             std::cout << "S" << out << '\n';
-        } catch (const ConfigUriUnescapeError& e) {
+        } catch (const ConfigUriUnescapeError &e) {
             std::cout << "E" << e.what() << '\n';
         }
     }

@@ -10,26 +10,30 @@ using namespace opensim;
 using namespace server;
 using namespace network;
 using namespace framework;
+
 std::string hex(std::string_view s) {
     std::string r;
-    const char* h = "0123456789abcdef";
+    const char *h = "0123456789abcdef";
     for (unsigned char c : s) {
         r += h[c >> 4];
         r += h[c & 15];
     }
     return r;
 }
+
 Uuid uid(int i) {
     std::ostringstream s;
     s << "00000000-0000-0000-0000-" << std::setw(12) << std::setfill('0') << std::hex << i;
     return Uuid(s.str());
 }
+
 Value uuid_value(int i) {
     Value v;
     v.kind = Value::Kind::Uuid;
     v.text = uid(i).str();
     return v;
 }
+
 std::shared_ptr<BoundJsonRpcMembers> model(int type, bool fill) {
     switch (type) {
     case 0: {
@@ -145,20 +149,21 @@ std::shared_ptr<BoundJsonRpcMembers> model(int type, bool fill) {
         return {};
     }
 }
+
 std::vector<JsonRpcFieldSchema> schema() {
     std::vector<JsonRpcFieldSchema> result;
     for (int i = 0; i < 8; ++i)
-        for (auto& field : model(i, false)->schema())
-            if (std::none_of(result.begin(), result.end(),
-                             [&](const auto& x) { return x.name == field.name; }))
+        for (auto &field : model(i, false)->schema())
+            if (std::none_of(result.begin(), result.end(), [&](const auto &x) { return x.name == field.name; }))
                 result.push_back(field);
     return result;
 }
+
 Value member_result(int mode) {
     Value map;
     map.kind = Value::Kind::Map;
     int index = 0;
-    for (auto& field : schema()) {
+    for (auto &field : schema()) {
         Value value;
         switch (field.kind) {
         case JsonRpcFieldKind::Uuid:
@@ -186,6 +191,7 @@ Value member_result(int mode) {
     }
     return map;
 }
+
 std::shared_ptr<Value> initial(int kind) {
     switch (kind) {
     case 0:
@@ -211,17 +217,20 @@ std::shared_ptr<Value> initial(int kind) {
         return std::make_shared<Value>(uuid_value(0));
     }
 }
-std::shared_ptr<Value> boxed_ptr(const Value& value) {
+
+std::shared_ptr<Value> boxed_ptr(const Value &value) {
     if (value.kind == Value::Kind::NullReference)
         return {};
     if (value.reference)
         return value.reference;
     return std::make_shared<Value>(value.view());
 }
-Value boxed_value(const std::shared_ptr<Value>& value) {
+
+Value boxed_value(const std::shared_ptr<Value> &value) {
     return value ? Value::alias(value) : Value::null_reference();
 }
-std::shared_ptr<Value> reply(int mode, const Value& request) {
+
+std::shared_ptr<Value> reply(int mode, const Value &request) {
     if (mode == 9)
         throw std::runtime_error("post failed");
     if (mode == 10)
@@ -269,7 +278,8 @@ std::shared_ptr<Value> reply(int mode, const Value& request) {
         outer->set("Success", Value(false));
     return outer;
 }
-std::string snapshot(const std::shared_ptr<Value>& value) {
+
+std::string snapshot(const std::shared_ptr<Value> &value) {
     if (!value)
         return "N";
     try {
@@ -278,7 +288,8 @@ std::string snapshot(const std::shared_ptr<Value>& value) {
         return "SEREX";
     }
 }
-std::string snapshot(const std::shared_ptr<JsonRpcMembers>& object) {
+
+std::string snapshot(const std::shared_ptr<JsonRpcMembers> &object) {
     if (!object)
         return "N";
     try {
@@ -287,15 +298,15 @@ std::string snapshot(const std::shared_ptr<JsonRpcMembers>& object) {
         return "SEREX";
     }
 }
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     std::string row;
     while (std::getline(std::cin, row)) {
         std::istringstream input(row);
         std::string kind;
         int type, fill, mode, args;
         input >> kind >> type >> fill >> mode >> args;
-        JsonRpcRequestManager::Text method = u"profile.query", uri = u"http://service.test/rpc",
-                                    id = u"id <&>";
+        JsonRpcRequestManager::Text method = u"profile.query", uri = u"http://service.test/rpc", id = u"id <&>";
         if (args == 1)
             id = u"";
         if (args == 2)
@@ -325,10 +336,9 @@ int main(int argc, char** argv) {
         auto original_object = object;
         JsonRpcRequestManager::Post post;
         if (argc <= 1)
-            post = [&](const auto& url, const Value& incoming, int timeout, bool rpc) {
+            post = [&](const auto &url, const Value &incoming, int timeout, bool rpc) {
                 ++calls;
-                postinfo =
-                    std::to_string(timeout) + ":" + (rpc ? "1" : "0") + ":" + (url ? hex(utf8(*url)) : "N");
+                postinfo = std::to_string(timeout) + ":" + (rpc ? "1" : "0") + ":" + (url ? hex(utf8(*url)) : "N");
                 Value copy = incoming;
                 if (kind == "O" && (!id || id->empty())) {
                     auto generated = osd_string(incoming.get("id"));
@@ -343,17 +353,17 @@ int main(int argc, char** argv) {
             };
         else
             uri = utf16_replacing(argv[1]);
-        JsonRpcRequestManager manager(post, {}, [&](const JsonRpcRequestLog& event) {
+        JsonRpcRequestManager manager(post, {}, [&](const JsonRpcRequestLog &event) {
             log += utf8(event.message) + (event.exception ? " EX:" + utf8(*event.exception) : "") + "\n";
         });
         try {
-            status = (kind == "O" ? manager.request(data, method, uri, id)
-                                  : manager.request_object(object, method, uri, id))
-                         ? "1"
-                         : "0";
-        } catch (const JsonRpcRequestArgumentError& e) {
+            status =
+                (kind == "O" ? manager.request(data, method, uri, id) : manager.request_object(object, method, uri, id))
+                    ? "1"
+                    : "0";
+        } catch (const JsonRpcRequestArgumentError &e) {
             status = "ARG:" + e.parameter;
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
             status = "EX:" + hex(e.what());
         }
         auto state = kind == "O" ? snapshot(data) : snapshot(object);
@@ -362,7 +372,7 @@ int main(int argc, char** argv) {
             continue;
         }
         bool same = kind == "O" ? data == original_data : object == original_object;
-        std::cout << status << "|" << state << "|" << (same ? "S" : "D") << "|" << calls << ":" << postinfo
-                  << "|" << captured << "|" << wire << "|" << hex(log) << "\n";
+        std::cout << status << "|" << state << "|" << (same ? "S" : "D") << "|" << calls << ":" << postinfo << "|"
+                  << captured << "|" << wire << "|" << hex(log) << "\n";
     }
 }

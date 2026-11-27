@@ -1,0 +1,38 @@
+[
+  {
+    "name": "string_right",
+    "kind": "Source",
+    "coverage_group": "deferred_right_and_flattened",
+    "operator": "+",
+    "lhs_type": "string",
+    "rhs_type": "string",
+    "source": "string value=\"a\";integer calls;list result;string mutate(){calls++;value=\"b\";return \"c\";}default{state_entry(){result=[mutate()+value];}}"
+  },
+  {
+    "name": "string_both",
+    "kind": "Source",
+    "coverage_group": "deferred_right_and_flattened",
+    "operator": "+",
+    "lhs_type": "string",
+    "rhs_type": "string",
+    "source": "string value=\"a\";integer calls;list result;string mutate(){calls++;value=\"b\";return \"c\";}default{state_entry(){result=[value+mutate()+value];}}"
+  },
+  {
+    "name": "integer_right",
+    "kind": "Source",
+    "coverage_group": "deferred_right_and_flattened",
+    "operator": "+",
+    "lhs_type": "integer",
+    "rhs_type": "integer",
+    "source": "integer value=1;integer calls;list result;string mutate(){calls++;value=2;return \"c\";}default{state_entry(){result=[mutate()+value];}}"
+  },
+  {
+    "name": "integer_both",
+    "kind": "Source",
+    "coverage_group": "deferred_right_and_flattened",
+    "operator": "+",
+    "lhs_type": "integer",
+    "rhs_type": "integer",
+    "source": "integer value=1;integer calls;list result;string mutate(){calls++;value=2;return \"c\";}default{state_entry(){result=[value+mutate()+value];}}"
+  }
+]

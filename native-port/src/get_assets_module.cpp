@@ -2,6 +2,7 @@
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/services/get_assets_module.hpp"
 #include "opensim/server/poll_http_service.hpp"
+
 namespace opensim::services {
 namespace {
 template <class T> T &required(const std::shared_ptr<T> &value) {
@@ -9,26 +10,31 @@ template <class T> T &required(const std::shared_ptr<T> &value) {
         throw std::invalid_argument("Null asset capability dependency");
     return *value;
 }
+
 std::shared_ptr<AssetsModuleState> shared_state() {
     static auto state = std::make_shared<AssetsModuleState>();
     return state;
 }
-}
+} // namespace
+
 std::shared_ptr<framework::ObjectJobQueue>
-AssetsModuleBackend::make_worker(framework::ObjectJobEngine::Callback callback, const std::string &name,
-                                 int hold, int concurrency) {
+AssetsModuleBackend::make_worker(framework::ObjectJobEngine::Callback callback, const std::string &name, int hold,
+                                 int concurrency) {
     auto self = shared_from_this();
     return std::make_shared<framework::ObjectJobEngine>(
         std::move(callback), name, hold, concurrency,
         [self](const auto &name, const auto &error) { self->job_error(name, error); });
 }
+
 server::PollResponsePtr AssetsModuleBackend::make_response(const network::HttpRequest &request) {
     return server::PollHttpService::response(request);
 }
+
 std::shared_ptr<server::HttpResponseState>
 AssetsModuleBackend::response_state(const server::PollResponsePtr &response) {
     return server::PollHttpService::response_state(response);
 }
+
 std::shared_ptr<AssetPollHandler> AssetPollHandler::create(std::string path, framework::Uuid agent,
                                                            std::shared_ptr<AssetsModuleScene> scene,
                                                            std::optional<std::string> foreign,
@@ -47,21 +53,22 @@ std::shared_ptr<AssetPollHandler> AssetPollHandler::create(std::string path, fra
     value->drop = [weak](auto req, auto id) { required(weak.lock()).dropped(req, id); };
     value->get_events = [weak](auto req, auto id) { return required(weak.lock()).events(req, id); };
     value->no_events = timeout;
-    value->request = [weak](auto req, const auto &request) {
-        return required(weak.lock()).receive(req, request);
-    };
+    value->request = [weak](auto req, const auto &request) { return required(weak.lock()).receive(req, request); };
     return value;
 }
+
 bool AssetPollHandler::has(framework::Uuid request, framework::Uuid) {
     std::lock_guard lock(responses_mutex_);
     return responses_.contains(request.str());
 }
+
 void AssetPollHandler::dropped(framework::Uuid request, framework::Uuid) {
     std::lock_guard lock(responses_mutex_);
     responses_.erase(request.str());
     std::lock_guard drops(dropped_mutex_);
     dropped_.insert(request.str());
 }
+
 server::PollTablePtr AssetPollHandler::events(framework::Uuid request, framework::Uuid) {
     std::lock_guard lock(responses_mutex_);
     auto key = request.str();
@@ -77,6 +84,7 @@ server::PollTablePtr AssetPollHandler::events(framework::Uuid request, framework
     }
     return std::make_shared<server::PollTable>();
 }
+
 server::PollTablePtr AssetPollHandler::timeout(framework::Uuid, framework::Uuid) {
     auto result = std::make_shared<server::PollTable>();
     result->set("int_response_code", int32_t(500));
@@ -85,8 +93,8 @@ server::PollTablePtr AssetPollHandler::timeout(framework::Uuid, framework::Uuid)
     result->set("keepalive", false);
     return result;
 }
-server::PollResponsePtr AssetPollHandler::receive(framework::Uuid request,
-                                                  const network::HttpRequest &native) {
+
+server::PollResponsePtr AssetPollHandler::receive(framework::Uuid request, const network::HttpRequest &native) {
     auto job = std::make_shared<AssetPollRequest>();
     job->poll = shared_from_this();
     job->request_id = request;
@@ -94,6 +102,7 @@ server::PollResponsePtr AssetPollHandler::receive(framework::Uuid request,
     required(state_->worker.load()).enqueue(job);
     return {};
 }
+
 void AssetPollHandler::process(std::shared_ptr<AssetPollRequest> input) {
     [[maybe_unused]] auto lifetime = shared_from_this();
     auto request = required(input).request_id;
@@ -117,11 +126,12 @@ void AssetPollHandler::process(std::shared_ptr<AssetPollRequest> input) {
         responses_[request.str()] = response;
     }
 }
-GetAssetsModule::GetAssetsModule(std::shared_ptr<AssetsModuleBackend> backend,
-                                 std::shared_ptr<AssetsModuleState> state)
+
+GetAssetsModule::GetAssetsModule(std::shared_ptr<AssetsModuleBackend> backend, std::shared_ptr<AssetsModuleState> state)
     : backend_(std::move(backend)), state_(state ? std::move(state) : shared_state()) {
     required(backend_);
 }
+
 void GetAssetsModule::initialise(const server::IniConfig *source) {
     if (!source)
         throw std::invalid_argument("Null asset capability configuration");
@@ -135,11 +145,13 @@ void GetAssetsModule::initialise(const server::IniConfig *source) {
         ++i;
     }
 }
+
 void GetAssetsModule::add_region(std::shared_ptr<AssetsModuleScene> scene) {
     if (!enabled_)
         return;
     scene_ = std::move(scene);
 }
+
 void GetAssetsModule::remove_region(std::shared_ptr<AssetsModuleScene> scene) {
     if (!enabled_)
         return;
@@ -147,6 +159,7 @@ void GetAssetsModule::remove_region(std::shared_ptr<AssetsModuleScene> scene) {
     state_->scenes--;
     scene_.store(nullptr);
 }
+
 void GetAssetsModule::region_loaded(std::shared_ptr<AssetsModuleScene> scene) {
     [[maybe_unused]] auto lifetime = weak_from_this().lock();
     if (!enabled_)
@@ -156,8 +169,8 @@ void GetAssetsModule::region_loaded(std::shared_ptr<AssetsModuleScene> scene) {
         auto service = required(scene).asset_service();
         state_->service = service;
         auto backend = backend_;
-        state_->handler = std::make_shared<server::GetAssetsHandler>(
-            service, [backend](const auto &text) { backend->warn(text); });
+        state_->handler =
+            std::make_shared<server::GetAssetsHandler>(service, [backend](const auto &text) { backend->warn(text); });
     }
     if (!state_->service.load()) {
         enabled_ = false;
@@ -166,11 +179,10 @@ void GetAssetsModule::region_loaded(std::shared_ptr<AssetsModuleScene> scene) {
     if (!users_.load())
         users_ = required(scene).user_management();
     auto weak = weak_from_this();
-    required(scene).events().on_register_caps.add(
-        {{this, "GetAssets.RegisterCaps"}, [weak](auto agent, auto caps) {
-             if (auto self = weak.lock())
-                 self->register_caps(agent, std::move(caps));
-         }});
+    required(scene).events().on_register_caps.add({{this, "GetAssets.RegisterCaps"}, [weak](auto agent, auto caps) {
+                                                       if (auto self = weak.lock())
+                                                           self->register_caps(agent, std::move(caps));
+                                                   }});
     state_->scenes++;
     if (!state_->worker.load()) {
         auto state = state_;
@@ -178,6 +190,7 @@ void GetAssetsModule::region_loaded(std::shared_ptr<AssetsModuleScene> scene) {
                                                "GetCapsAssetWorker", 1000, 3);
     }
 }
+
 void GetAssetsModule::close() {
     if (int32_t(state_->scenes) <= 0) {
         auto worker = state_->worker.load();
@@ -187,6 +200,7 @@ void GetAssetsModule::close() {
         }
     }
 }
+
 void GetAssetsModule::do_requests(std::any job, const std::shared_ptr<AssetsModuleState> &state) {
     if (int32_t(required(state).scenes) <= 0)
         return;
@@ -194,6 +208,7 @@ void GetAssetsModule::do_requests(std::any job, const std::shared_ptr<AssetsModu
         request && *request && !(*request)->request_id.is_zero())
         required((*request)->poll).process(*request);
 }
+
 void GetAssetsModule::register_caps(framework::Uuid agent, std::shared_ptr<Caps> caps) {
     [[maybe_unused]] auto lifetime = shared_from_this();
     std::optional<std::string> foreign;
@@ -219,4 +234,4 @@ void GetAssetsModule::register_caps(framework::Uuid agent, std::shared_ptr<Caps>
         ++i;
     }
 }
-}
+} // namespace opensim::services

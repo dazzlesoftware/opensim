@@ -1,0 +1,1874 @@
+[
+  {
+    "name": "binary_0",
+    "kind": "Source",
+    "source": "integer left=7;string right=\"a\";list result;default{state_entry(){result=[left+right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "+",
+    "lhs_type": "integer",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_1",
+    "kind": "Source",
+    "source": "integer left=7;key right=(key)\"bad\";list result;default{state_entry(){result=[left+right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "+",
+    "lhs_type": "integer",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_2",
+    "kind": "Source",
+    "source": "float left=1.25;string right=\"a\";list result;default{state_entry(){result=[left+right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "+",
+    "lhs_type": "float",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_3",
+    "kind": "Source",
+    "source": "float left=1.25;key right=(key)\"bad\";list result;default{state_entry(){result=[left+right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "+",
+    "lhs_type": "float",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_4",
+    "kind": "Source",
+    "source": "string left=\"a\";integer right=7;list result;default{state_entry(){result=[left+right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "+",
+    "lhs_type": "string",
+    "rhs_type": "integer"
+  },
+  {
+    "name": "binary_5",
+    "kind": "Source",
+    "source": "string left=\"a\";float right=1.25;list result;default{state_entry(){result=[left+right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "+",
+    "lhs_type": "string",
+    "rhs_type": "float"
+  },
+  {
+    "name": "binary_6",
+    "kind": "Source",
+    "source": "string left=\"a\";string right=\"a\";list result;default{state_entry(){result=[left+right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "+",
+    "lhs_type": "string",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_7",
+    "kind": "Source",
+    "source": "string left=\"a\";key right=(key)\"bad\";list result;default{state_entry(){result=[left+right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "+",
+    "lhs_type": "string",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_8",
+    "kind": "Source",
+    "source": "string left=\"a\";vector right=<1,2,3>;list result;default{state_entry(){result=[left+right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "+",
+    "lhs_type": "string",
+    "rhs_type": "vector"
+  },
+  {
+    "name": "binary_9",
+    "kind": "Source",
+    "source": "string left=\"a\";rotation right=<0,0,0,1>;list result;default{state_entry(){result=[left+right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "+",
+    "lhs_type": "string",
+    "rhs_type": "rotation"
+  },
+  {
+    "name": "binary_10",
+    "kind": "Source",
+    "source": "string left=\"a\";list right=[1,2];list result;default{state_entry(){result=[left+right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "+",
+    "lhs_type": "string",
+    "rhs_type": "list"
+  },
+  {
+    "name": "binary_11",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";integer right=7;list result;default{state_entry(){result=[left+right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "+",
+    "lhs_type": "key",
+    "rhs_type": "integer"
+  },
+  {
+    "name": "binary_12",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";float right=1.25;list result;default{state_entry(){result=[left+right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "+",
+    "lhs_type": "key",
+    "rhs_type": "float"
+  },
+  {
+    "name": "binary_13",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";string right=\"a\";list result;default{state_entry(){result=[left+right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "+",
+    "lhs_type": "key",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_14",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";key right=(key)\"bad\";list result;default{state_entry(){result=[left+right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "+",
+    "lhs_type": "key",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_15",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";vector right=<1,2,3>;list result;default{state_entry(){result=[left+right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "+",
+    "lhs_type": "key",
+    "rhs_type": "vector"
+  },
+  {
+    "name": "binary_16",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";rotation right=<0,0,0,1>;list result;default{state_entry(){result=[left+right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "+",
+    "lhs_type": "key",
+    "rhs_type": "rotation"
+  },
+  {
+    "name": "binary_17",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";list right=[1,2];list result;default{state_entry(){result=[left+right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "+",
+    "lhs_type": "key",
+    "rhs_type": "list"
+  },
+  {
+    "name": "binary_18",
+    "kind": "Source",
+    "source": "vector left=<1,2,3>;string right=\"a\";list result;default{state_entry(){result=[left+right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "+",
+    "lhs_type": "vector",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_19",
+    "kind": "Source",
+    "source": "vector left=<1,2,3>;key right=(key)\"bad\";list result;default{state_entry(){result=[left+right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "+",
+    "lhs_type": "vector",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_20",
+    "kind": "Source",
+    "source": "rotation left=<0,0,0,1>;string right=\"a\";list result;default{state_entry(){result=[left+right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "+",
+    "lhs_type": "rotation",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_21",
+    "kind": "Source",
+    "source": "rotation left=<0,0,0,1>;key right=(key)\"bad\";list result;default{state_entry(){result=[left+right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "+",
+    "lhs_type": "rotation",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_22",
+    "kind": "Source",
+    "source": "list left=[1,2];string right=\"a\";list result;default{state_entry(){result=[left+right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "+",
+    "lhs_type": "list",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_23",
+    "kind": "Source",
+    "source": "list left=[1,2];key right=(key)\"bad\";list result;default{state_entry(){result=[left+right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "+",
+    "lhs_type": "list",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_24",
+    "kind": "Source",
+    "source": "integer left=7;string right=\"a\";list result;default{state_entry(){result=[left==right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "==",
+    "lhs_type": "integer",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_25",
+    "kind": "Source",
+    "source": "integer left=7;key right=(key)\"bad\";list result;default{state_entry(){result=[left==right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "==",
+    "lhs_type": "integer",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_26",
+    "kind": "Source",
+    "source": "float left=1.25;string right=\"a\";list result;default{state_entry(){result=[left==right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "==",
+    "lhs_type": "float",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_27",
+    "kind": "Source",
+    "source": "float left=1.25;key right=(key)\"bad\";list result;default{state_entry(){result=[left==right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "==",
+    "lhs_type": "float",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_28",
+    "kind": "Source",
+    "source": "string left=\"a\";integer right=7;list result;default{state_entry(){result=[left==right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "==",
+    "lhs_type": "string",
+    "rhs_type": "integer"
+  },
+  {
+    "name": "binary_29",
+    "kind": "Source",
+    "source": "string left=\"a\";float right=1.25;list result;default{state_entry(){result=[left==right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "==",
+    "lhs_type": "string",
+    "rhs_type": "float"
+  },
+  {
+    "name": "binary_30",
+    "kind": "Source",
+    "source": "string left=\"a\";string right=\"a\";list result;default{state_entry(){result=[left==right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "==",
+    "lhs_type": "string",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_31",
+    "kind": "Source",
+    "source": "string left=\"a\";key right=(key)\"bad\";list result;default{state_entry(){result=[left==right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "==",
+    "lhs_type": "string",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_32",
+    "kind": "Source",
+    "source": "string left=\"a\";vector right=<1,2,3>;list result;default{state_entry(){result=[left==right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "==",
+    "lhs_type": "string",
+    "rhs_type": "vector"
+  },
+  {
+    "name": "binary_33",
+    "kind": "Source",
+    "source": "string left=\"a\";rotation right=<0,0,0,1>;list result;default{state_entry(){result=[left==right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "==",
+    "lhs_type": "string",
+    "rhs_type": "rotation"
+  },
+  {
+    "name": "binary_34",
+    "kind": "Source",
+    "source": "string left=\"a\";list right=[1,2];list result;default{state_entry(){result=[left==right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "==",
+    "lhs_type": "string",
+    "rhs_type": "list"
+  },
+  {
+    "name": "binary_35",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";integer right=7;list result;default{state_entry(){result=[left==right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "==",
+    "lhs_type": "key",
+    "rhs_type": "integer"
+  },
+  {
+    "name": "binary_36",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";float right=1.25;list result;default{state_entry(){result=[left==right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "==",
+    "lhs_type": "key",
+    "rhs_type": "float"
+  },
+  {
+    "name": "binary_37",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";string right=\"a\";list result;default{state_entry(){result=[left==right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "==",
+    "lhs_type": "key",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_38",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";key right=(key)\"bad\";list result;default{state_entry(){result=[left==right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "==",
+    "lhs_type": "key",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_39",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";vector right=<1,2,3>;list result;default{state_entry(){result=[left==right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "==",
+    "lhs_type": "key",
+    "rhs_type": "vector"
+  },
+  {
+    "name": "binary_40",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";rotation right=<0,0,0,1>;list result;default{state_entry(){result=[left==right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "==",
+    "lhs_type": "key",
+    "rhs_type": "rotation"
+  },
+  {
+    "name": "binary_41",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";list right=[1,2];list result;default{state_entry(){result=[left==right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "==",
+    "lhs_type": "key",
+    "rhs_type": "list"
+  },
+  {
+    "name": "binary_42",
+    "kind": "Source",
+    "source": "vector left=<1,2,3>;string right=\"a\";list result;default{state_entry(){result=[left==right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "==",
+    "lhs_type": "vector",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_43",
+    "kind": "Source",
+    "source": "vector left=<1,2,3>;key right=(key)\"bad\";list result;default{state_entry(){result=[left==right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "==",
+    "lhs_type": "vector",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_44",
+    "kind": "Source",
+    "source": "rotation left=<0,0,0,1>;string right=\"a\";list result;default{state_entry(){result=[left==right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "==",
+    "lhs_type": "rotation",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_45",
+    "kind": "Source",
+    "source": "rotation left=<0,0,0,1>;key right=(key)\"bad\";list result;default{state_entry(){result=[left==right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "==",
+    "lhs_type": "rotation",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_46",
+    "kind": "Source",
+    "source": "list left=[1,2];string right=\"a\";list result;default{state_entry(){result=[left==right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "==",
+    "lhs_type": "list",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_47",
+    "kind": "Source",
+    "source": "list left=[1,2];key right=(key)\"bad\";list result;default{state_entry(){result=[left==right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "==",
+    "lhs_type": "list",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_48",
+    "kind": "Source",
+    "source": "integer left=7;string right=\"a\";list result;default{state_entry(){result=[left!=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "!=",
+    "lhs_type": "integer",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_49",
+    "kind": "Source",
+    "source": "integer left=7;key right=(key)\"bad\";list result;default{state_entry(){result=[left!=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "!=",
+    "lhs_type": "integer",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_50",
+    "kind": "Source",
+    "source": "float left=1.25;string right=\"a\";list result;default{state_entry(){result=[left!=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "!=",
+    "lhs_type": "float",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_51",
+    "kind": "Source",
+    "source": "float left=1.25;key right=(key)\"bad\";list result;default{state_entry(){result=[left!=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "!=",
+    "lhs_type": "float",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_52",
+    "kind": "Source",
+    "source": "string left=\"a\";integer right=7;list result;default{state_entry(){result=[left!=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "!=",
+    "lhs_type": "string",
+    "rhs_type": "integer"
+  },
+  {
+    "name": "binary_53",
+    "kind": "Source",
+    "source": "string left=\"a\";float right=1.25;list result;default{state_entry(){result=[left!=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "!=",
+    "lhs_type": "string",
+    "rhs_type": "float"
+  },
+  {
+    "name": "binary_54",
+    "kind": "Source",
+    "source": "string left=\"a\";string right=\"a\";list result;default{state_entry(){result=[left!=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "!=",
+    "lhs_type": "string",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_55",
+    "kind": "Source",
+    "source": "string left=\"a\";key right=(key)\"bad\";list result;default{state_entry(){result=[left!=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "!=",
+    "lhs_type": "string",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_56",
+    "kind": "Source",
+    "source": "string left=\"a\";vector right=<1,2,3>;list result;default{state_entry(){result=[left!=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "!=",
+    "lhs_type": "string",
+    "rhs_type": "vector"
+  },
+  {
+    "name": "binary_57",
+    "kind": "Source",
+    "source": "string left=\"a\";rotation right=<0,0,0,1>;list result;default{state_entry(){result=[left!=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "!=",
+    "lhs_type": "string",
+    "rhs_type": "rotation"
+  },
+  {
+    "name": "binary_58",
+    "kind": "Source",
+    "source": "string left=\"a\";list right=[1,2];list result;default{state_entry(){result=[left!=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "!=",
+    "lhs_type": "string",
+    "rhs_type": "list"
+  },
+  {
+    "name": "binary_59",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";integer right=7;list result;default{state_entry(){result=[left!=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "!=",
+    "lhs_type": "key",
+    "rhs_type": "integer"
+  },
+  {
+    "name": "binary_60",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";float right=1.25;list result;default{state_entry(){result=[left!=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "!=",
+    "lhs_type": "key",
+    "rhs_type": "float"
+  },
+  {
+    "name": "binary_61",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";string right=\"a\";list result;default{state_entry(){result=[left!=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "!=",
+    "lhs_type": "key",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_62",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";key right=(key)\"bad\";list result;default{state_entry(){result=[left!=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "!=",
+    "lhs_type": "key",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_63",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";vector right=<1,2,3>;list result;default{state_entry(){result=[left!=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "!=",
+    "lhs_type": "key",
+    "rhs_type": "vector"
+  },
+  {
+    "name": "binary_64",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";rotation right=<0,0,0,1>;list result;default{state_entry(){result=[left!=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "!=",
+    "lhs_type": "key",
+    "rhs_type": "rotation"
+  },
+  {
+    "name": "binary_65",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";list right=[1,2];list result;default{state_entry(){result=[left!=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "!=",
+    "lhs_type": "key",
+    "rhs_type": "list"
+  },
+  {
+    "name": "binary_66",
+    "kind": "Source",
+    "source": "vector left=<1,2,3>;string right=\"a\";list result;default{state_entry(){result=[left!=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "!=",
+    "lhs_type": "vector",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_67",
+    "kind": "Source",
+    "source": "vector left=<1,2,3>;key right=(key)\"bad\";list result;default{state_entry(){result=[left!=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "!=",
+    "lhs_type": "vector",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_68",
+    "kind": "Source",
+    "source": "rotation left=<0,0,0,1>;string right=\"a\";list result;default{state_entry(){result=[left!=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "!=",
+    "lhs_type": "rotation",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_69",
+    "kind": "Source",
+    "source": "rotation left=<0,0,0,1>;key right=(key)\"bad\";list result;default{state_entry(){result=[left!=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "!=",
+    "lhs_type": "rotation",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_70",
+    "kind": "Source",
+    "source": "list left=[1,2];string right=\"a\";list result;default{state_entry(){result=[left!=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "!=",
+    "lhs_type": "list",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_71",
+    "kind": "Source",
+    "source": "list left=[1,2];key right=(key)\"bad\";list result;default{state_entry(){result=[left!=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "!=",
+    "lhs_type": "list",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_72",
+    "kind": "Source",
+    "source": "integer left=7;string right=\"a\";list result;default{state_entry(){result=[left<right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<",
+    "lhs_type": "integer",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_73",
+    "kind": "Source",
+    "source": "integer left=7;key right=(key)\"bad\";list result;default{state_entry(){result=[left<right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<",
+    "lhs_type": "integer",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_74",
+    "kind": "Source",
+    "source": "float left=1.25;string right=\"a\";list result;default{state_entry(){result=[left<right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<",
+    "lhs_type": "float",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_75",
+    "kind": "Source",
+    "source": "float left=1.25;key right=(key)\"bad\";list result;default{state_entry(){result=[left<right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<",
+    "lhs_type": "float",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_76",
+    "kind": "Source",
+    "source": "string left=\"a\";integer right=7;list result;default{state_entry(){result=[left<right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<",
+    "lhs_type": "string",
+    "rhs_type": "integer"
+  },
+  {
+    "name": "binary_77",
+    "kind": "Source",
+    "source": "string left=\"a\";float right=1.25;list result;default{state_entry(){result=[left<right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<",
+    "lhs_type": "string",
+    "rhs_type": "float"
+  },
+  {
+    "name": "binary_78",
+    "kind": "Source",
+    "source": "string left=\"a\";string right=\"a\";list result;default{state_entry(){result=[left<right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<",
+    "lhs_type": "string",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_79",
+    "kind": "Source",
+    "source": "string left=\"a\";key right=(key)\"bad\";list result;default{state_entry(){result=[left<right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<",
+    "lhs_type": "string",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_80",
+    "kind": "Source",
+    "source": "string left=\"a\";vector right=<1,2,3>;list result;default{state_entry(){result=[left<right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<",
+    "lhs_type": "string",
+    "rhs_type": "vector"
+  },
+  {
+    "name": "binary_81",
+    "kind": "Source",
+    "source": "string left=\"a\";rotation right=<0,0,0,1>;list result;default{state_entry(){result=[left<right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<",
+    "lhs_type": "string",
+    "rhs_type": "rotation"
+  },
+  {
+    "name": "binary_82",
+    "kind": "Source",
+    "source": "string left=\"a\";list right=[1,2];list result;default{state_entry(){result=[left<right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<",
+    "lhs_type": "string",
+    "rhs_type": "list"
+  },
+  {
+    "name": "binary_83",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";integer right=7;list result;default{state_entry(){result=[left<right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<",
+    "lhs_type": "key",
+    "rhs_type": "integer"
+  },
+  {
+    "name": "binary_84",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";float right=1.25;list result;default{state_entry(){result=[left<right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<",
+    "lhs_type": "key",
+    "rhs_type": "float"
+  },
+  {
+    "name": "binary_85",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";string right=\"a\";list result;default{state_entry(){result=[left<right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<",
+    "lhs_type": "key",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_86",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";key right=(key)\"bad\";list result;default{state_entry(){result=[left<right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<",
+    "lhs_type": "key",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_87",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";vector right=<1,2,3>;list result;default{state_entry(){result=[left<right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<",
+    "lhs_type": "key",
+    "rhs_type": "vector"
+  },
+  {
+    "name": "binary_88",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";rotation right=<0,0,0,1>;list result;default{state_entry(){result=[left<right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<",
+    "lhs_type": "key",
+    "rhs_type": "rotation"
+  },
+  {
+    "name": "binary_89",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";list right=[1,2];list result;default{state_entry(){result=[left<right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<",
+    "lhs_type": "key",
+    "rhs_type": "list"
+  },
+  {
+    "name": "binary_90",
+    "kind": "Source",
+    "source": "vector left=<1,2,3>;string right=\"a\";list result;default{state_entry(){result=[left<right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<",
+    "lhs_type": "vector",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_91",
+    "kind": "Source",
+    "source": "vector left=<1,2,3>;key right=(key)\"bad\";list result;default{state_entry(){result=[left<right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<",
+    "lhs_type": "vector",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_92",
+    "kind": "Source",
+    "source": "rotation left=<0,0,0,1>;string right=\"a\";list result;default{state_entry(){result=[left<right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<",
+    "lhs_type": "rotation",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_93",
+    "kind": "Source",
+    "source": "rotation left=<0,0,0,1>;key right=(key)\"bad\";list result;default{state_entry(){result=[left<right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<",
+    "lhs_type": "rotation",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_94",
+    "kind": "Source",
+    "source": "list left=[1,2];string right=\"a\";list result;default{state_entry(){result=[left<right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<",
+    "lhs_type": "list",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_95",
+    "kind": "Source",
+    "source": "list left=[1,2];key right=(key)\"bad\";list result;default{state_entry(){result=[left<right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<",
+    "lhs_type": "list",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_96",
+    "kind": "Source",
+    "source": "integer left=7;string right=\"a\";list result;default{state_entry(){result=[left>right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">",
+    "lhs_type": "integer",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_97",
+    "kind": "Source",
+    "source": "integer left=7;key right=(key)\"bad\";list result;default{state_entry(){result=[left>right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">",
+    "lhs_type": "integer",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_98",
+    "kind": "Source",
+    "source": "float left=1.25;string right=\"a\";list result;default{state_entry(){result=[left>right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">",
+    "lhs_type": "float",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_99",
+    "kind": "Source",
+    "source": "float left=1.25;key right=(key)\"bad\";list result;default{state_entry(){result=[left>right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">",
+    "lhs_type": "float",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_100",
+    "kind": "Source",
+    "source": "string left=\"a\";integer right=7;list result;default{state_entry(){result=[left>right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">",
+    "lhs_type": "string",
+    "rhs_type": "integer"
+  },
+  {
+    "name": "binary_101",
+    "kind": "Source",
+    "source": "string left=\"a\";float right=1.25;list result;default{state_entry(){result=[left>right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">",
+    "lhs_type": "string",
+    "rhs_type": "float"
+  },
+  {
+    "name": "binary_102",
+    "kind": "Source",
+    "source": "string left=\"a\";string right=\"a\";list result;default{state_entry(){result=[left>right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">",
+    "lhs_type": "string",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_103",
+    "kind": "Source",
+    "source": "string left=\"a\";key right=(key)\"bad\";list result;default{state_entry(){result=[left>right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">",
+    "lhs_type": "string",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_104",
+    "kind": "Source",
+    "source": "string left=\"a\";vector right=<1,2,3>;list result;default{state_entry(){result=[left>right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">",
+    "lhs_type": "string",
+    "rhs_type": "vector"
+  },
+  {
+    "name": "binary_105",
+    "kind": "Source",
+    "source": "string left=\"a\";rotation right=<0,0,0,1>;list result;default{state_entry(){result=[left>right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">",
+    "lhs_type": "string",
+    "rhs_type": "rotation"
+  },
+  {
+    "name": "binary_106",
+    "kind": "Source",
+    "source": "string left=\"a\";list right=[1,2];list result;default{state_entry(){result=[left>right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">",
+    "lhs_type": "string",
+    "rhs_type": "list"
+  },
+  {
+    "name": "binary_107",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";integer right=7;list result;default{state_entry(){result=[left>right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">",
+    "lhs_type": "key",
+    "rhs_type": "integer"
+  },
+  {
+    "name": "binary_108",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";float right=1.25;list result;default{state_entry(){result=[left>right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">",
+    "lhs_type": "key",
+    "rhs_type": "float"
+  },
+  {
+    "name": "binary_109",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";string right=\"a\";list result;default{state_entry(){result=[left>right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">",
+    "lhs_type": "key",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_110",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";key right=(key)\"bad\";list result;default{state_entry(){result=[left>right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">",
+    "lhs_type": "key",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_111",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";vector right=<1,2,3>;list result;default{state_entry(){result=[left>right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">",
+    "lhs_type": "key",
+    "rhs_type": "vector"
+  },
+  {
+    "name": "binary_112",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";rotation right=<0,0,0,1>;list result;default{state_entry(){result=[left>right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">",
+    "lhs_type": "key",
+    "rhs_type": "rotation"
+  },
+  {
+    "name": "binary_113",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";list right=[1,2];list result;default{state_entry(){result=[left>right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">",
+    "lhs_type": "key",
+    "rhs_type": "list"
+  },
+  {
+    "name": "binary_114",
+    "kind": "Source",
+    "source": "vector left=<1,2,3>;string right=\"a\";list result;default{state_entry(){result=[left>right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">",
+    "lhs_type": "vector",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_115",
+    "kind": "Source",
+    "source": "vector left=<1,2,3>;key right=(key)\"bad\";list result;default{state_entry(){result=[left>right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">",
+    "lhs_type": "vector",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_116",
+    "kind": "Source",
+    "source": "rotation left=<0,0,0,1>;string right=\"a\";list result;default{state_entry(){result=[left>right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">",
+    "lhs_type": "rotation",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_117",
+    "kind": "Source",
+    "source": "rotation left=<0,0,0,1>;key right=(key)\"bad\";list result;default{state_entry(){result=[left>right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">",
+    "lhs_type": "rotation",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_118",
+    "kind": "Source",
+    "source": "list left=[1,2];string right=\"a\";list result;default{state_entry(){result=[left>right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">",
+    "lhs_type": "list",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_119",
+    "kind": "Source",
+    "source": "list left=[1,2];key right=(key)\"bad\";list result;default{state_entry(){result=[left>right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">",
+    "lhs_type": "list",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_120",
+    "kind": "Source",
+    "source": "integer left=7;string right=\"a\";list result;default{state_entry(){result=[left<=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<=",
+    "lhs_type": "integer",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_121",
+    "kind": "Source",
+    "source": "integer left=7;key right=(key)\"bad\";list result;default{state_entry(){result=[left<=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<=",
+    "lhs_type": "integer",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_122",
+    "kind": "Source",
+    "source": "float left=1.25;string right=\"a\";list result;default{state_entry(){result=[left<=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<=",
+    "lhs_type": "float",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_123",
+    "kind": "Source",
+    "source": "float left=1.25;key right=(key)\"bad\";list result;default{state_entry(){result=[left<=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<=",
+    "lhs_type": "float",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_124",
+    "kind": "Source",
+    "source": "string left=\"a\";integer right=7;list result;default{state_entry(){result=[left<=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<=",
+    "lhs_type": "string",
+    "rhs_type": "integer"
+  },
+  {
+    "name": "binary_125",
+    "kind": "Source",
+    "source": "string left=\"a\";float right=1.25;list result;default{state_entry(){result=[left<=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<=",
+    "lhs_type": "string",
+    "rhs_type": "float"
+  },
+  {
+    "name": "binary_126",
+    "kind": "Source",
+    "source": "string left=\"a\";string right=\"a\";list result;default{state_entry(){result=[left<=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<=",
+    "lhs_type": "string",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_127",
+    "kind": "Source",
+    "source": "string left=\"a\";key right=(key)\"bad\";list result;default{state_entry(){result=[left<=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<=",
+    "lhs_type": "string",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_128",
+    "kind": "Source",
+    "source": "string left=\"a\";vector right=<1,2,3>;list result;default{state_entry(){result=[left<=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<=",
+    "lhs_type": "string",
+    "rhs_type": "vector"
+  },
+  {
+    "name": "binary_129",
+    "kind": "Source",
+    "source": "string left=\"a\";rotation right=<0,0,0,1>;list result;default{state_entry(){result=[left<=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<=",
+    "lhs_type": "string",
+    "rhs_type": "rotation"
+  },
+  {
+    "name": "binary_130",
+    "kind": "Source",
+    "source": "string left=\"a\";list right=[1,2];list result;default{state_entry(){result=[left<=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<=",
+    "lhs_type": "string",
+    "rhs_type": "list"
+  },
+  {
+    "name": "binary_131",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";integer right=7;list result;default{state_entry(){result=[left<=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<=",
+    "lhs_type": "key",
+    "rhs_type": "integer"
+  },
+  {
+    "name": "binary_132",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";float right=1.25;list result;default{state_entry(){result=[left<=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<=",
+    "lhs_type": "key",
+    "rhs_type": "float"
+  },
+  {
+    "name": "binary_133",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";string right=\"a\";list result;default{state_entry(){result=[left<=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<=",
+    "lhs_type": "key",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_134",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";key right=(key)\"bad\";list result;default{state_entry(){result=[left<=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<=",
+    "lhs_type": "key",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_135",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";vector right=<1,2,3>;list result;default{state_entry(){result=[left<=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<=",
+    "lhs_type": "key",
+    "rhs_type": "vector"
+  },
+  {
+    "name": "binary_136",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";rotation right=<0,0,0,1>;list result;default{state_entry(){result=[left<=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<=",
+    "lhs_type": "key",
+    "rhs_type": "rotation"
+  },
+  {
+    "name": "binary_137",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";list right=[1,2];list result;default{state_entry(){result=[left<=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<=",
+    "lhs_type": "key",
+    "rhs_type": "list"
+  },
+  {
+    "name": "binary_138",
+    "kind": "Source",
+    "source": "vector left=<1,2,3>;string right=\"a\";list result;default{state_entry(){result=[left<=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<=",
+    "lhs_type": "vector",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_139",
+    "kind": "Source",
+    "source": "vector left=<1,2,3>;key right=(key)\"bad\";list result;default{state_entry(){result=[left<=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<=",
+    "lhs_type": "vector",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_140",
+    "kind": "Source",
+    "source": "rotation left=<0,0,0,1>;string right=\"a\";list result;default{state_entry(){result=[left<=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<=",
+    "lhs_type": "rotation",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_141",
+    "kind": "Source",
+    "source": "rotation left=<0,0,0,1>;key right=(key)\"bad\";list result;default{state_entry(){result=[left<=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<=",
+    "lhs_type": "rotation",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_142",
+    "kind": "Source",
+    "source": "list left=[1,2];string right=\"a\";list result;default{state_entry(){result=[left<=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<=",
+    "lhs_type": "list",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_143",
+    "kind": "Source",
+    "source": "list left=[1,2];key right=(key)\"bad\";list result;default{state_entry(){result=[left<=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": "<=",
+    "lhs_type": "list",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_144",
+    "kind": "Source",
+    "source": "integer left=7;string right=\"a\";list result;default{state_entry(){result=[left>=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">=",
+    "lhs_type": "integer",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_145",
+    "kind": "Source",
+    "source": "integer left=7;key right=(key)\"bad\";list result;default{state_entry(){result=[left>=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">=",
+    "lhs_type": "integer",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_146",
+    "kind": "Source",
+    "source": "float left=1.25;string right=\"a\";list result;default{state_entry(){result=[left>=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">=",
+    "lhs_type": "float",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_147",
+    "kind": "Source",
+    "source": "float left=1.25;key right=(key)\"bad\";list result;default{state_entry(){result=[left>=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">=",
+    "lhs_type": "float",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_148",
+    "kind": "Source",
+    "source": "string left=\"a\";integer right=7;list result;default{state_entry(){result=[left>=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">=",
+    "lhs_type": "string",
+    "rhs_type": "integer"
+  },
+  {
+    "name": "binary_149",
+    "kind": "Source",
+    "source": "string left=\"a\";float right=1.25;list result;default{state_entry(){result=[left>=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">=",
+    "lhs_type": "string",
+    "rhs_type": "float"
+  },
+  {
+    "name": "binary_150",
+    "kind": "Source",
+    "source": "string left=\"a\";string right=\"a\";list result;default{state_entry(){result=[left>=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">=",
+    "lhs_type": "string",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_151",
+    "kind": "Source",
+    "source": "string left=\"a\";key right=(key)\"bad\";list result;default{state_entry(){result=[left>=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">=",
+    "lhs_type": "string",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_152",
+    "kind": "Source",
+    "source": "string left=\"a\";vector right=<1,2,3>;list result;default{state_entry(){result=[left>=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">=",
+    "lhs_type": "string",
+    "rhs_type": "vector"
+  },
+  {
+    "name": "binary_153",
+    "kind": "Source",
+    "source": "string left=\"a\";rotation right=<0,0,0,1>;list result;default{state_entry(){result=[left>=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">=",
+    "lhs_type": "string",
+    "rhs_type": "rotation"
+  },
+  {
+    "name": "binary_154",
+    "kind": "Source",
+    "source": "string left=\"a\";list right=[1,2];list result;default{state_entry(){result=[left>=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">=",
+    "lhs_type": "string",
+    "rhs_type": "list"
+  },
+  {
+    "name": "binary_155",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";integer right=7;list result;default{state_entry(){result=[left>=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">=",
+    "lhs_type": "key",
+    "rhs_type": "integer"
+  },
+  {
+    "name": "binary_156",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";float right=1.25;list result;default{state_entry(){result=[left>=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">=",
+    "lhs_type": "key",
+    "rhs_type": "float"
+  },
+  {
+    "name": "binary_157",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";string right=\"a\";list result;default{state_entry(){result=[left>=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">=",
+    "lhs_type": "key",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_158",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";key right=(key)\"bad\";list result;default{state_entry(){result=[left>=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">=",
+    "lhs_type": "key",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_159",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";vector right=<1,2,3>;list result;default{state_entry(){result=[left>=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">=",
+    "lhs_type": "key",
+    "rhs_type": "vector"
+  },
+  {
+    "name": "binary_160",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";rotation right=<0,0,0,1>;list result;default{state_entry(){result=[left>=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">=",
+    "lhs_type": "key",
+    "rhs_type": "rotation"
+  },
+  {
+    "name": "binary_161",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";list right=[1,2];list result;default{state_entry(){result=[left>=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">=",
+    "lhs_type": "key",
+    "rhs_type": "list"
+  },
+  {
+    "name": "binary_162",
+    "kind": "Source",
+    "source": "vector left=<1,2,3>;string right=\"a\";list result;default{state_entry(){result=[left>=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">=",
+    "lhs_type": "vector",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_163",
+    "kind": "Source",
+    "source": "vector left=<1,2,3>;key right=(key)\"bad\";list result;default{state_entry(){result=[left>=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">=",
+    "lhs_type": "vector",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_164",
+    "kind": "Source",
+    "source": "rotation left=<0,0,0,1>;string right=\"a\";list result;default{state_entry(){result=[left>=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">=",
+    "lhs_type": "rotation",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_165",
+    "kind": "Source",
+    "source": "rotation left=<0,0,0,1>;key right=(key)\"bad\";list result;default{state_entry(){result=[left>=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">=",
+    "lhs_type": "rotation",
+    "rhs_type": "key"
+  },
+  {
+    "name": "binary_166",
+    "kind": "Source",
+    "source": "list left=[1,2];string right=\"a\";list result;default{state_entry(){result=[left>=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">=",
+    "lhs_type": "list",
+    "rhs_type": "string"
+  },
+  {
+    "name": "binary_167",
+    "kind": "Source",
+    "source": "list left=[1,2];key right=(key)\"bad\";list result;default{state_entry(){result=[left>=right];}}",
+    "coverage_group": "binary_matrix",
+    "operator": ">=",
+    "lhs_type": "list",
+    "rhs_type": "key"
+  },
+  {
+    "name": "compound_string_integer",
+    "kind": "Source",
+    "source": "string left=\"a\";integer right=7;default{state_entry(){left+=right;}}",
+    "coverage_group": "compound_matrix",
+    "operator": "+=",
+    "lhs_type": "string",
+    "rhs_type": "integer"
+  },
+  {
+    "name": "compound_string_float",
+    "kind": "Source",
+    "source": "string left=\"a\";float right=1.25;default{state_entry(){left+=right;}}",
+    "coverage_group": "compound_matrix",
+    "operator": "+=",
+    "lhs_type": "string",
+    "rhs_type": "float"
+  },
+  {
+    "name": "compound_string_string",
+    "kind": "Source",
+    "source": "string left=\"a\";string right=\"a\";default{state_entry(){left+=right;}}",
+    "coverage_group": "compound_matrix",
+    "operator": "+=",
+    "lhs_type": "string",
+    "rhs_type": "string"
+  },
+  {
+    "name": "compound_string_key",
+    "kind": "Source",
+    "source": "string left=\"a\";key right=(key)\"bad\";default{state_entry(){left+=right;}}",
+    "coverage_group": "compound_matrix",
+    "operator": "+=",
+    "lhs_type": "string",
+    "rhs_type": "key"
+  },
+  {
+    "name": "compound_string_vector",
+    "kind": "Source",
+    "source": "string left=\"a\";vector right=<1,2,3>;default{state_entry(){left+=right;}}",
+    "coverage_group": "compound_matrix",
+    "operator": "+=",
+    "lhs_type": "string",
+    "rhs_type": "vector"
+  },
+  {
+    "name": "compound_string_rotation",
+    "kind": "Source",
+    "source": "string left=\"a\";rotation right=<0,0,0,1>;default{state_entry(){left+=right;}}",
+    "coverage_group": "compound_matrix",
+    "operator": "+=",
+    "lhs_type": "string",
+    "rhs_type": "rotation"
+  },
+  {
+    "name": "compound_string_list",
+    "kind": "Source",
+    "source": "string left=\"a\";list right=[1,2];default{state_entry(){left+=right;}}",
+    "coverage_group": "compound_matrix",
+    "operator": "+=",
+    "lhs_type": "string",
+    "rhs_type": "list"
+  },
+  {
+    "name": "compound_key_integer",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";integer right=7;default{state_entry(){left+=right;}}",
+    "coverage_group": "compound_matrix",
+    "operator": "+=",
+    "lhs_type": "key",
+    "rhs_type": "integer"
+  },
+  {
+    "name": "compound_key_float",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";float right=1.25;default{state_entry(){left+=right;}}",
+    "coverage_group": "compound_matrix",
+    "operator": "+=",
+    "lhs_type": "key",
+    "rhs_type": "float"
+  },
+  {
+    "name": "compound_key_string",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";string right=\"a\";default{state_entry(){left+=right;}}",
+    "coverage_group": "compound_matrix",
+    "operator": "+=",
+    "lhs_type": "key",
+    "rhs_type": "string"
+  },
+  {
+    "name": "compound_key_key",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";key right=(key)\"bad\";default{state_entry(){left+=right;}}",
+    "coverage_group": "compound_matrix",
+    "operator": "+=",
+    "lhs_type": "key",
+    "rhs_type": "key"
+  },
+  {
+    "name": "compound_key_vector",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";vector right=<1,2,3>;default{state_entry(){left+=right;}}",
+    "coverage_group": "compound_matrix",
+    "operator": "+=",
+    "lhs_type": "key",
+    "rhs_type": "vector"
+  },
+  {
+    "name": "compound_key_rotation",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";rotation right=<0,0,0,1>;default{state_entry(){left+=right;}}",
+    "coverage_group": "compound_matrix",
+    "operator": "+=",
+    "lhs_type": "key",
+    "rhs_type": "rotation"
+  },
+  {
+    "name": "compound_key_list",
+    "kind": "Source",
+    "source": "key left=(key)\"bad\";list right=[1,2];default{state_entry(){left+=right;}}",
+    "coverage_group": "compound_matrix",
+    "operator": "+=",
+    "lhs_type": "key",
+    "rhs_type": "list"
+  },
+  {
+    "name": "return_0",
+    "kind": "Source",
+    "source": "string result;string join(){return 7+\"a\";}default{state_entry(){result=join();}}",
+    "coverage_group": "return",
+    "operator": "return",
+    "lhs_type": "string",
+    "rhs_type": null
+  },
+  {
+    "name": "return_1",
+    "kind": "Source",
+    "source": "key result;key join(){return [1,2]+\"a\";}default{state_entry(){result=join();}}",
+    "coverage_group": "return",
+    "operator": "return",
+    "lhs_type": "key",
+    "rhs_type": null
+  },
+  {
+    "name": "return_2",
+    "kind": "Source",
+    "source": "string result;string join(){return \"a\"+[1,2];}default{state_entry(){result=join();}}",
+    "coverage_group": "return",
+    "operator": "return",
+    "lhs_type": "string",
+    "rhs_type": null
+  },
+  {
+    "name": "return_3",
+    "kind": "Source",
+    "source": "string result;string join(){return <1,2,3>+\"a\";}default{state_entry(){result=join();}}",
+    "coverage_group": "return",
+    "operator": "return",
+    "lhs_type": "string",
+    "rhs_type": null
+  },
+  {
+    "name": "order_string_0",
+    "kind": "Source",
+    "source": "integer order;list result;string left(){order=order*10+1;return \"L\";}string right(){order=order*10+2;return \"R\";}default{state_entry(){result=[left()+right()];}}",
+    "coverage_group": "order",
+    "operator": "+",
+    "lhs_type": "string",
+    "rhs_type": "string"
+  },
+  {
+    "name": "order_string_1",
+    "kind": "Source",
+    "source": "integer order;list result;string left(){order=order*10+1;return \"L\";}string right(){order=order*10+2;return \"R\";}default{state_entry(){result=[left()==right()];}}",
+    "coverage_group": "order",
+    "operator": "==",
+    "lhs_type": "string",
+    "rhs_type": "string"
+  },
+  {
+    "name": "order_string_2",
+    "kind": "Source",
+    "source": "integer order;list result;string left(){order=order*10+1;return \"L\";}string right(){order=order*10+2;return \"R\";}default{state_entry(){result=[left()!=right()];}}",
+    "coverage_group": "order",
+    "operator": "!=",
+    "lhs_type": "string",
+    "rhs_type": "string"
+  },
+  {
+    "name": "order_string_3",
+    "kind": "Source",
+    "source": "integer order;list result;string left(){order=order*10+1;return \"L\";}string right(){order=order*10+2;return \"R\";}default{state_entry(){result=[left()<right()];}}",
+    "coverage_group": "order",
+    "operator": "<",
+    "lhs_type": "string",
+    "rhs_type": "string"
+  },
+  {
+    "name": "order_key_4",
+    "kind": "Source",
+    "source": "integer order;list result;key left(){order=order*10+1;return \"L\";}key right(){order=order*10+2;return \"R\";}default{state_entry(){result=[left()+right()];}}",
+    "coverage_group": "order",
+    "operator": "+",
+    "lhs_type": "key",
+    "rhs_type": "key"
+  },
+  {
+    "name": "order_key_5",
+    "kind": "Source",
+    "source": "integer order;list result;key left(){order=order*10+1;return \"L\";}key right(){order=order*10+2;return \"R\";}default{state_entry(){result=[left()==right()];}}",
+    "coverage_group": "order",
+    "operator": "==",
+    "lhs_type": "key",
+    "rhs_type": "key"
+  },
+  {
+    "name": "order_key_6",
+    "kind": "Source",
+    "source": "integer order;list result;key left(){order=order*10+1;return \"L\";}key right(){order=order*10+2;return \"R\";}default{state_entry(){result=[left()!=right()];}}",
+    "coverage_group": "order",
+    "operator": "!=",
+    "lhs_type": "key",
+    "rhs_type": "key"
+  },
+  {
+    "name": "order_key_7",
+    "kind": "Source",
+    "source": "integer order;list result;key left(){order=order*10+1;return \"L\";}key right(){order=order*10+2;return \"R\";}default{state_entry(){result=[left()<right()];}}",
+    "coverage_group": "order",
+    "operator": "<",
+    "lhs_type": "key",
+    "rhs_type": "key"
+  },
+  {
+    "name": "deferred_string",
+    "kind": "Source",
+    "source": "string value=\"a\";list result;string mutate(){value=\"b\";return \"c\";}default{state_entry(){result=[value+mutate()];}}",
+    "coverage_group": "deferred",
+    "operator": "+",
+    "lhs_type": "string",
+    "rhs_type": "string"
+  },
+  {
+    "name": "deferred_integer",
+    "kind": "Source",
+    "source": "integer value=1;list result;string mutate(){value=2;return \"c\";}default{state_entry(){result=[value+mutate()];}}",
+    "coverage_group": "deferred",
+    "operator": "+",
+    "lhs_type": "integer",
+    "rhs_type": "string"
+  },
+  {
+    "name": "ordinal_0_0",
+    "kind": "Source",
+    "coverage_group": "ordinal",
+    "operator": "<",
+    "lhs_type": "string",
+    "rhs_type": "string",
+    "source": "string left=\"\ud83d\ude00\";string right=\"\uffff\";list result;default{state_entry(){result=[left<right];}}"
+  },
+  {
+    "name": "ordinal_0_1",
+    "kind": "Source",
+    "coverage_group": "ordinal",
+    "operator": ">",
+    "lhs_type": "string",
+    "rhs_type": "string",
+    "source": "string left=\"\ud83d\ude00\";string right=\"\uffff\";list result;default{state_entry(){result=[left>right];}}"
+  },
+  {
+    "name": "ordinal_0_2",
+    "kind": "Source",
+    "coverage_group": "ordinal",
+    "operator": "==",
+    "lhs_type": "string",
+    "rhs_type": "string",
+    "source": "string left=\"\ud83d\ude00\";string right=\"\uffff\";list result;default{state_entry(){result=[left==right];}}"
+  },
+  {
+    "name": "ordinal_0_3",
+    "kind": "Source",
+    "coverage_group": "ordinal",
+    "operator": "!=",
+    "lhs_type": "string",
+    "rhs_type": "string",
+    "source": "string left=\"\ud83d\ude00\";string right=\"\uffff\";list result;default{state_entry(){result=[left!=right];}}"
+  },
+  {
+    "name": "ordinal_1_4",
+    "kind": "Source",
+    "coverage_group": "ordinal",
+    "operator": "<",
+    "lhs_type": "string",
+    "rhs_type": "string",
+    "source": "string left=\"a\u0000b\";string right=\"ab\";list result;default{state_entry(){result=[left<right];}}"
+  },
+  {
+    "name": "ordinal_1_5",
+    "kind": "Source",
+    "coverage_group": "ordinal",
+    "operator": ">",
+    "lhs_type": "string",
+    "rhs_type": "string",
+    "source": "string left=\"a\u0000b\";string right=\"ab\";list result;default{state_entry(){result=[left>right];}}"
+  },
+  {
+    "name": "ordinal_1_6",
+    "kind": "Source",
+    "coverage_group": "ordinal",
+    "operator": "==",
+    "lhs_type": "string",
+    "rhs_type": "string",
+    "source": "string left=\"a\u0000b\";string right=\"ab\";list result;default{state_entry(){result=[left==right];}}"
+  },
+  {
+    "name": "ordinal_1_7",
+    "kind": "Source",
+    "coverage_group": "ordinal",
+    "operator": "!=",
+    "lhs_type": "string",
+    "rhs_type": "string",
+    "source": "string left=\"a\u0000b\";string right=\"ab\";list result;default{state_entry(){result=[left!=right];}}"
+  },
+  {
+    "name": "ordinal_2_8",
+    "kind": "Source",
+    "coverage_group": "ordinal",
+    "operator": "<",
+    "lhs_type": "string",
+    "rhs_type": "string",
+    "source": "string left=\"\u00e9\";string right=\"e\u0301\";list result;default{state_entry(){result=[left<right];}}"
+  },
+  {
+    "name": "ordinal_2_9",
+    "kind": "Source",
+    "coverage_group": "ordinal",
+    "operator": ">",
+    "lhs_type": "string",
+    "rhs_type": "string",
+    "source": "string left=\"\u00e9\";string right=\"e\u0301\";list result;default{state_entry(){result=[left>right];}}"
+  },
+  {
+    "name": "ordinal_2_10",
+    "kind": "Source",
+    "coverage_group": "ordinal",
+    "operator": "==",
+    "lhs_type": "string",
+    "rhs_type": "string",
+    "source": "string left=\"\u00e9\";string right=\"e\u0301\";list result;default{state_entry(){result=[left==right];}}"
+  },
+  {
+    "name": "ordinal_2_11",
+    "kind": "Source",
+    "coverage_group": "ordinal",
+    "operator": "!=",
+    "lhs_type": "string",
+    "rhs_type": "string",
+    "source": "string left=\"\u00e9\";string right=\"e\u0301\";list result;default{state_entry(){result=[left!=right];}}"
+  }
+]

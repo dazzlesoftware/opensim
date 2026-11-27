@@ -1,20 +1,29 @@
 #include "opensim/framework/config_http_wininet_proxy_helper.hpp"
 #include <bit>
 #include "opensim/framework/config_uri_components.hpp"
+
 namespace opensim::framework {
 namespace {
-bool nonempty(ConfigUriText text) { return text && !text->empty(); }
+bool nonempty(ConfigUriText text) {
+    return text && !text->empty();
 }
+} // namespace
+
 ConfigHttpWinInetProxyHelper::ConfigHttpWinInetProxyHelper(ConfigHttpWinInetSettings settings,
                                                            std::function<std::int32_t()> ticks)
     : settings_(std::move(settings)), ticks_(std::move(ticks)) {
     if (!ticks_)
         throw ConfigHttpProxyProviderError("WinInet proxy policy requires TickCount provider");
 }
+
 bool ConfigHttpWinInetProxyHelper::auto_settings_used() const {
     return settings_.auto_detect || nonempty(settings_.auto_config_url);
 }
-bool ConfigHttpWinInetProxyHelper::manual_settings_used() const { return nonempty(settings_.proxy); }
+
+bool ConfigHttpWinInetProxyHelper::manual_settings_used() const {
+    return nonempty(settings_.proxy);
+}
+
 bool ConfigHttpWinInetProxyHelper::recent_auto_detection_failure() const {
     if (!auto_failed_.load())
         return false;
@@ -22,6 +31,7 @@ bool ConfigHttpWinInetProxyHelper::recent_auto_detection_failure() const {
                                                std::bit_cast<std::uint32_t>(last_failure_.load()));
     return elapsed <= 120000;
 }
+
 ConfigHttpWinHttpProxyResult
 ConfigHttpWinInetProxyHelper::get_proxy_for_url(std::shared_ptr<ConfigHttpWinHttpSession> session,
                                                 ConfigUriObjectPtr uri) {
@@ -30,10 +40,9 @@ ConfigHttpWinInetProxyHelper::get_proxy_for_url(std::shared_ptr<ConfigHttpWinHtt
         return result;
     if (!session)
         throw ConfigHttpProxyProviderError("WinInet automatic lookup requires a WinHTTP session");
-    ConfigHttpWinHttpAutoOptions options{settings_.auto_config_url,
-                                         (settings_.auto_detect ? 1u : 0u) |
-                                             (nonempty(settings_.auto_config_url) ? 2u : 0u),
-                                         settings_.auto_detect ? 3u : 0u, false};
+    ConfigHttpWinHttpAutoOptions options{
+        settings_.auto_config_url, (settings_.auto_detect ? 1u : 0u) | (nonempty(settings_.auto_config_url) ? 2u : 0u),
+        settings_.auto_detect ? 3u : 0u, false};
     if (!uri)
         throw ConfigUriComponentsError("System.NullReferenceException",
                                        u"Object reference not set to an instance of an object.", 0x80004003);
@@ -64,9 +73,8 @@ ConfigHttpWinInetProxyHelper::get_proxy_for_url(std::shared_ptr<ConfigHttpWinHtt
     } while (retried);
     if (!result.success && nonempty(settings_.proxy)) {
         result.success = true;
-        result.info = {3, settings_.proxy,
-                       nonempty(settings_.proxy_bypass) ? settings_.proxy_bypass : ConfigUriText{}};
+        result.info = {3, settings_.proxy, nonempty(settings_.proxy_bypass) ? settings_.proxy_bypass : ConfigUriText{}};
     }
     return result;
 }
-}
+} // namespace opensim::framework

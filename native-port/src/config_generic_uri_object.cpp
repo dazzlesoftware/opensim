@@ -16,35 +16,42 @@
 #include <sstream>
 #include <vector>
 #include <mutex>
+
 namespace opensim::framework {
 namespace {
 using Text = ConfigUriText;
 using V = std::u16string_view;
 using U = std::uint64_t;
+
 int hex(char16_t c) {
     return c >= u'0' && c <= u'9'   ? c - u'0'
            : c >= u'A' && c <= u'F' ? c - u'A' + 10
            : c >= u'a' && c <= u'f' ? c - u'a' + 10
                                     : -1;
 }
+
 bool digit(char16_t c) {
     return c >= u'0' && c <= u'9';
 }
+
 std::u16string number(std::uint32_t n) {
     auto x = std::to_string(n);
     return {x.begin(), x.end()};
 }
+
 Text text(std::u16string value) {
     return value.empty() ? runtime_empty_text() : std::make_shared<const std::u16string>(std::move(value));
 }
+
 [[noreturn]] void parsing_error(int value) {
-    throw ConfigUriComponentsError("System.UriFormatException",
-                                   std::u16string(config_file_uri_error_messages[value]), 0x80131537);
+    throw ConfigUriComponentsError("System.UriFormatException", std::u16string(config_file_uri_error_messages[value]),
+                                   0x80131537);
 }
-Text substring(const Text& source, std::int64_t start, std::int64_t count) {
+
+Text substring(const Text &source, std::int64_t start, std::int64_t count) {
     if (start > static_cast<std::int64_t>(source->size()))
-        throw ConfigFileUriRangeError(
-            u"startIndex cannot be larger than length of string. (Parameter 'startIndex')", u"startIndex");
+        throw ConfigFileUriRangeError(u"startIndex cannot be larger than length of string. (Parameter 'startIndex')",
+                                      u"startIndex");
     if (start < 0 || count < 0) {
         auto name = start < 0 ? u"startIndex" : u"length";
         auto value = start < 0 ? start : count;
@@ -57,8 +64,8 @@ Text substring(const Text& source, std::int64_t start, std::int64_t count) {
             u"\n";
 #endif
         throw ConfigFileUriRangeError(std::u16string(name) + u" ('" + num +
-                                          u"') must be a non-negative value. (Parameter '" + name + u"')" +
-                                          newline + u"Actual value was " + num + u".",
+                                          u"') must be a non-negative value. (Parameter '" + name + u"')" + newline +
+                                          u"Actual value was " + num + u".",
                                       name, value);
     }
     if (count > static_cast<std::int64_t>(source->size()) - start)
@@ -70,6 +77,7 @@ Text substring(const Text& source, std::int64_t start, std::int64_t count) {
         return source;
     return text(source->substr(static_cast<std::size_t>(start), static_cast<std::size_t>(count)));
 }
+
 std::optional<std::u16string> ipv4(V s) {
     std::vector<std::uint64_t> values;
     std::size_t i = 0;
@@ -117,9 +125,9 @@ std::optional<std::u16string> ipv4(V s) {
     std::uint32_t v = static_cast<std::uint32_t>(values.back());
     for (std::size_t n = 0; n + 1 < values.size(); ++n)
         v |= static_cast<std::uint32_t>(values[n]) << (24 - 8 * n);
-    return number(v >> 24) + u"." + number((v >> 16) & 255) + u"." + number((v >> 8) & 255) + u"." +
-           number(v & 255);
+    return number(v >> 24) + u"." + number((v >> 16) & 255) + u"." + number((v >> 8) & 255) + u"." + number(v & 255);
 }
+
 std::pair<std::u16string, std::u16string> ipv6(V source) {
     V s = source.substr(1, source.size() - 2);
     std::u16string scope;
@@ -134,7 +142,7 @@ std::pair<std::u16string, std::u16string> ipv6(V source) {
     std::array<std::uint16_t, 8> nums{};
     std::vector<std::uint16_t> left, right;
     auto gap = s.find(u"::");
-    auto read = [](V part, std::vector<std::uint16_t>& out) {
+    auto read = [](V part, std::vector<std::uint16_t> &out) {
         std::size_t pos = 0;
         while (pos < part.size()) {
             auto stop = part.find(u':', pos);
@@ -184,16 +192,15 @@ std::pair<std::u16string, std::u16string> ipv6(V source) {
         best = -1;
         len = 0;
     }
-    bool v4 =
-        (nums[0] == 0 && nums[1] == 0 && nums[2] == 0 && nums[3] == 0 && nums[6] != 0 &&
-         ((nums[4] == 0 && (nums[5] == 0 || nums[5] == 65535)) || (nums[4] == 65535 && nums[5] == 0))) ||
-        (nums[4] == 0 && nums[5] == 24318);
+    bool v4 = (nums[0] == 0 && nums[1] == 0 && nums[2] == 0 && nums[3] == 0 && nums[6] != 0 &&
+               ((nums[4] == 0 && (nums[5] == 0 || nums[5] == 65535)) || (nums[4] == 65535 && nums[5] == 0))) ||
+              (nums[4] == 0 && nums[5] == 24318);
     std::u16string out = u"[";
     for (int i = 0; i < 8; ++i) {
         if (v4 && i == 6) {
             out += u':';
-            out += number(nums[i] >> 8) + u"." + number(nums[i] & 255) + u"." + number(nums[i + 1] >> 8) +
-                   u"." + number(nums[i + 1] & 255);
+            out += number(nums[i] >> 8) + u"." + number(nums[i] & 255) + u"." + number(nums[i + 1] >> 8) + u"." +
+                   number(nums[i + 1] & 255);
             break;
         }
         if (i == best) {
@@ -223,26 +230,29 @@ class GenericUriObject final : public ConfigUriObject {
     mutable std::recursive_mutex mutex_;
     mutable Text parse_, host_, absolute_, display_, fragment_, idn_, path_, query_;
     mutable std::optional<std::u16string> scope_;
+
     bool has(ConfigUriSyntaxFlags f) const {
         return (state_.syntax->flags & static_cast<U>(f)) != 0;
     }
+
     void remaining() const {
         if (!(state_.flags & 0x80000000ull)) {
             bool normalize = (state_.flags & 0xa00000000ull) == 0x200000000ull;
             try {
                 config_uri_parse_remaining(state_);
-            } catch (const ConfigUriStateError& e) {
+            } catch (const ConfigUriStateError &e) {
                 throw ConfigUriComponentsError(e.source_type, utf16_replacing(e.what()), e.hresult);
             }
             if (normalize)
                 parse_ = text(state_.parse_string);
         }
     }
+
     void host() const {
         if (host_)
             return;
         remaining();
-        auto& s = state_;
+        auto &s = state_;
         auto o = s.offsets;
         auto type = s.flags & 0x70000ull;
         auto raw = (type == 0x50000 && (s.flags & 0x8000000ull)) || type == 0x70000
@@ -290,10 +300,10 @@ class GenericUriObject final : public ConfigUriObject {
             s.flags |= 0x400000ull;
         if (!value.empty()) {
             if (type == 0x50000) {
-                auto c = config_uri_check_canonical(value, 0, value.size(), char16_t(0xffff),
-                                                    (s.flags & 0x20000000ull) != 0,
-                                                    (s.flags & 0x200000000ull) != 0, s.syntax.get())
-                             .check;
+                auto c =
+                    config_uri_check_canonical(value, 0, value.size(), char16_t(0xffff), (s.flags & 0x20000000ull) != 0,
+                                               (s.flags & 0x200000000ull) != 0, s.syntax.get())
+                        .check;
                 if (!(c & 2) && (!(s.flags & 0x20000000ull) || (c & 32)))
                     s.flags |= 4;
                 if ((s.flags & 0x20000000ull) && (c & (1 | 32)))
@@ -317,6 +327,7 @@ class GenericUriObject final : public ConfigUriObject {
         }
         host_ = text(std::move(value));
     }
+
     unsigned mask(int format) const {
         auto f = state_.flags;
         unsigned result = format == 1 ? unsigned((f & 0x3f80) >> 6) : unsigned(f & 127);
@@ -332,6 +343,7 @@ class GenericUriObject final : public ConfigUriObject {
         }
         return result;
     }
+
     std::u16string component(bool fragment, int format, unsigned nc) const {
         auto o = state_.offsets;
         int start = fragment ? o.fragment : o.query, end = fragment ? o.end : o.fragment;
@@ -342,17 +354,17 @@ class GenericUriObject final : public ConfigUriObject {
         int mode = 0;
         if (nc & bit) {
             if (format == 1 && !(state_.flags & 0x80000))
-                return config_uri_escape(raw, true,
-                                         fragment ? ConfigUriEscapeSet::UnreservedReserved
-                                                  : ConfigUriEscapeSet::ExceptHash);
+                return config_uri_escape(
+                    raw, true, fragment ? ConfigUriEscapeSet::UnreservedReserved : ConfigUriEscapeSet::ExceptHash);
             if (format != 1)
                 mode = format == 32767 ? ((state_.flags & 0x80000) ? 6 : 7)
                        : format == 2   ? 10
                                        : ((state_.flags & 0x80000) ? 2 : 3);
         }
-        return config_uri_unescape(raw, u'#', 0xffff, 0xffff, mode,
-                                   has(ConfigUriSyntaxFlags::AllowIriParsing), !fragment);
+        return config_uri_unescape(raw, u'#', 0xffff, 0xffff, mode, has(ConfigUriSyntaxFlags::AllowIriParsing),
+                                   !fragment);
     }
+
     Text parts(int format, unsigned bits, bool keep = true) const {
         remaining();
         if (bits == 1)
@@ -374,8 +386,7 @@ class GenericUriObject final : public ConfigUriObject {
                 return substring(parse_, o.scheme, std::int64_t(o.end) - o.scheme);
             if (bits == 16) {
                 auto start = o.path;
-                if (!keep && (state_.flags & 0x100000) && start < o.query &&
-                    state_.parse_string[start] == u'/')
+                if (!keep && (state_.flags & 0x100000) && start < o.query && state_.parse_string[start] == u'/')
                     ++start;
                 return substring(parse_, start, std::int64_t(o.query) - start);
             }
@@ -424,8 +435,8 @@ class GenericUriObject final : public ConfigUriObject {
             int mode = (format != 1 && (state_.flags & 0x70000) == 0x50000 && (nc & 4))
                            ? (format == 2 ? 10 : ((state_.flags & 0x80000) ? 2 : 3))
                            : 0;
-            dest += config_uri_unescape(*host_, u'/', u'?', u'#', mode,
-                                        has(ConfigUriSyntaxFlags::AllowIriParsing), false);
+            dest +=
+                config_uri_unescape(*host_, u'/', u'?', u'#', mode, has(ConfigUriSyntaxFlags::AllowIriParsing), false);
         }
         if ((bits & 8) && (state_.flags & 0x800000))
             dest += u":" + number(o.port_value);
@@ -450,8 +461,7 @@ class GenericUriObject final : public ConfigUriObject {
   public:
     GenericUriObject(Text original, ConfigUriState state, std::shared_ptr<ConfigUriComponentsBackend> backend,
                      bool windows)
-        : state_(std::move(state)), original_(std::move(original)), backend_(std::move(backend)),
-          windows_(windows) {
+        : state_(std::move(state)), original_(std::move(original)), backend_(std::move(backend)), windows_(windows) {
         parse_ = (state_.flags & 0x200000000ull) ? text(state_.parse_string) : original_;
     }
 
@@ -465,8 +475,7 @@ class GenericUriObject final : public ConfigUriObject {
                 auto at = [&](std::size_t pos) {
                     if (pos >= state.parse_string.size())
                         throw ConfigUriComponentsError("System.IndexOutOfRangeException",
-                                                       u"Index was outside the bounds of the array.",
-                                                       0x80131508);
+                                                       u"Index was outside the bounds of the array.", 0x80131508);
                     return state.parse_string[pos];
                 };
                 while (at(cursor) != u':' && cursor > state.offsets.host)
@@ -481,8 +490,9 @@ class GenericUriObject final : public ConfigUriObject {
         result->parse_ = parse_;
         return result;
     }
-    ConfigUriObjectPtr
-    resolve(Text input, const std::function<ConfigUriObjectPtr(Text, ConfigUriObjectKind)>& create) const {
+
+    ConfigUriObjectPtr resolve(Text input,
+                               const std::function<ConfigUriObjectPtr(Text, ConfigUriObjectKind)> &create) const {
         std::lock_guard lock(mutex_);
         auto lws = [](char16_t c) { return c == u' ' || c == u'\t' || c == u'\r' || c == u'\n'; };
         auto slash = [](char16_t c) { return c == u'/' || c == u'\\'; };
@@ -496,9 +506,7 @@ class GenericUriObject final : public ConfigUriObject {
         auto flags = state_.flags;
         bool implicit = (flags & 0x20000000ull) != 0, dos = (flags & 0x8000000ull) != 0,
              unc = (flags & 0x10000000ull) != 0;
-        auto make = [&](std::u16string v) {
-            return create(text(std::move(v)), ConfigUriObjectKind::Absolute);
-        };
+        auto make = [&](std::u16string v) { return create(text(std::move(v)), ConfigUriObjectKind::Absolute); };
         if (value->empty())
             return create(parts((flags & 0x80000) ? 1 : 3, 127), ConfigUriObjectKind::Absolute);
         if (value->front() == u'#' && !implicit && has(ConfigUriSyntaxFlags::MayHaveFragment))
@@ -515,8 +523,8 @@ class GenericUriObject final : public ConfigUriObject {
                                                 : (has(ConfigUriSyntaxFlags::PathIsRooted) ? u":/" : u":")) +
                             *value);
         }
-        for (std::size_t i = 0;
-             i < value->size() && !slash((*value)[i]) && (*value)[i] != u'?' && (*value)[i] != u'#'; ++i)
+        for (std::size_t i = 0; i < value->size() && !slash((*value)[i]) && (*value)[i] != u'?' && (*value)[i] != u'#';
+             ++i)
             if ((*value)[i] == u':') {
                 if (i < 2)
                     break;
@@ -528,7 +536,7 @@ class GenericUriObject final : public ConfigUriObject {
                 if (!valid || i > 1024)
                     break;
                 auto name = value->substr(0, i);
-                for (auto& c : name)
+                for (auto &c : name)
                     if (c >= u'A' && c <= u'Z')
                         c += 32;
                 auto syntax = native_config_uri_syntax_catalog().find_or_fetch(text(std::move(name)));
@@ -624,8 +632,7 @@ class GenericUriObject final : public ConfigUriObject {
         std::lock_guard lock(mutex_);
         auto name = scheme();
         auto hostname = parts(1, 4);
-        auto port =
-            (state_.flags & 0x800000ull) ? int(state_.offsets.port_value) : state_.syntax->default_port;
+        auto port = (state_.flags & 0x800000ull) ? int(state_.offsets.port_value) : state_.syntax->default_port;
         auto path = *parts(1, 16);
         if ((state_.flags & 0x8000000ull) && !path.empty() && path.front() == u'/')
             path.erase(path.begin());
@@ -633,18 +640,17 @@ class GenericUriObject final : public ConfigUriObject {
         fragment();
         auto info = *parts(1, 2, false);
         auto colon = info.find(u':');
-        auto user = info.substr(0, colon),
-             password = colon == info.npos ? std::u16string{} : info.substr(colon + 1);
+        auto user = info.substr(0, colon), password = colon == info.npos ? std::u16string{} : info.substr(colon + 1);
         if (user.empty() && !password.empty())
             throw ConfigUriComponentsError("System.UriFormatException",
                                            u"Invalid URI: The username:password construct is badly formed.",
                                            0x80131537);
         auto syntax = native_config_uri_syntax_catalog().get(*name);
-        bool authority = syntax ? ((syntax->flags & std::uint64_t(ConfigUriSyntaxFlags::MustHaveAuthority)) ||
-                                   (!hostname->empty() &&
-                                    !(syntax->flags & std::uint64_t(ConfigUriSyntaxFlags::MailToLikeUri)) &&
-                                    (syntax->flags & std::uint64_t(ConfigUriSyntaxFlags::OptionalAuthority))))
-                                : !hostname->empty();
+        bool authority =
+            syntax ? ((syntax->flags & std::uint64_t(ConfigUriSyntaxFlags::MustHaveAuthority)) ||
+                      (!hostname->empty() && !(syntax->flags & std::uint64_t(ConfigUriSyntaxFlags::MailToLikeUri)) &&
+                       (syntax->flags & std::uint64_t(ConfigUriSyntaxFlags::OptionalAuthority))))
+                   : !hostname->empty();
         std::u16string value = *name + (authority ? u"://" : u":");
         auto encode = [](V input) {
             std::u16string result;
@@ -695,6 +701,7 @@ class GenericUriObject final : public ConfigUriObject {
         }
         return text(std::move(value));
     }
+
     void builder_fields() const {
         std::lock_guard lock(mutex_);
         scheme();
@@ -758,6 +765,7 @@ class GenericUriObject final : public ConfigUriObject {
         }
         throw std::invalid_argument("Invalid native URI component selector");
     }
+
     ConfigUriNetworkIdentity network_identity() const {
         std::lock_guard lock(mutex_);
         host();
@@ -769,15 +777,17 @@ class GenericUriObject final : public ConfigUriObject {
                                                            : 0;
         return {value, (state_.flags & 0x400000ull) != 0};
     }
+
     std::int32_t port_source() const {
         std::lock_guard lock(mutex_);
         try {
             config_uri_create_info(state_);
-        } catch (const ConfigUriStateError& e) {
+        } catch (const ConfigUriStateError &e) {
             throw ConfigUriComponentsError(e.source_type, utf16_replacing(e.what()), e.hresult);
         }
         return (state_.flags & 0x800000ull) ? state_.offsets.port_value : state_.syntax->default_port;
     }
+
     Text authority() const {
         std::lock_guard lock(mutex_);
         const auto value = network_component(ConfigGenericUriComponent::Host);
@@ -786,49 +796,58 @@ class GenericUriObject final : public ConfigUriObject {
         auto authority = *value + u':' + utf16_replacing(std::to_string(state_.offsets.port_value));
         return std::make_shared<const std::u16string>(std::move(authority));
     }
+
     Text path_parts(int format) const {
         std::lock_guard lock(mutex_);
         return parts(format, 16);
     }
+
     Text http_pool_identity() const {
         std::lock_guard lock(mutex_);
-        const auto& protocol = *state_.syntax->scheme;
-        if (protocol != u"http" && protocol != u"https" &&
-            protocol != u"socks4" && protocol != u"socks4a" && protocol != u"socks5")
+        const auto &protocol = *state_.syntax->scheme;
+        if (protocol != u"http" && protocol != u"https" && protocol != u"socks4" && protocol != u"socks4a" &&
+            protocol != u"socks5")
             throw std::invalid_argument("HTTP proxy pool identity requires an HTTP, HTTPS, or SOCKS proxy URI");
         return parts(3, 61);
     }
+
     bool is_absolute() const override {
         return true;
     }
+
     Text original_string() const override {
         return original_;
     }
+
     Text scheme() const override {
         return state_.syntax->scheme;
     }
+
     Text absolute_uri() const override {
         std::lock_guard lock(mutex_);
         if (!absolute_)
             absolute_ = parts(1, 127);
         return absolute_;
     }
+
     Text to_string() const override {
         std::lock_guard lock(mutex_);
         if (!display_)
             display_ = parts(32767, 127);
         return display_;
     }
+
     Text fragment() const override {
         std::lock_guard lock(mutex_);
         if (!fragment_)
             fragment_ = parts(1, 64);
         return fragment_;
     }
+
     Text local_path() const override {
         std::lock_guard lock(mutex_);
         remaining();
-        auto& s = state_;
+        auto &s = state_;
         auto o = s.offsets;
         bool dos = (s.flags & 0x8000000) != 0, unc = (s.flags & 0x10000000) != 0,
              implicit = (s.flags & 0x20000000) != 0;
@@ -851,7 +870,7 @@ class GenericUriObject final : public ConfigUriObject {
                 }
                 if (value->find(u'/') != value->npos) {
                     auto changed = *value;
-                    for (auto& c : changed)
+                    for (auto &c : changed)
                         if (c == u'/')
                             c = u'\\';
                     value = text(std::move(changed));
@@ -866,19 +885,19 @@ class GenericUriObject final : public ConfigUriObject {
                 ++start;
             auto secured = dest.size();
             int mode = (s.flags & 16) && !implicit ? 10 : 0;
-            dest += config_uri_unescape(*substring(parse_, start, int(o.query) - start), 0xffff, 0xffff,
-                                        0xffff, mode, has(ConfigUriSyntaxFlags::AllowIriParsing), true);
+            dest += config_uri_unescape(*substring(parse_, start, int(o.query) - start), 0xffff, 0xffff, 0xffff, mode,
+                                        has(ConfigUriSyntaxFlags::AllowIriParsing), true);
             if (dest.size() > 1 && dest[1] == u'|')
                 dest[1] = u':';
             if (s.flags & 0x2000) {
                 auto prefix = secured + (dos ? 2 : 0);
-                auto compressed = config_file_uri_compress(dest.substr(prefix),
-                                                           has(ConfigUriSyntaxFlags::ConvertPathSlashes),
-                                                           has(ConfigUriSyntaxFlags::CanonicalizeAsFilePath));
+                auto compressed =
+                    config_file_uri_compress(dest.substr(prefix), has(ConfigUriSyntaxFlags::ConvertPathSlashes),
+                                             has(ConfigUriSyntaxFlags::CanonicalizeAsFilePath));
                 dest.resize(prefix);
                 dest += compressed;
             }
-            for (auto& c : dest)
+            for (auto &c : dest)
                 if (c == u'/')
                     c = u'\\';
             return text(std::move(dest));
@@ -886,14 +905,14 @@ class GenericUriObject final : public ConfigUriObject {
         return parts(2, 16);
     }
 };
-}
+} // namespace
+
 ConfigUriObjectPtr config_generic_uri_create(ConfigUriText input, ConfigUriObjectKind kind,
-                                             std::shared_ptr<ConfigUriComponentsBackend> backend,
-                                             bool windows, bool user_escaped) {
+                                             std::shared_ptr<ConfigUriComponentsBackend> backend, bool windows,
+                                             bool user_escaped) {
     if (!input)
-        throw ConfigUriComponentsError("System.ArgumentNullException",
-                                       u"Value cannot be null. (Parameter 'uriString')", 0x80004003,
-                                       u"uriString");
+        throw ConfigUriComponentsError("System.ArgumentNullException", u"Value cannot be null. (Parameter 'uriString')",
+                                       0x80004003, u"uriString");
     auto k = static_cast<std::int32_t>(kind);
     if (k < 0 || k > 2) {
         auto n = std::to_string(k);
@@ -908,17 +927,16 @@ ConfigUriObjectPtr config_generic_uri_create(ConfigUriText input, ConfigUriObjec
     if (scan.error) {
         if (scan.error > 4 || k == 1)
             parsing_error(scan.error);
-        auto parse =
-            config_uri_has_iri_characters(*input) ? text(config_uri_escape_unescape_iri(*input, 0)) : input;
+        auto parse = config_uri_has_iri_characters(*input) ? text(config_uri_escape_unescape_iri(*input, 0)) : input;
         return config_uri_relative_object(input, parse);
     }
     if (config_file_uri_implicit_kind_is_relative(scan, *input, k, windows))
         return config_uri_relative_object(input, input);
-    auto& catalog = native_config_uri_syntax_catalog();
+    auto &catalog = native_config_uri_syntax_catalog();
     auto syntax = scan.unix_file_syntax ? catalog.unix_file() : catalog.find_or_fetch(text(scan.scheme));
     auto flags = scan.flags | (user_escaped ? 0x80000ull : 0ull);
-    bool iri = (syntax->flags & std::uint64_t(ConfigUriSyntaxFlags::AllowIriParsing)) &&
-               config_uri_has_iri_characters(*input);
+    bool iri =
+        (syntax->flags & std::uint64_t(ConfigUriSyntaxFlags::AllowIriParsing)) && config_uri_has_iri_characters(*input);
     if (iri)
         flags |= 0x200000000ull;
     auto parsed = config_uri_parse_minimal(*input, *input, flags, syntax, windows, backend->unicode);
@@ -935,16 +953,16 @@ ConfigUriObjectPtr config_generic_uri_create(ConfigUriText input, ConfigUriObjec
     if (iri)
         try {
             config_uri_parse_remaining(state);
-        } catch (const ConfigUriStateError& e) {
+        } catch (const ConfigUriStateError &e) {
             throw ConfigUriComponentsError(e.source_type, utf16_replacing(e.what()), e.hresult);
         }
     if (error)
         parsing_error(error);
     return std::make_shared<GenericUriObject>(input, std::move(state), std::move(backend), windows);
 }
+
 ConfigUriObjectPtr config_generic_uri_try_create(ConfigUriText input, ConfigUriObjectKind kind,
-                                                 std::shared_ptr<ConfigUriComponentsBackend> backend,
-                                                 bool windows) {
+                                                 std::shared_ptr<ConfigUriComponentsBackend> backend, bool windows) {
     if (!input)
         return {};
     auto k = static_cast<std::int32_t>(kind);
@@ -955,12 +973,13 @@ ConfigUriObjectPtr config_generic_uri_try_create(ConfigUriText input, ConfigUriO
     }
     try {
         return config_generic_uri_create(std::move(input), kind, std::move(backend), windows);
-    } catch (const ConfigUriComponentsError& e) {
+    } catch (const ConfigUriComponentsError &e) {
         if (e.source_type == "System.UriFormatException")
             return {};
         throw;
     }
 }
+
 ConfigUriText config_generic_uri_path(ConfigUriObjectPtr uri, std::int32_t format) {
     if (format != 1 && format != 2 && format != 3 && format != 32767)
         throw ConfigUriComponentsError(
@@ -973,18 +992,16 @@ ConfigUriText config_generic_uri_path(ConfigUriObjectPtr uri, std::int32_t forma
     return native->path_parts(format);
 }
 
-ConfigUriObjectPtr config_generic_uri_combine_string(
-    ConfigUriObjectPtr base, ConfigUriText relative,
-    const std::function<ConfigUriObjectPtr(ConfigUriText, ConfigUriObjectKind)>& create) {
+ConfigUriObjectPtr
+config_generic_uri_combine_string(ConfigUriObjectPtr base, ConfigUriText relative,
+                                  const std::function<ConfigUriObjectPtr(ConfigUriText, ConfigUriObjectKind)> &create) {
     if (!base)
-        throw ConfigUriComponentsError("System.ArgumentNullException",
-                                       u"Value cannot be null. (Parameter 'baseUri')", 0x80004003,
-                                       u"baseUri");
+        throw ConfigUriComponentsError("System.ArgumentNullException", u"Value cannot be null. (Parameter 'baseUri')",
+                                       0x80004003, u"baseUri");
     if (!base->is_absolute())
         throw ConfigUriComponentsError(
             "System.ArgumentOutOfRangeException",
-            u"Specified argument was out of the range of valid values. (Parameter 'baseUri')", 0x80131502,
-            u"baseUri");
+            u"Specified argument was out of the range of valid values. (Parameter 'baseUri')", 0x80131502, u"baseUri");
     if (!create)
         throw std::invalid_argument("Generic URI resolution requires global constructor dispatch");
     auto parsed = create(relative ? relative : runtime_empty_text(), ConfigUriObjectKind::RelativeOrAbsolute);
@@ -995,22 +1012,21 @@ ConfigUriObjectPtr config_generic_uri_combine_string(
         throw std::invalid_argument("Generic URI resolution requires its native base object");
     return native->resolve(parsed->original_string(), create);
 }
+
 bool config_generic_uri_owns(ConfigUriObjectPtr uri) {
     return bool(std::dynamic_pointer_cast<const GenericUriObject>(uri));
 }
 
-ConfigUriObjectPtr config_generic_uri_combine_uri(
-    ConfigUriObjectPtr base, ConfigUriObjectPtr relative,
-    const std::function<ConfigUriObjectPtr(ConfigUriText, ConfigUriObjectKind)>& create) {
+ConfigUriObjectPtr
+config_generic_uri_combine_uri(ConfigUriObjectPtr base, ConfigUriObjectPtr relative,
+                               const std::function<ConfigUriObjectPtr(ConfigUriText, ConfigUriObjectKind)> &create) {
     if (!base)
-        throw ConfigUriComponentsError("System.ArgumentNullException",
-                                       u"Value cannot be null. (Parameter 'baseUri')", 0x80004003,
-                                       u"baseUri");
+        throw ConfigUriComponentsError("System.ArgumentNullException", u"Value cannot be null. (Parameter 'baseUri')",
+                                       0x80004003, u"baseUri");
     if (!base->is_absolute())
         throw ConfigUriComponentsError(
             "System.ArgumentOutOfRangeException",
-            u"Specified argument was out of the range of valid values. (Parameter 'baseUri')", 0x80131502,
-            u"baseUri");
+            u"Specified argument was out of the range of valid values. (Parameter 'baseUri')", 0x80131502, u"baseUri");
     if (!relative)
         throw ConfigUriComponentsError("System.NullReferenceException",
                                        u"Object reference not set to an instance of an object.", 0x80004003);
@@ -1027,12 +1043,13 @@ ConfigUriObjectPtr config_generic_uri_combine_uri(
         throw std::invalid_argument("Generic URI resolution requires global constructor dispatch");
     return native->resolve(relative->original_string(), create);
 }
-ConfigUriObjectPtr config_generic_uri_with_fragment(
-    ConfigUriObjectPtr uri, ConfigUriText replacement,
-    const std::function<ConfigUriObjectPtr(ConfigUriText, ConfigUriObjectKind)>& create) {
+
+ConfigUriObjectPtr
+config_generic_uri_with_fragment(ConfigUriObjectPtr uri, ConfigUriText replacement,
+                                 const std::function<ConfigUriObjectPtr(ConfigUriText, ConfigUriObjectKind)> &create) {
     if (!uri)
-        throw ConfigUriComponentsError("System.ArgumentNullException",
-                                       u"Value cannot be null. (Parameter 'uri')", 0x80004003, u"uri");
+        throw ConfigUriComponentsError("System.ArgumentNullException", u"Value cannot be null. (Parameter 'uri')",
+                                       0x80004003, u"uri");
     uri->scheme();
     auto native = std::dynamic_pointer_cast<const GenericUriObject>(uri);
     if (!native)
@@ -1046,36 +1063,42 @@ ConfigUriObjectPtr config_generic_uri_with_fragment(
     rebuilt->builder_fields();
     return result;
 }
+
 ConfigUriObjectPtr config_generic_uri_clone(ConfigUriObjectPtr uri) {
     auto native = std::dynamic_pointer_cast<const GenericUriObject>(uri);
     if (!native)
         throw std::invalid_argument("Generic URI clone requires its native object");
     return native->clone_source();
 }
+
 ConfigUriText config_generic_uri_component(ConfigUriObjectPtr uri, ConfigGenericUriComponent component) {
     auto native = std::dynamic_pointer_cast<const GenericUriObject>(uri);
     if (!native)
         throw std::invalid_argument("Generic URI components require their native absolute object");
     return native->network_component(component);
 }
+
 std::int32_t config_generic_uri_port(ConfigUriObjectPtr uri) {
     auto native = std::dynamic_pointer_cast<const GenericUriObject>(uri);
     if (!native)
         throw std::invalid_argument("Generic URI port requires its native absolute object");
     return native->port_source();
 }
+
 ConfigUriText config_generic_uri_authority(ConfigUriObjectPtr uri) {
     auto native = std::dynamic_pointer_cast<const GenericUriObject>(uri);
     if (!native)
         throw std::invalid_argument("Generic URI authority requires its native absolute object");
     return native->authority();
 }
+
 ConfigUriText config_generic_uri_http_pool_identity(ConfigUriObjectPtr uri) {
     auto native = std::dynamic_pointer_cast<const GenericUriObject>(uri);
     if (!native)
         throw std::invalid_argument("HTTP proxy pool identity requires its native absolute object");
     return native->http_pool_identity();
 }
+
 ConfigUriNetworkIdentity config_generic_uri_network_identity(ConfigUriObjectPtr uri) {
     auto native = std::dynamic_pointer_cast<const GenericUriObject>(uri);
     if (!native)
@@ -1083,4 +1106,4 @@ ConfigUriNetworkIdentity config_generic_uri_network_identity(ConfigUriObjectPtr 
     return native->network_identity();
 }
 
-}
+} // namespace opensim::framework

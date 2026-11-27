@@ -27,12 +27,14 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "opensim/network/packet_history.hpp"
 #include <stdexcept>
+
 namespace opensim::network {
 IncomingPacketHistoryCollection::IncomingPacketHistoryCollection(std::int32_t capacity) {
     if (capacity < 0)
         throw std::invalid_argument("Negative packet history capacity");
     items_.resize(static_cast<std::size_t>(capacity));
 }
+
 bool IncomingPacketHistoryCollection::try_enqueue(std::uint32_t sequence) {
     std::lock_guard lock(mutex_);
     if (!set_.insert(sequence).second)
@@ -45,4 +47,4 @@ bool IncomingPacketHistoryCollection::try_enqueue(std::uint32_t sequence) {
     }
     return true;
 }
-}
+} // namespace opensim::network

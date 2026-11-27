@@ -1,0 +1,1 @@
+YOption advflowctl;YOption chars;integer result;integer calls;default{state_entry(){integer n;for(n=0;n<3;n++){switch(n){case 1:continue;default:result+=1;}calls++;}}}

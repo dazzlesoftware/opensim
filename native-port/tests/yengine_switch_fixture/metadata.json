@@ -1,0 +1,1008 @@
+[
+  {
+    "accepted": false,
+    "executed": false,
+    "globals": {},
+    "errors": [
+      "premature expression end"
+    ],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": null,
+    "stackSamples": [],
+    "name": "missing_option",
+    "source": "integer result;integer calls;default{state_entry(){switch(1){case 1:result=7;break;}}}",
+    "sha256": {
+      "source.lsl": "e63ab389a55abebf0295d8753ee2d65bb70915c2f4670792976a4fe70000c729",
+      "source_hash.txt": "6dbe4816967853f6686e9f7ec62847154d081b53b2a265d41b74f6ee1d430d97",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  },
+  {
+    "accepted": false,
+    "executed": false,
+    "globals": {},
+    "errors": [
+      "premature expression end"
+    ],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": null,
+    "stackSamples": [],
+    "name": "chars_only",
+    "source": "YOption chars;integer result;integer calls;default{state_entry(){switch(1){case 1:result=7;break;}}}",
+    "sha256": {
+      "source.lsl": "ad12fc97eaa9a58e81b35bf4c2d947821eb61d3d53f450f8581bc10effc76d85",
+      "source_hash.txt": "6dbe4816967853f6686e9f7ec62847154d081b53b2a265d41b74f6ee1d430d97",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  },
+  {
+    "accepted": true,
+    "executed": true,
+    "globals": {
+      "calls": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 0
+      },
+      "result": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 7
+      }
+    },
+    "errors": [],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": 1000000,
+    "stackSamples": [],
+    "name": "yoptions",
+    "source": "YOptions;integer result;integer calls;default{state_entry(){switch(1){case 1:result=7;break;}}}",
+    "sha256": {
+      "original.il.txt": "644ca3ffb6c3c4a732bae374ccd053b3715940108179d21b896b80152570b8dd",
+      "original.yobj": "fa6b2fefe95a397852e151e8512e518e9429f922d9c19f124d34fa29bc91ff48",
+      "source.lsl": "c1582c56257ed69b8c07862999ed698c814b7858db04efdb8cab9becd4005d15",
+      "source_hash.txt": "6dbe4816967853f6686e9f7ec62847154d081b53b2a265d41b74f6ee1d430d97",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  },
+  {
+    "accepted": true,
+    "executed": true,
+    "globals": {
+      "calls": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 0
+      },
+      "result": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 7
+      },
+      "value": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 2
+      }
+    },
+    "errors": [],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": 1000000,
+    "stackSamples": [],
+    "name": "selector_integer",
+    "source": "YOption advflowctl;YOption chars;integer value=2;integer result;integer calls;default{state_entry(){switch(value){case 2:result=7;break;default:result=9;}}}",
+    "sha256": {
+      "original.il.txt": "6eb412fac9e780cd30c0ab2588ce5901626b04a3e623473bb7bcd057ba666692",
+      "original.yobj": "3cf68b09ed59f6e17d215a74550db9101e0bc236e4917d8e937ac11e033cc5da",
+      "source.lsl": "4dcd3b92a5c6594363930e450020893751350a9d16d7e75b8093d49decf78c2c",
+      "source_hash.txt": "b57519a385210231f08afb99bcff294a73e5ec464456d2cb4752da873d9f531d",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  },
+  {
+    "accepted": true,
+    "executed": true,
+    "globals": {
+      "calls": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 0
+      },
+      "result": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 7
+      },
+      "value": {
+        "type": "char",
+        "clr": "System.Char",
+        "utf16": 66
+      }
+    },
+    "errors": [],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": 1000000,
+    "stackSamples": [],
+    "name": "selector_char",
+    "source": "YOption advflowctl;YOption chars;char value='B';integer result;integer calls;default{state_entry(){switch(value){case 'B':result=7;break;default:result=9;}}}",
+    "sha256": {
+      "original.il.txt": "09e0777af5185adf543749192f02cb3404abc1e9070f4cdac157dbaa5d21edd7",
+      "original.yobj": "499594c7b324a754d83c4b91cadf07b02f6a47ccf76d232c513cefa23e485be6",
+      "source.lsl": "0de0486ab8905214d39029ddbc32bc6e52fe84ff68a65f272ed4b01b09083799",
+      "source_hash.txt": "06089befb6c981f9cdcc2faa89c005ead950b39c988a57685fc431485739933c",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  },
+  {
+    "accepted": false,
+    "executed": false,
+    "globals": {},
+    "errors": [
+      "must explicitly cast from float to integer"
+    ],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": null,
+    "stackSamples": [],
+    "name": "selector_float",
+    "source": "YOption advflowctl;YOption chars;float value=2.0;integer result;integer calls;default{state_entry(){switch(value){case 2:result=7;break;default:result=9;}}}",
+    "sha256": {
+      "source.lsl": "0faa4a1257b8fe171ece9f7b56a773b5d98e516400f5044e59f2a288a99fe263",
+      "source_hash.txt": "7f1562e4a2ab5a3fcae4226d885478c249e1f2ebddd48003d7552baf4e9a8f2e",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  },
+  {
+    "accepted": true,
+    "executed": true,
+    "globals": {
+      "calls": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 0
+      },
+      "result": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 7
+      },
+      "value": {
+        "type": "other",
+        "clr": "System.String",
+        "text": "b"
+      }
+    },
+    "errors": [],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": 1000000,
+    "stackSamples": [],
+    "name": "selector_string",
+    "source": "YOption advflowctl;YOption chars;string value=\"b\";integer result;integer calls;default{state_entry(){switch(value){case \"b\":result=7;break;default:result=9;}}}",
+    "sha256": {
+      "original.il.txt": "4513824c7f9fb4b4b869c1148dbb2f7c3ad011167cdfffdb2e92f64cb1cc3946",
+      "original.yobj": "a0bd5a06e95e7e2deb9bc8468af52b87600e39ef4a41aa71aaf3f32ef592e226",
+      "source.lsl": "99f55012251b456aa43401408f5cee15633b155fd35fc0941766e8edff065571",
+      "source_hash.txt": "96f7f617f97aadbf36c58eaf8ae0851b91e231498cd39932112dfb5ee2e6c6f6",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  },
+  {
+    "accepted": true,
+    "executed": true,
+    "globals": {
+      "calls": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 0
+      },
+      "result": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 7
+      },
+      "value": {
+        "type": "other",
+        "clr": "System.String",
+        "text": "b"
+      }
+    },
+    "errors": [],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": 1000000,
+    "stackSamples": [],
+    "name": "selector_key",
+    "source": "YOption advflowctl;YOption chars;key value=(key)\"b\";integer result;integer calls;default{state_entry(){switch(value){case \"b\":result=7;break;default:result=9;}}}",
+    "sha256": {
+      "original.il.txt": "3684e1879d824068439c57da28b0c9edaf4c26cef21f32b3f6a35bff9d1ecbb2",
+      "original.yobj": "17f4087da5653776a79e281c7838976dcb9dc23d6e71c6a13f5f5238ecd68291",
+      "source.lsl": "faf5cb49038175349ac7784104d48c7320875fcc6392f9483c83b97e664acefc",
+      "source_hash.txt": "9d53bca296dfa90e2e808f557f1683ccd28d0d708b66ad12a28aefb1809170e1",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  },
+  {
+    "accepted": false,
+    "executed": false,
+    "globals": {},
+    "errors": [
+      "illegal to cast from list to integer"
+    ],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": null,
+    "stackSamples": [],
+    "name": "selector_list",
+    "source": "YOption advflowctl;YOption chars;list value=[2];integer result;integer calls;default{state_entry(){switch(value){case 2:result=7;break;default:result=9;}}}",
+    "sha256": {
+      "source.lsl": "41f978cde04854ffa3e8ada0d8e94699ac6a5aec92804dda6bab0b275e066277",
+      "source_hash.txt": "d4ec16f0c12040fc290b71c3594292ed015c63a44cbd33678b327bb14f72d887",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  },
+  {
+    "accepted": false,
+    "executed": false,
+    "globals": {},
+    "errors": [
+      "illegal to cast from vector to integer"
+    ],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": null,
+    "stackSamples": [],
+    "name": "selector_vector",
+    "source": "YOption advflowctl;YOption chars;vector value=<2,0,0>;integer result;integer calls;default{state_entry(){switch(value){case 2:result=7;break;default:result=9;}}}",
+    "sha256": {
+      "source.lsl": "c854aea7ec8ed2ea4412d600bf3d543251ab309396009cb76db37d63bbc4df3b",
+      "source_hash.txt": "0810463b028d7fbdf36997ceace1f34e91152a969e5a521b45823e6ab89352fd",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  },
+  {
+    "accepted": false,
+    "executed": false,
+    "globals": {},
+    "errors": [
+      "illegal to cast from rotation to integer"
+    ],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": null,
+    "stackSamples": [],
+    "name": "selector_rotation",
+    "source": "YOption advflowctl;YOption chars;rotation value=<0,0,0,1>;integer result;integer calls;default{state_entry(){switch(value){case 1:result=7;break;default:result=9;}}}",
+    "sha256": {
+      "source.lsl": "d0fc35653ee3fe7bc2016716a93102c141bc7f6204e540aaf59cb0742de6d5d2",
+      "source_hash.txt": "e74ff30ba5d8e494c307992882dd77ed0c2efaea789cc5ffbcfd306d93f6c071",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  },
+  {
+    "accepted": false,
+    "executed": false,
+    "globals": {},
+    "errors": [
+      "must be compile-time char or integer constant"
+    ],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": null,
+    "stackSamples": [],
+    "name": "float_case",
+    "source": "YOption advflowctl;YOption chars;integer result;integer calls;default{state_entry(){switch(2){case 2.0:result=7;break;}}}",
+    "sha256": {
+      "source.lsl": "9d981843de0c7f2563f23c0eb698d97b999cb34d8db7a4e3727de11a5bd507eb",
+      "source_hash.txt": "227ba41d6a9e7e04ba1c2632948f3082e7e45cda45e7336648a1beabf46a7f6b",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  },
+  {
+    "accepted": false,
+    "executed": false,
+    "globals": {},
+    "errors": [
+      "must be compile-time char or integer constant"
+    ],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": null,
+    "stackSamples": [],
+    "name": "variable_case",
+    "source": "YOption advflowctl;YOption chars;integer value=2;integer result;integer calls;default{state_entry(){switch(2){case value:result=7;break;}}}",
+    "sha256": {
+      "source.lsl": "421139228a0b7944474cdb16b91f1d02d949fee5942704e2455ae07d9d7fce4c",
+      "source_hash.txt": "5035913fbd971b6798051ebf3d9a6ac9b0a8f564c58c8c95660cc92ed8104dfb",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  },
+  {
+    "accepted": true,
+    "executed": true,
+    "globals": {
+      "calls": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 0
+      },
+      "result": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 7
+      }
+    },
+    "errors": [],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": 1000000,
+    "stackSamples": [],
+    "name": "constant_expression",
+    "source": "YOption advflowctl;YOption chars;integer result;integer calls;default{state_entry(){switch(2){case 1+1:result=7;break;}}}",
+    "sha256": {
+      "original.il.txt": "abbeda5155e63b019b731392261ca14e2ae4fb1fc929f3e35f5f9bcd7f6aab1c",
+      "original.yobj": "1c4027927660ea16a992a30d255f5a441bdf449b1abff20ab988da0883af9488",
+      "source.lsl": "3bcfab95e43fa5e66e07400b002d37096dab8405f32ab4ab84a66eb4ec66273f",
+      "source_hash.txt": "be2cb72ec09440853787416e5f88c937922d96df3e8c4ba9955064d12a0dad81",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  },
+  {
+    "accepted": false,
+    "executed": false,
+    "globals": {},
+    "errors": [
+      "must be compile-time char or integer constant"
+    ],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": null,
+    "stackSamples": [],
+    "name": "case_function",
+    "source": "YOption advflowctl;YOption chars;integer result;integer calls;integer get(){calls++;return 2;}default{state_entry(){switch(2){case get():result=7;break;}}}",
+    "sha256": {
+      "source.lsl": "35f5b8de7b6fba6b71388d3d69bfe3b158ee617950730f6194e0b326793f0a54",
+      "source_hash.txt": "1810459fca8e84dc7d17cc345c67a8c2a6cc26eb9cbee939d9395e84cd0ab2d2",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  },
+  {
+    "accepted": true,
+    "executed": true,
+    "globals": {
+      "calls": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 0
+      },
+      "result": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 7
+      }
+    },
+    "errors": [],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": 1000000,
+    "stackSamples": [],
+    "name": "key_case",
+    "source": "YOption advflowctl;YOption chars;integer result;integer calls;default{state_entry(){switch(\"b\"){case (key)\"b\":result=7;break;}}}",
+    "sha256": {
+      "original.il.txt": "83c453f5fda07831cb59beabcdb4b367447208e0e43eb3b8a60864717afe7545",
+      "original.yobj": "c4d62b1ba2fe51b51b03da2b3a2b6a39175df47299f67376d0f04c02ba611366",
+      "source.lsl": "fdd63ae5a413d6ae52dd25f9838576f0ed0c26e883d49c5f7277697c9dc61dfc",
+      "source_hash.txt": "e04bf15f23dd21671db08b6b07a65ae6bfd4d57e581f1d49f4f12f8cd8982758",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  },
+  {
+    "accepted": false,
+    "executed": false,
+    "globals": {},
+    "errors": [
+      "must be compile-time string constant"
+    ],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": null,
+    "stackSamples": [],
+    "name": "int_case_string_selector",
+    "source": "YOption advflowctl;YOption chars;integer result;integer calls;default{state_entry(){switch(\"2\"){case 2:result=7;break;}}}",
+    "sha256": {
+      "source.lsl": "dba8847677c490d2325349b9eda6354801268d51236bfbcf6323e39e513cbda7",
+      "source_hash.txt": "3069c58fc138d972e773dd6788cf0c328b2d7299a1ca13519040b629d40b2a25",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  },
+  {
+    "accepted": true,
+    "executed": true,
+    "globals": {
+      "calls": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 0
+      },
+      "result": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 7
+      }
+    },
+    "errors": [],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": 1000000,
+    "stackSamples": [],
+    "name": "char_case_integer_selector",
+    "source": "YOption advflowctl;YOption chars;integer result;integer calls;default{state_entry(){switch(65){case 'A':result=7;break;}}}",
+    "sha256": {
+      "original.il.txt": "6213e7c6311d677103404f65e546f573ae437a356ca5216061a66b410e4eff6b",
+      "original.yobj": "5d61050686f0309813cce70e01f772945525795167bc9a994b014499c1183ae2",
+      "source.lsl": "ee38de68fe5bb11c545e87eb9f9f6d13404ba8dda520e24949bbdfe0a58d67b9",
+      "source_hash.txt": "72a78f61241cdbee9aeec042e85b388d7e2a5b6c8d7471e10b3b956c9288f6f4",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  },
+  {
+    "accepted": true,
+    "executed": true,
+    "globals": {
+      "calls": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 0
+      },
+      "result": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 111
+      }
+    },
+    "errors": [],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": 1000000,
+    "stackSamples": [],
+    "name": "fallthrough",
+    "source": "YOption advflowctl;YOption chars;integer result;integer calls;default{state_entry(){switch(1){case 1:result+=1;case 2:result+=10;default:result+=100;}}}",
+    "sha256": {
+      "original.il.txt": "37538b91d79af67186660bb8f589ba0a40d99c3b2f54b2dd8feeac72c6109e27",
+      "original.yobj": "5cd0dcac29ded9055879cd00c25c37c26bb9e6eb109c6b36623ece1c9a1b541a",
+      "source.lsl": "f24ee26f93f313b4c85e0062bbee5901e57d984e32fdb250e924c2236cabf7e2",
+      "source_hash.txt": "9f5e24b4e53df5b3bfaf73e1d04223ee7069906a33476d8bfd3ea6e7fb7519ed",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  },
+  {
+    "accepted": true,
+    "executed": true,
+    "globals": {
+      "calls": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 0
+      },
+      "result": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 110
+      }
+    },
+    "errors": [],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": 1000000,
+    "stackSamples": [],
+    "name": "default_middle",
+    "source": "YOption advflowctl;YOption chars;integer result;integer calls;default{state_entry(){switch(9){case 1:result+=1;default:result+=10;case 2:result+=100;}}}",
+    "sha256": {
+      "original.il.txt": "6915bdf9597661b91fb19e1022e8441d55a8499d5cf9b53f8fd340586e300a0a",
+      "original.yobj": "736689fd20d60035ea51a1935d1335f703afd8dd0d66d888298ec97a299cdf00",
+      "source.lsl": "ec0d140d5c10ff456dd387780f0074ebfc905721bfcb3043ffffbe7b4be4a0c8",
+      "source_hash.txt": "301a2bbe3c30dfbf6aa3d20817b6c6f15083ad13ecad4a1403e060d56f1c8588",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  },
+  {
+    "accepted": true,
+    "executed": true,
+    "globals": {
+      "calls": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 1
+      },
+      "result": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 0
+      }
+    },
+    "errors": [],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": 1000000,
+    "stackSamples": [],
+    "name": "no_match",
+    "source": "YOption advflowctl;YOption chars;integer result;integer calls;default{state_entry(){switch(9){case 1:result=7;break;}calls=1;}}",
+    "sha256": {
+      "original.il.txt": "b286646fc503f12e77d76cba5030bd0e26fa8f270d3427aceef9563d4d42ee3c",
+      "original.yobj": "27d6e39c0c41e363e762266f662132005ad5c24964dabf92c3c9bdf83c515712",
+      "source.lsl": "e48a024bcf16fd72cc6b3c6d085f25f8e3b06481dcb57ded463ed9daa06a694d",
+      "source_hash.txt": "bcb86d3c697c267315932cc5bbd70f9886e01da65fb6920c521a1bcd58136336",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  },
+  {
+    "accepted": false,
+    "executed": false,
+    "globals": {},
+    "errors": [
+      "expecting switch case or default"
+    ],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": null,
+    "stackSamples": [],
+    "name": "empty",
+    "source": "YOption advflowctl;YOption chars;integer result;integer calls;default{state_entry(){switch(9){}calls=1;}}",
+    "sha256": {
+      "source.lsl": "ebcc1ea9ba8b185f0b621e8b36fcfaaeadc5cd63f4b49019e8275f6b7591912d",
+      "source_hash.txt": "d0926e5a0ab9989dd16c924f7513166404555bb0ef41d475df45120897af6e43",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  },
+  {
+    "accepted": true,
+    "executed": true,
+    "globals": {
+      "calls": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 0
+      },
+      "result": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 7
+      }
+    },
+    "errors": [],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": 1000000,
+    "stackSamples": [],
+    "name": "shared_labels",
+    "source": "YOption advflowctl;YOption chars;integer result;integer calls;default{state_entry(){switch(2){case 1:case 2:result=7;break;default:result=9;}}}",
+    "sha256": {
+      "original.il.txt": "d20c1046560f4c6eabf8f99154608a336aafb1afcd45100acc06e36d7a5eac1b",
+      "original.yobj": "e070c450b64d7d8b3bc3100bf1efc6e5b072b53a730b44380669e5c72a56e8ee",
+      "source.lsl": "ec0845c2e7fdc582d21189db2fb45d0de7c8a902d98715a45614433c50e5b3d4",
+      "source_hash.txt": "8ee966253e383f506708b58e7342f2feed79b06a3ffab6c15c3ce3b6bf49382f",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  },
+  {
+    "accepted": false,
+    "executed": false,
+    "globals": {},
+    "errors": [
+      "value used by previous case"
+    ],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": null,
+    "stackSamples": [],
+    "name": "duplicate",
+    "source": "YOption advflowctl;YOption chars;integer result;integer calls;default{state_entry(){switch(1){case 1:result=7;break;case 1:result=9;}}}",
+    "sha256": {
+      "source.lsl": "7f3e61cf9b2cd1084d88f34891f750b7c02b7a62a5bc9009f407a2fefe095ebe",
+      "source_hash.txt": "b99fc56458804727c0aa2635a77e901e81e675446e3334431ed6a6814ba740b6",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  },
+  {
+    "accepted": false,
+    "executed": false,
+    "globals": {},
+    "errors": [
+      "only one default case allowed"
+    ],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": null,
+    "stackSamples": [],
+    "name": "duplicate_default",
+    "source": "YOption advflowctl;YOption chars;integer result;integer calls;default{state_entry(){switch(1){default:result=7;default:result=9;}}}",
+    "sha256": {
+      "source.lsl": "123072b4d16cd7257ce4a2ebdcbf18f91ee4b5f3027b299fba8c7d3553076914",
+      "source_hash.txt": "9106d924d1411ce91440df8f7ad3fa5e60eb6f09672fb20a10410c9abe8493c1",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  },
+  {
+    "accepted": true,
+    "executed": true,
+    "globals": {
+      "calls": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 0
+      },
+      "result": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 7
+      }
+    },
+    "errors": [],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": 1000000,
+    "stackSamples": [],
+    "name": "range_integer",
+    "source": "YOption advflowctl;YOption chars;integer result;integer calls;default{state_entry(){switch(2){case 1 ... 3:result=7;break;default:result=9;}}}",
+    "sha256": {
+      "original.il.txt": "56e07360d158a2d8880ff0f856140aef76d91a0e295b0236527f6e038c172b27",
+      "original.yobj": "979d4d197488ec248f545c34e77fc32f0626c9e4c58c34fd8877320453229ce1",
+      "source.lsl": "ebc5bd3024bbb7a9b605089fdf45fff0773122c28efe9c6c65e0ad881bcda4e9",
+      "source_hash.txt": "17a0b71978bfe7164632f67a1a6a62fdd6c14a3f125a6b233a4865d6d9bab5b6",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  },
+  {
+    "accepted": true,
+    "executed": true,
+    "globals": {
+      "calls": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 0
+      },
+      "result": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 7
+      }
+    },
+    "errors": [],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": 1000000,
+    "stackSamples": [],
+    "name": "range_string",
+    "source": "YOption advflowctl;YOption chars;integer result;integer calls;default{state_entry(){switch(\"b\"){case \"a\" ... \"c\":result=7;break;default:result=9;}}}",
+    "sha256": {
+      "original.il.txt": "6c9e7aeb56675045c15812c329297bf03648a7245863e6e747e7e4a10d5c63e0",
+      "original.yobj": "fd614042879f5abd72d021f146a3f45c549c48b087251848f285f646fbcfbe88",
+      "source.lsl": "d194c3eab772b57928687ce5b0cbbd7e96cc88540b9e58513def730c30d62612",
+      "source_hash.txt": "f7f73634bfaac4250fc05bdeb869c8c3af3b5f264f23d4167cd4d9e7e87a8fcb",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  },
+  {
+    "accepted": true,
+    "executed": true,
+    "globals": {
+      "calls": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 0
+      },
+      "result": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 7
+      }
+    },
+    "errors": [],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": 1000000,
+    "stackSamples": [],
+    "name": "range_char",
+    "source": "YOption advflowctl;YOption chars;integer result;integer calls;default{state_entry(){switch('B'){case 'A' ... 'C':result=7;break;default:result=9;}}}",
+    "sha256": {
+      "original.il.txt": "34a29ed03b36981fb3990537686a0806f444294795168f7f2fad1bc561cbbf5a",
+      "original.yobj": "3eee947d0f0da574ea0bb7fd83bedaa587681d6fefcdcf235d3944ec2a4b4376",
+      "source.lsl": "04d0f4c5d31b5ad3386f8af66ac39588f8cad2dc8afe17eee34d6350132cbbe6",
+      "source_hash.txt": "497b7b504fbb6d9bb1c88a362ea6f876f8e23b9568a9b82253aa94cb4617ff15",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  },
+  {
+    "accepted": false,
+    "executed": false,
+    "globals": {},
+    "errors": [
+      "must be .ge. first value for the case"
+    ],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": null,
+    "stackSamples": [],
+    "name": "range_descending",
+    "source": "YOption advflowctl;YOption chars;integer result;integer calls;default{state_entry(){switch(2){case 3 ... 1:result=7;break;}}}",
+    "sha256": {
+      "source.lsl": "09de5f0f11a6b8093907780723096baea2e41853a7bc03b8c8f2c9ffe8bf07d2",
+      "source_hash.txt": "ed8f77f86de8ec35a4ae28121092c6b42926203a62ab6424da782136fc9e1519",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  },
+  {
+    "accepted": false,
+    "executed": false,
+    "globals": {},
+    "errors": [
+      "value used by previous case"
+    ],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": null,
+    "stackSamples": [],
+    "name": "range_overlap",
+    "source": "YOption advflowctl;YOption chars;integer result;integer calls;default{state_entry(){switch(2){case 1 ... 3:result=7;break;case 3 ... 5:result=9;}}}",
+    "sha256": {
+      "source.lsl": "dc7c9c267b95ef9da7c0665bb0909c579665590d71be2e287eb6f4030e878ecd",
+      "source_hash.txt": "ed20d5657799ca3f93f5531a983047dd3e4da086b4b4350491a11d8375594524",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  },
+  {
+    "accepted": true,
+    "executed": true,
+    "globals": {
+      "calls": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 1
+      },
+      "result": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 7
+      }
+    },
+    "errors": [],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": 1000000,
+    "stackSamples": [],
+    "name": "selector_once",
+    "source": "YOption advflowctl;YOption chars;integer result;integer calls;integer get(){calls++;return 2;}default{state_entry(){switch(get()){case 1:result=9;break;case 2:result=7;break;default:result=8;}}}",
+    "sha256": {
+      "original.il.txt": "940f71b548e40113e3e22034a0a992a269655381e6c8a2edd1310a5d46d9af67",
+      "original.yobj": "354c4bcc6dc4a3a8fb3fdd3913923b2693f7ef14d0dd56b87a6889793053a61f",
+      "source.lsl": "ddda524d4c46b79fee82ea3a499701d6aca738d959fdbbdebbea6c399754f558",
+      "source_hash.txt": "250b6cb2dca7724f28aefdc5fff3396730e0786514df16855f7024149b59fd87",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  },
+  {
+    "accepted": true,
+    "executed": true,
+    "globals": {
+      "calls": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 1
+      },
+      "result": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 17
+      }
+    },
+    "errors": [],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": 1000000,
+    "stackSamples": [],
+    "name": "nested_break",
+    "source": "YOption advflowctl;YOption chars;integer result;integer calls;default{state_entry(){switch(1){case 1:switch(2){case 2:result=7;break;}result+=10;break;default:result=99;}calls=1;}}",
+    "sha256": {
+      "original.il.txt": "55173f536989f4457d2856e2f1994ee521a5f9dcd21199665842a60f48ec0d76",
+      "original.yobj": "c21eb92a1f6b3a3e7bf30c1084339114ecddb1507ca3c73de01816bd381c9fcb",
+      "source.lsl": "d69bebd2cf65d3ab55c86792ee082c7d22f86125bcd6365ea20ca76d57c030a0",
+      "source_hash.txt": "850b76d93b8cdc0b877bb781d0debc49ba8f25c63a1ff243f896ace2d1d39cec",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  },
+  {
+    "accepted": true,
+    "executed": true,
+    "globals": {
+      "calls": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 3
+      },
+      "result": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 12
+      }
+    },
+    "errors": [],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": 1000000,
+    "stackSamples": [
+      999932,
+      999932,
+      999932,
+      999932
+    ],
+    "name": "loop_break",
+    "source": "YOption advflowctl;YOption chars;integer result;integer calls;default{state_entry(){integer n;for(n=0;n<3;n++){switch(n){case 1:result+=10;break;default:result+=1;}calls++;}}}",
+    "sha256": {
+      "original.il.txt": "b888311f67c3a686afe1f46f2094d1c98a05ac7b7f50e99c30f387f71bf25c09",
+      "original.yobj": "a67408f9c69a6c226fb0ae45c3e832e9c0bb0b0de6d5852b0c77c389f25fa767",
+      "source.lsl": "90cf9f9f8234a92f57398899372d8ee042e421f33ef33cdd361b01cdc8ee3a51",
+      "source_hash.txt": "8e26ef67dc5b20a2533e308bf91a347df158e3888855149d906e4a17bf5ace5a",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  },
+  {
+    "accepted": true,
+    "executed": true,
+    "globals": {
+      "calls": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 2
+      },
+      "result": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 2
+      }
+    },
+    "errors": [],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": 1000000,
+    "stackSamples": [
+      999932,
+      999932,
+      999932,
+      999932
+    ],
+    "name": "loop_continue",
+    "source": "YOption advflowctl;YOption chars;integer result;integer calls;default{state_entry(){integer n;for(n=0;n<3;n++){switch(n){case 1:continue;default:result+=1;}calls++;}}}",
+    "sha256": {
+      "original.il.txt": "2a9a58f5f4ebb1fc545d3fa639ef4d851d473b79eb67c7a17d621e7c0df5cab6",
+      "original.yobj": "01559a34be8b286a6a4af4da690a46708ac2830289dd003d4e97debc566b220e",
+      "source.lsl": "aea5e179f9b973a1d10c9873a770aa5a93e068a4ed24932cdcd6a94df3b8100b",
+      "source_hash.txt": "7daa732b0789a1ef47d2bc0b1f0b1040f999f8bad89db25fc83cde6ba94ed7a1",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  },
+  {
+    "accepted": false,
+    "executed": false,
+    "globals": {},
+    "errors": [
+      "not in a continueable situation"
+    ],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": null,
+    "stackSamples": [],
+    "name": "continue_without_loop",
+    "source": "YOption advflowctl;YOption chars;integer result;integer calls;default{state_entry(){switch(1){case 1:continue;}}}",
+    "sha256": {
+      "source.lsl": "82ad015fe4c0b87248f3c84b09325d50024882f247f981cb5c669efb3318198d",
+      "source_hash.txt": "a647ab5dd92ec0469e9193459e8a623833bd1001b25110a0b5d15d3f91a29209",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  },
+  {
+    "accepted": true,
+    "executed": true,
+    "globals": {
+      "calls": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 0
+      },
+      "result": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 7
+      }
+    },
+    "errors": [],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": 1000000,
+    "stackSamples": [],
+    "name": "function_return",
+    "source": "YOption advflowctl;YOption chars;integer result;integer calls;integer get(){switch(2){case 2:return 7;default:return 9;}}default{state_entry(){result=get();}}",
+    "sha256": {
+      "original.il.txt": "9c26bb5d69c01ec9b56b62e6103822c221e2b6e64eb75837a71d24b86e4b8e87",
+      "original.yobj": "c3f580c61e794a2fce5f80d33258bee1839e72db7dfea89e6f31cebbc4179a11",
+      "source.lsl": "1c18eaae88e52c465c67e1e5d50414ba0de503688fea7db33dccd967085b3649",
+      "source_hash.txt": "9becc74f04afdb790c6462b05bb639fdd2f7beb758666ccb26c53b2396e76354",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  }
+]

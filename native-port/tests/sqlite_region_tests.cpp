@@ -32,10 +32,12 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdexcept>
 using namespace opensim;
 using namespace services;
-void check(bool value, const char* message) {
+
+void check(bool value, const char *message) {
     if (!value)
         throw std::runtime_error(message);
 }
+
 GridRegion region() {
     GridRegion value;
     value.id = framework::Uuid::random();
@@ -49,11 +51,11 @@ GridRegion region() {
     value.external_host = "127.0.0.1";
     return value;
 }
+
 int main() {
-    auto path = std::filesystem::temp_directory_path() /
-                ("opensim-regions-" + framework::Uuid::random().str() + ".db");
+    auto path = std::filesystem::temp_directory_path() / ("opensim-regions-" + framework::Uuid::random().str() + ".db");
     const auto encoded = path.u8string();
-    const std::string file(reinterpret_cast<const char*>(encoded.data()), encoded.size());
+    const std::string file(reinterpret_cast<const char *>(encoded.data()), encoded.size());
     try {
         bool threw = false;
         try {
@@ -77,12 +79,10 @@ int main() {
                   "non-square containment");
             check(store.range(model.x, model.y + 700, model.x + 1, model.y + 701, model.scope).size() == 1,
                   "range uses independent Y size");
-            check(store.find("A\\_\\%' Region", model.scope)->size() == 1,
-                  "escaped wildcard and quote values bound");
+            check(store.find("A\\_\\%' Region", model.scope)->size() == 1, "escaped wildcard and quote values bound");
             check(store.find("missing", {}).has_value() && store.find("missing", {})->empty(),
                   "SQL empty results are an empty collection");
-            check(store.specific("a_%' region", model.scope) != nullptr,
-                  "ASCII case-insensitive exact names");
+            check(store.specific("a_%' region", model.scope) != nullptr, "ASCII case-insensitive exact names");
             check(store.set(model.id, "PrincipalID", framework::Uuid::random().str()), "column update");
             const auto principal = store.get(model.id, {})->data.at("PrincipalID");
             auto row = store.get(model.id, {});
@@ -92,14 +92,16 @@ int main() {
             check(store.store(row) && store.get(model.id, {})->name == model.name &&
                       store.get(model.id, {})->x == model.x + 256,
                   "existing row updates preserve provider name behavior");
-            check(store.get(model.id, {})->data.at("PrincipalID") == principal,
-                  "unprovided columns survive update");
+            check(store.get(model.id, {})->data.at("PrincipalID") == principal, "unprovided columns survive update");
             row->scope = framework::Uuid::random();
             row->x += 4096;
             check(!store.store(row) && store.get(model.id, {})->x == model.x + 256,
                   "conflicting scoped update leaves row intact");
-            check(store.with_flags(DefaultRegion, model.scope).size() == 1 &&
-                      store.with_flags(Hyperlink, {}).empty(),
+            const auto previous = store.get(model.id, {});
+            check(store.restore(row) && store.get(model.id, row->scope)->name == "Renamed" && store.restore(previous) &&
+                      store.get(model.id, model.scope)->name == model.name,
+                  "rollback restores the saved name and scope");
+            check(store.with_flags(DefaultRegion, model.scope).size() == 1 && store.with_flags(Hyperlink, {}).empty(),
                   "flag selection");
             bool rejected = false;
             try {
@@ -123,8 +125,7 @@ int main() {
         } catch (...) {
             threw = true;
         }
-        check(threw && std::filesystem::file_size(path) == size,
-              "initialization refuses a populated database");
+        check(threw && std::filesystem::file_size(path) == size, "initialization refuses a populated database");
         {
             SqliteRegionStore reopened(file);
             auto row = reopened.get(model.id, model.scope);
@@ -134,6 +135,11 @@ int main() {
             reopened.store(row);
             server::IniConfig config;
             GridService grid(reopened, config, [] { return 1700000000; });
+            auto conflicting = model;
+            conflicting.scope = framework::Uuid::random();
+            check(grid.register_region(conflicting.scope, conflicting).empty() &&
+                      !grid.by_id(conflicting.scope, model.id) && grid.by_id(model.scope, model.id),
+                  "managed registration ignores a declined scoped write and preserves the existing region");
             check(grid.deregister_region(model.id) && grid.by_id(model.scope, model.id) &&
                       grid.flags(model.scope, model.id) == 17,
                   "persistent deregistration is durable offline state");
@@ -142,7 +148,7 @@ int main() {
         std::filesystem::remove(path);
         std::cout << "PASS: SQLite region persistence, queries and reopen\n";
         return 0;
-    } catch (const std::exception& error) {
+    } catch (const std::exception &error) {
         std::filesystem::remove(path);
         std::cerr << error.what() << '\n';
         return 1;

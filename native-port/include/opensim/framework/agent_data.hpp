@@ -11,6 +11,7 @@
 #include <any>
 #include <iosfwd>
 #include <unordered_map>
+
 namespace opensim::framework {
 class AgentData : public IAgentData {
   public:
@@ -45,28 +46,34 @@ class AgentData : public IAgentData {
     std::shared_ptr<TransferList<Uuid>> cached_friends_online;
     AgentData() = default;
     using LegacyTable = std::unordered_map<std::string, std::any>;
-    explicit AgentData(const LegacyTable*) {} // Original Hashtable constructor is a no-op.
+
+    explicit AgentData(const LegacyTable *) {} // Original Hashtable constructor is a no-op.
+
     Uuid agent_uuid() const override {
         return agent_id;
     }
-    void agent_uuid(const Uuid& value) override {
+
+    void agent_uuid(const Uuid &value) override {
         agent_id = value;
     }
-    void set_look_at(const Vector3& value);
-    network::Value pack(EntityTransferContext* context = nullptr) override;
-    void unpack(network::Value& data, AgentTransferScene* scene = nullptr,
-                EntityTransferContext* context = nullptr) override;
-    void dump(std::ostream& output) const;
+
+    void set_look_at(const Vector3 &value);
+    network::Value pack(EntityTransferContext *context = nullptr) override;
+    void unpack(network::Value &data, AgentTransferScene *scene = nullptr,
+                EntityTransferContext *context = nullptr) override;
+    void dump(std::ostream &output) const;
     void dump() const;
 };
+
 class CompleteAgentData : public AgentData {
   public:
-    network::Value pack(EntityTransferContext* context = nullptr) override {
+    network::Value pack(EntityTransferContext *context = nullptr) override {
         return AgentData::pack(context);
     }
-    void unpack(network::Value& data, AgentTransferScene* scene = nullptr,
-                EntityTransferContext* context = nullptr) override {
+
+    void unpack(network::Value &data, AgentTransferScene *scene = nullptr,
+                EntityTransferContext *context = nullptr) override {
         AgentData::unpack(data, scene, context);
     }
 };
-}
+} // namespace opensim::framework

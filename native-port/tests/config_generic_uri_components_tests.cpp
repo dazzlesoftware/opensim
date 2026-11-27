@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <vector>
 using namespace opensim::framework;
+
 ConfigUriText decode(std::string s) {
     if (s == "~")
         return {};
@@ -16,6 +17,7 @@ ConfigUriText decode(std::string s) {
         v += char16_t(std::stoul(s.substr(i, 4), nullptr, 16));
     return std::make_shared<const std::u16string>(v);
 }
+
 std::string hex(std::u16string_view value) {
     std::string s;
     for (auto c : value)
@@ -23,14 +25,15 @@ std::string hex(std::u16string_view value) {
             s += "0123456789abcdef"[(c >> b) & 15];
     return s.empty() ? "-" : s;
 }
-std::string error(const ConfigUriComponentsError& e) {
-    auto range = dynamic_cast<const ConfigFileUriRangeError*>(&e);
-    return "E:" + e.source_type + ":" + std::to_string(static_cast<std::int32_t>(e.hresult)) + ":" +
-           hex(e.message) + ":" + (e.parameter ? hex(*e.parameter) : "~") + ":" +
+
+std::string error(const ConfigUriComponentsError &e) {
+    auto range = dynamic_cast<const ConfigFileUriRangeError *>(&e);
+    return "E:" + e.source_type + ":" + std::to_string(static_cast<std::int32_t>(e.hresult)) + ":" + hex(e.message) +
+           ":" + (e.parameter ? hex(*e.parameter) : "~") + ":" +
            (range && range->actual_value ? std::to_string(*range->actual_value) : "~");
 }
 
-int main(int argc, char**) {
+int main(int argc, char **) {
     auto backend = native_config_uri_components_backend();
     bool windows =
 #ifdef _WIN32
@@ -49,7 +52,7 @@ int main(int argc, char**) {
     }
     std::string raw;
     while (std::getline(std::cin, raw)) {
-        std::unordered_map<const void*, int> ids;
+        std::unordered_map<const void *, int> ids;
         std::vector<ConfigUriText> roots;
         auto input = decode(raw);
         auto render = [&](ConfigUriText t) {
@@ -104,13 +107,13 @@ int main(int argc, char**) {
                         value = uri->scheme();
                     }
                     std::cout << render(value);
-                } catch (const ConfigUriComponentsError& e) {
+                } catch (const ConfigUriComponentsError &e) {
                     std::cout << error(e);
                 }
             }
-        } catch (const ConfigUriComponentsError& e) {
+        } catch (const ConfigUriComponentsError &e) {
             std::cout << error(e);
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
             std::cout << "NATIVE:" << e.what();
         }
         std::cout << "\n";

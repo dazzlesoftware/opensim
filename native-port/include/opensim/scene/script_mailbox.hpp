@@ -18,27 +18,29 @@ struct ScriptEmail {
 };
 
 class ScriptMailbox {
-public:
+  public:
     using Clock = std::chrono::steady_clock;
-    explicit ScriptMailbox(int owner_per_hour = 500, int recipient_per_hour = 50,
-                           int smtp_per_day = 100, int smtp_recipient_per_hour = 50);
+    explicit ScriptMailbox(int owner_per_hour = 500, int recipient_per_hour = 50, int smtp_per_day = 100,
+                           int smtp_recipient_per_hour = 50);
     bool allow_owner(framework::Uuid owner, Clock::time_point now = Clock::now());
     bool allow_recipient(std::string address, Clock::time_point now = Clock::now());
     bool allow_smtp(std::string address, Clock::time_point now = Clock::now());
     void add(framework::Uuid part);
     void remove(framework::Uuid part);
     void insert(framework::Uuid part, ScriptEmail message, Clock::time_point now = Clock::now());
-    std::optional<ScriptEmail> next(framework::Uuid part, std::string_view sender,
-                                    std::string_view subject, Clock::time_point now = Clock::now());
+    std::optional<ScriptEmail> next(framework::Uuid part, std::string_view sender, std::string_view subject,
+                                    Clock::time_point now = Clock::now());
 
-private:
+  private:
     static constexpr auto timeout = std::chrono::minutes(30);
     static constexpr auto throttle_window = std::chrono::hours(1);
+
     struct Throttle {
         double remaining;
         Clock::time_point last;
     };
-    static bool consume(Throttle& throttle, int limit, Clock::time_point now);
+
+    static bool consume(Throttle &throttle, int limit, Clock::time_point now);
     int owner_per_hour_, recipient_per_hour_;
     int smtp_per_day_, smtp_recipient_per_hour_;
     std::mutex mutex_;
@@ -53,4 +55,4 @@ private:
     std::map<framework::Uuid, Clock::time_point> expires_;
     Clock::time_point next_expiry_ = Clock::now() + timeout;
 };
-}
+} // namespace opensim::scene

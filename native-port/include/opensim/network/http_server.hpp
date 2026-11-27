@@ -33,8 +33,10 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <memory>
 #include <string>
 #include <vector>
+
 namespace opensim::network {
 class HttpResponseChannel;
+
 struct HttpRequest {
     std::string method;
     std::string path;
@@ -48,7 +50,9 @@ struct HttpRequest {
     std::shared_ptr<HttpResponseChannel> response_channel;
     std::uint32_t request_id = 0;
     double arrival_timestamp = 0;
+    bool standard_gzip_decoded = false;
 };
+
 struct HttpResponse {
     int status = 200;
     std::string content_type = "text/plain; charset=utf-8";
@@ -57,6 +61,7 @@ struct HttpResponse {
     bool keep_alive = false;
     bool deferred = false;
 };
+
 struct HttpServerOptions {
     std::string host = "127.0.0.1";
     int port = 9000;
@@ -71,20 +76,22 @@ struct HttpServerOptions {
     std::string pkcs12_bundle;
     std::string pkcs12_password;
 };
+
 class HttpServer {
-public:
-    using Handler = std::function<HttpResponse(const HttpRequest&)>;
+  public:
+    using Handler = std::function<HttpResponse(const HttpRequest &)>;
     HttpServer(HttpServerOptions options, Handler handler);
     ~HttpServer();
-    HttpServer(const HttpServer&) = delete;
-    HttpServer& operator=(const HttpServer&) = delete;
-    int start(const std::function<void(int)>& on_bound = {});
+    HttpServer(const HttpServer &) = delete;
+    HttpServer &operator=(const HttpServer &) = delete;
+    int start(const std::function<void(int)> &on_bound = {});
     void stop();
     bool is_running() const;
     static bool tls_available() noexcept;
     static bool gzip_available() noexcept;
-private:
+
+  private:
     struct Impl;
     std::unique_ptr<Impl> impl_;
 };
-}
+} // namespace opensim::network

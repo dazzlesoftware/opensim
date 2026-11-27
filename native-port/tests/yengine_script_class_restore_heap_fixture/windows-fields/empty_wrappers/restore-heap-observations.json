@@ -1,0 +1,1318 @@
+[
+  {
+    "mode": "fresh_allocated",
+    "limit": 0,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 0,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": -4,
+      "globalIntegers": [
+        0
+      ],
+      "classes": [
+        null,
+        null
+      ]
+    },
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=4, newtotal=4, limit=0",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.ClearOldArrays() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 346\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 188\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.MigrateIn(BinaryReader mir) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1814\r\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-array-class-restore-heap-phase35-reference\\Reference.cs:line 603",
+      "inner": null
+    },
+    "after": {
+      "heapLimit": 0,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": -4,
+      "globalIntegers": null,
+      "classes": null
+    }
+  },
+  {
+    "mode": "fresh_allocated",
+    "limit": 3,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 3,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": -1,
+      "globalIntegers": [
+        0
+      ],
+      "classes": [
+        null,
+        null
+      ]
+    },
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=4, newtotal=4, limit=3",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.ClearOldArrays() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 346\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 188\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.MigrateIn(BinaryReader mir) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1814\r\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-array-class-restore-heap-phase35-reference\\Reference.cs:line 603",
+      "inner": null
+    },
+    "after": {
+      "heapLimit": 3,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": -1,
+      "globalIntegers": null,
+      "classes": null
+    }
+  },
+  {
+    "mode": "fresh_allocated",
+    "limit": 4,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 4,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 0,
+      "globalIntegers": [
+        0
+      ],
+      "classes": [
+        null,
+        null
+      ]
+    },
+    "error": null,
+    "after": {
+      "heapLimit": 4,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 0,
+      "globalIntegers": [
+        0
+      ],
+      "classes": [
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": null
+            }
+          ]
+        },
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": null
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "mode": "fresh_allocated",
+    "limit": 15,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 15,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 11,
+      "globalIntegers": [
+        0
+      ],
+      "classes": [
+        null,
+        null
+      ]
+    },
+    "error": null,
+    "after": {
+      "heapLimit": 15,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 11,
+      "globalIntegers": [
+        0
+      ],
+      "classes": [
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": null
+            }
+          ]
+        },
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": null
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "mode": "fresh_allocated",
+    "limit": 16,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 16,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 12,
+      "globalIntegers": [
+        0
+      ],
+      "classes": [
+        null,
+        null
+      ]
+    },
+    "error": null,
+    "after": {
+      "heapLimit": 16,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 12,
+      "globalIntegers": [
+        0
+      ],
+      "classes": [
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": null
+            }
+          ]
+        },
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": null
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "mode": "fresh_allocated",
+    "limit": 19,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 19,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 15,
+      "globalIntegers": [
+        0
+      ],
+      "classes": [
+        null,
+        null
+      ]
+    },
+    "error": null,
+    "after": {
+      "heapLimit": 19,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 15,
+      "globalIntegers": [
+        0
+      ],
+      "classes": [
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": null
+            }
+          ]
+        },
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": null
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "mode": "fresh_allocated",
+    "limit": 20,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 20,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 16,
+      "globalIntegers": [
+        0
+      ],
+      "classes": [
+        null,
+        null
+      ]
+    },
+    "error": null,
+    "after": {
+      "heapLimit": 20,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 16,
+      "globalIntegers": [
+        0
+      ],
+      "classes": [
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": null
+            }
+          ]
+        },
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": null
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "mode": "fresh_allocated",
+    "limit": 100000000,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 100000000,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 99999996,
+      "globalIntegers": [
+        0
+      ],
+      "classes": [
+        null,
+        null
+      ]
+    },
+    "error": null,
+    "after": {
+      "heapLimit": 100000000,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 99999996,
+      "globalIntegers": [
+        0
+      ],
+      "classes": [
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": null
+            }
+          ]
+        },
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": null
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "mode": "same_instance",
+    "limit": 0,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 0,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": -4,
+      "globalIntegers": [
+        0
+      ],
+      "classes": [
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 0
+            }
+          ]
+        },
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 0
+            }
+          ]
+        }
+      ]
+    },
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=4, newtotal=4, limit=0",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.ClearOldArrays() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 346\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 188\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.MigrateIn(BinaryReader mir) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1814\r\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-array-class-restore-heap-phase35-reference\\Reference.cs:line 603",
+      "inner": null
+    },
+    "after": {
+      "heapLimit": 0,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": -4,
+      "globalIntegers": null,
+      "classes": null
+    }
+  },
+  {
+    "mode": "same_instance",
+    "limit": 3,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 3,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": -1,
+      "globalIntegers": [
+        0
+      ],
+      "classes": [
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 0
+            }
+          ]
+        },
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 0
+            }
+          ]
+        }
+      ]
+    },
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=4, newtotal=4, limit=3",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.ClearOldArrays() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 346\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 188\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.MigrateIn(BinaryReader mir) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1814\r\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-array-class-restore-heap-phase35-reference\\Reference.cs:line 603",
+      "inner": null
+    },
+    "after": {
+      "heapLimit": 3,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": -1,
+      "globalIntegers": null,
+      "classes": null
+    }
+  },
+  {
+    "mode": "same_instance",
+    "limit": 4,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 4,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 0,
+      "globalIntegers": [
+        0
+      ],
+      "classes": [
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 0
+            }
+          ]
+        },
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 0
+            }
+          ]
+        }
+      ]
+    },
+    "error": null,
+    "after": {
+      "heapLimit": 4,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 0,
+      "globalIntegers": [
+        0
+      ],
+      "classes": [
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": null
+            }
+          ]
+        },
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": null
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "mode": "same_instance",
+    "limit": 15,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 15,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 11,
+      "globalIntegers": [
+        0
+      ],
+      "classes": [
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 0
+            }
+          ]
+        },
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 0
+            }
+          ]
+        }
+      ]
+    },
+    "error": null,
+    "after": {
+      "heapLimit": 15,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 11,
+      "globalIntegers": [
+        0
+      ],
+      "classes": [
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": null
+            }
+          ]
+        },
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": null
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "mode": "same_instance",
+    "limit": 16,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 16,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 12,
+      "globalIntegers": [
+        0
+      ],
+      "classes": [
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 0
+            }
+          ]
+        },
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 0
+            }
+          ]
+        }
+      ]
+    },
+    "error": null,
+    "after": {
+      "heapLimit": 16,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 12,
+      "globalIntegers": [
+        0
+      ],
+      "classes": [
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": null
+            }
+          ]
+        },
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": null
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "mode": "same_instance",
+    "limit": 19,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 19,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 15,
+      "globalIntegers": [
+        0
+      ],
+      "classes": [
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 0
+            }
+          ]
+        },
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 0
+            }
+          ]
+        }
+      ]
+    },
+    "error": null,
+    "after": {
+      "heapLimit": 19,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 15,
+      "globalIntegers": [
+        0
+      ],
+      "classes": [
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": null
+            }
+          ]
+        },
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": null
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "mode": "same_instance",
+    "limit": 20,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 20,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 16,
+      "globalIntegers": [
+        0
+      ],
+      "classes": [
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 0
+            }
+          ]
+        },
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 0
+            }
+          ]
+        }
+      ]
+    },
+    "error": null,
+    "after": {
+      "heapLimit": 20,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 16,
+      "globalIntegers": [
+        0
+      ],
+      "classes": [
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": null
+            }
+          ]
+        },
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": null
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "mode": "same_instance",
+    "limit": 100000000,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 100000000,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 99999996,
+      "globalIntegers": [
+        0
+      ],
+      "classes": [
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 0
+            }
+          ]
+        },
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 0
+            }
+          ]
+        }
+      ]
+    },
+    "error": null,
+    "after": {
+      "heapLimit": 100000000,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 99999996,
+      "globalIntegers": [
+        0
+      ],
+      "classes": [
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": null
+            }
+          ]
+        },
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": null
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "mode": "fresh_unallocated",
+    "limit": 0,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 0,
+      "globalUsage": 0,
+      "localsUsage": 0,
+      "heapUsed": 0,
+      "heapLeft": 0,
+      "globalIntegers": null,
+      "classes": null
+    },
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=0, newtotal=4, limit=0",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 284\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj.Restore(XMRInstAbstract inst, Recver recvValue) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRSDTypeClObj.cs:line 272\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.RecvObjValue() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1967\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.RecvObjValue() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1911\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 272\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.MigrateIn(BinaryReader mir) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1814\r\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-array-class-restore-heap-phase35-reference\\Reference.cs:line 603",
+      "inner": null
+    },
+    "after": {
+      "heapLimit": 0,
+      "globalUsage": 0,
+      "localsUsage": 0,
+      "heapUsed": 0,
+      "heapLeft": 0,
+      "globalIntegers": [
+        0
+      ],
+      "classes": null
+    }
+  },
+  {
+    "mode": "fresh_unallocated",
+    "limit": 3,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 3,
+      "globalUsage": 0,
+      "localsUsage": 0,
+      "heapUsed": 0,
+      "heapLeft": 3,
+      "globalIntegers": null,
+      "classes": null
+    },
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=0, newtotal=4, limit=3",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 284\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj.Restore(XMRInstAbstract inst, Recver recvValue) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRSDTypeClObj.cs:line 272\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.RecvObjValue() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1967\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.RecvObjValue() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1911\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 272\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.MigrateIn(BinaryReader mir) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1814\r\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-array-class-restore-heap-phase35-reference\\Reference.cs:line 603",
+      "inner": null
+    },
+    "after": {
+      "heapLimit": 3,
+      "globalUsage": 0,
+      "localsUsage": 0,
+      "heapUsed": 0,
+      "heapLeft": 3,
+      "globalIntegers": [
+        0
+      ],
+      "classes": null
+    }
+  },
+  {
+    "mode": "fresh_unallocated",
+    "limit": 4,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 4,
+      "globalUsage": 0,
+      "localsUsage": 0,
+      "heapUsed": 0,
+      "heapLeft": 4,
+      "globalIntegers": null,
+      "classes": null
+    },
+    "error": null,
+    "after": {
+      "heapLimit": 4,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 0,
+      "globalIntegers": [
+        0
+      ],
+      "classes": [
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": null
+            }
+          ]
+        },
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": null
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "mode": "fresh_unallocated",
+    "limit": 15,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 15,
+      "globalUsage": 0,
+      "localsUsage": 0,
+      "heapUsed": 0,
+      "heapLeft": 15,
+      "globalIntegers": null,
+      "classes": null
+    },
+    "error": null,
+    "after": {
+      "heapLimit": 15,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 11,
+      "globalIntegers": [
+        0
+      ],
+      "classes": [
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": null
+            }
+          ]
+        },
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": null
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "mode": "fresh_unallocated",
+    "limit": 16,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 16,
+      "globalUsage": 0,
+      "localsUsage": 0,
+      "heapUsed": 0,
+      "heapLeft": 16,
+      "globalIntegers": null,
+      "classes": null
+    },
+    "error": null,
+    "after": {
+      "heapLimit": 16,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 12,
+      "globalIntegers": [
+        0
+      ],
+      "classes": [
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": null
+            }
+          ]
+        },
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": null
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "mode": "fresh_unallocated",
+    "limit": 19,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 19,
+      "globalUsage": 0,
+      "localsUsage": 0,
+      "heapUsed": 0,
+      "heapLeft": 19,
+      "globalIntegers": null,
+      "classes": null
+    },
+    "error": null,
+    "after": {
+      "heapLimit": 19,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 15,
+      "globalIntegers": [
+        0
+      ],
+      "classes": [
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": null
+            }
+          ]
+        },
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": null
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "mode": "fresh_unallocated",
+    "limit": 20,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 20,
+      "globalUsage": 0,
+      "localsUsage": 0,
+      "heapUsed": 0,
+      "heapLeft": 20,
+      "globalIntegers": null,
+      "classes": null
+    },
+    "error": null,
+    "after": {
+      "heapLimit": 20,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 16,
+      "globalIntegers": [
+        0
+      ],
+      "classes": [
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": null
+            }
+          ]
+        },
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": null
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "mode": "fresh_unallocated",
+    "limit": 100000000,
+    "preparationError": null,
+    "before": {
+      "heapLimit": 100000000,
+      "globalUsage": 0,
+      "localsUsage": 0,
+      "heapUsed": 0,
+      "heapLeft": 100000000,
+      "globalIntegers": null,
+      "classes": null
+    },
+    "error": null,
+    "after": {
+      "heapLimit": 100000000,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 99999996,
+      "globalIntegers": [
+        0
+      ],
+      "classes": [
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": null
+            }
+          ]
+        },
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            0
+          ],
+          "objects": [
+            {
+              "type": null
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

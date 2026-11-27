@@ -5,7 +5,8 @@
 #include "opensim/framework/time_zone.hpp"
 #include "opensim/framework/invariant_datetime_context.hpp"
 using namespace opensim::framework;
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     try {
         std::string op = argv[1];
         auto path = nini_writer_text(utf16_replacing(argv[2]));
@@ -34,11 +35,11 @@ int main(int argc, char** argv) {
             }
             f->close();
         }
-    } catch (const NiniStreamError& e) {
+    } catch (const NiniStreamError &e) {
         std::cout << "ERR " << e.source_type;
-    } catch (const DirectoryEntriesError& e) {
+    } catch (const DirectoryEntriesError &e) {
         std::cout << "ERR " << e.source_type;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cout << "ERR " << e.what();
     }
     std::cout << "\n";

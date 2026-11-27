@@ -6,12 +6,14 @@
 #include <limits>
 #include <stdexcept>
 #include <type_traits>
+
 namespace opensim::framework {
 TextureEntry::TextureEntry(Uuid texture) : default_texture(std::make_shared<TextureFace>()) {
     default_texture->texture_id(texture);
 }
-TextureEntry::TextureEntry(const TextureFace& face) : TextureEntry(Uuid{}) {
-    auto& d = *default_texture;
+
+TextureEntry::TextureEntry(const TextureFace &face) : TextureEntry(Uuid{}) {
+    auto &d = *default_texture;
     d.bump(face.bump());
     d.fullbright(face.fullbright());
     d.media_flags(face.media_flags());
@@ -27,8 +29,9 @@ TextureEntry::TextureEntry(const TextureFace& face) : TextureEntry(Uuid{}) {
     d.texture_id(face.texture_id());
     d.material_id(face.material_id());
 }
-TextureEntry::TextureEntry(std::span<const std::uint8_t> data) : TextureEntry(data, 0, data.size()) {
-}
+
+TextureEntry::TextureEntry(std::span<const std::uint8_t> data) : TextureEntry(data, 0, data.size()) {}
+
 TextureEntry::TextureEntry(std::span<const std::uint8_t> data, std::size_t position, std::size_t length) {
     if (length < 16)
         return;
@@ -112,6 +115,7 @@ TextureEntry::TextureEntry(std::span<const std::uint8_t> data, std::size_t posit
     if (cursor <= end && end - cursor >= 16)
         block(&TextureFace::material_id_, MaterialId);
 }
+
 std::shared_ptr<TextureFace> TextureEntry::get_face(unsigned index) {
     if (index >= max_faces)
         throw std::out_of_range("Texture face outside MAX_FACES");
@@ -119,6 +123,7 @@ std::shared_ptr<TextureFace> TextureEntry::get_face(unsigned index) {
         faces[index] = std::make_shared<TextureFace>(default_texture);
     return faces[index];
 }
+
 std::uint32_t TextureEntry::dirty_flags(int length, bool clear) {
     if (length == std::numeric_limits<int>::min())
         throw std::out_of_range("Texture face length overflow");
@@ -133,6 +138,7 @@ std::uint32_t TextureEntry::dirty_flags(int length, bool clear) {
         }
     return flags;
 }
+
 void TextureEntry::dirty_flags(int length, std::uint32_t flags) {
     if (length == std::numeric_limits<int>::min())
         throw std::out_of_range("Texture face length overflow");
@@ -142,12 +148,15 @@ void TextureEntry::dirty_flags(int length, std::uint32_t flags) {
         if (faces[i])
             faces[i]->dirty_flags(flags);
 }
+
 std::vector<std::uint8_t> TextureEntry::bakes_bytes(int maxfaces) const {
     return serialize(maxfaces, true);
 }
+
 std::vector<std::uint8_t> TextureEntry::bytes(int maxfaces) const {
     return serialize(maxfaces, false);
 }
+
 std::vector<std::uint8_t> TextureEntry::serialize(int maxfaces, bool bakes) const {
     std::vector<std::uint8_t> out;
     if (!default_texture)
@@ -158,8 +167,7 @@ std::vector<std::uint8_t> TextureEntry::serialize(int maxfaces, bool bakes) cons
         auto selected = std::span(all).subspan(maxfaces > 21 ? 0 : 5);
         indices.assign(selected.begin(), selected.end());
     } else
-        for (int i = (maxfaces == std::numeric_limits<int>::min() ? 45 : std::clamp(maxfaces, 0, 45)) - 1;
-             i >= 0; --i)
+        for (int i = (maxfaces == std::numeric_limits<int>::min() ? 45 : std::clamp(maxfaces, 0, 45)) - 1; i >= 0; --i)
             indices.push_back(i);
     auto mask = [&](std::uint64_t bits) {
         int shift = 0;
@@ -211,18 +219,18 @@ std::vector<std::uint8_t> TextureEntry::serialize(int maxfaces, bool bakes) cons
             }
         out.push_back(0);
     };
-    block([&](const TextureFace& f) { return bakes ? f.texture_id() : f.texture_; }, TextureId);
-    block([&](const TextureFace& f) { return bakes ? f.color() : f.color_; }, TextureColor);
-    block([&](const TextureFace& f) { return bakes ? f.repeat_u() : f.repeat_u_; }, RepeatU);
-    block([&](const TextureFace& f) { return bakes ? f.repeat_v() : f.repeat_v_; }, RepeatV);
+    block([&](const TextureFace &f) { return bakes ? f.texture_id() : f.texture_; }, TextureId);
+    block([&](const TextureFace &f) { return bakes ? f.color() : f.color_; }, TextureColor);
+    block([&](const TextureFace &f) { return bakes ? f.repeat_u() : f.repeat_u_; }, RepeatU);
+    block([&](const TextureFace &f) { return bakes ? f.repeat_v() : f.repeat_v_; }, RepeatV);
     // These SDK blocks intentionally use raw storage, including inherited faces.
-    block([](const TextureFace& f) { return f.offset_u_; }, OffsetU);
-    block([](const TextureFace& f) { return f.offset_v_; }, OffsetV);
-    block([](const TextureFace& f) { return f.rotation_; }, Rotation);
-    block([](const TextureFace& f) { return f.material_; }, Material);
-    block([](const TextureFace& f) { return f.media_; }, Media);
-    block([](const TextureFace& f) { return f.glow_; }, Glow);
-    block([](const TextureFace& f) { return f.material_id_; }, MaterialId);
+    block([](const TextureFace &f) { return f.offset_u_; }, OffsetU);
+    block([](const TextureFace &f) { return f.offset_v_; }, OffsetV);
+    block([](const TextureFace &f) { return f.rotation_; }, Rotation);
+    block([](const TextureFace &f) { return f.material_; }, Material);
+    block([](const TextureFace &f) { return f.media_; }, Media);
+    block([](const TextureFace &f) { return f.glow_; }, Glow);
+    block([](const TextureFace &f) { return f.material_id_; }, MaterialId);
     return out;
 }
-}
+} // namespace opensim::framework

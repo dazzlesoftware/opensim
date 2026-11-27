@@ -1,0 +1,21 @@
+{
+  "accepted": false,
+  "executed": false,
+  "globals": {},
+  "errors": [
+    "premature expression end"
+  ],
+  "exception": null,
+  "exceptionType": null,
+  "stackSize": 1000000,
+  "stackLimit": 1024,
+  "finalStackLeft": null,
+  "stackSamples": [],
+  "name": "chars_only",
+  "source": "YOption chars;integer result;integer calls;default{state_entry(){switch(1){case 1:result=7;break;}}}",
+  "sha256": {
+    "source.lsl": "ad12fc97eaa9a58e81b35bf4c2d947821eb61d3d53f450f8581bc10effc76d85",
+    "source_hash.txt": "6dbe4816967853f6686e9f7ec62847154d081b53b2a265d41b74f6ee1d430d97",
+    "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+  }
+}

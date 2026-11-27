@@ -1,0 +1,1 @@
+float value=1.0;integer result;integer after;default{state_entry(){result=xmrHashCode((integer)value);after=1;}}

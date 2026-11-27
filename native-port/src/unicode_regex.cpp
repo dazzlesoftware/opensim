@@ -16,12 +16,12 @@
 namespace opensim::framework {
 namespace {
 struct IcuRegex {
-    using Open = void* (*)(const char16_t*, int32_t, uint32_t, void*, int32_t*);
-    using Close = void (*)(void*);
-    using Text = void (*)(void*, const char16_t*, int32_t, int32_t*);
-    using Find = int8_t (*)(void*, int32_t, int32_t*);
-    using Count = int32_t (*)(void*, int32_t*);
-    using Index = int32_t (*)(void*, int32_t, int32_t*);
+    using Open = void *(*)(const char16_t *, int32_t, uint32_t, void *, int32_t *);
+    using Close = void (*)(void *);
+    using Text = void (*)(void *, const char16_t *, int32_t, int32_t *);
+    using Find = int8_t (*)(void *, int32_t, int32_t *);
+    using Count = int32_t (*)(void *, int32_t *);
+    using Index = int32_t (*)(void *, int32_t, int32_t *);
     Open open = nullptr;
     Close close = nullptr;
     Text text = nullptr;
@@ -30,12 +30,14 @@ struct IcuRegex {
     Index start = nullptr, end = nullptr;
 #ifdef _WIN32
     HMODULE module = nullptr;
-    void* symbol(const std::string& name) {
-        return reinterpret_cast<void*>(GetProcAddress(module, name.c_str()));
+
+    void *symbol(const std::string &name) {
+        return reinterpret_cast<void *>(GetProcAddress(module, name.c_str()));
     }
 #else
-    void* module = nullptr;
-    void* symbol(const std::string& name) {
+    void *module = nullptr;
+
+    void *symbol(const std::string &name) {
         return dlsym(module, name.c_str());
     }
 #endif
@@ -66,6 +68,7 @@ struct IcuRegex {
         start = reinterpret_cast<Index>(symbol("uregex_start" + suffix));
         end = reinterpret_cast<Index>(symbol("uregex_end" + suffix));
     }
+
     ~IcuRegex() {
 #ifdef _WIN32
         if (module)
@@ -76,26 +79,31 @@ struct IcuRegex {
 #endif
     }
 };
-IcuRegex& api() {
+
+IcuRegex &api() {
     static IcuRegex value;
     return value;
 }
+
 void checked(int32_t error) {
     if (error > 0)
         throw std::runtime_error("ICU regular expression failed");
 }
-}
+} // namespace
+
 struct UnicodeRegex::State {
-    void* expression = nullptr;
+    void *expression = nullptr;
     std::shared_ptr<std::u16string> text;
     std::mutex mutex;
+
     ~State() {
         if (expression)
             api().close(expression);
     }
 };
-UnicodeRegex::UnicodeRegex(const std::string& pattern) : state_(std::make_unique<State>()) {
-    auto& p = api();
+
+UnicodeRegex::UnicodeRegex(const std::string &pattern) : state_(std::make_unique<State>()) {
+    auto &p = api();
     if (!p.open || !p.close || !p.text || !p.find || !p.count || !p.start || !p.end)
         throw std::runtime_error("ICU regular expressions unavailable");
     auto units = utf16_replacing(pattern);
@@ -105,10 +113,12 @@ UnicodeRegex::UnicodeRegex(const std::string& pattern) : state_(std::make_unique
     if (!state_->expression)
         throw std::invalid_argument("Invalid regular expression");
 }
+
 UnicodeRegex::~UnicodeRegex() = default;
-std::optional<std::vector<std::string>> UnicodeRegex::match(const std::string& text) {
+
+std::optional<std::vector<std::string>> UnicodeRegex::match(const std::string &text) {
     std::lock_guard lock(state_->mutex);
-    auto& p = api();
+    auto &p = api();
     auto units = std::make_shared<std::u16string>(utf16_replacing(text));
     int32_t error = 0;
     p.text(state_->expression, units->data(), static_cast<int32_t>(units->size()), &error);
@@ -124,15 +134,14 @@ std::optional<std::vector<std::string>> UnicodeRegex::match(const std::string& t
     for (int32_t i = 0; i <= count; ++i) {
         auto a = p.start(state_->expression, i, &error), b = p.end(state_->expression, i, &error);
         checked(error);
-        result.push_back(a < 0 ? ""
-                               : utf8(std::u16string_view(*units).substr(static_cast<size_t>(a),
-                                                                         static_cast<size_t>(b - a))));
+        result.push_back(
+            a < 0 ? "" : utf8(std::u16string_view(*units).substr(static_cast<size_t>(a), static_cast<size_t>(b - a))));
     }
     return result;
 }
-std::string stream_reader_text(const std::string& bytes) {
-    if (bytes.starts_with(std::string("\xff\xfe\0\0", 4)) ||
-        bytes.starts_with(std::string("\0\0\xfe\xff", 4))) {
+
+std::string stream_reader_text(const std::string &bytes) {
+    if (bytes.starts_with(std::string("\xff\xfe\0\0", 4)) || bytes.starts_with(std::string("\0\0\xfe\xff", 4))) {
         bool little = uint8_t(bytes[0]) == 255;
         std::u16string units;
         size_t i = 4;
@@ -169,4 +178,4 @@ std::string stream_reader_text(const std::string& bytes) {
     }
     return utf8(utf16_replacing(bytes));
 }
-}
+} // namespace opensim::framework

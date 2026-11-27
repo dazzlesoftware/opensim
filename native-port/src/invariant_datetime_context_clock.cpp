@@ -22,20 +22,25 @@ namespace {
 #ifdef _WIN32
 constexpr std::uint64_t file_epoch = 504911232000000000ull, second = 10000000ull, day = 864000000000ull,
                         window = 300 * second;
+
 struct Cache {
     std::uint64_t file_start = 0, date_start = 0;
 };
-using Getter = void(WINAPI*)(FILETIME*);
+
+using Getter = void(WINAPI *)(FILETIME *);
+
 struct Clock {
     bool leap = false;
     Getter getter = nullptr;
     opensim::framework::AtomicSharedPtr<const Cache> cache{std::make_shared<Cache>()};
+
     Clock() {
         struct LeapInfo {
             BYTE enabled;
             DWORD flags;
         } info{};
-        using Query = LONG(NTAPI*)(int, void*, ULONG, ULONG*);
+
+        using Query = LONG(NTAPI *)(int, void *, ULONG, ULONG *);
         auto ntdll = GetModuleHandleW(L"ntdll.dll");
         auto query = reinterpret_cast<Query>(GetProcAddress(ntdll, "NtQuerySystemInformation"));
         leap = query && query(206, &info, sizeof info, nullptr) == 0 && info.enabled != 0;
@@ -55,22 +60,25 @@ struct Clock {
                 }
             }
     }
+
     static std::uint64_t bits(FILETIME t) {
         return std::uint64_t(t.dwLowDateTime) | (std::uint64_t(t.dwHighDateTime) << 32);
     }
+
     static FILETIME file(std::uint64_t bits) {
         return {static_cast<DWORD>(bits), static_cast<DWORD>(bits >> 32)};
     }
+
     std::uint64_t read() {
         FILETIME f;
         getter(&f);
         return bits(f);
     }
-    static AssetDateTime create(const SYSTEMTIME& t, std::uint64_t fraction) {
+
+    static AssetDateTime create(const SYSTEMTIME &t, std::uint64_t fraction) {
         using namespace std::chrono;
         auto ticks =
-            std::uint64_t((sys_days{year(t.wYear) / t.wMonth / t.wDay} - sys_days{year(1) / 1 / 1}).count()) *
-                day +
+            std::uint64_t((sys_days{year(t.wYear) / t.wMonth / t.wDay} - sys_days{year(1) / 1 / 1}).count()) * day +
             (t.wHour * 3600ull + t.wMinute * 60ull) * second;
         if (t.wSecond <= 59)
             ticks += t.wSecond * second + t.wMilliseconds * 10000ull + fraction;
@@ -78,11 +86,13 @@ struct Clock {
             ticks += 60 * second - 1;
         return AssetDateTime::from_serialized(ticks | utc_kind);
     }
+
     static AssetDateTime fallback() {
         SYSTEMTIME st;
         GetSystemTime(&st);
         return create(st, 0);
     }
+
     AssetDateTime update() {
         auto now = read();
         auto f = file(now);
@@ -114,6 +124,7 @@ struct Clock {
         cache.store(std::make_shared<Cache>(Cache{file_start, date_start}));
         return AssetDateTime::from_serialized(date_start + now - file_start);
     }
+
     AssetDateTime now() {
         auto filetime = read();
         if (!leap)
@@ -125,12 +136,14 @@ struct Clock {
         return update();
     }
 };
-Clock& clock() {
+
+Clock &clock() {
     static Clock value;
     return value;
 }
 #endif
-}
+} // namespace
+
 AssetDateTime native_utc_now() {
 #ifdef _WIN32
     return clock().now();
@@ -163,6 +176,7 @@ AssetDateTime native_from_file_time_utc(std::int64_t file_time) {
 #endif
     return AssetDateTime(file_time + 504911232000000000ll, 1);
 }
+
 std::int64_t native_to_file_time_utc(std::int64_t ticks) {
 #ifdef _WIN32
     if (clock().leap) {
@@ -207,13 +221,14 @@ bool native_valid_leap_second(int y, int m, int d, int h, int minute) {
     return false;
 #endif
 }
+
 int native_two_digit_year_max(bool invariant) {
 #ifdef _WIN32
     if (invariant)
         return 2049;
     DWORD year = 0;
-    return GetCalendarInfoEx(nullptr, CAL_GREGORIAN, nullptr, CAL_ITWODIGITYEARMAX | CAL_RETURN_NUMBER,
-                             nullptr, 0, &year) &&
+    return GetCalendarInfoEx(nullptr, CAL_GREGORIAN, nullptr, CAL_ITWODIGITYEARMAX | CAL_RETURN_NUMBER, nullptr, 0,
+                             &year) &&
                    static_cast<std::int32_t>(year) >= 0
                ? static_cast<int>(year)
                : 2049;
@@ -222,4 +237,4 @@ int native_two_digit_year_max(bool invariant) {
     return 2049;
 #endif
 }
-}
+} // namespace opensim::framework::invariant_datetime_platform

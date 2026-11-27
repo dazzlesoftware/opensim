@@ -1,0 +1,82 @@
+  state[0] = default
+  numGblArrays       0
+  numGblChars        0
+  numGblFloats       1
+  numGblIntegers     1
+  numGblLists        0
+  numGblObjects      0
+  numGblRotations    0
+  numGblStrings      0
+  numGblVectors      0
+  numGblSDTClObjs    0
+  numGblSDTIntfObjs  0
+  result = iarFloats[0]
+  after = iarIntegers[0]
+  delegate void $anondel$void()();
+
+Void $globalvarinit() (EventHelpersInstance)
+{
+  0000    ldarg.0     
+  0001    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0006    ldfld       XMRInstArrays:iarFloats -> Double[]   (field)
+  000B    ldc.i4.0    
+  000C    ldc.r8      0   (double)
+  0015    stelem.r8   
+  0016    ldarg.0     
+  0017    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  001C    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  0021    ldc.i4.0    
+  0022    ldc.i4.0    
+  0023    stelem.i4   
+  0024    leave       __retlbl$0   (label)
+  0029  __retlbl$0:
+  0029    ret         
+}
+
+Void default state_entry (XMRInstAbstract)
+{
+          xmrsuper    __xmrinst$0
+  0000    ldarg.0     
+  0001    castclass   EventHelpersInstance   (type)
+  0006    stloc       __xmrinst$0   (local)
+  0007    ldloc       __xmrinst$0   (local)
+  0008    ldfld       XMRInstAbstract:m_localsHeapUsed -> Int32   (field)
+          int         __curHeap$1
+  000D    stloc       __curHeap$1   (local)
+          lslfloat    tmp$1$2
+  000E    ldloc       __xmrinst$0   (local)
+  000F    ldfld       XMRInstAbstract:doGblInit -> Boolean   (field)
+  0014    brfalse     __skipGblInit$1   (label)
+  0019    ldloc       __xmrinst$0   (local)
+  001A    call        $globalvarinit()(EventHelpersInstance) -> Void
+  001F    ldloc       __xmrinst$0   (local)
+  0020    ldc.i4.0    
+  0021    stfld       XMRInstAbstract:doGblInit -> Boolean   (field)
+  0026  __skipGblInit$1:
+  0026    ldloc       __xmrinst$0   (local)
+  0027    ldc.i4.7    
+  0028    call        TypeCast:IntegerToList(Int32) -> list
+  002D    ldc.i4.0    
+  002E    call        ScriptBaseClass:llList2Float(list,Int32) -> LSLFloat
+  0033    stloc       tmp$1$2   (local)
+  0034    ldloc       __xmrinst$0   (local)
+  0035    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  003A    ldfld       XMRInstArrays:iarFloats -> Double[]   (field)
+  003F    ldc.i4.0    
+  0040    ldloc       tmp$1$2   (local)
+  0041    ldfld       LSLFloat:value -> Double   (field)
+  0046    stelem.r8   
+  0047    ldloc       __xmrinst$0   (local)
+  0048    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  004D    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  0052    ldc.i4.0    
+  0053    ldc.i4.1    
+  0054    stelem.i4   
+  0055    leave       __retlbl$0   (label)
+  005A  __retlbl$0:
+  005A    ldloc       __xmrinst$0   (local)
+  005B    ldloc       __curHeap$1   (local)
+  005C    stfld       XMRInstAbstract:m_localsHeapUsed -> Int32   (field)
+  0061    ret         
+}
+TheEnd.

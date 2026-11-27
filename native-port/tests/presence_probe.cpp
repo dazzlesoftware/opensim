@@ -31,7 +31,8 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sstream>
 using namespace opensim::services;
 using opensim::framework::Uuid;
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     try {
         const auto seed = argc > 1 ? std::stoi(argv[1]) : 0;
         double now = 0;
@@ -48,7 +49,7 @@ int main(int argc, char** argv) {
         const auto s1 = id(1), s2 = id(2), s3 = id(3), s4 = id(4), s5 = id(5), r1 = id(11), r2 = id(12);
         std::vector<std::string> rows;
         auto flag = [&](bool value) { rows.push_back(value ? "1" : "0"); };
-        auto info = [&](const std::optional<PresenceInfo>& value) {
+        auto info = [&](const std::optional<PresenceInfo> &value) {
             rows.push_back(value ? value->user_id + "@" + value->region_id.str() : "-");
         };
         flag(service.login(user, s1, id(21)));
@@ -58,13 +59,13 @@ int main(int argc, char** argv) {
         info(service.agent(s1));
         const auto agents = service.agents({user, "missing", user});
         rows.push_back(std::to_string(agents.size()));
-        for (const auto& agent : agents)
+        for (const auto &agent : agents)
             info(agent);
         flag(store.erase("SessionID", s2.str()));
         info(service.agent(s2));
         flag(service.report(s2, r2));
         info(service.agent(s2));
-        for (const auto& agent : service.agents({user}))
+        for (const auto &agent : service.agents({user}))
             info(agent);
         flag(service.login(user + "-two", s3, id(23)));
         flag(service.report(s3, {}));
@@ -119,7 +120,7 @@ int main(int argc, char** argv) {
         }
         std::cout << '\n';
         return 0;
-    } catch (const std::exception& error) {
+    } catch (const std::exception &error) {
         std::cerr << error.what() << '\n';
         return 1;
     }

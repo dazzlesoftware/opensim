@@ -1,0 +1,1 @@
+YOption chars;YOption arrays;integer result;integer after;default{state_entry(){result=llListFindList([65],'A');after=1;}}

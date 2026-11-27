@@ -1,0 +1,1 @@
+string result;integer after;default{state_entry(){result=llSHA1String("😀");after=1;}}

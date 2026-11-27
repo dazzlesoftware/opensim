@@ -1,0 +1,1 @@
+integer item=7;integer result;default{state_entry(){result=(integer)item;}}

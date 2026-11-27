@@ -28,25 +28,27 @@ struct ScriptHttpCompletion {
 };
 
 class ScriptHttpService {
-public:
-    ScriptHttpService(std::shared_ptr<const framework::OutboundUrlFilter> filter,
-                      int max_body_bytes = 16384, int timeout_ms = 30000, int worker_count = 8,
+  public:
+    ScriptHttpService(std::shared_ptr<const framework::OutboundUrlFilter> filter, int max_body_bytes = 16384,
+                      int timeout_ms = 30000, int worker_count = 8,
                       std::shared_ptr<framework::ConfigXmlProxy> proxy = {});
     ~ScriptHttpService();
     std::size_t active_workers() const;
 
-private:
+  private:
     friend class ScriptHttpModule;
     struct Job;
     struct RegionState;
+
     struct Worker {
         std::jthread thread;
         bool running = false;
     };
-    void enqueue(const std::shared_ptr<Job>& job);
-    void cancel(const RegionState& region, std::optional<framework::Uuid> item = {});
-    void queue_locked(const std::shared_ptr<Job>& job);
-    void work(Worker& worker, std::stop_token stop);
+
+    void enqueue(const std::shared_ptr<Job> &job);
+    void cancel(const RegionState &region, std::optional<framework::Uuid> item = {});
+    void queue_locked(const std::shared_ptr<Job> &job);
+    void work(Worker &worker, std::stop_token stop);
 
     std::shared_ptr<const framework::OutboundUrlFilter> filter_;
     std::shared_ptr<framework::ConfigUriObjectBackend> uris_;
@@ -61,22 +63,21 @@ private:
 };
 
 class ScriptHttpModule {
-public:
+  public:
     explicit ScriptHttpModule(std::shared_ptr<ScriptHttpService> service,
                               script::HttpRequestThrottleSettings throttle = {});
     ~ScriptHttpModule();
     ScriptHttpSubmission submit(framework::Uuid part, std::uint32_t local_id, framework::Uuid owner,
-                                framework::Uuid item, std::string url, const std::vector<ScriptHttpOption>& options,
-                                std::string body,
-                                const std::function<void(ScriptHttpRequest&)>& add_scene_headers);
+                                framework::Uuid item, std::string url, const std::vector<ScriptHttpOption> &options,
+                                std::string body, const std::function<void(ScriptHttpRequest &)> &add_scene_headers);
     void stop(std::uint32_t local_id, framework::Uuid item);
     void stop_all();
     std::deque<ScriptHttpCompletion> take_completed();
 
-private:
+  private:
     std::shared_ptr<ScriptHttpService> service_;
     std::shared_ptr<ScriptHttpService::RegionState> state_;
     script::HttpRequestThrottle throttle_;
 };
 
-}
+} // namespace opensim::network

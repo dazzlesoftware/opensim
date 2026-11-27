@@ -31,9 +31,11 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <memory>
 #include <optional>
 #include <vector>
+
 namespace opensim::services {
 using RegionFields = std::map<std::string, std::optional<std::string>>;
 using OrderedRegionFields = std::vector<std::pair<std::string, std::optional<std::string>>>;
+
 enum RegionFlags : std::int32_t {
     DefaultRegion = 1,
     FallbackRegion = 2,
@@ -47,29 +49,38 @@ enum RegionFlags : std::int32_t {
     Hyperlink = 512,
     DefaultHGRegion = 1024
 };
+
 struct RegionEndpoint {
     std::string address = "0.0.0.0";
     std::uint16_t port = 0;
 };
+
 // GridRegion's IPEndPoint is a reference object in the original model. Copies
 // share mutations; assigning a new endpoint replaces only that region's slot.
 class RegionEndpointRef {
   public:
     RegionEndpointRef() = default;
+
     RegionEndpointRef(std::nullopt_t) {}
+
     RegionEndpointRef(RegionEndpoint value) : value_(std::make_shared<RegionEndpoint>(std::move(value))) {}
+
     explicit operator bool() const noexcept {
         return static_cast<bool>(value_);
     }
+
     bool has_value() const noexcept {
         return static_cast<bool>(value_);
     }
-    RegionEndpoint* operator->() const noexcept {
+
+    RegionEndpoint *operator->() const noexcept {
         return value_.get();
     }
-    RegionEndpoint& operator*() const {
+
+    RegionEndpoint &operator*() const {
         return *value_;
     }
+
     void reset() noexcept {
         value_.reset();
     }
@@ -77,6 +88,7 @@ class RegionEndpointRef {
   private:
     std::shared_ptr<RegionEndpoint> value_;
 };
+
 struct GridRegion {
     framework::Uuid id, scope, terrain_image, parcel_image, estate_owner;
     std::int32_t x = 0, y = 0, size_x = 256, size_y = 256, maturity = 0;
@@ -87,28 +99,32 @@ struct GridRegion {
                                raw_server_uri = std::string{};
     std::string token;
     RegionEndpointRef internal_endpoint;
-    static GridRegion from_fields(const RegionFields& fields);
+    static GridRegion from_fields(const RegionFields &fields);
     static GridRegion from_cells(std::uint32_t x, std::uint32_t y);
     GridRegion legacy_copy() const;
     std::string server_uri() const;
-    void set_server_uri(const std::optional<std::string>& value);
+    void set_server_uri(const std::optional<std::string> &value);
     OrderedRegionFields fields() const;
     std::uint64_t handle() const;
+    bool within_transfer_view(const GridRegion &other) const;
     std::int32_t coord_x() const;
     std::int32_t coord_y() const;
-    bool equals(const GridRegion& other) const {
+
+    bool equals(const GridRegion &other) const {
         return !id.is_zero() && id == other.id;
     }
 };
+
 struct RegionData {
     framework::Uuid id, scope;
     std::optional<std::string> name;
     std::int32_t x = 0, y = 0, size_x = 0, size_y = 0;
     RegionFields data;
 };
-RegionData region_data(const GridRegion& region);
-GridRegion grid_region(const RegionData& data);
-std::int32_t parse_region_integer(const std::optional<std::string>& value);
+
+RegionData region_data(const GridRegion &region);
+GridRegion grid_region(const RegionData &data);
+std::int32_t parse_region_integer(const std::optional<std::string> &value);
 std::int32_t parse_region_flags(std::int32_t previous, std::string_view specification);
-int compare_region_distance(const RegionData& a, const RegionData& b, std::int32_t x, std::int32_t y);
-}
+int compare_region_distance(const RegionData &a, const RegionData &b, std::int32_t x, std::int32_t y);
+} // namespace opensim::services

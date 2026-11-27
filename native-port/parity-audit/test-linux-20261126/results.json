@@ -1,0 +1,53 @@
+{
+  "platform": "Linux",
+  "passed": true,
+  "checks": [
+    "Wildcard binding advertises a reachable login URI; fresh region settings and map persist",
+    "First: fresh CLI account, login and UDP arrival",
+    "Second: fresh CLI account, login and UDP arrival",
+    "Both accounts recover after discarding 2 reliable handshake deliveries without acknowledging them",
+    "Both connected accounts receive the other avatar ObjectUpdate",
+    "c3cad97b-d505-4d86-b359-31fe0180ff69: six default wearables and six own current-outfit links",
+    "6c725af5-b284-486f-92b1-485c23c7c56f: six default wearables and six own current-outfit links",
+    "Both accounts receive their inventory wearable IDs and can fetch all six wearable assets",
+    "One account uploads a baked texture and the other retrieves its exact bytes",
+    "CreateInventoryCategory creates own folder and rejects other account parent",
+    "Viewer rezzes and edits a cube; both accounts receive its updated transform",
+    "Taking a copy stores a new object inventory item through ordinary viewer packets",
+    "Clean restart restores the edited prim and capability-created inventory folder",
+    "Clean restart flushes pending avatar appearance and advertises the restored parameters",
+    "Both accounts recover through 2 fresh logins after source-compatible endpoint replacement rejection; repeated circuit requests complete",
+    "Both accounts complete 5 logout/fresh-session/UDP-handshake cycles after restart"
+  ],
+  "handshakeLoss": [
+    [
+      {
+        "sequence": 1,
+        "flags": 192
+      },
+      {
+        "sequence": 1,
+        "flags": 224
+      },
+      {
+        "sequence": 1,
+        "flags": 224
+      }
+    ],
+    [
+      {
+        "sequence": 1,
+        "flags": 192
+      },
+      {
+        "sequence": 1,
+        "flags": 224
+      },
+      {
+        "sequence": 1,
+        "flags": 224
+      }
+    ]
+  ],
+  "realFirestormVerified": false
+}

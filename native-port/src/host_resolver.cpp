@@ -25,13 +25,14 @@
 namespace opensim::framework {
 namespace {
 std::int32_t integer(double n) {
-    return !std::isfinite(n) || n < -2147483648. || n >= 2147483648. ? INT32_MIN
-                                                                     : static_cast<std::int32_t>(n);
+    return !std::isfinite(n) || n < -2147483648. || n >= 2147483648. ? INT32_MIN : static_cast<std::int32_t>(n);
 }
+
 std::int32_t expiry(std::int32_t now) {
     return std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(now) + 300000u);
 }
-bool blank(const std::optional<std::string>& s) {
+
+bool blank(const std::optional<std::string> &s) {
     if (!s)
         return true;
     for (auto c : utf16_replacing(*s))
@@ -47,15 +48,17 @@ void initialize_winsock() {
             if (WSAStartup(MAKEWORD(2, 2), &data))
                 throw std::runtime_error("Winsock startup failed");
         }
+
         ~Runtime() {
             WSACleanup();
         }
     };
+
     static Runtime runtime;
 }
 #endif
 
-std::optional<std::vector<HostResolver::Address>> lookup(const std::string& host, std::string* canonical = nullptr) {
+std::optional<std::vector<HostResolver::Address>> lookup(const std::string &host, std::string *canonical = nullptr) {
     if (host.find('\0') != std::string::npos)
         return {};
 #ifdef _WIN32
@@ -64,7 +67,7 @@ std::optional<std::vector<HostResolver::Address>> lookup(const std::string& host
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_CANONNAME;
-    ADDRINFOW* found = nullptr;
+    ADDRINFOW *found = nullptr;
     auto u16 = utf16_replacing(host);
     std::wstring wide(u16.begin(), u16.end());
     if (GetAddrInfoW(wide.c_str(), nullptr, &hints, &found))
@@ -79,7 +82,7 @@ std::optional<std::vector<HostResolver::Address>> lookup(const std::string& host
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_CANONNAME;
-    addrinfo* found = nullptr;
+    addrinfo *found = nullptr;
     if (getaddrinfo(host.c_str(), nullptr, &hints, &found))
         return {};
     std::unique_ptr<addrinfo, decltype(&freeaddrinfo)> guard(found, freeaddrinfo);
@@ -87,16 +90,16 @@ std::optional<std::vector<HostResolver::Address>> lookup(const std::string& host
         *canonical = found->ai_canonname;
 #endif
     std::vector<HostResolver::Address> result;
-    for (auto* row = found; row; row = row->ai_next) {
+    for (auto *row = found; row; row = row->ai_next) {
         std::array<std::uint8_t, 16> bytes{};
         bool v6 = false;
         std::uint32_t scope = 0;
         if (row->ai_family == AF_INET) {
-            auto* p = reinterpret_cast<const sockaddr_in*>(row->ai_addr);
-            std::copy_n(reinterpret_cast<const std::uint8_t*>(&p->sin_addr), 4, bytes.begin());
+            auto *p = reinterpret_cast<const sockaddr_in *>(row->ai_addr);
+            std::copy_n(reinterpret_cast<const std::uint8_t *>(&p->sin_addr), 4, bytes.begin());
         } else if (row->ai_family == AF_INET6) {
-            auto* p = reinterpret_cast<const sockaddr_in6*>(row->ai_addr);
-            std::copy_n(reinterpret_cast<const std::uint8_t*>(&p->sin6_addr), 16, bytes.begin());
+            auto *p = reinterpret_cast<const sockaddr_in6 *>(row->ai_addr);
+            std::copy_n(reinterpret_cast<const std::uint8_t *>(&p->sin6_addr), 16, bytes.begin());
             scope = p->sin6_scope_id;
             v6 = true;
         } else
@@ -105,12 +108,14 @@ std::optional<std::vector<HostResolver::Address>> lookup(const std::string& host
     }
     return result;
 }
-}
+} // namespace
+
 struct HostResolver::State {
     struct Entry {
         Address address;
         std::int32_t expires;
     };
+
     Lookup lookup;
     Clock clock;
     double start;
@@ -120,6 +125,7 @@ struct HostResolver::State {
     bool active = false, stop = false;
     std::chrono::steady_clock::time_point due;
     std::thread worker;
+
     State(Lookup l, Clock c, bool automatic) : lookup(std::move(l)), clock(std::move(c)), start(clock()) {
         if (automatic)
             worker = std::thread([this] {
@@ -129,8 +135,7 @@ struct HostResolver::State {
                     if (stop)
                         break;
                     const auto deadline = due;
-                    if (changed.wait_until(lock, deadline,
-                                           [&] { return stop || !active || due != deadline; }))
+                    if (changed.wait_until(lock, deadline, [&] { return stop || !active || due != deadline; }))
                         continue;
                     purge_locked();
                     if (active)
@@ -138,6 +143,7 @@ struct HostResolver::State {
                 }
             });
     }
+
     ~State() {
         {
             std::lock_guard lock(mutex);
@@ -147,9 +153,11 @@ struct HostResolver::State {
         if (worker.joinable())
             worker.join();
     }
+
     std::int32_t now() {
         return integer(clock() - start);
     }
+
     void purge_locked() {
         if (entries.empty()) {
             active = false;
@@ -164,6 +172,7 @@ struct HostResolver::State {
         if (entries.empty())
             active = false;
     }
+
     void timer() {
         if (!active) {
             active = true;
@@ -172,19 +181,21 @@ struct HostResolver::State {
         }
     }
 };
+
 HostResolver::HostResolver(Lookup function, Clock clock, bool automatic) {
     if (!function)
         function = system_lookup;
     if (!clock)
         clock = []() {
-            return std::chrono::duration<double, std::milli>(
-                       std::chrono::steady_clock::now().time_since_epoch())
+            return std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now().time_since_epoch())
                 .count();
         };
     state_ = std::make_unique<State>(std::move(function), std::move(clock), automatic);
 }
+
 HostResolver::~HostResolver() = default;
-std::optional<std::vector<HostResolver::Address>> HostResolver::system_lookup(const std::string& host) {
+
+std::optional<std::vector<HostResolver::Address>> HostResolver::system_lookup(const std::string &host) {
     return lookup(host);
 }
 
@@ -196,14 +207,11 @@ HostResolver::Address HostResolver::local_host_address() {
     if (gethostname(hostname, sizeof(hostname) - 1) == 0) {
         const auto addresses = system_lookup(hostname);
         if (addresses && !addresses->empty()) {
-            const auto external_ipv4 = std::ranges::find_if(*addresses, [](const Address& address) {
-                return !address->v6() && address->bytes()[0] != 127;
-            });
+            const auto external_ipv4 = std::ranges::find_if(
+                *addresses, [](const Address &address) { return !address->v6() && address->bytes()[0] != 127; });
             if (external_ipv4 != addresses->end())
                 return *external_ipv4;
-            const auto ipv4 = std::ranges::find_if(*addresses, [](const Address& address) {
-                return !address->v6();
-            });
+            const auto ipv4 = std::ranges::find_if(*addresses, [](const Address &address) { return !address->v6(); });
             return ipv4 != addresses->end() ? *ipv4 : addresses->front();
         }
     }
@@ -212,13 +220,15 @@ HostResolver::Address HostResolver::local_host_address() {
         return loopback->front();
     throw std::runtime_error("Unable to resolve SYSTEMIP");
 }
-std::optional<std::string> HostResolver::system_canonical_name(const std::string& host) {
+
+std::optional<std::string> HostResolver::system_canonical_name(const std::string &host) {
     std::string canonical;
     if (!lookup(host, &canonical))
         return {};
     return canonical.empty() ? host : canonical;
 }
-HostResolver::Address HostResolver::host_from_dns(const std::optional<std::string>& host) {
+
+HostResolver::Address HostResolver::host_from_dns(const std::optional<std::string> &host) {
     if (blank(host))
         return {};
     const auto key = *host;
@@ -240,12 +250,12 @@ HostResolver::Address HostResolver::host_from_dns(const std::optional<std::strin
         std::optional<std::vector<Address>> found;
         try {
             found = state_->lookup(key);
-        } catch (const std::exception&) {
+        } catch (const std::exception &) {
             return {};
         }
         if (!found || found->empty())
             return {};
-        for (const auto& item : *found) {
+        for (const auto &item : *found) {
             if (!address)
                 address = item;
             if (!item)
@@ -263,7 +273,8 @@ HostResolver::Address HostResolver::host_from_dns(const std::optional<std::strin
     }
     return address;
 }
-HostResolver::Address HostResolver::host_from_url(const std::optional<std::string>& url) {
+
+HostResolver::Address HostResolver::host_from_url(const std::optional<std::string> &url) {
     if (!url)
         throw std::invalid_argument("Null URL");
     std::size_t start = 0;
@@ -276,15 +287,17 @@ HostResolver::Address HostResolver::host_from_url(const std::optional<std::strin
     const auto end = url->find_first_of("/:", start);
     return host_from_dns(url->substr(start, end == std::string::npos ? end : end - start));
 }
-std::shared_ptr<IpEndpoint> HostResolver::endpoint(const std::optional<std::string>& host,
-                                                   std::int32_t port) {
+
+std::shared_ptr<IpEndpoint> HostResolver::endpoint(const std::optional<std::string> &host, std::int32_t port) {
     return endpoint(host_from_dns(host), port);
 }
-std::shared_ptr<IpEndpoint> HostResolver::endpoint(const Address& address, std::int32_t port) {
+
+std::shared_ptr<IpEndpoint> HostResolver::endpoint(const Address &address, std::int32_t port) {
     if (!address || port < 0 || port > 65535)
         return {};
     return std::make_shared<IpEndpoint>(IpEndpoint{address, static_cast<std::uint16_t>(port)});
 }
+
 void HostResolver::purge() {
     std::lock_guard lock(state_->mutex);
     if (state_->active) {
@@ -294,18 +307,21 @@ void HostResolver::purge() {
         state_->changed.notify_all();
     }
 }
+
 void HostResolver::clear() {
     std::lock_guard lock(state_->mutex);
     state_->entries.clear();
     state_->active = false;
     state_->changed.notify_all();
 }
+
 std::size_t HostResolver::count() const {
     std::lock_guard lock(state_->mutex);
     return state_->entries.size();
 }
-HostResolver& host_resolver() {
+
+HostResolver &host_resolver() {
     static HostResolver value;
     return value;
 }
-}
+} // namespace opensim::framework

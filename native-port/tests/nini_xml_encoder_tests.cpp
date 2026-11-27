@@ -3,6 +3,7 @@
 #include <sstream>
 #include <vector>
 using namespace opensim::framework;
+
 std::string hex(std::u16string_view s) {
     if (s.empty())
         return "-";
@@ -12,6 +13,7 @@ std::string hex(std::u16string_view s) {
             out += "0123456789abcdef"[(c >> shift) & 15];
     return out;
 }
+
 std::string bytes(std::u16string_view s) {
     std::string out;
     for (auto c : s)
@@ -22,7 +24,8 @@ std::string bytes(std::u16string_view s) {
         }
     return out;
 }
-int main(int argc, char**) {
+
+int main(int argc, char **) {
     if (argc == 1) {
         std::u16string output;
         NativeXmlTextEncoder encoder([&](XmlEncoderWriteKind, std::optional<std::u16string_view> value) {
@@ -43,7 +46,7 @@ int main(int argc, char**) {
         try {
             encoder.write_array(std::u16string_view(u"a"), -1, -1, true);
             throw std::runtime_error("XML encoder missing argument error");
-        } catch (const XmlEncoderArrayError& e) {
+        } catch (const XmlEncoderArrayError &e) {
             if (e.parameter != u"count" || e.actual_value != -1 || e.hresult != 0x80131502)
                 throw;
         }
@@ -51,15 +54,14 @@ int main(int argc, char**) {
         // has been inspected. The source retains that inspected character.
         std::u16string array = u"a<b", written;
         bool changed = false;
-        NativeXmlTextEncoder array_encoder(
-            [&](XmlEncoderWriteKind kind, std::optional<std::u16string_view> value) {
-                if (value)
-                    written += *value;
-                if (kind == XmlEncoderWriteKind::Array && !changed) {
-                    array[1] = u'&';
-                    changed = true;
-                }
-            });
+        NativeXmlTextEncoder array_encoder([&](XmlEncoderWriteKind kind, std::optional<std::u16string_view> value) {
+            if (value)
+                written += *value;
+            if (kind == XmlEncoderWriteKind::Array && !changed) {
+                array[1] = u'&';
+                changed = true;
+            }
+        });
         array_encoder.write_array(array, 0, 3);
         if (!changed || array != u"a&b" || written != u"a&lt;b")
             throw std::runtime_error("XML encoder cached array character unit failed");
@@ -72,9 +74,8 @@ int main(int argc, char**) {
         try {
             span_encoder.write(borrowed);
             throw std::runtime_error("XML encoder missing borrowed-span error");
-        } catch (const XmlEncoderError& e) {
-            if (!span_changed || e.kind != XmlEncoderError::Kind::InvalidPair || e.high != 0xd800 ||
-                e.low != u'&')
+        } catch (const XmlEncoderError &e) {
+            if (!span_changed || e.kind != XmlEncoderError::Kind::InvalidPair || e.high != 0xd800 || e.low != u'&')
                 throw;
         }
         return 0;
@@ -96,8 +97,7 @@ int main(int argc, char**) {
         in >> mutation_at >> mutation_index >> mutation_unit;
         std::vector<std::string> calls;
         NativeXmlTextEncoder encoder([&](XmlEncoderWriteKind kind, std::optional<std::u16string_view> value) {
-            calls.push_back(std::string(1, "CTSA"[static_cast<int>(kind)]) + ":" +
-                            (value ? bytes(*value) : "null"));
+            calls.push_back(std::string(1, "CTSA"[static_cast<int>(kind)]) + ":" + (value ? bytes(*value) : "null"));
             int number = static_cast<int>(calls.size());
             if (number == mutation_at)
                 s[mutation_index] = static_cast<char16_t>(mutation_unit);
@@ -133,17 +133,17 @@ int main(int argc, char**) {
                 break;
             case 6:
             case 7:
-                encoder.write_array(payload == "null" ? std::nullopt : std::optional<std::u16string_view>(s),
-                                    offset, count, mode == 7);
+                encoder.write_array(payload == "null" ? std::nullopt : std::optional<std::u16string_view>(s), offset,
+                                    count, mode == 7);
                 break;
             }
-        } catch (const XmlEncoderError& e) {
+        } catch (const XmlEncoderError &e) {
             error = std::string(e.source_type) + ":80070057:" + hex(e.message);
-        } catch (const XmlEncoderArrayError& e) {
+        } catch (const XmlEncoderArrayError &e) {
             std::ostringstream code;
             code << std::hex << e.hresult;
             error = e.source_type + ":" + code.str() + ":" + hex(e.message);
-        } catch (const std::runtime_error&) {
+        } catch (const std::runtime_error &) {
             error = "System.IO.IOException:80131620:" + hex(u"injected writer failure");
         }
         for (std::size_t i = 0; i < calls.size(); ++i) {

@@ -8,9 +8,11 @@
 #include <bit>
 #include <algorithm>
 #include <stdexcept>
+
 namespace opensim::scene {
 namespace {
 using View = std::string_view;
+
 View trim(View v, View chars = " ") {
     auto start = v.find_first_not_of(chars);
     if (start == View::npos)
@@ -18,11 +20,13 @@ View trim(View v, View chars = " ") {
     auto end = v.find_last_not_of(chars);
     return v.substr(start, end - start + 1);
 }
+
 View data(const UuidGatherer::Asset &a) {
     if (!a || !a->data)
         throw std::runtime_error("Null asset data");
     return {reinterpret_cast<const char *>(a->data->data()), a->data->size()};
 }
+
 // osUTF8Slice ReadLine returns false for an unterminated last line, while
 // SkipLine returns true. Escaped CR/LF are ordinary bytes, including CRLF.
 class Lines {
@@ -31,6 +35,7 @@ class Lines {
 
   public:
     explicit Lines(View v) : all_(v) {}
+
     bool read(View &out, bool skip = false) {
         if (pos_ >= all_.size()) {
             out = {};
@@ -48,11 +53,13 @@ class Lines {
         out = all_.substr(start);
         return skip;
     }
+
     bool skip() {
         View out;
         return read(out, true);
     }
 };
+
 bool integer(View value, std::int32_t &out) {
     value = trim(value);
     out = 0;
@@ -70,6 +77,7 @@ bool integer(View value, std::int32_t &out) {
     out = std::bit_cast<std::int32_t>(negative ? 0u - number : number);
     return true;
 }
+
 bool byte_uuid(View value, framework::Uuid &id) {
     while (value.starts_with(' '))
         value.remove_prefix(1);
@@ -84,6 +92,7 @@ bool byte_uuid(View value, framework::Uuid &id) {
     }
     return framework::try_parse_sdk_uuid(value.substr(0, size), id);
 }
+
 std::vector<View> split(View v) {
     std::vector<View> out;
     if (v.empty()) {
@@ -102,6 +111,7 @@ std::vector<View> split(View v) {
     }
     return out;
 }
+
 // Original parser mutates the shared osUTF8Slice. It deliberately does not
 // implement general XML parsing (including its escaped-angle handling).
 int node(View &value, View &header) {
@@ -125,6 +135,7 @@ int node(View &value, View &header) {
     value.remove_prefix(std::min(end + 1, value.size()));
     return static_cast<int>(end + 1);
 }
+
 bool xml_uuid(View &value, framework::Uuid &id) {
     id = {};
     View header;
@@ -141,6 +152,7 @@ bool xml_uuid(View &value, framework::Uuid &id) {
     value.remove_prefix(at);
     return byte_uuid(text, id);
 }
+
 std::optional<std::vector<std::uint8_t>> binary(View &value) {
     auto at = value.find('<');
     if (at == View::npos || at == 0)
@@ -184,13 +196,16 @@ std::optional<std::vector<std::uint8_t>> binary(View &value) {
     }
     return out;
 }
+
 std::int32_t add32(std::int32_t a, std::int32_t b) {
     return std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(a) + static_cast<std::uint32_t>(b));
 }
+
 struct ExtraReferences {
     framework::Uuid projection;
     std::vector<framework::Uuid> materials;
 };
+
 ExtraReferences extra_references(const std::vector<std::uint8_t> &bytes) {
     ExtraReferences out;
     auto length = static_cast<std::int32_t>(bytes.size());
@@ -264,6 +279,7 @@ ExtraReferences extra_references(const std::vector<std::uint8_t> &bytes) {
     }
     return out;
 }
+
 framework::Uuid particle_texture(std::span<const std::uint8_t> bytes) {
     if (bytes.size() == 86)
         return framework::Uuid::from_bytes(std::span(bytes).subspan(36, 16));
@@ -279,7 +295,8 @@ framework::Uuid particle_texture(std::span<const std::uint8_t> bytes) {
     return framework::Uuid::from_bytes(std::span(bytes).subspan(40, 16));
 }
 
-}
+} // namespace
+
 namespace {
 std::optional<std::vector<framework::Uuid>> note_ids(const UuidGatherer::Asset &asset) {
     if (!asset || !asset->data || asset->data->size() < 79)
@@ -300,21 +317,19 @@ std::optional<std::vector<framework::Uuid>> note_ids(const UuidGatherer::Asset &
     auto size = static_cast<Index>(note.size());
     auto search = [&](std::u16string_view needle, Index start, Index count) -> Index {
         if (start < 0 || start > size)
-            throw std::out_of_range(
-                "Index was out of range. Must be non-negative and less than or equal to the size of the collection. (Parameter 'startIndex')");
+            throw std::out_of_range("Index was out of range. Must be non-negative and less than or equal to the size "
+                                    "of the collection. (Parameter 'startIndex')");
         if (count < 0 || count > size - start)
-            throw std::out_of_range(
-                "Count must be positive and count must refer to a location within the string/array/collection. (Parameter 'count')");
-        auto found =
-            framework::invariant_index_of(std::u16string_view(note).substr(static_cast<std::size_t>(start),
-                                                                           static_cast<std::size_t>(count)),
-                                          needle);
+            throw std::out_of_range("Count must be positive and count must refer to a location within the "
+                                    "string/array/collection. (Parameter 'count')");
+        auto found = framework::invariant_index_of(
+            std::u16string_view(note).substr(static_cast<std::size_t>(start), static_cast<std::size_t>(count)), needle);
         return found < 0 ? -1 : start + found;
     };
     auto find_char = [&](char16_t c, Index start) -> Index {
         if (start < 0 || start > size)
-            throw std::out_of_range(
-                "Index was out of range. Must be non-negative and less than or equal to the size of the collection. (Parameter 'startIndex')");
+            throw std::out_of_range("Index was out of range. Must be non-negative and less than or equal to the size "
+                                    "of the collection. (Parameter 'startIndex')");
         auto found = note.find(c, static_cast<std::size_t>(start));
         return found == std::u16string::npos ? -1 : static_cast<Index>(found);
     };
@@ -328,8 +343,7 @@ std::optional<std::vector<framework::Uuid>> note_ids(const UuidGatherer::Asset &
         return std::nullopt;
     std::int32_t count;
     if (!services::parse_account_integer(
-            framework::utf8(std::u16string_view(note).substr(57, static_cast<std::size_t>(index - 57))),
-            count))
+            framework::utf8(std::u16string_view(note).substr(57, static_cast<std::size_t>(index - 57))), count))
         return std::nullopt;
     auto field = [&](Index start, std::u16string_view name, std::u16string_view &value) -> Index {
         value = {};
@@ -339,11 +353,11 @@ std::optional<std::vector<framework::Uuid>> note_ids(const UuidGatherer::Asset &
         at += static_cast<Index>(name.size()) + 1;
         auto max = std::min<Index>(size - at - 2, 129);
         if (at < 0 || at > size)
-            throw std::out_of_range(
-                "Index was out of range. Must be non-negative and less than or equal to the size of the collection. (Parameter 'startIndex')");
+            throw std::out_of_range("Index was out of range. Must be non-negative and less than or equal to the size "
+                                    "of the collection. (Parameter 'startIndex')");
         if (max < 0 || max > size - at)
-            throw std::out_of_range(
-                "Count must be positive and count must refer to a location within the string/array/collection. (Parameter 'count')");
+            throw std::out_of_range("Count must be positive and count must refer to a location within the "
+                                    "string/array/collection. (Parameter 'count')");
         Index end = -1;
         for (Index i = at; i < at + max; ++i)
             if (note[static_cast<std::size_t>(i)] == u'\t' || note[static_cast<std::size_t>(i)] == u'\n') {
@@ -352,8 +366,7 @@ std::optional<std::vector<framework::Uuid>> note_ids(const UuidGatherer::Asset &
             }
         if (end < 0)
             return -1;
-        value = std::u16string_view(note).substr(static_cast<std::size_t>(at),
-                                                 static_cast<std::size_t>(end - at));
+        value = std::u16string_view(note).substr(static_cast<std::size_t>(at), static_cast<std::size_t>(end - at));
         return end;
     };
     std::vector<framework::Uuid> ids;
@@ -375,8 +388,7 @@ std::optional<std::vector<framework::Uuid>> note_ids(const UuidGatherer::Asset &
             return std::nullopt;
         if (shadow) {
             auto bytes = id.bytes();
-            constexpr std::uint8_t key[16] = {60,  17,  94,  81,  4,   244, 82, 60,
-                                              159, 166, 152, 175, 241, 3,   71, 48};
+            constexpr std::uint8_t key[16] = {60, 17, 94, 81, 4, 244, 82, 60, 159, 166, 152, 175, 241, 3, 71, 48};
             for (std::size_t i = 0; i < 16; ++i)
                 bytes[i] ^= key[i];
             id = framework::Uuid::from_bytes(bytes);
@@ -402,14 +414,13 @@ std::optional<std::vector<framework::Uuid>> note_ids(const UuidGatherer::Asset &
     if (index > 0) {
         index += 14;
         if (index > size)
-            throw std::out_of_range(
-                "Specified argument was out of the range of valid values. (Parameter 'start')");
+            throw std::out_of_range("Specified argument was out of the range of valid values. (Parameter 'start')");
         auto body = std::u16string_view(note).substr(static_cast<std::size_t>(index));
         for (std::int64_t i = 8; i < static_cast<Index>(body.size()) - 28;) {
             if (body[static_cast<std::size_t>(i)] == u'-') {
                 framework::Uuid id;
-                if (framework::try_parse_sdk_uuid(
-                        framework::utf8(body.substr(static_cast<std::size_t>(i - 8), 36)), id)) {
+                if (framework::try_parse_sdk_uuid(framework::utf8(body.substr(static_cast<std::size_t>(i - 8), 36)),
+                                                  id)) {
                     if (!id.is_zero())
                         ids.push_back(id);
                     i += 37;
@@ -423,7 +434,8 @@ std::optional<std::vector<framework::Uuid>> note_ids(const UuidGatherer::Asset &
         return std::nullopt;
     return ids;
 }
-}
+} // namespace
+
 void UuidGatherer::inspect_notecard(const Asset &asset) {
     auto ids = note_ids(asset);
     if (!ids)
@@ -435,6 +447,7 @@ void UuidGatherer::inspect_notecard(const Asset &asset) {
         add_for_inspection(id);
     }
 }
+
 void UuidGatherer::inspect_gesture(const Asset &asset) {
     Lines lines(data(asset));
     for (int i = 0; i < 5; ++i)
@@ -475,6 +488,7 @@ void UuidGatherer::inspect_gesture(const Asset &asset) {
         }
     }
 }
+
 void UuidGatherer::inspect_wearable(const Asset &asset) {
     if (!asset || !asset->data || asset->data->size() < 64)
         return;
@@ -519,6 +533,7 @@ void UuidGatherer::inspect_wearable(const Asset &asset) {
     } catch (...) {
     }
 }
+
 void UuidGatherer::inspect_material(const Asset &asset) {
     auto value = data(asset);
     View header;
@@ -538,9 +553,11 @@ void UuidGatherer::inspect_material(const Asset &asset) {
         }
     }
 }
+
 framework::Uuid gather_particle_texture(std::span<const std::uint8_t> bytes) {
     return particle_texture(bytes);
 }
+
 void UuidGatherer::inspect_object(const Asset &asset) {
     auto value = data(asset);
     View header;
@@ -654,9 +671,11 @@ void UuidGatherer::inspect_object(const Asset &asset) {
         }
     }
 }
-std::shared_ptr<UuidGathererBackend> native_uuid_gatherer_backend(
-    std::shared_ptr<services::AssetService> service, UuidGathererBackend::Inspector object,
-    std::function<void(const std::string &)> error, std::function<void(const std::string &)> debug) {
+
+std::shared_ptr<UuidGathererBackend> native_uuid_gatherer_backend(std::shared_ptr<services::AssetService> service,
+                                                                  UuidGathererBackend::Inspector object,
+                                                                  std::function<void(const std::string &)> error,
+                                                                  std::function<void(const std::string &)> debug) {
     if (!service || !object || !error || !debug)
         throw std::invalid_argument("Native gatherer requires service, object inspector and logs");
     auto backend = std::make_shared<UuidGathererBackend>();
@@ -672,13 +691,11 @@ std::shared_ptr<UuidGathererBackend> native_uuid_gatherer_backend(
     return backend;
 }
 
-std::shared_ptr<UuidGathererBackend>
-native_uuid_gatherer_backend(std::shared_ptr<services::AssetService> service,
-                             std::function<void(const std::string &)> error,
-                             std::function<void(const std::string &)> debug) {
+std::shared_ptr<UuidGathererBackend> native_uuid_gatherer_backend(std::shared_ptr<services::AssetService> service,
+                                                                  std::function<void(const std::string &)> error,
+                                                                  std::function<void(const std::string &)> debug) {
     return native_uuid_gatherer_backend(
-        std::move(service), [](auto &g, auto &a) { g.inspect_object(a); }, std::move(error),
-        std::move(debug));
+        std::move(service), [](auto &g, auto &a) { g.inspect_object(a); }, std::move(error), std::move(debug));
 }
 
-}
+} // namespace opensim::scene

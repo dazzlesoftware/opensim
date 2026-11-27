@@ -3,6 +3,7 @@
 #include "opensim/framework/config_xml_transport_http.hpp"
 #include "opensim/framework/config_xml_uri_object.hpp"
 #include "opensim/framework/config_http_cookies.hpp"
+
 namespace opensim::framework {
 // Fills canonical HTTP address, full typed RedirectHandler and fresh cookie jar.
 // The caller explicitly owns proxy, TLS, credentials and OS failure policies.
@@ -10,4 +11,4 @@ namespace opensim::framework {
 ConfigXmlNativeHttpServices
 config_xml_bind_typed_http(ConfigXmlNativeHttpServices policy, ConfigXmlUriObjects, ConfigUriObjectBackend,
                            std::function<std::shared_ptr<ConfigHttpCookiesBackend>()> new_cookie_backend);
-}
+} // namespace opensim::framework

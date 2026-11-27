@@ -1,0 +1,1 @@
+string result;integer after;default{state_entry(){result=xmrRotation2String(<xmrString2Float("NaN"),xmrString2Float("Infinity"),xmrString2Float("-Infinity"),xmrString2Float("5e-324")>,"N2");after=1;}}

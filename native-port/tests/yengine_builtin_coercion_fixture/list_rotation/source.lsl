@@ -1,0 +1,1 @@
+rotation result;integer after;default{state_entry(){result=llList2Rot(<0,0,0,1>,0);after=1;}}

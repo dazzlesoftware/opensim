@@ -1,0 +1,1 @@
+integer result;integer after;default{state_entry(){llSleep(0.1);result=llGetListEntryType(xmrEventDequeue(0.0,2097152,0,0,0),1);after=1;}touch_start(integer n){}}

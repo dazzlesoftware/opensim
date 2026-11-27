@@ -8,14 +8,17 @@
 #include <string>
 #include <string_view>
 #include <vector>
+
 namespace opensim::framework {
 class DotnetRegexClassError : public std::runtime_error {
   public:
     DotnetRegexClassError(std::string type, std::uint32_t code, std::string message)
         : runtime_error(message), source_type(std::move(type)), hresult(code) {}
+
     std::string source_type;
     std::uint32_t hresult;
 };
+
 std::uint8_t dotnet_regex_unicode_category(char16_t);
 bool dotnet_regex_ecma_word_char(char16_t);
 bool dotnet_regex_word_char(char16_t);
@@ -26,5 +29,5 @@ bool dotnet_regex_char_in_class(char16_t, std::u16string_view);
 bool dotnet_regex_char_in_category(char16_t, std::u16string_view);
 using DotnetRegexAsciiCache = std::vector<std::atomic<std::uint32_t>>;
 using DotnetRegexAsciiCacheSlot = opensim::framework::AtomicSharedPtr<DotnetRegexAsciiCache>;
-bool dotnet_regex_char_in_class(char16_t, std::u16string_view, DotnetRegexAsciiCacheSlot&);
-}
+bool dotnet_regex_char_in_class(char16_t, std::u16string_view, DotnetRegexAsciiCacheSlot &);
+} // namespace opensim::framework

@@ -4,15 +4,16 @@
 #include "opensim/framework/text.hpp"
 #include <algorithm>
 #include <stdexcept>
+
 namespace opensim::services {
 namespace {
-AdmissionCaps& caps(const std::shared_ptr<AdmissionCaps>& value) {
+AdmissionCaps &caps(const std::shared_ptr<AdmissionCaps> &value) {
     if (!value)
         throw std::invalid_argument("Null caps module");
     return *value;
 }
-bool viewer_matches(const std::optional<std::string>& entry, const std::string& lowered,
-                    std::size_t original_length) {
+
+bool viewer_matches(const std::optional<std::string> &entry, const std::string &lowered, std::size_t original_length) {
     if (!entry)
         throw std::invalid_argument("Null viewer entry");
     auto e = framework::utf16_replacing(*entry), v = framework::utf16_replacing(lowered);
@@ -21,9 +22,10 @@ bool viewer_matches(const std::optional<std::string>& entry, const std::string& 
         throw std::out_of_range("Viewer prefix length");
     return e == v.substr(0, length);
 }
-}
-bool SceneAdmission::verify_user_presence(const std::shared_ptr<framework::AgentCircuitData>& circuit,
-                                          std::string& reason) {
+} // namespace
+
+bool SceneAdmission::verify_user_presence(const std::shared_ptr<framework::AgentCircuitData> &circuit,
+                                          std::string &reason) {
     const auto names = [&]() {
         if (!circuit)
             throw std::invalid_argument("Null agent circuit");
@@ -45,9 +47,9 @@ bool SceneAdmission::verify_user_presence(const std::shared_ptr<framework::Agent
     reason.clear();
     return true;
 }
-bool SceneAdmission::new_user_connection(std::shared_ptr<framework::AgentCircuitData> circuit,
-                                         std::uint32_t flags, const GridRegion* source, std::string& reason,
-                                         bool require_presence) {
+
+bool SceneAdmission::new_user_connection(std::shared_ptr<framework::AgentCircuitData> circuit, std::uint32_t flags,
+                                         const GridRegion *source, std::string &reason, bool require_presence) {
     const bool via_login = (flags & (128u | 1073741824u)) != 0;
     reason.clear();
     auto viewer = backend_.viewer_name(circuit);
@@ -66,7 +68,7 @@ bool SceneAdmission::new_user_connection(std::shared_ptr<framework::AgentCircuit
     const auto viewer_length = framework::utf16_replacing(viewer).size();
     if (!allowed.empty()) {
         lower = backend_.lower_current_culture(framework::trim_utf8(viewer));
-        for (const auto& entry : allowed)
+        for (const auto &entry : allowed)
             if (viewer_matches(entry, *lower, viewer_length)) {
                 denied = false;
                 break;
@@ -77,7 +79,7 @@ bool SceneAdmission::new_user_connection(std::shared_ptr<framework::AgentCircuit
     if (!banned.empty()) {
         if (!lower)
             lower = backend_.lower_current_culture(framework::trim_utf8(viewer));
-        for (const auto& entry : banned)
+        for (const auto &entry : banned)
             if (viewer_matches(entry, *lower, viewer_length)) {
                 denied = true;
                 break;
@@ -102,8 +104,7 @@ bool SceneAdmission::new_user_connection(std::shared_ptr<framework::AgentCircuit
     if (presence && presence->state() == AdmissionPresenceState::removing) {
         int polls_left = 10;
         try {
-            while (!presence->deleted() && presence->state() == AdmissionPresenceState::removing &&
-                   polls_left-- > 0)
+            while (!presence->deleted() && presence->state() == AdmissionPresenceState::removing && polls_left-- > 0)
                 backend_.sleep(1000);
             if (!presence->deleted() && presence->state() == AdmissionPresenceState::removing)
                 return false;
@@ -147,7 +148,7 @@ bool SceneAdmission::new_user_connection(std::shared_ptr<framework::AgentCircuit
                         backend_.remove_circuit(circuit);
                         return false;
                     }
-                } catch (const std::exception&) {
+                } catch (const std::exception &) {
                     backend_.remove_circuit(circuit);
                     return false;
                 }
@@ -156,7 +157,7 @@ bool SceneAdmission::new_user_connection(std::shared_ptr<framework::AgentCircuit
                     backend_.remove_circuit(circuit);
                     return false;
                 }
-            } catch (const std::exception&) {
+            } catch (const std::exception &) {
                 backend_.remove_circuit(circuit);
                 return false;
             }
@@ -184,4 +185,4 @@ bool SceneAdmission::new_user_connection(std::shared_ptr<framework::AgentCircuit
         module->activate_caps(circuit->circuit_code);
     return true;
 }
-}
+} // namespace opensim::services

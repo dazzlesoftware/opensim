@@ -1,0 +1,8 @@
+{
+  "scenario": "populated_reject16",
+  "argument_is_global_class": true,
+  "own_heap_usage": 16,
+  "global_heap": 4,
+  "target_limit": 16,
+  "boundary": "Backend-injected ehArgs Object[]; source state_entry has no declared parameters."
+}

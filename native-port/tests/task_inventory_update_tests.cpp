@@ -5,20 +5,24 @@
 #include <bit>
 using namespace opensim;
 using namespace scene;
+
 namespace {
 framework::Uuid id(int n) {
     auto s = std::to_string(n);
     return framework::Uuid("11223344-5566-7788-99aa-" + std::string(12 - s.size(), '0') + s);
 }
+
 using Item = TaskInventoryUpdateBackend::Item;
+
 std::string dump(Item i) {
     if (!i)
         return "NULL";
     return std::to_string(i->base_permissions) + "," + std::to_string(i->current_permissions) + "," +
            std::to_string(i->everyone_permissions) + "," + std::to_string(i->group_permissions) + "," +
-           std::to_string(i->next_permissions) + "," + std::to_string(i->flags) + "," + i->asset_id.str() +
-           "," + i->owner_id.str() + "," + i->group_id.str();
+           std::to_string(i->next_permissions) + "," + std::to_string(i->flags) + "," + i->asset_id.str() + "," +
+           i->owner_id.str() + "," + i->group_id.str();
 }
+
 std::string probe(int mode, int mask, int failure) {
     auto bit = [&](int b) { return (mode & b) != 0; };
     std::string trace;
@@ -142,14 +146,14 @@ std::string probe(int mode, int mask, int failure) {
                                      }};
     std::string result = "OK";
     try {
-        TaskInventoryUpdateController(std::move(b))
-            .update(client, bit(524288) ? id(7) : framework::Uuid{}, input, 123);
+        TaskInventoryUpdateController(std::move(b)).update(client, bit(524288) ? id(7) : framework::Uuid{}, input, 123);
     } catch (...) {
         result = "THROW";
     }
     return result + ":" + dump(current) + ":" + dump(input) + trace;
 }
-}
+} // namespace
+
 int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string_view(argv[1]) == "--probe") {

@@ -11,12 +11,12 @@
 
 namespace opensim::physics {
 namespace {
-using network::Value;
 using framework::Vector3;
+using network::Value;
 
 constexpr std::size_t max_mesh_depth = 32;
 
-Value read_mesh_section(std::string_view payload, const Value& section) {
+Value read_mesh_section(std::string_view payload, const Value &section) {
     if (section.kind != Value::Kind::Map)
         return {};
     const auto offset = network::osd_integer(section.get("offset"));
@@ -27,12 +27,12 @@ Value read_mesh_section(std::string_view payload, const Value& section) {
     return network::deserialize_zipped_llsd_binary(payload.substr(offset, size), max_mesh_depth);
 }
 
-bool read_vector(const Value& value, Vector3& result) {
+bool read_vector(const Value &value, Vector3 &result) {
     if (value.kind != Value::Kind::Array || value.array.size() != 3)
         return false;
-    float* components[] = {&result.x, &result.y, &result.z};
+    float *components[] = {&result.x, &result.y, &result.z};
     for (std::size_t i = 0; i < 3; ++i) {
-        const auto& component = value.array[i];
+        const auto &component = value.array[i];
         if (component.kind != Value::Kind::Real && component.kind != Value::Kind::Integer)
             return false;
         *components[i] = static_cast<float>(network::osd_real(component));
@@ -42,15 +42,15 @@ bool read_vector(const Value& value, Vector3& result) {
     return true;
 }
 
-std::uint16_t read_u16(const std::vector<std::uint8_t>& bytes, std::size_t offset) {
+std::uint16_t read_u16(const std::vector<std::uint8_t> &bytes, std::size_t offset) {
     return static_cast<std::uint16_t>(bytes[offset] | (std::uint16_t(bytes[offset + 1]) << 8));
 }
 
-bool read_texcoord(const Value& value, std::array<float, 2>& result) {
+bool read_texcoord(const Value &value, std::array<float, 2> &result) {
     if (value.kind != Value::Kind::Array || value.array.size() != result.size())
         return false;
     for (std::size_t index = 0; index < result.size(); ++index) {
-        const auto& component = value.array[index];
+        const auto &component = value.array[index];
         if (component.kind != Value::Kind::Real && component.kind != Value::Kind::Integer)
             return false;
         result[index] = static_cast<float>(network::osd_real(component));
@@ -60,7 +60,7 @@ bool read_texcoord(const Value& value, std::array<float, 2>& result) {
     return true;
 }
 
-bool append_submesh(const Value& submesh, AssetPhysicsMesh& mesh) {
+bool append_submesh(const Value &submesh, AssetPhysicsMesh &mesh) {
     if (submesh.kind != Value::Kind::Map || submesh.contains("NoGeometry"))
         return true;
     const auto positions = network::osd_binary(submesh.get("Position"));
@@ -73,15 +73,15 @@ bool append_submesh(const Value& submesh, AssetPhysicsMesh& mesh) {
     Vector3 minimum{-.5f, -.5f, -.5f};
     Vector3 maximum{.5f, .5f, .5f};
     if (submesh.contains("PositionDomain")) {
-        const auto& domain = submesh.get("PositionDomain");
+        const auto &domain = submesh.get("PositionDomain");
         if (!read_vector(domain.get("Min"), minimum) || !read_vector(domain.get("Max"), maximum))
             return false;
     }
     constexpr float inverse_max = 1.f / 65535.f;
     const Vector3 range{(maximum.x - minimum.x) * inverse_max, (maximum.y - minimum.y) * inverse_max,
                         (maximum.z - minimum.z) * inverse_max};
-    if (range.x < 0.f || range.y < 0.f || range.z < 0.f ||
-        !std::isfinite(range.x) || !std::isfinite(range.y) || !std::isfinite(range.z))
+    if (range.x < 0.f || range.y < 0.f || range.z < 0.f || !std::isfinite(range.x) || !std::isfinite(range.y) ||
+        !std::isfinite(range.z))
         return false;
 
     const auto count = positions->size() / 6;
@@ -103,7 +103,7 @@ bool append_submesh(const Value& submesh, AssetPhysicsMesh& mesh) {
     return true;
 }
 
-bool read_render_face(const Value& submesh, AssetRenderFace& face) {
+bool read_render_face(const Value &submesh, AssetRenderFace &face) {
     if (submesh.kind != Value::Kind::Map || !append_submesh(submesh, face.geometry))
         return false;
     if (face.geometry.indices.empty())
@@ -116,7 +116,7 @@ bool read_render_face(const Value& submesh, AssetRenderFace& face) {
         if (!data || data->size() != vertex_count * 4)
             return false;
         std::array<float, 2> minimum{}, maximum{};
-        const auto& domain = submesh.get("TexCoord0Domain");
+        const auto &domain = submesh.get("TexCoord0Domain");
         if (!read_texcoord(domain.get("Min"), minimum) || !read_texcoord(domain.get("Max"), maximum))
             return false;
         const float u_step = (maximum[0] - minimum[0]) * inverse_max;
@@ -136,26 +136,20 @@ bool read_render_face(const Value& submesh, AssetRenderFace& face) {
 }
 
 // The fixed interior point lets every new face keep its outward winding.
-bool append_hull(std::vector<Vector3> points, AssetPhysicsMesh& mesh) {
+bool append_hull(std::vector<Vector3> points, AssetPhysicsMesh &mesh) {
     for (const auto point : points)
         if (!std::isfinite(point.x) || !std::isfinite(point.y) || !std::isfinite(point.z))
             return false;
     using Point = std::array<double, 3>;
     using Face = std::array<std::size_t, 3>;
-    const auto less = [](Vector3 a, Vector3 b) {
-        return std::array{a.x, a.y, a.z} < std::array{b.x, b.y, b.z};
-    };
+    const auto less = [](Vector3 a, Vector3 b) { return std::array{a.x, a.y, a.z} < std::array{b.x, b.y, b.z}; };
     if (points.size() != 3)
         std::sort(points.begin(), points.end(), less);
     points.erase(std::unique(points.begin(), points.end()), points.end());
     if (points.size() < 3)
         return false;
-    const auto point = [&](std::size_t i) {
-        return Point{points[i].x, points[i].y, points[i].z};
-    };
-    const auto subtract = [](Point a, Point b) {
-        return Point{a[0] - b[0], a[1] - b[1], a[2] - b[2]};
-    };
+    const auto point = [&](std::size_t i) { return Point{points[i].x, points[i].y, points[i].z}; };
+    const auto subtract = [](Point a, Point b) { return Point{a[0] - b[0], a[1] - b[1], a[2] - b[2]}; };
     const auto cross = [](Point a, Point b) {
         return Point{a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]};
     };
@@ -223,19 +217,19 @@ bool append_hull(std::vector<Vector3> points, AssetPhysicsMesh& mesh) {
                 }
                 return true;
             });
-            for (const auto& [from, to] : horizon)
+            for (const auto &[from, to] : horizon)
                 add_face({from, to, i});
         }
     }
     const auto base = static_cast<std::uint32_t>(mesh.vertices.size());
     mesh.vertices.insert(mesh.vertices.end(), points.begin(), points.end());
-    for (const auto& face : faces)
+    for (const auto &face : faces)
         for (const auto index : face)
             mesh.indices.push_back(base + static_cast<std::uint32_t>(index));
     return !faces.empty();
 }
 
-std::optional<AssetPhysicsMesh> decode_convex(const Value& block, bool convex) {
+std::optional<AssetPhysicsMesh> decode_convex(const Value &block, bool convex) {
     if (block.kind != Value::Kind::Map)
         return {};
     Vector3 minimum{-.5f, -.5f, -.5f};
@@ -246,15 +240,14 @@ std::optional<AssetPhysicsMesh> decode_convex(const Value& block, bool convex) {
     constexpr float inverse_max = 1.f / 65535.f;
     const Vector3 range{(maximum.x - minimum.x) * inverse_max, (maximum.y - minimum.y) * inverse_max,
                         (maximum.z - minimum.z) * inverse_max};
-    if (range.x < 0.f || range.y < 0.f || range.z < 0.f ||
-        !std::isfinite(range.x) || !std::isfinite(range.y) || !std::isfinite(range.z))
+    if (range.x < 0.f || range.y < 0.f || range.z < 0.f || !std::isfinite(range.x) || !std::isfinite(range.y) ||
+        !std::isfinite(range.z))
         return {};
-    const auto points_at = [&](const std::vector<std::uint8_t>& data, std::size_t first, std::size_t count) {
+    const auto points_at = [&](const std::vector<std::uint8_t> &data, std::size_t first, std::size_t count) {
         std::vector<Vector3> points;
         points.reserve(count);
         for (std::size_t i = first; i < first + count * 6; i += 6)
-            points.push_back({minimum.x + read_u16(data, i) * range.x,
-                              minimum.y + read_u16(data, i + 2) * range.y,
+            points.push_back({minimum.x + read_u16(data, i) * range.x, minimum.y + read_u16(data, i + 2) * range.y,
                               minimum.z + read_u16(data, i + 4) * range.z});
         return points;
     };
@@ -284,7 +277,7 @@ std::optional<AssetPhysicsMesh> decode_convex(const Value& block, bool convex) {
         return mesh;
     return {};
 }
-}
+} // namespace
 
 std::optional<AssetPhysicsMesh> decode_asset_physics_mesh(std::string_view asset, bool convex) {
     try {
@@ -293,23 +286,23 @@ std::optional<AssetPhysicsMesh> decode_asset_physics_mesh(std::string_view asset
         if (header.kind != Value::Kind::Map)
             return {};
         const bool triangles = !convex && (header.contains("physics_shape") || header.contains("physics_mesh"));
-        const auto& section = header.get(triangles ? (header.contains("physics_shape") ? "physics_shape" :
-                                                      "physics_mesh") : "physics_convex");
+        const auto &section = header.get(
+            triangles ? (header.contains("physics_shape") ? "physics_shape" : "physics_mesh") : "physics_convex");
         const auto decoded = read_mesh_section(asset.substr(header_size), section);
         if (!triangles)
             return decode_convex(decoded, convex);
         if (decoded.kind != Value::Kind::Array)
             return {};
         AssetPhysicsMesh mesh;
-        for (const auto& submesh : decoded.array)
+        for (const auto &submesh : decoded.array)
             if (!append_submesh(submesh, mesh))
                 return {};
         if (mesh.indices.empty())
             return {};
         return mesh;
-    } catch (const std::runtime_error&) {
+    } catch (const std::runtime_error &) {
         return {};
-    } catch (const std::logic_error&) {
+    } catch (const std::logic_error &) {
         return {};
     }
 }
@@ -329,27 +322,27 @@ std::optional<std::vector<AssetRenderFace>> decode_asset_render_mesh(std::string
             return {};
         std::vector<AssetRenderFace> faces;
         faces.reserve(decoded.array.size());
-        for (const auto& submesh : decoded.array) {
+        for (const auto &submesh : decoded.array) {
             if (submesh.contains("NoGeometry"))
                 continue;
             if (!read_render_face(submesh, faces.emplace_back()))
                 return {};
         }
         return faces;
-    } catch (const std::runtime_error&) {
+    } catch (const std::runtime_error &) {
         return {};
-    } catch (const std::logic_error&) {
+    } catch (const std::logic_error &) {
         return {};
     }
 }
 
-std::optional<AssetRenderFace> build_sculpt_render_face(std::span<const std::uint8_t> pixels,
-    std::uint32_t width, std::uint32_t height, std::size_t channels, std::uint8_t sculpt_type, AssetMeshLod lod) {
+std::optional<AssetRenderFace> build_sculpt_render_face(std::span<const std::uint8_t> pixels, std::uint32_t width,
+                                                        std::uint32_t height, std::size_t channels,
+                                                        std::uint8_t sculpt_type, AssetMeshLod lod) {
     constexpr std::array lod_edges{8u, 16u, 32u, 32u};
     const auto lod_index = static_cast<std::size_t>(lod);
-    if (width == 0 || height == 0 || (channels != 3 && channels != 4) ||
-        pixels.size() % channels != 0 || std::uint64_t(width) * height != pixels.size() / channels ||
-        lod_index >= lod_edges.size())
+    if (width == 0 || height == 0 || (channels != 3 && channels != 4) || pixels.size() % channels != 0 ||
+        std::uint64_t(width) * height != pixels.size() / channels || lod_index >= lod_edges.size())
         return {};
 
     const auto max_samples = lod_edges[lod_index] * lod_edges[lod_index];
@@ -387,20 +380,20 @@ std::optional<AssetRenderFace> build_sculpt_render_face(std::span<const std::uin
     constexpr float color_scale = 1.f / 255.f;
     for (std::uint32_t y = 0; y < rows_count; ++y) {
         const auto source_y = subsample && y > 0 ? 2 * y - (y + 1 == rows_count) : y;
-        auto& row = rows[y];
+        auto &row = rows[y];
         row.reserve(columns + 1);
         for (std::uint32_t x = 0; x < columns; ++x) {
             const auto source_x = subsample && x > 0 ? 2 * x - (x + 1 == columns) : x;
             const auto offset = (std::size_t(source_y) * step_y * width + source_x * step_x) * channels;
             const float red = pixels[offset] * color_scale - .5f;
-            row.push_back({mirror ? -red : red, pixels[offset + 1] * color_scale - .5f,
-                           pixels[offset + 2] * color_scale - .5f});
+            row.push_back(
+                {mirror ? -red : red, pixels[offset + 1] * color_scale - .5f, pixels[offset + 2] * color_scale - .5f});
         }
     }
 
     const bool even_rows = rows.size() % 2 == 0;
     if (topology != plane) {
-        for (auto& row : rows) {
+        for (auto &row : rows) {
             if (even_rows)
                 row.push_back(row.front());
             else
@@ -427,7 +420,7 @@ std::optional<AssetRenderFace> build_sculpt_render_face(std::span<const std::uin
     const float u_step = 1.f / (across - 1);
     const float v_step = 1.f / (down - 1);
     AssetRenderFace face;
-    auto& [vertices, indices] = face.geometry;
+    auto &[vertices, indices] = face.geometry;
     vertices.reserve(across * down);
     face.texcoords.reserve(across * down);
     indices.reserve((across - 1) * (down - 1) * 6);
@@ -460,19 +453,19 @@ std::optional<AssetRenderFace> build_sculpt_render_face(std::span<const std::uin
         const Vector3 v{vertices[c].x - origin.x, vertices[c].y - origin.y, vertices[c].z - origin.z};
         const auto normal = normalize({u.y * v.z - u.z * v.y, u.z * v.x - u.x * v.z, u.x * v.y - u.y * v.x});
         for (const auto vertex : {a, b, c}) {
-            auto& sum = face.normals[vertex];
+            auto &sum = face.normals[vertex];
             sum = {sum.x + normal.x, sum.y + normal.y, sum.z + normal.z};
         }
     }
-    for (auto& normal : face.normals)
+    for (auto &normal : face.normals)
         normal = normalize(normal);
     if (topology != plane) {
         for (std::uint32_t y = 0; y < down; ++y) {
-            auto& first = face.normals[y * across];
-            auto& last = face.normals[(y + 1) * across - 1];
+            auto &first = face.normals[y * across];
+            auto &last = face.normals[(y + 1) * across - 1];
             first = last = normalize({first.x + last.x, first.y + last.y, first.z + last.z});
         }
     }
     return face;
 }
-}
+} // namespace opensim::physics

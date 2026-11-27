@@ -7,18 +7,18 @@ namespace opensim::scene {
 RemoteDataChannels::RemoteDataChannels(Sender sender) : sender_(std::move(sender)) {}
 
 RemoteDataChannels::~RemoteDataChannels() {
-    for (auto& worker : workers_)
+    for (auto &worker : workers_)
         worker.thread.request_stop();
-    for (auto& worker : workers_)
+    for (auto &worker : workers_)
         worker.thread.join();
 }
 
-framework::Uuid RemoteDataChannels::send(framework::Uuid item, std::string channel,
-                                        std::string destination, Data data, framework::Uuid region) {
+framework::Uuid RemoteDataChannels::send(framework::Uuid item, std::string channel, std::string destination, Data data,
+                                         framework::Uuid region) {
     const auto message = framework::Uuid::random();
     std::lock_guard lock(mutex_);
-    workers_.remove_if([](const auto& worker) { return worker.finished; });
-    auto& worker = workers_.emplace_back();
+    workers_.remove_if([](const auto &worker) { return worker.finished; });
+    auto &worker = workers_.emplace_back();
     worker.item = item;
     worker.region = region;
     try {
@@ -28,7 +28,7 @@ framework::Uuid RemoteDataChannels::send(framework::Uuid item, std::string chann
                 try {
                     if (!stop.stop_requested())
                         sender_(completion.channel, destination, completion.data, stop);
-                } catch (const std::exception& error) {
+                } catch (const std::exception &error) {
                     completion.data.text = error.what();
                 }
                 std::lock_guard lock(mutex_);
@@ -53,41 +53,36 @@ void RemoteDataChannels::cancel_region(framework::Uuid region) {
 
 void RemoteDataChannels::cancel(framework::Uuid region, std::optional<framework::Uuid> item) {
     std::lock_guard lock(mutex_);
-    const auto matches = [&](const auto& entry) {
-        return entry.region == region && (!item || entry.item == *item);
-    };
-    std::erase_if(channels_, [&](const auto& entry) {
-        return matches(entry.second);
-    });
-    std::erase_if(requests_, [&](const auto& request) {
-        return matches(request.receiver);
-    });
+    const auto matches = [&](const auto &entry) { return entry.region == region && (!item || entry.item == *item); };
+    std::erase_if(channels_, [&](const auto &entry) { return matches(entry.second); });
+    std::erase_if(requests_, [&](const auto &request) { return matches(request.receiver); });
     std::erase_if(completed_, matches);
-    for (auto& [message, pending] : pending_)
+    for (auto &[message, pending] : pending_)
         if (matches(pending->receiver))
             pending->cancelled = true;
     changed_.notify_all();
-    for (auto& worker : workers_)
+    for (auto &worker : workers_)
         if (matches(worker))
             worker.thread.request_stop();
 }
 
 std::vector<RemoteDataChannels::Completion> RemoteDataChannels::take_completed(framework::Uuid region) {
     std::lock_guard lock(mutex_);
-    workers_.remove_if([](const auto& worker) { return worker.finished; });
+    workers_.remove_if([](const auto &worker) { return worker.finished; });
     std::vector<Completion> result;
     result.reserve(completed_.size());
-    const auto first = std::stable_partition(completed_.begin(), completed_.end(),
-        [region](const Completion& completion) { return completion.region != region; });
+    const auto first =
+        std::stable_partition(completed_.begin(), completed_.end(),
+                              [region](const Completion &completion) { return completion.region != region; });
     std::move(first, completed_.end(), std::back_inserter(result));
     completed_.erase(first, completed_.end());
     return result;
 }
 
-framework::Uuid RemoteDataChannels::open(std::uint32_t local_id, framework::Uuid item,
-                                        framework::Uuid requested, framework::Uuid region) {
+framework::Uuid RemoteDataChannels::open(std::uint32_t local_id, framework::Uuid item, framework::Uuid requested,
+                                         framework::Uuid region) {
     std::lock_guard lock(mutex_);
-    for (const auto& [channel, receiver] : channels_)
+    for (const auto &[channel, receiver] : channels_)
         if (receiver.item == item && receiver.region == region)
             return channel;
 
@@ -131,11 +126,11 @@ RemoteDataChannels::Result RemoteDataChannels::request(framework::Uuid channel, 
         changed_.wait_for(lock, timeout, [&] { return pending->reply.has_value() || pending->cancelled; });
     } catch (...) {
         pending_.erase(message);
-        std::erase_if(requests_, [&](const Request& request) { return request.message == message; });
+        std::erase_if(requests_, [&](const Request &request) { return request.message == message; });
         throw;
     }
     pending_.erase(message);
-    std::erase_if(requests_, [&](const Request& request) { return request.message == message; });
+    std::erase_if(requests_, [&](const Request &request) { return request.message == message; });
     return {pending->reply ? Status::Replied : Status::TimedOut, std::move(pending->reply)};
 }
 
@@ -143,8 +138,9 @@ std::vector<RemoteDataChannels::Request> RemoteDataChannels::take_requests(frame
     std::lock_guard lock(mutex_);
     std::vector<Request> result;
     result.reserve(requests_.size());
-    const auto first = std::stable_partition(requests_.begin(), requests_.end(),
-        [region](const Request& request) { return request.receiver.region != region; });
+    const auto first = std::stable_partition(requests_.begin(), requests_.end(), [region](const Request &request) {
+        return request.receiver.region != region;
+    });
     std::move(first, requests_.end(), std::back_inserter(result));
     requests_.erase(first, requests_.end());
     return result;
@@ -164,4 +160,4 @@ bool RemoteDataChannels::reply(framework::Uuid channel, framework::Uuid message,
     changed_.notify_all();
     return true;
 }
-}
+} // namespace opensim::scene

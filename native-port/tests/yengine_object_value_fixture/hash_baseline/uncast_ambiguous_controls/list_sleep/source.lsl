@@ -1,0 +1,1 @@
+list input=[1,2];list alias=input;integer before_hash;integer result;integer repeat_hash;integer entries;integer after;default{state_entry(){entries++;before_hash=xmrHashCode(input);llSleep(0.1);result=xmrHashCode(input);repeat_hash=xmrHashCode(input);after=1;}}

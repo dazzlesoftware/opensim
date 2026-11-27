@@ -1,0 +1,18 @@
+{
+  "methodology": "Actual unchanged original compiler and generated CallSEH pure execution; CheckRunWork stub is no-op. No scheduler, migration, or viewer claim. Separate process boundary for self-cycle failure.",
+  "runtime": "Original .NET8 Windows reference environment",
+  "hashes": {
+    "bin\\OpenSim.Region.ScriptEngine.YEngine.dll": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+    "OpenSim\\Region\\ScriptEngine\\YEngine\\MMRScriptTokenize.cs": "e4eef1fcb18ae8205712989d46de8e1da596399abcaf1531ec5144e7c0745f83",
+    "OpenSim\\Region\\ScriptEngine\\YEngine\\MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+    "OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+    "OpenSim\\Region\\ScriptEngine\\YEngine\\MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+    "native-port\\tests\\yengine_fixed_array_reference.cs": "d86517a13d8f4094e933279614d487a0e69d44a49f2296c4af7562bf7386d651"
+  },
+  "outcome_counts": {
+    "total": 56,
+    "accepted": 34,
+    "compile_rejected": 22,
+    "process_boundaries": 0
+  }
+}

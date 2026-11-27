@@ -1,0 +1,1 @@
+integer result;integer calls;default{state_entry(){switch(1){case 1:result=7;break;}}}

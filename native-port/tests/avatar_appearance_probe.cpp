@@ -6,20 +6,23 @@
 #include <iostream>
 #include <sstream>
 using namespace opensim;
-using network::Value;
 using framework::AvatarAppearance;
 using framework::Uuid;
+using network::Value;
+
 Uuid id(unsigned n) {
     std::ostringstream s;
     s << "00000000-0000-0000-0000-" << std::hex << std::setw(12) << std::setfill('0') << n;
     return Uuid(s.str());
 }
-template <class T> std::string hex(const T& bytes) {
+
+template <class T> std::string hex(const T &bytes) {
     std::ostringstream s;
     for (auto b : bytes)
         s << std::hex << std::setw(2) << std::setfill('0') << unsigned(b);
     return s.str();
 }
+
 std::string number(float n) {
     auto bits = std::bit_cast<std::uint32_t>(n);
     if (std::isnan(n))
@@ -28,7 +31,8 @@ std::string number(float n) {
     s << std::hex << bits;
     return s.str();
 }
-std::string canonical(const Value& v) {
+
+std::string canonical(const Value &v) {
     switch (v.kind) {
     case Value::Kind::Integer:
         return "i" + std::to_string(v.integer);
@@ -46,13 +50,13 @@ std::string canonical(const Value& v) {
         return "x" + hex(*network::osd_binary(v));
     case Value::Kind::Array: {
         std::string s = "[";
-        for (auto& n : v.array)
+        for (auto &n : v.array)
             s += canonical(n) + ",";
         return s + "]";
     }
     case Value::Kind::Map: {
         std::string s = "{";
-        for (auto& [k, n] : v.map)
+        for (auto &[k, n] : v.map)
             s += k + "=" + canonical(n) + ",";
         return s + "}";
     }
@@ -60,16 +64,16 @@ std::string canonical(const Value& v) {
         return "u";
     }
 }
-std::string snapshot(AvatarAppearance& a) {
+
+std::string snapshot(AvatarAppearance &a) {
     std::string s = std::to_string(a.serial) + ":" + number(a.avatar_height) + ":" + number(a.hover_z);
     for (auto v : {a.avatar_size(), a.avatar_box_size()})
         s += ":" + number(v.x) + "," + number(v.y) + "," + number(v.z);
-    s +=
-        ":" + number(a.avatar_feet_offset()) + ":" + (a.visual_params ? hex(*a.visual_params) : "null") + ":";
+    s += ":" + number(a.avatar_feet_offset()) + ":" + (a.visual_params ? hex(*a.visual_params) : "null") + ":";
     if (!a.wearables)
         s += "null";
     else
-        for (auto& w : *a.wearables) {
+        for (auto &w : *a.wearables) {
             if (!w) {
                 s += "null;";
                 continue;
@@ -84,19 +88,18 @@ std::string snapshot(AvatarAppearance& a) {
     s += ':';
     s += a.texture ? hex(a.texture->bytes()) : "null";
     s += ':';
-    for (auto& attachment : a.attachments())
-        s += std::to_string(attachment.point) + "," + attachment.item.str() + "," + attachment.asset.str() +
-             ";";
+    for (auto &attachment : a.attachments())
+        s += std::to_string(attachment.point) + "," + attachment.item.str() + "," + attachment.asset.str() + ";";
     s += ':';
     if (!a.cache_items)
         s += "null";
     else
-        for (auto& c : *a.cache_items)
-            s += c ? std::to_string(c->texture_index) + "," + c->cache_id.str() + "," + c->texture_id.str() +
-                         ";"
+        for (auto &c : *a.cache_items)
+            s += c ? std::to_string(c->texture_index) + "," + c->cache_id.str() + "," + c->texture_id.str() + ";"
                    : "null;";
     return s;
 }
+
 int main() {
     auto a = std::make_shared<AvatarAppearance>();
     std::shared_ptr<AvatarAppearance> saved;
@@ -133,9 +136,9 @@ int main() {
                 saved = a;
                 a = std::make_shared<AvatarAppearance>(a.get(), w != 0, b != 0);
             } else if (op == "copy-null")
-                a = std::make_shared<AvatarAppearance>(static_cast<AvatarAppearance*>(nullptr));
+                a = std::make_shared<AvatarAppearance>(static_cast<AvatarAppearance *>(nullptr));
             else if (op == "map-null")
-                a = std::make_shared<AvatarAppearance>(static_cast<Value*>(nullptr));
+                a = std::make_shared<AvatarAppearance>(static_cast<Value *>(nullptr));
             else if (op == "size") {
                 std::uint32_t x, y, z;
                 in >> std::hex >> x >> y >> z;
@@ -183,10 +186,9 @@ int main() {
                 if (mode == 2)
                     a->texture.reset();
                 else {
-                    auto entry =
-                        mode == 1
-                            ? a->texture
-                            : std::make_shared<framework::TextureEntry>(AvatarAppearance::default_texture_id);
+                    auto entry = mode == 1
+                                     ? a->texture
+                                     : std::make_shared<framework::TextureEntry>(AvatarAppearance::default_texture_id);
                     if (index >= 0)
                         entry->get_face(index)->texture_id(id(n));
                     output = a->set_texture_entries(entry) ? "1" : "0";
@@ -269,11 +271,9 @@ int main() {
                     if (kind == "packed")
                         map = a->pack();
                     else if (kind == "bad-wear")
-                        map.map["wearables"].kind = Value::Kind::Array,
-                        map.map["wearables"].array.push_back(Value(3));
+                        map.map["wearables"].kind = Value::Kind::Array, map.map["wearables"].array.push_back(Value(3));
                     else if (kind == "extra-only")
-                        map.map["wrbls8"].kind = Value::Kind::Array,
-                        map.map["wrbls8"].array.push_back(Value(3));
+                        map.map["wrbls8"].kind = Value::Kind::Array, map.map["wrbls8"].array.push_back(Value(3));
                     else if (kind == "height") {
                         Value v;
                         v.kind = Value::Kind::Real;
@@ -302,13 +302,13 @@ int main() {
                     (*saved->cache_items)[8]->texture_id = id(999);
             } else if (op == "assets" && saved)
                 a->get_assets_from(*saved);
-        } catch (const std::exception&) {
+        } catch (const std::exception &) {
             status = "EX";
         }
         std::string state;
         try {
             state = snapshot(*a);
-        } catch (const std::exception&) {
+        } catch (const std::exception &) {
             state = "STATEEX";
         }
         std::cout << status << '|' << output << '|' << state << '\n';

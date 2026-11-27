@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "checkedAtUtc": "2026-11-26T22:44:08.838869+00:00",
+  "originalCapacityObservationVerified": true,
+  "nativeFixImplemented": false,
+  "fullParityVerified": false,
+  "scope": "Actual unchanged original YEngine production binary write/read and live/migrated resume of 600000 Double cells on Windows/Linux",
+  "generatorSha256": "093af1e2eab67c3d81dc2629c8c4d4d477721e892c2e32d01018659870698aa4",
+  "platforms": {
+    "windows": {
+      "acceptedCapturedMigrated": true,
+      "snapshotBytes": 5400171,
+      "snapshotSha256": "c87b69dde52466a613fb12423a9ef77da957366adc472e9c0131650d910d6aa2",
+      "metadataSha256": "517eb17ca0ab2052eac9e1f8bb17ffe58258bfb07729498261f9cd9e0dbff9eb",
+      "arrayLength": 600000,
+      "fullCellSha256": "0572a4f3b2f8852c28d40156819e4c1ea4be7ba70b4214f544fa028bac34f5ad",
+      "aliasAndCompletionVerified": true,
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64"
+    },
+    "linux": {
+      "acceptedCapturedMigrated": true,
+      "snapshotBytes": 5400171,
+      "snapshotSha256": "c87b69dde52466a613fb12423a9ef77da957366adc472e9c0131650d910d6aa2",
+      "metadataSha256": "baf9eafbc9567f10acd7fd88f8a4acc983b9da0c0cea3f7a0350851fba3120c2",
+      "arrayLength": 600000,
+      "fullCellSha256": "0572a4f3b2f8852c28d40156819e4c1ea4be7ba70b4214f544fa028bac34f5ad",
+      "aliasAndCompletionVerified": true,
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64"
+    }
+  },
+  "nativeRestriction": {
+    "path": "native-port/src/yengine_snapshot.cpp",
+    "sha256": "321bc3a11c4ca1b2df3a71ed1f72c289ee211aed6ce6eaeba2b07b696bcf0d66",
+    "line": 404,
+    "condition": "bytes.size() > 4 * 1024 * 1024 returns nullopt",
+    "runtimeRejectionDirectlyMeasured": false
+  },
+  "nextWork": [
+    "Replace arbitrary checkpoint byte envelope with format-derived allocation/length validation while preserving old accepted wire bytes",
+    "Measure and remove incompatible reference-count/List-count restrictions separately",
+    "Run original fixture imports and native live/persistent resumes on both platforms",
+    "Retain malformed-length regression coverage and verify production persistence beyond former envelope"
+  ]
+}

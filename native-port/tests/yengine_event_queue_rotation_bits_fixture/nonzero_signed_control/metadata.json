@@ -1,0 +1,41 @@
+{
+  "name": "nonzero_signed_control",
+  "input": {
+    "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+    "bits": [
+      "8000000000000000",
+      "3ff0000000000000",
+      "8000000000000000",
+      "8000000000000000"
+    ],
+    "text": "\u003C-0.000000, 1.000000, -0.000000, -0.000000\u003E"
+  },
+  "append_exception": null,
+  "outer_xml_exception": null,
+  "load_xml_exception": null,
+  "restore_event_queue_exception": null,
+  "restored": {
+    "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+    "bits": [
+      "8000000000000000",
+      "3ff0000000000000",
+      "8000000000000000",
+      "8000000000000000"
+    ],
+    "text": "\u003C-0.000000, 1.000000, -0.000000, -0.000000\u003E"
+  },
+  "strict_xml_reader_control_exception": null,
+  "strict_xml_reader_control_restored": {
+    "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+    "bits": [
+      "8000000000000000",
+      "3ff0000000000000",
+      "8000000000000000",
+      "8000000000000000"
+    ],
+    "text": "\u003C-0.000000, 1.000000, -0.000000, -0.000000\u003E"
+  },
+  "sha256": {
+    "serialized.xml": "a8ed4e805a77ea50b982038b72631c586e0fc9762fd195506790f45d62933b4f"
+  }
+}

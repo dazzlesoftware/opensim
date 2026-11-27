@@ -1,0 +1,1 @@
+string result;integer after;default{state_entry(){result=llToUpper(7);after=1;}}

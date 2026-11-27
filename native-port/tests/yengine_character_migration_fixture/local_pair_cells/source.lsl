@@ -1,0 +1,1 @@
+YOption chars;integer h=55357;integer l=56832;integer first;integer second;integer calls;integer after;integer pause(){char high=(char)h;char low=(char)l;calls++;llSleep(3.0);first=(integer)high;second=(integer)low;after=1;return 0;}default{state_entry(){pause();}}

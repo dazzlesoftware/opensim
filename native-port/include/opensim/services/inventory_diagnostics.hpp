@@ -4,9 +4,11 @@
 #include "opensim/network/sdk_llsd_xml.hpp"
 #include <functional>
 #include <stdexcept>
+
 namespace opensim::services {
 enum class InventoryLogLevel { Debug, Warn, Error };
 using InventoryDiagnostic = std::function<void(InventoryLogLevel, const std::string &)>;
+
 inline std::string inventory_cast_message(network::Value::Kind kind) {
     const char *type = "OSD";
     using K = network::Value::Kind;
@@ -44,6 +46,7 @@ inline std::string inventory_cast_message(network::Value::Kind kind) {
     return std::string("Unable to cast object of type 'OpenMetaverse.StructuredData.") + type +
            "' to type 'OpenMetaverse.StructuredData.OSDMap'.";
 }
+
 inline std::string inventory_exception_message() {
     try {
         throw;
@@ -53,4 +56,4 @@ inline std::string inventory_exception_message() {
         return "Unknown native exception";
     }
 }
-}
+} // namespace opensim::services

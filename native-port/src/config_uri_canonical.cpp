@@ -1,5 +1,6 @@
 // Source .NET8.0.31 Uri.CheckCanonical, general syntax flags; MIT .NET license.
 #include "opensim/framework/config_uri_canonical.hpp"
+
 namespace opensim::framework {
 namespace {
 int hex(char16_t c) {
@@ -8,19 +9,19 @@ int hex(char16_t c) {
            : c >= u'a' && c <= u'f' ? c - u'a' + 10
                                     : -1;
 }
+
 bool iri(std::uint32_t c) {
     if (c <= 65535)
         return (c >= 160 && c <= 55295) || (c >= 63744 && c <= 64975) || (c >= 65008 && c <= 65519) ||
                (c >= 57344 && c <= 63743);
     return (c & 65535) < 65534 && !(c >= 917504 && c <= 921599);
 }
-}
-ConfigUriCanonicalResult config_uri_check_canonical(std::u16string_view text, std::size_t start,
-                                                    std::size_t end, char16_t delimiter, bool implicit,
-                                                    bool unicode, const ConfigUriSyntax* syntax) {
-    auto has = [&](ConfigUriSyntaxFlags f) {
-        return syntax && (syntax->flags & static_cast<std::uint64_t>(f)) != 0;
-    };
+} // namespace
+
+ConfigUriCanonicalResult config_uri_check_canonical(std::u16string_view text, std::size_t start, std::size_t end,
+                                                    char16_t delimiter, bool implicit, bool unicode,
+                                                    const ConfigUriSyntax *syntax) {
+    auto has = [&](ConfigUriSyntaxFlags f) { return syntax && (syntax->flags & static_cast<std::uint64_t>(f)) != 0; };
     bool iri_parsing = !syntax || has(ConfigUriSyntaxFlags::AllowIriParsing);
     int check = 0;
     bool flag = false, flag2 = false;
@@ -53,8 +54,7 @@ ConfigUriCanonicalResult config_uri_check_canonical(std::u16string_view text, st
         if (c == delimiter || (delimiter == u'?' && c == u'#' && has(ConfigUriSyntaxFlags::MayHaveFragment)))
             break;
         if (c == u'?') {
-            if (implicit ||
-                (syntax && !has(ConfigUriSyntaxFlags::MayHaveQuery) && delimiter != char16_t(0xfffe))) {
+            if (implicit || (syntax && !has(ConfigUriSyntaxFlags::MayHaveQuery) && delimiter != char16_t(0xfffe))) {
                 check |= 32;
                 flag2 = flag = true;
             }
@@ -77,8 +77,8 @@ ConfigUriCanonicalResult config_uri_check_canonical(std::u16string_view text, st
         }
         if (c == u'.') {
             auto next = i + 1 < text.size() ? text[i + 1] : char16_t(0);
-            if ((!(check & 4) && i + 1 == end) || next == u'.' || next == u'/' || next == u'\\' ||
-                next == u'?' || next == u'#')
+            if ((!(check & 4) && i + 1 == end) || next == u'.' || next == u'/' || next == u'\\' || next == u'?' ||
+                next == u'#')
                 check |= 4;
             continue;
         }
@@ -118,4 +118,4 @@ ConfigUriCanonicalResult config_uri_check_canonical(std::u16string_view text, st
     }
     return {check, i};
 }
-}
+} // namespace opensim::framework

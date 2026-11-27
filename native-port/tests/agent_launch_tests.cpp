@@ -5,41 +5,43 @@
 #include <stdexcept>
 using namespace opensim;
 using namespace services;
-void check(bool value, const char* message) {
+
+void check(bool value, const char *message) {
     if (!value)
         throw std::runtime_error(message);
 }
+
 struct Admission : ISimulationLogin {
-    framework::AgentCircuitManager& circuits;
+    framework::AgentCircuitManager &circuits;
     framework::Uuid allowed;
     int queries = 0, creates = 0;
-    Admission(framework::AgentCircuitManager& manager, framework::Uuid region)
-        : circuits(manager), allowed(region) {
-    }
-    bool query_access(GridRegion& region, const framework::Uuid&, const std::optional<std::string>& home,
-                      bool teleport, const framework::Vector3&, std::vector<framework::Uuid>& features,
-                      LoginTransferContext& context, std::string& reason) override {
+
+    Admission(framework::AgentCircuitManager &manager, framework::Uuid region) : circuits(manager), allowed(region) {}
+
+    bool query_access(GridRegion &region, const framework::Uuid &, const std::optional<std::string> &home,
+                      bool teleport, const framework::Vector3 &, std::vector<framework::Uuid> &features,
+                      LoginTransferContext &context, std::string &reason) override {
         ++queries;
         check(!home && teleport && features.empty(), "source access query arguments");
-        check(context.inbound_version == 0.8f && context.outbound_version == 0.8f &&
-                  context.wearables_count == -1,
+        check(context.inbound_version == 0.8f && context.outbound_version == 0.8f && context.wearables_count == -1,
               "fresh transfer context on each attempt");
         context.wearables_count = 16;
         reason = "access denied";
         return region.id == allowed;
     }
-    bool create_agent(const GridRegion* source, GridRegion& region,
-                      const std::shared_ptr<framework::AgentCircuitData>& circuit, std::uint32_t flags,
-                      LoginTransferContext& context, std::string& reason) override {
+
+    bool create_agent(const GridRegion *source, GridRegion &region,
+                      const std::shared_ptr<framework::AgentCircuitData> &circuit, std::uint32_t flags,
+                      LoginTransferContext &context, std::string &reason) override {
         ++creates;
-        check(!source && region.id == allowed && context.wearables_count == 16,
-              "query context reaches create-agent");
+        check(!source && region.id == allowed && context.wearables_count == 16, "query context reaches create-agent");
         check((flags & 4096) != 0, "direct fallback uses ViaRegionID");
         circuits.add_new_circuit(circuit);
         reason = "";
         return true;
     }
 };
+
 int main() {
     try {
         server::IniConfig config;
@@ -77,7 +79,7 @@ int main() {
         request.where = "last";
         request.flags = 128;
         std::shared_ptr<framework::AgentCircuitData> created;
-        request.make_agent = [&](const GridRegion& region, std::uint32_t code) {
+        request.make_agent = [&](const GridRegion &region, std::uint32_t code) {
             ++factories;
             check(region.id == start->id, "factory uses original destination");
             check(code < 2147483647u, "circuit code follows Random.Next range");
@@ -108,7 +110,7 @@ int main() {
               "failed attempts retain original destination and final reason");
         std::cout << "PASS: scoped agent launch and circuit-manager handoff\n";
         return 0;
-    } catch (const std::exception& error) {
+    } catch (const std::exception &error) {
         std::cerr << error.what() << '\n';
         return 1;
     }

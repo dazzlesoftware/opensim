@@ -1,0 +1,1 @@
+YOption chars;char high=(char)55357;char low=(char)56832;char zero=(char)0;string format;string result;integer after;default{state_entry(){format=(string)high+(string)zero+"0";result=xmrRotation2String(<0.25,0.5,0.75,1>,format);after=1;}}

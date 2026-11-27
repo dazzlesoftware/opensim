@@ -2,6 +2,7 @@
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/services/account_service_urls.hpp"
 #include "opensim/network/service_protocol.hpp"
+
 namespace opensim::services {
 std::shared_ptr<framework::AgentCircuitData::ServiceUrls> decode_account_service_urls(std::string_view text) {
     auto result = std::make_shared<framework::AgentCircuitData::ServiceUrls>();
@@ -19,8 +20,8 @@ std::shared_ptr<framework::AgentCircuitData::ServiceUrls> decode_account_service
     }
     return result;
 }
-std::string
-encode_account_service_urls(const std::shared_ptr<framework::AgentCircuitData::ServiceUrls>& urls) {
+
+std::string encode_account_service_urls(const std::shared_ptr<framework::AgentCircuitData::ServiceUrls> &urls) {
     if (!urls)
         throw std::invalid_argument("Null account service URL dictionary");
     auto enumerated = urls;
@@ -31,7 +32,7 @@ encode_account_service_urls(const std::shared_ptr<framework::AgentCircuitData::S
         result += '=';
         if (!value.has_value() || value.type() == typeid(std::nullptr_t))
             throw std::invalid_argument("Null account service URL value");
-        if (auto p = std::any_cast<const char*>(&value); p && !*p)
+        if (auto p = std::any_cast<const char *>(&value); p && !*p)
             throw std::invalid_argument("Null account service URL string");
         result += network::service_url_encode(framework::service_url_object_text(value));
         if (!urls)
@@ -41,4 +42,4 @@ encode_account_service_urls(const std::shared_ptr<framework::AgentCircuitData::S
     }
     return result;
 }
-}
+} // namespace opensim::services

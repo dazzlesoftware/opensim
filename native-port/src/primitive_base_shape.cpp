@@ -9,10 +9,12 @@
 #include <exception>
 #include <sstream>
 #include <iomanip>
+
 namespace opensim::framework {
 namespace {
 using Bytes = PrimitiveBaseShapeCore::Bytes;
-int length(const Bytes& b) {
+
+int length(const Bytes &b) {
     if (!b)
         throw PrimitiveShapeError("System.NullReferenceException",
                                   "Object reference not set to an instance of an object.");
@@ -20,59 +22,71 @@ int length(const Bytes& b) {
         throw std::length_error("Shape array exceeds managed array limit");
     return static_cast<int>(b->size());
 }
-std::uint8_t at(const Bytes& b, int pos) {
+
+std::uint8_t at(const Bytes &b, int pos) {
     if (pos < 0 || pos >= length(b))
-        throw PrimitiveShapeError("System.IndexOutOfRangeException",
-                                  "Index was outside the bounds of the array.");
+        throw PrimitiveShapeError("System.IndexOutOfRangeException", "Index was outside the bounds of the array.");
     return (*b)[static_cast<std::size_t>(pos)];
 }
+
 // The SDK uses unchecked native reads for UUID/float arrays. Deterministic valid
 // ranges are ported; out-of-buffer native-memory observations are not reproduced.
-void native_range(const Bytes& b, int pos, int size) {
+void native_range(const Bytes &b, int pos, int size) {
     if (pos < 0 || size < 0 || std::int64_t(pos) + size > length(b))
-        throw PrimitiveShapeError("NativeShapeUnsafeRead",
-                                  "SDK native read extends beyond supplied shape buffer");
+        throw PrimitiveShapeError("NativeShapeUnsafeRead", "SDK native read extends beyond supplied shape buffer");
 }
-std::uint32_t uint_at(const Bytes& b, int p) {
+
+std::uint32_t uint_at(const Bytes &b, int p) {
     native_range(b, p, 4);
-    return std::uint32_t(at(b, p)) | (std::uint32_t(at(b, p + 1)) << 8) |
-           (std::uint32_t(at(b, p + 2)) << 16) | (std::uint32_t(at(b, p + 3)) << 24);
+    return std::uint32_t(at(b, p)) | (std::uint32_t(at(b, p + 1)) << 8) | (std::uint32_t(at(b, p + 2)) << 16) |
+           (std::uint32_t(at(b, p + 3)) << 24);
 }
-float float_at(const Bytes& b, int p) {
+
+float float_at(const Bytes &b, int p) {
     return std::bit_cast<float>(uint_at(b, p));
 }
-Uuid uuid_at(const Bytes& b, int p) {
+
+Uuid uuid_at(const Bytes &b, int p) {
     native_range(b, p, 16);
     return Uuid::from_bytes(std::span<const std::uint8_t>(*b).subspan(p, 16));
 }
-int sub_length(const Bytes& b, int pos) {
+
+int sub_length(const Bytes &b, int pos) {
     return std::bit_cast<std::int32_t>(std::uint32_t(length(b)) - std::uint32_t(pos));
 }
+
 int add(int x, int y) {
     return std::bit_cast<std::int32_t>(std::uint32_t(x) + std::uint32_t(y));
 }
+
 float clamp(float v, float high) {
     return v < 0 ? 0 : (v > high ? high : v);
 }
+
 std::uint8_t cast_byte(float v) {
     if (!std::isfinite(v) || v >= 2147483648.f || v < -2147483648.f)
         return 0;
     return static_cast<std::uint8_t>(static_cast<std::int32_t>(v));
 }
+
 std::uint8_t color_byte(float v) {
     return v <= 0 ? 0 : (v >= 1 ? 255 : cast_byte(255.f * v));
 }
-void push_uint(std::vector<std::uint8_t>& b, std::uint32_t v) {
+
+void push_uint(std::vector<std::uint8_t> &b, std::uint32_t v) {
     for (int n = 0; n < 4; ++n)
         b.push_back(static_cast<std::uint8_t>(v >> (n * 8)));
 }
-void push_float(std::vector<std::uint8_t>& b, float v) {
+
+void push_float(std::vector<std::uint8_t> &b, float v) {
     push_uint(b, std::bit_cast<std::uint32_t>(v));
 }
-void push_uuid(std::vector<std::uint8_t>& b, const Uuid& u) {
+
+void push_uuid(std::vector<std::uint8_t> &b, const Uuid &u) {
     b.insert(b.end(), u.bytes().begin(), u.bytes().end());
 }
-}
+} // namespace
+
 PrimitiveBaseShapeCore::PrimitiveBaseShapeCore(Log log) : log_(std::make_shared<Log>(std::move(log))) {
     if (!*log_)
         throw std::invalid_argument("PrimitiveBaseShapeCore requires shape log provider");
@@ -82,6 +96,7 @@ PrimitiveBaseShapeCore::PrimitiveBaseShapeCore(Log log) : log_(std::make_shared<
     static const auto empty = std::make_shared<ShapeByteArray>();
     sculpt_data = empty;
 }
+
 PrimitiveBaseShapeCore PrimitiveBaseShapeCore::create_box(Log log) {
     PrimitiveBaseShapeCore s(std::move(log));
     s.path_curve = 16;
@@ -89,28 +104,33 @@ PrimitiveBaseShapeCore PrimitiveBaseShapeCore::create_box(Log log) {
     s.path_scale_x = s.path_scale_y = 100;
     return s;
 }
+
 PrimitiveBaseShapeCore PrimitiveBaseShapeCore::create_sphere(Log log) {
     auto s = create_box(std::move(log));
     s.path_curve = 32;
     s.profile_shape = 5;
     return s;
 }
+
 PrimitiveBaseShapeCore PrimitiveBaseShapeCore::create_cylinder(Log log) {
     auto s = create_box(std::move(log));
     s.path_curve = 32;
     return s;
 }
+
 PrimitiveBaseShapeCore PrimitiveBaseShapeCore::default_shape(Log log) {
     auto s = create_box(std::move(log));
     s.set_scale(.5f);
     return s;
 }
+
 PrimitiveBaseShapeCore PrimitiveBaseShapeCore::create_cylinder(float radius, float height, Log log) {
     auto s = create_cylinder(std::move(log));
     s.set_heigth(height);
     s.set_radius(radius);
     return s;
 }
+
 PrimitiveBaseShapeCore PrimitiveBaseShapeCore::create_mesh(int faces, Uuid mesh, Log log) {
     PrimitiveBaseShapeCore s(std::move(log));
     s.path_scale_x = s.path_scale_y = 100;
@@ -154,6 +174,7 @@ PrimitiveBaseShapeCore PrimitiveBaseShapeCore::create_mesh(int faces, Uuid mesh,
     s.sculpt_texture = mesh;
     return s;
 }
+
 void PrimitiveBaseShapeCore::profile_curve(std::uint8_t v) {
     auto h = static_cast<std::uint8_t>(v & 0xf0);
     if (h != 0 && h != 16 && h != 32 && h != 48) {
@@ -170,6 +191,7 @@ void PrimitiveBaseShapeCore::profile_curve(std::uint8_t v) {
     } else
         profile_shape = p;
 }
+
 float PrimitiveBaseShapeCore::light_color(unsigned channel) const {
     switch (channel) {
     case 0:
@@ -184,6 +206,7 @@ float PrimitiveBaseShapeCore::light_color(unsigned channel) const {
         throw std::out_of_range("Light color channel");
     }
 }
+
 void PrimitiveBaseShapeCore::light_color(unsigned channel, float value) {
     value = clamp(value, 1);
     switch (channel) {
@@ -203,9 +226,11 @@ void PrimitiveBaseShapeCore::light_color(unsigned channel, float value) {
         throw std::out_of_range("Light color channel");
     }
 }
+
 bool PrimitiveBaseShapeCore::animesh_enabled() const noexcept {
     return mesh_flags_entry_ && (mesh_flags_ & 1) != 0 && (sculpt_type & 7) == 5;
 }
+
 void PrimitiveBaseShapeCore::animesh_enabled(bool v) {
     if ((sculpt_type & 7) != 5) {
         mesh_flags_entry_ = false;
@@ -218,29 +243,33 @@ void PrimitiveBaseShapeCore::animesh_enabled(bool v) {
     } else
         mesh_flags_ &= 0xfe;
 }
+
 void PrimitiveBaseShapeCore::texture_entry(Bytes v) {
     texture_ = v ? std::move(v) : std::make_shared<ShapeByteArray>(1);
 }
+
 TextureEntry PrimitiveBaseShapeCore::textures() const {
     try {
         if (!texture_)
             throw std::runtime_error("null texture");
         return TextureEntry(std::span<const std::uint8_t>(*texture_));
     } catch (...) {
-        (*log_)("[SHAPE]: Failed to decode texture, length=" +
-                std::to_string(texture_ ? texture_->size() : 0));
+        (*log_)("[SHAPE]: Failed to decode texture, length=" + std::to_string(texture_ ? texture_->size() : 0));
         return TextureEntry(Uuid{});
     }
 }
-void PrimitiveBaseShapeCore::textures(const std::shared_ptr<TextureEntry>& t) {
+
+void PrimitiveBaseShapeCore::textures(const std::shared_ptr<TextureEntry> &t) {
     if (!t)
         throw PrimitiveShapeError("System.NullReferenceException",
                                   "Object reference not set to an instance of an object.");
     textures(*t);
 }
-void PrimitiveBaseShapeCore::textures(const TextureEntry& t) {
+
+void PrimitiveBaseShapeCore::textures(const TextureEntry &t) {
     texture_ = std::make_shared<ShapeByteArray>(t.bytes());
 }
+
 PrimGeometry PrimitiveBaseShapeCore::geometry() const noexcept {
     PrimGeometry s;
     s.sculpt_entry = sculpt_entry;
@@ -261,7 +290,8 @@ PrimGeometry PrimitiveBaseShapeCore::geometry() const noexcept {
     s.path_revolutions = path_revolutions;
     return s;
 }
-void PrimitiveBaseShapeCore::read_sculpt(const Bytes& b, int p) {
+
+void PrimitiveBaseShapeCore::read_sculpt(const Bytes &b, int p) {
     if (sub_length(b, p) >= 17) {
         sculpt_texture = uuid_at(b, p);
         sculpt_type = at(b, add(p, 16));
@@ -272,7 +302,8 @@ void PrimitiveBaseShapeCore::read_sculpt(const Bytes& b, int p) {
         sculpt_type = 0;
     }
 }
-void PrimitiveBaseShapeCore::read_flexi(const Bytes& b, int p) {
+
+void PrimitiveBaseShapeCore::read_flexi(const Bytes &b, int p) {
     if (sub_length(b, p) >= 16) {
         flexi_entry = true;
         flexi_softness = ((at(b, p) & 128) >> 6) | ((at(b, add(p, 1)) & 128) >> 7);
@@ -286,11 +317,11 @@ void PrimitiveBaseShapeCore::read_flexi(const Bytes& b, int p) {
     } else {
         flexi_entry = false;
         flexi_softness = 0;
-        flexi_tension = flexi_drag = flexi_gravity = flexi_wind = flexi_force_x = flexi_force_y =
-            flexi_force_z = 0;
+        flexi_tension = flexi_drag = flexi_gravity = flexi_wind = flexi_force_x = flexi_force_y = flexi_force_z = 0;
     }
 }
-void PrimitiveBaseShapeCore::read_light(const Bytes& b, int p) {
+
+void PrimitiveBaseShapeCore::read_light(const Bytes &b, int p) {
     if (sub_length(b, p) >= 16) {
         light_entry = true;
         light_intensity = at(b, add(p, 3)) * (1.f / 255.f);
@@ -304,11 +335,12 @@ void PrimitiveBaseShapeCore::read_light(const Bytes& b, int p) {
     } else {
         light_entry = false;
         light_color_a = 1;
-        light_color_r = light_color_g = light_color_b = light_radius = light_cutoff = light_falloff =
-            light_intensity = 0;
+        light_color_r = light_color_g = light_color_b = light_radius = light_cutoff = light_falloff = light_intensity =
+            0;
     }
 }
-void PrimitiveBaseShapeCore::read_projection(const Bytes& b, int p) {
+
+void PrimitiveBaseShapeCore::read_projection(const Bytes &b, int p) {
     if (sub_length(b, p) >= 28) {
         projection_entry = true;
         projection_texture = uuid_at(b, p);
@@ -321,11 +353,13 @@ void PrimitiveBaseShapeCore::read_projection(const Bytes& b, int p) {
         projection_fov = projection_focus = projection_ambiance = 0;
     }
 }
-void PrimitiveBaseShapeCore::read_mesh_flags(const Bytes& b, int p) {
+
+void PrimitiveBaseShapeCore::read_mesh_flags(const Bytes &b, int p) {
     mesh_flags_entry_ = true;
     mesh_flags_ = sub_length(b, p) >= 4 ? uint_at(b, p) : 0;
 }
-void PrimitiveBaseShapeCore::read_reflection_probe(const Bytes& b, int p) {
+
+void PrimitiveBaseShapeCore::read_reflection_probe(const Bytes &b, int p) {
     if (sub_length(b, p) >= 9) {
         auto probe = std::make_shared<ShapeReflectionProbe>();
         const auto sdk_clamp = [](float value, float high) {
@@ -341,13 +375,14 @@ void PrimitiveBaseShapeCore::read_reflection_probe(const Bytes& b, int p) {
         reflection_probe = std::move(probe);
     }
 }
-int PrimitiveBaseShapeCore::read_render_materials(const Bytes& b, int p, int size) {
+
+int PrimitiveBaseShapeCore::read_render_materials(const Bytes &b, int p, int size) {
     if (size > 17) {
         int count = at(b, p);
         p = add(p, 1);
         if (size >= 1 + 17 * count) {
             auto entries = std::make_shared<ShapeArray<ShapeMaterialEntry>>(count);
-            for (auto& e : *entries) {
+            for (auto &e : *entries) {
                 e.te_index = at(b, p);
                 p = add(p, 1);
                 e.id = uuid_at(b, p);
@@ -360,7 +395,8 @@ int PrimitiveBaseShapeCore::read_render_materials(const Bytes& b, int p, int siz
     }
     return add(size, 4);
 }
-void PrimitiveBaseShapeCore::update_extra_param(std::uint16_t type, bool use, const Bytes& b) {
+
+void PrimitiveBaseShapeCore::update_extra_param(std::uint16_t type, bool use, const Bytes &b) {
     switch (type) {
     case 16:
         if (!use) {
@@ -415,7 +451,8 @@ void PrimitiveBaseShapeCore::update_extra_param(std::uint16_t type, bool use, co
         break;
     }
 }
-void PrimitiveBaseShapeCore::read_extra_params(const Bytes& b) {
+
+void PrimitiveBaseShapeCore::read_extra_params(const Bytes &b) {
     if (!b)
         return;
     flexi_entry = light_entry = sculpt_entry = projection_entry = mesh_flags_entry_ = false;
@@ -468,6 +505,7 @@ void PrimitiveBaseShapeCore::read_extra_params(const Bytes& b) {
         }
     }
 }
+
 std::vector<std::uint8_t> PrimitiveBaseShapeCore::extra_params() const {
     std::vector<std::uint8_t> out(1);
     const auto header = [&](std::uint8_t id, std::uint32_t size) {
@@ -521,13 +559,14 @@ std::vector<std::uint8_t> PrimitiveBaseShapeCore::extra_params() const {
     if (render_materials && render_materials->entries && !render_materials->entries->empty()) {
         header(128, static_cast<std::uint32_t>(1 + 17 * render_materials->entries->size()));
         out.push_back(static_cast<std::uint8_t>(render_materials->entries->size()));
-        for (const auto& e : *render_materials->entries) {
+        for (const auto &e : *render_materials->entries) {
             out.push_back(e.te_index);
             push_uuid(out, e.id);
         }
     }
     return out;
 }
+
 std::uint64_t PrimitiveBaseShapeCore::mesh_key(Vector3 size, float lod, bool convex) const noexcept {
     std::uint64_t hash = 5381;
     const auto append = [&](std::uint64_t v) { hash = 33 * hash + v; };
@@ -568,30 +607,33 @@ float shape_round(float v) {
     if (!std::isfinite(v) || std::fabs(v) >= 8388608.f)
         return v;
     const auto low = std::floor(v), fraction = v - low;
-    return fraction < .5f
-               ? low
-               : (fraction > .5f ? low + 1.f : (static_cast<std::int32_t>(low) % 2 == 0 ? low : low + 1.f));
+    return fraction < .5f ? low
+                          : (fraction > .5f ? low + 1.f : (static_cast<std::int32_t>(low) % 2 == 0 ? low : low + 1.f));
 }
+
 std::int32_t unchecked_integer(float v) {
-    return !std::isfinite(v) || v >= 2147483648.f || v < -2147483648.f ? INT32_MIN
-                                                                       : static_cast<std::int32_t>(v);
+    return !std::isfinite(v) || v >= 2147483648.f || v < -2147483648.f ? INT32_MIN : static_cast<std::int32_t>(v);
 }
+
 std::uint16_t pack_begin(float v) {
     return static_cast<std::uint16_t>(unchecked_integer(shape_round(v * 50000.f)));
 }
+
 std::uint16_t pack_end(float v) {
     return static_cast<std::uint16_t>(50000 - pack_begin(v));
 }
+
 std::uint8_t pack_scale(float v) {
-    return static_cast<std::uint8_t>(200 -
-                                     static_cast<std::uint8_t>(unchecked_integer(shape_round(v * 100.f))));
+    return static_cast<std::uint8_t>(200 - static_cast<std::uint8_t>(unchecked_integer(shape_round(v * 100.f))));
 }
+
 std::int8_t pack_signed(float v) {
     return static_cast<std::int8_t>(unchecked_integer(shape_round(v * 100.f)));
 }
+
 // SDK osUTF8.Append drops NULs and unpaired surrogates; a high surrogate
 // consumes the following code unit even when that code unit is not low.
-void append_osutf8(std::vector<std::uint8_t>& bytes, std::u16string_view value) {
+void append_osutf8(std::vector<std::uint8_t> &bytes, std::u16string_view value) {
     for (std::size_t i = 0; i < value.size(); ++i) {
         auto c = value[i];
         if (c == 0)
@@ -611,21 +653,24 @@ void append_osutf8(std::vector<std::uint8_t>& bytes, std::u16string_view value) 
         bytes.insert(bytes.end(), encoded.begin(), encoded.end());
     }
 }
-}
+} // namespace
+
 void PrimitiveBaseShapeCore::set_path_range(float begin, float end) {
     path_begin = pack_begin(begin);
     path_end = pack_end(end);
 }
+
 void PrimitiveBaseShapeCore::set_profile_range(float begin, float end) {
     profile_begin = pack_begin(begin);
     profile_end = pack_end(end);
 }
-PrimitiveBaseShapeCore::PrimitiveBaseShapeCore(const std::shared_ptr<ShapeOmvPrimitive>& prim, Log log)
+
+PrimitiveBaseShapeCore::PrimitiveBaseShapeCore(const std::shared_ptr<ShapeOmvPrimitive> &prim, Log log)
     : PrimitiveBaseShapeCore(std::move(log)) {
     if (!prim)
         throw PrimitiveShapeError("System.NullReferenceException",
                                   "Object reference not set to an instance of an object.");
-    const auto& p = prim->prim_data;
+    const auto &p = prim->prim_data;
     pcode = p.pcode;
     state = p.state;
     last_attach_point = p.state;
@@ -661,9 +706,11 @@ PrimitiveBaseShapeCore::PrimitiveBaseShapeCore(const std::shared_ptr<ShapeOmvPri
     } else
         sculpt_type = 0;
 }
+
 ShapeOmvPrimitive PrimitiveBaseShapeCore::to_omv_primitive() const {
     return to_omv_primitive({0, 0, 0}, {0, 0, 0, 1});
 }
+
 ShapeOmvPrimitive PrimitiveBaseShapeCore::to_omv_primitive(Vector3 position, Quaternion rotation) const {
     ShapeOmvPrimitive prim;
     prim.scale = scale;
@@ -674,7 +721,7 @@ ShapeOmvPrimitive PrimitiveBaseShapeCore::to_omv_primitive(Vector3 position, Qua
         prim.sculpt->raw_type = sculpt_type;
         prim.sculpt->texture = sculpt_texture;
     }
-    auto& p = prim.prim_data;
+    auto &p = prim.prim_data;
     p.path_shear_x = path_shear_x < 128 ? float(path_shear_x) * .01f : float(int(path_shear_x) - 256) * .01f;
     p.path_shear_y = path_shear_y < 128 ? float(path_shear_y) * .01f : float(int(path_shear_y) - 256) * .01f;
     p.path_begin = float(path_begin) * 2.e-5f;
@@ -697,7 +744,7 @@ ShapeOmvPrimitive PrimitiveBaseShapeCore::to_omv_primitive(Vector3 position, Qua
     p.state = 0;
     if (flexi_entry) {
         prim.flexible = std::make_shared<ShapeOmvFlexible>();
-        auto& f = *prim.flexible;
+        auto &f = *prim.flexible;
         f.drag = flexi_drag;
         f.force = {flexi_force_x, flexi_force_y, flexi_force_z};
         f.gravity = flexi_gravity;
@@ -707,7 +754,7 @@ ShapeOmvPrimitive PrimitiveBaseShapeCore::to_omv_primitive(Vector3 position, Qua
     }
     if (light_entry) {
         prim.light = std::make_shared<ShapeOmvLight>();
-        auto& l = *prim.light;
+        auto &l = *prim.light;
         const auto sdk_color = [](float v) {
             if (!(v < 1))
                 return 1.f;
@@ -729,19 +776,20 @@ ShapeOmvPrimitive PrimitiveBaseShapeCore::to_omv_primitive(Vector3 position, Qua
     prim.properties->sale_price = 10;
     return prim;
 }
+
 PrimitiveBaseShapeCore::Bytes PrimitiveBaseShapeCore::render_overrides_to_raw() const {
     if (!render_materials)
         return {};
     if (!render_materials->overrides || render_materials->overrides->empty())
         return std::make_shared<ShapeByteArray>(1);
     int count = 0;
-    for (const auto& entry : *render_materials->overrides)
+    for (const auto &entry : *render_materials->overrides)
         if (entry.data && !entry.data->empty())
             ++count;
     if (!count)
         return std::make_shared<ShapeByteArray>(1);
     std::vector<std::uint8_t> bytes{static_cast<std::uint8_t>(count)};
-    for (const auto& entry : *render_materials->overrides) {
+    for (const auto &entry : *render_materials->overrides) {
         if (!entry.data || entry.data->empty())
             continue;
         bytes.push_back(entry.te_index);
@@ -752,7 +800,8 @@ PrimitiveBaseShapeCore::Bytes PrimitiveBaseShapeCore::render_overrides_to_raw() 
     }
     return std::make_shared<ShapeByteArray>(std::move(bytes));
 }
-void PrimitiveBaseShapeCore::render_overrides_from_raw(const Bytes& bytes, const StartsWith& starts_with) {
+
+void PrimitiveBaseShapeCore::render_overrides_from_raw(const Bytes &bytes, const StartsWith &starts_with) {
     if (!starts_with)
         throw std::invalid_argument("PBR override decoding requires CurrentCulture StartsWith provider");
     if (render_materials && render_materials->overrides)
@@ -770,7 +819,7 @@ void PrimitiveBaseShapeCore::render_overrides_from_raw(const Bytes& bytes, const
     int index = 1;
     auto overrides = std::make_shared<ShapeArray<ShapeMaterialOverride>>(count);
     try {
-        for (auto& entry : *overrides) {
+        for (auto &entry : *overrides) {
             entry.te_index = at(bytes, index++);
             int len = at(bytes, index++);
             len += int(at(bytes, index++)) << 8;
@@ -780,8 +829,7 @@ void PrimitiveBaseShapeCore::render_overrides_from_raw(const Bytes& bytes, const
                 int decoded = len - (last == 0 ? 1 : 0);
                 native_range(bytes, index, decoded);
                 value = utf16_replacing(std::string_view(
-                    reinterpret_cast<const char*>(std::span<const std::uint8_t>(*bytes).data() + index),
-                    decoded));
+                    reinterpret_cast<const char *>(std::span<const std::uint8_t>(*bytes).data() + index), decoded));
             }
             entry.data = std::move(value);
             if (starts_with(*entry.data, u"{\"asset"))
@@ -813,14 +861,15 @@ void validate_xml_raw(std::u16string_view text) {
         if (high >= 0xd800 && high <= 0xdbff) {
             auto low = i + 1 < text.size() ? text[++i] : char16_t{};
             if (low < 0xdc00 || low > 0xdfff)
-                throw PrimitiveShapeError(
-                    "System.ArgumentException",
-                    "The surrogate pair (0x" + hex(high) + ", 0x" + hex(low) +
-                        ") is invalid. A high surrogate character (0xD800 - 0xDBFF) must always be paired with a low surrogate character (0xDC00 - 0xDFFF).");
+                throw PrimitiveShapeError("System.ArgumentException",
+                                          "The surrogate pair (0x" + hex(high) + ", 0x" + hex(low) +
+                                              ") is invalid. A high surrogate character (0xD800 - 0xDBFF) must always "
+                                              "be paired with a low surrogate character (0xDC00 - 0xDFFF).");
         }
     }
 }
-void xml_escape(std::u16string& out, std::u16string_view text) {
+
+void xml_escape(std::u16string &out, std::u16string_view text) {
     for (auto c : text)
         switch (c) {
         case u'<':
@@ -842,7 +891,8 @@ void xml_escape(std::u16string& out, std::u16string_view text) {
             out += c;
         }
 }
-void media_osd_xml(std::u16string& out, const ShapeMediaEntry& entry, const ShapeMediaIntegerFormat& format) {
+
+void media_osd_xml(std::u16string &out, const ShapeMediaEntry &entry, const ShapeMediaIntegerFormat &format) {
     out += u"<map>";
     const auto key = [&](std::u16string_view value) {
         out += u"<key>";
@@ -859,7 +909,7 @@ void media_osd_xml(std::u16string& out, const ShapeMediaEntry& entry, const Shap
         out += format(value);
         out += u"</integer>";
     };
-    const auto string = [&](std::u16string_view name, const std::optional<std::u16string>& value) {
+    const auto string = [&](std::u16string_view name, const std::optional<std::u16string> &value) {
         key(name);
         out += u"<string>";
         if (value)
@@ -881,7 +931,7 @@ void media_osd_xml(std::u16string& out, const ShapeMediaEntry& entry, const Shap
     key(u"whitelist");
     out += u"<array>";
     if (entry.whitelist)
-        for (const auto& value : *entry.whitelist) {
+        for (const auto &value : *entry.whitelist) {
             out += u"<string>";
             if (value)
                 xml_escape(out, *value);
@@ -892,8 +942,9 @@ void media_osd_xml(std::u16string& out, const ShapeMediaEntry& entry, const Shap
     integer(u"width_pixels", entry.width);
     out += u"</map>";
 }
-std::shared_ptr<ShapeMediaEntry> media_from_osd(const network::Value& osd) {
-    const auto& map = osd.view();
+
+std::shared_ptr<ShapeMediaEntry> media_from_osd(const network::Value &osd) {
+    const auto &map = osd.view();
     if (map.kind != network::Value::Kind::Map)
         throw PrimitiveShapeError("System.InvalidCastException", "MediaEntry requires OSDMap");
     auto entry = std::make_shared<ShapeMediaEntry>();
@@ -910,10 +961,9 @@ std::shared_ptr<ShapeMediaEntry> media_from_osd(const network::Value& osd) {
     entry->home_url = utf16_replacing(osd_string(map.get("home_url")));
     entry->control_permissions = static_cast<std::uint8_t>(osd_integer(map.get("perms_control")));
     entry->interact_permissions = static_cast<std::uint8_t>(osd_integer(map.get("perms_interact")));
-    const auto& whitelist = map.get("whitelist").view();
+    const auto &whitelist = map.get("whitelist").view();
     if (whitelist.kind == Value::Kind::Array && !whitelist.array.empty()) {
-        entry->whitelist =
-            std::make_shared<ShapeArray<std::optional<std::u16string>>>(whitelist.array.size());
+        entry->whitelist = std::make_shared<ShapeArray<std::optional<std::u16string>>>(whitelist.array.size());
         for (std::size_t i = 0; i < whitelist.array.size(); ++i)
             (*entry->whitelist)[i] = utf16_replacing(osd_string(whitelist.array[i]));
     }
@@ -921,47 +971,51 @@ std::shared_ptr<ShapeMediaEntry> media_from_osd(const network::Value& osd) {
     entry->width = osd_integer(map.get("width_pixels"));
     return entry;
 }
-void require_media_xml(const ShapeMediaXmlBackend& backend) {
+
+void require_media_xml(const ShapeMediaXmlBackend &backend) {
     if (!backend.create_reader || !backend.deserialize_llsd || !backend.media_from_osd)
-        throw std::invalid_argument(
-            "MediaList XML reading requires System.Xml reader, SDK LLSD parser and CurrentCulture MediaEntry coercion providers");
+        throw std::invalid_argument("MediaList XML reading requires System.Xml reader, SDK LLSD parser and "
+                                    "CurrentCulture MediaEntry coercion providers");
 }
-}
+} // namespace
+
 ShapeMediaList::ShapeMediaList(Log log) : log_(std::move(log)) {
     if (!log_)
         throw std::invalid_argument("MediaList requires shape logger");
 }
+
 ShapeMediaList::ShapeMediaList(int capacity, Log log) : ShapeMediaList(std::move(log)) {
     if (capacity < 0)
         throw PrimitiveShapeError("System.ArgumentOutOfRangeException",
                                   "Non-negative number required. (Parameter 'capacity')", "capacity");
     entries.reserve(capacity);
 }
-ShapeMediaList::ShapeMediaList(const std::optional<std::vector<Entry>>& collection, Log log)
+
+ShapeMediaList::ShapeMediaList(const std::optional<std::vector<Entry>> &collection, Log log)
     : ShapeMediaList(std::move(log)) {
     if (!collection)
-        throw PrimitiveShapeError("System.ArgumentNullException",
-                                  "Value cannot be null. (Parameter 'collection')", "collection");
+        throw PrimitiveShapeError("System.ArgumentNullException", "Value cannot be null. (Parameter 'collection')",
+                                  "collection");
     entries = *collection;
 }
-std::u16string ShapeMediaList::to_xml(const ShapeMediaIntegerFormat& format) const {
+
+std::u16string ShapeMediaList::to_xml(const ShapeMediaIntegerFormat &format) const {
     if (!format)
         throw std::invalid_argument("MediaList XML requires CurrentCulture integer formatter");
     std::lock_guard guard(mutex);
     std::vector<std::optional<ShapeMediaEntry>> snapshot;
     snapshot.reserve(entries.size());
-    for (const auto& entry : entries) {
+    for (const auto &entry : entries) {
         if (!entry) {
             snapshot.emplace_back();
             continue;
         }
         snapshot.emplace_back(*entry);
         if (entry->whitelist)
-            snapshot.back()->whitelist =
-                std::make_shared<ShapeArray<std::optional<std::u16string>>>(*entry->whitelist);
+            snapshot.back()->whitelist = std::make_shared<ShapeArray<std::optional<std::u16string>>>(*entry->whitelist);
     }
     std::u16string out = u"<OSMedia type=\"sl\" version=\"0.1\"><OSData><llsd><array>";
-    for (const auto& entry : snapshot) {
+    for (const auto &entry : snapshot) {
         if (entry)
             media_osd_xml(out, *entry, format);
         else
@@ -971,18 +1025,21 @@ std::u16string ShapeMediaList::to_xml(const ShapeMediaIntegerFormat& format) con
     validate_xml_raw(out);
     return out;
 }
-void ShapeMediaList::write_xml(ShapeMediaXmlWriter& writer, const ShapeMediaIntegerFormat& format) const {
+
+void ShapeMediaList::write_xml(ShapeMediaXmlWriter &writer, const ShapeMediaIntegerFormat &format) const {
     writer.write_raw(to_xml(format));
 }
-void ShapeMediaList::write_xml(const std::shared_ptr<ShapeMediaXmlWriter>& writer,
-                               const ShapeMediaIntegerFormat& format) const {
+
+void ShapeMediaList::write_xml(const std::shared_ptr<ShapeMediaXmlWriter> &writer,
+                               const ShapeMediaIntegerFormat &format) const {
     auto xml = to_xml(format);
     if (!writer)
         throw PrimitiveShapeError("System.NullReferenceException",
                                   "Object reference not set to an instance of an object.");
     writer->write_raw(std::move(xml));
 }
-void ShapeMediaList::read_xml(const std::optional<std::u16string>& raw, const ShapeMediaXmlBackend& backend) {
+
+void ShapeMediaList::read_xml(const std::optional<std::u16string> &raw, const ShapeMediaXmlBackend &backend) {
     require_media_xml(backend);
     try {
         auto reader = backend.create_reader(raw);
@@ -997,13 +1054,12 @@ void ShapeMediaList::read_xml(const std::optional<std::u16string>& raw, const Sh
                     return;
                 reader->read_start_element(u"OSMedia");
                 auto osd = backend.deserialize_llsd(reader->read_inner_xml());
-                const auto& array = osd.view();
+                const auto &array = osd.view();
                 if (array.kind != network::Value::Kind::Array || array.array.empty())
                     return;
-                for (const auto& item : array.array) {
-                    auto entry = item.view().kind == network::Value::Kind::Map
-                                     ? backend.media_from_osd(item)
-                                     : std::make_shared<ShapeMediaEntry>();
+                for (const auto &item : array.array) {
+                    auto entry = item.view().kind == network::Value::Kind::Map ? backend.media_from_osd(item)
+                                                                               : std::make_shared<ShapeMediaEntry>();
                     if (!entry)
                         throw std::invalid_argument("SDK MediaEntry converter returned null");
                     add(std::move(entry));
@@ -1020,20 +1076,21 @@ void ShapeMediaList::read_xml(const std::optional<std::u16string>& raw, const Sh
     }
 }
 
-void ShapeMediaList::read_xml(ShapeMediaXmlReader& reader, const ShapeMediaXmlBackend& backend) {
+void ShapeMediaList::read_xml(ShapeMediaXmlReader &reader, const ShapeMediaXmlBackend &backend) {
     if (reader.is_empty_element())
         return;
     read_xml(reader.read_inner_xml(), backend);
 }
-void ShapeMediaList::read_xml(const std::shared_ptr<ShapeMediaXmlReader>& reader,
-                              const ShapeMediaXmlBackend& backend) {
+
+void ShapeMediaList::read_xml(const std::shared_ptr<ShapeMediaXmlReader> &reader, const ShapeMediaXmlBackend &backend) {
     if (!reader)
         throw PrimitiveShapeError("System.NullReferenceException",
                                   "Object reference not set to an instance of an object.");
     read_xml(*reader, backend);
 }
-std::shared_ptr<ShapeMediaList> ShapeMediaList::from_xml(const std::optional<std::u16string>& raw,
-                                                         const ShapeMediaXmlBackend& backend, Log log) {
+
+std::shared_ptr<ShapeMediaList> ShapeMediaList::from_xml(const std::optional<std::u16string> &raw,
+                                                         const ShapeMediaXmlBackend &backend, Log log) {
     auto result = std::make_shared<ShapeMediaList>(std::move(log));
     result->read_xml(raw, backend);
     return result->size() == 0 ? nullptr : result;
@@ -1042,8 +1099,9 @@ std::shared_ptr<ShapeMediaList> ShapeMediaList::from_xml(const std::optional<std
 std::u16string format_invariant_shape_media_integer(std::int32_t value) {
     return utf16(std::to_string(value));
 }
-std::shared_ptr<ShapeMediaEntry> shape_media_entry_from_invariant_osd(const network::Value& value) {
+
+std::shared_ptr<ShapeMediaEntry> shape_media_entry_from_invariant_osd(const network::Value &value) {
     return media_from_osd(value);
 }
 
-}
+} // namespace opensim::framework

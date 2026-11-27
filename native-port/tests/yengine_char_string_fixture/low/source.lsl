@@ -1,0 +1,1 @@
+YOption chars;string text=(string)(char)56320;integer length;integer unit;default{state_entry(){length=llStringLength(text);unit=(integer)text[0];}}

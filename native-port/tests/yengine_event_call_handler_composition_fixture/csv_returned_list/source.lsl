@@ -1,0 +1,1 @@
+list parsed;integer count;integer after;default{state_entry(){parsed=llCSV2List("2");xmrEventCallHandler(parsed);after=1;}timer(){++count;}}

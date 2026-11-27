@@ -29,8 +29,9 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "opensim/framework/config_generic_uri_object.hpp"
 #include "opensim/framework/invariant_case.hpp"
 #include "opensim/framework/text.hpp"
+
 namespace opensim::framework {
-HttpUri::HttpUri(const std::optional<std::string>& input, bool with_dns, const RegionUri::Resolver& resolver)
+HttpUri::HttpUri(const std::optional<std::string> &input, bool with_dns, const RegionUri::Resolver &resolver)
     : HttpHost(std::nullopt) {
     port = -1;
     if (!input || input->empty())
@@ -42,15 +43,15 @@ HttpUri::HttpUri(const std::optional<std::string>& input, bool with_dns, const R
 #else
         constexpr bool windows = false;
 #endif
-        auto object = config_generic_uri_create(
-            std::make_shared<const std::u16string>(utf16_replacing(*input)), ConfigUriObjectKind::Absolute,
-            native_config_uri_components_backend(), windows);
+        auto object =
+            config_generic_uri_create(std::make_shared<const std::u16string>(utf16_replacing(*input)),
+                                      ConfigUriObjectKind::Absolute, native_config_uri_components_backend(), windows);
         const auto scheme = *object->scheme();
         if (scheme != u"http" && scheme != u"https")
             return;
         flags = ValidHost;
-        host = utf8(lower_invariant_culture(
-            *config_generic_uri_component(object, ConfigGenericUriComponent::DnsSafeHost)));
+        host = utf8(
+            lower_invariant_culture(*config_generic_uri_component(object, ConfigGenericUriComponent::DnsSafeHost)));
         port = config_generic_uri_port(object);
         path = utf8(*config_generic_uri_component(object, ConfigGenericUriComponent::AbsolutePath));
         url = utf8(scheme) + "://" + host + ":" + std::to_string(port);
@@ -70,4 +71,4 @@ HttpUri::HttpUri(const std::optional<std::string>& input, bool with_dns, const R
         uri.clear();
     }
 }
-}
+} // namespace opensim::framework

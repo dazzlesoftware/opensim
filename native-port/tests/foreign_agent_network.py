@@ -14,16 +14,41 @@ import tempfile
 import threading
 import time
 import urllib.parse
+import urllib.error
 import uuid
 import xml.etree.ElementTree as ET
 import xmlrpc.client
-from contextlib import closing
+from contextlib import closing, nullcontext
 from pathlib import Path
 from socketserver import ThreadingMixIn
 from urllib.parse import urlsplit
 from xmlrpc.server import SimpleXMLRPCRequestHandler, SimpleXMLRPCServer
 
 from sql_offline_im_network import running_server
+from preview_entry_network import post as llsd_post, decode
+
+os.environ['OPENSIM_TRACE_AGENT_DATA'] = '1'
+
+
+def receive_acked(viewer, endpoint):
+ packet = viewer.recv(65536)
+ if packet[0] & 0x40:
+  sequence = struct.unpack_from(">I", packet, 1)[0]
+  viewer.sendto(struct.pack(">BIB", 0, 0, 0) + bytes.fromhex("fffffffb") +
+                struct.pack("<BI", 1, sequence), endpoint)
+ return packet
+
+
+def stage_home_agent(port, agent, session, destination, origin):
+ """Send the full update that an original home simulator sends after CreateAgent."""
+ with closing(http.client.HTTPConnection("127.0.0.1", port, timeout=5)) as connection:
+  connection.request("PUT", f"/agent/{agent}/", json.dumps({
+      "message_type":"AgentData", "agent_uuid":str(agent), "session_uuid":str(session),
+      "destination_uuid":destination, "region_id":origin,
+      "position":"<128,128,70>", "at_axis":"<1,0,0>"}),
+      {"Content-Type":"application/json"})
+  response = connection.getresponse()
+  assert (response.status, response.read()) == (200, b"True")
 
 calls = queue.Queue()
 kicks = queue.Queue()
@@ -51,6 +76,9 @@ ready_texture_served = threading.Event()
 
 class HomeRequestHandler(SimpleXMLRPCRequestHandler):
  protocol_version = "HTTP/1.1"
+ # Keep the domain-flow peer alive across its deliberate slow asset tests.
+ # Pooled POST resets/no-replay are compared separately with the original DLL.
+ timeout = 30
 
  def do_GET(self):
   textures = {f"/assets/{remote_texture_id}": (remote_texture_id, remote_texture),
@@ -143,7 +171,46 @@ class HomeRequestHandler(SimpleXMLRPCRequestHandler):
   self.send_json(b"true")
 
 class HomeServer(ThreadingMixIn, SimpleXMLRPCServer):
- daemon_threads = True
+    def __init__(self, *args, **kwargs):
+        self.connection_lock = threading.Lock()
+        self.connections = set()
+        self.stopping = False
+        super().__init__(*args, **kwargs)
+
+    def get_request(self):
+        connection, address = super().get_request()
+        with self.connection_lock:
+            self.connections.add(connection)
+        return connection, address
+
+    def close_request(self, connection):
+        with self.connection_lock:
+            self.connections.discard(connection)
+        super().close_request(connection)
+
+    def handle_error(self, request, client_address):
+        if self.stopping and isinstance(sys.exception(), (BrokenPipeError, ConnectionResetError)):
+            return  # Expected wake-up of an idle reader interrupted by shutdown.
+        super().handle_error(request, client_address)
+
+    def start(self):
+        self.server_thread = threading.Thread(target=self.serve_forever)
+        self.server_thread.start()
+
+    def __exit__(self, *exc_info):
+        thread = getattr(self, "server_thread", None)
+        if thread is not None and thread.is_alive():
+            self.shutdown()
+            thread.join()
+        self.stopping = True
+        with self.connection_lock:
+            connections = list(self.connections)
+        for connection in connections:
+            try:
+                connection.shutdown(socket.SHUT_RDWR)
+            except OSError:
+                pass
+        return super().__exit__(*exc_info)
 
 home_friend_requests = queue.Queue()
 unrelated_online_friend = uuid.uuid4()
@@ -245,7 +312,7 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
            "http_port":str(home.server_address[1]), "server_uri":home_uri}
   return {"result":"false", "message":"Fixture denied Hypergrid destination"}
  home.register_function(get_region, "get_region")
- threading.Thread(target=home.serve_forever,daemon=True).start()
+ home.start()
  with tempfile.TemporaryDirectory() as d, socket.socket(socket.AF_INET,socket.SOCK_DGRAM) as viewer:
   with socket.socket(socket.AF_INET,socket.SOCK_DGRAM) as probe:
    probe.bind(("127.0.0.1",0))
@@ -579,10 +646,10 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
      response = c.getresponse()
      result = json.loads(response.read())
      assert response.status == 200 and result.get("success") is True, result
-    c.request("POST", f"/agent/{local_agent}/", json.dumps(admitted),
+    c.request("POST", f"/agent/{local_agent}/", b"{",
               {"Content-Type":"application/json", "X-SecondLife-Shard":"fixture"})
     response = c.getresponse()
-    assert (response.status, response.read()) == (406, b"false")
+    assert (response.status, response.read()) == (400, b"false")
     if not deny_client:
      source_viewer = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
      source_viewer.settimeout(5)
@@ -608,7 +675,7 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
      source_viewer.sendto(struct.pack(">BIB", 0x40, 2, 0) + bytes.fromhex("ffff00f9") +
                           local_agent.bytes + session_bytes + circuit_bytes, source_endpoint)
      for _ in range(64):
-      if source_viewer.recv(4096)[6:10] == bytes.fromhex("ffff00fa"):
+      if receive_acked(source_viewer, source_endpoint)[6:10] == bytes.fromhex("ffff00fa"):
        break
      else:
       raise AssertionError("Source viewer did not enter the region")
@@ -646,14 +713,58 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
         return struct.unpack_from("<16si", payload, 18)
        return None
 
-      with running_server([command[0], "--config", str(destination_config)]):
+      with running_server([command[0], "--config", str(destination_config)]), \
+           closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as crossed_viewer:
+       child_connected = False
+       event_ack = None
+       def crossing_events():
+        global child_connected, event_ack
+        c.request("POST", urlsplit(event_queue_url).path,
+                  "<llsd><map><key>ack</key>" + ("<undef/>" if event_ack is None else f"<integer>{event_ack}</integer>") +
+                  "<key>done</key><boolean>0</boolean></map></llsd>",
+                  {"Content-Type":"application/llsd+xml"})
+        response = c.getresponse()
+        body = response.read()
+        if response.status != 200:
+         return None
+        events = decode(ET.fromstring(body))
+        event_ack = int(events["id"])
+        for event in events["events"]:
+         if event["message"] == "EnableSimulator" and not child_connected:
+          info = event["body"]["SimulatorInfo"][0]
+          announced_handle = int.from_bytes(base64.b64decode(info["Handle"]), "big")
+          if announced_handle == handle:
+           child_endpoint = (socket.inet_ntoa(base64.b64decode(info["IP"])), int(info["Port"]))
+           assert child_endpoint == ("127.0.0.1", destination_udp), child_endpoint
+           crossed_viewer.sendto(struct.pack(">BIB", 0x40, 1, 0) + bytes.fromhex("ffff0003") +
+                                 circuit_bytes + session_bytes + local_agent.bytes, child_endpoint)
+           child_connected = True
+        return next((event for event in ET.fromstring(body).iter("map")
+                     if event.findtext("string") == "CrossedRegion"), None)
        source_handle = ((1000 * 256) << 32) | (1000 * 256)
        altitude = 70 if fall_crossing else 40 if fly_crossing else 25
+       source_flight = None
+       if fly_crossing:
+        # Establish actual flight before moving to the elevated start point;
+        # neighbor handshaking must not turn this into an unintended fall.
+        source_viewer.sendto(struct.pack(">BIBB", 0x40, 19000, 0, 4) +
+                             local_agent.bytes + session_bytes + bytes(25) +
+                             struct.pack("<13fIB", 128,128,25, 1,0,0, 0,1,0, 0,0,1, 64, 0x2001, 0),
+                             source_endpoint)
+        flight_id = uuid.UUID("aec4610c-757f-bc4e-c092-c6e9caf18daf").bytes
+        flight_deadline = time.monotonic() + 5
+        while time.monotonic() < flight_deadline:
+         animation = movement_animation(receive_acked(source_viewer, source_endpoint))
+         if animation is not None and animation[0] == flight_id:
+          source_flight = animation
+          break
+        else:
+         raise AssertionError("Source flight fixture did not enter flight before teleporting")
        source_viewer.sendto(struct.pack(">BIB", 0x40, 19001, 0) + bytes.fromhex("ffff003f") +
                             local_agent.bytes + session_bytes +
                             struct.pack("<Q6f", source_handle, 255, 128, altitude, 1, 0, 0), source_endpoint)
        for _ in range(64):
-        if source_viewer.recv(4096)[6:10] == bytes.fromhex("ffff0040"):
+        if receive_acked(source_viewer, source_endpoint)[6:10] == bytes.fromhex("ffff0040"):
          break
        else:
         raise AssertionError("Viewer could not reach the crossing fixture's starting position")
@@ -663,13 +774,19 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
         falling_animation = uuid.UUID("666307d9-a860-572d-6fd4-c3ab8865c094").bytes
         deadline = time.monotonic() + 5
         while time.monotonic() < deadline:
-         source_fall = movement_animation(source_viewer.recv(4096))
+         source_fall = movement_animation(receive_acked(source_viewer, source_endpoint))
          if source_fall is not None and source_fall[0] == falling_animation:
           break
         else:
          raise AssertionError("The source avatar did not start falling")
        elif not fly_crossing:
         time.sleep(0.75)
+       child_deadline = time.monotonic() + 12
+       while not child_connected and time.monotonic() < child_deadline:
+        crossing_events()
+       assert child_connected, "Viewer did not receive its destination neighbor"
+       crossed_viewer.settimeout(5)
+       crossed_viewer.recv(4096)  # Wait for the admitted child before starting movement.
        movement_controls = 0x2001 if fly_crossing else 1
        source_viewer.sendto(struct.pack(">BIBB", 0x40, 19002, 0, 4) +
                             local_agent.bytes + session_bytes + bytes(24) + b"\0" +
@@ -678,14 +795,7 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
        deadline = time.monotonic() + 12
        crossed = None
        while time.monotonic() < deadline and crossed is None:
-        c.request("POST", urlsplit(event_queue_url).path,
-                  "<llsd><map><key>ack</key><undef/><key>done</key><boolean>0</boolean></map></llsd>",
-                  {"Content-Type":"application/llsd+xml"})
-        response = c.getresponse()
-        body = response.read()
-        if response.status == 200:
-         crossed = next((event for event in ET.fromstring(body).iter("map")
-                         if event.findtext("string") == "CrossedRegion"), None)
+        crossed = crossing_events()
        assert crossed is not None, "Viewer did not receive CrossedRegion after moving across the boundary"
        region_data = next((dict(zip((key.text for key in entry[::2]), entry[1::2]))
                            for entry in crossed.iter("map") if entry.findtext("key") == "RegionHandle"), None)
@@ -696,7 +806,20 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
        seed_url = urlsplit(region_data["SeedCapability"].text)
        assert seed_url.hostname == endpoint[0] and seed_url.path.startswith("/CAPS/")
 
-       with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as crossed_viewer:
+       assert child_connected, "Viewer did not connect the announced destination child"
+       # Consume and acknowledge child updates before promoting that same
+       # connection. They are not destination-root arrival animations.
+       crossed_viewer.settimeout(0.02)
+       while True:
+        try:
+         pending = crossed_viewer.recv(4096)
+        except socket.timeout:
+         break
+        if pending[0] & 0x40:
+         sequence = struct.unpack_from(">I", pending, 1)[0]
+         crossed_viewer.sendto(struct.pack(">BIB", 0, 0, 0) + bytes.fromhex("fffffffb") +
+                               struct.pack("<BI", 1, sequence), endpoint)
+       with nullcontext(crossed_viewer):
         crossed_viewer.settimeout(5)
         crossed_viewer.sendto(struct.pack(">BIB", 0x40, 1, 0) + bytes.fromhex("ffff0003") +
                               circuit_bytes + session_bytes + local_agent.bytes, endpoint)
@@ -733,8 +856,14 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
                                struct.pack("<13fIB", x,y,z, 1,0,0, 0,1,0, 0,0,1, 64, 0x2010, 0), endpoint)
          deadline = time.monotonic() + 8
          ack_sequence = 200
+         last_motion = None
+         avatar_local_id = None
+         crossed_viewer.settimeout(0.25)
          while time.monotonic() < deadline:
-          packet = crossed_viewer.recv(4096)
+          try:
+           packet = crossed_viewer.recv(4096)
+          except socket.timeout:
+           continue
           if packet[0] & 0x40:
            ack_sequence += 1
            sequence = struct.unpack_from(">I", packet, 1)[0]
@@ -751,12 +880,33 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
              decoded.extend(bytes(next(cursor, 0)))
            payload = decoded
           if payload[:1] == b"\x0c" and payload[17:33] == local_agent.bytes and len(payload) >= 93:
-           # The avatar ObjectData block stores position and velocity consecutively.
+           avatar_local_id = payload[12:16]
            current_z, _, _, vertical_speed = struct.unpack_from("<4f", payload, 77)
-           if current_z < z - 3 and vertical_speed < 0:
-            break
+           last_motion = (current_z, vertical_speed)
+          elif len(payload) >= 12 and payload[0] == 0x0f and avatar_local_id is not None:
+           # Physics heartbeats carry quantized motion in terse avatar blocks.
+           offset = 12
+           for _ in range(payload[11]):
+            if offset >= len(payload):
+             break
+            size = payload[offset]
+            offset += 1
+            data = payload[offset:offset + size]
+            offset += size
+            if offset + 2 > len(payload):
+             break
+            texture_size = struct.unpack_from("<H", payload, offset)[0]
+            offset += 2 + texture_size
+            if size == 60 and data[:4] == avatar_local_id:
+             current_z = struct.unpack_from("<f", data, 30)[0]
+             velocity_code = struct.unpack_from("<H", data, 38)[0]
+             last_motion = (current_z, velocity_code * 256 / 65535 - 128)
+          if last_motion is not None and last_motion[0] < z - 3 and last_motion[1] < -0.01:
+           break
          else:
-          raise AssertionError("Avatar did not descend in the no-flight region")
+          raise AssertionError(f"Avatar did not descend in the no-flight region: arrival z={z}, "
+                               f"last motion={last_motion}")
+         crossed_viewer.settimeout(5)
         elif fly_crossing:
          # Observe several physics heartbeats without sending fresh movement input.
          crossed_viewer.settimeout(0.1)
@@ -789,11 +939,24 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
          else:
           raise AssertionError("The falling avatar did not land in the destination")
         else:
-         for _ in range(128):
-          if movement_animation(source_viewer.recv(4096)) == destination_animation:
-           break
-         else:
-          raise AssertionError("The destination did not publish the source movement animation and sequence")
+         source_animations = []
+         matched_source_animation = destination_animation == source_flight
+         if source_flight is not None:
+          source_animations.append((str(uuid.UUID(bytes=source_flight[0])), source_flight[1]))
+         animation_deadline = time.monotonic() + 5
+         while not matched_source_animation and time.monotonic() < animation_deadline:
+          try:
+           animation = movement_animation(receive_acked(source_viewer, source_endpoint))
+          except socket.timeout:
+           continue
+          if animation is not None:
+           source_animations.append((str(uuid.UUID(bytes=animation[0])), animation[1]))
+          if animation == destination_animation:
+           matched_source_animation = True
+         if not matched_source_animation:
+          raise AssertionError("The destination did not publish the source movement animation and sequence: "
+                               f"destination={(str(uuid.UUID(bytes=destination_animation[0])), destination_animation[1])} "
+                               f"source={source_animations}")
         deadline = time.monotonic() + 5
         while time.monotonic() < deadline:
          with closing(sqlite3.connect(Path(d) / "presence.db")) as database:
@@ -805,15 +968,25 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
         else:
          raise AssertionError(f"Crossing did not move the grid presence to the destination: {presence}")
 
+        with closing(http.client.HTTPConnection(seed_url.hostname, seed_url.port, timeout=5)) as destination_http:
+         destination_http.request("DELETE",
+            f"/agent/{local_agent}/{destination_id}/close-child/?auth=child:{login['session_id']}")
+         response = destination_http.getresponse()
+         assert response.status == 200, response.read()
+         response.read()
+        with closing(sqlite3.connect(Path(d) / "presence.db")) as database:
+         assert database.execute("SELECT RegionID FROM Presence WHERE SessionID = ?",
+                                 (login["session_id"],)).fetchone() == (destination_id,)
+
         if fall_crossing or blocked_flight_destination:
-         home.shutdown()
          print("PASS: avatar descends in the destination region")
          sys.exit(0)
 
         time.sleep(0.25)
         source_viewer.sendto(struct.pack(">BIBBB", 0, 19003, 0, 1, 127) + bytes(4), source_endpoint)
-        for _ in range(64):
-         if source_viewer.recv(4096)[6:8] == bytes((2, 127)):
+        ping_deadline = time.monotonic() + 5
+        while time.monotonic() < ping_deadline:
+         if receive_acked(source_viewer, source_endpoint)[6:8] == bytes((2, 127)):
           break
         else:
          raise AssertionError("Source region did not retain the viewer's child circuit")
@@ -860,12 +1033,75 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
         else:
          raise AssertionError("Viewer did not return through the original child circuit")
         time.sleep(0.25)
-        crossed_viewer.sendto(struct.pack(">BIB", 0x40, 5, 0) + bytes.fromhex("ffff00fc") +
-                              local_agent.bytes + session_bytes, endpoint)
+        # Cross east again while the destination still holds the original child circuit.
+        source_viewer.sendto(struct.pack(">BIBB", 0x40, 19005, 0, 4) +
+                             local_agent.bytes + session_bytes + bytes(24) + b"\0" +
+                             struct.pack("<13fIB", 255,128,altitude, 1,0,0, 0,1,0, 0,0,1,
+                                         64, movement_controls, 0), source_endpoint)
+        deadline = time.monotonic() + 12
+        repeat_crossing = None
+        while time.monotonic() < deadline and repeat_crossing is None:
+         c.request("POST", urlsplit(event_queue_url).path,
+                   "<llsd><map><key>ack</key><undef/><key>done</key><boolean>0</boolean></map></llsd>",
+                   {"Content-Type":"application/llsd+xml"})
+         response = c.getresponse()
+         body = response.read()
+         if response.status == 200:
+          repeat_crossing = next((event for event in ET.fromstring(body).iter("map")
+                                  if event.findtext("string") == "CrossedRegion"), None)
+        assert repeat_crossing is not None, "Viewer could not cross back into the retained destination child"
+        repeated_seed = next((entry[index + 1].text
+                              for entry in repeat_crossing.iter("map")
+                              for index, key in enumerate(entry)
+                              if key.tag == "key" and key.text == "SeedCapability"), None)
+        assert repeated_seed and urlsplit(repeated_seed) == seed_url, (repeated_seed, seed_url)
+
+        # Finish the second eastbound crossing on the original destination socket.
+        crossed_viewer.sendto(struct.pack(">BIB", 0x40, 300, 0) + bytes.fromhex("ffff00f9") +
+                              local_agent.bytes + session_bytes + circuit_bytes, endpoint)
+        for _ in range(128):
+         packet = crossed_viewer.recv(4096)
+         if packet[6:10] == bytes.fromhex("ffff00fa") and struct.unpack_from("<Q", packet, 66)[0] == handle:
+          x, y, _ = struct.unpack_from("<3f", packet, 42)
+          if 0 <= x < 4 and abs(y - 128) < 1:
+           break
+        else:
+         raise AssertionError("Second eastbound crossing did not complete on the retained circuit")
         deadline = time.monotonic() + 5
-        with closing(http.client.HTTPConnection(seed_url.hostname, seed_url.port, timeout=5)) as neighbor:
+        while time.monotonic() < deadline:
+         with closing(sqlite3.connect(Path(d) / "presence.db")) as database:
+          presence = database.execute("SELECT RegionID FROM Presence WHERE SessionID = ?",
+                                      (login["session_id"],)).fetchone()
+         if presence == (destination_id,):
+          break
+         time.sleep(0.02)
+        else:
+         raise AssertionError("Second eastbound crossing did not move the grid presence")
+        time.sleep(0.25)
+        source_seed = urlsplit(login["seed_capability"])
+        with closing(http.client.HTTPConnection(source_seed.hostname, source_seed.port, timeout=5)) as neighbor:
+         child_close_path = f"/agent/{local_agent}/{home_region_id}/close-child/?auth="
+         neighbor.request("DELETE", child_close_path + login["session_id"])
+         response = neighbor.getresponse()
+         assert response.status == 200, response.read()
+         response.read()
+         neighbor.request("DELETE", child_close_path + "child:" + str(uuid.uuid4()))
+         response = neighbor.getresponse()
+         assert response.status == 200, response.read()
+         response.read()
+         neighbor.request("POST", source_seed.path, "<llsd><array/></llsd>",
+                          {"Content-Type":"application/llsd+xml"})
+         response = neighbor.getresponse()
+         assert response.status == 200, response.read()
+         response.read()
+         neighbor.request("DELETE", child_close_path + "child:" + login["session_id"])
+         response = neighbor.getresponse()
+         assert response.status == 200, response.read()
+         response.read()
+        deadline = time.monotonic() + 5
+        with closing(http.client.HTTPConnection(source_seed.hostname, source_seed.port, timeout=5)) as neighbor:
          while time.monotonic() < deadline:
-          neighbor.request("POST", seed_url.path, "<llsd><array/></llsd>",
+          neighbor.request("POST", source_seed.path, "<llsd><array/></llsd>",
                            {"Content-Type":"application/llsd+xml"})
           response = neighbor.getresponse()
           response.read()
@@ -876,8 +1112,7 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
           raise AssertionError("Closing the neighbor child circuit did not remove its seed capability")
         with closing(sqlite3.connect(Path(d) / "presence.db")) as database:
          assert database.execute("SELECT RegionID FROM Presence WHERE SessionID = ?",
-                                 (login["session_id"],)).fetchone() == ("11111111-1111-4111-8111-111111111111",)
-       home.shutdown()
+                                 (login["session_id"],)).fetchone() == (destination_id,)
        print("PASS: avatar crosses a region boundary through the viewer event queue")
        sys.exit(0)
      pending_messages = {b"Will you be my friend?": b"Offer Recipient",
@@ -1066,30 +1301,26 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
      with xmlrpc.client.ServerProxy(f"http://127.0.0.1:{port}/") as proxy:
       notification = {"userID":foreign_friend, "online":"True",
                       "friend_0":f"{local_agent};{uui_grid};Access Fixture;fixture-status-secret"}
+      def wait_for_friend_status(message_id, failure):
+       friend_id = uuid.UUID(foreign_friend).bytes
+       for _ in range(64):
+        packet = source_viewer.recv(4096)
+        if packet[6:10] == message_id and friend_id in packet[10:]:
+         return
+       raise AssertionError(failure)
+
       bad_notification = {**notification, "friend_0":notification["friend_0"] + "-wrong"}
       assert proxy.status_notification(bad_notification) == {"result":"No Friends Online"}
       assert proxy.status_notification({**notification, "online": " True "}) == {
           "result": "false", "friend_0": str(local_agent),
       }
-      for _ in range(64):
-       packet = source_viewer.recv(4096)
-       if packet[6:10] == bytes.fromhex("ffff0142"):
-        assert uuid.UUID(foreign_friend).bytes in packet
-        break
-      else:
-       raise AssertionError("Viewer did not receive OnlineNotification")
+      wait_for_friend_status(bytes.fromhex("ffff0142"), "Viewer did not receive OnlineNotification")
       c.request("POST", "/hgfriends", urllib.parse.urlencode({
           **notification, "METHOD":"statusnotification", "online":"False"}),
           {"Content-Type":"application/x-www-form-urlencoded"})
       reply = c.getresponse()
       assert reply.status == 200 and ET.fromstring(reply.read()).findtext("RESULT") == "NULL"
-      for _ in range(64):
-       packet = source_viewer.recv(4096)
-       if packet[6:10] == bytes.fromhex("ffff0143"):
-        assert uuid.UUID(foreign_friend).bytes in packet
-        break
-      else:
-       raise AssertionError("Viewer did not receive OfflineNotification")
+      wait_for_friend_status(bytes.fromhex("ffff0143"), "Viewer did not receive OfflineNotification")
       for fields, key, expected in (
           (bad_notification, "RESULT", "NULL"),
           ({**notification, "online":"invalid"}, "RESULT", "Failure"),
@@ -1100,25 +1331,13 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
            {"Content-Type":"application/x-www-form-urlencoded"})
        reply = c.getresponse()
        assert reply.status == 200 and ET.fromstring(reply.read()).findtext(key) == expected
-      for _ in range(64):
-       packet = source_viewer.recv(4096)
-       if packet[6:10] == bytes.fromhex("ffff0142"):
-        assert uuid.UUID(foreign_friend).bytes in packet
-        break
-      else:
-       raise AssertionError("Hypergrid status endpoint did not notify the viewer")
+      wait_for_friend_status(bytes.fromhex("ffff0142"), "Hypergrid status endpoint did not notify the viewer")
      status_fields = {"METHOD":"status", "FromID":foreign_friend, "ToID":str(local_agent), "Online":"True"}
      c.request("POST", "/friends", urllib.parse.urlencode(status_fields),
                {"Content-Type":"application/x-www-form-urlencoded"})
      reply = c.getresponse()
      assert reply.status == 200 and ET.fromstring(reply.read()).findtext("RESULT") == "True"
-     for _ in range(64):
-      packet = source_viewer.recv(4096)
-      if packet[6:10] == bytes.fromhex("ffff0142"):
-       assert uuid.UUID(foreign_friend).bytes in packet
-       break
-     else:
-      raise AssertionError("Simulator status endpoint did not notify the viewer")
+     wait_for_friend_status(bytes.fromhex("ffff0142"), "Simulator status endpoint did not notify the viewer")
      approving_friend = uuid.uuid4()
      with closing(sqlite3.connect(Path(d) / "friends.db")) as database:
       database.execute("INSERT INTO Friends (PrincipalID, Friend, Flags) VALUES (?, ?, ?)",
@@ -1333,25 +1552,31 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
       source_viewer.sendto(struct.pack(">BIB", 0x40, 3, 0) + bytes.fromhex("ffff003f") +
                            local_agent.bytes + session_bytes + struct.pack("<Q6f", handle, 128, 128, 45, 1, 0, 0),
                            source_endpoint)
-      for _ in range(64):
-       packet = source_viewer.recv(4096)
-       if packet[6:10] == bytes.fromhex("ffff004a"):
-        raise AssertionError(f"Source rejected teleport: {packet[27:]!r}")
-       if packet[6:10] == bytes.fromhex("ffff0045"):
-        finish_sequence = packet[1:5]
-        assert packet[30:34] == socket.inet_aton("127.0.0.1"), packet.hex()
-        assert struct.unpack_from(">H", packet, 34)[0] == destination_udp
-        expected_handle = ((1001 * 256) << 32) | (1000 * 256) if live_hypergrid else handle
-        assert struct.unpack_from("<Q", packet, 36)[0] == expected_handle
-        length = struct.unpack_from("<H", packet, 44)[0]
-        seed_url = urlsplit(packet[46:46+length].rstrip(b"\0").decode())
-        expected_url = urlsplit(destination_url)
-        assert (seed_url.scheme, seed_url.hostname, seed_url.port) == (
-            expected_url.scheme, expected_url.hostname, expected_url.port), seed_url
-        assert seed_url.path.startswith("/CAPS/") and seed_url.path.endswith("0000/"), seed_url
-        break
-      else:
-       raise AssertionError("Source did not send TeleportFinish")
+      event_state = {'ack': decode(ET.fromstring(events))['id']}
+      def wait_destination_handoff():
+       deadline = time.monotonic() + 15
+       while time.monotonic() < deadline:
+        try:
+         batch = llsd_post(event_queue_url, dict(ack=event_state['ack'], done=0))
+        except urllib.error.HTTPError as error:
+         if error.code != 502:
+          raise
+         continue
+        event_state['ack'] = batch['id']
+        for event in batch['events']:
+         if event['message'] == 'TeleportFinish':
+          return event['body']['Info'][0]
+       raise AssertionError("Source did not send EventQueue TeleportFinish")
+      finish = wait_destination_handoff()
+      assert socket.inet_ntoa(base64.b64decode(finish['SimIP'])) == "127.0.0.1", finish
+      assert finish['SimPort'] == destination_udp, finish
+      expected_handle = ((1001 * 256) << 32) | (1000 * 256) if live_hypergrid else handle
+      assert struct.unpack('>Q', base64.b64decode(finish['RegionHandle']))[0] == expected_handle, finish
+      seed_url = urlsplit(finish['SeedCapability'])
+      expected_url = urlsplit(destination_url)
+      assert (seed_url.scheme, seed_url.hostname, seed_url.port) == (
+          expected_url.scheme, expected_url.hostname, expected_url.port), seed_url
+      assert seed_url.path.startswith("/CAPS/") and seed_url.path.endswith("0000/"), seed_url
       c.request("DELETE", f"/agent/{local_agent}/11111111-1111-4111-8111-111111111111/release/?auth={uuid.uuid4()}")
       release = c.getresponse()
       assert (release.status, release.read()) == (404, b"false")
@@ -1377,6 +1602,19 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
         assert response.status == 200, "Wrong session token removed the pending destination seed"
         old_queue = ET.fromstring(response.read()).findtext("map/string")
         assert old_queue
+       # Connect the destination circuit without completing movement.
+       with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as early_viewer:
+        early_viewer.settimeout(5)
+        early_viewer.sendto(struct.pack(">BIB", 0x40, 1, 0) + bytes.fromhex("ffff0003") +
+                            struct.pack("<I", int(login["circuit_code"]) & 0xffffffff) +
+                            uuid.UUID(login["session_id"]).bytes + local_agent.bytes,
+                            ("127.0.0.1", destination_udp))
+        for _ in range(64):
+         packet = early_viewer.recv(4096)
+         if packet[6:].startswith(bytes.fromhex("fffffffb")):
+          break
+        else:
+         raise AssertionError("Destination did not admit the unfinished viewer")
        source_viewer.settimeout(35)
        deadline = time.monotonic() + 35
        while time.monotonic() < deadline:
@@ -1400,47 +1638,52 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
        source_viewer.sendto(struct.pack(">BIB", 0x40, 5, 0) + bytes.fromhex("ffff003f") +
                             local_agent.bytes + session_bytes + struct.pack("<Q6f", handle, 128, 128, 45, 1, 0, 0),
                             source_endpoint)
-       for _ in range(64):
-        packet = source_viewer.recv(4096)
-        if packet[6:10] == bytes.fromhex("ffff0045") and packet[1:5] != finish_sequence:
-         length = struct.unpack_from("<H", packet, 44)[0]
-         seed_url = urlsplit(packet[46:46+length].rstrip(b"\0").decode())
-         break
-       else:
-        raise AssertionError("Source did not retry the timed-out teleport")
+       previous_seed = seed_url.geturl()
+       seed_url = urlsplit(wait_destination_handoff()['SeedCapability'])
+       assert seed_url.geturl() != previous_seed, "Retry reused the timed-out teleport seed"
        with closing(http.client.HTTPConnection(seed_url.hostname, seed_url.port, timeout=5)) as destination:
         destination.request("POST", seed_url.path, queue_request, {"Content-Type":"application/llsd+xml"})
         response = destination.getresponse()
         assert response.status == 200
         new_queue = ET.fromstring(response.read()).findtext("map/string")
         assert new_queue and new_queue != old_queue, "Retry reused the expired teleport's event queue"
-      with closing(http.client.HTTPConnection("127.0.0.1", urlsplit(destination_url).port, timeout=5)) as destination:
-       update = {"message_type":"AgentData", "destination_uuid":destination_id, "agent_uuid":str(local_agent),
-                 "session_uuid":login["session_id"], "circuit_code":str(int(login["circuit_code"]) & 0xffffffff),
-                 "position":"<125,126,47>", "at_axis":"<0,1,0>",
-                 "god_data":{"ViewerUiIsGod":True}}
-       for path, status in ((f"/agent/{uuid.uuid4()}/", 400),
-                            (f"/agent/{local_agent}/{uuid.uuid4()}/", 404)):
-        destination.request("PUT", path, json.dumps(update), {"Content-Type":"application/json"})
-        reply = destination.getresponse()
-        actual = (reply.status, reply.read())
-        assert actual == (status, b"false"), (path, status, actual)
-       release_url = f"http://127.0.0.1:{port}/agent/{local_agent}/11111111-1111-4111-8111-111111111111/release/"
-       for fields, expected in (({**update, "session_uuid":str(uuid.uuid4())}, b"False"),
-                                ({**update, "cb_uri":home_uri + "wrong/release/"}, b"False"),
-                                ({**update, "cb_uri":release_url + "?auth=invalid"}, b"False"),
-                                (update, b"True")):
-        destination.request("PUT", f"/agent/{local_agent}/", json.dumps(fields), {"Content-Type":"application/json"})
-        reply = destination.getresponse()
-        actual = (reply.status, reply.read())
-        assert actual == (200, expected), (fields, actual)
       with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as transfer_viewer:
+       output_cursor = len(destination_post.output_lines)
        transfer_viewer.settimeout(5)
        session_bytes = uuid.UUID(login["session_id"]).bytes
        circuit_bytes = struct.pack("<I", int(login["circuit_code"]) & 0xffffffff)
        endpoint = ("127.0.0.1", destination_udp)
        transfer_viewer.sendto(struct.pack(">BIB", 0x40, 1, 0) + bytes.fromhex("ffff0003") +
                               circuit_bytes + session_bytes + local_agent.bytes, endpoint)
+       # V2 sends TeleportFinish before its real UpdateAgent. Do not let
+       # supplemental payload checks create a root before that update stages:
+       # the original simulator correctly rejects a late update on a root.
+       deadline = time.monotonic() + 10
+       while not any('TRANSFER_DATA_STAGED ' + str(local_agent) in line
+                     for line in destination_post.output_lines[output_cursor:]):
+        assert time.monotonic() < deadline, "Production AgentData did not stage before supplemental checks"
+        time.sleep(.01)
+       with closing(http.client.HTTPConnection("127.0.0.1", urlsplit(destination_url).port, timeout=5)) as destination:
+        update = {"message_type":"AgentData", "destination_uuid":destination_id, "agent_uuid":str(local_agent),
+                  "session_uuid":login["session_id"], "circuit_code":str(int(login["circuit_code"]) & 0xffffffff),
+                  "region_id":"11111111-1111-4111-8111-111111111111",
+                  "position":"<125,126,47>", "at_axis":"<0,1,0>",
+                  "god_data":{"ViewerUiIsGod":True}}
+        for path, status in ((f"/agent/{uuid.uuid4()}/", 400),
+                             (f"/agent/{local_agent}/{uuid.uuid4()}/", 404)):
+         destination.request("PUT", path, json.dumps(update), {"Content-Type":"application/json"})
+         reply = destination.getresponse()
+         actual = (reply.status, reply.read())
+         assert actual == (status, b"false"), (path, status, actual)
+        release_url = f"http://127.0.0.1:{port}/agent/{local_agent}/11111111-1111-4111-8111-111111111111/release/"
+        for fields, expected in (({**update, "session_uuid":str(uuid.uuid4())}, b"False"),
+                                 ({**update, "cb_uri":home_uri + "wrong/release/"}, b"False"),
+                                 ({**update, "cb_uri":release_url + "?auth=invalid"}, b"False"),
+                                 (update, b"True")):
+         destination.request("PUT", f"/agent/{local_agent}/", json.dumps(fields), {"Content-Type":"application/json"})
+         reply = destination.getresponse()
+         actual = (reply.status, reply.read())
+         assert actual == (200, expected), (fields, actual)
        transfer_viewer.sendto(struct.pack(">BIB", 0x40, 2, 0) + bytes.fromhex("ffff00f9") +
                               local_agent.bytes + session_bytes + circuit_bytes, endpoint)
        entered = revoked = False
@@ -1483,6 +1726,10 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
           raise AssertionError("Destination presence was not available for notification forwarding")
         with xmlrpc.client.ServerProxy(f"http://127.0.0.1:{port}/") as proxy:
          assert proxy.status_notification(notification) == {"result": "false", "friend_0": str(local_agent)}
+        with closing(sqlite3.connect(Path(d) / "regions.db")) as database:
+         advertised = database.execute("SELECT serverURI FROM regions WHERE uuid=?", (destination_id,)).fetchone()
+         expected_server = urlsplit(destination_url)
+         assert advertised and urlsplit(advertised[0]).port == expected_server.port, (advertised, destination_url)
         for _ in range(64):
          packet = transfer_viewer.recv(4096)
          if packet[6:10] == bytes.fromhex("ffff0142"):
@@ -1715,17 +1962,20 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
         time.sleep(0.02)
        else:
         raise AssertionError(f"Destination presence was {row}, expected {expected_presence}")
+       # Original EntityTransfer keeps an adjacent native region as a
+       # child; HG departures close it even when the mapped region is nearby.
+       expected_seed_status = 404 if live_hypergrid else 200
        deadline = time.monotonic() + 5
        while time.monotonic() < deadline:
         c.request("POST", urlsplit(login["seed_capability"]).path, "<llsd><array/></llsd>",
                   {"Content-Type":"application/llsd+xml"})
         seed = c.getresponse()
         seed.read()
-        if seed.status == 404:
+        if seed.status == expected_seed_status:
          break
         time.sleep(0.02)
        else:
-        raise AssertionError("Source seed capability survived destination arrival")
+        raise AssertionError(f"Source seed status {seed.status}, expected {expected_seed_status}")
        source_viewer.close()
        assert database.execute("SELECT RegionID FROM Presence WHERE SessionID = ?",
                                (login["session_id"],)).fetchone() == expected_presence
@@ -1752,7 +2002,6 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
          time.sleep(0.02)
         else:
          raise AssertionError(f"Home grid presence was {row}, expected {expected_home_presence}")
-       home.shutdown()
        sys.exit(0)
    def grid_user_status(connection, user):
     data = urllib.parse.urlencode({"METHOD": "getgriduserinfo", "UserID": user})
@@ -1817,7 +2066,6 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
       else:
        raise AssertionError("Viewer did not receive the outbound policy denial")
       assert home_launches.empty(), "Denied trip contacted the destination Gatekeeper"
-      home.shutdown()
       sys.exit(0)
      path, launch = home_launches.get(timeout=8)
      assert path == f"/foreignagent/{local_agent}/", (path, launch)
@@ -1886,7 +2134,6 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
       with xmlrpc.client.ServerProxy(f"http://127.0.0.1:{port}/") as proxy:
        assert proxy.verify_agent({"sessionID":new_session, "token":issued["service_session_id"]}) == {"result":"True"}
        assert proxy.verify_agent({"sessionID":str(local_session), "token":launch["service_session_id"]}) == {"result":"False"}
-      home.shutdown()
       sys.exit(0)
      c.request("POST", f"/homeagent/{local_agent}/",
                json.dumps({**next_launch, "service_session_id":"invalid"}),
@@ -1913,7 +2160,6 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
      with xmlrpc.client.ServerProxy(f"http://127.0.0.1:{port}/") as proxy:
       assert proxy.verify_agent({"sessionID":str(local_session), "token":launch["service_session_id"]}) == {"result":"False"}
       assert proxy.verify_agent({"sessionID":str(local_session), "token":relaunched["service_session_id"]}) == {"result":"True"}
-     home.shutdown()
      sys.exit(0)
     c.request("POST","/",xmlrpc.client.dumps(({"region_name":"Foreign Test"},),methodname="link_region"),{"Content-Type":"text/xml"})
     linked=xmlrpc.client.loads(c.getresponse().read())[0][0]
@@ -1992,7 +2238,6 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
     assert r.status==200 and body.get("success") is True, (r.status,body)
     if telehub_denial:
      print("PASS: Gatekeeper denies a fully restricted telehub and admits an unrestricted visitor")
-     home.shutdown()
      sys.exit(0)
     c.request("POST", f"/foreignagent/{agent}/",
               json.dumps(admission_payload | {"secure_session_id":str(uuid.uuid4())}),
@@ -2040,17 +2285,24 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
      seed.read()
     print("PASS home-grid denial prevents the viewer handshake")
    else:
-    packet=viewer.recv(4096)
-    payload=packet[6:]
-    if packet[0] & 0x80:
-     decoded=bytearray()
-     iterator=iter(payload)
-     for byte in iterator:
-      decoded.extend(bytes(next(iterator)) if byte==0 else bytes([byte]))
-     payload=decoded
-    assert payload.startswith(b"\xff\xff\x00\x94"), payload[:16].hex()
+    # The controlled home simulator must send full AgentData for an HG
+    # arrival. ViaHGLogin does not get the ordinary login exemption.
+    stage_home_agent(port, agent, session, linked["uuid"], remote_id)
     viewer.sendto(struct.pack(">BIB", 0x40, 2, 0) + bytes.fromhex("ffff00f9") +
                   agent.bytes + session.bytes + struct.pack("<I", code), ("127.0.0.1", udp))
+    for _ in range(64):
+     packet=viewer.recv(4096)
+     payload=packet[6:]
+     if packet[0] & 0x80:
+      decoded=bytearray()
+      iterator=iter(payload)
+      for byte in iterator:
+       decoded.extend(bytes(next(iterator)) if byte==0 else bytes([byte]))
+      payload=decoded
+     if payload.startswith(b"\xff\xff\x00\x94"):
+      break
+    else:
+     raise AssertionError("Foreign viewer did not receive the root handshake")
     viewer.settimeout(4)
     for _ in range(64):
      movement = viewer.recv(4096)
@@ -2369,8 +2621,7 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
      with HomeServer(("127.0.0.1", 0), requestHandler=HomeRequestHandler, logRequests=False) as second_friends:
       second_friends.friend_requests = queue.Queue()
       second_friends_uri = f"http://127.0.0.1:{second_friends.server_address[1]}/"
-      second_friends_thread = threading.Thread(target=second_friends.serve_forever, daemon=True)
-      second_friends_thread.start()
+      second_friends.start()
       try:
        other_visitor, other_session = uuid.uuid4(), uuid.uuid4()
        other_code = code + 1
@@ -2388,6 +2639,7 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
         other_viewer.settimeout(5)
         other_viewer.sendto(struct.pack(">BIBHH", 0x40, 1, 0, 0xffff, 3) +
                              struct.pack("<I", other_code) + other_session.bytes + other_visitor.bytes, endpoint)
+        stage_home_agent(port, other_visitor, other_session, linked["uuid"], remote_id)
         other_viewer.sendto(struct.pack(">BIBHH", 0x40, 2, 0, 0xffff, 249) +
                              other_visitor.bytes + other_session.bytes + struct.pack("<I", other_code), endpoint)
         for _ in range(64):
@@ -2443,13 +2695,13 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
         assert validated.status == 200 and ET.fromstring(validated.read()).findtext("RESULT") == "True"
       finally:
        second_friends.shutdown()
-       second_friends_thread.join(timeout=5)
     handle = struct.unpack_from("<Q", movement, 66)[0]
     viewer.sendto(struct.pack(">BIB", 0x40, 3, 0) + bytes.fromhex("ffff003f") +
                   agent.bytes + session.bytes + struct.pack("<Q6f", handle, 120, 121, 45, 1, 0, 0),
                   ("127.0.0.1", udp))
     started = False
-    for _ in range(64):
+    deadline = time.monotonic() + 5
+    while time.monotonic() < deadline:
      teleport = viewer.recv(4096)
      if teleport[6:10] == bytes.fromhex("ffff0049"):
       started = True
@@ -2473,7 +2725,24 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
     viewer.sendto(struct.pack(">BIB", 0x40, 7, 0) + bytes.fromhex("ffff003f") +
                   agent.bytes + session.bytes + struct.pack("<Q6f", linked_handle, 120, 121, 45, 1, 0, 0),
                   ("127.0.0.1", udp))
-    assert hypergrid_queries.get(timeout=5) == {
+    try:
+     hypergrid_query = hypergrid_queries.get(timeout=5)
+    except queue.Empty as error:
+     # Inspect pending replies only after the acceptance deadline has failed.
+     # This preserves timing while distinguishing rejection from a lost request.
+     replies = []
+     previous_timeout = viewer.gettimeout()
+     viewer.setblocking(False)
+     try:
+      for _ in range(256):
+       try:
+        replies.append(viewer.recv(65535).hex())
+       except BlockingIOError:
+        break
+     finally:
+      viewer.settimeout(previous_timeout)
+     raise AssertionError(f"Hypergrid query timed out; pending viewer packets: {replies}") from error
+    assert hypergrid_query == {
         "region_uuid": remote_id, "agent_id": str(agent), "agent_home_uri": home_uri}
     for _ in range(64):
      packet = viewer.recv(4096)
@@ -2706,5 +2975,4 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
        ("link", {"region_name": "Remote Region"}),
        ("link", {"region_name": "Malformed Link"}),
    ], remote_calls
- home.shutdown()
 

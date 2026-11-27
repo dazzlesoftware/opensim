@@ -4,11 +4,13 @@
 #include <iostream>
 using namespace opensim;
 using namespace scene;
+
 namespace {
 framework::Uuid id(int n) {
     auto s = std::to_string(n);
     return framework::Uuid("11223344-5566-7788-99aa-" + std::string(12 - s.size(), '0') + s);
 }
+
 std::string probe(int mode, std::uint64_t first, std::uint64_t second, int action, int failure) {
     auto bit = [&](int n) { return (mode & n) != 0; };
     std::string trace;
@@ -75,11 +77,12 @@ std::string probe(int mode, std::uint64_t first, std::uint64_t second, int actio
         auto value = events.events(id(n));
         return value ? std::to_string(*value) : "-";
     };
-    return result + ":" + std::to_string(events.aggregated()) + ":" + std::to_string(events.local_flags()) +
-           ":" + mask(1) + ":" + mask(2) + trace;
+    return result + ":" + std::to_string(events.aggregated()) + ":" + std::to_string(events.local_flags()) + ":" +
+           mask(1) + ":" + mask(2) + trace;
 }
-}
-int main(int argc, char** argv) {
+} // namespace
+
+int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string_view(argv[1]) == "--probe") {
             int m, a, f;
@@ -89,7 +92,7 @@ int main(int argc, char** argv) {
             return 0;
         }
         int n = 0;
-        auto check = [&](bool value, const char* s) {
+        auto check = [&](bool value, const char *s) {
             ++n;
             if (!value)
                 throw std::runtime_error(s);
@@ -99,15 +102,14 @@ int main(int argc, char** argv) {
         check(probe(0, 0, 0, 2, 0).find('|') == std::string::npos, "missing event removal has no effects");
         check(probe(0, script_event::any_target, 0, 1, 0).find("|TARGETS:") != std::string::npos,
               "target registration cleanup");
-        check(probe(0, script_event::email, 0, 1, 0).find("|REMOVEMAIL") != std::string::npos,
-              "mailbox cleanup");
+        check(probe(0, script_event::email, 0, 1, 0).find("|REMOVEMAIL") != std::string::npos, "mailbox cleanup");
         check(probe(8, script_event::touch, 0, 1, 0).find("|PHYSICS|FULL") != std::string::npos,
               "child physics then full update");
         check(probe(1, 0, 0, 3, 0).starts_with("OK:18364758544493064720:305419896"),
               "missing parent retains stale aggregate");
         std::cout << "PASS: " << n << " part script event checks\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

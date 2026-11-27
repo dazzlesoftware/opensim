@@ -2,6 +2,7 @@
 #include "osd_fixture_value.hpp"
 #include <iostream>
 using namespace opensim::network;
+
 std::string hex(std::string_view s) {
     constexpr char d[] = "0123456789abcdef";
     std::string r;
@@ -11,17 +12,19 @@ std::string hex(std::string_view s) {
     }
     return r;
 }
-std::string types(const Value& v) {
-    static const char* names[] = {"u", "s", "i", "b", "r", "id", "d", "uri", "bin", "a", "m", "l"};
+
+std::string types(const Value &v) {
+    static const char *names[] = {"u", "s", "i", "b", "r", "id", "d", "uri", "bin", "a", "m", "l"};
     std::string s = names[static_cast<int>(v.kind)];
     if (v.kind == Value::Kind::Array)
-        for (const auto& x : v.array)
+        for (const auto &x : v.array)
             s += ":" + types(x);
     if (v.kind == Value::Kind::Map)
-        for (const auto& key : v.ordered_keys())
+        for (const auto &key : v.ordered_keys())
             s += ":" + hex(key) + "=" + types(v.get(key));
     return s;
 }
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {

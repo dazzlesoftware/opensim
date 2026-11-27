@@ -1,0 +1,1 @@
+string input="ordered";integer result;integer order;integer after;string argument(){order=order*10+1;return input;}default{state_entry(){result=xmrHashCode(argument());after=1;}}

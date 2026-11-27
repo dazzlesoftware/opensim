@@ -1,0 +1,1 @@
+integer result;integer after;default{state_entry(){llSleep(0.1);}touch_start(integer n){result=n;after=1;}}

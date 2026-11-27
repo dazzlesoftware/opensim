@@ -6,22 +6,27 @@
 #include <iostream>
 #include <stdexcept>
 using namespace opensim;
-void check(bool value, const char* message) {
+
+void check(bool value, const char *message) {
     if (!value)
         throw std::runtime_error(message);
 }
-std::string path_text(const std::filesystem::path& p) {
+
+std::string path_text(const std::filesystem::path &p) {
     auto text = p.u8string();
     return {text.begin(), text.end()};
 }
+
 struct Files {
     std::filesystem::path root =
         std::filesystem::temp_directory_path() /
         framework::utf8_path("account-urls-" + framework::Uuid::random().str() + "-\xe8\xa9\xa6\xe9\xa8\x93");
     std::filesystem::path accounts = root / "accounts.db", auth = root / "auth.db";
+
     Files() {
         std::filesystem::create_directory(root);
     }
+
     ~Files() {
         std::error_code error;
         std::filesystem::remove(accounts, error);
@@ -29,33 +34,39 @@ struct Files {
         std::filesystem::remove(root, error);
     }
 };
+
 struct Raw {
-    sqlite3* db = nullptr;
-    explicit Raw(const std::string& path) {
+    sqlite3 *db = nullptr;
+
+    explicit Raw(const std::string &path) {
         if (sqlite3_open_v2(path.c_str(), &db, SQLITE_OPEN_READWRITE, nullptr) != SQLITE_OK)
             throw std::runtime_error("Raw account database open failed");
     }
+
     ~Raw() {
         sqlite3_close(db);
     }
-    void execute(const char* sql) {
+
+    void execute(const char *sql) {
         if (sqlite3_exec(db, sql, nullptr, nullptr, nullptr) != SQLITE_OK)
             throw std::runtime_error(sqlite3_errmsg(db));
     }
-    std::string scalar(const char* sql) {
-        sqlite3_stmt* s = nullptr;
+
+    std::string scalar(const char *sql) {
+        sqlite3_stmt *s = nullptr;
         if (sqlite3_prepare_v2(db, sql, -1, &s, nullptr) != SQLITE_OK)
             throw std::runtime_error(sqlite3_errmsg(db));
         std::string result;
         if (sqlite3_step(s) == SQLITE_ROW) {
             auto p = sqlite3_column_text(s, 0);
             if (p)
-                result.assign(reinterpret_cast<const char*>(p), sqlite3_column_bytes(s, 0));
+                result.assign(reinterpret_cast<const char *>(p), sqlite3_column_bytes(s, 0));
         }
         sqlite3_finalize(s);
         return result;
     }
 };
+
 int main() {
     try {
         Files files;
@@ -65,8 +76,8 @@ int main() {
             services::AccountStore store(accounts, auth, true);
             principal = store.create_user("Url", "User", "secret", framework::ZeroUuid, 7);
             Raw raw(accounts);
-            raw.execute(
-                "UPDATE UserAccounts SET Email='kept@example',UserTitle='Kept',UserFlags=123,active=0,ServiceURLs=NULL");
+            raw.execute("UPDATE UserAccounts SET "
+                        "Email='kept@example',UserTitle='Kept',UserFlags=123,active=0,ServiceURLs=NULL");
             auto user = store.find(framework::ZeroUuid, "Url", "User");
             check(user && user->service_urls && user->service_urls->empty(),
                   "SQL NULL loads as an empty URL dictionary");
@@ -75,9 +86,8 @@ int main() {
             token = auth_result.token;
             int persisted = 0;
             services::LoginAgentFactory factory(
-                {{"SRV_InventoryServerURI", "https://inventory/a?x=1&y=two words"},
-                 {"SRV_試験", "https://unicode"}},
-                std::nullopt, [&](auto& changed) {
+                {{"SRV_InventoryServerURI", "https://inventory/a?x=1&y=two words"}, {"SRV_試験", "https://unicode"}},
+                std::nullopt, [&](auto &changed) {
                     ++persisted;
                     return store.store_service_urls(changed);
                 });
@@ -101,7 +111,7 @@ int main() {
             bool rejected = false;
             try {
                 store.store_service_urls(*user);
-            } catch (const std::invalid_argument&) {
+            } catch (const std::invalid_argument &) {
                 rejected = true;
             }
             check(rejected, "Null URL objects reject serialization like the source");
@@ -112,25 +122,22 @@ int main() {
                 user->principal_id = framework::Uuid::random().str();
                 return "captured";
             }};
-            check(store.store_service_urls(*user),
-                  "Record identity captured before object serialization callbacks");
+            check(store.store_service_urls(*user), "Record identity captured before object serialization callbacks");
             check(store.find(framework::ZeroUuid, "Url", "User")->principal_id == principal,
                   "Callback identity mutation does not retarget the stored record");
         }
         {
             services::AccountStore store(accounts, auth);
             auto user = store.find(framework::ZeroUuid, "Url", "User");
-            check(user && user->user_level == 7 && user->user_flags == 123,
-                  "Account metadata survives reopening");
+            check(user && user->user_level == 7 && user->user_flags == 123, "Account metadata survives reopening");
             check(std::any_cast<std::string>(user->service_urls->at("InventoryServerURI")) ==
                       "https://inventory/a?x=1&y=two words/",
                   "URL survives SQLite close and reopen");
             check(store.verify(principal, token, 30), "Token survives reopening account/auth databases");
             int writes = 0;
             services::LoginAgentFactory factory(
-                {{"SRV_InventoryServerURI", "https://inventory/a?x=1&y=two words"},
-                 {"SRV_試験", "https://unicode"}},
-                std::nullopt, [&](auto& changed) {
+                {{"SRV_InventoryServerURI", "https://inventory/a?x=1&y=two words"}, {"SRV_試験", "https://unicode"}},
+                std::nullopt, [&](auto &changed) {
                     ++writes;
                     return store.store_service_urls(changed);
                 });
@@ -163,12 +170,10 @@ int main() {
                 check(auth_raw.scalar("SELECT passwordHash FROM auth") ==
                           framework::md5(framework::md5("changed") + ":" + salt),
                       "Password uses source double MD5 and UUID salt");
-                check(
-                    auth_raw.scalar("SELECT accountType||':'||webLoginKey||':'||typeof(Custom) FROM auth") ==
-                        "ServiceAccount:00000000-0000-0000-0000-000000000008:text",
-                    "Password replacement preserves auth metadata and source null-to-empty conversion");
-                check(store.verify(id, credentials.token, 30),
-                      "Password replacement preserves existing tokens");
+                check(auth_raw.scalar("SELECT accountType||':'||webLoginKey||':'||typeof(Custom) FROM auth") ==
+                          "ServiceAccount:00000000-0000-0000-0000-000000000008:text",
+                      "Password replacement preserves auth metadata and source null-to-empty conversion");
+                check(store.verify(id, credentials.token, 30), "Password replacement preserves existing tokens");
                 auto standalone = framework::Uuid::random().str();
                 check(store.set_password(standalone, std::string{}, [&] { return salt_id; }),
                       "Password creation accepts empty password without an account row");
@@ -183,14 +188,13 @@ int main() {
                         ++random_calls;
                         return salt_id;
                     });
-                } catch (const std::invalid_argument&) {
+                } catch (const std::invalid_argument &) {
                     null_rejected = true;
                 }
-                check(
-                    null_rejected && random_calls == 1 &&
-                        auth_raw.scalar("SELECT passwordHash FROM auth WHERE accountType='ServiceAccount'") ==
-                            before_null,
-                    "Null password fails after salt generation without changing authentication");
+                check(null_rejected && random_calls == 1 &&
+                          auth_raw.scalar("SELECT passwordHash FROM auth WHERE accountType='ServiceAccount'") ==
+                              before_null,
+                      "Null password fails after salt generation without changing authentication");
                 auth_raw.execute(
                     "CREATE TRIGGER reject_password BEFORE UPDATE ON auth BEGIN SELECT RAISE(ABORT,'rejected');END");
                 check(!store.set_password(id, std::string("rejected")),
@@ -200,18 +204,15 @@ int main() {
                 account->created = 123;
                 account->user_level = -4;
                 account->user_flags = 2147483647;
-                services::LoginAgentFactory factory(
-                    {{"SRV_InventoryServerURI", "https://inventory"}}, std::nullopt,
-                    [&](auto& changed) { return store.store_account(changed); });
+                services::LoginAgentFactory factory({{"SRV_InventoryServerURI", "https://inventory"}}, std::nullopt,
+                                                    [&](auto &changed) { return store.store_account(changed); });
                 services::LoginAgentDetails details;
                 factory.make_agent(*account, nullptr, details);
-                check(
-                    raw.scalar(
-                        "SELECT active||':'||UserTitle||':'||typeof(Email)||':'||Created||':'||UserLevel||':'||UserFlags FROM UserAccounts") ==
-                        "1::null:123:-4:2147483647",
-                    "Full replacement resets omitted defaults and binds nullable email");
-                check(store.verify(id, credentials.token, 30),
-                      "Full replacement preserves authentication tokens");
+                check(raw.scalar("SELECT "
+                                 "active||':'||UserTitle||':'||typeof(Email)||':'||Created||':'||UserLevel||':'||"
+                                 "UserFlags FROM UserAccounts") == "1::null:123:-4:2147483647",
+                      "Full replacement resets omitted defaults and binds nullable email");
+                check(store.verify(id, credentials.token, 30), "Full replacement preserves authentication tokens");
                 (*account->service_urls)["callback"] = framework::ServiceUrlStringifiable{[&] {
                     account->first_name = "Mutated";
                     account->created = 999;
@@ -219,14 +220,13 @@ int main() {
                 }};
                 check(store.store_account(*account), "Full replacement accepts URL callbacks");
                 auto captured = store.find(framework::ZeroUuid, "Full", "Account");
-                check(captured && captured->created == 123,
-                      "Full replacement snapshots metadata before callbacks");
+                check(captured && captured->created == 123, "Full replacement snapshots metadata before callbacks");
                 account = *captured;
                 account->first_name = std::nullopt;
                 bool rejected = false;
                 try {
                     store.store_account(*account);
-                } catch (const std::invalid_argument&) {
+                } catch (const std::invalid_argument &) {
                     rejected = true;
                 }
                 check(rejected && store.find(framework::ZeroUuid, "Full", "Account").has_value(),
@@ -236,14 +236,14 @@ int main() {
                 rejected = false;
                 try {
                     store.store_account(*account);
-                } catch (const std::runtime_error&) {
+                } catch (const std::runtime_error &) {
                     rejected = true;
                 }
                 check(rejected, "Original schema rejects nonempty unsupported country column");
                 raw.execute("ALTER TABLE UserAccounts ADD COLUMN UserCountry TEXT DEFAULT ''");
                 check(store.store_account(*account), "Extended schema accepts country values");
-                services::UserAccount fresh(framework::Uuid(framework::ZeroUuid), framework::Uuid::random(),
-                                            "New", "Account", "new@example", [] { return 456; });
+                services::UserAccount fresh(framework::Uuid(framework::ZeroUuid), framework::Uuid::random(), "New",
+                                            "Account", "new@example", [] { return 456; });
                 check(store.store_account(fresh), "Full store inserts new accounts");
                 check(!store.authenticate(fresh.principal_id, framework::md5("secret"), 30),
                       "Account insertion does not invent authentication credentials");
@@ -261,7 +261,7 @@ int main() {
         std::cout
             << "PASS: SQLite account URLs, full record replacement, factory persistence, metadata and auth isolation\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

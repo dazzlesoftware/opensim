@@ -36,11 +36,13 @@
 #include <cmath>
 #include <stdexcept>
 #include <limits>
+
 namespace opensim::scene {
 namespace {
 struct Tables {
     std::array<float, 256> quant;
     std::array<int, 256> copy;
+
     Tables() {
         for (int y = 0; y < 16; y++)
             for (int x = 0; x < 16; x++)
@@ -79,19 +81,24 @@ struct Tables {
         }
     }
 };
+
 const Tables tables;
+
 // Match unchecked CLR conversion/negation without C++ float-cast or signed-overflow UB.
 int source_int(float f) {
     if (!std::isfinite(f) || static_cast<double>(f) >= 2147483648. || static_cast<double>(f) < -2147483648.)
         return std::numeric_limits<int>::min();
     return static_cast<int>(f);
 }
+
 int source_negative(int v) {
     return std::bit_cast<int>(0u - std::bit_cast<unsigned>(v));
 }
+
 struct Bits {
     std::vector<std::uint8_t> data;
     std::size_t count = 0;
+
     void byte(std::uint32_t v, int n = 8) {
         for (int i = n - 1; i >= 0; --i) {
             if (count / 8 == data.size())
@@ -100,6 +107,7 @@ struct Bits {
             ++count;
         }
     }
+
     void bits(std::uint32_t v, int n) {
         while (n > 8) {
             byte(v & 255);
@@ -109,13 +117,16 @@ struct Bits {
         if (n)
             byte(v, n);
     }
+
     void real(float f) {
         bits(std::bit_cast<std::uint32_t>(f), 32);
     }
+
     std::size_t byte_pos() const {
         return count ? (count - 1) / 8 : 0;
     }
 };
+
 const float C16_1R = 0.35185093438159561476f * 2.82842712474619f;
 const float C16_1I = 0.03465429229977286565f * 2.82842712474619f;
 const float C16_2R = 0.34675996133053686546f * 2.82842712474619f;
@@ -135,7 +146,7 @@ const float W16_4R = 0.92387953251128675613f;
 const float W16_4I = 0.38268343236508977173f;
 const float W16_8R = 0.70710678118654752440f;
 
-void dct16x16(float* a, int* iout, int& wbits) {
+void dct16x16(float *a, int *iout, int &wbits) {
     float tmp[256];
 
     float x0r, x0i, x1r, x1i, x2r, x2i, x3r, x3i;
@@ -151,8 +162,8 @@ void dct16x16(float* a, int* iout, int& wbits) {
     int wbitsMaxValue = 1 << wbits;
     bool dowbits = wbits < 17;
 
-    const float* fQuantizeTable16 = tables.quant.data();
-    const int* fCopyMatrix16 = tables.copy.data();
+    const float *fQuantizeTable16 = tables.quant.data();
+    const int *fCopyMatrix16 = tables.copy.data();
     {
         for (j = 0, k = 0; j < 256; j += 16, k++) {
             x4r = a[0 + j] - a[15 + j];
@@ -600,8 +611,7 @@ void dct16x16(float* a, int* iout, int& wbits) {
     }
 }
 
-void encode_coefficients(Bits& out, std::span<float, 256> block, float low, int range,
-                         std::uint32_t id, bool large) {
+void encode_coefficients(Bits &out, std::span<float, 256> block, float low, int range, std::uint32_t id, bool large) {
     for (float f : block)
         if (!std::isfinite(f))
             throw std::invalid_argument("nonfinite terrain sample");
@@ -635,7 +645,8 @@ void encode_coefficients(Bits& out, std::span<float, 256> block, float low, int 
         i++;
     }
 }
-void encode(Bits& out, const Terrain& t, TerrainPatchCoordinate p) {
+
+void encode(Bits &out, const Terrain &t, TerrainPatchCoordinate p) {
     auto [low, high] = t.patch_min_max(p.x, p.y);
     const float frange = (high - low) + 1.f;
     if (!std::isfinite(frange) || frange < 1.f || frange >= 2147483648.f || !std::isfinite(low))
@@ -655,6 +666,7 @@ void encode(Bits& out, const Terrain& t, TerrainPatchCoordinate p) {
     encode_coefficients(out, block, low, range, id, large);
 }
 } // namespace
+
 TerrainLayerPacket wind_layer_packet(std::span<const framework::Vector3, 256> wind) {
     constexpr std::uint8_t type = 55;
     Bits out;
@@ -671,14 +683,15 @@ TerrainLayerPacket wind_layer_packet(std::span<const framework::Vector3, 256> wi
         const int range = static_cast<int>(frange);
         const float sub = .5f * range + minimum;
         const float premult = (1.f / range) * 1024.f;
-        for (auto& value : block)
+        for (auto &value : block)
             value = (value - sub) * premult;
         encode_coefficients(out, block, minimum, range, 0, false);
     }
     out.byte(97);
     return {type, std::move(out.data)};
 }
-std::vector<TerrainLayerPacket> terrain_layer_packets(const Terrain& terrain,
+
+std::vector<TerrainLayerPacket> terrain_layer_packets(const Terrain &terrain,
                                                       std::span<const TerrainPatchCoordinate> patches) {
     // Use a consistent height/taint snapshot across a stream, without consuming taints.
     Terrain t(terrain);

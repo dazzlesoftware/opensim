@@ -1,0 +1,46 @@
+  state[0] = default
+  numGblArrays       0
+  numGblChars        0
+  numGblFloats       0
+  numGblIntegers     0
+  numGblLists        0
+  numGblObjects      0
+  numGblRotations    0
+  numGblStrings      0
+  numGblVectors      0
+  numGblSDTClObjs    0
+  numGblSDTIntfObjs  0
+  delegate void $anondel$void()();
+
+Void default state_entry (XMRInstAbstract)
+{
+          xmrsuper    __xmrinst$0
+  0000    ldarg.0     
+  0001    castclass   EventHelpersInstance   (type)
+  0006    stloc       __xmrinst$0   (local)
+  0007    ldloc       __xmrinst$0   (local)
+  0008    ldfld       XMRInstAbstract:m_localsHeapUsed -> Int32   (field)
+          int         __curHeap$1
+  000D    stloc       __curHeap$1   (local)
+          lsllist     tmp$1$2
+  000E    ldc.i4.1    
+  000F    newarr      Object   (type)
+  0014    dup         
+  0015    ldc.i4.0    
+  0016    ldc.i4.m1   
+  0017    newobj      LSLInteger:(Int32)
+  001C    box         LSLInteger   (type)
+  0021    stelem      Object   (type)
+  0026    newobj      list:(Object[])
+  002B    stloc       tmp$1$2   (local)
+  002C    ldloc       __xmrinst$0   (local)
+  002D    ldloc       tmp$1$2   (local)
+  002E    call        XMRInstAbstract:xmrEventCallHandler(list) -> Void
+  0033    leave       __retlbl$0   (label)
+  0038  __retlbl$0:
+  0038    ldloc       __xmrinst$0   (local)
+  0039    ldloc       __curHeap$1   (local)
+  003A    stfld       XMRInstAbstract:m_localsHeapUsed -> Int32   (field)
+  003F    ret         
+}
+TheEnd.

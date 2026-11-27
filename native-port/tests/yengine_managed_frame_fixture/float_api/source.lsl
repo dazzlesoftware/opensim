@@ -1,0 +1,1 @@
+float result;integer count;float input(){count++;return -2.5;}float inner(){return llFabs(input());}default{state_entry(){result=inner();}}

@@ -1,12 +1,11 @@
 #include "opensim/framework/config_native_uri_object.hpp"
 #include "opensim/framework/config_generic_uri_object.hpp"
 #include "opensim/framework/config_http_uri_object.hpp"
+
 namespace opensim::framework {
-std::shared_ptr<ConfigUriObjectBackend>
-native_config_uri_object_backend(ConfigNativeUriObjectOptions options) {
+std::shared_ptr<ConfigUriObjectBackend> native_config_uri_object_backend(ConfigNativeUriObjectOptions options) {
     auto result = std::make_shared<ConfigUriObjectBackend>();
-    auto components =
-        options.components ? std::move(options.components) : native_config_uri_components_backend();
+    auto components = options.components ? std::move(options.components) : native_config_uri_components_backend();
     ConfigHttpUriObjectOptions http;
     http.components = components;
     http.windows = options.windows;
@@ -33,4 +32,4 @@ native_config_uri_object_backend(ConfigNativeUriObjectOptions options) {
     *result = native_http_uri_object_backend(std::move(http));
     return result;
 }
-}
+} // namespace opensim::framework

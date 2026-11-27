@@ -13,10 +13,12 @@
 #include <limits>
 using namespace opensim::framework;
 using Text = NiniWriterText;
+
 Text t(std::u16string v) {
     return std::make_shared<const std::u16string>(std::move(v));
 }
-Text decode(const std::string& s) {
+
+Text decode(const std::string &s) {
     if (s == "null")
         return {};
     std::u16string v;
@@ -25,7 +27,8 @@ Text decode(const std::string& s) {
             v += static_cast<char16_t>(std::stoul(s.substr(i, 4), nullptr, 16));
     return t(v);
 }
-std::string enc(const Text& p) {
+
+std::string enc(const Text &p) {
     if (!p)
         return "null";
     std::ostringstream o;
@@ -35,28 +38,33 @@ std::string enc(const Text& p) {
     auto s = o.str();
     return s.empty() ? "-" : s;
 }
-std::string err(const NiniConfigError& e) {
+
+std::string err(const NiniConfigError &e) {
     return std::string(e.source_type()) + ":" + enc(t(e.message)) + ":" + std::to_string(e.hresult()) + ":" +
            (e.parameter ? enc(t(*e.parameter)) : "null");
 }
-std::string err(const NiniDocumentError& e) {
-    return std::string(e.source_type()) + ":" + enc(t(e.message)) + ":" +
-           std::to_string(std::uint32_t(e.hresult())) + ":" + (e.parameter ? enc(t(*e.parameter)) : "null");
+
+std::string err(const NiniDocumentError &e) {
+    return std::string(e.source_type()) + ":" + enc(t(e.message)) + ":" + std::to_string(std::uint32_t(e.hresult())) +
+           ":" + (e.parameter ? enc(t(*e.parameter)) : "null");
 }
 
 std::u16string lower(std::u16string v) {
-    for (auto& c : v)
+    for (auto &c : v)
         if (c >= u'A' && c <= u'Z')
             c += 32;
     return v;
 }
+
 struct Sign {
     std::u16string negative = u"-";
 };
-std::u16string number_text(const Text& p) {
+
+std::u16string number_text(const Text &p) {
     return p ? *p : u"";
 }
-template <class I> I integer(Text input, const Sign& sign) {
+
+template <class I> I integer(Text input, const Sign &sign) {
     if (!input)
         return 0;
     auto v = *input;
@@ -97,6 +105,7 @@ template <class I> I integer(Text input, const Sign& sign) {
     return std::bit_cast<I>(negative ? std::make_unsigned_t<I>(0) - std::make_unsigned_t<I>(n)
                                      : std::make_unsigned_t<I>(n));
 }
+
 template <class F> F real(Text p) {
     if (!p)
         return 0;
@@ -115,6 +124,7 @@ template <class F> F real(Text p) {
                               u"The input string '" + *p + u"' was not in a correct format.");
     return out;
 }
+
 struct Row {
     std::shared_ptr<Sign> sign = std::make_shared<Sign>();
     std::shared_ptr<NiniConfigBackend> backend = std::make_shared<NiniConfigBackend>();
@@ -123,10 +133,11 @@ struct Row {
     std::map<int, std::shared_ptr<NiniConfig>> configs;
     std::map<int, std::shared_ptr<NiniConfigObject>> objects;
     std::map<int, std::shared_ptr<int>> calls;
-    std::map<NiniConfig*, int> ids;
+    std::map<NiniConfig *, int> ids;
     int next_id = 1000;
     std::map<int, NiniConfigCollection::Enumerator> enumerators;
     std::vector<std::string> events, results;
+
     Row() {
         backend->capture_number_format = [this] {
             auto captured = sign;
@@ -152,7 +163,8 @@ struct Row {
         backend->stream_reader = backend->document.stream_reader;
         arena = std::make_shared<NiniConfigArena>(backend);
     }
-    int id(const std::shared_ptr<NiniConfig>& c) {
+
+    int id(const std::shared_ptr<NiniConfig> &c) {
         if (!c)
             return -1;
         auto it = ids.find(c.get());
@@ -163,28 +175,32 @@ struct Row {
         configs[n] = c;
         return n;
     }
+
     void bind(int n, std::shared_ptr<NiniConfig> c) {
         configs[n] = c;
         if (c)
             ids[c.get()] = n;
     }
+
     void source(int n, bool ini) {
         sources.at(n) = ini ? std::static_pointer_cast<NiniConfigSourceBase>(arena->create_ini_source())
                             : arena->create_source(t(u"BaseSource"));
         auto s = sources[n];
-        s->saved.add(1, [this, n](auto&, auto) { events.push_back("s" + std::to_string(n)); });
-        s->reloaded.add(1, [this, n](auto&, auto) { events.push_back("r" + std::to_string(n)); });
-        s->configs()->config_added.add(1, [this, n](auto&, auto e) {
+        s->saved.add(1, [this, n](auto &, auto) { events.push_back("s" + std::to_string(n)); });
+        s->reloaded.add(1, [this, n](auto &, auto) { events.push_back("r" + std::to_string(n)); });
+        s->configs()->config_added.add(1, [this, n](auto &, auto e) {
             events.push_back("a" + std::to_string(n) + ":" + std::to_string(id(e->config)));
         });
-        s->configs()->config_removed.add(1, [this, n](auto&, auto e) {
+        s->configs()->config_removed.add(1, [this, n](auto &, auto e) {
             events.push_back("d" + std::to_string(n) + ":" + std::to_string(id(e->config)));
         });
     }
+
     std::shared_ptr<NiniIniConfigSource> ini(int n) {
         return std::dynamic_pointer_cast<NiniIniConfigSource>(sources.at(n));
     }
-    void command(const std::string& cmd) {
+
+    void command(const std::string &cmd) {
         std::istringstream in(cmd);
         std::string op, a, b;
         int n, m, k;
@@ -298,9 +314,8 @@ struct Row {
                     if (m)
                         throw NiniConfigError(
                             NiniConfigError::Kind::InvalidCast,
-                            m == 1
-                                ? u"Unable to cast object of type 'ByteAliases[]' to type 'System.Int32[]'."
-                                : u"Unable to cast object of type 'LongAliases[]' to type 'System.Int32[]'.");
+                            m == 1 ? u"Unable to cast object of type 'ByteAliases[]' to type 'System.Int32[]'."
+                                   : u"Unable to cast object of type 'LongAliases[]' to type 'System.Int32[]'.");
                     return std::vector<std::int32_t>{0, 1, 1, -1};
                 };
             }
@@ -310,8 +325,7 @@ struct Row {
             (n < 0 ? sources.at(-n - 1)->alias() : configs.at(n)->alias())->add_alias(decode(a), m != 0);
         } else if (op == "AI") {
             in >> n >> a >> b >> m;
-            (n < 0 ? sources.at(-n - 1)->alias() : configs.at(n)->alias())
-                ->add_alias(decode(a), decode(b), m);
+            (n < 0 ? sources.at(-n - 1)->alias() : configs.at(n)->alias())->add_alias(decode(a), decode(b), m);
         } else if (op == "GET") {
             in >> n >> a >> m >> k;
             auto c = configs.at(n);
@@ -360,8 +374,7 @@ struct Row {
                 results.push_back(std::to_string(std::bit_cast<std::uint32_t>(c->get_float(key, float(k)))));
                 break;
             case 14:
-                results.push_back(
-                    std::to_string(std::bit_cast<std::uint64_t>(c->get_double(key, double(k)))));
+                results.push_back(std::to_string(std::bit_cast<std::uint64_t>(c->get_double(key, double(k)))));
                 break;
             case 15:
                 results.push_back(std::to_string(c->get_int(key, false)));
@@ -372,7 +385,7 @@ struct Row {
             }
         } else if (op == "KS" || op == "KR") {
             in >> n >> m >> k;
-            auto fn = [this, n, m, k, op](NiniConfig& c, auto e) {
+            auto fn = [this, n, m, k, op](NiniConfig &c, auto e) {
                 events.push_back(op + std::to_string(n) + ":" + enc(e->key) + ":" + enc(e->value));
                 if (k == 1)
                     throw NiniConfigError(NiniConfigError::Kind::InvalidOperation, u"event fault");
@@ -410,8 +423,7 @@ struct Row {
             sources.at(n)->configs()->copy_to(nullptr, m);
         } else if (op == "LADD") {
             in >> n >> m;
-            results.push_back(
-                std::to_string(sources.at(n)->configs()->list_add(m < 0 ? nullptr : objects.at(m))));
+            results.push_back(std::to_string(sources.at(n)->configs()->list_add(m < 0 ? nullptr : objects.at(m))));
         } else if (op == "INSERT") {
             in >> n >> m >> k;
             sources.at(n)->configs()->insert(m, k < 0 ? nullptr : objects.at(k));
@@ -424,6 +436,7 @@ struct Row {
         } else
             throw std::runtime_error("Unknown Nini configuration probe operation: " + op);
     }
+
     std::string snapshot() {
         std::ostringstream out;
         for (std::size_t n = 0; n < sources.size(); ++n)
@@ -440,7 +453,7 @@ struct Row {
                 }
                 out << "]";
             }
-        for (auto& [n, c] : configs)
+        for (auto &[n, c] : configs)
             if (c) {
                 out << "C" << n << ":" << enc(c->managed_type()) << ":" << enc(c->name()) << ":";
                 auto src = c->config_source();
@@ -454,19 +467,20 @@ struct Row {
                     out << enc(keys[i]) << "=" << enc(values[i]) << "/";
                     try {
                         out << enc(c->get(keys[i]));
-                    } catch (const NiniConfigError& e) {
+                    } catch (const NiniConfigError &e) {
                         out << err(e);
                     }
                     out << ",";
                 }
                 out << "]";
             }
-        for (auto& [n, c] : calls)
+        for (auto &[n, c] : calls)
             out << "B" << n << ":" << *c;
         return out.str();
     }
 };
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string(argv[1]) == "--probe") {
             std::ios::sync_with_stdio(false);
@@ -480,28 +494,28 @@ int main(int argc, char** argv) {
                 while (std::getline(parts, command, '|')) {
                     try {
                         row.command(command);
-                    } catch (const NiniConfigError& e) {
+                    } catch (const NiniConfigError &e) {
                         error = err(e);
                         break;
-                    } catch (const NiniDocumentError& e) {
+                    } catch (const NiniDocumentError &e) {
                         error = err(e);
                         break;
-                    } catch (const NiniStreamError& e) {
+                    } catch (const NiniStreamError &e) {
                         error = e.source_type + ":" + enc(t(e.message)) + ":" +
                                 std::to_string(std::uint32_t(e.hresult)) + ":" +
                                 (e.parameter ? enc(t(*e.parameter)) : "null");
                         break;
-                    } catch (const NiniReaderError& e) {
+                    } catch (const NiniReaderError &e) {
                         error = std::string(e.source_type()) + ":" + enc(t(e.message_utf16())) + ":" +
                                 std::to_string(std::uint32_t(e.hresult())) + ":null";
                         break;
                     }
                 }
                 std::cout << error << "/";
-                for (auto& s : row.results)
+                for (auto &s : row.results)
                     std::cout << s << ";";
                 std::cout << "/" << row.snapshot() << "/";
-                for (auto& s : row.events)
+                for (auto &s : row.events)
                     std::cout << s << ";";
                 std::cout << '\n';
             }
@@ -526,7 +540,7 @@ int main(int argc, char** argv) {
             throw std::runtime_error("Intrinsic config/source graph leaked arena");
         std::cout << "PASS: Nini config ordered state and source-reference ownership\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

@@ -1,0 +1,1 @@
+vector input;integer result;integer after;default{state_entry(){input.x=xmrString2Float("-0");input.z=xmrString2Float("-0");result=xmrHashCode(input);after=1;}}

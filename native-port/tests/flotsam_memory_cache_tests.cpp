@@ -11,11 +11,13 @@
 #include <chrono>
 using namespace opensim;
 using namespace services;
+
 namespace {
 std::string key(int n) {
     return n == 7 ? framework::Uuid{}.str() : "key" + std::to_string(n);
 }
-std::string show(const std::shared_ptr<framework::AssetBase>& a) {
+
+std::string show(const std::shared_ptr<framework::AssetBase> &a) {
     if (!a)
         return "-";
     std::string result = a->name().value_or("") + ":";
@@ -25,12 +27,14 @@ std::string show(const std::shared_ptr<framework::AssetBase>& a) {
     }
     return result;
 }
+
 struct Probe {
     std::int64_t now = 0;
     int serial = 0;
     std::unique_ptr<FlotsamMemoryCache> cache;
     std::map<int, std::shared_ptr<framework::AssetBase>> held;
-    std::string run(const std::string& line) {
+
+    std::string run(const std::string &line) {
         std::istringstream input(line);
         std::string op, result;
         int n = 0;
@@ -44,8 +48,7 @@ struct Probe {
             serial = 0;
             held.clear();
             cache = std::make_unique<FlotsamMemoryCache>(
-                FlotsamMemoryCache::Options{memory != 0, negative != 0, seconds, negms},
-                [this] { return now; }, false);
+                FlotsamMemoryCache::Options{memory != 0, negative != 0, seconds, negms}, [this] { return now; }, false);
             result = "init";
         } else if (op == "advance") {
             std::int64_t delta;
@@ -57,9 +60,8 @@ struct Probe {
             input >> n;
             std::shared_ptr<framework::AssetBase> a;
             if (op == "cache") {
-                a = std::make_shared<framework::AssetBase>(std::optional<std::string>(key(n)),
-                                                           "asset" + std::to_string(++serial), std::int8_t(0),
-                                                           "creator");
+                a = std::make_shared<framework::AssetBase>(
+                    std::optional<std::string>(key(n)), "asset" + std::to_string(++serial), std::int8_t(0), "creator");
                 a->data = std::make_shared<std::vector<std::uint8_t>>(
                     std::initializer_list<std::uint8_t>{static_cast<std::uint8_t>(serial), 0, 255});
                 held[n] = a;
@@ -99,7 +101,7 @@ struct Probe {
                 result = "negativeclear";
             } else if (op == "report") {
                 auto lines = cache->hit_report();
-                for (auto& line : lines) {
+                for (auto &line : lines) {
                     if (!result.empty())
                         result += ';';
                     result += line;
@@ -115,8 +117,9 @@ struct Probe {
                std::to_string(stats.weak_hits);
     }
 };
-}
-int main(int argc, char** argv) {
+} // namespace
+
+int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string_view(argv[1]) == "--report-probe") {
             FlotsamMemoryCache::Status s;
@@ -134,29 +137,34 @@ int main(int argc, char** argv) {
             return 0;
         }
         if (argc > 1 && std::string_view(argv[1]) == "--config-probe") {
-            auto directory = std::filesystem::temp_directory_path() /
-                             ("opensim-cache-config-" + framework::Uuid::random().str());
+            auto directory =
+                std::filesystem::temp_directory_path() / ("opensim-cache-config-" + framework::Uuid::random().str());
             std::filesystem::create_directory(directory);
+
             struct Cleanup {
                 std::filesystem::path path;
+
                 ~Cleanup() {
                     std::error_code ec;
                     std::filesystem::remove_all(path, ec);
                 }
             } cleanup{directory};
+
             auto file = directory / "config.ini";
             std::string seconds, negative;
             while (std::cin >> seconds >> negative) {
                 try {
                     std::ofstream out(file);
                     auto db = (directory / "assets.db").generic_u8string();
-                    out << "[Modules]\nAssetCaching=FlotsamAssetCache\nAssetServices=LocalAssetServicesConnector\n[AssetCache]\nFileCacheEnabled=false\nMemoryCacheEnabled=true\n";
+                    out << "[Modules]\nAssetCaching=FlotsamAssetCache\nAssetServices=LocalAssetServicesConnector\n["
+                           "AssetCache]\nFileCacheEnabled=false\nMemoryCacheEnabled=true\n";
                     if (seconds != ".")
                         out << "MemoryCacheTimeout=" << seconds << '\n';
                     if (negative != ".")
                         out << "NegativeCacheTimeout=" << negative << '\n';
-                    out << "[AssetService]\nLocalServiceModule=OpenSim.Services.AssetService.dll:AssetService\nStorageProvider=OpenSim.Data.SQLite.dll\nConnectionString=URI=file:"
-                        << std::string(reinterpret_cast<const char*>(db.data()), db.size())
+                    out << "[AssetService]\nLocalServiceModule=OpenSim.Services.AssetService.dll:"
+                           "AssetService\nStorageProvider=OpenSim.Data.SQLite.dll\nConnectionString=URI=file:"
+                        << std::string(reinterpret_cast<const char *>(db.data()), db.size())
                         << ";version=3;Pooling=false\nAssetLoaderEnabled=false\n";
                     out.close();
                     auto events = std::make_shared<SceneCapabilityEvents>(SceneCapabilityEvents::Error{});
@@ -194,12 +202,8 @@ int main(int argc, char** argv) {
                 reads != std::vector<double>{10, 11})
                 throw std::runtime_error("Actual source negative-before-memory constructor clock order");
             auto initialized = std::make_shared<FlotsamMemoryCache::Containers>();
-            initialized->make_key = [&](auto n) {
-                return std::make_shared<FlotsamKeyEntries>(n, clock, false);
-            };
-            initialized->make_memory = [&](auto n) {
-                return std::make_shared<FlotsamAssetEntries>(n, clock, false);
-            };
+            initialized->make_key = [&](auto n) { return std::make_shared<FlotsamKeyEntries>(n, clock, false); };
+            initialized->make_memory = [&](auto n) { return std::make_shared<FlotsamAssetEntries>(n, clock, false); };
             tick = 100;
             initialized->negative = initialized->make_key(2000);
             tick = 900;
@@ -211,8 +215,8 @@ int main(int argc, char** argv) {
             if (reads.size() != calls || adopted.containers()->negative.load() != negative ||
                 adopted.containers()->memory.load() != memory)
                 throw std::runtime_error("Wrapper must adopt exact initialized objects without clock reads");
-            auto asset = std::make_shared<framework::AssetBase>(framework::Uuid::random(), "adopted",
-                                                                std::int8_t(0), "");
+            auto asset =
+                std::make_shared<framework::AssetBase>(framework::Uuid::random(), "adopted", std::int8_t(0), "");
             adopted.cache(asset);
             adopted.cache_negative("missing");
             tick = 2000;
@@ -241,7 +245,7 @@ int main(int argc, char** argv) {
             bool disposed = false;
             try {
                 negative->contains("missing");
-            } catch (const FlotsamEntriesDisposed&) {
+            } catch (const FlotsamEntriesDisposed &) {
                 disposed = true;
             }
             if (!disposed)
@@ -262,8 +266,8 @@ int main(int argc, char** argv) {
         p.run("advance 2000");
         if (p.run("get 1").find("1:-") != 0)
             throw std::runtime_error("Periodic expiry");
-        auto asset = std::make_shared<framework::AssetBase>(framework::Uuid::random(), "background",
-                                                            std::int8_t(0), "creator");
+        auto asset =
+            std::make_shared<framework::AssetBase>(framework::Uuid::random(), "background", std::int8_t(0), "creator");
         auto id = asset->id();
         std::weak_ptr<framework::AssetBase> weak = asset;
         FlotsamMemoryCache real({true, true, .001, 120});
@@ -277,8 +281,7 @@ int main(int argc, char** argv) {
         FlotsamMemoryCache::Status snapshot;
         snapshot.hits.requests = 32;
         snapshot.hits.weak_hits = 1;
-        if (FlotsamMemoryCache::hit_report(snapshot, false)[1] !=
-            "unCollected Hit Rate: 3.13% (0 entries 0 alive)")
+        if (FlotsamMemoryCache::hit_report(snapshot, false)[1] != "unCollected Hit Rate: 3.13% (0 entries 0 alive)")
             throw std::runtime_error("Source midpoint rate formatting");
         auto before = real.status();
         real.clear_memory();
@@ -289,7 +292,7 @@ int main(int argc, char** argv) {
             throw std::runtime_error("Negative-only clear count");
         std::cout << "PASS: memory/negative cache semantics and real worker expiry\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

@@ -1,0 +1,1 @@
+integer result;default{state_entry(){result=xmrStringToBool(0);}}

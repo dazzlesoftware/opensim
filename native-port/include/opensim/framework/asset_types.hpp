@@ -5,6 +5,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+
 namespace opensim::framework {
 enum class AssetType : std::int8_t {
     OSMaterial = -2,
@@ -39,11 +40,11 @@ enum class AssetType : std::int8_t {
 AssetType asset_type_from_code(std::int8_t code);
 std::string_view asset_type_enum_name(std::int8_t code);
 std::optional<AssetType> asset_type_from_enum_name(std::string_view name);
-std::int8_t asset_name_type(const std::optional<std::string>& name);
-std::int8_t inventory_name_type(const std::optional<std::string>& name);
+std::int8_t asset_name_type(const std::optional<std::string> &name);
+std::int8_t inventory_name_type(const std::optional<std::string> &name);
 std::string asset_content_type(int type);
 std::string inventory_content_type(int type);
 std::string asset_extension(int type);
-std::int8_t content_asset_type(const std::optional<std::string>& content);
-std::int8_t content_inventory_type(const std::optional<std::string>& content);
-}
+std::int8_t content_asset_type(const std::optional<std::string> &content);
+std::int8_t content_inventory_type(const std::optional<std::string> &content);
+} // namespace opensim::framework

@@ -1,0 +1,1 @@
+YOption chars;char high=(char)55357;char low=(char)56832;char zero=(char)0;string format;string result;integer after;default{state_entry(){format=(string)high+(string)low+"0";result=xmrInteger2String(12,format);after=1;}}

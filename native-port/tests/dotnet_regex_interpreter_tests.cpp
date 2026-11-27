@@ -6,7 +6,8 @@
 #include <limits>
 #include <sstream>
 using namespace opensim::framework;
-DotnetRegexNodeText dec(const std::string& s) {
+
+DotnetRegexNodeText dec(const std::string &s) {
     if (s == "-")
         return {};
     std::u16string value;
@@ -15,6 +16,7 @@ DotnetRegexNodeText dec(const std::string& s) {
             value.push_back(static_cast<char16_t>(std::stoul(s.substr(i, 4), nullptr, 16)));
     return value.empty() ? runtime_empty_text() : std::make_shared<const std::u16string>(value);
 }
+
 std::string hex(std::u16string_view s) {
     if (s.empty())
         return ".";
@@ -23,15 +25,17 @@ std::string hex(std::u16string_view s) {
         out << std::hex << std::setfill('0') << std::setw(4) << unsigned(c);
     return out.str();
 }
-std::string hex(const DotnetRegexNodeText& s) {
+
+std::string hex(const DotnetRegexNodeText &s) {
     return s ? hex(std::u16string_view(*s)) : "-";
 }
-std::string format(const DotnetRegexScanResult& result) {
+
+std::string format(const DotnetRegexScanResult &result) {
     if (!result.success)
         return "0:-1:-1:-1";
     std::string value = "1:" + std::to_string(result.index) + ":" + std::to_string(result.length) + ":" +
                         std::to_string(result.text_position);
-    for (auto& group : result.groups) {
+    for (auto &group : result.groups) {
         value += "/" + std::to_string(group.number) + ":" + hex(std::u16string_view(group.name)) + ":" +
                  std::to_string(group.success) + ":" + std::to_string(group.index) + ":" +
                  std::to_string(group.length) + ":";
@@ -41,6 +45,7 @@ std::string format(const DotnetRegexScanResult& result) {
     }
     return value;
 }
+
 int main() {
     for (std::string row; std::getline(std::cin, row);) {
         try {
@@ -55,8 +60,8 @@ int main() {
                 std::cout << "T\n";
                 continue;
             }
-            in >> options >> name >> expression >> body >> begin >> length >> start >> previous >> mode >>
-                ticks >> force;
+            in >> options >> name >> expression >> body >> begin >> length >> start >> previous >> mode >> ticks >>
+                force;
             auto pattern = dec(expression), input = dec(body),
                  culture_name = name == "_" ? DotnetRegexNodeText{} : dec(name);
             int reads = 0;
@@ -75,9 +80,7 @@ int main() {
             int calls = 0;
             DotnetRegexTickCount clock;
             if (force == 1)
-                clock = [&]() {
-                    return calls++ == 0 ? std::int64_t{0} : std::numeric_limits<std::int64_t>::max();
-                };
+                clock = [&]() { return calls++ == 0 ? std::int64_t{0} : std::numeric_limits<std::int64_t>::max(); };
             if (force == 2)
                 clock = [&]() { return calls++ == 0 ? std::int64_t{1000000000000} : std::int64_t{0}; };
             int iterations = 0;
@@ -96,16 +99,15 @@ int main() {
                     throw std::runtime_error("Match enumeration did not terminate");
             } while (true);
             std::cout << output << "#" << reads << '\n';
-        } catch (const DotnetRegexMatchTimeout& e) {
+        } catch (const DotnetRegexMatchTimeout &e) {
             std::cout << "T:" << hex(e.input) << ":" << hex(e.pattern) << ":" << e.timeout_ticks << '\n';
-        } catch (const DotnetRegexParseException& e) {
-            std::cout << "P:" << e.error << ":" << e.offset << ":" << hex(std::u16string_view(e.message))
-                      << '\n';
-        } catch (const DotnetRegexClassError& e) {
+        } catch (const DotnetRegexParseException &e) {
+            std::cout << "P:" << e.error << ":" << e.offset << ":" << hex(std::u16string_view(e.message)) << '\n';
+        } catch (const DotnetRegexClassError &e) {
             std::ostringstream h;
             h << std::hex << e.hresult;
-            std::cout << "E:" << e.source_type << ":" << h.str() << ":"
-                      << hex(std::u16string_view(utf16(e.what()))) << '\n';
+            std::cout << "E:" << e.source_type << ":" << h.str() << ":" << hex(std::u16string_view(utf16(e.what())))
+                      << '\n';
         }
     }
     return 0;

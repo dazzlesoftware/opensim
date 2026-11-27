@@ -1,0 +1,2331 @@
+{
+  "scope": "Original XMRInstAbstract public declared lowercase script methods, including active yException aliases; inherited ll/os APIs are outside this inventory.",
+  "methodology": "Actual original assembly reflection AND actual TokenDeclInline.inlineFunctions registry enumeration. Native named binding detection uses parser is(\"name\") dispatch and is only binding evidence, not behavioral parity. No source functions invented from expected naming patterns.",
+  "counts": {
+    "original_registered_signatures": 52,
+    "original_distinct_names": 49,
+    "native_named_bound_signatures": 21,
+    "native_named_bound_distinct_names": 21,
+    "native_unbound_signatures": 31,
+    "native_unbound_distinct_names": 28
+  },
+  "registration_source": {
+    "path": "OpenSim/Region/ScriptEngine/YEngine/MMRScriptInlines.cs",
+    "reflection_lines": [
+      162,
+      166,
+      167
+    ],
+    "lowercase_filter_lines": [
+      174,
+      180,
+      186
+    ],
+    "ignored_registration_failures_lines": [
+      217,
+      219
+    ]
+  },
+  "runtime_version": "8.0.34",
+  "sha256": {
+    "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+    "OpenSim/Region/ScriptEngine/YEngine/MMRScriptInlines.cs": "7da28458ae5a6c06acd48b70ab445f18115fa71edaad2e1b59e19b6160dca95b",
+    "OpenSim/Region/ScriptEngine/YEngine/MMRScriptVarDict.cs": "64275847c377135805744941a65e82d13b37e629d39454511a0b02a358c519aa",
+    "native-port/src/lsl_runtime.cpp": "5d32ddc6350cdcb4b4a182b0293acd4b412837596b4aae9850357cc0bbf0600a",
+    "native-port/build-https/xmr-api-inventory-reference/reflection.json": "5d1c8b3129063089593a0380634cbdef6feda93a0681cb4cb8beed22ecbb04f7",
+    "native-port/build-https/xmr-api-inventory-reference/Inventory.cs": "77ff75f38b7795433ddc59786341d3a87adcb318d6fb98ade7d35ead4c23cbc5",
+    "G:/GitHub/SecondLife/opensim/native-port/build-https/xmr-api-inventory-reference/bin/Debug/net8.0/OpenSim.Region.ScriptEngine.YEngine.dll": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056"
+  },
+  "methods": [
+    {
+      "name": "xmrArray2List",
+      "clr_signature": "list xmrArray2List(System.Object, Int32, Int32)",
+      "return_type": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+list",
+      "is_static": true,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "srcar",
+          "type": "System.Object"
+        },
+        {
+          "name": "start",
+          "type": "System.Int32"
+        },
+        {
+          "name": "count",
+          "type": "System.Int32"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrArray2List",
+          "script_signature": "xmrArray2List(object,integer,integer)",
+          "script_return_type": "list",
+          "clr_signature": "list xmrArray2List(System.Object, Int32, Int32)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          1095
+        ]
+      },
+      "native_named_binding_present": false,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": []
+      },
+      "dependencies": [
+        "typed fixed-array storage and bounds",
+        "source object/array values",
+        "array checkpoint/migration graphs"
+      ],
+      "reference_artifacts": []
+    },
+    {
+      "name": "xmrArrayCopy",
+      "clr_signature": "Void xmrArrayCopy(System.Object, Int32, System.Object, Int32, Int32)",
+      "return_type": "System.Void",
+      "is_static": true,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "srcobj",
+          "type": "System.Object"
+        },
+        {
+          "name": "srcstart",
+          "type": "System.Int32"
+        },
+        {
+          "name": "dstobj",
+          "type": "System.Object"
+        },
+        {
+          "name": "dststart",
+          "type": "System.Int32"
+        },
+        {
+          "name": "count",
+          "type": "System.Int32"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrArrayCopy",
+          "script_signature": "xmrArrayCopy(object,integer,object,integer,integer)",
+          "script_return_type": "void",
+          "clr_signature": "Void xmrArrayCopy(System.Object, Int32, System.Object, Int32, Int32)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          1044
+        ]
+      },
+      "native_named_binding_present": false,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": []
+      },
+      "dependencies": [
+        "typed fixed-array storage and bounds",
+        "source object/array values",
+        "array checkpoint/migration graphs"
+      ],
+      "reference_artifacts": []
+    },
+    {
+      "name": "xmrChars2String",
+      "clr_signature": "System.String xmrChars2String(System.Object, Int32, Int32)",
+      "return_type": "System.String",
+      "is_static": true,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "srcar",
+          "type": "System.Object"
+        },
+        {
+          "name": "start",
+          "type": "System.Int32"
+        },
+        {
+          "name": "count",
+          "type": "System.Int32"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrChars2String",
+          "script_signature": "xmrChars2String(object,integer,integer)",
+          "script_return_type": "string",
+          "clr_signature": "System.String xmrChars2String(System.Object, Int32, Int32)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          1187
+        ]
+      },
+      "native_named_binding_present": false,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": []
+      },
+      "dependencies": [
+        "typed fixed-array storage and bounds",
+        "source object/array values",
+        "array checkpoint/migration graphs",
+        "UTF-16 char source type and value identity"
+      ],
+      "reference_artifacts": []
+    },
+    {
+      "name": "xmrEventCallHandler",
+      "clr_signature": "Void xmrEventCallHandler(list)",
+      "return_type": "System.Void",
+      "is_static": false,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "ev",
+          "type": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+list"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrEventCallHandler",
+          "script_signature": "xmrEventCallHandler(list)",
+          "script_return_type": "void",
+          "clr_signature": "Void xmrEventCallHandler(list)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          820
+        ]
+      },
+      "native_named_binding_present": true,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": [
+          7955,
+          7959
+        ]
+      },
+      "dependencies": [
+        "event queues/detectors and script execution context",
+        "saved call frames, original capture/restore, script stack/heap accounting"
+      ],
+      "reference_artifacts": [
+        "tests/yengine_event_helpers_fixture",
+        "tests/yengine_event_call_handler_fixture",
+        "tests/yengine_event_call_handler_scheduler_fixture"
+      ]
+    },
+    {
+      "name": "xmrEventDequeue",
+      "clr_signature": "list xmrEventDequeue(Double, Int32, Int32, Int32, Int32)",
+      "return_type": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+list",
+      "is_static": false,
+      "is_abstract": true,
+      "parameters": [
+        {
+          "name": "timeout",
+          "type": "System.Double"
+        },
+        {
+          "name": "returnMask1",
+          "type": "System.Int32"
+        },
+        {
+          "name": "returnMask2",
+          "type": "System.Int32"
+        },
+        {
+          "name": "backgroundMask1",
+          "type": "System.Int32"
+        },
+        {
+          "name": "backgroundMask2",
+          "type": "System.Int32"
+        }
+      ],
+      "attributes": [
+        "OpenSim.Region.ScriptEngine.Yengine.xmrMethodCallsCheckRunAttribute",
+        "OpenSim.Region.ScriptEngine.Yengine.xmrMethodIsNoisyAttribute"
+      ],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrEventDequeue",
+          "script_signature": "xmrEventDequeue(float,integer,integer,integer,integer)",
+          "script_return_type": "list",
+          "clr_signature": "list xmrEventDequeue(Double, Int32, Int32, Int32, Int32)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          479
+        ]
+      },
+      "native_named_binding_present": true,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": [
+          7974
+        ]
+      },
+      "dependencies": [
+        "event queues/detectors and script execution context",
+        "saved call frames, original capture/restore, script stack/heap accounting"
+      ],
+      "reference_artifacts": [
+        "tests/yengine_event_helpers_fixture",
+        "tests/yengine_event_call_handler_fixture",
+        "tests/yengine_event_call_handler_scheduler_fixture"
+      ]
+    },
+    {
+      "name": "xmrEventEnqueue",
+      "clr_signature": "Void xmrEventEnqueue(list)",
+      "return_type": "System.Void",
+      "is_static": false,
+      "is_abstract": true,
+      "parameters": [
+        {
+          "name": "ev",
+          "type": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+list"
+        }
+      ],
+      "attributes": [
+        "OpenSim.Region.ScriptEngine.Yengine.xmrMethodIsNoisyAttribute"
+      ],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrEventEnqueue",
+          "script_signature": "xmrEventEnqueue(list)",
+          "script_return_type": "void",
+          "clr_signature": "Void xmrEventEnqueue(list)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          483
+        ]
+      },
+      "native_named_binding_present": true,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": [
+          7955,
+          7958
+        ]
+      },
+      "dependencies": [
+        "event queues/detectors and script execution context"
+      ],
+      "reference_artifacts": [
+        "tests/yengine_event_helpers_fixture",
+        "tests/yengine_event_call_handler_fixture",
+        "tests/yengine_event_call_handler_scheduler_fixture"
+      ]
+    },
+    {
+      "name": "xmrEventLoadDets",
+      "clr_signature": "Void xmrEventLoadDets(list)",
+      "return_type": "System.Void",
+      "is_static": false,
+      "is_abstract": true,
+      "parameters": [
+        {
+          "name": "dpList",
+          "type": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+list"
+        }
+      ],
+      "attributes": [
+        "OpenSim.Region.ScriptEngine.Yengine.xmrMethodIsNoisyAttribute"
+      ],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrEventLoadDets",
+          "script_signature": "xmrEventLoadDets(list)",
+          "script_return_type": "void",
+          "clr_signature": "Void xmrEventLoadDets(list)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          489
+        ]
+      },
+      "native_named_binding_present": true,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": [
+          7955
+        ]
+      },
+      "dependencies": [
+        "event queues/detectors and script execution context"
+      ],
+      "reference_artifacts": [
+        "tests/yengine_event_helpers_fixture",
+        "tests/yengine_event_call_handler_fixture",
+        "tests/yengine_event_call_handler_scheduler_fixture"
+      ]
+    },
+    {
+      "name": "xmrEventSaveDets",
+      "clr_signature": "list xmrEventSaveDets()",
+      "return_type": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+list",
+      "is_static": false,
+      "is_abstract": true,
+      "parameters": [],
+      "attributes": [
+        "OpenSim.Region.ScriptEngine.Yengine.xmrMethodIsNoisyAttribute"
+      ],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrEventSaveDets",
+          "script_signature": "xmrEventSaveDets()",
+          "script_return_type": "list",
+          "clr_signature": "list xmrEventSaveDets()"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          486
+        ]
+      },
+      "native_named_binding_present": true,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": [
+          7955,
+          7956
+        ]
+      },
+      "dependencies": [
+        "event queues/detectors and script execution context"
+      ],
+      "reference_artifacts": [
+        "tests/yengine_event_helpers_fixture",
+        "tests/yengine_event_call_handler_fixture",
+        "tests/yengine_event_call_handler_scheduler_fixture"
+      ]
+    },
+    {
+      "name": "xmrExceptionMessage",
+      "clr_signature": "System.String xmrExceptionMessage(System.Exception)",
+      "return_type": "System.String",
+      "is_static": true,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "ex",
+          "type": "System.Exception"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrExceptionMessage",
+          "script_signature": "xmrExceptionMessage(exception)",
+          "script_return_type": "string",
+          "clr_signature": "System.String xmrExceptionMessage(System.Exception)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          1228
+        ]
+      },
+      "native_named_binding_present": false,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": []
+      },
+      "dependencies": [
+        "source exception/catch/throw values",
+        "original exception identity and stack trace semantics"
+      ],
+      "reference_artifacts": []
+    },
+    {
+      "name": "xmrExceptionStackTrace",
+      "clr_signature": "System.String xmrExceptionStackTrace(System.Exception)",
+      "return_type": "System.String",
+      "is_static": false,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "ex",
+          "type": "System.Exception"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrExceptionStackTrace",
+          "script_signature": "xmrExceptionStackTrace(exception)",
+          "script_return_type": "string",
+          "clr_signature": "System.String xmrExceptionStackTrace(System.Exception)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          1239
+        ]
+      },
+      "native_named_binding_present": false,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": []
+      },
+      "dependencies": [
+        "source exception/catch/throw values",
+        "original exception identity and stack trace semantics"
+      ],
+      "reference_artifacts": []
+    },
+    {
+      "name": "xmrExceptionThrownValue",
+      "clr_signature": "System.Object xmrExceptionThrownValue(System.Exception)",
+      "return_type": "System.Object",
+      "is_static": true,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "ex",
+          "type": "System.Exception"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrExceptionThrownValue",
+          "script_signature": "xmrExceptionThrownValue(exception)",
+          "script_return_type": "object",
+          "clr_signature": "System.Object xmrExceptionThrownValue(System.Exception)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          1250
+        ]
+      },
+      "native_named_binding_present": false,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": []
+      },
+      "dependencies": [
+        "source exception/catch/throw values",
+        "original exception identity and stack trace semantics"
+      ],
+      "reference_artifacts": []
+    },
+    {
+      "name": "xmrExceptionTypeName",
+      "clr_signature": "System.String xmrExceptionTypeName(System.Exception)",
+      "return_type": "System.String",
+      "is_static": true,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "ex",
+          "type": "System.Exception"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrExceptionTypeName",
+          "script_signature": "xmrExceptionTypeName(exception)",
+          "script_return_type": "string",
+          "clr_signature": "System.String xmrExceptionTypeName(System.Exception)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          1261
+        ]
+      },
+      "native_named_binding_present": false,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": []
+      },
+      "dependencies": [
+        "source exception/catch/throw values",
+        "original exception identity and stack trace semantics"
+      ],
+      "reference_artifacts": []
+    },
+    {
+      "name": "xmrFixedArrayAllocC",
+      "clr_signature": "System.Object xmrFixedArrayAllocC(Int32)",
+      "return_type": "System.Object",
+      "is_static": true,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "len",
+          "type": "System.Int32"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrFixedArrayAllocC",
+          "script_signature": "xmrFixedArrayAllocC(integer)",
+          "script_return_type": "object",
+          "clr_signature": "System.Object xmrFixedArrayAllocC(Int32)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          985
+        ]
+      },
+      "native_named_binding_present": false,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": []
+      },
+      "dependencies": [
+        "typed fixed-array storage and bounds",
+        "source object/array values",
+        "array checkpoint/migration graphs",
+        "UTF-16 char source type and value identity"
+      ],
+      "reference_artifacts": []
+    },
+    {
+      "name": "xmrFixedArrayAllocF",
+      "clr_signature": "System.Object xmrFixedArrayAllocF(Int32)",
+      "return_type": "System.Object",
+      "is_static": true,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "len",
+          "type": "System.Int32"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrFixedArrayAllocF",
+          "script_signature": "xmrFixedArrayAllocF(integer)",
+          "script_return_type": "object",
+          "clr_signature": "System.Object xmrFixedArrayAllocF(Int32)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          989
+        ]
+      },
+      "native_named_binding_present": false,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": []
+      },
+      "dependencies": [
+        "typed fixed-array storage and bounds",
+        "source object/array values",
+        "array checkpoint/migration graphs"
+      ],
+      "reference_artifacts": []
+    },
+    {
+      "name": "xmrFixedArrayAllocI",
+      "clr_signature": "System.Object xmrFixedArrayAllocI(Int32)",
+      "return_type": "System.Object",
+      "is_static": true,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "len",
+          "type": "System.Int32"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrFixedArrayAllocI",
+          "script_signature": "xmrFixedArrayAllocI(integer)",
+          "script_return_type": "object",
+          "clr_signature": "System.Object xmrFixedArrayAllocI(Int32)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          993
+        ]
+      },
+      "native_named_binding_present": false,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": []
+      },
+      "dependencies": [
+        "typed fixed-array storage and bounds",
+        "source object/array values",
+        "array checkpoint/migration graphs"
+      ],
+      "reference_artifacts": []
+    },
+    {
+      "name": "xmrFixedArrayAllocO",
+      "clr_signature": "System.Object xmrFixedArrayAllocO(Int32)",
+      "return_type": "System.Object",
+      "is_static": true,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "len",
+          "type": "System.Int32"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrFixedArrayAllocO",
+          "script_signature": "xmrFixedArrayAllocO(integer)",
+          "script_return_type": "object",
+          "clr_signature": "System.Object xmrFixedArrayAllocO(Int32)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          997
+        ]
+      },
+      "native_named_binding_present": false,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": []
+      },
+      "dependencies": [
+        "typed fixed-array storage and bounds",
+        "source object/array values",
+        "array checkpoint/migration graphs",
+        "object reference values and typed unboxing"
+      ],
+      "reference_artifacts": []
+    },
+    {
+      "name": "xmrFixedArrayGetC",
+      "clr_signature": "Char xmrFixedArrayGetC(System.Object, Int32)",
+      "return_type": "System.Char",
+      "is_static": true,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "arr",
+          "type": "System.Object"
+        },
+        {
+          "name": "idx",
+          "type": "System.Int32"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrFixedArrayGetC",
+          "script_signature": "xmrFixedArrayGetC(object,integer)",
+          "script_return_type": "char",
+          "clr_signature": "Char xmrFixedArrayGetC(System.Object, Int32)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          1002
+        ]
+      },
+      "native_named_binding_present": false,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": []
+      },
+      "dependencies": [
+        "typed fixed-array storage and bounds",
+        "source object/array values",
+        "array checkpoint/migration graphs",
+        "UTF-16 char source type and value identity"
+      ],
+      "reference_artifacts": []
+    },
+    {
+      "name": "xmrFixedArrayGetF",
+      "clr_signature": "Double xmrFixedArrayGetF(System.Object, Int32)",
+      "return_type": "System.Double",
+      "is_static": true,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "arr",
+          "type": "System.Object"
+        },
+        {
+          "name": "idx",
+          "type": "System.Int32"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrFixedArrayGetF",
+          "script_signature": "xmrFixedArrayGetF(object,integer)",
+          "script_return_type": "float",
+          "clr_signature": "Double xmrFixedArrayGetF(System.Object, Int32)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          1006
+        ]
+      },
+      "native_named_binding_present": false,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": []
+      },
+      "dependencies": [
+        "typed fixed-array storage and bounds",
+        "source object/array values",
+        "array checkpoint/migration graphs"
+      ],
+      "reference_artifacts": []
+    },
+    {
+      "name": "xmrFixedArrayGetI",
+      "clr_signature": "Int32 xmrFixedArrayGetI(System.Object, Int32)",
+      "return_type": "System.Int32",
+      "is_static": true,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "arr",
+          "type": "System.Object"
+        },
+        {
+          "name": "idx",
+          "type": "System.Int32"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrFixedArrayGetI",
+          "script_signature": "xmrFixedArrayGetI(object,integer)",
+          "script_return_type": "integer",
+          "clr_signature": "Int32 xmrFixedArrayGetI(System.Object, Int32)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          1010
+        ]
+      },
+      "native_named_binding_present": false,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": []
+      },
+      "dependencies": [
+        "typed fixed-array storage and bounds",
+        "source object/array values",
+        "array checkpoint/migration graphs"
+      ],
+      "reference_artifacts": []
+    },
+    {
+      "name": "xmrFixedArrayGetO",
+      "clr_signature": "System.Object xmrFixedArrayGetO(System.Object, Int32)",
+      "return_type": "System.Object",
+      "is_static": true,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "arr",
+          "type": "System.Object"
+        },
+        {
+          "name": "idx",
+          "type": "System.Int32"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrFixedArrayGetO",
+          "script_signature": "xmrFixedArrayGetO(object,integer)",
+          "script_return_type": "object",
+          "clr_signature": "System.Object xmrFixedArrayGetO(System.Object, Int32)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          1014
+        ]
+      },
+      "native_named_binding_present": false,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": []
+      },
+      "dependencies": [
+        "typed fixed-array storage and bounds",
+        "source object/array values",
+        "array checkpoint/migration graphs",
+        "object reference values and typed unboxing"
+      ],
+      "reference_artifacts": []
+    },
+    {
+      "name": "xmrFixedArraySetC",
+      "clr_signature": "Void xmrFixedArraySetC(System.Object, Int32, Char)",
+      "return_type": "System.Void",
+      "is_static": true,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "arr",
+          "type": "System.Object"
+        },
+        {
+          "name": "idx",
+          "type": "System.Int32"
+        },
+        {
+          "name": "val",
+          "type": "System.Char"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrFixedArraySetC",
+          "script_signature": "xmrFixedArraySetC(object,integer,char)",
+          "script_return_type": "void",
+          "clr_signature": "Void xmrFixedArraySetC(System.Object, Int32, Char)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          1019
+        ]
+      },
+      "native_named_binding_present": false,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": []
+      },
+      "dependencies": [
+        "typed fixed-array storage and bounds",
+        "source object/array values",
+        "array checkpoint/migration graphs",
+        "UTF-16 char source type and value identity"
+      ],
+      "reference_artifacts": []
+    },
+    {
+      "name": "xmrFixedArraySetF",
+      "clr_signature": "Void xmrFixedArraySetF(System.Object, Int32, Double)",
+      "return_type": "System.Void",
+      "is_static": true,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "arr",
+          "type": "System.Object"
+        },
+        {
+          "name": "idx",
+          "type": "System.Int32"
+        },
+        {
+          "name": "val",
+          "type": "System.Double"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrFixedArraySetF",
+          "script_signature": "xmrFixedArraySetF(object,integer,float)",
+          "script_return_type": "void",
+          "clr_signature": "Void xmrFixedArraySetF(System.Object, Int32, Double)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          1023
+        ]
+      },
+      "native_named_binding_present": false,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": []
+      },
+      "dependencies": [
+        "typed fixed-array storage and bounds",
+        "source object/array values",
+        "array checkpoint/migration graphs"
+      ],
+      "reference_artifacts": []
+    },
+    {
+      "name": "xmrFixedArraySetI",
+      "clr_signature": "Void xmrFixedArraySetI(System.Object, Int32, Int32)",
+      "return_type": "System.Void",
+      "is_static": true,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "arr",
+          "type": "System.Object"
+        },
+        {
+          "name": "idx",
+          "type": "System.Int32"
+        },
+        {
+          "name": "val",
+          "type": "System.Int32"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrFixedArraySetI",
+          "script_signature": "xmrFixedArraySetI(object,integer,integer)",
+          "script_return_type": "void",
+          "clr_signature": "Void xmrFixedArraySetI(System.Object, Int32, Int32)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          1027
+        ]
+      },
+      "native_named_binding_present": false,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": []
+      },
+      "dependencies": [
+        "typed fixed-array storage and bounds",
+        "source object/array values",
+        "array checkpoint/migration graphs"
+      ],
+      "reference_artifacts": []
+    },
+    {
+      "name": "xmrFixedArraySetO",
+      "clr_signature": "Void xmrFixedArraySetO(System.Object, Int32, System.Object)",
+      "return_type": "System.Void",
+      "is_static": true,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "arr",
+          "type": "System.Object"
+        },
+        {
+          "name": "idx",
+          "type": "System.Int32"
+        },
+        {
+          "name": "val",
+          "type": "System.Object"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrFixedArraySetO",
+          "script_signature": "xmrFixedArraySetO(object,integer,object)",
+          "script_return_type": "void",
+          "clr_signature": "Void xmrFixedArraySetO(System.Object, Int32, System.Object)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          1031
+        ]
+      },
+      "native_named_binding_present": false,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": []
+      },
+      "dependencies": [
+        "typed fixed-array storage and bounds",
+        "source object/array values",
+        "array checkpoint/migration graphs",
+        "object reference values and typed unboxing"
+      ],
+      "reference_artifacts": []
+    },
+    {
+      "name": "xmrFloat2String",
+      "clr_signature": "System.String xmrFloat2String(Double, System.String)",
+      "return_type": "System.String",
+      "is_static": false,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "val",
+          "type": "System.Double"
+        },
+        {
+          "name": "fmt",
+          "type": "System.String"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrFloat2String",
+          "script_signature": "xmrFloat2String(float,string)",
+          "script_return_type": "string",
+          "clr_signature": "System.String xmrFloat2String(Double, System.String)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          899
+        ]
+      },
+      "native_named_binding_present": true,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": [
+          7870,
+          7872
+        ]
+      },
+      "dependencies": [],
+      "reference_artifacts": [
+        "tests/yengine_numeric_format_fixture",
+        "tests/yengine_numeric_format_extended_fixture",
+        "tests/yengine_numeric_format_zero_section_fixture"
+      ]
+    },
+    {
+      "name": "xmrFontsAvailable",
+      "clr_signature": "list xmrFontsAvailable()",
+      "return_type": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+list",
+      "is_static": false,
+      "is_abstract": false,
+      "parameters": [],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrFontsAvailable",
+          "script_signature": "xmrFontsAvailable()",
+          "script_return_type": "list",
+          "clr_signature": "list xmrFontsAvailable()"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          1396
+        ]
+      },
+      "native_named_binding_present": false,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": []
+      },
+      "dependencies": [
+        "host installed font enumeration and cross-platform font backend"
+      ],
+      "reference_artifacts": []
+    },
+    {
+      "name": "xmrHashCode",
+      "clr_signature": "Int32 xmrHashCode(Double)",
+      "return_type": "System.Int32",
+      "is_static": true,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "f",
+          "type": "System.Double"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrHashCode",
+          "script_signature": "xmrHashCode(float)",
+          "script_return_type": "integer",
+          "clr_signature": "Int32 xmrHashCode(Double)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          740
+        ]
+      },
+      "native_named_binding_present": false,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": []
+      },
+      "dependencies": [
+        "CLR overload-specific hash semantics"
+      ],
+      "reference_artifacts": []
+    },
+    {
+      "name": "xmrHashCode",
+      "clr_signature": "Int32 xmrHashCode(Int32)",
+      "return_type": "System.Int32",
+      "is_static": true,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "i",
+          "type": "System.Int32"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrHashCode",
+          "script_signature": "xmrHashCode(integer)",
+          "script_return_type": "integer",
+          "clr_signature": "Int32 xmrHashCode(Int32)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          735
+        ]
+      },
+      "native_named_binding_present": false,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": []
+      },
+      "dependencies": [
+        "CLR overload-specific hash semantics"
+      ],
+      "reference_artifacts": []
+    },
+    {
+      "name": "xmrHashCode",
+      "clr_signature": "Int32 xmrHashCode(System.Object)",
+      "return_type": "System.Int32",
+      "is_static": true,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "o",
+          "type": "System.Object"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrHashCode",
+          "script_signature": "xmrHashCode(object)",
+          "script_return_type": "integer",
+          "clr_signature": "Int32 xmrHashCode(System.Object)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          745
+        ]
+      },
+      "native_named_binding_present": false,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": []
+      },
+      "dependencies": [
+        "CLR overload-specific hash semantics",
+        "object reference and boxed-value identity"
+      ],
+      "reference_artifacts": []
+    },
+    {
+      "name": "xmrHashCode",
+      "clr_signature": "Int32 xmrHashCode(System.String)",
+      "return_type": "System.Int32",
+      "is_static": true,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "s",
+          "type": "System.String"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrHashCode",
+          "script_signature": "xmrHashCode(string)",
+          "script_return_type": "integer",
+          "clr_signature": "Int32 xmrHashCode(System.String)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          750
+        ]
+      },
+      "native_named_binding_present": false,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": []
+      },
+      "dependencies": [
+        "CLR overload-specific hash semantics",
+        "process/runtime string hash policy; not a stable cross-process oracle"
+      ],
+      "reference_artifacts": []
+    },
+    {
+      "name": "xmrHeapLeft",
+      "clr_signature": "Int32 xmrHeapLeft()",
+      "return_type": "System.Int32",
+      "is_static": false,
+      "is_abstract": false,
+      "parameters": [],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrHeapLeft",
+          "script_signature": "xmrHeapLeft()",
+          "script_return_type": "integer",
+          "clr_signature": "Int32 xmrHeapLeft()"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          520
+        ]
+      },
+      "native_named_binding_present": true,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": [
+          10226,
+          10227
+        ]
+      },
+      "dependencies": [
+        "native heap accounting and configured limits; alias binding alone is not byte parity"
+      ],
+      "reference_artifacts": [
+        "tests/yengine_heap_compare_fixture"
+      ]
+    },
+    {
+      "name": "xmrHeapUsed",
+      "clr_signature": "Int32 xmrHeapUsed()",
+      "return_type": "System.Int32",
+      "is_static": false,
+      "is_abstract": false,
+      "parameters": [],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrHeapUsed",
+          "script_signature": "xmrHeapUsed()",
+          "script_return_type": "integer",
+          "clr_signature": "Int32 xmrHeapUsed()"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          525
+        ]
+      },
+      "native_named_binding_present": true,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": [
+          10226
+        ]
+      },
+      "dependencies": [
+        "native heap accounting and configured limits; alias binding alone is not byte parity"
+      ],
+      "reference_artifacts": [
+        "tests/yengine_heap_compare_fixture"
+      ]
+    },
+    {
+      "name": "xmrInteger2String",
+      "clr_signature": "System.String xmrInteger2String(Int32, System.String)",
+      "return_type": "System.String",
+      "is_static": false,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "val",
+          "type": "System.Int32"
+        },
+        {
+          "name": "fmt",
+          "type": "System.String"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrInteger2String",
+          "script_signature": "xmrInteger2String(integer,string)",
+          "script_return_type": "string",
+          "clr_signature": "System.String xmrInteger2String(Int32, System.String)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          904
+        ]
+      },
+      "native_named_binding_present": true,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": [
+          7870,
+          7871
+        ]
+      },
+      "dependencies": [],
+      "reference_artifacts": [
+        "tests/yengine_numeric_format_fixture",
+        "tests/yengine_numeric_format_extended_fixture",
+        "tests/yengine_numeric_format_zero_section_fixture"
+      ]
+    },
+    {
+      "name": "xmrKeyToBool",
+      "clr_signature": "Boolean xmrKeyToBool(System.String)",
+      "return_type": "System.Boolean",
+      "is_static": false,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "x",
+          "type": "System.String"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrKeyToBool",
+          "script_signature": "xmrKeyToBool(string)",
+          "script_return_type": "bool",
+          "clr_signature": "Boolean xmrKeyToBool(System.String)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          1422
+        ]
+      },
+      "native_named_binding_present": true,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": [
+          7894,
+          7897
+        ]
+      },
+      "dependencies": [],
+      "reference_artifacts": [
+        "tests/yengine_truth_conversion_fixture",
+        "tests/yengine_rotation_zero_fixture",
+        "tests/yengine_rotation_arithmetic_fixture"
+      ]
+    },
+    {
+      "name": "xmrList2Array",
+      "clr_signature": "Void xmrList2Array(list, Int32, System.Object, Int32, Int32)",
+      "return_type": "System.Void",
+      "is_static": true,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "srclist",
+          "type": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+list"
+        },
+        {
+          "name": "srcstart",
+          "type": "System.Int32"
+        },
+        {
+          "name": "dstobj",
+          "type": "System.Object"
+        },
+        {
+          "name": "dststart",
+          "type": "System.Int32"
+        },
+        {
+          "name": "count",
+          "type": "System.Int32"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrList2Array",
+          "script_signature": "xmrList2Array(list,integer,object,integer,integer)",
+          "script_return_type": "void",
+          "clr_signature": "Void xmrList2Array(list, Int32, System.Object, Int32, Int32)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          1153
+        ]
+      },
+      "native_named_binding_present": false,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": []
+      },
+      "dependencies": [
+        "typed fixed-array storage and bounds",
+        "source object/array values",
+        "array checkpoint/migration graphs"
+      ],
+      "reference_artifacts": []
+    },
+    {
+      "name": "xmrListToBool",
+      "clr_signature": "Boolean xmrListToBool(list)",
+      "return_type": "System.Boolean",
+      "is_static": false,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "x",
+          "type": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+list"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrListToBool",
+          "script_signature": "xmrListToBool(list)",
+          "script_return_type": "bool",
+          "clr_signature": "Boolean xmrListToBool(list)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          1426
+        ]
+      },
+      "native_named_binding_present": true,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": [
+          7894,
+          7898
+        ]
+      },
+      "dependencies": [],
+      "reference_artifacts": [
+        "tests/yengine_truth_conversion_fixture",
+        "tests/yengine_rotation_zero_fixture",
+        "tests/yengine_rotation_arithmetic_fixture"
+      ]
+    },
+    {
+      "name": "xmrRotation2String",
+      "clr_signature": "System.String xmrRotation2String(Quaternion, System.String)",
+      "return_type": "System.String",
+      "is_static": false,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "val",
+          "type": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+Quaternion"
+        },
+        {
+          "name": "fmt",
+          "type": "System.String"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrRotation2String",
+          "script_signature": "xmrRotation2String(rotation,string)",
+          "script_return_type": "string",
+          "clr_signature": "System.String xmrRotation2String(Quaternion, System.String)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          909
+        ]
+      },
+      "native_named_binding_present": true,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": [
+          7870
+        ]
+      },
+      "dependencies": [],
+      "reference_artifacts": [
+        "tests/yengine_numeric_format_fixture",
+        "tests/yengine_numeric_format_extended_fixture",
+        "tests/yengine_numeric_format_zero_section_fixture"
+      ]
+    },
+    {
+      "name": "xmrRotationToBool",
+      "clr_signature": "Boolean xmrRotationToBool(Quaternion)",
+      "return_type": "System.Boolean",
+      "is_static": false,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "x",
+          "type": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+Quaternion"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrRotationToBool",
+          "script_signature": "xmrRotationToBool(rotation)",
+          "script_return_type": "bool",
+          "clr_signature": "Boolean xmrRotationToBool(Quaternion)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          1410
+        ]
+      },
+      "native_named_binding_present": true,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": [
+          7895
+        ]
+      },
+      "dependencies": [],
+      "reference_artifacts": [
+        "tests/yengine_truth_conversion_fixture",
+        "tests/yengine_rotation_zero_fixture",
+        "tests/yengine_rotation_arithmetic_fixture"
+      ]
+    },
+    {
+      "name": "xmrString2Chars",
+      "clr_signature": "Void xmrString2Chars(System.String, Int32, System.Object, Int32, Int32)",
+      "return_type": "System.Void",
+      "is_static": true,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "srcstr",
+          "type": "System.String"
+        },
+        {
+          "name": "srcstart",
+          "type": "System.Int32"
+        },
+        {
+          "name": "dstobj",
+          "type": "System.Object"
+        },
+        {
+          "name": "dststart",
+          "type": "System.Int32"
+        },
+        {
+          "name": "count",
+          "type": "System.Int32"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrString2Chars",
+          "script_signature": "xmrString2Chars(string,integer,object,integer,integer)",
+          "script_return_type": "void",
+          "clr_signature": "Void xmrString2Chars(System.String, Int32, System.Object, Int32, Int32)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          1209
+        ]
+      },
+      "native_named_binding_present": false,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": []
+      },
+      "dependencies": [
+        "typed fixed-array storage and bounds",
+        "source object/array values",
+        "array checkpoint/migration graphs",
+        "UTF-16 char source type and value identity"
+      ],
+      "reference_artifacts": [
+        "tests/yengine_strict_conversion_fixture",
+        "tests/yengine_strict_conversion_process_fixture"
+      ]
+    },
+    {
+      "name": "xmrString2Float",
+      "clr_signature": "Double xmrString2Float(System.String)",
+      "return_type": "System.Double",
+      "is_static": false,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "s",
+          "type": "System.String"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrString2Float",
+          "script_signature": "xmrString2Float(string)",
+          "script_return_type": "float",
+          "clr_signature": "Double xmrString2Float(System.String)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          847
+        ]
+      },
+      "native_named_binding_present": true,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": [
+          7934,
+          7936,
+          7940
+        ]
+      },
+      "dependencies": [],
+      "reference_artifacts": [
+        "tests/yengine_strict_conversion_fixture",
+        "tests/yengine_strict_conversion_process_fixture"
+      ]
+    },
+    {
+      "name": "xmrString2Integer",
+      "clr_signature": "Int32 xmrString2Integer(System.String)",
+      "return_type": "System.Int32",
+      "is_static": false,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "s",
+          "type": "System.String"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrString2Integer",
+          "script_signature": "xmrString2Integer(string)",
+          "script_return_type": "integer",
+          "clr_signature": "Int32 xmrString2Integer(System.String)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          852
+        ]
+      },
+      "native_named_binding_present": true,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": [
+          7934,
+          7935,
+          7939
+        ]
+      },
+      "dependencies": [],
+      "reference_artifacts": [
+        "tests/yengine_strict_conversion_fixture",
+        "tests/yengine_strict_conversion_process_fixture"
+      ]
+    },
+    {
+      "name": "xmrString2Rotation",
+      "clr_signature": "Quaternion xmrString2Rotation(System.String)",
+      "return_type": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+Quaternion",
+      "is_static": false,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "s",
+          "type": "System.String"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrString2Rotation",
+          "script_signature": "xmrString2Rotation(string)",
+          "script_return_type": "rotation",
+          "clr_signature": "Quaternion xmrString2Rotation(System.String)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          861
+        ]
+      },
+      "native_named_binding_present": true,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": [
+          7934
+        ]
+      },
+      "dependencies": [],
+      "reference_artifacts": [
+        "tests/yengine_strict_conversion_fixture",
+        "tests/yengine_strict_conversion_process_fixture"
+      ]
+    },
+    {
+      "name": "xmrString2Vector",
+      "clr_signature": "Vector3 xmrString2Vector(System.String)",
+      "return_type": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+Vector3",
+      "is_static": false,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "s",
+          "type": "System.String"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrString2Vector",
+          "script_signature": "xmrString2Vector(string)",
+          "script_return_type": "vector",
+          "clr_signature": "Vector3 xmrString2Vector(System.String)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          879
+        ]
+      },
+      "native_named_binding_present": true,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": [
+          7934,
+          7937,
+          7941
+        ]
+      },
+      "dependencies": [],
+      "reference_artifacts": [
+        "tests/yengine_strict_conversion_fixture",
+        "tests/yengine_strict_conversion_process_fixture"
+      ]
+    },
+    {
+      "name": "xmrStringCompare",
+      "clr_signature": "Int32 xmrStringCompare(System.String, System.String)",
+      "return_type": "System.Int32",
+      "is_static": false,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "x",
+          "type": "System.String"
+        },
+        {
+          "name": "y",
+          "type": "System.String"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrStringCompare",
+          "script_signature": "xmrStringCompare(string,string)",
+          "script_return_type": "integer",
+          "clr_signature": "Int32 xmrStringCompare(System.String, System.String)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          1431
+        ]
+      },
+      "native_named_binding_present": true,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": [
+          7916
+        ]
+      },
+      "dependencies": [],
+      "reference_artifacts": [
+        "tests/yengine_heap_compare_fixture"
+      ]
+    },
+    {
+      "name": "xmrStringToBool",
+      "clr_signature": "Boolean xmrStringToBool(System.String)",
+      "return_type": "System.Boolean",
+      "is_static": false,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "x",
+          "type": "System.String"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrStringToBool",
+          "script_signature": "xmrStringToBool(string)",
+          "script_return_type": "bool",
+          "clr_signature": "Boolean xmrStringToBool(System.String)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          1414
+        ]
+      },
+      "native_named_binding_present": true,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": [
+          7894,
+          7896
+        ]
+      },
+      "dependencies": [],
+      "reference_artifacts": [
+        "tests/yengine_truth_conversion_fixture",
+        "tests/yengine_rotation_zero_fixture",
+        "tests/yengine_rotation_arithmetic_fixture"
+      ]
+    },
+    {
+      "name": "xmrTypeName",
+      "clr_signature": "System.String xmrTypeName(System.Object)",
+      "return_type": "System.String",
+      "is_static": false,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "o",
+          "type": "System.Object"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrTypeName",
+          "script_signature": "xmrTypeName(object)",
+          "script_return_type": "string",
+          "clr_signature": "System.String xmrTypeName(System.Object)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          755
+        ]
+      },
+      "native_named_binding_present": false,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": []
+      },
+      "dependencies": [
+        "object boxing identity",
+        "script-defined classes/interfaces/delegates",
+        "array/char/exception source types"
+      ],
+      "reference_artifacts": []
+    },
+    {
+      "name": "xmrVector2String",
+      "clr_signature": "System.String xmrVector2String(Vector3, System.String)",
+      "return_type": "System.String",
+      "is_static": false,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "val",
+          "type": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+Vector3"
+        },
+        {
+          "name": "fmt",
+          "type": "System.String"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrVector2String",
+          "script_signature": "xmrVector2String(vector,string)",
+          "script_return_type": "string",
+          "clr_signature": "System.String xmrVector2String(Vector3, System.String)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          917
+        ]
+      },
+      "native_named_binding_present": true,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": [
+          7870,
+          7873
+        ]
+      },
+      "dependencies": [],
+      "reference_artifacts": [
+        "tests/yengine_numeric_format_fixture",
+        "tests/yengine_numeric_format_extended_fixture",
+        "tests/yengine_numeric_format_zero_section_fixture"
+      ]
+    },
+    {
+      "name": "xmrVectorToBool",
+      "clr_signature": "Boolean xmrVectorToBool(Vector3)",
+      "return_type": "System.Boolean",
+      "is_static": false,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "x",
+          "type": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+Vector3"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "xmrVectorToBool",
+          "script_signature": "xmrVectorToBool(vector)",
+          "script_return_type": "bool",
+          "clr_signature": "Boolean xmrVectorToBool(Vector3)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          1418
+        ]
+      },
+      "native_named_binding_present": true,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": [
+          7894,
+          7899
+        ]
+      },
+      "dependencies": [],
+      "reference_artifacts": [
+        "tests/yengine_truth_conversion_fixture",
+        "tests/yengine_rotation_zero_fixture",
+        "tests/yengine_rotation_arithmetic_fixture"
+      ]
+    },
+    {
+      "name": "yExceptionMessage",
+      "clr_signature": "System.String yExceptionMessage(System.Exception)",
+      "return_type": "System.String",
+      "is_static": true,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "ex",
+          "type": "System.Exception"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "yExceptionMessage",
+          "script_signature": "yExceptionMessage(exception)",
+          "script_return_type": "string",
+          "clr_signature": "System.String yExceptionMessage(System.Exception)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          1233
+        ]
+      },
+      "native_named_binding_present": false,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": []
+      },
+      "dependencies": [
+        "source exception/catch/throw values",
+        "original exception identity and stack trace semantics"
+      ],
+      "reference_artifacts": []
+    },
+    {
+      "name": "yExceptionStackTrace",
+      "clr_signature": "System.String yExceptionStackTrace(System.Exception)",
+      "return_type": "System.String",
+      "is_static": false,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "ex",
+          "type": "System.Exception"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "yExceptionStackTrace",
+          "script_signature": "yExceptionStackTrace(exception)",
+          "script_return_type": "string",
+          "clr_signature": "System.String yExceptionStackTrace(System.Exception)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          1244
+        ]
+      },
+      "native_named_binding_present": false,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": []
+      },
+      "dependencies": [
+        "source exception/catch/throw values",
+        "original exception identity and stack trace semantics"
+      ],
+      "reference_artifacts": []
+    },
+    {
+      "name": "yExceptionThrownValue",
+      "clr_signature": "System.Object yExceptionThrownValue(System.Exception)",
+      "return_type": "System.Object",
+      "is_static": true,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "ex",
+          "type": "System.Exception"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "yExceptionThrownValue",
+          "script_signature": "yExceptionThrownValue(exception)",
+          "script_return_type": "object",
+          "clr_signature": "System.Object yExceptionThrownValue(System.Exception)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          1255
+        ]
+      },
+      "native_named_binding_present": false,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": []
+      },
+      "dependencies": [
+        "source exception/catch/throw values",
+        "original exception identity and stack trace semantics"
+      ],
+      "reference_artifacts": []
+    },
+    {
+      "name": "yExceptionTypeName",
+      "clr_signature": "System.String yExceptionTypeName(System.Exception)",
+      "return_type": "System.String",
+      "is_static": true,
+      "is_abstract": false,
+      "parameters": [
+        {
+          "name": "ex",
+          "type": "System.Exception"
+        }
+      ],
+      "attributes": [],
+      "script_registered": true,
+      "script_signatures": [
+        {
+          "name": "yExceptionTypeName",
+          "script_signature": "yExceptionTypeName(exception)",
+          "script_return_type": "string",
+          "clr_signature": "System.String yExceptionTypeName(System.Exception)"
+        }
+      ],
+      "original_source": {
+        "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+        "declaration_lines": [
+          1266
+        ]
+      },
+      "native_named_binding_present": false,
+      "native_named_binding": {
+        "path": "native-port/src/lsl_runtime.cpp",
+        "lines": []
+      },
+      "dependencies": [
+        "source exception/catch/throw values",
+        "original exception identity and stack trace semantics"
+      ],
+      "reference_artifacts": []
+    }
+  ],
+  "language_dependencies_not_source_functions": [
+    {
+      "name": "GetScriptMethodDelegate",
+      "source": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+      "line": 932,
+      "script_registered": false,
+      "reason": "Uppercase infrastructure method is excluded by original lowercase API filter; it supports generated script-defined delegates, not an xmr source API binding.",
+      "dependencies": [
+        "script-defined delegates/classes/interfaces",
+        "dynamic-method targets and capture/migration object graphs"
+      ]
+    }
+  ]
+}

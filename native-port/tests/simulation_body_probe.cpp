@@ -2,7 +2,8 @@
 #include "opensim/network/osd_json.hpp"
 #include <iostream>
 #include <sstream>
-std::string decode(const std::string& s) {
+
+std::string decode(const std::string &s) {
     std::string out;
     if (s == ".")
         return out;
@@ -10,15 +11,17 @@ std::string decode(const std::string& s) {
         out += static_cast<char>(std::stoi(s.substr(i, 2), nullptr, 16));
     return out;
 }
-std::string hex(const std::string& s) {
+
+std::string hex(const std::string &s) {
     std::string out;
-    const char* h = "0123456789abcdef";
+    const char *h = "0123456789abcdef";
     for (unsigned char c : s) {
         out += h[c >> 4];
         out += h[c & 15];
     }
     return out;
 }
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {

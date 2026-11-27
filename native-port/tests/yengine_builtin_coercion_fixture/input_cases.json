@@ -1,0 +1,337 @@
+[
+  {
+    "name": "string_length_integer",
+    "kind": "Source",
+    "source": "integer result;integer after;default{state_entry(){result=llStringLength(7);after=1;}}"
+  },
+  {
+    "name": "string_upper_integer",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llToUpper(7);after=1;}}"
+  },
+  {
+    "name": "string_lower_integer",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llToLower(7);after=1;}}"
+  },
+  {
+    "name": "string_substring_integer",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llGetSubString(7,0,-1);after=1;}}"
+  },
+  {
+    "name": "string_insert_integer",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llInsertString(7,1,9);after=1;}}"
+  },
+  {
+    "name": "string_delete_integer",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llDeleteSubString(7,0,0);after=1;}}"
+  },
+  {
+    "name": "string_index_integer",
+    "kind": "Source",
+    "source": "integer result;integer after;default{state_entry(){result=llSubStringIndex(7,2);after=1;}}"
+  },
+  {
+    "name": "string_length_float",
+    "kind": "Source",
+    "source": "integer result;integer after;default{state_entry(){result=llStringLength(2.5);after=1;}}"
+  },
+  {
+    "name": "string_upper_float",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llToUpper(2.5);after=1;}}"
+  },
+  {
+    "name": "string_lower_float",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llToLower(2.5);after=1;}}"
+  },
+  {
+    "name": "string_substring_float",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llGetSubString(2.5,0,-1);after=1;}}"
+  },
+  {
+    "name": "string_insert_float",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llInsertString(2.5,1,9);after=1;}}"
+  },
+  {
+    "name": "string_delete_float",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llDeleteSubString(2.5,0,0);after=1;}}"
+  },
+  {
+    "name": "string_index_float",
+    "kind": "Source",
+    "source": "integer result;integer after;default{state_entry(){result=llSubStringIndex(2.5,2);after=1;}}"
+  },
+  {
+    "name": "string_length_vector",
+    "kind": "Source",
+    "source": "integer result;integer after;default{state_entry(){result=llStringLength(<1,2,3>);after=1;}}"
+  },
+  {
+    "name": "string_upper_vector",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llToUpper(<1,2,3>);after=1;}}"
+  },
+  {
+    "name": "string_lower_vector",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llToLower(<1,2,3>);after=1;}}"
+  },
+  {
+    "name": "string_substring_vector",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llGetSubString(<1,2,3>,0,-1);after=1;}}"
+  },
+  {
+    "name": "string_insert_vector",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llInsertString(<1,2,3>,1,9);after=1;}}"
+  },
+  {
+    "name": "string_delete_vector",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llDeleteSubString(<1,2,3>,0,0);after=1;}}"
+  },
+  {
+    "name": "string_index_vector",
+    "kind": "Source",
+    "source": "integer result;integer after;default{state_entry(){result=llSubStringIndex(<1,2,3>,2);after=1;}}"
+  },
+  {
+    "name": "string_length_rotation",
+    "kind": "Source",
+    "source": "integer result;integer after;default{state_entry(){result=llStringLength(<0,0,0,1>);after=1;}}"
+  },
+  {
+    "name": "string_upper_rotation",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llToUpper(<0,0,0,1>);after=1;}}"
+  },
+  {
+    "name": "string_lower_rotation",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llToLower(<0,0,0,1>);after=1;}}"
+  },
+  {
+    "name": "string_substring_rotation",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llGetSubString(<0,0,0,1>,0,-1);after=1;}}"
+  },
+  {
+    "name": "string_insert_rotation",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llInsertString(<0,0,0,1>,1,9);after=1;}}"
+  },
+  {
+    "name": "string_delete_rotation",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llDeleteSubString(<0,0,0,1>,0,0);after=1;}}"
+  },
+  {
+    "name": "string_index_rotation",
+    "kind": "Source",
+    "source": "integer result;integer after;default{state_entry(){result=llSubStringIndex(<0,0,0,1>,2);after=1;}}"
+  },
+  {
+    "name": "string_length_list",
+    "kind": "Source",
+    "source": "integer result;integer after;default{state_entry(){result=llStringLength([1,2.5]);after=1;}}"
+  },
+  {
+    "name": "string_upper_list",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llToUpper([1,2.5]);after=1;}}"
+  },
+  {
+    "name": "string_lower_list",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llToLower([1,2.5]);after=1;}}"
+  },
+  {
+    "name": "string_substring_list",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llGetSubString([1,2.5],0,-1);after=1;}}"
+  },
+  {
+    "name": "string_insert_list",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llInsertString([1,2.5],1,9);after=1;}}"
+  },
+  {
+    "name": "string_delete_list",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llDeleteSubString([1,2.5],0,0);after=1;}}"
+  },
+  {
+    "name": "string_index_list",
+    "kind": "Source",
+    "source": "integer result;integer after;default{state_entry(){result=llSubStringIndex([1,2.5],2);after=1;}}"
+  },
+  {
+    "name": "list_length_integer",
+    "kind": "Source",
+    "source": "integer result;integer after;default{state_entry(){result=llGetListLength(7);after=1;}}"
+  },
+  {
+    "name": "list_string_integer",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llList2String(7,0);after=1;}}"
+  },
+  {
+    "name": "list_integer_integer",
+    "kind": "Source",
+    "source": "integer result;integer after;default{state_entry(){result=llList2Integer(7,0);after=1;}}"
+  },
+  {
+    "name": "list_length_float",
+    "kind": "Source",
+    "source": "integer result;integer after;default{state_entry(){result=llGetListLength(2.5);after=1;}}"
+  },
+  {
+    "name": "list_string_float",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llList2String(2.5,0);after=1;}}"
+  },
+  {
+    "name": "list_integer_float",
+    "kind": "Source",
+    "source": "integer result;integer after;default{state_entry(){result=llList2Integer(2.5,0);after=1;}}"
+  },
+  {
+    "name": "list_length_vector",
+    "kind": "Source",
+    "source": "integer result;integer after;default{state_entry(){result=llGetListLength(<1,2,3>);after=1;}}"
+  },
+  {
+    "name": "list_string_vector",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llList2String(<1,2,3>,0);after=1;}}"
+  },
+  {
+    "name": "list_integer_vector",
+    "kind": "Source",
+    "source": "integer result;integer after;default{state_entry(){result=llList2Integer(<1,2,3>,0);after=1;}}"
+  },
+  {
+    "name": "list_length_rotation",
+    "kind": "Source",
+    "source": "integer result;integer after;default{state_entry(){result=llGetListLength(<0,0,0,1>);after=1;}}"
+  },
+  {
+    "name": "list_string_rotation",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llList2String(<0,0,0,1>,0);after=1;}}"
+  },
+  {
+    "name": "list_integer_rotation",
+    "kind": "Source",
+    "source": "integer result;integer after;default{state_entry(){result=llList2Integer(<0,0,0,1>,0);after=1;}}"
+  },
+  {
+    "name": "list_length_list",
+    "kind": "Source",
+    "source": "integer result;integer after;default{state_entry(){result=llGetListLength([1,2.5]);after=1;}}"
+  },
+  {
+    "name": "list_string_list",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llList2String([1,2.5],0);after=1;}}"
+  },
+  {
+    "name": "list_integer_list",
+    "kind": "Source",
+    "source": "integer result;integer after;default{state_entry(){result=llList2Integer([1,2.5],0);after=1;}}"
+  },
+  {
+    "name": "list_find",
+    "kind": "Source",
+    "source": "integer result;integer after;default{state_entry(){result=llListFindList(7,7);after=1;}}"
+  },
+  {
+    "name": "list_replace",
+    "kind": "Source",
+    "source": "list result;integer after;default{state_entry(){result=llListReplaceList(7,9,0,0);after=1;}}"
+  },
+  {
+    "name": "list_statistics",
+    "kind": "Source",
+    "source": "float result;integer after;default{state_entry(){result=llListStatistics(LIST_STAT_SUM,7);after=1;}}"
+  },
+  {
+    "name": "list_csv",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llList2CSV(7);after=1;}}"
+  },
+  {
+    "name": "list_dump",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llDumpList2String(7,9);after=1;}}"
+  },
+  {
+    "name": "list_slice",
+    "kind": "Source",
+    "source": "list result;integer after;default{state_entry(){result=llList2List(7,0,-1);after=1;}}"
+  },
+  {
+    "name": "list_float",
+    "kind": "Source",
+    "source": "float result;integer after;default{state_entry(){result=llList2Float(7,0);after=1;}}"
+  },
+  {
+    "name": "list_vector",
+    "kind": "Source",
+    "source": "vector result;integer after;default{state_entry(){result=llList2Vector(<1,2,3>,0);after=1;}}"
+  },
+  {
+    "name": "list_rotation",
+    "kind": "Source",
+    "source": "rotation result;integer after;default{state_entry(){result=llList2Rot(<0,0,0,1>,0);after=1;}}"
+  },
+  {
+    "name": "reject_substring_string",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llGetSubString(\"abc\",\"0\",1);after=1;}}"
+  },
+  {
+    "name": "reject_substring_float",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llGetSubString(\"abc\",0.0,1);after=1;}}"
+  },
+  {
+    "name": "reject_insert_string",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llInsertString(\"abc\",\"1\",\"x\");after=1;}}"
+  },
+  {
+    "name": "reject_delete_float",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llDeleteSubString(\"abc\",0,1.0);after=1;}}"
+  },
+  {
+    "name": "reject_list_index_string",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llList2String([1],\"0\");after=1;}}"
+  },
+  {
+    "name": "reject_list_index_float",
+    "kind": "Source",
+    "source": "integer result;integer after;default{state_entry(){result=llList2Integer([1],0.0);after=1;}}"
+  },
+  {
+    "name": "reject_replace_index",
+    "kind": "Source",
+    "source": "list result;integer after;default{state_entry(){result=llListReplaceList([1],[2],\"0\",0);after=1;}}"
+  },
+  {
+    "name": "reject_statistics_operation",
+    "kind": "Source",
+    "source": "float result;integer after;default{state_entry(){result=llListStatistics(\"6\",[1]);after=1;}}"
+  }
+]

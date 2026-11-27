@@ -33,34 +33,42 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include <string_view>
 #include <vector>
+
 namespace opensim::framework {
 class AssetDateTime;
 class ConfigUriObject;
-}
+} // namespace opensim::framework
+
 namespace opensim::network {
 class BinaryStorage {
   public:
     using Bytes = std::shared_ptr<std::vector<std::uint8_t>>;
     BinaryStorage() noexcept = default;
-    BinaryStorage(const BinaryStorage& other) noexcept : bytes_(other.load()) {}
-    BinaryStorage& operator=(const BinaryStorage& other) noexcept {
+
+    BinaryStorage(const BinaryStorage &other) noexcept : bytes_(other.load()) {}
+
+    BinaryStorage &operator=(const BinaryStorage &other) noexcept {
         bytes_.store(other.load());
         return *this;
     }
-    BinaryStorage& operator=(Bytes value) noexcept {
+
+    BinaryStorage &operator=(Bytes value) noexcept {
         bytes_.store(std::move(value));
         return *this;
     }
+
     Bytes load() const noexcept {
         return bytes_.load();
     }
-    bool initialize(Bytes& expected, Bytes desired) const noexcept {
+
+    bool initialize(Bytes &expected, Bytes desired) const noexcept {
         return bytes_.compare_exchange_strong(expected, std::move(desired));
     }
 
   private:
     mutable std::atomic<Bytes> bytes_{};
 };
+
 struct Value {
     enum class Kind {
         Undefined,
@@ -91,42 +99,52 @@ struct Value {
     std::map<std::string, Value> map;
     std::vector<std::string> map_order;
     std::shared_ptr<Value> reference;
-    const Value& view() const;
-    static Value alias(const std::shared_ptr<Value>& value);
+    const Value &view() const;
+    static Value alias(const std::shared_ptr<Value> &value);
     Value() = default;
-    Value(const char* value) : kind(Kind::String), text(value) {}
+
+    Value(const char *value) : kind(Kind::String), text(value) {}
+
     Value(std::string value) : kind(Kind::String), text(std::move(value)) {}
+
     explicit Value(std::int32_t value) : kind(Kind::Integer), integer(value) {}
+
     explicit Value(bool value) : kind(Kind::Boolean), boolean(value) {}
+
     static Value object(std::map<std::string, Value> fields);
+
     static Value null_reference() {
         Value value;
         value.kind = Kind::NullReference;
         return value;
     }
+
     static Value long_integer(std::int64_t number) {
         Value result;
         result.kind = Kind::Long;
         result.long_value = number;
         return result;
     }
+
     std::string as_string() const;
     bool contains(std::string_view name) const;
-    const Value& get(std::string_view name) const;
+    const Value &get(std::string_view name) const;
     void set(std::string key, Value value);
     std::vector<std::string> ordered_keys() const;
 };
+
 struct RpcCall {
     std::string method;
     std::vector<Value> parameters;
 };
+
 RpcCall parse_xml_rpc(std::string_view bytes);
-std::string xml_rpc_request(const RpcCall& call);
+std::string xml_rpc_request(const RpcCall &call);
 Value parse_xml_rpc_response(std::string_view bytes);
 Value parse_llsd_xml(std::string_view bytes);
-std::string xml_rpc_response(const Value& value);
-std::string xml_rpc_fault(std::int32_t code, const std::string& message);
-std::string llsd_xml(const Value& value);
-std::string grid_info_xml(const std::map<std::string, std::string>& info);
-std::string json_strings(const std::map<std::string, std::string>& fields);
-}
+std::string xml_rpc_response(const Value &value);
+std::string xml_rpc_fault(std::int32_t code, const std::string &message);
+std::string llsd_xml(const Value &value);
+std::string grid_info_xml(const std::map<std::string, std::string> &info);
+std::string json_strings(const std::map<std::string, std::string> &fields);
+} // namespace opensim::network

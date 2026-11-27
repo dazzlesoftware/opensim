@@ -1,0 +1,1 @@
+YOption chars;string global;string result;list items;integer unit;integer calls;integer entries;integer after;integer pause(string value){string local=value;calls++;llSleep(3.0);result=local;unit=(integer)result[0];after=1;return 0;}default{state_entry(){entries++;global=llGetSubString("😀",0,0);items=[global];pause(global);}}

@@ -1,0 +1,242 @@
+{
+  "migration_version": 12,
+  "reserved": 16,
+  "event_arguments": {
+    "kind": 9,
+    "id": 0,
+    "element_type": "ob",
+    "children": []
+  },
+  "initialize_globals": false,
+  "state_index": 0,
+  "event_code": 30,
+  "globals": [
+    {
+      "kind": 9,
+      "id": 1,
+      "element_type": "xa",
+      "children": []
+    },
+    {
+      "kind": 9,
+      "id": 2,
+      "element_type": "ch",
+      "children": []
+    },
+    {
+      "kind": 9,
+      "id": 3,
+      "element_type": "do",
+      "children": []
+    },
+    {
+      "kind": 9,
+      "id": 4,
+      "element_type": "in",
+      "children": [
+        {
+          "kind": 12,
+          "value": 1
+        },
+        {
+          "kind": 12,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "kind": 9,
+      "id": 5,
+      "element_type": "li",
+      "children": [
+        {
+          "kind": 0
+        }
+      ]
+    },
+    {
+      "kind": 15,
+      "reference": 0
+    },
+    {
+      "kind": 9,
+      "id": 6,
+      "element_type": "ro",
+      "children": []
+    },
+    {
+      "kind": 9,
+      "id": 7,
+      "element_type": "st",
+      "children": []
+    },
+    {
+      "kind": 9,
+      "id": 8,
+      "element_type": "ve",
+      "children": []
+    },
+    {
+      "kind": 9,
+      "id": 9,
+      "element_type": "sc",
+      "children": []
+    },
+    {
+      "kind": 9,
+      "id": 10,
+      "element_type": "de[]",
+      "children": []
+    }
+  ],
+  "frames": [
+    {
+      "function": "default state_entry",
+      "call_no": 1,
+      "slots": {
+        "kind": 9,
+        "id": 11,
+        "element_type": "ob",
+        "children": [
+          {
+            "kind": 17
+          },
+          {
+            "kind": 12,
+            "value": 0
+          }
+        ]
+      }
+    },
+    {
+      "function": "xmrEventDequeue",
+      "call_no": 0,
+      "slots": {
+        "kind": 9,
+        "id": 12,
+        "element_type": "ob",
+        "children": [
+          {
+            "kind": 13,
+            "id": 13,
+            "value": "2026-11-26 1:57:45 AM"
+          },
+          {
+            "kind": 12,
+            "value": 2097152
+          },
+          {
+            "kind": 12,
+            "value": 0
+          },
+          {
+            "kind": 12,
+            "value": 2097152
+          },
+          {
+            "kind": 12,
+            "value": 0
+          },
+          {
+            "kind": 0
+          },
+          {
+            "kind": 0
+          },
+          {
+            "kind": 0
+          },
+          {
+            "kind": 0
+          }
+        ]
+      }
+    }
+  ],
+  "source_hash": "6C4D06A7A38A0C0AA9AFB491D33AC7A9",
+  "captured_checks": 2,
+  "original_method": "list xmrEventDequeue(Double, Int32, Int32, Int32, Int32)",
+  "frame_summary": [
+    {
+      "function": "default state_entry",
+      "call_no": 1,
+      "slots": [
+        {
+          "type": "FunctionExecutionReferenceInstance",
+          "value": "FunctionExecutionReferenceInstance"
+        },
+        {
+          "type": "System.Int32",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "function": "xmrEventDequeue",
+      "call_no": 0,
+      "slots": [
+        {
+          "type": "System.String",
+          "value": "2026-11-26 1:57:45 AM"
+        },
+        {
+          "type": "System.Int32",
+          "value": "2097152"
+        },
+        {
+          "type": "System.Int32",
+          "value": "0"
+        },
+        {
+          "type": "System.Int32",
+          "value": "2097152"
+        },
+        {
+          "type": "System.Int32",
+          "value": "0"
+        },
+        null,
+        null,
+        null,
+        null
+      ]
+    }
+  ],
+  "original_deadline_utc_ticks": 639312550650000000,
+  "original_resume_globals": {
+    "background": 0,
+    "count": 11,
+    "result": "219"
+  },
+  "original_resume_result_items": [
+    {
+      "type": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+      "value": "21"
+    },
+    {
+      "type": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+      "value": "9"
+    }
+  ],
+  "remaining_queue": [
+    "timer"
+  ],
+  "detect_name_after_resume": "touch_start detect marker",
+  "original_resume_check_count": 1,
+  "event_codes": {
+    "touch_start": 21,
+    "touch_end": 29,
+    "timer": 2
+  },
+  "sha256": {
+    "source.lsl": "E1F300CC0C4222BF86FBE57D1CE1B7A28948C582CD5F73DF2684B40349218AF5",
+    "snapshot.bin": "38E1C0DAE0736113285E9D126276A0D137396484D728D73322360765199BF343",
+    "original.yobj": "E92117F99D6D18EDC04C3521BEE3012E705C6AB154F3775665D61E29EFCDC684",
+    "original.il.txt": "F259918F5FB4985C00B2EA3B4970E29AC1B33718B1E2CBF7404234B0EBE24E1E",
+    "state.xml": "A66688BAD7758F4DF68258502F0CDA0D2D37A94E8C02BD5EFCBF5D93AAE00AAC",
+    "cache_key.txt": "09A04559E4557C510455535A202956F8915EFD67AA717A0CB7474F7006571D76",
+    "original_yengine_assembly": "25D54EAE1428018C259AA00632342E41B17A3041472F65A8EC2F31E8A8811056",
+    "generator_source": "F1318460DC922CBC893371D37890CFCDB6D8AC3813D392BC5B97675D0F0BC3F7",
+    "generator_assembly": "43AAE259FAAE06A946D772E0663B7B8776B6672062AC6A2797BF160301FB262F"
+  }
+}

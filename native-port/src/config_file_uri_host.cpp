@@ -4,28 +4,32 @@
 #include "opensim/framework/viewer_unicode_data.hpp"
 #include <algorithm>
 #include <stdexcept>
+
 namespace opensim::framework {
 namespace {
 using V = std::u16string_view;
+
 bool digit(char16_t c) {
     return c >= u'0' && c <= u'9';
 }
+
 bool letter(char16_t c) {
     return (c >= u'a' && c <= u'z') || (c >= u'A' && c <= u'Z');
 }
+
 bool lws(char16_t c) {
     return c == u' ' || c == u'\t' || c == u'\r' || c == u'\n';
 }
+
 int hex(char16_t c) {
-    return digit(c)                 ? c - u'0'
-           : c >= u'a' && c <= u'f' ? c - u'a' + 10
-           : c >= u'A' && c <= u'F' ? c - u'A' + 10
-                                    : -1;
+    return digit(c) ? c - u'0' : c >= u'a' && c <= u'f' ? c - u'a' + 10 : c >= u'A' && c <= u'F' ? c - u'A' + 10 : -1;
 }
+
 bool bidi(char16_t c) {
     return c == 0x200e || c == 0x200f || (c >= 0x202a && c <= 0x202e);
 }
-bool ipv4_canonical(V s, std::size_t start, std::size_t& end) {
+
+bool ipv4_canonical(V s, std::size_t start, std::size_t &end) {
     int dots = 0, num = 0;
     bool had = false, zero = false;
     while (start < end) {
@@ -57,7 +61,8 @@ bool ipv4_canonical(V s, std::size_t start, std::size_t& end) {
     end = start;
     return true;
 }
-bool ipv6(V s, std::size_t start, std::size_t& end) {
+
+bool ipv6(V s, std::size_t start, std::size_t &end) {
     int labels = 0, digits = 0;
     bool compressed = false, ipv4 = false, prefix = false, need = true;
     std::size_t part = 1;
@@ -132,7 +137,8 @@ bool ipv6(V s, std::size_t start, std::size_t& end) {
     }
     return false;
 }
-bool ipv4_noncanonical(V s, std::size_t start, std::size_t& end, bool not_implicit) {
+
+bool ipv4_noncanonical(V s, std::size_t start, std::size_t &end, bool not_implicit) {
     std::uint64_t parts[4]{}, value = 0;
     int used = 0;
     bool had = false;
@@ -180,7 +186,8 @@ bool ipv4_noncanonical(V s, std::size_t start, std::size_t& end, bool not_implic
     end = i;
     return true;
 }
-bool dns(V s, std::size_t start, std::size_t& end, bool not_implicit) {
+
+bool dns(V s, std::size_t start, std::size_t &end, bool not_implicit) {
     auto stop = start;
     for (; stop < end; ++stop) {
         auto c = s[stop];
@@ -220,13 +227,14 @@ bool dns(V s, std::size_t start, std::size_t& end, bool not_implicit) {
     end = stop;
     return true;
 }
+
 bool char_letter(char16_t c) {
-    auto p =
-        std::lower_bound(viewer_unicode::letters.begin(), viewer_unicode::letters.end(), std::uint32_t(c),
-                         [](const auto& range, std::uint32_t value) { return range[1] < value; });
+    auto p = std::lower_bound(viewer_unicode::letters.begin(), viewer_unicode::letters.end(), std::uint32_t(c),
+                              [](const auto &range, std::uint32_t value) { return range[1] < value; });
     return p != viewer_unicode::letters.end() && (*p)[0] <= c;
 }
-bool unc(V s, std::size_t start, std::size_t& end, bool not_implicit) {
+
+bool unc(V s, std::size_t start, std::size_t &end, bool not_implicit) {
     auto stop = end;
     if (start == stop)
         return false;
@@ -279,10 +287,10 @@ bool unc(V s, std::size_t start, std::size_t& end, bool not_implicit) {
     end = stop;
     return true;
 }
-}
-ConfigFileUriHostResult config_file_uri_check_host(std::u16string_view text, std::size_t start,
-                                                   std::size_t length, std::uint64_t flags,
-                                                   const ConfigUriUnicodeBackend& unicode) {
+} // namespace
+
+ConfigFileUriHostResult config_file_uri_check_host(std::u16string_view text, std::size_t start, std::size_t length,
+                                                   std::uint64_t flags, const ConfigUriUnicodeBackend &unicode) {
     ConfigFileUriHostResult r;
     r.end = start;
     r.flags = flags;
@@ -290,8 +298,7 @@ ConfigFileUriHostResult config_file_uri_check_host(std::u16string_view text, std
          rewrite = has_unicode && (flags & 0x400000000ull) == 0;
     if (rewrite)
         r.rewritten_prefix = std::u16string(text.substr(0, start));
-    if (start == length || text[start] == u'/' || text[start] == u'\\' || text[start] == u'#' ||
-        text[start] == u'?') {
+    if (start == length || text[start] == u'/' || text[start] == u'\\' || text[start] == u'#' || text[start] == u'?') {
         r.flags &= ~0x10000000ull;
         if (implicit)
             r.error = 8;
@@ -354,4 +361,4 @@ ConfigFileUriHostResult config_file_uri_check_host(std::u16string_view text, std
     r.end = stop;
     return r;
 }
-}
+} // namespace opensim::framework

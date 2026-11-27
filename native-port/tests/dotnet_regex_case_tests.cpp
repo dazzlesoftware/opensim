@@ -4,14 +4,15 @@
 #include <iomanip>
 #include <iostream>
 using namespace opensim::framework;
-const std::array<std::u16string_view, 14> names = {u"",           u"en-US", u"tr",         u"tr-TR", u"az",
-                                                   u"az-Latn-AZ", u"TR",    u"trick",      u"tr_TR", u"az-",
-                                                   u"t",          u"a",     u"tr-unknown", u"Az"};
+const std::array<std::u16string_view, 14> names = {u"",      u"en-US", u"tr",  u"tr-TR", u"az", u"az-Latn-AZ", u"TR",
+                                                   u"trick", u"tr_TR", u"az-", u"t",     u"a",  u"tr-unknown", u"Az"};
+
 void hex(std::span<const char16_t> text) {
     for (auto c : text)
         std::cout << std::hex << std::setfill('0') << std::setw(4) << unsigned(c);
     std::cout << std::dec;
 }
+
 int main() {
     for (std::size_t n = 0; n < names.size(); ++n) {
         int reads = 0;
@@ -34,8 +35,8 @@ int main() {
                         return std::u16string(names[n]);
                     },
                     behavior);
-                std::cout << n << ':' << initial << ':' << code << ':' << static_cast<int>(behavior) << ':'
-                          << reads << ':';
+                std::cout << n << ':' << initial << ':' << code << ':' << static_cast<int>(behavior) << ':' << reads
+                          << ':';
                 if (result.empty())
                     std::cout << '-';
                 else

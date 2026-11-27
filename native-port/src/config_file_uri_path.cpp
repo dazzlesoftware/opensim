@@ -1,5 +1,6 @@
 // Source .NET8.0.31 Uri.Compress; .NET Foundation MIT license.
 #include "opensim/framework/config_file_uri_path.hpp"
+
 namespace opensim::framework {
 std::u16string config_file_uri_compress(std::u16string span, bool convert, bool file) {
     int num = 0, num2 = 0, num3 = 0, num4 = 0;
@@ -20,8 +21,7 @@ std::u16string config_file_uri_compress(std::u16string span, bool convert, bool 
         }
         if (num3 != 0) {
             if ((file || (num3 <= 2 && c == u'/')) && c == u'/' &&
-                (num2 == num5 + num3 + 1 ||
-                 (num2 == 0 && num5 + num3 + 1 == static_cast<int>(span.size()))) &&
+                (num2 == num5 + num3 + 1 || (num2 == 0 && num5 + num3 + 1 == static_cast<int>(span.size()))) &&
                 num3 <= 2) {
                 num2 = num5 + 1 + num3 + (num2 != 0 ? 1 : 0);
                 span.erase(num5 + 1, num2 - num5 - 1);
@@ -71,7 +71,7 @@ std::u16string config_file_uri_unescape_dots(std::u16string text, bool convert) 
     };
     auto third = convert ? u'\\' : char16_t(0xffff);
     auto begin = text.data(), pch = begin, ptr = begin + text.size() - 2;
-    char16_t* ptr2 = nullptr;
+    char16_t *ptr2 = nullptr;
     while (pch < ptr) {
         if (*(pch++) != u'%')
             continue;
@@ -205,9 +205,8 @@ ConfigFileUriSchemeScan config_file_uri_scan_scheme(std::u16string_view input, b
     return result;
 }
 
-bool config_file_uri_implicit_kind_is_relative(const ConfigFileUriSchemeScan& scan,
-                                               std::u16string_view original, std::int32_t kind,
-                                               bool windows) {
+bool config_file_uri_implicit_kind_is_relative(const ConfigFileUriSchemeScan &scan, std::u16string_view original,
+                                               std::int32_t kind, bool windows) {
     if (scan.error != 0 || (scan.flags & 0x20000000ull) == 0)
         return false;
     if ((scan.flags & 0x8000000ull) == 0 && kind != 1 &&
@@ -216,4 +215,4 @@ bool config_file_uri_implicit_kind_is_relative(const ConfigFileUriSchemeScan& sc
         return true;
     return kind == 2 && (scan.flags & 0x8000000ull) != 0;
 }
-}
+} // namespace opensim::framework

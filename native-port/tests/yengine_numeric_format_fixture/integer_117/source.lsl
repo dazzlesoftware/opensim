@@ -1,0 +1,1 @@
+string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer("1234567"),"+#,##0.0;-#,##0.0;ZERO");after=1;}}

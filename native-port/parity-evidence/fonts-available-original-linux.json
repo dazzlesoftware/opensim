@@ -1,0 +1,215 @@
+{
+  "method": "xmrFontsAvailable",
+  "methodology": "Actual unchanged original method and actual FontFamily.Families/Name/GetName on this runtime. Returned SDK ordering and wrapper identity recorded without sorting or fixed font-name assumptions. No Linux result inferred; enumeration failure remains an exception, never an invented empty list.",
+  "platform": "Unix 6.18.58.1",
+  "framework": ".NET 8.0.34",
+  "original_production_prelude": "Original Culture.SetCurrentCulture \u002B SetDefaultCurrentCulture; System.Drawing.EnableUnixSupport=true; isolated System.Drawing.Common.dll selected from original .linux as Application.cs79-110",
+  "current_culture": {
+    "name": "",
+    "lcid": 127
+  },
+  "current_ui_culture": {
+    "name": "",
+    "lcid": 127
+  },
+  "registered": [
+    {
+      "signature": "xmrFontsAvailable()",
+      "returns": "list"
+    }
+  ],
+  "returned": [
+    {
+      "index": 0,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Liberation Mono"
+    },
+    {
+      "index": 1,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Liberation Serif"
+    },
+    {
+      "index": 2,
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "Liberation Sans"
+    }
+  ],
+  "exception": null,
+  "font_count": 3,
+  "independent_families": [
+    {
+      "index": 0,
+      "name": "Liberation Mono",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Liberation Mono",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Liberation Mono",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Liberation Mono",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Liberation Mono",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Liberation Mono"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Liberation Mono"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Liberation Mono"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Liberation Mono"
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "name": "Liberation Serif",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Liberation Serif",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Liberation Serif",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Liberation Serif",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Liberation Serif",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Liberation Serif"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Liberation Serif"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Liberation Serif"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Liberation Serif"
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "name": "Liberation Sans",
+      "get_names": [
+        {
+          "lcid": 0,
+          "name": "Liberation Sans",
+          "exception": null
+        },
+        {
+          "lcid": 127,
+          "name": "Liberation Sans",
+          "exception": null
+        },
+        {
+          "lcid": 1033,
+          "name": "Liberation Sans",
+          "exception": null
+        },
+        {
+          "lcid": 1041,
+          "name": "Liberation Sans",
+          "exception": null
+        }
+      ],
+      "name_property_under_ui_cultures": [
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Liberation Sans"
+        },
+        {
+          "ui_culture": "",
+          "lcid": 127,
+          "name": "Liberation Sans"
+        },
+        {
+          "ui_culture": "en-US",
+          "lcid": 1033,
+          "name": "Liberation Sans"
+        },
+        {
+          "ui_culture": "ja-JP",
+          "lcid": 1041,
+          "name": "Liberation Sans"
+        }
+      ]
+    }
+  ],
+  "independent_exception": null,
+  "independent_order_matches_method": true,
+  "drawing_assemblies": [
+    {
+      "file": "System.Drawing.Common.dll",
+      "sha256": "89ea595ccb1fd1384480c1e30bd487c92af5d06d3b06f295323eff601acd9019",
+      "assembly_version": "6.0.0.0"
+    },
+    {
+      "file": "System.Drawing.Common.dll.win",
+      "sha256": "4d3001697df50cca54f32ed2dbbd1f3f415b48d5d756b1bf9500a43ae9b68da0",
+      "assembly_version": "6.0.0.0"
+    },
+    {
+      "file": "System.Drawing.Common.dll.linux",
+      "sha256": "89ea595ccb1fd1384480c1e30bd487c92af5d06d3b06f295323eff601acd9019",
+      "assembly_version": "6.0.0.0"
+    }
+  ],
+  "loaded_drawing_path": "/reference/System.Drawing.Common.dll",
+  "original_source": {
+    "path": "OpenSim/Region/ScriptEngine/YEngine/XMRInstAbstract.cs",
+    "method_line": 1396,
+    "families_line": 1398,
+    "name_line": 1401,
+    "sha256": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00"
+  },
+  "original_yengine_assembly_sha256": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+  "generator_sha256": "18f8c9482f4a9d445d02d132f746c2b7ab6bcc13fdb9a2ba0c60bedfdf777c6d"
+}

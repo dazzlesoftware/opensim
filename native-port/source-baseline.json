@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceRevision": "1553d07bd04160e563dd258214a88e4e13417429",
+  "sourceRevision": "570e0c765160ea8620c52fdc8d5bcbaa52e0e557",
   "targetPlatforms": [
     "Windows",
     "Linux",
@@ -17,8 +17,8 @@
     "csharpFiles": 1556,
     "csharpLines": 571829.0,
     "declaredProjects": 69,
-    "mappedSourceScopes": 192,
-    "sourcesWithoutPortMapping": 1364
+    "mappedSourceScopes": 213,
+    "sourcesWithoutPortMapping": 1343
   },
   "projects": [
     {
@@ -2128,7 +2128,7 @@
       "lines": 58,
       "sha256": "2c7d911c633ee160b70d77e570264dced3b0736677ffb84ae31edf3dc07e38fe",
       "testDirectory": false,
-      "portStatus": "not_started"
+      "portStatus": "partial"
     },
     {
       "path": "OpenSim/Data/IRegionData.cs",
@@ -2716,7 +2716,7 @@
       "lines": 981,
       "sha256": "161ff79f3982c69ebb3d3abba7dee0e87355a9478b4b4df0bd68ac48eeaa6e6a",
       "testDirectory": false,
-      "portStatus": "not_started"
+      "portStatus": "partial"
     },
     {
       "path": "OpenSim/Data/SQLite/SQLiteUtils.cs",
@@ -3269,7 +3269,7 @@
       "lines": 162,
       "sha256": "8a12dabd1282a233a813546b572de02b55bd3aef0a4f11f779707c9f577fed31",
       "testDirectory": false,
-      "portStatus": "not_started"
+      "portStatus": "partial"
     },
     {
       "path": "OpenSim/Framework/IAssetCache.cs",
@@ -4067,21 +4067,21 @@
       "lines": 34,
       "sha256": "183b11316e7ef4d034bdc723945036a9edbf97a43e41776fbbc821b166e6eaca",
       "testDirectory": false,
-      "portStatus": "not_started"
+      "portStatus": "partial"
     },
     {
       "path": "OpenSim/Framework/Servers/HttpServer/JsonRpcRequestManager.cs",
       "lines": 190,
       "sha256": "ee0c23980a7e8a4f96d1e8f56a7ac604163ad2037b17b3a31a64645d8e7fbfff",
       "testDirectory": false,
-      "portStatus": "not_started"
+      "portStatus": "partial"
     },
     {
       "path": "OpenSim/Framework/Servers/HttpServer/JsonRpcResponse.cs",
       "lines": 150,
       "sha256": "f5f976d55786d1c1fc21a78fb41f05b83acb5668bc60d716fee908c8388f692e",
       "testDirectory": false,
-      "portStatus": "not_started"
+      "portStatus": "partial"
     },
     {
       "path": "OpenSim/Framework/Servers/HttpServer/LLSDMethod.cs",
@@ -4662,7 +4662,7 @@
       "lines": 142,
       "sha256": "25012eb09c5198f85efef965971f3c95ee0febdcc20663e214b4c61ea3c64f04",
       "testDirectory": false,
-      "portStatus": "not_started"
+      "portStatus": "partial"
     },
     {
       "path": "OpenSim/Framework/Util.cs",
@@ -5439,14 +5439,14 @@
       "lines": 179,
       "sha256": "56b313c26f888eae8eb50b5a0f995acc3c435903ca3555e5954a92eb9c4bae04",
       "testDirectory": false,
-      "portStatus": "not_started"
+      "portStatus": "partial"
     },
     {
       "path": "OpenSim/Region/CoreModules/Avatar/UserProfiles/UserProfileModule.cs",
       "lines": 2015,
       "sha256": "2b79847f696702a4684df98bd178eea60021515022e411ec3a49f364096375a1",
       "testDirectory": false,
-      "portStatus": "not_started"
+      "portStatus": "partial"
     },
     {
       "path": "OpenSim/Region/CoreModules/Framework/Caps/CapabilitiesModule.cs",
@@ -5873,7 +5873,7 @@
       "lines": 220,
       "sha256": "0c6bc11cd5beaa228bd7604bdd0f4e0f00d8ba8f0851fa14ac362b4883eea555",
       "testDirectory": false,
-      "portStatus": "not_started"
+      "portStatus": "partial"
     },
     {
       "path": "OpenSim/Region/CoreModules/ServiceConnectorsOut/AgentPreferences/LocalAgentPreferencesServiceConnector.cs",
@@ -7112,7 +7112,7 @@
       "lines": 37,
       "sha256": "61125be6503aef0dd370dd734a7f4de750e3717e8cb9fd2ff5b2a26ce0587e73",
       "testDirectory": false,
-      "portStatus": "not_started"
+      "portStatus": "partial"
     },
     {
       "path": "OpenSim/Region/Framework/Interfaces/IRegionArchiverModule.cs",
@@ -9268,7 +9268,7 @@
       "lines": 6884,
       "sha256": "7f01f9c546c9d18f358227c95d2f76169d0db9cf2f4c1c5d6631ccc0102725e2",
       "testDirectory": false,
-      "portStatus": "not_started"
+      "portStatus": "partial"
     },
     {
       "path": "OpenSim/Region/ScriptEngine/Shared/Api/Implementation/Plugins/Dataserver.cs",
@@ -9324,7 +9324,7 @@
       "lines": 542,
       "sha256": "fb74d3969144bab45e71a819eb92bc4b8e97a18717a6514f625981c709f502bf",
       "testDirectory": false,
-      "portStatus": "not_started"
+      "portStatus": "partial"
     },
     {
       "path": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILS_Api.cs",
@@ -9345,7 +9345,7 @@
       "lines": 938,
       "sha256": "6925e2cda5d7b7775b4de95d202b160c8a8e8507faae349f34c0892fa7d46952",
       "testDirectory": false,
-      "portStatus": "not_started"
+      "portStatus": "partial"
     },
     {
       "path": "OpenSim/Region/ScriptEngine/Shared/Api/Runtime/LSL_Constants.cs",
@@ -10220,14 +10220,14 @@
       "lines": 109,
       "sha256": "27b0d2fbe26a2eeb4ba16d009bcb76eb318ef7ead89b78961942a3462c174671",
       "testDirectory": false,
-      "portStatus": "not_started"
+      "portStatus": "partial"
     },
     {
       "path": "OpenSim/Server/Handlers/Profiles/UserProfilesHandlers.cs",
       "lines": 552,
       "sha256": "71a1a153ea58ce0e3448c508794b35a0d3a115f23de4a546867a0205f633e93d",
       "testDirectory": false,
-      "portStatus": "not_started"
+      "portStatus": "partial"
     },
     {
       "path": "OpenSim/Server/Handlers/Properties/AssemblyInfo.cs",
@@ -10535,7 +10535,7 @@
       "lines": 615,
       "sha256": "417910fd56f00062589e2e83109fbe41d0e44cc61272076bb4029e30900b6749",
       "testDirectory": false,
-      "portStatus": "not_started"
+      "portStatus": "partial"
     },
     {
       "path": "OpenSim/Services/Connectors/InstantMessage/InstantMessageServiceConnector.cs",
@@ -10969,14 +10969,14 @@
       "lines": 80,
       "sha256": "9a36c7e02955f79d1e1c62662156dc4d2596327c3b52817d61e0b7093574b368",
       "testDirectory": false,
-      "portStatus": "not_started"
+      "portStatus": "partial"
     },
     {
       "path": "OpenSim/Services/Interfaces/OpenProfileClient.cs",
       "lines": 134,
       "sha256": "285ffc3fd679b19cddad567e57d1c05f65c68b9e85cb8c62a83e66b582ab13d2",
       "testDirectory": false,
-      "portStatus": "not_started"
+      "portStatus": "partial"
     },
     {
       "path": "OpenSim/Services/Interfaces/Properties/AssemblyInfo.cs",
@@ -11137,14 +11137,14 @@
       "lines": 261,
       "sha256": "090ec34ade7b453ebae681dfbbfab3f3aaf12ccb515fecfc675180660abcdac8",
       "testDirectory": false,
-      "portStatus": "not_started"
+      "portStatus": "partial"
     },
     {
       "path": "OpenSim/Services/UserProfilesService/UserProfilesServiceBase.cs",
       "lines": 87,
       "sha256": "31c6f525ee47191eec7e9ef5016a0e9eb5dd63deb87cbef5246bc83ceebbdcbd",
       "testDirectory": false,
-      "portStatus": "not_started"
+      "portStatus": "partial"
     },
     {
       "path": "OpenSim/Tests/Clients/Assets/AssetsClient.cs",

@@ -1,0 +1,1 @@
+string result;integer after;default{state_entry(){result=xmrVector2String(<xmrString2Float("1.25"),xmrString2Float("-0"),xmrString2Float("1234.567")>,"N2");after=1;}}

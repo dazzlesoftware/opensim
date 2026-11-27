@@ -6,6 +6,7 @@
 #include <sstream>
 using namespace opensim;
 using namespace services;
+
 std::string hex(std::string_view s) {
     std::string result;
     for (unsigned char c : s) {
@@ -14,6 +15,7 @@ std::string hex(std::string_view s) {
     }
     return result;
 }
+
 std::string unhex(const std::string &s) {
     if (s == "." || s == "N")
         return "";
@@ -22,14 +24,17 @@ std::string unhex(const std::string &s) {
         out += char(std::stoi(s.substr(i, 2), nullptr, 16));
     return out;
 }
+
 struct Files : AssetLoaderFiles {
     std::string trace, fail;
     int randoms = 0;
+
     void event(std::string value) {
         trace += value + ";";
         if (value == fail)
             throw std::runtime_error("injected");
     }
+
     framework::Uuid random_uuid() override {
         event("random");
         std::array<uint8_t, 16> data{};
@@ -40,9 +45,11 @@ struct Files : AssetLoaderFiles {
         }
         return framework::Uuid::from_bytes(data);
     }
+
     void info(const std::string &text) override {
         event("info:" + text);
     }
+
     void error(const std::string &text) override {
         auto value = text;
         auto at = value.find(" : ");
@@ -51,12 +58,14 @@ struct Files : AssetLoaderFiles {
         event("error:" + value);
     }
 };
+
 std::string snapshot(const AssetService::Asset &a) {
     return a->full_id().str() + ":" + hex(a->name().value_or("")) + ":" + std::to_string(a->type()) + ":" +
            hex(a->creator_id().value_or("")) + ":" + (a->data ? framework::sha1_hex(*a->data) : "N") + ":" +
-           (a->data ? std::to_string(a->data->size()) : "N") + ":" + hex(a->description().value_or("")) +
-           ":" + (a->local() ? "1" : "0") + (a->temporary() ? "1" : "0");
+           (a->data ? std::to_string(a->data->size()) : "N") + ":" + hex(a->description().value_or("")) + ":" +
+           (a->local() ? "1" : "0") + (a->temporary() ? "1" : "0");
 }
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {

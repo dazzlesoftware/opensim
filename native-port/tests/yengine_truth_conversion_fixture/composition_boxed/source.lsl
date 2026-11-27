@@ -1,0 +1,1 @@
+list boxed;default{state_entry(){boxed=[xmrStringToBool("x"),xmrKeyToBool((key)"bad")];}}

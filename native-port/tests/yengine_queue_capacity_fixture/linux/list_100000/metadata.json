@@ -1,0 +1,46 @@
+{
+  "name": "list_100000",
+  "kind": "list",
+  "length": 100000,
+  "eventName": "touch_start",
+  "postAccepted": true,
+  "queuedCount": 1,
+  "restoredCount": 1,
+  "parameterCount": 1,
+  "before": {
+    "kind": "list",
+    "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+    "length": 100000,
+    "cellsSha256": "ea0d345c9fbcdb2528bbc7faebdfec6b31d64458ccd3e0291660659e9583bea4",
+    "first": "19",
+    "middle": "19",
+    "last": "-7",
+    "firstClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+    "lastClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger"
+  },
+  "after": {
+    "kind": "list",
+    "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+    "length": 100000,
+    "cellsSha256": "ea0d345c9fbcdb2528bbc7faebdfec6b31d64458ccd3e0291660659e9583bea4",
+    "first": "19",
+    "middle": "19",
+    "last": "-7",
+    "firstClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+    "lastClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger"
+  },
+  "xmlBytes": 7800086,
+  "xmlSha256": "ff3c801e81f54890b394a092e8470b26e56d71242b6001aafaea5f68cf4e1c85",
+  "generatorSha256": "2132dc5e4fdcff23b6cd0ef5fa18238dccd5eedef094388e418ddebac3a70dd9",
+  "originalAssemblySha256": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+  "originalSharedAssemblySha256": "5e8b75269a1c76c15f979166a6ae121da03e5d118532c2ef9616de0b348bba77",
+  "originalSourceSha256": {
+    "XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+    "XMRInstCapture.cs": "775f1d83bd4610f788891269ea9ea08b1f79cf4bf3b44300d926f49c8a277cbd",
+    "XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52"
+  },
+  "runtime": ".NET 8.0.34",
+  "architecture": "X64",
+  "processId": 1,
+  "scope": "Actual unchanged original PostEvent plus production AppendXMLObjectArray/AppendXMLDetectArray and RestoreEventQueue; no source compilation or event dispatch claim"
+}

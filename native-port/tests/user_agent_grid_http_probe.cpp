@@ -7,6 +7,7 @@
 #include <iostream>
 #include <sstream>
 using namespace opensim;
+
 int main() {
     framework::ConfigXmlNativeHttpServices http;
     http.proxy = [](auto, auto) -> std::optional<framework::ConfigXmlHttpRoute> { return {}; };
@@ -15,8 +16,7 @@ int main() {
     http.read_error = framework::config_http_read_error;
     http.write_error = framework::config_http_write_error;
     http.error = [](std::string phase, int code) {
-        return std::make_exception_ptr(
-            std::runtime_error("UNMAPPED HTTP " + phase + ":" + std::to_string(code)));
+        return std::make_exception_ptr(std::runtime_error("UNMAPPED HTTP " + phase + ":" + std::to_string(code)));
     };
     network::OsdServiceNativeHttp transport(http);
     network::OsdServiceServices web;
@@ -24,14 +24,12 @@ int main() {
     web.request_number = [&] { return number; };
     web.set_request_number = [&](int n) { number = n; };
     web.debug_level = [] { return 0; };
-    web.debug = web.info = [](const auto&) {};
+    web.debug = web.info = [](const auto &) {};
     web.tick_count = [] { return 0; };
     web.elapsed = [](int) { return 0; };
     transport.bind(web);
     auto requester = std::make_shared<network::OsdServiceRequester>(std::move(web));
-    auto id = [](int n) {
-        return framework::Uuid("00000000-0000-0000-0000-00000000000" + std::to_string(n));
-    };
+    auto id = [](int n) { return framework::Uuid("00000000-0000-0000-0000-00000000000" + std::to_string(n)); };
     std::string line;
     while (std::getline(std::cin, line)) {
         std::istringstream input(line);
@@ -39,15 +37,15 @@ int main() {
         int profile;
         input >> profile >> url;
         services::UserAgentConnectorServices services;
-        services.debug = services.error = services.warn = [](const auto&) {};
+        services.debug = services.error = services.warn = [](const auto &) {};
         services.client = [](int) -> std::shared_ptr<network::XmlRpcRequesterClient> {
             throw std::logic_error("XMLRPC is outside grid-login path");
         };
         services.simulation_options.automatic_purge = false;
-        services.simulation_request = [requester](const auto& u, const auto& data, const auto& method,
-                                                  bool compressed, bool keepalive) {
-            return requester->send(framework::utf16(u), &data, framework::utf16(method), 30000, compressed,
-                                   false, keepalive);
+        services.simulation_request = [requester](const auto &u, const auto &data, const auto &method, bool compressed,
+                                                  bool keepalive) {
+            return requester->send(framework::utf16(u), &data, framework::utf16(method), 30000, compressed, false,
+                                   keepalive);
         };
         services::UserAgentServiceConnector connector(framework::utf16(url), std::move(services));
         services::GridRegion source;
@@ -98,16 +96,15 @@ int main() {
             circuit.reset();
         std::string reason, status;
         try {
-            status = connector.login_agent_to_grid_owned((profile & 1) ? &source : nullptr, circuit, gate,
-                                                         destination, (profile & 4) != 0, reason)
+            status = connector.login_agent_to_grid_owned((profile & 1) ? &source : nullptr, circuit, gate, destination,
+                                                         (profile & 4) != 0, reason)
                          ? "1"
                          : "0";
-        } catch (const services::SimulationConnectorError& e) {
+        } catch (const services::SimulationConnectorError &e) {
             status = "E:" + e.source_type + ":" + framework::utf8(e.message);
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
             status = "UNEXPECTED:" + std::string(e.what());
         }
-        std::cout << network::osd_json(network::Value::object({{"status", status}, {"reason", reason}}), true)
-                  << '\n';
+        std::cout << network::osd_json(network::Value::object({{"status", status}, {"reason", reason}}), true) << '\n';
     }
 }

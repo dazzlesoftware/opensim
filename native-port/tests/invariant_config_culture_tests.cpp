@@ -4,8 +4,9 @@
 #include <iostream>
 #include <sstream>
 using namespace opensim::framework;
+
 namespace {
-NiniWriterText dec(const std::string& s) {
+NiniWriterText dec(const std::string &s) {
     if (s == "-")
         return {};
     std::u16string v;
@@ -15,7 +16,8 @@ NiniWriterText dec(const std::string& s) {
                                        (std::stoul(s.substr(i + 2, 2), nullptr, 16) << 8));
     return nini_writer_text(v);
 }
-std::string hex(const NiniWriterText& t) {
+
+std::string hex(const NiniWriterText &t) {
     if (!t)
         return "-";
     if (t->empty())
@@ -28,7 +30,8 @@ std::string hex(const NiniWriterText& t) {
         }
     return out;
 }
-std::string run(const std::string& row) {
+
+std::string run(const std::string &row) {
     std::istringstream in(row);
     char op;
     std::string a, b;
@@ -49,13 +52,14 @@ std::string run(const std::string& row) {
         }
         in >> start;
         return "I:" + std::to_string(invariant_config_index_of(left, right, start));
-    } catch (const InvariantConfigCultureError& e) {
+    } catch (const InvariantConfigCultureError &e) {
         return "EX:" + e.source_type + ":" + std::to_string(std::bit_cast<std::uint32_t>(e.hresult)) + ":" +
                hex(nini_writer_text(e.message)) + ":" + hex(nini_writer_text(e.parameter));
     }
 }
-}
-int main(int argc, char** argv) {
+} // namespace
+
+int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string_view(argv[1]) == "--probe") {
             std::string row;
@@ -79,7 +83,7 @@ int main(int argc, char** argv) {
             throw std::runtime_error("ASCII lowercase identity");
         std::cout << "PASS invariant config culture rawUTF16\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

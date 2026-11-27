@@ -1,0 +1,1 @@
+integer order;integer result;string left(){order=order*10+1;return "a";}string right(){order=order*10+2;return "b";}default{state_entry(){result=xmrStringCompare(left(),right());}}

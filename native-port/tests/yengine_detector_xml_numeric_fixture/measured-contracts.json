@@ -1,0 +1,1552 @@
+{
+  "scope": "Original private detector XML + production binary migration + live ResumeEx; no native result inferred",
+  "cases": [
+    {
+      "name": "finite_precision",
+      "rotationBeforeBits": [
+        "3fbf9add3739635f",
+        "bfef9add3c0e56b8",
+        "3fd5555554f9b516",
+        "bea07111652d2b5c"
+      ],
+      "rotationAfterBits": [
+        "3fbf9ae0c1765775",
+        "bfef9adc8fb86f48",
+        "3fd55553ef6b5d46",
+        "8000000000000000"
+      ],
+      "surfaceBefore": {
+        "touch_st": [
+          {
+            "clr": "System.Double",
+            "value": 0.123456789,
+            "bits": "3fbf9add3739635f",
+            "text": "0.123456789"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654321,
+            "bits": "bfef9add3c0e56b8",
+            "text": "-0.987654321"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333333,
+            "bits": "3fd5555554f9b516",
+            "text": "0.333333333"
+          }
+        ],
+        "touch_uv": [
+          {
+            "clr": "System.Double",
+            "value": 0.123456789,
+            "bits": "3fbf9add3739635f",
+            "text": "0.123456789"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654321,
+            "bits": "bfef9add3c0e56b8",
+            "text": "-0.987654321"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333333,
+            "bits": "3fd5555554f9b516",
+            "text": "0.333333333"
+          }
+        ],
+        "touch_normal": [
+          {
+            "clr": "System.Double",
+            "value": 0.123456789,
+            "bits": "3fbf9add3739635f",
+            "text": "0.123456789"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654321,
+            "bits": "bfef9add3c0e56b8",
+            "text": "-0.987654321"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333333,
+            "bits": "3fd5555554f9b516",
+            "text": "0.333333333"
+          }
+        ],
+        "touch_binormal": [
+          {
+            "clr": "System.Double",
+            "value": 0.123456789,
+            "bits": "3fbf9add3739635f",
+            "text": "0.123456789"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654321,
+            "bits": "bfef9add3c0e56b8",
+            "text": "-0.987654321"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333333,
+            "bits": "3fd5555554f9b516",
+            "text": "0.333333333"
+          }
+        ],
+        "touch_pos": [
+          {
+            "clr": "System.Double",
+            "value": 0.123456789,
+            "bits": "3fbf9add3739635f",
+            "text": "0.123456789"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654321,
+            "bits": "bfef9add3c0e56b8",
+            "text": "-0.987654321"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333333,
+            "bits": "3fd5555554f9b516",
+            "text": "0.333333333"
+          }
+        ],
+        "touch_face": 6
+      },
+      "surfaceAfter": {
+        "touch_st": [
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_uv": [
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_normal": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_binormal": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_pos": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_face": -1
+      }
+    },
+    {
+      "name": "positive_half",
+      "rotationBeforeBits": [
+        "3ea0c6f7a0b5ed8d",
+        "3ff3c0c8cd63cb81",
+        "3ff3c0c9d9d3458d",
+        "40056666a98244e9"
+      ],
+      "rotationAfterBits": [
+        "3eb0c6f7a0b5ed8d",
+        "3ff3c0c9539b8887",
+        "3ff3c0ca600b0293",
+        "40056666ec9e236c"
+      ],
+      "surfaceBefore": {
+        "touch_st": [
+          {
+            "clr": "System.Double",
+            "value": 5e-07,
+            "bits": "3ea0c6f7a0b5ed8d",
+            "text": "5E-07"
+          },
+          {
+            "clr": "System.Double",
+            "value": 1.2345665,
+            "bits": "3ff3c0c8cd63cb81",
+            "text": "1.2345665"
+          },
+          {
+            "clr": "System.Double",
+            "value": 1.2345675,
+            "bits": "3ff3c0c9d9d3458d",
+            "text": "1.2345675"
+          }
+        ],
+        "touch_uv": [
+          {
+            "clr": "System.Double",
+            "value": 5e-07,
+            "bits": "3ea0c6f7a0b5ed8d",
+            "text": "5E-07"
+          },
+          {
+            "clr": "System.Double",
+            "value": 1.2345665,
+            "bits": "3ff3c0c8cd63cb81",
+            "text": "1.2345665"
+          },
+          {
+            "clr": "System.Double",
+            "value": 1.2345675,
+            "bits": "3ff3c0c9d9d3458d",
+            "text": "1.2345675"
+          }
+        ],
+        "touch_normal": [
+          {
+            "clr": "System.Double",
+            "value": 5e-07,
+            "bits": "3ea0c6f7a0b5ed8d",
+            "text": "5E-07"
+          },
+          {
+            "clr": "System.Double",
+            "value": 1.2345665,
+            "bits": "3ff3c0c8cd63cb81",
+            "text": "1.2345665"
+          },
+          {
+            "clr": "System.Double",
+            "value": 1.2345675,
+            "bits": "3ff3c0c9d9d3458d",
+            "text": "1.2345675"
+          }
+        ],
+        "touch_binormal": [
+          {
+            "clr": "System.Double",
+            "value": 5e-07,
+            "bits": "3ea0c6f7a0b5ed8d",
+            "text": "5E-07"
+          },
+          {
+            "clr": "System.Double",
+            "value": 1.2345665,
+            "bits": "3ff3c0c8cd63cb81",
+            "text": "1.2345665"
+          },
+          {
+            "clr": "System.Double",
+            "value": 1.2345675,
+            "bits": "3ff3c0c9d9d3458d",
+            "text": "1.2345675"
+          }
+        ],
+        "touch_pos": [
+          {
+            "clr": "System.Double",
+            "value": 5e-07,
+            "bits": "3ea0c6f7a0b5ed8d",
+            "text": "5E-07"
+          },
+          {
+            "clr": "System.Double",
+            "value": 1.2345665,
+            "bits": "3ff3c0c8cd63cb81",
+            "text": "1.2345665"
+          },
+          {
+            "clr": "System.Double",
+            "value": 1.2345675,
+            "bits": "3ff3c0c9d9d3458d",
+            "text": "1.2345675"
+          }
+        ],
+        "touch_face": 6
+      },
+      "surfaceAfter": {
+        "touch_st": [
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_uv": [
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_normal": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_binormal": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_pos": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_face": -1
+      }
+    },
+    {
+      "name": "negative_half",
+      "rotationBeforeBits": [
+        "bea0c6f7a0b5ed8d",
+        "bff3c0c8cd63cb81",
+        "bff3c0c9d9d3458d",
+        "c0056666a98244e9"
+      ],
+      "rotationAfterBits": [
+        "beb0c6f7a0b5ed8d",
+        "bff3c0c9539b8887",
+        "bff3c0ca600b0293",
+        "c0056666ec9e236c"
+      ],
+      "surfaceBefore": {
+        "touch_st": [
+          {
+            "clr": "System.Double",
+            "value": -5e-07,
+            "bits": "bea0c6f7a0b5ed8d",
+            "text": "-5E-07"
+          },
+          {
+            "clr": "System.Double",
+            "value": -1.2345665,
+            "bits": "bff3c0c8cd63cb81",
+            "text": "-1.2345665"
+          },
+          {
+            "clr": "System.Double",
+            "value": -1.2345675,
+            "bits": "bff3c0c9d9d3458d",
+            "text": "-1.2345675"
+          }
+        ],
+        "touch_uv": [
+          {
+            "clr": "System.Double",
+            "value": -5e-07,
+            "bits": "bea0c6f7a0b5ed8d",
+            "text": "-5E-07"
+          },
+          {
+            "clr": "System.Double",
+            "value": -1.2345665,
+            "bits": "bff3c0c8cd63cb81",
+            "text": "-1.2345665"
+          },
+          {
+            "clr": "System.Double",
+            "value": -1.2345675,
+            "bits": "bff3c0c9d9d3458d",
+            "text": "-1.2345675"
+          }
+        ],
+        "touch_normal": [
+          {
+            "clr": "System.Double",
+            "value": -5e-07,
+            "bits": "bea0c6f7a0b5ed8d",
+            "text": "-5E-07"
+          },
+          {
+            "clr": "System.Double",
+            "value": -1.2345665,
+            "bits": "bff3c0c8cd63cb81",
+            "text": "-1.2345665"
+          },
+          {
+            "clr": "System.Double",
+            "value": -1.2345675,
+            "bits": "bff3c0c9d9d3458d",
+            "text": "-1.2345675"
+          }
+        ],
+        "touch_binormal": [
+          {
+            "clr": "System.Double",
+            "value": -5e-07,
+            "bits": "bea0c6f7a0b5ed8d",
+            "text": "-5E-07"
+          },
+          {
+            "clr": "System.Double",
+            "value": -1.2345665,
+            "bits": "bff3c0c8cd63cb81",
+            "text": "-1.2345665"
+          },
+          {
+            "clr": "System.Double",
+            "value": -1.2345675,
+            "bits": "bff3c0c9d9d3458d",
+            "text": "-1.2345675"
+          }
+        ],
+        "touch_pos": [
+          {
+            "clr": "System.Double",
+            "value": -5e-07,
+            "bits": "bea0c6f7a0b5ed8d",
+            "text": "-5E-07"
+          },
+          {
+            "clr": "System.Double",
+            "value": -1.2345665,
+            "bits": "bff3c0c8cd63cb81",
+            "text": "-1.2345665"
+          },
+          {
+            "clr": "System.Double",
+            "value": -1.2345675,
+            "bits": "bff3c0c9d9d3458d",
+            "text": "-1.2345675"
+          }
+        ],
+        "touch_face": 6
+      },
+      "surfaceAfter": {
+        "touch_st": [
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_uv": [
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_normal": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_binormal": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_pos": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_face": -1
+      }
+    },
+    {
+      "name": "tiny_signed_zero",
+      "rotationBeforeBits": [
+        "8000000000000000",
+        "bea07111652d2b5c",
+        "3ea07111652d2b5c",
+        "8000000000000000"
+      ],
+      "rotationAfterBits": [
+        "8000000000000000",
+        "8000000000000000",
+        "0000000000000000",
+        "8000000000000000"
+      ],
+      "surfaceBefore": {
+        "touch_st": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "8000000000000000",
+            "text": "-0"
+          },
+          {
+            "clr": "System.Double",
+            "value": -4.9e-07,
+            "bits": "bea07111652d2b5c",
+            "text": "-4.9E-07"
+          },
+          {
+            "clr": "System.Double",
+            "value": 4.9e-07,
+            "bits": "3ea07111652d2b5c",
+            "text": "4.9E-07"
+          }
+        ],
+        "touch_uv": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "8000000000000000",
+            "text": "-0"
+          },
+          {
+            "clr": "System.Double",
+            "value": -4.9e-07,
+            "bits": "bea07111652d2b5c",
+            "text": "-4.9E-07"
+          },
+          {
+            "clr": "System.Double",
+            "value": 4.9e-07,
+            "bits": "3ea07111652d2b5c",
+            "text": "4.9E-07"
+          }
+        ],
+        "touch_normal": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "8000000000000000",
+            "text": "-0"
+          },
+          {
+            "clr": "System.Double",
+            "value": -4.9e-07,
+            "bits": "bea07111652d2b5c",
+            "text": "-4.9E-07"
+          },
+          {
+            "clr": "System.Double",
+            "value": 4.9e-07,
+            "bits": "3ea07111652d2b5c",
+            "text": "4.9E-07"
+          }
+        ],
+        "touch_binormal": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "8000000000000000",
+            "text": "-0"
+          },
+          {
+            "clr": "System.Double",
+            "value": -4.9e-07,
+            "bits": "bea07111652d2b5c",
+            "text": "-4.9E-07"
+          },
+          {
+            "clr": "System.Double",
+            "value": 4.9e-07,
+            "bits": "3ea07111652d2b5c",
+            "text": "4.9E-07"
+          }
+        ],
+        "touch_pos": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "8000000000000000",
+            "text": "-0"
+          },
+          {
+            "clr": "System.Double",
+            "value": -4.9e-07,
+            "bits": "bea07111652d2b5c",
+            "text": "-4.9E-07"
+          },
+          {
+            "clr": "System.Double",
+            "value": 4.9e-07,
+            "bits": "3ea07111652d2b5c",
+            "text": "4.9E-07"
+          }
+        ],
+        "touch_face": 6
+      },
+      "surfaceAfter": {
+        "touch_st": [
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_uv": [
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_normal": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_binormal": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_pos": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_face": -1
+      }
+    },
+    {
+      "name": "nonfinite",
+      "rotationBeforeBits": [
+        "fff8000000000000",
+        "7ff0000000000000",
+        "fff0000000000000",
+        "8000000000000000"
+      ],
+      "rotationAfterBits": [
+        "0000000000000000",
+        "0000000000000000",
+        "0000000000000000",
+        "3ff0000000000000"
+      ],
+      "surfaceBefore": {
+        "touch_st": [
+          {
+            "clr": "System.Double",
+            "value": null,
+            "bits": "fff8000000000000",
+            "text": "NaN"
+          },
+          {
+            "clr": "System.Double",
+            "value": null,
+            "bits": "7ff0000000000000",
+            "text": "Infinity"
+          },
+          {
+            "clr": "System.Double",
+            "value": null,
+            "bits": "fff0000000000000",
+            "text": "-Infinity"
+          }
+        ],
+        "touch_uv": [
+          {
+            "clr": "System.Double",
+            "value": null,
+            "bits": "fff8000000000000",
+            "text": "NaN"
+          },
+          {
+            "clr": "System.Double",
+            "value": null,
+            "bits": "7ff0000000000000",
+            "text": "Infinity"
+          },
+          {
+            "clr": "System.Double",
+            "value": null,
+            "bits": "fff0000000000000",
+            "text": "-Infinity"
+          }
+        ],
+        "touch_normal": [
+          {
+            "clr": "System.Double",
+            "value": null,
+            "bits": "fff8000000000000",
+            "text": "NaN"
+          },
+          {
+            "clr": "System.Double",
+            "value": null,
+            "bits": "7ff0000000000000",
+            "text": "Infinity"
+          },
+          {
+            "clr": "System.Double",
+            "value": null,
+            "bits": "fff0000000000000",
+            "text": "-Infinity"
+          }
+        ],
+        "touch_binormal": [
+          {
+            "clr": "System.Double",
+            "value": null,
+            "bits": "fff8000000000000",
+            "text": "NaN"
+          },
+          {
+            "clr": "System.Double",
+            "value": null,
+            "bits": "7ff0000000000000",
+            "text": "Infinity"
+          },
+          {
+            "clr": "System.Double",
+            "value": null,
+            "bits": "fff0000000000000",
+            "text": "-Infinity"
+          }
+        ],
+        "touch_pos": [
+          {
+            "clr": "System.Double",
+            "value": null,
+            "bits": "fff8000000000000",
+            "text": "NaN"
+          },
+          {
+            "clr": "System.Double",
+            "value": null,
+            "bits": "7ff0000000000000",
+            "text": "Infinity"
+          },
+          {
+            "clr": "System.Double",
+            "value": null,
+            "bits": "fff0000000000000",
+            "text": "-Infinity"
+          }
+        ],
+        "touch_face": 6
+      },
+      "surfaceAfter": {
+        "touch_st": [
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_uv": [
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_normal": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_binormal": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_pos": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_face": -1
+      }
+    },
+    {
+      "name": "nan_payload",
+      "rotationBeforeBits": [
+        "7ff8000000000042",
+        "fff8000000000043",
+        "0000000000000000",
+        "8000000000000000"
+      ],
+      "rotationAfterBits": [
+        "fff8000000000000",
+        "fff8000000000000",
+        "0000000000000000",
+        "8000000000000000"
+      ],
+      "surfaceBefore": {
+        "touch_st": [
+          {
+            "clr": "System.Double",
+            "value": null,
+            "bits": "7ff8000000000042",
+            "text": "NaN"
+          },
+          {
+            "clr": "System.Double",
+            "value": null,
+            "bits": "fff8000000000043",
+            "text": "NaN"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_uv": [
+          {
+            "clr": "System.Double",
+            "value": null,
+            "bits": "7ff8000000000042",
+            "text": "NaN"
+          },
+          {
+            "clr": "System.Double",
+            "value": null,
+            "bits": "fff8000000000043",
+            "text": "NaN"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_normal": [
+          {
+            "clr": "System.Double",
+            "value": null,
+            "bits": "7ff8000000000042",
+            "text": "NaN"
+          },
+          {
+            "clr": "System.Double",
+            "value": null,
+            "bits": "fff8000000000043",
+            "text": "NaN"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_binormal": [
+          {
+            "clr": "System.Double",
+            "value": null,
+            "bits": "7ff8000000000042",
+            "text": "NaN"
+          },
+          {
+            "clr": "System.Double",
+            "value": null,
+            "bits": "fff8000000000043",
+            "text": "NaN"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_pos": [
+          {
+            "clr": "System.Double",
+            "value": null,
+            "bits": "7ff8000000000042",
+            "text": "NaN"
+          },
+          {
+            "clr": "System.Double",
+            "value": null,
+            "bits": "fff8000000000043",
+            "text": "NaN"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_face": 6
+      },
+      "surfaceAfter": {
+        "touch_st": [
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_uv": [
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_normal": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_binormal": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_pos": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_face": -1
+      }
+    },
+    {
+      "name": "omitted_surface_defaults",
+      "rotationBeforeBits": [
+        "3fbf9add3739635f",
+        "bfef9add3c0e56b8",
+        "3fd5555554f9b516",
+        "bea07111652d2b5c"
+      ],
+      "rotationAfterBits": [
+        "3fbf9ae0c1765775",
+        "bfef9adc8fb86f48",
+        "3fd55553ef6b5d46",
+        "8000000000000000"
+      ],
+      "surfaceBefore": {
+        "touch_st": [
+          {
+            "clr": "System.Double",
+            "value": 0.123456789,
+            "bits": "3fbf9add3739635f",
+            "text": "0.123456789"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654321,
+            "bits": "bfef9add3c0e56b8",
+            "text": "-0.987654321"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333333,
+            "bits": "3fd5555554f9b516",
+            "text": "0.333333333"
+          }
+        ],
+        "touch_uv": [
+          {
+            "clr": "System.Double",
+            "value": 0.123456789,
+            "bits": "3fbf9add3739635f",
+            "text": "0.123456789"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654321,
+            "bits": "bfef9add3c0e56b8",
+            "text": "-0.987654321"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333333,
+            "bits": "3fd5555554f9b516",
+            "text": "0.333333333"
+          }
+        ],
+        "touch_normal": [
+          {
+            "clr": "System.Double",
+            "value": 0.123456789,
+            "bits": "3fbf9add3739635f",
+            "text": "0.123456789"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654321,
+            "bits": "bfef9add3c0e56b8",
+            "text": "-0.987654321"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333333,
+            "bits": "3fd5555554f9b516",
+            "text": "0.333333333"
+          }
+        ],
+        "touch_binormal": [
+          {
+            "clr": "System.Double",
+            "value": 0.123456789,
+            "bits": "3fbf9add3739635f",
+            "text": "0.123456789"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654321,
+            "bits": "bfef9add3c0e56b8",
+            "text": "-0.987654321"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333333,
+            "bits": "3fd5555554f9b516",
+            "text": "0.333333333"
+          }
+        ],
+        "touch_pos": [
+          {
+            "clr": "System.Double",
+            "value": 0.123456789,
+            "bits": "3fbf9add3739635f",
+            "text": "0.123456789"
+          },
+          {
+            "clr": "System.Double",
+            "value": -0.987654321,
+            "bits": "bfef9add3c0e56b8",
+            "text": "-0.987654321"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.333333333,
+            "bits": "3fd5555554f9b516",
+            "text": "0.333333333"
+          }
+        ],
+        "touch_face": 6
+      },
+      "surfaceAfter": {
+        "touch_st": [
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_uv": [
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": -1,
+            "bits": "bff0000000000000",
+            "text": "-1"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_normal": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_binormal": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_pos": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ],
+        "touch_face": -1
+      }
+    }
+  ]
+}

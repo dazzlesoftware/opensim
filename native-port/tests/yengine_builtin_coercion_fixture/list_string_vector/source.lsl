@@ -1,0 +1,1 @@
+string result;integer after;default{state_entry(){result=llList2String(<1,2,3>,0);after=1;}}

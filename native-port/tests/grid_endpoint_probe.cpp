@@ -32,19 +32,22 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 #include <sstream>
 using namespace opensim;
+
 std::string hex(std::string_view text) {
     std::ostringstream out;
     for (unsigned char c : text)
         out << std::hex << std::setfill('0') << std::setw(2) << static_cast<int>(c);
     return out.str();
 }
-std::string unhex(const std::string& text) {
+
+std::string unhex(const std::string &text) {
     std::string result;
     for (std::size_t i = 0; i < text.size(); i += 2)
         result.push_back(static_cast<char>(std::stoi(text.substr(i, 2), nullptr, 16)));
     return result;
 }
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     try {
         const auto config = server::IniConfig::load(framework::utf8_path(argv[1]));
         if (argc > 2) {
@@ -58,7 +61,7 @@ int main(int argc, char** argv) {
             services::NullRegionStore store;
             const auto previous = store.find("%", {});
             if (previous)
-                for (const auto& row : *previous)
+                for (const auto &row : *previous)
                     store.erase(row->id);
             services::GridService service(store, config, [] { return 1700000000; });
             for (int i = 1; i <= 2; ++i) {
@@ -73,9 +76,8 @@ int main(int argc, char** argv) {
                 row->data["flags"] = i == 1 ? "1031" : "516";
                 store.store(row);
             }
-            server::GridEndpoint endpoint(service, config, [] {
-                return network::ServiceXmlValue::object({{"ExportSupported", "true"}});
-            });
+            server::GridEndpoint endpoint(
+                service, config, [] { return network::ServiceXmlValue::object({{"ExportSupported", "true"}}); });
             network::HttpRequest request{"POST", "/grid", body, "127.0.0.1", "", {}};
             if (!authorization.empty())
                 request.headers["Authorization"] = authorization;
@@ -84,14 +86,14 @@ int main(int argc, char** argv) {
             try {
                 const auto response = endpoint.handle(request);
                 const auto auth = response.headers.find("WWW-Authenticate");
-                std::cout << response.status << '|' << hex(response.body) << '|' << hex(response.content_type)
-                          << '|' << (auth == response.headers.end() ? "" : hex(auth->second)) << '\n';
-            } catch (const std::invalid_argument&) {
+                std::cout << response.status << '|' << hex(response.body) << '|' << hex(response.content_type) << '|'
+                          << (auth == response.headers.end() ? "" : hex(auth->second)) << '\n';
+            } catch (const std::invalid_argument &) {
                 std::cout << "BASE64_FORMAT_ERROR\n";
             }
         }
         return 0;
-    } catch (const std::exception& error) {
+    } catch (const std::exception &error) {
         std::cerr << error.what() << '\n';
         return 1;
     }

@@ -8,27 +8,31 @@
 #include <limits>
 #include <stdexcept>
 #include <vector>
+
 namespace opensim::framework::file_system_name {
 namespace {
-template <class Table> std::uint32_t map(std::uint32_t c, const Table& table) {
-    auto it = std::lower_bound(table.begin(), table.end(), c,
-                               [](auto pair, auto value) { return pair[0] < value; });
+template <class Table> std::uint32_t map(std::uint32_t c, const Table &table) {
+    auto it = std::lower_bound(table.begin(), table.end(), c, [](auto pair, auto value) { return pair[0] < value; });
     return it != table.end() && (*it)[0] == c ? (*it)[1] : c;
 }
+
 char16_t upper_unit(char16_t c, CasingMode mode) {
     using namespace file_system_name_case_data;
     return static_cast<char16_t>(mode == CasingMode::Normal ? map(c, chars_normal) : map(c, chars_invariant));
 }
+
 std::uint32_t upper_scalar(std::uint32_t c, CasingMode mode) {
     using namespace file_system_name_case_data;
     return mode == CasingMode::Normal ? map(c, ordinal_normal) : map(c, ordinal_invariant);
 }
-std::uint32_t next(std::u16string_view text, std::size_t& i) {
+
+std::uint32_t next(std::u16string_view text, std::size_t &i) {
     std::uint32_t c = text[i++];
     if (c >= 0xd800 && c <= 0xdbff && i < text.size() && text[i] >= 0xdc00 && text[i] <= 0xdfff)
         c = 0x10000 + ((c - 0xd800) << 10) + (text[i++] - 0xdc00);
     return c;
 }
+
 bool ordinal_equal(std::u16string_view a, std::u16string_view b, CasingMode mode) {
     if (a.size() != b.size())
         return false;
@@ -38,40 +42,50 @@ bool ordinal_equal(std::u16string_view a, std::u16string_view b, CasingMode mode
             return false;
     return i == a.size() && j == b.size();
 }
+
 bool ends_with(std::u16string_view text, std::u16string_view suffix, bool ignore, CasingMode mode) {
     if (suffix.size() > text.size())
         return false;
     auto tail = text.substr(text.size() - suffix.size());
     return ignore ? ordinal_equal(tail, suffix, mode) : tail == suffix;
 }
-bool equal_units(char16_t a, char16_t b, const CasingBackend& casing) {
+
+bool equal_units(char16_t a, char16_t b, const CasingBackend &casing) {
     auto left = casing.upper_invariant(a);
     auto right = casing.upper_invariant(b);
     return left == right;
 }
+
 int plus(int a, int b) {
     return std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(a) + static_cast<std::uint32_t>(b));
 }
+
 int twice(int n) {
     return std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(n) * 2);
 }
+
 struct Text {
     std::u16string_view value;
     int Length;
+
     explicit Text(std::u16string_view v) : value(v), Length(0) {
         if (v.size() > static_cast<std::size_t>(std::numeric_limits<int>::max()))
             throw std::length_error("Source span length exceeds Int32");
         Length = static_cast<int>(v.size());
     }
+
     char16_t operator[](int i) const {
         return value.at(static_cast<std::size_t>(i));
     }
+
     Text Slice(int i) const {
         return Text(value.substr(static_cast<std::size_t>(i)));
     }
+
     bool ContainsAny(std::u16string_view choices) const {
         return value.find_first_of(choices) != value.npos;
     }
+
     bool ContainsAny(char16_t a, char16_t b) const {
         for (auto c : value)
             if (c == a || c == b)
@@ -79,8 +93,9 @@ struct Text {
         return false;
     }
 };
+
 bool match_pattern(Text expression, Text name, bool ignoreCase, bool useExtendedWildcards,
-                   const CasingBackend& casing) {
+                   const CasingBackend &casing) {
 
     if (expression.Length == 0 || name.Length == 0)
         return false;
@@ -92,8 +107,8 @@ bool match_pattern(Text expression, Text name, bool ignoreCase, bool useExtended
 
         Text expressionEnd = expression.Slice(1);
 
-        bool hasWildcards = useExtendedWildcards ? expressionEnd.ContainsAny(u"\"<>*?")
-                                                 : expressionEnd.ContainsAny(u'*', u'?');
+        bool hasWildcards =
+            useExtendedWildcards ? expressionEnd.ContainsAny(u"\"<>*?") : expressionEnd.ContainsAny(u'*', u'?');
         if (!hasWildcards) {
 
             if (name.Length < expressionEnd.Length)
@@ -256,23 +271,24 @@ bool match_pattern(Text expression, Text name, bool ignoreCase, bool useExtended
 
     return currentState == maxState;
 }
-}
-const CasingBackend& pinned_case_backend(CasingMode mode) {
+} // namespace
+
+const CasingBackend &pinned_case_backend(CasingMode mode) {
     static const CasingBackend normal{
         [](char16_t c) { return upper_unit(c, CasingMode::Normal); },
         [](auto text, auto suffix) { return ends_with(text, suffix, true, CasingMode::Normal); }};
     static const CasingBackend invariant{
         [](char16_t c) { return upper_unit(c, CasingMode::GlobalizationInvariant); },
-        [](auto text, auto suffix) {
-            return ends_with(text, suffix, true, CasingMode::GlobalizationInvariant);
-        }};
+        [](auto text, auto suffix) { return ends_with(text, suffix, true, CasingMode::GlobalizationInvariant); }};
     return mode == CasingMode::Normal ? normal : invariant;
 }
+
 String star_literal() {
     static const auto value = std::make_shared<const std::u16string>(u"*");
     return value;
 }
-String translate_win32_expression(const String& expression) {
+
+String translate_win32_expression(const String &expression) {
     if (!expression || expression->empty() || *expression == u"*" || *expression == u"*.*")
         return star_literal();
     bool modified = false;
@@ -285,8 +301,7 @@ String translate_win32_expression(const String& expression) {
             modified = true;
             if (i >= 1 && i == expression->size() - 1 && (*expression)[i - 1] == u'*')
                 out.back() = u'<';
-            else if (i < expression->size() - 1 &&
-                     ((*expression)[i + 1] == u'?' || (*expression)[i + 1] == u'*'))
+            else if (i < expression->size() - 1 && ((*expression)[i + 1] == u'?' || (*expression)[i + 1] == u'*'))
                 out += u'"';
             else
                 out += u'.';
@@ -302,20 +317,22 @@ String translate_win32_expression(const String& expression) {
     }
     return modified ? std::make_shared<const std::u16string>(std::move(out)) : expression;
 }
+
 bool matches_win32_expression(std::u16string_view expression, std::u16string_view name, bool ignore,
-                              const CasingBackend& casing) {
+                              const CasingBackend &casing) {
     return match_pattern(Text(expression), Text(name), ignore, true, casing);
 }
+
 bool matches_simple_expression(std::u16string_view expression, std::u16string_view name, bool ignore,
-                               const CasingBackend& casing) {
+                               const CasingBackend &casing) {
     return match_pattern(Text(expression), Text(name), ignore, false, casing);
 }
-bool matches_win32_expression(std::u16string_view expression, std::u16string_view name, bool ignore,
-                              CasingMode mode) {
+
+bool matches_win32_expression(std::u16string_view expression, std::u16string_view name, bool ignore, CasingMode mode) {
     return matches_win32_expression(expression, name, ignore, pinned_case_backend(mode));
 }
-bool matches_simple_expression(std::u16string_view expression, std::u16string_view name, bool ignore,
-                               CasingMode mode) {
+
+bool matches_simple_expression(std::u16string_view expression, std::u16string_view name, bool ignore, CasingMode mode) {
     return matches_simple_expression(expression, name, ignore, pinned_case_backend(mode));
 }
-}
+} // namespace opensim::framework::file_system_name

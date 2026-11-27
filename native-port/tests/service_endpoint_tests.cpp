@@ -31,15 +31,18 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <fstream>
 #include <iostream>
 using namespace opensim;
+
 namespace {
 int failures = 0;
-void check(bool value, const char* name) {
+
+void check(bool value, const char *name) {
     if (!value) {
         ++failures;
         std::cerr << "FAIL: " << name << '\n';
     }
 }
-void tests(const std::filesystem::path& path) {
+
+void tests(const std::filesystem::path &path) {
     services::SqliteGridUserStore grid_store(":memory:", true);
     auto grid_cache = std::make_shared<services::GridUserCache>();
     services::GridUserService grid(grid_store, [] { return 1700000000; }, grid_cache);
@@ -47,7 +50,7 @@ void tests(const std::filesystem::path& path) {
     server::GridUserEndpoint grid_endpoint(grid, grid_config);
     const std::string grid_id = "00000000-0000-0000-0000-000000000001",
                       grid_region = "00000000-0000-0000-0000-000000000003";
-    auto grid_request = [&](const std::string& body) {
+    auto grid_request = [&](const std::string &body) {
         return grid_endpoint.handle({"POST", "/griduser", body, "127.0.0.1", "", {}});
     };
     check(grid_request("METHOD=getgriduserinfo&UserID=" + grid_id).body.find("Failure") != std::string::npos,
@@ -58,11 +61,10 @@ void tests(const std::filesystem::path& path) {
     auto grid_response = grid_request("METHOD=loggedin&UserID=" + grid_id);
     check(grid_response.body.find("11/14/2023 22:13:20") != std::string::npos && grid.info(grid_id)->online,
           "grid loggedin persists and formats UTC invariant date");
-    check(
-        grid_request("METHOD=sethome&UserID=" + grid_id + "&RegionID=" + grid_region).body.find("Success") !=
-                std::string::npos &&
-            grid.info(grid_id)->home_position == framework::Vector3{128, 128, 70},
-        "grid home omitted position defaults");
+    check(grid_request("METHOD=sethome&UserID=" + grid_id + "&RegionID=" + grid_region).body.find("Success") !=
+                  std::string::npos &&
+              grid.info(grid_id)->home_position == framework::Vector3{128, 128, 70},
+          "grid home omitted position defaults");
     check(grid_request("METHOD=setposition&UserID=" + grid_id + "&RegionID=" + grid_region +
                        "&Position=bad&LookAt=<1,2,3>")
                       .body.find("Success") != std::string::npos &&
@@ -73,12 +75,11 @@ void tests(const std::filesystem::path& path) {
                   std::string::npos &&
               grid.info(grid_id)->online,
           "invalid grid region leaves online state intact");
-    check(grid_request("METHOD=loggedout&UserID=" + grid_id + "&RegionID=" + grid_region)
-                      .body.find("Success") != std::string::npos &&
+    check(grid_request("METHOD=loggedout&UserID=" + grid_id + "&RegionID=" + grid_region).body.find("Success") !=
+                  std::string::npos &&
               !grid.info(grid_id)->online && grid.info(grid_id)->logout == 1700000000,
           "grid logout persists session state");
-    check(grid_request("METHOD=getgriduserinfos&AgentIDs[]=" + grid_id +
-                       "&AgentIDs[]=missing&AgentIDs[]=" + grid_id)
+    check(grid_request("METHOD=getgriduserinfos&AgentIDs[]=" + grid_id + "&AgentIDs[]=missing&AgentIDs[]=" + grid_id)
                   .body.find("griduser1") != std::string::npos,
           "grid batch skips null and preserves duplicates");
     auto form = network::parse_service_form(
@@ -87,8 +88,7 @@ void tests(const std::filesystem::path& path) {
               std::get<std::vector<std::string>>(form.at("uuids")) == std::vector<std::string>({"a", "c"}),
           "form first-value, list typing and equals-split rules");
     check(std::get<std::string>(form.at("x")) == "\xf0\x9f\x98\x80" &&
-              std::get<std::string>(form.at("bad")) == "\xef\xbf\xbd" &&
-              std::get<std::string>(form.at("space")) == " ",
+              std::get<std::string>(form.at("bad")) == "\xef\xbf\xbd" && std::get<std::string>(form.at("space")) == " ",
           "form Unicode and replacement decoding");
     services::NullPresenceStore store;
     double now = 0;
@@ -98,12 +98,12 @@ void tests(const std::filesystem::path& path) {
     service.login("user <&>", session, framework::Uuid::random());
     server::IniConfig empty;
     server::PresenceEndpoint endpoint(service, empty);
-    auto request = [&](const std::string& body, std::map<std::string, std::string> headers = {}) {
-        return endpoint.handle({"POST", "/presence", body, "127.0.0.1", "application/x-www-form-urlencoded",
-                                std::move(headers)});
+    auto request = [&](const std::string &body, std::map<std::string, std::string> headers = {}) {
+        return endpoint.handle(
+            {"POST", "/presence", body, "127.0.0.1", "application/x-www-form-urlencoded", std::move(headers)});
     };
-    check(request("METHOD=login&UserID=remote&SessionID=" + framework::Uuid::random().str())
-                  .body.find("Failure") != std::string::npos,
+    check(request("METHOD=login&UserID=remote&SessionID=" + framework::Uuid::random().str()).body.find("Failure") !=
+              std::string::npos,
           "presence endpoint refuses remote login");
     auto response = request("METHOD=getagent&SessionID=" + session.str());
     check(response.status == 200 && response.body.find("user &lt;&amp;&gt;") != std::string::npos &&
@@ -113,21 +113,21 @@ void tests(const std::filesystem::path& path) {
           "getagents requires list argument");
     check(request("METHOD=getagents&uuids[]=missing").body.find("<result>null</result>") != std::string::npos,
           "missing agents null result");
-    check(request("METHOD=report&SessionID=" + session.str() + "&RegionID=" + region.str())
-                      .body.find("Success") != std::string::npos &&
+    check(request("METHOD=report&SessionID=" + session.str() + "&RegionID=" + region.str()).body.find("Success") !=
+                  std::string::npos &&
               service.agent(session)->region_id == region,
           "report updates native service");
     check(request("METHOD=getagent&SessionID=" + session.str(), {{"X-SecondLife-Shard", ""}}).status == 403,
           "default service auth rejects script requests even empty header");
     {
         std::ofstream file(path);
-        file
-            << "[Network]\nAuthType=BasicHttpAuthentication\nHttpAuthUsername=network\nHttpAuthPassword=wrong\n[PresenceService]\nHttpAuthUsername=u\nHttpAuthPassword=p\n";
+        file << "[Network]\nAuthType=BasicHttpAuthentication\nHttpAuthUsername=network\nHttpAuthPassword=wrong\n["
+                "PresenceService]\nHttpAuthUsername=u\nHttpAuthPassword=p\n";
     }
     auto config = server::IniConfig::load(path);
     server::PresenceEndpoint secured(service, config);
-    network::HttpRequest secured_request{
-        "POST", "/presence", "METHOD=getagent&SessionID=" + session.str(), "127.0.0.1", "", {}};
+    network::HttpRequest secured_request{"POST",      "/presence", "METHOD=getagent&SessionID=" + session.str(),
+                                         "127.0.0.1", "",          {}};
     auto denied = secured.handle(secured_request);
     check(denied.status == 401 && denied.headers.at("WWW-Authenticate") == "Basic realm = \"Asset Server\"",
           "basic authentication challenge");
@@ -140,7 +140,7 @@ void tests(const std::filesystem::path& path) {
     bool threw = false;
     try {
         secured.handle(secured_request);
-    } catch (const std::invalid_argument&) {
+    } catch (const std::invalid_argument &) {
         threw = true;
     }
     check(threw, "invalid Base64 error propagates outside handler processing like source");
@@ -148,13 +148,14 @@ void tests(const std::filesystem::path& path) {
               !service.agent(session),
           "logout endpoint clears session");
 }
-}
+} // namespace
+
 int main() {
-    const auto path = std::filesystem::temp_directory_path() /
-                      ("opensim-service-" + framework::Uuid::random().str() + ".ini");
+    const auto path =
+        std::filesystem::temp_directory_path() / ("opensim-service-" + framework::Uuid::random().str() + ".ini");
     try {
         tests(path);
-    } catch (const std::exception& error) {
+    } catch (const std::exception &error) {
         std::cerr << error.what() << '\n';
         std::filesystem::remove(path);
         return 1;

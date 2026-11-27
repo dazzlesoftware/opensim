@@ -262,11 +262,11 @@ MapBitmap read_map_jpeg(std::span<const std::uint8_t> bytes) {
     if (bytes.size() > std::numeric_limits<unsigned long>::max())
         return {};
     auto reader = std::make_unique<MapJpegReader>();
-    auto& decoder = reader->decoder;
+    auto &decoder = reader->decoder;
     decoder.err = jpeg_std_error(&reader->errors);
     decoder.client_data = reader.get();
     reader->errors.error_exit = [](j_common_ptr context) {
-        std::longjmp(static_cast<MapJpegReader*>(context->client_data)->error_jump, 1);
+        std::longjmp(static_cast<MapJpegReader *>(context->client_data)->error_jump, 1);
     };
     if (setjmp(reader->error_jump))
         return {};
@@ -281,14 +281,14 @@ MapBitmap read_map_jpeg(std::span<const std::uint8_t> bytes) {
     const auto count = std::uint64_t(width) * height;
     if (count == 0 || count > std::numeric_limits<std::int32_t>::max() / 3)
         return {};
-    auto& bitmap = reader->bitmap;
+    auto &bitmap = reader->bitmap;
     bitmap.width = width;
     bitmap.height = height;
     bitmap.pixels.resize(static_cast<std::size_t>(count) * 3);
     if (!jpeg_start_decompress(&decoder) || decoder.output_components != 3)
         return {};
     while (decoder.output_scanline < height) {
-        auto* scanline = bitmap.pixels.data() + std::size_t(decoder.output_scanline) * width * 3;
+        auto *scanline = bitmap.pixels.data() + std::size_t(decoder.output_scanline) * width * 3;
         if (jpeg_read_scanlines(&decoder, &scanline, 1) != 1)
             return {};
     }
@@ -301,11 +301,16 @@ MapBitmap read_map_png(std::span<const std::uint8_t> bytes) {
     struct PngImage {
         png_image image{};
 
-        PngImage() { image.version = PNG_IMAGE_VERSION; }
-        ~PngImage() { png_image_free(&image); }
+        PngImage() {
+            image.version = PNG_IMAGE_VERSION;
+        }
+
+        ~PngImage() {
+            png_image_free(&image);
+        }
     } png;
 
-    auto& image = png.image;
+    auto &image = png.image;
     if (!png_image_begin_read_from_memory(&image, bytes.data(), bytes.size()))
         return {};
     const bool alpha = (image.format & PNG_FORMAT_FLAG_ALPHA) != 0;
@@ -314,15 +319,15 @@ MapBitmap read_map_png(std::span<const std::uint8_t> bytes) {
     const auto count = std::uint64_t(image.width) * image.height;
     if (count == 0 || count > std::numeric_limits<std::int32_t>::max() / channels)
         return {};
-    MapBitmap bitmap{image.width, image.height,
-                     std::vector<std::uint8_t>(static_cast<std::size_t>(count) * channels), channels};
+    MapBitmap bitmap{image.width, image.height, std::vector<std::uint8_t>(static_cast<std::size_t>(count) * channels),
+                     channels};
     if (!png_image_finish_read(&image, nullptr, bitmap.pixels.data(), 0, nullptr))
         return {};
     return bitmap;
 }
 
-bool decode_bmp_rle(MapBitmap& bitmap, std::span<const std::uint8_t> stream,
-                    std::span<const std::uint8_t> palette, bool four_bit) {
+bool decode_bmp_rle(MapBitmap &bitmap, std::span<const std::uint8_t> stream, std::span<const std::uint8_t> palette,
+                    bool four_bit) {
     const auto write = [&](std::size_t offset, unsigned index) {
         const auto color = index * 4;
         if (color >= palette.size())
@@ -355,8 +360,7 @@ bool decode_bmp_rle(MapBitmap& bitmap, std::span<const std::uint8_t> stream,
             continue;
         }
         if (count == 0 && command == 2) {
-            if (stream.size() < 2 || stream[0] > bitmap.width - x ||
-                stream[1] >= bitmap.height - y)
+            if (stream.size() < 2 || stream[0] > bitmap.width - x || stream[1] >= bitmap.height - y)
                 return false;
             x += stream[0];
             y += stream[1];
@@ -390,9 +394,7 @@ MapBitmap read_map_bmp(std::span<const std::uint8_t> bytes) {
     const auto u16 = [&](std::size_t offset) {
         return std::uint32_t(bytes[offset]) | (std::uint32_t(bytes[offset + 1]) << 8);
     };
-    const auto u32 = [&](std::size_t offset) {
-        return u16(offset) | (u16(offset + 2) << 16);
-    };
+    const auto u32 = [&](std::size_t offset) { return u16(offset) | (u16(offset + 2) << 16); };
     const auto offset = u32(10);
     const auto header_size = u32(14);
     const auto width = static_cast<std::int32_t>(u32(18));
@@ -404,9 +406,8 @@ MapBitmap read_map_bmp(std::span<const std::uint8_t> bytes) {
     const bool has_masks = compression == bitfields || compression == alpha_bitfields;
     const auto palette_offset = 14 + std::uint64_t(header_size);
     const bool indexed = bits == 1 || bits == 4 || bits == 8;
-    if (header_size < 40 || offset < palette_offset || offset > bytes.size() ||
-        width <= 0 || signed_height == 0 || u16(26) != 1 ||
-        (!indexed && bits != 16 && bits != 24 && bits != 32) ||
+    if (header_size < 40 || offset < palette_offset || offset > bytes.size() || width <= 0 || signed_height == 0 ||
+        u16(26) != 1 || (!indexed && bits != 16 && bits != 24 && bits != 32) ||
         (compression != 0 && !compressed && (!has_masks || (bits != 16 && bits != 32))) ||
         (compressed && signed_height < 0))
         return {};
@@ -457,8 +458,7 @@ MapBitmap read_map_bmp(std::span<const std::uint8_t> bytes) {
         return {};
 
     MapBitmap bitmap{static_cast<std::uint32_t>(width), height,
-                     std::vector<std::uint8_t>(static_cast<std::size_t>(count) * output_channels),
-                     output_channels};
+                     std::vector<std::uint8_t>(static_cast<std::size_t>(count) * output_channels), output_channels};
     if (compressed) {
         auto stream = bytes.subspan(offset);
         const auto declared_size = u32(34);
@@ -473,11 +473,11 @@ MapBitmap read_map_bmp(std::span<const std::uint8_t> bytes) {
     }
     for (std::uint32_t row = 0; row < height; ++row) {
         const auto source_row = signed_height < 0 ? row : height - row - 1;
-        const auto* source = bytes.data() + offset + source_row * stride;
-        auto* target = bitmap.pixels.data() + std::size_t(row) * width * output_channels;
+        const auto *source = bytes.data() + offset + source_row * stride;
+        auto *target = bitmap.pixels.data() + std::size_t(row) * width * output_channels;
         for (std::int32_t column = 0; column < width; ++column) {
             const auto bit_offset = std::size_t(column) * bits;
-            const auto* sample = source + bit_offset / 8;
+            const auto *sample = source + bit_offset / 8;
             if (indexed) {
                 const auto shift = 8 - bits - (bit_offset % 8);
                 const auto index = (*sample >> shift) & ((1u << bits) - 1);
@@ -490,8 +490,8 @@ MapBitmap read_map_bmp(std::span<const std::uint8_t> bytes) {
                 const auto value = bits == 16 ? u16(sample_offset) : u32(sample_offset);
                 for (std::size_t channel = 0; channel < output_channels; ++channel) {
                     const auto component = (value & masks[channel]) >> shifts[channel];
-                    target[channel] = static_cast<std::uint8_t>(
-                        (std::uint64_t(component) * 255 + maxima[channel] / 2) / maxima[channel]);
+                    target[channel] = static_cast<std::uint8_t>((std::uint64_t(component) * 255 + maxima[channel] / 2) /
+                                                                maxima[channel]);
                 }
             } else if (bits == 16) {
                 const unsigned value = sample[0] | (unsigned(sample[1]) << 8);
@@ -518,11 +518,11 @@ std::optional<MapColor> parse_map_color(std::string_view text) {
     if (text.empty())
         return {};
     std::string lower(text);
-    for (auto& c : lower)
+    for (auto &c : lower)
         if (c >= 'A' && c <= 'Z')
             c = static_cast<char>(c + ('a' - 'A'));
 
-    if (const auto named = std::ranges::find(named_map_colors, lower, [](const auto& color) { return color.first; });
+    if (const auto named = std::ranges::find(named_map_colors, lower, [](const auto &color) { return color.first; });
         named != std::end(named_map_colors))
         return map_color_from_rgb(named->second);
 
@@ -553,19 +553,18 @@ std::optional<MapColor> parse_map_color(std::string_view text) {
         return {};
     if (!shorthand)
         return map_color_from_rgb(*value);
-    return MapColor{static_cast<std::uint8_t>((*value >> 8) * 17),
-                    static_cast<std::uint8_t>(((*value >> 4) & 15) * 17),
+    return MapColor{static_cast<std::uint8_t>((*value >> 8) * 17), static_cast<std::uint8_t>(((*value >> 4) & 15) * 17),
                     static_cast<std::uint8_t>((*value & 15) * 17)};
 }
 
-MapBitmap load_static_map_bitmap(const std::filesystem::path& path) {
+MapBitmap load_static_map_bitmap(const std::filesystem::path &path) {
     std::ifstream stream(path, std::ios::binary | std::ios::ate);
     const auto length = stream.tellg();
     if (length < 2 || length > std::numeric_limits<std::int32_t>::max())
         throw std::runtime_error("Could not read static map image");
     stream.seekg(0);
     std::vector<std::uint8_t> bytes(static_cast<std::size_t>(length));
-    if (!stream.read(reinterpret_cast<char*>(bytes.data()), static_cast<std::streamsize>(length)))
+    if (!stream.read(reinterpret_cast<char *>(bytes.data()), static_cast<std::streamsize>(length)))
         throw std::runtime_error("Could not read static map image");
 
     MapBitmap bitmap;
@@ -580,7 +579,7 @@ MapBitmap load_static_map_bitmap(const std::filesystem::path& path) {
     return bitmap;
 }
 
-void write_map_bitmap_png(const MapBitmap& bitmap, const std::filesystem::path& path) {
+void write_map_bitmap_png(const MapBitmap &bitmap, const std::filesystem::path &path) {
     const auto count = std::uint64_t(bitmap.width) * bitmap.height;
     if ((bitmap.channels != 3 && bitmap.channels != 4) || count == 0 ||
         count > std::numeric_limits<std::size_t>::max() / bitmap.channels ||
@@ -598,19 +597,15 @@ void write_map_bitmap_png(const MapBitmap& bitmap, const std::filesystem::path& 
     if (!png_image_write_to_memory(&image, data.data(), &length, 0, bitmap.pixels.data(), 0, nullptr))
         throw std::runtime_error("Could not encode the local map PNG");
     std::ofstream output(path, std::ios::binary | std::ios::trunc);
-    if (!output.write(reinterpret_cast<const char*>(data.data()), static_cast<std::streamsize>(length)))
+    if (!output.write(reinterpret_cast<const char *>(data.data()), static_cast<std::streamsize>(length)))
         throw std::runtime_error("Could not write the local map PNG");
 }
 
-std::vector<std::uint8_t> render_shaded_map_tile(
-    std::span<const float> heights,
-    std::uint32_t width,
-    std::uint32_t height,
-    float water_height,
-    std::array<std::uint8_t, 3> water_color) {
+std::vector<std::uint8_t> render_shaded_map_tile(std::span<const float> heights, std::uint32_t width,
+                                                 std::uint32_t height, float water_height,
+                                                 std::array<std::uint8_t, 3> water_color) {
     const auto count = std::uint64_t(width) * height;
-    if (width == 0 || height == 0 || count != heights.size() ||
-        count > std::numeric_limits<std::size_t>::max() / 3)
+    if (width == 0 || height == 0 || count != heights.size() || count > std::numeric_limits<std::size_t>::max() / 3)
         throw std::invalid_argument("Map tile dimensions do not match the terrain");
 
     std::vector<std::uint8_t> pixels(static_cast<std::size_t>(count) * 3);
@@ -626,7 +621,7 @@ std::vector<std::uint8_t> render_shaded_map_tile(
     for (std::uint32_t x = 0; x < width; ++x) {
         for (std::uint32_t y = 0; y < height; ++y) {
             const auto current = terrain(x, y);
-            auto* rgb = pixel(x, y);
+            auto *rgb = pixel(x, y);
             if (!(current > water_height)) {
                 std::ranges::copy(water_color, rgb);
                 continue;
@@ -647,7 +642,7 @@ std::vector<std::uint8_t> render_shaded_map_tile(
             const auto fraction = std::fmod(difference, 1.f);
             if (fraction != 0.f && std::isfinite(fraction))
                 shadow += std::abs(static_cast<int>(fraction * 5.f) - 1);
-            auto* southwest = pixel(x - 1, y - 1);
+            auto *southwest = pixel(x - 1, y - 1);
             for (std::size_t channel = 0; channel < 3; ++channel)
                 southwest[channel] = static_cast<std::uint8_t>(std::max(0, southwest[channel] - shadow));
         }
@@ -682,9 +677,7 @@ Hsv to_hsv(MapColor color) {
 }
 
 MapColor to_rgb(Hsv hsv) {
-    const auto channel = [](float value) {
-        return static_cast<std::uint8_t>(std::clamp(value * 255.f, 0.f, 255.f));
-    };
+    const auto channel = [](float value) { return static_cast<std::uint8_t>(std::clamp(value * 255.f, 0.f, 255.f)); };
     const float sector = hsv.hue / 60.f;
     const auto index = static_cast<int>(sector);
     const float fraction = sector - index;
@@ -693,16 +686,22 @@ MapColor to_rgb(Hsv hsv) {
     const auto t = channel(hsv.value * (1.f - (1.f - fraction) * hsv.saturation));
     const auto v = channel(hsv.value);
     switch (index % 6) {
-    case 0: return {v, t, p};
-    case 1: return {q, v, p};
-    case 2: return {p, v, t};
-    case 3: return {p, q, v};
-    case 4: return {t, p, v};
-    default: return {v, p, q};
+    case 0:
+        return {v, t, p};
+    case 1:
+        return {q, v, p};
+    case 2:
+        return {p, v, t};
+    case 3:
+        return {p, q, v};
+    case 4:
+        return {t, p, v};
+    default:
+        return {v, p, q};
     }
 }
 
-Hsv interpolate_hsv(Hsv& from, const Hsv& to, float ratio) {
+Hsv interpolate_hsv(Hsv &from, const Hsv &to, float ratio) {
     if (ratio <= 0.f)
         return from;
     if (ratio >= 1.f)
@@ -712,8 +711,7 @@ Hsv interpolate_hsv(Hsv& from, const Hsv& to, float ratio) {
         from.hue -= 360.f;
     else if (to.hue - from.hue > 180.f)
         from.hue += 360.f;
-    return {from.hue * (1.f - ratio) + to.hue * ratio,
-            from.saturation * (1.f - ratio) + to.saturation * ratio,
+    return {from.hue * (1.f - ratio) + to.hue * ratio, from.saturation * (1.f - ratio) + to.saturation * ratio,
             from.value * (1.f - ratio) + to.value * ratio};
 }
 
@@ -725,10 +723,10 @@ double terrain_noise(std::int64_t x, std::int64_t y) {
 }
 
 double smooth_terrain_noise(std::int64_t x, std::int64_t y) {
-    const double corners = terrain_noise(x - 1, y - 1) + terrain_noise(x + 1, y - 1) +
-                           terrain_noise(x - 1, y + 1) + terrain_noise(x + 1, y + 1);
-    const double sides = terrain_noise(x - 1, y) + terrain_noise(x + 1, y) +
-                         terrain_noise(x, y - 1) + terrain_noise(x, y + 1);
+    const double corners = terrain_noise(x - 1, y - 1) + terrain_noise(x + 1, y - 1) + terrain_noise(x - 1, y + 1) +
+                           terrain_noise(x + 1, y + 1);
+    const double sides =
+        terrain_noise(x - 1, y) + terrain_noise(x + 1, y) + terrain_noise(x, y - 1) + terrain_noise(x, y + 1);
     return corners / 16 + sides / 8 + terrain_noise(x, y) / 4;
 }
 
@@ -746,19 +744,19 @@ float smooth_step(float value) {
     return value * value * (3.f - 2.f * value);
 }
 
-float interpolate_elevation(const std::array<float, 4>& corners, float x, float y) {
-    return corners[0] * (1.f - y) * (1.f - x) + corners[1] * (1.f - y) * x +
-           corners[2] * y * (1.f - x) + corners[3] * y * x;
+float interpolate_elevation(const std::array<float, 4> &corners, float x, float y) {
+    return corners[0] * (1.f - y) * (1.f - x) + corners[1] * (1.f - y) * x + corners[2] * y * (1.f - x) +
+           corners[3] * y * x;
 }
 
 } // namespace
 
-std::vector<std::uint8_t> render_textured_map_tile(
-    std::span<const float> heights, std::uint32_t width, std::uint32_t height, float water_height,
-    const std::array<float, 4>& low, const std::array<float, 4>& high, const TexturedMapPalette& palette) {
+std::vector<std::uint8_t> render_textured_map_tile(std::span<const float> heights, std::uint32_t width,
+                                                   std::uint32_t height, float water_height,
+                                                   const std::array<float, 4> &low, const std::array<float, 4> &high,
+                                                   const TexturedMapPalette &palette) {
     const auto count = std::uint64_t(width) * height;
-    if (width == 0 || height == 0 || count != heights.size() ||
-        count > std::numeric_limits<std::size_t>::max() / 3)
+    if (width == 0 || height == 0 || count != heights.size() || count > std::numeric_limits<std::size_t>::max() / 3)
         throw std::invalid_argument("Map tile dimensions do not match the terrain");
 
     const auto sample_height = [&](std::uint32_t x, std::uint32_t y) {
@@ -784,7 +782,8 @@ std::vector<std::uint8_t> render_textured_map_tile(
                 auto upper = interpolate_elevation(high, column, row);
                 if (upper < lower)
                     std::swap(lower, upper);
-                const float small = static_cast<float>(smooth_terrain_noise(std::int64_t(x) + 33, std::int64_t(y) + 43));
+                const float small =
+                    static_cast<float>(smooth_terrain_noise(std::int64_t(x) + 33, std::int64_t(y) + 43));
                 const float large = static_cast<float>(interpolated_terrain_noise(x / 8.0, y / 8.0)) * .5f + .5f;
                 const float varied = elevation + small * 1.5f + 1.5f + smooth_step(smooth_step(large)) * 10.f;
                 auto hsv = colors.front();
@@ -830,8 +829,8 @@ bool finite_vector(framework::Vector3 value) {
     return std::isfinite(value.x) && std::isfinite(value.y) && std::isfinite(value.z);
 }
 
-void fill_map_face(std::span<std::uint8_t> pixels, std::uint32_t width, std::uint32_t height,
-                   const MapVolume& volume, const std::array<unsigned, 4>& face) {
+void fill_map_face(std::span<std::uint8_t> pixels, std::uint32_t width, std::uint32_t height, const MapVolume &volume,
+                   const std::array<unsigned, 4> &face) {
     double top = volume.vertices[face.front()].y;
     double bottom = top;
     for (auto corner : face) {
@@ -866,17 +865,16 @@ void fill_map_face(std::span<std::uint8_t> pixels, std::uint32_t width, std::uin
 
 } // namespace
 
-void draw_map_object_volumes(
-    std::span<std::uint8_t> pixels, std::span<const float> heights,
-    std::uint32_t width, std::uint32_t height, std::span<const SceneObject> objects) {
+void draw_map_object_volumes(std::span<std::uint8_t> pixels, std::span<const float> heights, std::uint32_t width,
+                             std::uint32_t height, std::span<const SceneObject> objects) {
     const auto pixel_count = std::uint64_t(width) * height;
     if (width == 0 || height == 0 || pixel_count != heights.size() ||
         pixel_count > std::numeric_limits<std::size_t>::max() / 3 || pixels.size() != pixel_count * 3)
         throw std::invalid_argument("Map tile dimensions do not match the terrain");
 
-    std::map<std::uint32_t, const SceneObject*> roots;
-    std::map<std::uint32_t, std::vector<const SceneObject*>> groups;
-    for (const auto& object : objects) {
+    std::map<std::uint32_t, const SceneObject *> roots;
+    std::map<std::uint32_t, std::vector<const SceneObject *>> groups;
+    for (const auto &object : objects) {
         if (object.is_attachment)
             continue;
         if (!object.parent_id)
@@ -885,21 +883,27 @@ void draw_map_object_volumes(
     }
 
     constexpr std::array<std::array<int, 3>, 8> signs{{
-        {1, -1, 1}, {1, 1, 1}, {1, -1, -1}, {1, 1, -1},
-        {-1, 1, 1}, {-1, 1, -1}, {-1, -1, 1}, {-1, -1, -1},
+        {1, -1, 1},
+        {1, 1, 1},
+        {1, -1, -1},
+        {1, 1, -1},
+        {-1, 1, 1},
+        {-1, 1, -1},
+        {-1, -1, 1},
+        {-1, -1, -1},
     }};
     std::vector<MapVolume> volumes;
-    for (auto& [root_id, parts] : groups) {
+    for (auto &[root_id, parts] : groups) {
         const auto root = roots.find(root_id);
         if (root == roots.end())
             continue;
-        std::stable_sort(parts.begin(), parts.end(), [](const auto* a, const auto* b) {
+        std::stable_sort(parts.begin(), parts.end(), [](const auto *a, const auto *b) {
             if (bool(a->parent_id) != bool(b->parent_id))
                 return a->parent_id == 0;
             return a->link_order < b->link_order;
         });
         MapColor group_color{128, 128, 128};
-        for (const auto* part : parts) {
+        for (const auto *part : parts) {
             const auto size = part->scale;
             if (!finite_vector(size) || std::max({size.x, size.y, size.z}) <= 1.f)
                 continue;
@@ -917,21 +921,20 @@ void draw_map_object_volumes(
                     color[channel] = static_cast<std::uint8_t>(255 - static_cast<int>(rgba[channel] * 255.f));
                 if (color != MapColor{255, 255, 255})
                     group_color = color;
-            } catch (const std::out_of_range&) {
+            } catch (const std::out_of_range &) {
                 // Malformed texture entries leave the previous color in place.
             }
 
             auto position = part->position;
             auto rotation = part->rotation;
             if (part->parent_id) {
-                const auto& parent = *root->second;
+                const auto &parent = *root->second;
                 const auto offset = framework::sdk_rotate_vector(position, parent.rotation);
-                position = {parent.position.x + offset.x, parent.position.y + offset.y,
-                            parent.position.z + offset.z};
+                position = {parent.position.x + offset.x, parent.position.y + offset.y, parent.position.z + offset.z};
                 rotation = framework::sdk_multiply_quaternion(parent.rotation, rotation);
             }
-            if (!finite_vector(position) || position.x < 0 || position.x >= width ||
-                position.y < 0 || position.y >= height)
+            if (!finite_vector(position) || position.x < 0 || position.x >= width || position.y < 0 ||
+                position.y >= height)
                 continue;
             const auto terrain = heights[std::size_t(position.y) * width + std::size_t(position.x)];
             if (!(position.z < terrain + 256.f))
@@ -949,9 +952,9 @@ void draw_map_object_volumes(
             MapVolume volume{{}, position.z, group_color};
             bool valid = true;
             for (std::size_t index = 0; index < signs.size(); ++index) {
-                const auto& sign = signs[index];
-                const auto vertex = framework::sdk_rotate_vector(
-                    {half.x * sign[0], half.y * sign[1], half.z * sign[2]}, rotation);
+                const auto &sign = signs[index];
+                const auto vertex =
+                    framework::sdk_rotate_vector({half.x * sign[0], half.y * sign[1], half.z * sign[2]}, rotation);
                 if (!finite_vector(vertex)) {
                     valid = false;
                     break;
@@ -964,20 +967,23 @@ void draw_map_object_volumes(
                 volumes.push_back(volume);
         }
     }
-    std::stable_sort(volumes.begin(), volumes.end(), [](const auto& a, const auto& b) {
-        return a.elevation < b.elevation;
-    });
+    std::stable_sort(volumes.begin(), volumes.end(),
+                     [](const auto &a, const auto &b) { return a.elevation < b.elevation; });
     constexpr std::array<std::array<unsigned, 4>, 6> faces{{
-        {0, 1, 3, 2}, {1, 4, 5, 3}, {4, 6, 7, 5},
-        {6, 0, 2, 7}, {0, 6, 4, 1}, {3, 5, 7, 2},
+        {0, 1, 3, 2},
+        {1, 4, 5, 3},
+        {4, 6, 7, 5},
+        {6, 0, 2, 7},
+        {0, 6, 4, 1},
+        {3, 5, 7, 2},
     }};
-    for (const auto& volume : volumes)
-        for (const auto& face : faces)
+    for (const auto &volume : volumes)
+        for (const auto &face : faces)
             fill_map_face(pixels, width, height, volume, face);
 }
 
-std::vector<std::uint8_t> render_parcel_map_tile(
-    std::span<const std::uint8_t> sale_cells, std::uint32_t width, std::uint32_t height) {
+std::vector<std::uint8_t> render_parcel_map_tile(std::span<const std::uint8_t> sale_cells, std::uint32_t width,
+                                                 std::uint32_t height) {
     constexpr std::uint32_t land_unit = 4;
     constexpr std::array<std::uint8_t, 4> sale_color{249, 223, 9, 192};
     const auto cells_x = width / land_unit;
@@ -999,7 +1005,7 @@ std::vector<std::uint8_t> render_parcel_map_tile(
                 const auto row = top + dy;
                 if (row < 0 || row >= height)
                     continue;
-                auto* pixel = rgba.data() + (std::size_t(row) * width + x * land_unit) * sale_color.size();
+                auto *pixel = rgba.data() + (std::size_t(row) * width + x * land_unit) * sale_color.size();
                 for (std::uint32_t dx = 0; dx < land_unit; ++dx) {
                     std::copy(sale_color.begin(), sale_color.end(), pixel);
                     pixel += sale_color.size();
@@ -1010,16 +1016,15 @@ std::vector<std::uint8_t> render_parcel_map_tile(
     return rgba;
 }
 
-std::vector<std::uint8_t> resize_map_tile(
-    std::span<const std::uint8_t> pixels, std::uint32_t width, std::uint32_t height,
-    std::uint32_t target_width, std::uint32_t target_height, std::size_t channels) {
+std::vector<std::uint8_t> resize_map_tile(std::span<const std::uint8_t> pixels, std::uint32_t width,
+                                          std::uint32_t height, std::uint32_t target_width, std::uint32_t target_height,
+                                          std::size_t channels) {
     const auto count = std::uint64_t(width) * height;
     const auto target_count = std::uint64_t(target_width) * target_height;
     if (channels != 3 && channels != 4)
         throw std::invalid_argument("Invalid map image channels");
     const auto limit = std::numeric_limits<std::size_t>::max() / channels;
-    if (count == 0 || count > limit || pixels.size() != count * channels ||
-        target_count == 0 || target_count > limit)
+    if (count == 0 || count > limit || pixels.size() != count * channels || target_count == 0 || target_count > limit)
         throw std::invalid_argument("Invalid map image dimensions");
 
     const auto mirrored = [](std::int64_t coordinate, std::int64_t size) {
@@ -1055,15 +1060,14 @@ std::vector<std::uint8_t> resize_map_tile(
             }
             const auto offset = (static_cast<std::size_t>(y) * target_width + x) * channels;
             for (std::size_t channel = 0; channel < channels; ++channel)
-                result[offset + channel] = static_cast<std::uint8_t>(
-                    std::clamp(std::lround(color[channel]), 0L, 255L));
+                result[offset + channel] = static_cast<std::uint8_t>(std::clamp(std::lround(color[channel]), 0L, 255L));
         }
     }
     return result;
 }
 
-void composite_map_bitmap(MapBitmap& canvas, MapBitmap tile, std::int64_t x, std::int64_t y,
-                          std::uint32_t width, std::uint32_t height) {
+void composite_map_bitmap(MapBitmap &canvas, MapBitmap tile, std::int64_t x, std::int64_t y, std::uint32_t width,
+                          std::uint32_t height) {
     const auto left = std::max<std::int64_t>(0, x);
     const auto top = std::max<std::int64_t>(0, y);
     const auto right = std::min<std::int64_t>(canvas.width, x + width);
@@ -1080,8 +1084,8 @@ void composite_map_bitmap(MapBitmap& canvas, MapBitmap tile, std::int64_t x, std
             const unsigned alpha = tile.channels == 4 ? tile.pixels[source + 3] : 255;
             for (std::size_t channel = 0; channel < 3; ++channel) {
                 canvas.pixels[target + channel] = static_cast<std::uint8_t>(
-                    (tile.pixels[source + channel] * alpha +
-                     canvas.pixels[target + channel] * (255 - alpha) + 127) / 255);
+                    (tile.pixels[source + channel] * alpha + canvas.pixels[target + channel] * (255 - alpha) + 127) /
+                    255);
             }
         }
     }

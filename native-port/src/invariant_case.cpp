@@ -4,6 +4,7 @@
 #include "opensim/framework/text.hpp"
 #include "opensim/framework/viewer_unicode_data.hpp"
 #include <algorithm>
+
 namespace opensim::framework {
 std::u16string lower_invariant_culture(std::u16string_view text) {
     std::u16string result;
@@ -15,7 +16,7 @@ std::u16string lower_invariant_culture(std::u16string_view text) {
             scalar = 0x10000 + ((scalar - 0xd800) << 10) + (text[++i] - 0xdc00);
         }
         auto found = std::lower_bound(viewer_unicode::lower.begin(), viewer_unicode::lower.end(), scalar,
-                                      [](const auto& entry, std::uint32_t n) { return entry[0] < n; });
+                                      [](const auto &entry, std::uint32_t n) { return entry[0] < n; });
         if (found != viewer_unicode::lower.end() && (*found)[0] == scalar)
             scalar = (*found)[1];
         if (scalar < 0x10000)
@@ -28,7 +29,8 @@ std::u16string lower_invariant_culture(std::u16string_view text) {
     }
     return result;
 }
+
 std::string lower_invariant_culture(std::string_view text) {
     return utf8(lower_invariant_culture(std::u16string_view(utf16_replacing(text))));
 }
-}
+} // namespace opensim::framework

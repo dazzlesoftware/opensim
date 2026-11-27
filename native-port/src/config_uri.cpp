@@ -16,24 +16,27 @@
 namespace opensim::framework {
 namespace {
 using V = std::u16string_view;
+
 bool digit(char16_t c) {
     return c >= u'0' && c <= u'9';
 }
+
 bool letter(char16_t c) {
     return (c >= u'a' && c <= u'z') || (c >= u'A' && c <= u'Z');
 }
+
 bool lws(char16_t c) {
     return c == u' ' || c == u'\t' || c == u'\r' || c == u'\n';
 }
+
 int hex(char16_t c) {
-    return digit(c)                 ? c - u'0'
-           : c >= u'a' && c <= u'f' ? c - u'a' + 10
-           : c >= u'A' && c <= u'F' ? c - u'A' + 10
-                                    : -1;
+    return digit(c) ? c - u'0' : c >= u'a' && c <= u'f' ? c - u'a' + 10 : c >= u'A' && c <= u'F' ? c - u'A' + 10 : -1;
 }
+
 bool bidi(char16_t c) {
     return c == 0x200e || c == 0x200f || (c >= 0x202a && c <= 0x202e);
 }
+
 bool valid_unicode(V s) {
     for (std::size_t i = 0; i < s.size(); ++i) {
         auto c = s[i];
@@ -47,12 +50,14 @@ bool valid_unicode(V s) {
     }
     return true;
 }
+
 bool iri(std::uint32_t c, bool query) {
     if (c <= 0xffff)
         return (c >= 160 && c <= 55295) || (c >= 63744 && c <= 64975) || (c >= 65008 && c <= 65519) ||
                (query && c >= 57344 && c <= 63743);
     return (c & 0xffff) < 65534 && !(c >= 917504 && c <= 921599) && (query || c < 983040);
 }
+
 bool iri_trigger(V s) {
     for (std::size_t i = 0; i < s.size(); ++i) {
         auto c = s[i];
@@ -61,14 +66,14 @@ bool iri_trigger(V s) {
         if (c == u'%' && i + 2 < s.size()) {
             int a = hex(s[i + 1]), b = hex(s[i + 2]);
             int d = a < 0 || b < 0 ? 65535 : a * 16 + b;
-            if (d > 127 || letter(char16_t(d)) || digit(char16_t(d)) || d == '-' || d == '_' || d == '.' ||
-                d == '~')
+            if (d > 127 || letter(char16_t(d)) || digit(char16_t(d)) || d == '-' || d == '_' || d == '.' || d == '~')
                 return true;
             i += 2;
         }
     }
     return false;
 }
+
 // EscapeUnescapeIri changes only length for this predicate. Keep component boundaries.
 std::size_t iri_length(V s, bool query) {
     std::size_t out = 0;
@@ -83,16 +88,12 @@ std::size_t iri_length(V s, bool query) {
             }
             c = a * 16 + b;
             if (c < 128) {
-                out +=
-                    (c <= 31 || c == 127 || V(u";/?:@&=+$,#[]!'()*%\\").find(char16_t(c)) != V::npos) ? 3 : 1;
+                out += (c <= 31 || c == 127 || V(u";/?:@&=+$,#[]!'()*%\\").find(char16_t(c)) != V::npos) ? 3 : 1;
                 i += 2;
                 continue;
             }
             // Consume one valid percent-encoded UTF8 scalar; malformed bytes remain escaped.
-            int count = c >= 0xc2 && c <= 0xdf   ? 2
-                        : c >= 0xe0 && c <= 0xef ? 3
-                        : c >= 0xf0 && c <= 0xf4 ? 4
-                                                 : 0;
+            int count = c >= 0xc2 && c <= 0xdf ? 2 : c >= 0xe0 && c <= 0xef ? 3 : c >= 0xf0 && c <= 0xf4 ? 4 : 0;
             std::uint32_t scalar = count ? c & ((1u << (7 - count)) - 1) : 0;
             bool ok = count > 0;
             for (int n = 1; ok && n < count; ++n) {
@@ -123,8 +124,7 @@ std::size_t iri_length(V s, bool query) {
             continue;
         }
         if (c > 127) {
-            bool pair =
-                c >= 0xd800 && c <= 0xdbff && i + 1 < s.size() && s[i + 1] >= 0xdc00 && s[i + 1] <= 0xdfff;
+            bool pair = c >= 0xd800 && c <= 0xdbff && i + 1 < s.size() && s[i + 1] >= 0xdc00 && s[i + 1] <= 0xdfff;
             if (pair)
                 c = 0x10000 + ((c - 0xd800) << 10) + (s[++i] - 0xdc00);
             if (iri(c, query))
@@ -139,7 +139,8 @@ std::size_t iri_length(V s, bool query) {
     }
     return out;
 }
-bool ipv4_canonical(V s, std::size_t start, std::size_t& end) {
+
+bool ipv4_canonical(V s, std::size_t start, std::size_t &end) {
     int dots = 0, num = 0;
     bool had = false, zero = false;
     while (start < end) {
@@ -171,7 +172,8 @@ bool ipv4_canonical(V s, std::size_t start, std::size_t& end) {
     end = start;
     return true;
 }
-bool ipv6(V s, std::size_t start, std::size_t& end) {
+
+bool ipv6(V s, std::size_t start, std::size_t &end) {
     int labels = 0, digits = 0;
     bool compressed = false, ipv4 = false, prefix = false, need = true;
     std::size_t part = 1;
@@ -246,7 +248,8 @@ bool ipv6(V s, std::size_t start, std::size_t& end) {
     }
     return false;
 }
-bool ipv4_noncanonical(V s, std::size_t start, std::size_t& end) {
+
+bool ipv4_noncanonical(V s, std::size_t start, std::size_t &end) {
     std::uint64_t parts[4]{}, value = 0;
     int used = 0;
     bool had = false;
@@ -294,7 +297,8 @@ bool ipv4_noncanonical(V s, std::size_t start, std::size_t& end) {
     end = i;
     return true;
 }
-bool dns(V s, std::size_t start, std::size_t& end) {
+
+bool dns(V s, std::size_t start, std::size_t &end) {
     auto stop = start;
     for (; stop < end; ++stop) {
         auto c = s[stop];
@@ -334,13 +338,14 @@ bool dns(V s, std::size_t start, std::size_t& end) {
     end = stop;
     return true;
 }
+
 bool char_letter(char16_t c) {
-    auto p =
-        std::lower_bound(viewer_unicode::letters.begin(), viewer_unicode::letters.end(), std::uint32_t(c),
-                         [](const auto& range, std::uint32_t value) { return range[1] < value; });
+    auto p = std::lower_bound(viewer_unicode::letters.begin(), viewer_unicode::letters.end(), std::uint32_t(c),
+                              [](const auto &range, std::uint32_t value) { return range[1] < value; });
     return p != viewer_unicode::letters.end() && (*p)[0] <= c;
 }
-bool unc(V s, std::size_t start, std::size_t& end) {
+
+bool unc(V s, std::size_t start, std::size_t &end) {
     auto stop = end;
     if (start == stop)
         return false;
@@ -393,20 +398,23 @@ bool unc(V s, std::size_t start, std::size_t& end) {
     end = stop;
     return true;
 }
+
 struct Normalizer {
-    using Get = const void* (*)(std::int32_t*);
-    using Normalize = std::int32_t (*)(const void*, const char16_t*, std::int32_t, char16_t*, std::int32_t,
-                                       std::int32_t*);
+    using Get = const void *(*)(std::int32_t *);
+    using Normalize = std::int32_t (*)(const void *, const char16_t *, std::int32_t, char16_t *, std::int32_t,
+                                       std::int32_t *);
     Get get = nullptr;
     Normalize normalize = nullptr;
 #ifdef _WIN32
     HMODULE module = nullptr;
-    void* symbol(const std::string& n) {
-        return reinterpret_cast<void*>(GetProcAddress(module, n.c_str()));
+
+    void *symbol(const std::string &n) {
+        return reinterpret_cast<void *>(GetProcAddress(module, n.c_str()));
     }
 #else
-    void* module = nullptr;
-    void* symbol(const std::string& n) {
+    void *module = nullptr;
+
+    void *symbol(const std::string &n) {
         return dlsym(module, n.c_str());
     }
 #endif
@@ -432,6 +440,7 @@ struct Normalizer {
         get = reinterpret_cast<Get>(symbol("unorm2_getNFCInstance" + suffix));
         normalize = reinterpret_cast<Normalize>(symbol("unorm2_normalize" + suffix));
     }
+
     ~Normalizer() {
 #ifdef _WIN32
         if (module)
@@ -441,10 +450,10 @@ struct Normalizer {
             dlclose(module);
 #endif
     }
+
     std::u16string apply(V s) {
         if (!get || !normalize)
-            throw std::runtime_error(
-                "Selected ICU normalization is required for configuration URI IRI hosts");
+            throw std::runtime_error("Selected ICU normalization is required for configuration URI IRI hosts");
         std::int32_t status = 0;
         auto form = get(&status);
         if (status > 0 || !form)
@@ -462,7 +471,8 @@ struct Normalizer {
         return out;
     }
 };
-}
+} // namespace
+
 ConfigUriUnicodeBackend native_config_uri_unicode_backend() {
     ConfigUriUnicodeBackend b;
     b.normalize_nfc = [](V s) -> std::optional<std::u16string> {
@@ -475,7 +485,8 @@ ConfigUriUnicodeBackend native_config_uri_unicode_backend() {
     };
     return b;
 }
-bool is_http_configuration_uri(ConfigUriText input, const ConfigUriUnicodeBackend& unicode) {
+
+bool is_http_configuration_uri(ConfigUriText input, const ConfigUriUnicodeBackend &unicode) {
     if (!input || input->empty() || input->size() >= 65520)
         return false;
     V s = *input;
@@ -598,8 +609,9 @@ bool is_http_configuration_uri(ConfigUriText input, const ConfigUriUnicodeBacken
     }
     return true;
 }
+
 bool is_http_configuration_uri(ConfigUriText input) {
     static auto backend = native_config_uri_unicode_backend();
     return is_http_configuration_uri(std::move(input), backend);
 }
-}
+} // namespace opensim::framework

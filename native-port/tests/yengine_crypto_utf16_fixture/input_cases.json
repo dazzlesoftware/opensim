@@ -1,0 +1,672 @@
+[
+  {
+    "name": "base64_ascii",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llStringToBase64(\"Abc\");after=1;}}"
+  },
+  {
+    "name": "md5_ascii",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llMD5String(\"Abc\",0);after=1;}}"
+  },
+  {
+    "name": "md5_negative_ascii",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llMD5String(\"Abc\",-1);after=1;}}"
+  },
+  {
+    "name": "sha1_ascii",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llSHA1String(\"Abc\");after=1;}}"
+  },
+  {
+    "name": "sha256_ascii",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llSHA256String(\"Abc\");after=1;}}"
+  },
+  {
+    "name": "base64_bmp",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llStringToBase64(\"漢字\");after=1;}}"
+  },
+  {
+    "name": "md5_bmp",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llMD5String(\"漢字\",0);after=1;}}"
+  },
+  {
+    "name": "md5_negative_bmp",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llMD5String(\"漢字\",-1);after=1;}}"
+  },
+  {
+    "name": "sha1_bmp",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llSHA1String(\"漢字\");after=1;}}"
+  },
+  {
+    "name": "sha256_bmp",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llSHA256String(\"漢字\");after=1;}}"
+  },
+  {
+    "name": "base64_pair",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llStringToBase64(\"😀\");after=1;}}"
+  },
+  {
+    "name": "md5_pair",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llMD5String(\"😀\",0);after=1;}}"
+  },
+  {
+    "name": "md5_negative_pair",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llMD5String(\"😀\",-1);after=1;}}"
+  },
+  {
+    "name": "sha1_pair",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llSHA1String(\"😀\");after=1;}}"
+  },
+  {
+    "name": "sha256_pair",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llSHA256String(\"😀\");after=1;}}"
+  },
+  {
+    "name": "base64_high",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llStringToBase64(llGetSubString(\"😀\",0,0));after=1;}}"
+  },
+  {
+    "name": "md5_high",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llMD5String(llGetSubString(\"😀\",0,0),0);after=1;}}"
+  },
+  {
+    "name": "md5_negative_high",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llMD5String(llGetSubString(\"😀\",0,0),-1);after=1;}}"
+  },
+  {
+    "name": "sha1_high",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llSHA1String(llGetSubString(\"😀\",0,0));after=1;}}"
+  },
+  {
+    "name": "sha256_high",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llSHA256String(llGetSubString(\"😀\",0,0));after=1;}}"
+  },
+  {
+    "name": "base64_low",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llStringToBase64(llGetSubString(\"😀\",1,1));after=1;}}"
+  },
+  {
+    "name": "md5_low",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llMD5String(llGetSubString(\"😀\",1,1),0);after=1;}}"
+  },
+  {
+    "name": "md5_negative_low",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llMD5String(llGetSubString(\"😀\",1,1),-1);after=1;}}"
+  },
+  {
+    "name": "sha1_low",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llSHA1String(llGetSubString(\"😀\",1,1));after=1;}}"
+  },
+  {
+    "name": "sha256_low",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llSHA256String(llGetSubString(\"😀\",1,1));after=1;}}"
+  },
+  {
+    "name": "base64_mixed",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llStringToBase64(\"x\"+llGetSubString(\"😀\",0,0)+\"z\");after=1;}}"
+  },
+  {
+    "name": "md5_mixed",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llMD5String(\"x\"+llGetSubString(\"😀\",0,0)+\"z\",0);after=1;}}"
+  },
+  {
+    "name": "md5_negative_mixed",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llMD5String(\"x\"+llGetSubString(\"😀\",0,0)+\"z\",-1);after=1;}}"
+  },
+  {
+    "name": "sha1_mixed",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llSHA1String(\"x\"+llGetSubString(\"😀\",0,0)+\"z\");after=1;}}"
+  },
+  {
+    "name": "sha256_mixed",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llSHA256String(\"x\"+llGetSubString(\"😀\",0,0)+\"z\");after=1;}}"
+  },
+  {
+    "name": "base64_nul",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llStringToBase64(llBase64ToString(\"YQBi\"));after=1;}}"
+  },
+  {
+    "name": "md5_nul",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llMD5String(llBase64ToString(\"YQBi\"),0);after=1;}}"
+  },
+  {
+    "name": "md5_negative_nul",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llMD5String(llBase64ToString(\"YQBi\"),-1);after=1;}}"
+  },
+  {
+    "name": "sha1_nul",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llSHA1String(llBase64ToString(\"YQBi\"));after=1;}}"
+  },
+  {
+    "name": "sha256_nul",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llSHA256String(llBase64ToString(\"YQBi\"));after=1;}}"
+  },
+  {
+    "name": "base64_empty",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llStringToBase64(\"\");after=1;}}"
+  },
+  {
+    "name": "md5_empty",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llMD5String(\"\",0);after=1;}}"
+  },
+  {
+    "name": "md5_negative_empty",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llMD5String(\"\",-1);after=1;}}"
+  },
+  {
+    "name": "sha1_empty",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llSHA1String(\"\");after=1;}}"
+  },
+  {
+    "name": "sha256_empty",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llSHA256String(\"\");after=1;}}"
+  },
+  {
+    "name": "compute_high_0",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llComputeHash(llGetSubString(\"😀\",0,0),\"md5\");after=1;}}"
+  },
+  {
+    "name": "compute_high_1",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llComputeHash(llGetSubString(\"😀\",0,0),\"md5_sha1\");after=1;}}"
+  },
+  {
+    "name": "compute_high_2",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llComputeHash(llGetSubString(\"😀\",0,0),\"sha1\");after=1;}}"
+  },
+  {
+    "name": "compute_high_3",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llComputeHash(llGetSubString(\"😀\",0,0),\"sha224\");after=1;}}"
+  },
+  {
+    "name": "compute_high_4",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llComputeHash(llGetSubString(\"😀\",0,0),\"sha256\");after=1;}}"
+  },
+  {
+    "name": "compute_high_5",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llComputeHash(llGetSubString(\"😀\",0,0),\"sha384\");after=1;}}"
+  },
+  {
+    "name": "compute_high_6",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llComputeHash(llGetSubString(\"😀\",0,0),\"sha512\");after=1;}}"
+  },
+  {
+    "name": "compute_high_7",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llComputeHash(llGetSubString(\"😀\",0,0),\"SHA256\");after=1;}}"
+  },
+  {
+    "name": "compute_low_0",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llComputeHash(llGetSubString(\"😀\",1,1),\"md5\");after=1;}}"
+  },
+  {
+    "name": "compute_low_1",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llComputeHash(llGetSubString(\"😀\",1,1),\"md5_sha1\");after=1;}}"
+  },
+  {
+    "name": "compute_low_2",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llComputeHash(llGetSubString(\"😀\",1,1),\"sha1\");after=1;}}"
+  },
+  {
+    "name": "compute_low_3",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llComputeHash(llGetSubString(\"😀\",1,1),\"sha224\");after=1;}}"
+  },
+  {
+    "name": "compute_low_4",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llComputeHash(llGetSubString(\"😀\",1,1),\"sha256\");after=1;}}"
+  },
+  {
+    "name": "compute_low_5",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llComputeHash(llGetSubString(\"😀\",1,1),\"sha384\");after=1;}}"
+  },
+  {
+    "name": "compute_low_6",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llComputeHash(llGetSubString(\"😀\",1,1),\"sha512\");after=1;}}"
+  },
+  {
+    "name": "compute_low_7",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llComputeHash(llGetSubString(\"😀\",1,1),\"SHA256\");after=1;}}"
+  },
+  {
+    "name": "compute_pair_0",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llComputeHash(\"😀\",\"md5\");after=1;}}"
+  },
+  {
+    "name": "compute_pair_1",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llComputeHash(\"😀\",\"md5_sha1\");after=1;}}"
+  },
+  {
+    "name": "compute_pair_2",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llComputeHash(\"😀\",\"sha1\");after=1;}}"
+  },
+  {
+    "name": "compute_pair_3",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llComputeHash(\"😀\",\"sha224\");after=1;}}"
+  },
+  {
+    "name": "compute_pair_4",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llComputeHash(\"😀\",\"sha256\");after=1;}}"
+  },
+  {
+    "name": "compute_pair_5",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llComputeHash(\"😀\",\"sha384\");after=1;}}"
+  },
+  {
+    "name": "compute_pair_6",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llComputeHash(\"😀\",\"sha512\");after=1;}}"
+  },
+  {
+    "name": "compute_pair_7",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llComputeHash(\"😀\",\"SHA256\");after=1;}}"
+  },
+  {
+    "name": "compute_nul_0",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llComputeHash(llBase64ToString(\"YQBi\"),\"md5\");after=1;}}"
+  },
+  {
+    "name": "compute_nul_1",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llComputeHash(llBase64ToString(\"YQBi\"),\"md5_sha1\");after=1;}}"
+  },
+  {
+    "name": "compute_nul_2",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llComputeHash(llBase64ToString(\"YQBi\"),\"sha1\");after=1;}}"
+  },
+  {
+    "name": "compute_nul_3",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llComputeHash(llBase64ToString(\"YQBi\"),\"sha224\");after=1;}}"
+  },
+  {
+    "name": "compute_nul_4",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llComputeHash(llBase64ToString(\"YQBi\"),\"sha256\");after=1;}}"
+  },
+  {
+    "name": "compute_nul_5",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llComputeHash(llBase64ToString(\"YQBi\"),\"sha384\");after=1;}}"
+  },
+  {
+    "name": "compute_nul_6",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llComputeHash(llBase64ToString(\"YQBi\"),\"sha512\");after=1;}}"
+  },
+  {
+    "name": "compute_nul_7",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llComputeHash(llBase64ToString(\"YQBi\"),\"SHA256\");after=1;}}"
+  },
+  {
+    "name": "hmac_widekey_0",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llHMAC(llGetSubString(\"😀\",0,0),\"😀\",\"md5\");after=1;}}"
+  },
+  {
+    "name": "hmac_widemessage_0",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llHMAC(\"key\",llGetSubString(\"😀\",1,1),\"md5\");after=1;}}"
+  },
+  {
+    "name": "hmac_widekey_1",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llHMAC(llGetSubString(\"😀\",0,0),\"😀\",\"sha1\");after=1;}}"
+  },
+  {
+    "name": "hmac_widemessage_1",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llHMAC(\"key\",llGetSubString(\"😀\",1,1),\"sha1\");after=1;}}"
+  },
+  {
+    "name": "hmac_widekey_2",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llHMAC(llGetSubString(\"😀\",0,0),\"😀\",\"sha224\");after=1;}}"
+  },
+  {
+    "name": "hmac_widemessage_2",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llHMAC(\"key\",llGetSubString(\"😀\",1,1),\"sha224\");after=1;}}"
+  },
+  {
+    "name": "hmac_widekey_3",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llHMAC(llGetSubString(\"😀\",0,0),\"😀\",\"sha256\");after=1;}}"
+  },
+  {
+    "name": "hmac_widemessage_3",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llHMAC(\"key\",llGetSubString(\"😀\",1,1),\"sha256\");after=1;}}"
+  },
+  {
+    "name": "hmac_widekey_4",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llHMAC(llGetSubString(\"😀\",0,0),\"😀\",\"sha384\");after=1;}}"
+  },
+  {
+    "name": "hmac_widemessage_4",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llHMAC(\"key\",llGetSubString(\"😀\",1,1),\"sha384\");after=1;}}"
+  },
+  {
+    "name": "hmac_widekey_5",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llHMAC(llGetSubString(\"😀\",0,0),\"😀\",\"sha512\");after=1;}}"
+  },
+  {
+    "name": "hmac_widemessage_5",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llHMAC(\"key\",llGetSubString(\"😀\",1,1),\"sha512\");after=1;}}"
+  },
+  {
+    "name": "hmac_widekey_6",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llHMAC(llGetSubString(\"😀\",0,0),\"😀\",\"md5_sha1\");after=1;}}"
+  },
+  {
+    "name": "hmac_widemessage_6",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llHMAC(\"key\",llGetSubString(\"😀\",1,1),\"md5_sha1\");after=1;}}"
+  },
+  {
+    "name": "hmac_widekey_7",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llHMAC(llGetSubString(\"😀\",0,0),\"😀\",\"unknown\");after=1;}}"
+  },
+  {
+    "name": "hmac_widemessage_7",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llHMAC(\"key\",llGetSubString(\"😀\",1,1),\"unknown\");after=1;}}"
+  },
+  {
+    "name": "decode_0",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llBase64ToString(llBase64ToString(\"\"));after=1;}}"
+  },
+  {
+    "name": "decode_1",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llBase64ToString(llBase64ToString(\"QUE9PQ==\"));after=1;}}"
+  },
+  {
+    "name": "decode_2",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llBase64ToString(llBase64ToString(\"WVFCaQ==\"));after=1;}}"
+  },
+  {
+    "name": "decode_3",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llBase64ToString(llBase64ToString(\"OEorWWdBPT0=\"));after=1;}}"
+  },
+  {
+    "name": "decode_4",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llBase64ToString(llBase64ToString(\"N2FDQQ==\"));after=1;}}"
+  },
+  {
+    "name": "decode_5",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llBase64ToString(llBase64ToString(\"N2JDQQ==\"));after=1;}}"
+  },
+  {
+    "name": "decode_6",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llBase64ToString(llBase64ToString(\"L3c9PQ==\"));after=1;}}"
+  },
+  {
+    "name": "decode_7",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llBase64ToString(llBase64ToString(\"d0s4PQ==\"));after=1;}}"
+  },
+  {
+    "name": "decode_8",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llBase64ToString(llBase64ToString(\"NG9JPQ==\"));after=1;}}"
+  },
+  {
+    "name": "decode_9",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llBase64ToString(llBase64ToString(\"IFlRPT0gDQo=\"));after=1;}}"
+  },
+  {
+    "name": "decode_10",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llBase64ToString(llBase64ToString(\"IQ==\"));after=1;}}"
+  },
+  {
+    "name": "decode_11",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llBase64ToString(llBase64ToString(\"WVE9\"));after=1;}}"
+  },
+  {
+    "name": "llXorBase64_0",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llXorBase64(llGetSubString(\"😀\",0,0),\"\");after=1;}}"
+  },
+  {
+    "name": "llXorBase64_1",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llXorBase64(llGetSubString(\"😀\",1,1),\"\");after=1;}}"
+  },
+  {
+    "name": "llXorBase64_2",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llXorBase64(\"QQ==\",llGetSubString(\"😀\",0,0));after=1;}}"
+  },
+  {
+    "name": "llXorBase64_3",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llXorBase64(\"QQ==\",llGetSubString(\"😀\",1,1));after=1;}}"
+  },
+  {
+    "name": "llXorBase64_4",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llXorBase64(\"QQ==\"+llGetSubString(\"😀\",0,0),\"AA==\");after=1;}}"
+  },
+  {
+    "name": "llXorBase64_5",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llXorBase64(\"QQ==\",\"AA==\"+llGetSubString(\"😀\",1,1));after=1;}}"
+  },
+  {
+    "name": "llXorBase64_6",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llXorBase64(\" Q Q = = \",\"A A = =\");after=1;}}"
+  },
+  {
+    "name": "llXorBase64_7",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llXorBase64(\"QQ==\",\"\");after=1;}}"
+  },
+  {
+    "name": "llXorBase64StringsCorrect_0",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llXorBase64StringsCorrect(llGetSubString(\"😀\",0,0),\"\");after=1;}}"
+  },
+  {
+    "name": "llXorBase64StringsCorrect_1",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llXorBase64StringsCorrect(llGetSubString(\"😀\",1,1),\"\");after=1;}}"
+  },
+  {
+    "name": "llXorBase64StringsCorrect_2",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llXorBase64StringsCorrect(\"QQ==\",llGetSubString(\"😀\",0,0));after=1;}}"
+  },
+  {
+    "name": "llXorBase64StringsCorrect_3",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llXorBase64StringsCorrect(\"QQ==\",llGetSubString(\"😀\",1,1));after=1;}}"
+  },
+  {
+    "name": "llXorBase64StringsCorrect_4",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llXorBase64StringsCorrect(\"QQ==\"+llGetSubString(\"😀\",0,0),\"AA==\");after=1;}}"
+  },
+  {
+    "name": "llXorBase64StringsCorrect_5",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llXorBase64StringsCorrect(\"QQ==\",\"AA==\"+llGetSubString(\"😀\",1,1));after=1;}}"
+  },
+  {
+    "name": "llXorBase64StringsCorrect_6",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llXorBase64StringsCorrect(\" Q Q = = \",\"A A = =\");after=1;}}"
+  },
+  {
+    "name": "llXorBase64StringsCorrect_7",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llXorBase64StringsCorrect(\"QQ==\",\"\");after=1;}}"
+  },
+  {
+    "name": "llXorBase64Strings_0",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llXorBase64Strings(llGetSubString(\"😀\",0,0),\"\");after=1;}}"
+  },
+  {
+    "name": "llXorBase64Strings_1",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llXorBase64Strings(llGetSubString(\"😀\",1,1),\"\");after=1;}}"
+  },
+  {
+    "name": "llXorBase64Strings_2",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llXorBase64Strings(\"QQ==\",llGetSubString(\"😀\",0,0));after=1;}}"
+  },
+  {
+    "name": "llXorBase64Strings_3",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llXorBase64Strings(\"QQ==\",llGetSubString(\"😀\",1,1));after=1;}}"
+  },
+  {
+    "name": "llXorBase64Strings_4",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llXorBase64Strings(\"QQ==\"+llGetSubString(\"😀\",0,0),\"AA==\");after=1;}}"
+  },
+  {
+    "name": "llXorBase64Strings_5",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llXorBase64Strings(\"QQ==\",\"AA==\"+llGetSubString(\"😀\",1,1));after=1;}}"
+  },
+  {
+    "name": "llXorBase64Strings_6",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llXorBase64Strings(\" Q Q = = \",\"A A = =\");after=1;}}"
+  },
+  {
+    "name": "llXorBase64Strings_7",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llXorBase64Strings(\"QQ==\",\"\");after=1;}}"
+  },
+  {
+    "name": "decode_12",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llBase64ToString(llBase64ToString(\"WVE9PcKg\"));after=1;}}"
+  },
+  {
+    "name": "decode_13",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llBase64ToString(llBase64ToString(\"WVE9PcKF\"));after=1;}}"
+  },
+  {
+    "name": "decode_14",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llBase64ToString(llBase64ToString(\"WVE9PQs=\"));after=1;}}"
+  },
+  {
+    "name": "decode_15",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llBase64ToString(llBase64ToString(\"WVE9PQw=\"));after=1;}}"
+  },
+  {
+    "name": "decode_16",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llBase64ToString(llBase64ToString(\"WVE9PQA=\"));after=1;}}"
+  },
+  {
+    "name": "decode_17",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llBase64ToString(llBase64ToString(\"WVE9ID0=\"));after=1;}}"
+  },
+  {
+    "name": "decode_18",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llBase64ToString(llBase64ToString(\"QUI9PQ==\"));after=1;}}"
+  },
+  {
+    "name": "decode_19",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llBase64ToString(llBase64ToString(\"QUFCPQ==\"));after=1;}}"
+  },
+  {
+    "name": "legacy_empty_mask",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llXorBase64Strings(\"QQ==\",\"=\");after=1;}}"
+  },
+  {
+    "name": "legacy_pad_whitespace",
+    "kind": "Source",
+    "source": "string result;integer after;default{state_entry(){result=llXorBase64Strings(\"QQ== \",\"AA==\");after=1;}}"
+  }
+]

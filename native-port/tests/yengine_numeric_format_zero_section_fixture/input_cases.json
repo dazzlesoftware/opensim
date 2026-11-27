@@ -1,0 +1,47 @@
+[
+  {
+    "name": "float_0",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-0.04",
+    "format": "0.000;(0.0)",
+    "coverage_group": "rounded_zero_reroute",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-0.04\"),\"0.000;(0.0)\");after=1;}}"
+  },
+  {
+    "name": "float_1",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-0.04",
+    "format": "0.000;(0.0);0.0000",
+    "coverage_group": "rounded_zero_reroute",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-0.04\"),\"0.000;(0.0);0.0000\");after=1;}}"
+  },
+  {
+    "name": "float_2",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0.04",
+    "format": "0.0;0.000;0.0000",
+    "coverage_group": "rounded_zero_reroute",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0.04\"),\"0.0;0.000;0.0000\");after=1;}}"
+  },
+  {
+    "name": "float_3",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-0",
+    "format": "0;(0)",
+    "coverage_group": "rounded_zero_reroute",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-0\"),\"0;(0)\");after=1;}}"
+  },
+  {
+    "name": "float_4",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-0",
+    "format": "0.0;(0.0)",
+    "coverage_group": "rounded_zero_reroute",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-0\"),\"0.0;(0.0)\");after=1;}}"
+  }
+]

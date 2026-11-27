@@ -1,0 +1,1 @@
+integer order;string result;float value(){order=order*10+1;return 1.25;}string format(){order=order*10+2;return "F2";}default{state_entry(){result=xmrFloat2String(value(),format());}}

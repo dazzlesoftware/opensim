@@ -1,0 +1,46 @@
+{
+  "name": "list_65537",
+  "kind": "list",
+  "length": 65537,
+  "eventName": "touch_start",
+  "postAccepted": true,
+  "queuedCount": 1,
+  "restoredCount": 1,
+  "parameterCount": 1,
+  "before": {
+    "kind": "list",
+    "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+    "length": 65537,
+    "cellsSha256": "f8e00a8c88d9c8215dba987eae129e084da6afef2aa12afbb1adc7e00154e28e",
+    "first": "19",
+    "middle": "19",
+    "last": "-7",
+    "firstClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+    "lastClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger"
+  },
+  "after": {
+    "kind": "list",
+    "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+    "length": 65537,
+    "cellsSha256": "f8e00a8c88d9c8215dba987eae129e084da6afef2aa12afbb1adc7e00154e28e",
+    "first": "19",
+    "middle": "19",
+    "last": "-7",
+    "firstClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+    "lastClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger"
+  },
+  "xmlBytes": 5111972,
+  "xmlSha256": "ea161ca7a468cce7229b0b616fc2b6e4490f12062063b4af0fb33ec2fae51e6e",
+  "generatorSha256": "2132dc5e4fdcff23b6cd0ef5fa18238dccd5eedef094388e418ddebac3a70dd9",
+  "originalAssemblySha256": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+  "originalSharedAssemblySha256": "5e8b75269a1c76c15f979166a6ae121da03e5d118532c2ef9616de0b348bba77",
+  "originalSourceSha256": {
+    "XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+    "XMRInstCapture.cs": "775f1d83bd4610f788891269ea9ea08b1f79cf4bf3b44300d926f49c8a277cbd",
+    "XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52"
+  },
+  "runtime": ".NET 8.0.34",
+  "architecture": "X64",
+  "processId": 1,
+  "scope": "Actual unchanged original PostEvent plus production AppendXMLObjectArray/AppendXMLDetectArray and RestoreEventQueue; no source compilation or event dispatch claim"
+}

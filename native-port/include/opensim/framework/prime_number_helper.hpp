@@ -29,10 +29,11 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // C++ adaptation of OpenSim/Framework/PrimeNumberHelper.cs; BSD license: native-port/LICENSE.txt.
 #pragma once
 #include <cstdint>
+
 namespace opensim::framework {
 struct PrimeNumberHelper {
     static std::int32_t get_prime(std::int32_t minimum) noexcept;
     // Compatibility predicate, including the original strict sqrt bound and treatment of 1.
     static bool is_prime(std::int32_t candidate) noexcept;
 };
-}
+} // namespace opensim::framework

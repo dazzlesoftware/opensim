@@ -6,6 +6,7 @@
 #include <thread>
 using namespace opensim;
 using namespace server;
+
 std::string hex(std::string_view text) {
     std::string result;
     for (unsigned char c : text) {
@@ -14,6 +15,7 @@ std::string hex(std::string_view text) {
     }
     return result;
 }
+
 std::optional<std::string> text(const std::string &token) {
     if (token == "N")
         return {};
@@ -24,9 +26,11 @@ std::optional<std::string> text(const std::string &token) {
         out += char(std::stoi(token.substr(i, 2), nullptr, 16));
     return out;
 }
+
 std::string token(const std::optional<std::string> &value) {
     return value ? "s" + hex(*value) : "N";
 }
+
 namespace opensim::server {
 struct HttpResponseProbe {
     static std::optional<std::string> range(const HttpResponseState &response) {
@@ -36,14 +40,17 @@ struct HttpResponseProbe {
         return {};
     }
 };
-}
+} // namespace opensim::server
+
 struct Request : AssetHttpRequest {
     int flags;
     std::optional<std::string> value;
+
     Request(std::string target, std::optional<std::string> range, int f)
         : AssetHttpRequest({}), flags(f), value(std::move(range)) {
         native.raw_target = std::move(target);
     }
+
     std::shared_ptr<AssetQueries> queries() override {
         if (flags & 2)
             throw std::runtime_error("queries");
@@ -51,12 +58,14 @@ struct Request : AssetHttpRequest {
             return {};
         return AssetHttpRequest::queries();
     }
+
     std::optional<std::string> range() override {
         if (flags & 8)
             throw std::runtime_error("range");
         return value;
     }
 };
+
 struct Service : AssetRetrievalService {
     std::shared_ptr<framework::AssetBase> asset;
     Complete saved;
@@ -64,8 +73,8 @@ struct Service : AssetRetrievalService {
     std::string id;
     std::optional<std::string> foreign;
     bool store = true;
-    void get(const std::string &key, const std::optional<std::string> &url, bool local,
-             Complete done) override {
+
+    void get(const std::string &key, const std::optional<std::string> &url, bool local, Complete done) override {
         ++calls;
         id = key;
         foreign = url;
@@ -86,6 +95,7 @@ struct Service : AssetRetrievalService {
             throw std::runtime_error("after");
     }
 };
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -93,8 +103,8 @@ int main() {
             std::istringstream input(line);
             std::string query, range, foreign, mime;
             int asset_mode, type, size, callback, start, length, priority, flags;
-            input >> query >> range >> asset_mode >> type >> size >> callback >> start >> length >>
-                priority >> foreign >> mime >> flags;
+            input >> query >> range >> asset_mode >> type >> size >> callback >> start >> length >> priority >>
+                foreign >> mime >> flags;
             auto service = std::make_shared<Service>();
             service->mode = callback;
             if (asset_mode != 1) {
@@ -110,14 +120,13 @@ int main() {
                 if (asset_mode == 3)
                     service->asset->metadata({});
             }
-            auto response = std::make_shared<HttpResponseState>(std::shared_ptr<HttpResponseContext>{},
-                                                                "HTTP/1.1", HttpConnectionType::KeepAlive);
+            auto response = std::make_shared<HttpResponseState>(std::shared_ptr<HttpResponseContext>{}, "HTTP/1.1",
+                                                                HttpConnectionType::KeepAlive);
             response->status(207);
             response->raw_start(start);
             response->raw_length(length);
             response->priority(priority);
-            response->raw_buffer(
-                std::make_shared<std::vector<uint8_t>>(std::initializer_list<uint8_t>{0xaa}));
+            response->raw_buffer(std::make_shared<std::vector<uint8_t>>(std::initializer_list<uint8_t>{0xaa}));
             response->content_type("initial/type");
             std::string warnings, result = "OK", late = "-";
             GetAssetsHandler handler((flags & 1) ? nullptr : service, [&](const auto &warning) {
@@ -153,16 +162,15 @@ int main() {
             }
             if ((flags & 1024) && service->asset && service->asset->data && !service->asset->data->empty())
                 (*service->asset->data)[0] = 0xee;
-            std::string bytes =
-                response->raw_buffer()
-                    ? hex(std::string(response->raw_buffer()->begin(), response->raw_buffer()->end()))
-                    : "N";
+            std::string bytes = response->raw_buffer()
+                                    ? hex(std::string(response->raw_buffer()->begin(), response->raw_buffer()->end()))
+                                    : "N";
             std::cout << result << '|' << response->status() << '|' << int(response->connection()) << '|'
-                      << response->raw_start() << '|' << response->raw_length() << '|' << response->priority()
-                      << '|' << token(response->content_type()) << '|' << bytes << '|'
-                      << token(HttpResponseProbe::range(*response)) << '|' << service->calls << '|'
-                      << hex(service->id) << '|' << token(service->foreign) << '|' << int(service->store)
-                      << '|' << hex(warnings) << '|' << late << '\n';
+                      << response->raw_start() << '|' << response->raw_length() << '|' << response->priority() << '|'
+                      << token(response->content_type()) << '|' << bytes << '|'
+                      << token(HttpResponseProbe::range(*response)) << '|' << service->calls << '|' << hex(service->id)
+                      << '|' << token(service->foreign) << '|' << int(service->store) << '|' << hex(warnings) << '|'
+                      << late << '\n';
         } catch (...) {
             std::cout << "FIXTURE_EX\n";
         }

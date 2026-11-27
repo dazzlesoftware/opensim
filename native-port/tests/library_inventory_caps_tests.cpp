@@ -4,11 +4,13 @@
 #include <iostream>
 using namespace opensim;
 using namespace services;
+
 namespace {
 framework::Uuid id(int n) {
     auto tail = std::to_string(n);
     return framework::Uuid("00000000-0000-0000-0000-" + std::string(12 - tail.size(), '0') + tail);
 }
+
 std::string hex(std::string_view value) {
     std::string result;
     constexpr char d[] = "0123456789abcdef";
@@ -18,6 +20,7 @@ std::string hex(std::string_view value) {
     }
     return result;
 }
+
 InventoryItem sample(int seed, framework::Uuid key) {
     InventoryItem item;
     item.id = key;
@@ -38,6 +41,7 @@ InventoryItem sample(int seed, framework::Uuid key) {
     item.sale_type = seed % 4;
     return item;
 }
+
 std::string probe(int seed, int count, int mode) {
     int calls = 0;
     std::string trace;
@@ -56,13 +60,11 @@ std::string probe(int seed, int count, int mode) {
             return {};
         FetchInventory2Core::Items result;
         for (std::size_t i = 0; i < ids.size(); ++i)
-            result.push_back((mode & 512) || ids[i].is_zero() || i % 3 == 2
-                                 ? std::nullopt
-                                 : std::optional{sample(seed, ids[i])});
+            result.push_back((mode & 512) || ids[i].is_zero() || i % 3 == 2 ? std::nullopt
+                                                                            : std::optional{sample(seed, ids[i])});
         return result;
     };
-    FetchLibrary2Core core(mode & 8 ? framework::Uuid{} : id(42),
-                           mode & 4 ? std::nullopt : std::optional{backend});
+    FetchLibrary2Core core(mode & 8 ? framework::Uuid{} : id(42), mode & 4 ? std::nullopt : std::optional{backend});
     InventoryBadRequests bad([] { return 0; });
     if (mode & 1)
         bad.add(id(2));
@@ -94,6 +96,7 @@ std::string probe(int seed, int count, int mode) {
     }
     return result + "|" + std::to_string(calls) + "|" + trace;
 }
+
 std::string unhex(const std::string &value) {
     if (value == "-")
         return {};
@@ -102,6 +105,7 @@ std::string unhex(const std::string &value) {
         out += static_cast<char>(std::stoi(value.substr(i, 2), nullptr, 16));
     return out;
 }
+
 std::string http_probe(int seed, int mode, const std::string &method, const std::string &body) {
     int calls = 0;
     std::string trace;
@@ -120,8 +124,7 @@ std::string http_probe(int seed, int mode, const std::string &method, const std:
             return {};
         FetchInventory2Core::Items out;
         for (std::size_t i = 0; i < ids.size(); ++i)
-            out.push_back(ids[i].is_zero() || i % 3 == 2 ? std::nullopt
-                                                         : std::optional{sample(seed, ids[i])});
+            out.push_back(ids[i].is_zero() || i % 3 == 2 ? std::nullopt : std::optional{sample(seed, ids[i])});
         return out;
     };
     auto core = std::make_shared<FetchLibrary2Core>(mode & 8 ? framework::Uuid{} : id(42),
@@ -135,15 +138,18 @@ std::string http_probe(int seed, int mode, const std::string &method, const std:
     request.body = body;
     auto response = route.handle(request);
     return std::to_string(response.status) + ":" + hex(response.body) + "|" +
-           std::to_string(route.requests_received.load()) + "|" +
-           std::to_string(route.requests_handled.load()) + "|" + std::to_string(calls) + "|" + trace;
+           std::to_string(route.requests_received.load()) + "|" + std::to_string(route.requests_handled.load()) + "|" +
+           std::to_string(calls) + "|" + trace;
 }
+
 int checks = 0;
+
 void check(bool value, const char *label) {
     ++checks;
     if (!value)
         throw std::runtime_error(label);
 }
+
 void run() {
     check(http_probe(1, 0, "GET", "{}") == "404:|1|0|0|", "route method404 before parse");
     check(http_probe(1, 0, "POST", "bad") == "400:|1|0|0|", "route parse400");
@@ -165,7 +171,8 @@ void run() {
     }
     check(failed, "present library missing root rejected at construction");
 }
-}
+} // namespace
+
 int main(int argc, char **argv) {
     try {
         if (argc == 2 && std::string_view(argv[1]) == "--http") {

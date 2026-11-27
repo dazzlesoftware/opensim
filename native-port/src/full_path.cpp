@@ -21,10 +21,11 @@ namespace opensim::framework {
 namespace {
 #ifdef _WIN32
 bool extended(std::u16string_view value) {
-    return value.size() >= 4 && value[0] == u'\\' && (value[1] == u'\\' || value[1] == u'?') &&
-           value[2] == u'?' && value[3] == u'\\';
+    return value.size() >= 4 && value[0] == u'\\' && (value[1] == u'\\' || value[1] == u'?') && value[2] == u'?' &&
+           value[3] == u'\\';
 }
-[[noreturn]] void windows_error(DWORD code, const std::u16string& path) {
+
+[[noreturn]] void windows_error(DWORD code, const std::u16string &path) {
     if (code == ERROR_FILENAME_EXCED_RANGE)
         throw FullPathError(FullPathFailure::PathTooLong,
                             "The path '" + utf8(path) +
@@ -35,10 +36,11 @@ bool extended(std::u16string_view value) {
                             (path.empty() ? std::string{} : " : '" + utf8(path) + "'"),
                         {}, static_cast<std::uint32_t>(code));
 }
-std::u16string normalize(const std::u16string& path) {
+
+std::u16string normalize(const std::u16string &path) {
     std::vector<wchar_t> buffer(261);
     for (;;) {
-        auto length = GetFullPathNameW(reinterpret_cast<const wchar_t*>(path.c_str()),
+        auto length = GetFullPathNameW(reinterpret_cast<const wchar_t *>(path.c_str()),
                                        static_cast<DWORD>(buffer.size()), buffer.data(), nullptr);
         if (!length) {
             auto code = GetLastError();
@@ -47,11 +49,12 @@ std::u16string normalize(const std::u16string& path) {
         if (length > 32767)
             windows_error(ERROR_FILENAME_EXCED_RANGE, path);
         if (length < buffer.size())
-            return {reinterpret_cast<const char16_t*>(buffer.data()), length};
+            return {reinterpret_cast<const char16_t *>(buffer.data()), length};
         buffer.resize(static_cast<std::size_t>(length) + 1);
     }
 }
-std::optional<std::u16string> long_name(const std::u16string& value) {
+
+std::optional<std::u16string> long_name(const std::u16string &value) {
     auto requested = value;
     bool prefix = false, unc = false;
     if (value.size() > 259 && !extended(value) && !value.starts_with(u"\\\\.\\")) {
@@ -64,12 +67,12 @@ std::optional<std::u16string> long_name(const std::u16string& value) {
     }
     std::vector<wchar_t> buffer(261);
     for (;;) {
-        auto length = GetLongPathNameW(reinterpret_cast<const wchar_t*>(requested.c_str()), buffer.data(),
+        auto length = GetLongPathNameW(reinterpret_cast<const wchar_t *>(requested.c_str()), buffer.data(),
                                        static_cast<DWORD>(buffer.size()));
         if (!length)
             return {};
         if (length < buffer.size()) {
-            std::u16string result(reinterpret_cast<const char16_t*>(buffer.data()), length);
+            std::u16string result(reinterpret_cast<const char16_t *>(buffer.data()), length);
             if (prefix) {
                 if (unc && result.starts_with(u"\\\\?\\UNC\\"))
                     result = u"\\\\" + result.substr(8);
@@ -83,7 +86,8 @@ std::optional<std::u16string> long_name(const std::u16string& value) {
         buffer.resize(static_cast<std::size_t>(length) + 1);
     }
 }
-std::u16string expand(const std::u16string& path) {
+
+std::u16string expand(const std::u16string &path) {
     std::size_t end = path.size();
     for (;;) {
         if (auto expanded = long_name(path.substr(0, end)))
@@ -129,6 +133,7 @@ UnixPathError unix_error(int code) {
         return UnixPathError::Other;
     }
 }
+
 UnixCwdResult native_unix_cwd() {
     std::vector<char> buffer(256);
     for (;;) {
@@ -142,17 +147,20 @@ UnixCwdResult native_unix_cwd() {
         buffer.resize(buffer.size() * 2);
     }
 }
-std::u16string normalize(const std::u16string& text) {
+
+std::u16string normalize(const std::u16string &text) {
     return utf16(get_full_path_unix(utf8(text), native_unix_cwd));
 }
-std::u16string expand(const std::u16string& text) {
+
+std::u16string expand(const std::u16string &text) {
     return text;
 }
 
 #endif
-}
+} // namespace
+
 namespace {
-[[noreturn]] void throw_unix_cwd(const UnixCwdResult& result) {
+[[noreturn]] void throw_unix_cwd(const UnixCwdResult &result) {
     switch (result.error) {
     case UnixPathError::NoEntry:
         throw FullPathError(FullPathFailure::MissingFile, "Unable to find the specified file.");
@@ -167,28 +175,26 @@ namespace {
             FullPathFailure::PathTooLong,
             "The specified file name or path is too long, or a component of the specified path is too long.");
     case UnixPathError::WouldBlock:
-        throw FullPathError(
-            FullPathFailure::Io,
-            "The process cannot access the file because it is being used by another process.");
+        throw FullPathError(FullPathFailure::Io,
+                            "The process cannot access the file because it is being used by another process.");
     case UnixPathError::Canceled:
         throw FullPathError(FullPathFailure::OperationCanceled, "The operation was canceled.");
     case UnixPathError::FileTooLarge:
         throw FullPathError(FullPathFailure::ArgumentOutOfRange,
-                            "Specified file length was too large for the file system. (Parameter 'value')",
-                            "value");
+                            "Specified file length was too large for the file system. (Parameter 'value')", "value");
     default:
         throw FullPathError(FullPathFailure::Io, result.system_message);
     }
 }
-}
-std::string get_full_path_unix(const std::optional<std::string>& input, UnixCwdProvider cwd) {
+} // namespace
+
+std::string get_full_path_unix(const std::optional<std::string> &input, UnixCwdProvider cwd) {
     if (!input)
-        throw FullPathError(FullPathFailure::ArgumentNull, "Value cannot be null. (Parameter 'path')",
-                            "path");
+        throw FullPathError(FullPathFailure::ArgumentNull, "Value cannot be null. (Parameter 'path')", "path");
     auto text = utf16_replacing(*input);
     if (text.empty())
-        throw FullPathError(FullPathFailure::Argument,
-                            "The value cannot be an empty string. (Parameter 'path')", "path");
+        throw FullPathError(FullPathFailure::Argument, "The value cannot be an empty string. (Parameter 'path')",
+                            "path");
     if (text.find(u'\0') != text.npos)
         throw FullPathError(FullPathFailure::Argument, "Null character in path. (Parameter 'path')", "path");
     auto path = utf8(text);
@@ -218,7 +224,7 @@ std::string get_full_path_unix(const std::optional<std::string>& input, UnixCwdP
         start = end + 1;
     }
     std::string result = "/";
-    for (auto& segment : segments) {
+    for (auto &segment : segments) {
         if (result.size() > 1)
             result += '/';
         result += segment;
@@ -227,16 +233,17 @@ std::string get_full_path_unix(const std::optional<std::string>& input, UnixCwdP
         result += '/';
     return result;
 }
+
 std::shared_ptr<FullPathBackend> native_full_path_backend() {
     auto result = std::make_shared<FullPathBackend>();
     result->normalize = normalize;
     result->expand_short = expand;
     return result;
 }
-std::string get_full_path(const std::optional<std::string>& path, std::shared_ptr<FullPathBackend> backend) {
+
+std::string get_full_path(const std::optional<std::string> &path, std::shared_ptr<FullPathBackend> backend) {
     if (!path)
-        throw FullPathError(FullPathFailure::ArgumentNull, "Value cannot be null. (Parameter 'path')",
-                            "path");
+        throw FullPathError(FullPathFailure::ArgumentNull, "Value cannot be null. (Parameter 'path')", "path");
     auto value = utf16_replacing(*path);
     bool empty = value.empty();
 #ifdef _WIN32
@@ -246,8 +253,8 @@ std::string get_full_path(const std::optional<std::string>& path, std::shared_pt
 #ifdef _WIN32
         throw FullPathError(FullPathFailure::Argument, "The path is empty. (Parameter 'path')", "path");
 #else
-        throw FullPathError(FullPathFailure::Argument,
-                            "The value cannot be an empty string. (Parameter 'path')", "path");
+        throw FullPathError(FullPathFailure::Argument, "The value cannot be an empty string. (Parameter 'path')",
+                            "path");
 #endif
     }
     if (value.find(u'\0') != value.npos)
@@ -267,4 +274,4 @@ std::string get_full_path(const std::optional<std::string>& path, std::shared_pt
 #endif
     return utf8(result);
 }
-}
+} // namespace opensim::framework

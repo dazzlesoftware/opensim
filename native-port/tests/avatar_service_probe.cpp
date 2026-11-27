@@ -2,10 +2,12 @@
 #include "avatar_data_fixture.hpp"
 using services::AvatarBaseData;
 using services::AvatarData;
-std::string optional_text(const std::optional<std::string>& s) {
+
+std::string optional_text(const std::optional<std::string> &s) {
     return s ? "s" + hex(*s) : "null";
 }
-std::string data_text(const AvatarData& a) {
+
+std::string data_text(const AvatarData &a) {
     std::string s = std::to_string(a.avatar_type) + ":";
     if (!a.data)
         return s + "null";
@@ -13,18 +15,21 @@ std::string data_text(const AvatarData& a) {
         s += hex(k) + "=" + optional_text(v) + ";";
     return s;
 }
+
 struct Database : services::AvatarStore {
     std::map<framework::Uuid, std::map<std::string, std::optional<std::string>>> rows;
     std::vector<std::shared_ptr<AvatarBaseData>> held;
     std::string trace;
     int outcome = 0, target = 0, mutation = 0, step = 0, stores = 0;
-    AvatarData* avatar = nullptr;
+    AvatarData *avatar = nullptr;
+
     bool touch() {
         ++step;
         if (outcome == 2 && step == target)
             throw std::runtime_error("provider");
         return !(outcome == 1 && step == target);
     }
+
     auto get(framework::Uuid principal) -> std::vector<std::shared_ptr<AvatarBaseData>> override {
         trace += "get:" + principal.str() + ";";
         if (!touch())
@@ -46,12 +51,12 @@ struct Database : services::AvatarStore {
         }
         return result;
     }
+
     bool store(std::shared_ptr<AvatarBaseData> row) override {
         ++stores;
         held.push_back(row);
         auto name = row->data->at("Name"), value = row->data->at("Value");
-        trace +=
-            "store:" + row->principal.str() + ":" + optional_text(name) + ":" + optional_text(value) + ";";
+        trace += "store:" + row->principal.str() + ":" + optional_text(name) + ":" + optional_text(value) + ";";
         if (!touch())
             return false;
         rows[row->principal][name.value_or("<null>")] = value;
@@ -73,6 +78,7 @@ struct Database : services::AvatarStore {
             avatar->data.reset();
         return true;
     }
+
     bool erase_all(framework::Uuid principal) override {
         trace += "delete:" + principal.str() + ";";
         if (!touch())
@@ -86,12 +92,14 @@ struct Database : services::AvatarStore {
         }
         return result;
     }
-    bool erase(framework::Uuid principal, const std::optional<std::string>& name) override {
+
+    bool erase(framework::Uuid principal, const std::optional<std::string> &name) override {
         trace += "remove:" + principal.str() + ":" + optional_text(name) + ";";
         if (!touch())
             return false;
         return rows[principal].erase(name.value_or("<null>")) != 0;
     }
+
     std::string snapshot() {
         std::string s;
         for (auto [principal, fields] : rows)
@@ -100,12 +108,12 @@ struct Database : services::AvatarStore {
         s += '|';
         for (auto r : held)
             s += r->principal.str() + ":" +
-                 (r->data ? optional_text(r->data->at("Name")) + ":" + optional_text(r->data->at("Value"))
-                          : "null") +
+                 (r->data ? optional_text(r->data->at("Name")) + ":" + optional_text(r->data->at("Value")) : "null") +
                  ";";
         return s;
     }
 };
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -114,8 +122,8 @@ int main() {
         std::string h;
         Database db;
         in >> mode >> db.outcome >> db.target >> db.mutation >> h;
-        auto height = h == "-" ? std::optional<std::string>{}
-                               : std::optional(h == "." ? std::string{} : fixture::unhex(h));
+        auto height =
+            h == "-" ? std::optional<std::string>{} : std::optional(h == "." ? std::string{} : fixture::unhex(h));
         AvatarData a;
         a.avatar_type = 2;
         a.data = std::make_shared<AvatarData::Fields>();
@@ -167,7 +175,7 @@ int main() {
         } catch (...) {
             result = "EX";
         }
-        std::cout << hex(result) << '|' << hex(db.trace) << '|' << hex(db.snapshot()) << '|'
-                  << hex(data_text(a)) << '\n';
+        std::cout << hex(result) << '|' << hex(db.trace) << '|' << hex(db.snapshot()) << '|' << hex(data_text(a))
+                  << '\n';
     }
 }

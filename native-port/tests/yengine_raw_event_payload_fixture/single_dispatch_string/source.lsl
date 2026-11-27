@@ -1,0 +1,1 @@
+string result;integer after;default{state_entry(){llSleep(0.1);}touch_start(string n){result=n;after=1;}}

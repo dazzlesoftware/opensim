@@ -1,0 +1,1 @@
+YOption arrays;list input=[1,2];list alias;integer first_hash;integer alias_hash;integer result;integer same_hash;default{state_entry(){alias=input+[];first_hash=xmrHashCode((object)input);alias_hash=xmrHashCode((object)alias);result=xmrHashCode((object)input);same_hash=(first_hash==alias_hash);}}

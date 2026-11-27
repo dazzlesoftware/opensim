@@ -35,21 +35,28 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace opensim::framework {
 inline constexpr std::int32_t EnvironmentTickCountMask = 0x3fffffff;
+
 inline std::int32_t wrapping_add(std::int32_t a, std::int32_t b) noexcept {
     return std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(a) + static_cast<std::uint32_t>(b));
 }
+
 inline std::int32_t environment_tick_count() noexcept {
-    const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::steady_clock::now().time_since_epoch()).count();
+    const auto ms =
+        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch())
+            .count();
     return static_cast<std::int32_t>(static_cast<std::uint64_t>(ms) & EnvironmentTickCountMask);
 }
+
 inline std::int32_t environment_tick_count_subtract(std::int32_t now, std::int32_t before) noexcept {
     auto diff = std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(now) - static_cast<std::uint32_t>(before));
     return diff >= 0 ? diff : wrapping_add(diff, EnvironmentTickCountMask + 1);
 }
+
 inline std::int32_t environment_tick_count_compare(std::int32_t a, std::int32_t b, std::int32_t now) noexcept {
-    if (static_cast<std::int64_t>(now) - a >= 0) a = wrapping_add(a, EnvironmentTickCountMask + 1);
-    if (static_cast<std::int64_t>(now) - b >= 0) b = wrapping_add(b, EnvironmentTickCountMask + 1);
+    if (static_cast<std::int64_t>(now) - a >= 0)
+        a = wrapping_add(a, EnvironmentTickCountMask + 1);
+    if (static_cast<std::int64_t>(now) - b >= 0)
+        b = wrapping_add(b, EnvironmentTickCountMask + 1);
     return std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(a) - static_cast<std::uint32_t>(b));
 }
-}
+} // namespace opensim::framework

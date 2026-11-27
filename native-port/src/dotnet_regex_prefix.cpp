@@ -5,40 +5,49 @@
 #include "dotnet_regex_sort.hpp"
 #include <array>
 #include <bit>
+
 namespace opensim::framework {
 namespace {
 using K = DotnetRegexNodeKind;
 using Sets = std::vector<DotnetRegexFixedDistanceSet>;
 using Builder = std::shared_ptr<DotnetRegexClassBuilder>;
+
 [[noreturn]] void null_reference() {
     throw DotnetRegexClassError("System.NullReferenceException", 0x80004003u,
                                 "Object reference not set to an instance of an object.");
 }
-DotnetRegexNode* required(DotnetRegexNode* node) {
+
+DotnetRegexNode *required(DotnetRegexNode *node) {
     if (!node)
         null_reference();
     return node;
 }
-std::u16string_view required(const DotnetRegexNodeText& text) {
+
+std::u16string_view required(const DotnetRegexNodeText &text) {
     if (!text)
         null_reference();
     return *text;
 }
-bool available(const DotnetRegexExecutionStack& stack) {
+
+bool available(const DotnetRegexExecutionStack &stack) {
     if (!stack)
         throw std::invalid_argument("Regex prefix analysis requires its execution-stack policy");
     return stack();
 }
+
 int wrap(std::int64_t value) {
     return std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(value));
 }
+
 DotnetRegexNodeText text(std::u16string value) {
     return value.empty() ? runtime_empty_text() : std::make_shared<const std::u16string>(std::move(value));
 }
-DotnetRegexClassText class_text(const DotnetRegexNodeText& value) {
+
+DotnetRegexClassText class_text(const DotnetRegexNodeText &value) {
     return value ? DotnetRegexClassText(*value) : std::nullopt;
 }
-bool prefix(DotnetRegexNode* node, std::u16string& output, const DotnetRegexExecutionStack& stack) {
+
+bool prefix(DotnetRegexNode *node, std::u16string &output, const DotnetRegexExecutionStack &stack) {
     if (!available(stack))
         return false;
     required(node);
@@ -119,8 +128,8 @@ bool prefix(DotnetRegexNode* node, std::u16string& output, const DotnetRegexExec
     }
     return false;
 }
-std::optional<bool> first_class(DotnetRegexNode* node, Builder& builder,
-                                const DotnetRegexExecutionStack& stack) {
+
+std::optional<bool> first_class(DotnetRegexNode *node, Builder &builder, const DotnetRegexExecutionStack &stack) {
     if (!available(stack))
         return false;
     required(node);
@@ -250,8 +259,9 @@ std::optional<bool> first_class(DotnetRegexNode* node, Builder& builder,
         return false;
     }
 }
-bool raw_fixed_sets(DotnetRegexNode* node, Sets& results, int& distance, bool thorough,
-                    const DotnetRegexExecutionStack& stack) {
+
+bool raw_fixed_sets(DotnetRegexNode *node, Sets &results, int &distance, bool thorough,
+                    const DotnetRegexExecutionStack &stack) {
     if (!available(stack))
         return false;
     required(node);
@@ -358,12 +368,14 @@ bool raw_fixed_sets(DotnetRegexNode* node, Sets& results, int& distance, bool th
             int count = node->child_count();
             bool fixed = true;
             std::optional<int> length;
+
             // Dictionary enumeration follows first insertion, not numeric key order.
             struct Entry {
                 int distance;
                 Builder builder;
                 int count;
             };
+
             std::vector<Entry> entries;
             Sets branch;
             for (int i = 0; i < count; ++i) {
@@ -379,19 +391,17 @@ bool raw_fixed_sets(DotnetRegexNode* node, Sets& results, int& distance, bool th
                     else if (*length != branch_distance)
                         fixed = false;
                 }
-                for (auto& item : branch) {
+                for (auto &item : branch) {
                     auto found = std::find_if(entries.begin(), entries.end(),
-                                              [&](auto& entry) { return entry.distance == item.distance; });
+                                              [&](auto &entry) { return entry.distance == item.distance; });
                     if (found != entries.end()) {
-                        if (found->builder->try_add_class(
-                                *DotnetRegexClassBuilder::parse(required(item.set))))
+                        if (found->builder->try_add_class(*DotnetRegexClassBuilder::parse(required(item.set))))
                             ++found->count;
                     } else
-                        entries.push_back(
-                            {item.distance, DotnetRegexClassBuilder::parse(required(item.set)), 1});
+                        entries.push_back({item.distance, DotnetRegexClassBuilder::parse(required(item.set)), 1});
                 }
             }
-            for (auto& entry : entries) {
+            for (auto &entry : entries) {
                 if (results.size() >= 50) {
                     fixed = false;
                     break;
@@ -416,6 +426,7 @@ bool raw_fixed_sets(DotnetRegexNode* node, Sets& results, int& distance, bool th
     }
     return false;
 }
+
 constexpr float frequency[] = {
     0.0f,   0.0f,   0.0f,   0.0f,   0.0f,   0.0f,   0.0f,   0.0f,   0.0f,   0.001f, 0.0f,   0.0f,   0.0f,
     0.0f,   0.0f,   0.0f,   0.0f,   0.0f,   0.0f,   0.0f,   0.003f, 0.0f,   0.0f,   0.0f,   0.0f,   0.004f,
@@ -427,11 +438,11 @@ constexpr float frequency[] = {
     0.591f, 0.085f, 0.59f,  0.013f, 0.797f, 0.001f, 4.596f, 1.296f, 2.081f, 2.005f, 6.903f, 1.494f, 1.019f,
     1.024f, 3.75f,  0.286f, 0.439f, 2.913f, 1.459f, 3.908f, 3.23f,  1.444f, 0.231f, 4.22f,  3.924f, 5.312f,
     2.112f, 0.737f, 0.573f, 0.992f, 1.067f, 0.181f, 0.391f, 0.056f, 0.391f, 0.002f, 0.0f};
-int compare_sets(const DotnetRegexFixedDistanceSet& a, const DotnetRegexFixedDistanceSet& b) {
+
+int compare_sets(const DotnetRegexFixedDistanceSet &a, const DotnetRegexFixedDistanceSet &b) {
     auto compare = [](auto x, auto y) { return x < y ? -1 : x > y ? 1 : 0; };
-    int ac = a.chars ? static_cast<int>(a.chars->size()) : 0,
-        bc = b.chars ? static_cast<int>(b.chars->size()) : 0;
-    auto range_length = [](const DotnetRegexFixedDistanceSet& item) {
+    int ac = a.chars ? static_cast<int>(a.chars->size()) : 0, bc = b.chars ? static_cast<int>(b.chars->size()) : 0;
+    auto range_length = [](const DotnetRegexFixedDistanceSet &item) {
         if (!item.range)
             return 0;
         int size = static_cast<int>(item.range->last) - item.range->first + 1;
@@ -442,7 +453,7 @@ int compare_sets(const DotnetRegexFixedDistanceSet& a, const DotnetRegexFixedDis
         return b.negated ? -1 : 1;
     if (!a.negated) {
         if (a.chars && b.chars) {
-            auto sum = [](auto& chars) {
+            auto sum = [](auto &chars) {
                 float result = 0;
                 for (auto c : *chars)
                     if (c < 128)
@@ -468,7 +479,8 @@ int compare_sets(const DotnetRegexFixedDistanceSet& a, const DotnetRegexFixedDis
         return ar <= 0 ? 1 : -1;
     return ar > 0 ? compare(ar, br) : compare(a.distance, b.distance);
 }
-K anchor(DotnetRegexNode* node, bool leading, const DotnetRegexExecutionStack& stack) {
+
+K anchor(DotnetRegexNode *node, bool leading, const DotnetRegexExecutionStack &stack) {
     if (!available(stack))
         return K::Unknown;
     for (;;) {
@@ -488,7 +500,7 @@ K anchor(DotnetRegexNode* node, bool leading, const DotnetRegexExecutionStack& s
             node = node->child(0);
             continue;
         case K::Concatenate: {
-            DotnetRegexNode* next = nullptr;
+            DotnetRegexNode *next = nullptr;
             int count = node->child_count();
             for (int i = 0; i < count; ++i) {
                 auto child = required(node->child(leading ? i : count - 1 - i));
@@ -519,13 +531,15 @@ K anchor(DotnetRegexNode* node, bool leading, const DotnetRegexExecutionStack& s
         return K::Unknown;
     }
 }
-}
-DotnetRegexNodeText dotnet_regex_find_prefix(DotnetRegexNode* node, const DotnetRegexExecutionStack& stack) {
+} // namespace
+
+DotnetRegexNodeText dotnet_regex_find_prefix(DotnetRegexNode *node, const DotnetRegexExecutionStack &stack) {
     std::u16string value;
     prefix(node, value, stack);
     return text(std::move(value));
 }
-DotnetRegexNodeText dotnet_regex_find_ordinal_case_insensitive_prefix(DotnetRegexNode* node) {
+
+DotnetRegexNodeText dotnet_regex_find_ordinal_case_insensitive_prefix(DotnetRegexNode *node) {
     for (;;) {
         required(node);
         auto kind = node->kind();
@@ -543,8 +557,8 @@ DotnetRegexNodeText dotnet_regex_find_ordinal_case_insensitive_prefix(DotnetRege
         return {};
     }
 }
-DotnetRegexNodeText dotnet_regex_find_first_char_class(DotnetRegexNode* node,
-                                                       const DotnetRegexExecutionStack& stack) {
+
+DotnetRegexNodeText dotnet_regex_find_first_char_class(DotnetRegexNode *node, const DotnetRegexExecutionStack &stack) {
     Builder builder;
     if (first_class(node, builder, stack) != true)
         return {};
@@ -552,13 +566,14 @@ DotnetRegexNodeText dotnet_regex_find_first_char_class(DotnetRegexNode* node,
         null_reference();
     return text(builder->to_string_class());
 }
-std::optional<Sets> dotnet_regex_find_fixed_distance_sets(DotnetRegexNode* root, bool thorough,
-                                                          const DotnetRegexExecutionStack& stack) {
+
+std::optional<Sets> dotnet_regex_find_fixed_distance_sets(DotnetRegexNode *root, bool thorough,
+                                                          const DotnetRegexExecutionStack &stack) {
     Sets results;
     int distance = 0;
     raw_fixed_sets(root, results, distance, thorough, stack);
     auto any = dotnet_regex_class_literal(std::u16string{0, 1, 0, 0});
-    std::erase_if(results, [&](auto& item) { return item.set && *item.set == *any; });
+    std::erase_if(results, [&](auto &item) { return item.set && *item.set == *any; });
     if (results.empty()) {
         auto first = dotnet_regex_find_first_char_class(root, stack);
         if (!first || *first == *any)
@@ -566,23 +581,22 @@ std::optional<Sets> dotnet_regex_find_fixed_distance_sets(DotnetRegexNode* root,
         results.push_back({{}, first, 0});
     }
     std::array<char16_t, 128> buffer;
-    for (auto& item : results) {
+    for (auto &item : results) {
         auto set = class_text(item.set);
         item.negated = dotnet_regex_class_negated(set);
         int count = dotnet_regex_set_chars(set, buffer);
         if (count > 0)
-            item.chars =
-                std::make_shared<const std::vector<char16_t>>(buffer.begin(), buffer.begin() + count);
+            item.chars = std::make_shared<const std::vector<char16_t>>(buffer.begin(), buffer.begin() + count);
         char16_t low = 0, high = 0;
-        if (thorough && (!item.chars || item.chars->size() > 2) &&
-            dotnet_regex_single_range(set, low, high)) {
+        if (thorough && (!item.chars || item.chars->size() > 2) && dotnet_regex_single_range(set, low, high)) {
             item.chars.reset();
             item.range = DotnetRegexRange{low, high};
         }
     }
     return results;
 }
-std::optional<DotnetRegexLiteralAfterLoop> dotnet_regex_find_literal_after_loop(DotnetRegexNode* node) {
+
+std::optional<DotnetRegexLiteralAfterLoop> dotnet_regex_find_literal_after_loop(DotnetRegexNode *node) {
     required(node);
     if (node->options() & 64)
         return {};
@@ -592,8 +606,7 @@ std::optional<DotnetRegexLiteralAfterLoop> dotnet_regex_find_literal_after_loop(
         return {};
     auto loop = required(node->child(0));
     auto kind = loop->kind();
-    if ((kind != K::Setloop && kind != K::Setlazy && kind != K::Setloopatomic) ||
-        loop->maximum() != 2147483647)
+    if ((kind != K::Setloop && kind != K::Setlazy && kind != K::Setloopatomic) || loop->maximum() != 2147483647)
         return {};
     auto next = required(node->child(1));
     if (next->kind() == K::UpdateBumpalong) {
@@ -641,15 +654,16 @@ std::optional<DotnetRegexLiteralAfterLoop> dotnet_regex_find_literal_after_loop(
     }
     return {};
 }
-void dotnet_regex_sort_fixed_distance_sets(Sets& values) {
+
+void dotnet_regex_sort_fixed_distance_sets(Sets &values) {
     regex_detail::sort(values, compare_sets);
 }
-DotnetRegexNodeKind dotnet_regex_find_leading_anchor(DotnetRegexNode* node,
-                                                     const DotnetRegexExecutionStack& stack) {
+
+DotnetRegexNodeKind dotnet_regex_find_leading_anchor(DotnetRegexNode *node, const DotnetRegexExecutionStack &stack) {
     return anchor(node, true, stack);
 }
-DotnetRegexNodeKind dotnet_regex_find_trailing_anchor(DotnetRegexNode* node,
-                                                      const DotnetRegexExecutionStack& stack) {
+
+DotnetRegexNodeKind dotnet_regex_find_trailing_anchor(DotnetRegexNode *node, const DotnetRegexExecutionStack &stack) {
     return anchor(node, false, stack);
 }
-}
+} // namespace opensim::framework

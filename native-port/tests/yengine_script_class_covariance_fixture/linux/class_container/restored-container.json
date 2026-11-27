@@ -1,0 +1,21 @@
+{
+  "containerClr": "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj[]",
+  "inputAliases": [
+    true,
+    true
+  ],
+  "globalUsage": 4,
+  "ownUsage": 16,
+  "values": [
+    {
+      "type": "script_class_reference",
+      "clr": "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj",
+      "reference_id": 1
+    },
+    {
+      "type": "script_class_reference",
+      "clr": "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj",
+      "reference_id": 1
+    }
+  ]
+}

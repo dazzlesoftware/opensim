@@ -6,24 +6,28 @@
 #include <iostream>
 using namespace opensim;
 using network::Value;
+
 std::string hex(std::string_view s) {
     std::string out;
-    const char* h = "0123456789abcdef";
+    const char *h = "0123456789abcdef";
     for (unsigned char c : s) {
         out += h[c >> 4];
         out += h[c & 15];
     }
     return out;
 }
-std::string decode(const std::string& s) {
+
+std::string decode(const std::string &s) {
     std::string out;
     for (std::size_t i = 0; i < s.size(); i += 2)
         out += static_cast<char>(std::stoi(s.substr(i, 2), nullptr, 16));
     return out;
 }
+
 framework::Uuid id(int n) {
     return framework::Uuid("00000000-0000-0000-0000-00000000000" + std::to_string(n));
 }
+
 services::GridRegion region(std::string uri = "http://sim:9000/base/") {
     services::GridRegion d;
     d.id = id(9);
@@ -33,6 +37,7 @@ services::GridRegion region(std::string uri = "http://sim:9000/base/") {
     d.set_server_uri(uri);
     return d;
 }
+
 std::shared_ptr<framework::AgentData> data() {
     auto p = std::make_shared<framework::AgentData>();
     auto map = Value::object({});
@@ -41,14 +46,17 @@ std::shared_ptr<framework::AgentData> data() {
     p->unpack(map);
     return p;
 }
+
 struct Harness : services::SimulationConnector {
     bool custom = false;
     using SimulationConnector::SimulationConnector;
+
     std::string agent_path() const override {
         return custom ? "custom/" : "agent/";
     }
 };
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     if (argc > 1) {
         services::SimulationConnector c(simulation_http_requester());
         auto d = region(argv[1]);
@@ -76,10 +84,10 @@ int main(int argc, char** argv) {
         context.outbound_version = static_cast<float>(network::osd_real(args.get("version")));
         std::string trace, result;
         Harness c({}, {},
-                  [&](const std::string& uri, const Value& body, int timeout, bool compressed) {
-                      trace += hex(uri) + ":" + std::to_string(timeout) + ":" + std::to_string(compressed) +
-                               ":" + hex(network::osd_json(body, true)) + ";";
-                      auto& replies = args.get("replies").array;
+                  [&](const std::string &uri, const Value &body, int timeout, bool compressed) {
+                      trace += hex(uri) + ":" + std::to_string(timeout) + ":" + std::to_string(compressed) + ":" +
+                               hex(network::osd_json(body, true)) + ";";
+                      auto &replies = args.get("replies").array;
                       auto reply = replies.at(std::min<std::size_t>(calls++, replies.size() - 1));
                       if (reply.kind == Value::Kind::String && reply.text == "throw")
                           throw std::runtime_error("request");

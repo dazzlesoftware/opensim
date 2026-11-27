@@ -1,0 +1,1 @@
+YOption chars;YOption arrays;integer input=65536;integer result;integer after;default{state_entry(){result=llAbs((char)input);after=1;}}

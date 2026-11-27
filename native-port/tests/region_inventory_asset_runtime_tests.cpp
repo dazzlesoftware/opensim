@@ -8,44 +8,58 @@
 #include <thread>
 using namespace opensim;
 using namespace services;
+
 namespace {
 int checks = 0;
+
 void check(bool value, const char *label) {
     ++checks;
     if (!value)
         throw std::runtime_error(label);
 }
+
 struct Backend final : SceneCapabilityBackend {
     std::shared_ptr<server::RegistryCapabilityListener> registry;
+
     explicit Backend(std::shared_ptr<server::RegistryCapabilityListener> r) : registry(std::move(r)) {}
+
     std::string scene_name() const override {
         return "Script scene";
     }
+
     std::optional<std::string> region_name() const override {
         return "Scripts";
     }
+
     std::optional<std::string> external_host() const override {
         return "127.0.0.1";
     }
+
     std::shared_ptr<CapabilityRuntimeListener> listener() const override {
         return registry;
     }
+
     bool check_client(framework::Uuid, const network::HttpRequest &) override {
         return true;
     }
+
     void debug(const std::string &) override {}
+
     void warn(const std::string &) override {}
+
     void error(const std::string &) override {}
+
     void console(const std::string &) override {}
+
     void add_command(CapabilityCommand) override {}
 };
+
 void run(bool expiry) {
-    auto registry = std::make_shared<server::RegistryCapabilityListener>(
-        server::CapabilityListenerInfo{false, 19007, 0, {}});
+    auto registry =
+        std::make_shared<server::RegistryCapabilityListener>(server::CapabilityListenerInfo{false, 19007, 0, {}});
     SceneCapabilities scene(std::make_shared<Backend>(registry));
     auto before = scene.events().on_register_caps.snapshot().size();
-    auto agent = framework::Uuid::random(), object = framework::Uuid::random(),
-         item = framework::Uuid::random();
+    auto agent = framework::Uuid::random(), object = framework::Uuid::random(), item = framework::Uuid::random();
     int updates = 0;
     RegionInventoryAssetBackend backend;
     backend.object_exists = [&](auto id) { return id == object; };
@@ -68,14 +82,13 @@ void run(bool expiry) {
     auto caps = std::dynamic_pointer_cast<Caps>(scene.capabilities().get_caps_for_user(55));
     check(bool(caps), "real caps created");
     auto paths = caps->local_paths();
-    for (const auto &aliases : std::vector<std::vector<std::string>>{
-             {"UpdateNotecardAgentInventory", "UpdateNotecardTaskInventory"},
-             {"UpdateScriptAgent", "UpdateScriptAgentInventory"},
-             {"UpdateSettingsAgentInventory", "UpdateSettingsTaskInventory"},
-             {"UpdateMaterialAgentInventory", "UpdateMaterialTaskInventory"},
-             {"UpdateGestureAgentInventory", "UpdateGestureTaskInventory"}})
-        check(paths.contains(aliases[0]) && paths.contains(aliases[1]) &&
-                  paths.at(aliases[0]) == paths.at(aliases[1]),
+    for (const auto &aliases :
+         std::vector<std::vector<std::string>>{{"UpdateNotecardAgentInventory", "UpdateNotecardTaskInventory"},
+                                               {"UpdateScriptAgent", "UpdateScriptAgentInventory"},
+                                               {"UpdateSettingsAgentInventory", "UpdateSettingsTaskInventory"},
+                                               {"UpdateMaterialAgentInventory", "UpdateMaterialTaskInventory"},
+                                               {"UpdateGestureAgentInventory", "UpdateGestureTaskInventory"}})
+        check(paths.contains(aliases[0]) && paths.contains(aliases[1]) && paths.at(aliases[0]) == paths.at(aliases[1]),
               "exact source alias pair");
     check(paths.contains("UpdateAnimSetAgentInventory"), "source no-op capability registered");
     check(paths.contains("UpdateNotecardAgentInventory") && paths.contains("UpdateNotecardTaskInventory"),
@@ -83,8 +96,7 @@ void run(bool expiry) {
     check(paths.at("UpdateNotecardAgentInventory") == paths.at("UpdateNotecardTaskInventory"),
           "aliases share source handler path");
     std::shared_ptr<server::CapabilitySimpleHandler> initial;
-    check(registry->routes.try_simple(paths.at("UpdateNotecardAgentInventory"), initial),
-          "initial handler registered");
+    check(registry->routes.try_simple(paths.at("UpdateNotecardAgentInventory"), initial), "initial handler registered");
     network::HttpRequest request;
     request.method = "POST";
     request.remote_ip = "127.0.0.1";
@@ -136,8 +148,7 @@ void run(bool expiry) {
         runtime.stop();
         check(runtime.pending_uploads() == 0, "stop retires outstanding upload");
         std::shared_ptr<server::CapabilitySimpleHandler> missing;
-        check(!registry->routes.try_simple(abandoned.first, missing) &&
-                  abandoned.second->handle(binary).status == 500,
+        check(!registry->routes.try_simple(abandoned.first, missing) && abandoned.second->handle(binary).status == 500,
               "stop removes real route and invalidates retained handler");
     }
     runtime.stop();
@@ -146,7 +157,8 @@ void run(bool expiry) {
     check(registry->routes.simple_keys().empty() && registry->routes.poll_keys().empty(),
           "caps and runtime release all routes");
 }
-}
+} // namespace
+
 int main(int argc, char **argv) {
     try {
         run(argc > 1 && std::string_view(argv[1]) == "--expiry");

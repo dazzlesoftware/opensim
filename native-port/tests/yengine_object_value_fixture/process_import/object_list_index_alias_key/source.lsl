@@ -1,0 +1,1 @@
+YOption arrays;YOption chars;list values=[(key)"11111111-2222-3333-4444-555555555555"];list copy;object input;object alias;object other;integer repeated;integer copied;default{state_entry(){copy=values+[];input=values[0];alias=values[0];other=copy[0];repeated=(input==alias);copied=(input==other);}}

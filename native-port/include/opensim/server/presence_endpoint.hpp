@@ -28,15 +28,17 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 #include "opensim/network/service_protocol.hpp"
 #include "opensim/services/presence_service.hpp"
+
 namespace opensim::server {
 class PresenceEndpoint {
   public:
-    PresenceEndpoint(services::IPresenceService& service, const IniConfig& config)
+    PresenceEndpoint(services::IPresenceService &service, const IniConfig &config)
         : service_(service), auth_(config, "PresenceService") {}
-    network::HttpResponse handle(const network::HttpRequest& request);
+
+    network::HttpResponse handle(const network::HttpRequest &request);
 
   private:
-    services::IPresenceService& service_;
+    services::IPresenceService &service_;
     network::ServiceAuth auth_;
 };
-}
+} // namespace opensim::server

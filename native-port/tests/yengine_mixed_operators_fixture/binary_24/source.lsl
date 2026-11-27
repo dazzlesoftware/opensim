@@ -1,0 +1,1 @@
+integer left=7;string right="a";list result;default{state_entry(){result=[left==right];}}

@@ -1,0 +1,1 @@
+vector item=<xmrString2Float("-0"),xmrString2Float("0.0000005"),xmrString2Float("-0.0000005")>;string result;default{state_entry(){result=(string)item;}}

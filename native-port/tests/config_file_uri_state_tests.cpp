@@ -3,6 +3,7 @@
 #include <iostream>
 #include <sstream>
 using namespace opensim::framework;
+
 std::string encode(std::u16string_view s) {
     std::string out;
     for (auto c : s)
@@ -10,6 +11,7 @@ std::string encode(std::u16string_view s) {
             out += "0123456789abcdef"[(c >> b) & 15];
     return out;
 }
+
 int main() {
     auto unicode = native_config_uri_unicode_backend();
     std::string line;
@@ -31,16 +33,16 @@ int main() {
         if (!m.error)
             try {
                 config_file_uri_parse_remaining(s);
-            } catch (const ConfigFileUriStateError& e) {
+            } catch (const ConfigFileUriStateError &e) {
                 status = "E" + std::string(e.what());
             }
         auto o = s.offsets;
         std::cout << status << ":" << s.flags << ":" << encode(s.parse_string) << ":"
-                  << (s.info ? std::to_string(o.scheme) + "," + std::to_string(o.user) + "," +
-                                   std::to_string(o.host) + "," + std::to_string(o.port) + "," +
-                                   std::to_string(o.path) + "," + std::to_string(o.query) + "," +
-                                   std::to_string(o.fragment) + "," + std::to_string(o.end)
-                             : "N")
+                  << (s.info
+                          ? std::to_string(o.scheme) + "," + std::to_string(o.user) + "," + std::to_string(o.host) +
+                                "," + std::to_string(o.port) + "," + std::to_string(o.path) + "," +
+                                std::to_string(o.query) + "," + std::to_string(o.fragment) + "," + std::to_string(o.end)
+                          : "N")
                   << '\n';
     }
 }

@@ -9,17 +9,25 @@
 #include <memory>
 #include <stdexcept>
 #include <vector>
+
 namespace opensim::framework {
 namespace {
 using Bytes = std::span<const std::uint8_t>;
+
 struct Invalid {};
-[[noreturn]] void invalid() { throw Invalid{}; }
+
+[[noreturn]] void invalid() {
+    throw Invalid{};
+}
+
 struct Value {
     unsigned tag;
     Bytes contents, encoded;
 };
+
 struct Der {
     Bytes data;
+
     Value take() {
         if (data.size() < 2)
             invalid();
@@ -65,17 +73,20 @@ struct Der {
         data = data.subspan(at + length);
         return value;
     }
+
     Bytes take(unsigned tag) {
         auto value = take();
         if (value.tag != tag)
             invalid();
         return value.contents;
     }
+
     void end() {
         if (!data.empty())
             invalid();
     }
 };
+
 std::string oid(const Value &value) {
     if (value.tag != 6 || value.contents.empty())
         invalid();
@@ -111,10 +122,12 @@ std::string oid(const Value &value) {
     text.resize(length);
     return text;
 }
+
 std::u16string oid_label(const std::string &value) {
     struct Entry {
         std::string_view oid, name;
     };
+
     static constexpr Entry entries[] = {
 #include "config_http_linux_x500_oids.inc"
     };
@@ -122,8 +135,7 @@ std::u16string oid_label(const std::string &value) {
         if (entry.oid == value)
             return utf16(entry.name);
     ERR_clear_error();
-    std::unique_ptr<ASN1_OBJECT, decltype(&ASN1_OBJECT_free)> object(OBJ_txt2obj(value.c_str(), 1),
-                                                                     ASN1_OBJECT_free);
+    std::unique_ptr<ASN1_OBJECT, decltype(&ASN1_OBJECT_free)> object(OBJ_txt2obj(value.c_str(), 1), ASN1_OBJECT_free);
     if (object) {
         const int nid = OBJ_obj2nid(object.get());
         if (nid != NID_undef)
@@ -133,6 +145,7 @@ std::u16string oid_label(const std::string &value) {
     ERR_clear_error();
     return u"OID." + utf16(value);
 }
+
 std::u16string binary(Bytes data) {
     constexpr char16_t hex[] = u"0123456789ABCDEF";
     std::u16string result = u"#";
@@ -142,6 +155,7 @@ std::u16string binary(Bytes data) {
     }
     return result;
 }
+
 std::u16string string_value(const Value &value, bool &fallback) {
     fallback = false;
     std::u16string result;
@@ -179,8 +193,8 @@ std::u16string string_value(const Value &value, bool &fallback) {
             for (auto b : bytes) {
                 if (value.tag == 18 && b != ' ' && (b < '0' || b > '9'))
                     invalid();
-                if (value.tag == 19 && !(b >= 'A' && b <= 'Z') && !(b >= 'a' && b <= 'z') &&
-                    !(b >= '0' && b <= '9') && printable.find(static_cast<char>(b)) == printable.npos)
+                if (value.tag == 19 && !(b >= 'A' && b <= 'Z') && !(b >= 'a' && b <= 'z') && !(b >= '0' && b <= '9') &&
+                    printable.find(static_cast<char>(b)) == printable.npos)
                     invalid();
                 if (value.tag == 22 && b > 127)
                     invalid();
@@ -201,12 +215,17 @@ std::u16string string_value(const Value &value, bool &fallback) {
         return binary(value.encoded);
     }
 }
-bool whitespace(char16_t c) { return c == u' ' || (c >= u'\t' && c <= u'\r'); }
+
+bool whitespace(char16_t c) {
+    return c == u' ' || (c >= u'\t' && c <= u'\r');
+}
+
 bool quote(std::u16string_view value) {
     return value.empty() || whitespace(value.front()) || whitespace(value.back()) ||
            value.find_first_of(u",+=\"\n<>#;") != value.npos;
 }
-}
+} // namespace
+
 std::u16string config_http_linux_x500_name(Bytes bytes) {
     try {
         Der input{bytes};
@@ -251,4 +270,4 @@ std::u16string config_http_linux_x500_name(Bytes bytes) {
         return {};
     }
 }
-}
+} // namespace opensim::framework

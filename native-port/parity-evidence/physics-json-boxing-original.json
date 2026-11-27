@@ -1,0 +1,530 @@
+{
+  "methodology": "Actual unchanged original LSL_Api methods. Real SceneObjectPart public physics setters/getters, API.m_host and World bound to real original Scene; no fake producer returns or material actor simulation claim. JSON original LitJson parsing/classification is observed without replacement; format output uses actual original Dump/CSV.",
+  "physics": {
+    "host_property_inputs": [
+      {
+        "name": "GravityModifier",
+        "type": "System.Single",
+        "bits": "3f9e0652"
+      },
+      {
+        "name": "Restitution",
+        "type": "System.Single",
+        "bits": "3e000001"
+      },
+      {
+        "name": "Friction",
+        "type": "System.Single",
+        "bits": "3f333334"
+      },
+      {
+        "name": "Density",
+        "type": "System.Single",
+        "bits": "447a0802"
+      }
+    ],
+    "returned": {
+      "typed": {
+        "type": "list",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+        "value": [
+          {
+            "type": "float",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLFloat",
+            "value": 1.2345678806304932,
+            "bits": "3ff3c0ca40000000",
+            "text": "1.234568"
+          },
+          {
+            "type": "float",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLFloat",
+            "value": 0.1250000149011612,
+            "bits": "3fc0000020000000",
+            "text": "0.125000"
+          },
+          {
+            "type": "float",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLFloat",
+            "value": 0.7000000476837158,
+            "bits": "3fe6666680000000",
+            "text": "0.700000"
+          },
+          {
+            "type": "float",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLFloat",
+            "value": 1000.1251220703125,
+            "bits": "408f410040000000",
+            "text": "1000.125122"
+          }
+        ]
+      },
+      "dumped": "1.234568|0.125000|0.700000|1000.125122",
+      "csv": "1.234568, 0.125000, 0.700000, 1000.125122"
+    }
+  },
+  "json": [
+    {
+      "input": "",
+      "result": {
+        "typed": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": []
+        },
+        "dumped": "",
+        "csv": ""
+      },
+      "exception": null
+    },
+    {
+      "input": "[]",
+      "result": {
+        "typed": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": []
+        },
+        "dumped": "",
+        "csv": ""
+      },
+      "exception": null
+    },
+    {
+      "input": "{}",
+      "result": {
+        "typed": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": []
+        },
+        "dumped": "",
+        "csv": ""
+      },
+      "exception": null
+    },
+    {
+      "input": "1",
+      "result": {
+        "typed": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "string",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+              "value": "1"
+            }
+          ]
+        },
+        "dumped": "1",
+        "csv": "1"
+      },
+      "exception": null
+    },
+    {
+      "input": "1.25",
+      "result": {
+        "typed": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "string",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+              "value": "1.25"
+            }
+          ]
+        },
+        "dumped": "1.25",
+        "csv": "1.25"
+      },
+      "exception": null
+    },
+    {
+      "input": "true",
+      "result": {
+        "typed": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "string",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+              "value": "true"
+            }
+          ]
+        },
+        "dumped": "true",
+        "csv": "true"
+      },
+      "exception": null
+    },
+    {
+      "input": "null",
+      "result": {
+        "typed": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "string",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+              "value": "null"
+            }
+          ]
+        },
+        "dumped": "null",
+        "csv": "null"
+      },
+      "exception": null
+    },
+    {
+      "input": "\u0022hello\u0022",
+      "result": {
+        "typed": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "string",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+              "value": "\u0022hello\u0022"
+            }
+          ]
+        },
+        "dumped": "\u0022hello\u0022",
+        "csv": "\u0022hello\u0022"
+      },
+      "exception": null
+    },
+    {
+      "input": "[1,1.25,\u0022x\u0022,true,false,null]",
+      "result": {
+        "typed": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 1
+            },
+            {
+              "type": "float",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLFloat",
+              "value": 1.25,
+              "bits": "3ff4000000000000",
+              "text": "1.250000"
+            },
+            {
+              "type": "string",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+              "value": "x"
+            },
+            {
+              "type": "string",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+              "value": "\uFDD6"
+            },
+            {
+              "type": "string",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+              "value": "\uFDD7"
+            },
+            {
+              "type": "string",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+              "value": "\uFDD5"
+            }
+          ]
+        },
+        "dumped": "1|1.250000|x|\uFDD6|\uFDD7|\uFDD5",
+        "csv": "1, 1.250000, x, \uFDD6, \uFDD7, \uFDD5"
+      },
+      "exception": null
+    },
+    {
+      "input": "{\u0022i\u0022:1,\u0022f\u0022:1.25,\u0022s\u0022:\u0022x\u0022,\u0022b\u0022:true,\u0022n\u0022:null,\u0022a\u0022:[1,2],\u0022o\u0022:{\u0022k\u0022:2}}",
+      "result": {
+        "typed": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "string",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+              "value": "i"
+            },
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 1
+            },
+            {
+              "type": "string",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+              "value": "f"
+            },
+            {
+              "type": "float",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLFloat",
+              "value": 1.25,
+              "bits": "3ff4000000000000",
+              "text": "1.250000"
+            },
+            {
+              "type": "string",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+              "value": "s"
+            },
+            {
+              "type": "string",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+              "value": "x"
+            },
+            {
+              "type": "string",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+              "value": "b"
+            },
+            {
+              "type": "string",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+              "value": "\uFDD6"
+            },
+            {
+              "type": "string",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+              "value": "n"
+            },
+            {
+              "type": "string",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+              "value": "\uFDD5"
+            },
+            {
+              "type": "string",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+              "value": "a"
+            },
+            {
+              "type": "string",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+              "value": "[1,2]"
+            },
+            {
+              "type": "string",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+              "value": "o"
+            },
+            {
+              "type": "string",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+              "value": "{\u0022k\u0022:2}"
+            }
+          ]
+        },
+        "dumped": "i|1|f|1.250000|s|x|b|\uFDD6|n|\uFDD5|a|[1,2]|o|{\u0022k\u0022:2}",
+        "csv": "i, 1, f, 1.250000, s, x, b, \uFDD6, n, \uFDD5, a, [1,2], o, {\u0022k\u0022:2}"
+      },
+      "exception": null
+    },
+    {
+      "input": "[2147483647,2147483648,-2147483649]",
+      "result": {
+        "typed": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "string",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+              "value": "\uFDD0"
+            }
+          ]
+        },
+        "dumped": "\uFDD0",
+        "csv": "\uFDD0"
+      },
+      "exception": null
+    },
+    {
+      "input": "[0.0000005,-0.0,1e309,-1e309]",
+      "result": {
+        "typed": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "float",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLFloat",
+              "value": 5E-07,
+              "bits": "3ea0c6f7a0b5ed8d",
+              "text": "0.000001"
+            },
+            {
+              "type": "float",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLFloat",
+              "value": -0,
+              "bits": "8000000000000000",
+              "text": "-0.000000"
+            },
+            {
+              "type": "float",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLFloat",
+              "value": null,
+              "bits": "7ff0000000000000",
+              "text": "Infinity"
+            },
+            {
+              "type": "float",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLFloat",
+              "value": null,
+              "bits": "fff0000000000000",
+              "text": "-Infinity"
+            }
+          ]
+        },
+        "dumped": "0.000001|-0.000000|Infinity|-Infinity",
+        "csv": "0.000001, -0.000000, Infinity, -Infinity"
+      },
+      "exception": null
+    },
+    {
+      "input": "[NaN]",
+      "result": {
+        "typed": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "string",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+              "value": "[NaN]"
+            }
+          ]
+        },
+        "dumped": "[NaN]",
+        "csv": "[NaN]"
+      },
+      "exception": null
+    },
+    {
+      "input": "[Infinity]",
+      "result": {
+        "typed": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "string",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+              "value": "[Infinity]"
+            }
+          ]
+        },
+        "dumped": "[Infinity]",
+        "csv": "[Infinity]"
+      },
+      "exception": null
+    },
+    {
+      "input": "{\u0022n\u0022:null}",
+      "result": {
+        "typed": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "string",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+              "value": "n"
+            },
+            {
+              "type": "string",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+              "value": "\uFDD5"
+            }
+          ]
+        },
+        "dumped": "n|\uFDD5",
+        "csv": "n, \uFDD5"
+      },
+      "exception": null
+    },
+    {
+      "input": "{\u0022bad\u0022:}",
+      "result": {
+        "typed": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "string",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+              "value": "{\u0022bad\u0022:}"
+            }
+          ]
+        },
+        "dumped": "{\u0022bad\u0022:}",
+        "csv": "{\u0022bad\u0022:}"
+      },
+      "exception": null
+    },
+    {
+      "input": "[",
+      "result": {
+        "typed": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "string",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+              "value": "["
+            }
+          ]
+        },
+        "dumped": "[",
+        "csv": "["
+      },
+      "exception": null
+    },
+    {
+      "input": " [1]",
+      "result": {
+        "typed": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "string",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+              "value": " [1]"
+            }
+          ]
+        },
+        "dumped": " [1]",
+        "csv": " [1]"
+      },
+      "exception": null
+    }
+  ],
+  "source": {
+    "path": "OpenSim/Region/ScriptEngine/Shared/Api/Implementation/LSL_Api.cs",
+    "physics_method_line": 9200,
+    "physics_boxing_lines": [
+      9204,
+      9205,
+      9206,
+      9207
+    ],
+    "json_method_line": 18354,
+    "json_top_line": 18394,
+    "json_node_line": 18435,
+    "sha256": "1fa5e96d76b2b65e9e51a161eb272ca1a134f9fe64624dcb1af11707cf7105cf"
+  },
+  "original_api_assembly_sha256": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+  "original_scene_assembly_sha256": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+  "generator_sha256": "2520372ae8dc48eda7c74f09b1f187db04f61ecc423ab6f693a9c06a06f4e613"
+}

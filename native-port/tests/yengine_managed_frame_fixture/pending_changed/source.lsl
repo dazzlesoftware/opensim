@@ -1,0 +1,1 @@
+integer result;integer count;integer mark(){count++;return 3;}integer inner(integer n){count+=10;llSleep(2.0);count+=100;return n;}default{state_entry(){result=inner(5)+mark();}changed(integer f){if(f&CHANGED_REGION)count+=1000;}}

@@ -1,0 +1,1 @@
+integer result;integer after;default{state_entry(){result=llGetListLength([1,2.5]);after=1;}}

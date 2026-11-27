@@ -10,9 +10,10 @@
 #include <array>
 #include <chrono>
 #include <limits>
+
 namespace opensim::network {
 namespace {
-std::optional<std::uint64_t> content_length(const httplib::Response& headers) {
+std::optional<std::uint64_t> content_length(const httplib::Response &headers) {
     if (!headers.has_header("Content-Length"))
         return {};
     auto text = headers.get_header_value("Content-Length");
@@ -30,9 +31,16 @@ std::optional<std::uint64_t> content_length(const httplib::Response& headers) {
     }
     return value;
 }
-}
+} // namespace
+
 RestFormsRequest rest_forms_transport(std::optional<std::pair<std::string, std::string>> auth) {
-    return [auth](const std::string& url, const std::string& body) {
+    return rest_forms_transport(std::move(auth), -1);
+}
+
+RestFormsRequest rest_forms_transport(std::optional<std::pair<std::string, std::string>> auth,
+                                      std::int32_t timeout_milliseconds, bool raw_response) {
+    const auto timeout = timeout_milliseconds > 0 ? timeout_milliseconds : 30000;
+    return [auth, timeout, raw_response](const std::string &url, const std::string &body) {
         auto scheme = url.find("://");
         if (scheme == std::string::npos)
             throw std::invalid_argument("Invalid service URI");
@@ -45,10 +53,10 @@ RestFormsRequest rest_forms_transport(std::optional<std::pair<std::string, std::
         httplib::Client client(url.substr(0, end));
         if (!client.is_valid())
             throw std::invalid_argument("Invalid service URI");
-        client.set_connection_timeout(30);
-        client.set_read_timeout(30);
-        client.set_write_timeout(30);
-        client.set_max_timeout(30000);
+        client.set_connection_timeout(timeout / 1000, (timeout % 1000) * 1000);
+        client.set_read_timeout(timeout / 1000, (timeout % 1000) * 1000);
+        client.set_write_timeout(timeout / 1000, (timeout % 1000) * 1000);
+        client.set_max_timeout(timeout);
         client.set_follow_location(true);
         client.set_keep_alive(true);
         client.set_decompress(false);
@@ -67,7 +75,7 @@ RestFormsRequest rest_forms_transport(std::optional<std::pair<std::string, std::
         // send(Request) does not initialize the deadline origin as Post does.
         request.start_time_ = std::chrono::steady_clock::now();
         bool discard = false, failed_status = false;
-        request.opensim_response_headers_read = [&](httplib::Response& headers) {
+        request.opensim_response_headers_read = [&](httplib::Response &headers) {
             // Like EnsureSuccessStatusCode, reject final HTTP errors before body reads.
             failed_status = headers.status < 200 || headers.status >= 300;
             auto length = content_length(headers);
@@ -79,7 +87,7 @@ RestFormsRequest rest_forms_transport(std::optional<std::pair<std::string, std::
             if (length && !headers.has_header("Transfer-Encoding"))
                 headers.headers.emplace("Content-Length", std::to_string(*length));
         };
-        request.response_handler = [&](const httplib::Response&) {
+        request.response_handler = [&](const httplib::Response &) {
             // ResponseHeadersRead leaves absent/zero-length content unread. Returning
             // false cancels httplib's body phase; this intentional cancellation is not
             // a transport error. Redirects reach this callback only at the final reply.
@@ -92,17 +100,24 @@ RestFormsRequest rest_forms_transport(std::optional<std::pair<std::string, std::
             return std::string{};
         if (!response || response->status < 200 || response->status >= 300)
             throw std::runtime_error("Service HTTP request failed");
-        return read_service_body(response->body);
+        return raw_response ? response->body : read_service_body(response->body);
     };
 }
+
 RestFormsRequest rest_forms_transport(std::shared_ptr<WebHttpClients> clients,
                                       std::optional<std::pair<std::string, std::string>> auth) {
+    return rest_forms_transport(std::move(clients), std::move(auth), -1);
+}
+
+RestFormsRequest rest_forms_transport(std::shared_ptr<WebHttpClients> clients,
+                                      std::optional<std::pair<std::string, std::string>> auth,
+                                      std::int32_t timeout_milliseconds, bool raw_response) {
     if (!clients)
         throw std::invalid_argument("REST forms require shared HTTP clients");
     auto uris = framework::native_config_uri_object_backend();
-    return [clients = std::move(clients), uris = std::move(uris),
-            auth = std::move(auth)](const std::string& url, const std::string& body) {
-        auto client = clients->get_new_global_client(-1);
+    return [clients = std::move(clients), uris = std::move(uris), auth = std::move(auth), timeout_milliseconds,
+            raw_response](const std::string &url, const std::string &body) {
+        auto client = clients->get_new_global_client(timeout_milliseconds);
         auto uri = uris->create(framework::nini_writer_text(framework::utf16_replacing(url)),
                                 framework::ConfigUriObjectKind::RelativeOrAbsolute);
         framework::ConfigXmlHttpOperation operation;
@@ -112,30 +127,29 @@ RestFormsRequest rest_forms_transport(std::shared_ptr<WebHttpClients> clients,
                              {"Connection", framework::nini_writer_text(u"Keep-Alive")}};
         if (auth) {
             auto header = httplib::make_basic_authentication_header(auth->first, auth->second);
-            operation.headers.emplace_back(
-                header.first, framework::nini_writer_text(framework::utf16_replacing(header.second)));
+            operation.headers.emplace_back(header.first,
+                                           framework::nini_writer_text(framework::utf16_replacing(header.second)));
         }
         if (!body.empty()) {
             operation.headers.emplace_back("Content-Type",
                                            framework::nini_writer_text(u"application/x-www-form-urlencoded"));
             operation.headers.emplace_back(
-                "Content-Length",
-                framework::nini_writer_text(framework::utf16_replacing(std::to_string(body.size()))));
+                "Content-Length", framework::nini_writer_text(framework::utf16_replacing(std::to_string(body.size()))));
         }
         using Clock = std::chrono::steady_clock;
         auto deadline = std::make_shared<Clock::time_point>(Clock::time_point::max());
         operation.body_interrupted = [deadline] { return Clock::now() >= *deadline; };
         std::optional<std::int64_t> length;
-        operation.response_headers = [&length](const auto& head) {
+        operation.response_headers = [&length](const auto &head) {
             std::vector<std::u16string> values;
-            for (const auto& header : head.headers)
+            for (const auto &header : head.headers)
                 if (httplib::detail::case_ignore::equal(header.name, "Content-Length"))
                     values.push_back(header.value);
             length = framework::config_http_content_length(values);
         };
         auto stream = client->send_headers(std::move(uri), std::move(operation), true);
         struct CloseStream {
-            std::shared_ptr<framework::ConfigXmlStream>& stream;
+            std::shared_ptr<framework::ConfigXmlStream> &stream;
             ~CloseStream() {
                 try {
                     stream->close();
@@ -158,9 +172,9 @@ RestFormsRequest rest_forms_transport(std::shared_ptr<WebHttpClients> clients,
         while (auto count = stream->read(buffer)) {
             if (count < 0 || static_cast<std::size_t>(count) > buffer.size())
                 throw std::runtime_error("Invalid REST response read count");
-            response.append(reinterpret_cast<const char*>(buffer.data()), static_cast<std::size_t>(count));
+            response.append(reinterpret_cast<const char *>(buffer.data()), static_cast<std::size_t>(count));
         }
-        return read_service_body(response);
+        return raw_response ? response : read_service_body(response);
     };
 }
-}
+} // namespace opensim::network

@@ -5,11 +5,13 @@
 #include <iostream>
 using namespace opensim;
 using namespace scene;
+
 namespace {
 framework::Uuid id(int n) {
     auto s = std::to_string(n);
     return framework::Uuid("11223344-5566-7788-99aa-" + std::string(12 - s.size(), '0') + s);
 }
+
 std::string hex(const std::optional<std::string> &s) {
     if (!s)
         return "NULL";
@@ -20,12 +22,13 @@ std::string hex(const std::optional<std::string> &s) {
     }
     return out;
 }
+
 std::string request(const InventoryNewRequest &r) {
-    return r.transaction.str() + ":" + r.folder.str() + ":" + std::to_string(r.callback) + ":" +
-           hex(r.description) + ":" + hex(r.name) + ":" + std::to_string(r.inventory_type) + ":" +
-           std::to_string(r.asset_type) + ":" + std::to_string(r.subtype) + ":" +
-           std::to_string(r.next_permissions);
+    return r.transaction.str() + ":" + r.folder.str() + ":" + std::to_string(r.callback) + ":" + hex(r.description) +
+           ":" + hex(r.name) + ":" + std::to_string(r.inventory_type) + ":" + std::to_string(r.asset_type) + ":" +
+           std::to_string(r.subtype) + ":" + std::to_string(r.next_permissions);
 }
+
 std::string probe(int mode, int it, int at, int sub, int next, int failure) {
     auto bit = [&](int n) { return (mode & n) != 0; };
     std::string trace;
@@ -104,8 +107,8 @@ std::string probe(int mode, int it, int at, int sub, int next, int failure) {
     };
     b.create = [&](const auto &r, auto asset, auto flags, auto everyone, auto group) {
         step(13, "CREATE:" + request(r) + ":" + asset.str() + ":" + std::to_string(flags) + ":" +
-                     std::to_string(everyone) + ":" + std::to_string(group) + ":" +
-                     std::to_string(r.creation_date) + ":" + r.agent.str() + "::647168:647168");
+                     std::to_string(everyone) + ":" + std::to_string(group) + ":" + std::to_string(r.creation_date) +
+                     ":" + r.agent.str() + "::647168:647168");
     };
     InventoryNewRequest r;
     r.agent = id(1);
@@ -127,7 +130,8 @@ std::string probe(int mode, int it, int at, int sub, int next, int failure) {
     }
     return result + trace;
 }
-}
+} // namespace
+
 int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string_view(argv[1]) == "--probe") {
@@ -138,10 +142,8 @@ int main(int argc, char **argv) {
                     std::uint64_t handle;
                     std::cin >> x >> y >> z >> handle;
                     auto value = generate_inventory_landmark(
-                        id(4), {std::bit_cast<float>(x), std::bit_cast<float>(y), std::bit_cast<float>(z)},
-                        handle);
-                    std::cout << hex(value.text) << ":" << hex(value.prefix) << ":" << hex(value.suffix)
-                              << '\n';
+                        id(4), {std::bit_cast<float>(x), std::bit_cast<float>(y), std::bit_cast<float>(z)}, handle);
+                    std::cout << hex(value.text) << ":" << hex(value.prefix) << ":" << hex(value.suffix) << '\n';
                 } else {
                     int i, a, s, n, f;
                     std::cin >> i >> a >> s >> n >> f;

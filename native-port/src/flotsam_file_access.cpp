@@ -21,11 +21,13 @@
 namespace opensim::services {
 namespace {
 constexpr int check_ms = 300000;
+
 std::int32_t narrow(double elapsed) {
     return std::isfinite(elapsed) && elapsed >= -2147483648.0 && elapsed < 2147483648.0
                ? static_cast<std::int32_t>(elapsed)
                : INT32_MIN;
 }
+
 class TimedEntries final : public FlotsamAccessEntries {
   public:
     TimedEntries(std::function<double()> clock, bool background)
@@ -37,6 +39,7 @@ class TimedEntries final : public FlotsamAccessEntries {
         if (background)
             worker_ = std::thread([this] { run(); });
     }
+
     ~TimedEntries() override {
         {
             std::lock_guard lock(mutex_);
@@ -46,11 +49,13 @@ class TimedEntries final : public FlotsamAccessEntries {
         if (worker_.joinable())
             worker_.join();
     }
-    bool contains(const std::filesystem::path& path) override {
+
+    bool contains(const std::filesystem::path &path) override {
         std::lock_guard lock(mutex_);
         return values_.contains(path.u16string());
     }
-    void add(const std::filesystem::path& path, int ms) override {
+
+    void add(const std::filesystem::path &path, int ms) override {
         auto now = clock_();
         auto expiry = ms > 0 ? std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(narrow(now - start_)) +
                                                            static_cast<std::uint32_t>(std::max(ms, check_ms)))
@@ -61,6 +66,7 @@ class TimedEntries final : public FlotsamAccessEntries {
             due_ = clock_() + check_ms;
         changed_.notify_all();
     }
+
     void pump() override {
         std::lock_guard lock(mutex_);
         purge();
@@ -75,6 +81,7 @@ class TimedEntries final : public FlotsamAccessEntries {
     std::condition_variable changed_;
     std::thread worker_;
     bool stop_ = false;
+
     void purge() {
         auto now = clock_();
         if (!due_ || *due_ > now)
@@ -90,6 +97,7 @@ class TimedEntries final : public FlotsamAccessEntries {
         else
             due_ = clock_() + check_ms;
     }
+
     void run() {
         std::unique_lock lock(mutex_);
         while (!stop_) {
@@ -98,33 +106,36 @@ class TimedEntries final : public FlotsamAccessEntries {
                 changed_.wait(lock);
                 continue;
             }
-            changed_.wait_for(lock,
-                              std::chrono::duration<double, std::milli>(std::max(1.0, *due_ - clock_())));
+            changed_.wait_for(lock, std::chrono::duration<double, std::milli>(std::max(1.0, *due_ - clock_())));
         }
     }
 };
-}
+} // namespace
+
 std::shared_ptr<FlotsamAccessEntries> flotsam_access_entries(std::function<double()> clock, bool background) {
     return std::make_shared<TimedEntries>(std::move(clock), background);
 }
+
 FlotsamFileAccess::FlotsamFileAccess(std::shared_ptr<FlotsamAccessEntries> entries, SetTime set)
     : entries_(std::move(entries)), set_time_(std::move(set)) {
     if (!set_time_)
         throw std::invalid_argument("Missing file access-time operation");
 }
-bool FlotsamFileAccess::check_update(const std::filesystem::path& path) const noexcept {
+
+bool FlotsamFileAccess::check_update(const std::filesystem::path &path) const noexcept {
     try {
         set_time_(path);
         if (entries_)
             entries_->add(path, 900000);
         return true;
-    } catch (const FlotsamFileError& e) {
+    } catch (const FlotsamFileError &e) {
         return e.kind != FlotsamFileFailure::MissingFile;
     } catch (...) {
         return true;
     }
 }
-void FlotsamFileAccess::touch(const std::filesystem::path& path) const noexcept {
+
+void FlotsamFileAccess::touch(const std::filesystem::path &path) const noexcept {
     try {
         if (entries_ && !entries_->contains(path)) {
             set_time_(path);
@@ -133,28 +144,29 @@ void FlotsamFileAccess::touch(const std::filesystem::path& path) const noexcept 
     } catch (...) {
     }
 }
-void FlotsamFileAccess::note(const std::filesystem::path& path, int ms) const {
+
+void FlotsamFileAccess::note(const std::filesystem::path &path, int ms) const {
     if (entries_)
         entries_->add(path, ms);
 }
+
 FlotsamFileAccess::SetTime
 native_flotsam_access_time_setter(std::shared_ptr<framework::NativeInvariantDateTimeContext> datetime) {
     if (!datetime)
         datetime = framework::shared_native_invariant_datetime_context();
     auto local_offset = datetime->callbacks().local_offset_no_throw;
-    return [datetime, local_offset](const std::filesystem::path& path) {
+    return [datetime, local_offset](const std::filesystem::path &path) {
         // The argument DateTime.Now is evaluated before File.SetLastAccessTime opens
         // the path. Its DateTimeOffset conversion uses historical Local/NoThrow rules.
         auto local = datetime->now();
         auto utc_ticks = local.ticks() - local_offset(local);
 
 #ifdef _WIN32
-        auto bits =
-            static_cast<std::uint64_t>(datetime->to_file_time_utc(framework::AssetDateTime(utc_ticks, 1)));
+        auto bits = static_cast<std::uint64_t>(datetime->to_file_time_utc(framework::AssetDateTime(utc_ticks, 1)));
         FILETIME now{static_cast<DWORD>(bits), static_cast<DWORD>(bits >> 32)};
-        auto handle = CreateFileW(path.c_str(), FILE_WRITE_ATTRIBUTES,
-                                  FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr,
-                                  OPEN_EXISTING, 0, nullptr);
+        auto handle =
+            CreateFileW(path.c_str(), FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                        nullptr, OPEN_EXISTING, 0, nullptr);
         if (handle == INVALID_HANDLE_VALUE) {
             auto code = GetLastError();
             auto kind = code == ERROR_FILE_NOT_FOUND   ? FlotsamFileFailure::MissingFile
@@ -167,8 +179,7 @@ native_flotsam_access_time_setter(std::shared_ptr<framework::NativeInvariantDate
         auto code = GetLastError();
         CloseHandle(handle);
         if (!result)
-            throw FlotsamFileError(FlotsamFileFailure::Io,
-                                   std::system_category().message(static_cast<int>(code)));
+            throw FlotsamFileError(FlotsamFileFailure::Io, std::system_category().message(static_cast<int>(code)));
 #else
         auto delta = utc_ticks - 621355968000000000ll;
         auto seconds = delta / 10000000ll;
@@ -186,9 +197,8 @@ native_flotsam_access_time_setter(std::shared_ptr<framework::NativeInvariantDate
             std::error_code ec;
             auto parent = path.parent_path();
             bool missing_directory =
-                code == ENOTDIR ||
-                (code == ENOENT &&
-                 !std::filesystem::is_directory(parent.empty() ? std::filesystem::path(".") : parent, ec));
+                code == ENOTDIR || (code == ENOENT && !std::filesystem::is_directory(
+                                                          parent.empty() ? std::filesystem::path(".") : parent, ec));
             auto kind = missing_directory                 ? FlotsamFileFailure::MissingDirectory
                         : code == ENOENT                  ? FlotsamFileFailure::MissingFile
                         : code == EACCES || code == EPERM ? FlotsamFileFailure::Unauthorized
@@ -198,15 +208,17 @@ native_flotsam_access_time_setter(std::shared_ptr<framework::NativeInvariantDate
 #endif
     };
 }
-void native_flotsam_set_access_time(const std::filesystem::path& path) {
+
+void native_flotsam_set_access_time(const std::filesystem::path &path) {
     static auto setter = native_flotsam_access_time_setter();
     setter(path);
 }
-void attach_flotsam_file_access(const std::shared_ptr<FlotsamFileBackend>& backend,
-                                const std::shared_ptr<FlotsamFileAccess>& access) {
+
+void attach_flotsam_file_access(const std::shared_ptr<FlotsamFileBackend> &backend,
+                                const std::shared_ptr<FlotsamFileAccess> &access) {
     if (!backend || !access)
         throw std::invalid_argument("Missing Flotsam file access dependency");
-    backend->note_access = [access](auto& path, int ms) { access->note(path, ms); };
-    backend->touch_access = [access](auto& path) { access->touch(path); };
+    backend->note_access = [access](auto &path, int ms) { access->note(path, ms); };
+    backend->touch_access = [access](auto &path) { access->touch(path); };
 }
-}
+} // namespace opensim::services

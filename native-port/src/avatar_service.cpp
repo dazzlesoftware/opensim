@@ -1,6 +1,7 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/services/avatar_service.hpp"
+
 namespace opensim::services {
 AvatarData AvatarService::get_avatar(framework::Uuid principal) {
     auto rows = store_.get(principal);
@@ -10,7 +11,7 @@ AvatarData AvatarService::get_avatar(framework::Uuid principal) {
         result.avatar_type = 1;
         return result;
     }
-    for (const auto& row : rows) {
+    for (const auto &row : rows) {
         if (!row || !row->data)
             throw std::invalid_argument("Null avatar database row");
         auto name = row->data->at("Name"), value = row->data->at("Value");
@@ -24,7 +25,8 @@ AvatarData AvatarService::get_avatar(framework::Uuid principal) {
     }
     return result;
 }
-bool AvatarService::set_avatar(framework::Uuid principal, AvatarData& avatar) {
+
+bool AvatarService::set_avatar(framework::Uuid principal, AvatarData &avatar) {
     if (!avatar.data)
         throw std::invalid_argument("Null avatar fields");
     // Retain the source's pre-delete dictionary enumeration boundary.
@@ -54,7 +56,7 @@ bool AvatarService::set_avatar(framework::Uuid principal, AvatarData& avatar) {
                 if (!value)
                     throw std::invalid_argument("Null avatar height");
                 auto raw = *value;
-                for (auto& c : raw)
+                for (auto &c : raw)
                     if (c == ',')
                         c = '.';
                 if (!parse_avatar_float(raw, height) || height < 0 || height > 10)
@@ -70,14 +72,17 @@ bool AvatarService::set_avatar(framework::Uuid principal, AvatarData& avatar) {
     }
     return true;
 }
+
 std::shared_ptr<framework::AvatarAppearance> AvatarService::get_appearance(framework::Uuid principal) {
     return get_avatar(principal).to_appearance();
 }
-bool AvatarService::set_appearance(framework::Uuid principal, const framework::AvatarAppearance* appearance) {
+
+bool AvatarService::set_appearance(framework::Uuid principal, const framework::AvatarAppearance *appearance) {
     AvatarData data(appearance);
     return store_.write_appearance([&] { return set_avatar(principal, data); });
 }
-bool AvatarService::set_items(framework::Uuid principal, const Strings* names, const Strings* values) {
+
+bool AvatarService::set_items(framework::Uuid principal, const Strings *names, const Strings *values) {
     auto row = std::make_shared<AvatarBaseData>();
     row->principal = principal;
     row->data = std::make_shared<AvatarData::Fields>();
@@ -95,11 +100,12 @@ bool AvatarService::set_items(framework::Uuid principal, const Strings* names, c
     }
     return true;
 }
-bool AvatarService::remove_items(framework::Uuid principal, const Strings* names) {
+
+bool AvatarService::remove_items(framework::Uuid principal, const Strings *names) {
     if (!names)
         throw std::invalid_argument("Null avatar item names");
-    for (auto& name : *names)
+    for (auto &name : *names)
         store_.erase(principal, name);
     return true;
 }
-}
+} // namespace opensim::services

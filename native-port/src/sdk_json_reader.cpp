@@ -7,34 +7,39 @@
 #include <map>
 #include <charconv>
 #include <algorithm>
+
 namespace opensim::network {
 SdkJsonError::SdkJsonError(std::u16string text)
-    : std::invalid_argument(framework::utf8(text)), message(std::move(text)) {
-}
+    : std::invalid_argument(framework::utf8(text)), message(std::move(text)) {}
+
 namespace {
 [[noreturn]] void error(std::u16string message) {
     throw SdkJsonError(std::move(message));
 }
+
 std::u16string token_name(int value) {
-    static const char16_t* names[] = {u"None",      u"Number",   u"True",  u"False",      u"Null",
+    static const char16_t *names[] = {u"None",      u"Number",   u"True",  u"False",      u"Null",
                                       u"CharSeq",   u"Char",     u"Text",  u"Object",     u"ObjectPrime",
                                       u"Pair",      u"PairRest", u"Array", u"ArrayPrime", u"Value",
                                       u"ValueRest", u"String",   u"End",   u"Epsilon"};
     return value >= 65536 && value <= 65554 ? std::u16string(names[value - 65536])
                                             : framework::utf16_replacing(std::to_string(value));
 }
+
 class Lexer {
     struct Context {
-        Lexer& L;
+        Lexer &L;
         bool Return = false;
         int NextState = 0, StateStack = 0;
     };
+
     std::u16string_view text_;
     std::size_t position_ = 0;
     int input_buffer = 0, input_char = 0, state = 1, unichar = 0;
     bool allow_comments = true, allow_single_quoted_strings = true;
     std::u16string string_buffer;
     Context context{*this};
+
     bool GetChar() {
         input_char = NextChar();
         if (input_char != -1)
@@ -42,6 +47,7 @@ class Lexer {
         end_of_input = true;
         return false;
     }
+
     int NextChar() {
         if (input_buffer != 0) {
             int result = input_buffer;
@@ -50,9 +56,11 @@ class Lexer {
         }
         return position_ < text_.size() ? text_[position_++] : -1;
     }
+
     void UngetChar() {
         input_buffer = input_char;
     }
+
     static int HexValue(int digit) {
         switch (digit) {
         case 65:
@@ -77,6 +85,7 @@ class Lexer {
             return digit - 48;
         }
     }
+
     static char16_t ProcessEscChar(int esc_char) {
         switch (esc_char) {
         case 34:
@@ -98,7 +107,8 @@ class Lexer {
             return '?';
         }
     }
-    static bool State1(Context& ctx) {
+
+    static bool State1(Context &ctx) {
         while (ctx.L.GetChar()) {
             if (ctx.L.input_char == 32 || (ctx.L.input_char >= 9 && ctx.L.input_char <= 13)) {
                 continue;
@@ -159,7 +169,8 @@ class Lexer {
         }
         return true;
     }
-    static bool State2(Context& ctx) {
+
+    static bool State2(Context &ctx) {
         ctx.L.GetChar();
         if (ctx.L.input_char >= 49 && ctx.L.input_char <= 57) {
             ctx.L.string_buffer.push_back((char16_t)ctx.L.input_char);
@@ -173,7 +184,8 @@ class Lexer {
         }
         return false;
     }
-    static bool State3(Context& ctx) {
+
+    static bool State3(Context &ctx) {
         while (ctx.L.GetChar()) {
             if (ctx.L.input_char >= 48 && ctx.L.input_char <= 57) {
                 ctx.L.string_buffer.push_back((char16_t)ctx.L.input_char);
@@ -207,7 +219,8 @@ class Lexer {
         }
         return true;
     }
-    static bool State4(Context& ctx) {
+
+    static bool State4(Context &ctx) {
         ctx.L.GetChar();
         if (ctx.L.input_char == 32 || (ctx.L.input_char >= 9 && ctx.L.input_char <= 13)) {
             ctx.Return = true;
@@ -235,7 +248,8 @@ class Lexer {
             return false;
         }
     }
-    static bool State5(Context& ctx) {
+
+    static bool State5(Context &ctx) {
         ctx.L.GetChar();
         if (ctx.L.input_char >= 48 && ctx.L.input_char <= 57) {
             ctx.L.string_buffer.push_back((char16_t)ctx.L.input_char);
@@ -244,7 +258,8 @@ class Lexer {
         }
         return false;
     }
-    static bool State6(Context& ctx) {
+
+    static bool State6(Context &ctx) {
         while (ctx.L.GetChar()) {
             if (ctx.L.input_char >= 48 && ctx.L.input_char <= 57) {
                 ctx.L.string_buffer.push_back((char16_t)ctx.L.input_char);
@@ -274,7 +289,8 @@ class Lexer {
         }
         return true;
     }
-    static bool State7(Context& ctx) {
+
+    static bool State7(Context &ctx) {
         ctx.L.GetChar();
         if (ctx.L.input_char >= 48 && ctx.L.input_char <= 57) {
             ctx.L.string_buffer.push_back((char16_t)ctx.L.input_char);
@@ -289,7 +305,8 @@ class Lexer {
         }
         return false;
     }
-    static bool State8(Context& ctx) {
+
+    static bool State8(Context &ctx) {
         while (ctx.L.GetChar()) {
             if (ctx.L.input_char >= 48 && ctx.L.input_char <= 57) {
                 ctx.L.string_buffer.push_back((char16_t)ctx.L.input_char);
@@ -311,7 +328,8 @@ class Lexer {
         }
         return true;
     }
-    static bool State9(Context& ctx) {
+
+    static bool State9(Context &ctx) {
         ctx.L.GetChar();
         if (ctx.L.input_char == 114) {
             ctx.NextState = 10;
@@ -319,7 +337,8 @@ class Lexer {
         }
         return false;
     }
-    static bool State10(Context& ctx) {
+
+    static bool State10(Context &ctx) {
         ctx.L.GetChar();
         if (ctx.L.input_char == 117) {
             ctx.NextState = 11;
@@ -327,7 +346,8 @@ class Lexer {
         }
         return false;
     }
-    static bool State11(Context& ctx) {
+
+    static bool State11(Context &ctx) {
         ctx.L.GetChar();
         if (ctx.L.input_char == 101) {
             ctx.Return = true;
@@ -336,7 +356,8 @@ class Lexer {
         }
         return false;
     }
-    static bool State12(Context& ctx) {
+
+    static bool State12(Context &ctx) {
         ctx.L.GetChar();
         if (ctx.L.input_char == 97) {
             ctx.NextState = 13;
@@ -344,7 +365,8 @@ class Lexer {
         }
         return false;
     }
-    static bool State13(Context& ctx) {
+
+    static bool State13(Context &ctx) {
         ctx.L.GetChar();
         if (ctx.L.input_char == 108) {
             ctx.NextState = 14;
@@ -352,7 +374,8 @@ class Lexer {
         }
         return false;
     }
-    static bool State14(Context& ctx) {
+
+    static bool State14(Context &ctx) {
         ctx.L.GetChar();
         if (ctx.L.input_char == 115) {
             ctx.NextState = 15;
@@ -360,7 +383,8 @@ class Lexer {
         }
         return false;
     }
-    static bool State15(Context& ctx) {
+
+    static bool State15(Context &ctx) {
         ctx.L.GetChar();
         if (ctx.L.input_char == 101) {
             ctx.Return = true;
@@ -369,7 +393,8 @@ class Lexer {
         }
         return false;
     }
-    static bool State16(Context& ctx) {
+
+    static bool State16(Context &ctx) {
         ctx.L.GetChar();
         if (ctx.L.input_char == 117) {
             ctx.NextState = 17;
@@ -377,7 +402,8 @@ class Lexer {
         }
         return false;
     }
-    static bool State17(Context& ctx) {
+
+    static bool State17(Context &ctx) {
         ctx.L.GetChar();
         if (ctx.L.input_char == 108) {
             ctx.NextState = 18;
@@ -385,7 +411,8 @@ class Lexer {
         }
         return false;
     }
-    static bool State18(Context& ctx) {
+
+    static bool State18(Context &ctx) {
         ctx.L.GetChar();
         if (ctx.L.input_char == 108) {
             ctx.Return = true;
@@ -394,7 +421,8 @@ class Lexer {
         }
         return false;
     }
-    static bool State19(Context& ctx) {
+
+    static bool State19(Context &ctx) {
         while (ctx.L.GetChar()) {
             switch (ctx.L.input_char) {
             case 34:
@@ -411,7 +439,8 @@ class Lexer {
         }
         return true;
     }
-    static bool State20(Context& ctx) {
+
+    static bool State20(Context &ctx) {
         ctx.L.GetChar();
         if (ctx.L.input_char == 34) {
             ctx.Return = true;
@@ -420,7 +449,8 @@ class Lexer {
         }
         return false;
     }
-    static bool State21(Context& ctx) {
+
+    static bool State21(Context &ctx) {
         ctx.L.GetChar();
         switch (ctx.L.input_char) {
         case 117:
@@ -442,7 +472,8 @@ class Lexer {
             return false;
         }
     }
-    static bool State22(Context& ctx) {
+
+    static bool State22(Context &ctx) {
         int num = 0;
         int num2 = 4096;
         ctx.L.unichar = 0;
@@ -464,7 +495,8 @@ class Lexer {
         }
         return true;
     }
-    static bool State23(Context& ctx) {
+
+    static bool State23(Context &ctx) {
         while (ctx.L.GetChar()) {
             switch (ctx.L.input_char) {
             case 39:
@@ -481,7 +513,8 @@ class Lexer {
         }
         return true;
     }
-    static bool State24(Context& ctx) {
+
+    static bool State24(Context &ctx) {
         ctx.L.GetChar();
         if (ctx.L.input_char == 39) {
             ctx.L.input_char = 34;
@@ -491,7 +524,8 @@ class Lexer {
         }
         return false;
     }
-    static bool State25(Context& ctx) {
+
+    static bool State25(Context &ctx) {
         ctx.L.GetChar();
         switch (ctx.L.input_char) {
         case 42:
@@ -504,7 +538,8 @@ class Lexer {
             return false;
         }
     }
-    static bool State26(Context& ctx) {
+
+    static bool State26(Context &ctx) {
         while (ctx.L.GetChar()) {
             if (ctx.L.input_char == 10) {
                 ctx.NextState = 1;
@@ -513,7 +548,8 @@ class Lexer {
         }
         return true;
     }
-    static bool State27(Context& ctx) {
+
+    static bool State27(Context &ctx) {
         while (ctx.L.GetChar()) {
             if (ctx.L.input_char == 42) {
                 ctx.NextState = 28;
@@ -522,7 +558,8 @@ class Lexer {
         }
         return true;
     }
-    static bool State28(Context& ctx) {
+
+    static bool State28(Context &ctx) {
         while (ctx.L.GetChar()) {
             if (ctx.L.input_char != 42) {
                 if (ctx.L.input_char == 47) {
@@ -540,12 +577,12 @@ class Lexer {
     bool end_of_input = false;
     int token = 0;
     std::u16string string_value;
-    explicit Lexer(std::u16string_view text) : text_(text) {
-    }
+
+    explicit Lexer(std::u16string_view text) : text_(text) {}
+
     bool next() {
-        static constexpr int returns[] = {65542, 0, 65537, 65537, 0,     65537, 0, 65537, 0,     0,
-                                          65538, 0, 0,     0,     65539, 0,     0, 65540, 65541, 65542,
-                                          0,     0, 65541, 65542, 0,     0,     0, 0};
+        static constexpr int returns[] = {65542, 0, 65537, 65537, 0,     65537, 0, 65537, 0,     0,     65538, 0, 0, 0,
+                                          65539, 0, 0,     65540, 65541, 65542, 0, 0,     65541, 65542, 0,     0, 0, 0};
         context.Return = false;
         while (true) {
             bool valid = false;
@@ -667,16 +704,19 @@ enum class Token {
     Boolean,
     Null
 };
+
 class Reader {
     Lexer lexer_;
     std::vector<int> stack_{65553, 65543};
     bool end_input_ = false, end_json_ = false, started_ = false, in_string_ = false, return_ = false;
     int input_ = 0, symbol_ = 0;
+
     int peek_stack() const {
         if (stack_.empty())
             throw SdkJsonValueError("Stack empty.");
         return stack_.back();
     }
+
     bool next() {
         if (end_input_)
             return false;
@@ -688,11 +728,11 @@ class Reader {
         input_ = lexer_.token;
         return true;
     }
+
     void number() {
         auto number_text = framework::utf8(lexer_.string_value);
         double real = 0;
-        if (number_text.find_first_of(".eE") != number_text.npos &&
-            try_parse_invariant_real(number_text, real)) {
+        if (number_text.find_first_of(".eE") != number_text.npos && try_parse_invariant_real(number_text, real)) {
             token = Token::Double;
             value.kind = Value::Kind::Real;
             value.real = real;
@@ -711,10 +751,8 @@ class Reader {
             return;
         }
         std::uint64_t wide = 0;
-        auto unsigned_parse =
-            std::from_chars(number_text.data(), number_text.data() + number_text.size(), wide);
-        if (unsigned_parse.ec == std::errc{} &&
-            unsigned_parse.ptr == number_text.data() + number_text.size()) {
+        auto unsigned_parse = std::from_chars(number_text.data(), number_text.data() + number_text.size(), wide);
+        if (unsigned_parse.ec == std::errc{} && unsigned_parse.ptr == number_text.data() + number_text.size()) {
             token = Token::Long;
             unsigned_long = true;
             return;
@@ -722,6 +760,7 @@ class Reader {
         token = Token::Int;
         value = Value(std::int32_t{0});
     }
+
     void process() {
         switch (symbol_) {
         case 91:
@@ -776,35 +815,35 @@ class Reader {
             break;
         }
     }
-    static const std::map<std::pair<int, int>, std::vector<int>>& table() {
-        static const std::map<std::pair<int, int>, std::vector<int>> value = {
-            {{65548, 91}, {91, 65549}},
-            {{65549, 34}, {65550, 65551, 93}},
-            {{65549, 91}, {65550, 65551, 93}},
-            {{65549, 93}, {93}},
-            {{65549, 123}, {65550, 65551, 93}},
-            {{65549, 65537}, {65550, 65551, 93}},
-            {{65549, 65538}, {65550, 65551, 93}},
-            {{65549, 65539}, {65550, 65551, 93}},
-            {{65549, 65540}, {65550, 65551, 93}},
-            {{65544, 123}, {123, 65545}},
-            {{65545, 34}, {65546, 65547, 125}},
-            {{65545, 125}, {125}},
-            {{65546, 34}, {65552, 58, 65550}},
-            {{65547, 44}, {44, 65546, 65547}},
-            {{65547, 125}, {65554}},
-            {{65552, 34}, {34, 65541, 34}},
-            {{65543, 91}, {65548}},
-            {{65543, 123}, {65544}},
-            {{65550, 34}, {65552}},
-            {{65550, 91}, {65548}},
-            {{65550, 123}, {65544}},
-            {{65550, 65537}, {65537}},
-            {{65550, 65538}, {65538}},
-            {{65550, 65539}, {65539}},
-            {{65550, 65540}, {65540}},
-            {{65551, 44}, {44, 65550, 65551}},
-            {{65551, 93}, {65554}}};
+
+    static const std::map<std::pair<int, int>, std::vector<int>> &table() {
+        static const std::map<std::pair<int, int>, std::vector<int>> value = {{{65548, 91}, {91, 65549}},
+                                                                              {{65549, 34}, {65550, 65551, 93}},
+                                                                              {{65549, 91}, {65550, 65551, 93}},
+                                                                              {{65549, 93}, {93}},
+                                                                              {{65549, 123}, {65550, 65551, 93}},
+                                                                              {{65549, 65537}, {65550, 65551, 93}},
+                                                                              {{65549, 65538}, {65550, 65551, 93}},
+                                                                              {{65549, 65539}, {65550, 65551, 93}},
+                                                                              {{65549, 65540}, {65550, 65551, 93}},
+                                                                              {{65544, 123}, {123, 65545}},
+                                                                              {{65545, 34}, {65546, 65547, 125}},
+                                                                              {{65545, 125}, {125}},
+                                                                              {{65546, 34}, {65552, 58, 65550}},
+                                                                              {{65547, 44}, {44, 65546, 65547}},
+                                                                              {{65547, 125}, {65554}},
+                                                                              {{65552, 34}, {34, 65541, 34}},
+                                                                              {{65543, 91}, {65548}},
+                                                                              {{65543, 123}, {65544}},
+                                                                              {{65550, 34}, {65552}},
+                                                                              {{65550, 91}, {65548}},
+                                                                              {{65550, 123}, {65544}},
+                                                                              {{65550, 65537}, {65537}},
+                                                                              {{65550, 65538}, {65538}},
+                                                                              {{65550, 65539}, {65539}},
+                                                                              {{65550, 65540}, {65540}},
+                                                                              {{65551, 44}, {44, 65550, 65551}},
+                                                                              {{65551, 93}, {65554}}};
         return value;
     }
 
@@ -813,8 +852,9 @@ class Reader {
     Token token = Token::None;
     Value value;
     std::u16string text;
-    explicit Reader(std::u16string_view input) : lexer_(input) {
-    }
+
+    explicit Reader(std::u16string_view input) : lexer_(input) {}
+
     bool read() {
         if (end_input_)
             return false;
@@ -858,7 +898,8 @@ class Reader {
         return return_;
     }
 };
-Value mapped(Reader& reader, std::size_t depth) {
+
+Value mapped(Reader &reader, std::size_t depth) {
     if (depth > 512)
         throw SdkJsonValueError("OSD JSON nesting exceeds native limit");
     reader.read();
@@ -908,9 +949,10 @@ Value mapped(Reader& reader, std::size_t depth) {
         return {};
     }
 }
-}
+} // namespace
+
 Value read_sdk_json(std::u16string_view text) {
     Reader reader(text);
     return mapped(reader, 0);
 }
-}
+} // namespace opensim::network

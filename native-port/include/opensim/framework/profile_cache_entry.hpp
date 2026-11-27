@@ -4,10 +4,12 @@
 #include "opensim/framework/user_profile_models.hpp"
 #include "opensim/framework/ordered_dictionary.hpp"
 #include "opensim/framework/reference_hash_set.hpp"
+
 namespace opensim::scene {
 struct AdvancedProfileClient;
 class ProfileRequestClient;
-}
+} // namespace opensim::scene
+
 namespace opensim::framework {
 struct GroupMembershipData {
     Uuid GroupID;
@@ -24,8 +26,10 @@ struct GroupMembershipData {
     bool ListInProfile = false;
     std::optional<std::u16string> GroupTitle;
 };
+
 using ProfileClientSet = ReferenceHashSet<scene::ProfileRequestClient>;
 using UserProfileNameList = OrderedDictionary<Uuid, std::optional<std::u16string>, UuidHash>;
+
 struct UserProfileCacheEntry {
     std::shared_ptr<UserProfileNameList> picksList;
     std::shared_ptr<OrderedDictionary<Uuid, std::shared_ptr<UserProfilePick>, UuidHash>> picks;
@@ -38,4 +42,4 @@ struct UserProfileCacheEntry {
     std::uint32_t flags = 0;
     std::shared_ptr<ProfileClientSet> ClientsWaitingProps;
 };
-}
+} // namespace opensim::framework

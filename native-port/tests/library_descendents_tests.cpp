@@ -4,6 +4,7 @@
 #include <iostream>
 using namespace opensim;
 using namespace services;
+
 namespace {
 bool diagnostics_enabled = false;
 
@@ -11,6 +12,7 @@ framework::Uuid id(int n) {
     auto s = std::to_string(n);
     return framework::Uuid("00000000-0000-0000-0000-" + std::string(12 - s.size(), '0') + s);
 }
+
 std::string hex(std::string_view s) {
     std::string out;
     constexpr char d[] = "0123456789abcdef";
@@ -20,7 +22,8 @@ std::string hex(std::string_view s) {
     }
     return out;
 }
-std::string unhex(const std::string& s) {
+
+std::string unhex(const std::string &s) {
     if (s == "-")
         return {};
     std::string out;
@@ -28,6 +31,7 @@ std::string unhex(const std::string& s) {
         out += static_cast<char>(std::stoi(s.substr(i, 2), nullptr, 16));
     return out;
 }
+
 InventoryCollection collection(framework::Uuid key, int options) {
     InventoryCollection c;
     c.version = 7;
@@ -49,10 +53,11 @@ InventoryCollection collection(framework::Uuid key, int options) {
         c.items.push_back(item);
     return c;
 }
-std::string probe(int mode, int options, const std::string& body) {
+
+std::string probe(int mode, int options, const std::string &body) {
     std::string diagnostics;
     std::string trace;
-    auto add = [&](const std::string& s) {
+    auto add = [&](const std::string &s) {
         if (!trace.empty())
             trace += ';';
         trace += s;
@@ -64,7 +69,7 @@ std::string probe(int mode, int options, const std::string& body) {
         bad.add(id(2));
     LibraryDescendentsBackend backend;
     if (diagnostics_enabled)
-        backend.diagnostic = [&](auto level, const auto& message) {
+        backend.diagnostic = [&](auto level, const auto &message) {
             if (!diagnostics.empty())
                 diagnostics += ';';
             diagnostics += (level == InventoryLogLevel::Debug  ? "D:"
@@ -99,27 +104,30 @@ std::string probe(int mode, int options, const std::string& body) {
             owner = id(201);
         network::HttpRequest request;
         request.body = body;
-        auto response =
-            core.handle(request, options & 2 ? nullptr : &bad, options & 4 ? framework::Uuid{} : id(42));
+        auto response = core.handle(request, options & 2 ? nullptr : &bad, options & 4 ? framework::Uuid{} : id(42));
         result = std::to_string(response.status) + ":" + hex(response.body);
-    } catch (const std::exception&) {
+    } catch (const std::exception &) {
         result = constructed ? "EXCEPTION" : "CTOR";
     }
-    return result + "|" + trace + "|" + (bad.contains(id(1)) ? "1" : "0") +
-           (bad.contains(id(2)) ? "1" : "0") + (bad.contains(id(3)) ? "1" : "0") +
-           (diagnostics_enabled ? "|" + diagnostics : "");
+    return result + "|" + trace + "|" + (bad.contains(id(1)) ? "1" : "0") + (bad.contains(id(2)) ? "1" : "0") +
+           (bad.contains(id(3)) ? "1" : "0") + (diagnostics_enabled ? "|" + diagnostics : "");
 }
+
 std::string request(int key, int owner = 200) {
     return "<llsd><map><key>folders</key><array><map><key>folder_id</key><uuid>" + id(key).str() +
            "</uuid><key>owner_id</key><uuid>" + id(owner).str() +
-           "</uuid><key>fetch_folders</key><boolean>0</boolean><key>fetch_items</key><boolean>0</boolean></map></array></map></llsd>";
+           "</uuid><key>fetch_folders</key><boolean>0</boolean><key>fetch_items</key><boolean>0</boolean></map></"
+           "array></map></llsd>";
 }
+
 int checks = 0;
-void check(bool value, const char* label) {
+
+void check(bool value, const char *label) {
     ++checks;
     if (!value)
         throw std::runtime_error(label);
 }
+
 void run() {
     check(probe(64, 0, request(1)) == "CTOR||000", "missing library service rejected at construction");
     check(probe(2, 0, request(1)).starts_with("CTOR|R|"), "source constructor requires root");
@@ -132,14 +140,13 @@ void run() {
     check(probe(0, 1, request(2)).find(";F") == std::string::npos, "cached folder avoids tree search");
     check(probe(0, 0, request(1)).find(hex("<key>flags</key><integer>-1</integer>")) != std::string::npos,
           "false fetch flags ignored with full item flags");
-    check(probe(32, 0, request(1)).starts_with("EXCEPTION"),
-          "root disappearing during tree lookup propagates");
+    check(probe(32, 0, request(1)).starts_with("EXCEPTION"), "root disappearing during tree lookup propagates");
 }
-}
-int main(int argc, char** argv) {
+} // namespace
+
+int main(int argc, char **argv) {
     try {
-        if (argc == 2 &&
-            (std::string_view(argv[1]) == "--probe" || std::string_view(argv[1]) == "--probe-logs")) {
+        if (argc == 2 && (std::string_view(argv[1]) == "--probe" || std::string_view(argv[1]) == "--probe-logs")) {
             diagnostics_enabled = std::string_view(argv[1]) == "--probe-logs";
             int mode, options;
             std::string body;
@@ -150,7 +157,7 @@ int main(int argc, char** argv) {
         run();
         std::cout << "PASS: " << checks << " library descendents checks\n";
         return 0;
-    } catch (const std::exception& error) {
+    } catch (const std::exception &error) {
         std::cerr << error.what() << '\n';
         return 1;
     }

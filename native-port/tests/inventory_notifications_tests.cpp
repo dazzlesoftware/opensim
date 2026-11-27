@@ -4,11 +4,13 @@
 #include <iostream>
 using namespace opensim;
 using namespace scene;
+
 namespace {
 framework::Uuid id(int n) {
     auto t = std::to_string(n);
     return framework::Uuid("11223344-5566-7788-99aa-" + std::string(12 - t.size(), '0') + t);
 }
+
 std::string hex(std::span<const std::uint8_t> bytes) {
     std::string s;
     for (auto b : bytes) {
@@ -17,6 +19,7 @@ std::string hex(std::span<const std::uint8_t> bytes) {
     }
     return s;
 }
+
 std::vector<std::optional<std::string>> messages() {
     std::string unicode;
     for (int i = 0; i < 100; ++i)
@@ -41,14 +44,14 @@ std::vector<std::optional<std::string>> messages() {
             std::string("\0ALERT: message", 15),
             "\r\nmessage"};
 }
+
 std::string probe(int kind, int mode, int count) {
     auto agent = (mode & 4) ? framework::Uuid{} : id(1), session = (mode & 8) ? framework::Uuid{} : id(2);
     std::string result = "OK", trace;
     try {
         if (kind == 2) {
             auto p = agent_alert(agent, messages().at(count), bool(mode & 1));
-            trace =
-                "|" + hex(network::lludp::encode_packet(p)) + "|" + hex(network::lludp::encode_datagram(p));
+            trace = "|" + hex(network::lludp::encode_packet(p)) + "|" + hex(network::lludp::encode_datagram(p));
         } else {
             std::vector<framework::Uuid> ids;
             for (int n = 0; n < count; ++n)
@@ -77,7 +80,8 @@ std::string probe(int kind, int mode, int count) {
     }
     return result + trace;
 }
-}
+} // namespace
+
 int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string_view(argv[1]) == "--probe") {

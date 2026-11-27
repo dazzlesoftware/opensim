@@ -4,31 +4,33 @@
 #include "opensim/framework/animation_set.hpp"
 #include <bit>
 #include <stdexcept>
+
 namespace opensim::scene {
 namespace {
 bool stored(const std::optional<std::string> &value) {
     return value && !value->empty() && *value != "00000000-0000-0000-0000-000000000000";
 }
+
 std::int8_t asset_type(int value) {
     return std::bit_cast<std::int8_t>(static_cast<std::uint8_t>(value));
 }
-}
+} // namespace
+
 std::shared_ptr<framework::AssetBase> create_inventory_asset(const services::InventoryItem &item,
-                                                             framework::AssetBytes data,
-                                                             framework::Uuid creator) {
+                                                             framework::AssetBytes data, framework::Uuid creator) {
     auto asset = std::make_shared<framework::AssetBase>(framework::Uuid::random(), item.name,
                                                         asset_type(item.asset_type), creator.str());
     asset->description(item.description);
     asset->data = data ? std::move(data) : std::make_shared<std::vector<std::uint8_t>>(1);
     return asset;
 }
-InventoryAssetUpdateController::InventoryAssetUpdateController(InventoryAssetUpdateBackend b)
-    : backend_(std::move(b)) {
+
+InventoryAssetUpdateController::InventoryAssetUpdateController(InventoryAssetUpdateBackend b) : backend_(std::move(b)) {
     if (!backend_.item || !backend_.edit_notecard || !backend_.edit_script || !backend_.asset_permissions ||
-        !backend_.create_asset || !backend_.store || !backend_.update || !backend_.agent_alert ||
-        !backend_.alert)
+        !backend_.create_asset || !backend_.store || !backend_.update || !backend_.agent_alert || !backend_.alert)
         throw std::invalid_argument("Incomplete inventory asset update backend");
 }
+
 framework::Uuid InventoryAssetUpdateController::caps_update(framework::Uuid agent, framework::Uuid key,
                                                             framework::AssetBytes data) const {
     auto item = backend_.item(agent, key);
@@ -64,8 +66,7 @@ framework::Uuid InventoryAssetUpdateController::caps_update(framework::Uuid agen
         });
         if (permissions == 0) {
             backend_.agent_alert(
-                agent, "Not enought permissions on asset(s) referenced by animation set '{0}', update failed",
-                false);
+                agent, "Not enought permissions on asset(s) referenced by animation set '{0}', update failed", false);
             return {};
         }
         break;
@@ -118,6 +119,7 @@ framework::Uuid InventoryAssetUpdateController::caps_update(framework::Uuid agen
     backend_.alert(agent, "Update failed");
     return {};
 }
+
 bool InventoryAssetUpdateController::update(framework::Uuid owner, InventoryAssetItem item,
                                             std::shared_ptr<framework::AssetBase> asset) const {
     if (!item || !asset || item->owner != owner) {
@@ -142,4 +144,4 @@ bool InventoryAssetUpdateController::update(framework::Uuid owner, InventoryAsse
                        ", inventory item not updated");
     return false;
 }
-}
+} // namespace opensim::scene

@@ -6,8 +6,9 @@
 #include <sstream>
 #include <vector>
 using namespace opensim::framework;
+
 namespace {
-std::string hex(const std::string& s) {
+std::string hex(const std::string &s) {
     std::string out;
     for (unsigned char c : s) {
         out += "0123456789abcdef"[c >> 4];
@@ -15,7 +16,8 @@ std::string hex(const std::string& s) {
     }
     return out;
 }
-std::optional<std::string> unhex(const std::string& s) {
+
+std::optional<std::string> unhex(const std::string &s) {
     if (s == "-")
         return {};
     std::string out;
@@ -25,6 +27,7 @@ std::optional<std::string> unhex(const std::string& s) {
         out.push_back(static_cast<char>(std::stoi(s.substr(i, 2), nullptr, 16)));
     return out;
 }
+
 std::string exception_name(FullPathFailure kind) {
     switch (kind) {
     case FullPathFailure::ArgumentNull:
@@ -47,11 +50,12 @@ std::string exception_name(FullPathFailure kind) {
         return "IOException";
     }
 }
+
 struct ProviderFault : std::runtime_error {
-    ProviderFault() : runtime_error("cwd provider fault") {
-    }
+    ProviderFault() : runtime_error("cwd provider fault") {}
 };
-std::string unix_probe(const std::string& input) {
+
+std::string unix_probe(const std::string &input) {
     std::istringstream in(input);
     std::string path, cwd;
     int error, fault, calls = 0;
@@ -60,25 +64,27 @@ std::string unix_probe(const std::string& input) {
         ++calls;
         if (fault)
             throw ProviderFault();
-        return UnixCwdResult{unhex(cwd).value_or(""), static_cast<UnixPathError>(error),
-                             "controlled system error", error};
+        return UnixCwdResult{unhex(cwd).value_or(""), static_cast<UnixPathError>(error), "controlled system error",
+                             error};
     };
     try {
         auto full = get_full_path_unix(unhex(path), provider);
         return "OK:" + hex(full) + "|" + std::to_string(calls);
-    } catch (const FullPathError& e) {
+    } catch (const FullPathError &e) {
         return "EX:" + exception_name(e.kind) + ":" + e.parameter.value_or("") + ":" + hex(e.what()) + "|" +
                std::to_string(calls);
-    } catch (const ProviderFault& e) {
+    } catch (const ProviderFault &e) {
         return "EX:ProviderFault::" + hex(e.what()) + "|" + std::to_string(calls);
     }
 }
+
 std::string number_hex(std::uint32_t value) {
     std::ostringstream out;
     out << std::hex << std::setfill('0') << std::setw(8) << value;
     return out.str();
 }
-std::uint32_t hresult(const FullPathError& error) {
+
+std::uint32_t hresult(const FullPathError &error) {
     if (error.kind == FullPathFailure::Io && error.win32_code) {
         auto code = *error.win32_code;
         return code & 0xffff0000u ? code : 0x80070000u | code;
@@ -104,15 +110,14 @@ std::uint32_t hresult(const FullPathError& error) {
         return 0x80131620u;
     }
 }
-std::string probe(const std::string& input, bool metadata = false) {
+
+std::string probe(const std::string &input, bool metadata = false) {
     try {
         return "OK:" + hex(get_full_path(unhex(input)));
-    } catch (const FullPathError& e) {
+    } catch (const FullPathError &e) {
         std::string type = exception_name(e.kind);
         return "EX:" + type + ":" + e.parameter.value_or("") + ":" + hex(e.what()) +
-               (metadata
-                    ? ":" + number_hex(hresult(e)) + ":" + (e.win32_code ? number_hex(*e.win32_code) : "-")
-                    : "");
+               (metadata ? ":" + number_hex(hresult(e)) + ":" + (e.win32_code ? number_hex(*e.win32_code) : "-") : "");
     }
 }
 
@@ -123,42 +128,42 @@ void providers() {
         throw std::runtime_error("Full-path code metadata presence");
     auto b = std::make_shared<FullPathBackend>();
     std::vector<std::string> calls;
-    b->normalize = [&](const auto& path) {
+    b->normalize = [&](const auto &path) {
         calls.push_back("N");
         return path;
     };
-    b->expand_short = [&](const auto& path) {
+    b->expand_short = [&](const auto &path) {
         calls.push_back("E");
         return path;
     };
     try {
         get_full_path({}, b);
         throw std::runtime_error("Null accepted");
-    } catch (const FullPathError& e) {
+    } catch (const FullPathError &e) {
         if (e.kind != FullPathFailure::ArgumentNull || e.parameter != std::optional<std::string>("path"))
             throw;
     }
     try {
         get_full_path(std::string{}, b);
         throw std::runtime_error("Empty accepted");
-    } catch (const FullPathError& e) {
+    } catch (const FullPathError &e) {
         if (e.kind != FullPathFailure::Argument)
             throw;
     }
     try {
         get_full_path(std::string("a\0b", 3), b);
         throw std::runtime_error("NUL accepted");
-    } catch (const FullPathError& e) {
+    } catch (const FullPathError &e) {
         if (e.kind != FullPathFailure::Argument)
             throw;
     }
     if (!calls.empty())
         throw std::runtime_error("Validation called path provider");
-    b->normalize = [](const auto&) -> std::u16string { throw std::runtime_error("normalizer fault"); };
+    b->normalize = [](const auto &) -> std::u16string { throw std::runtime_error("normalizer fault"); };
     try {
         get_full_path("relative", b);
         throw std::runtime_error("Missing provider fault");
-    } catch (const std::runtime_error& e) {
+    } catch (const std::runtime_error &e) {
         if (std::string(e.what()) != "normalizer fault")
             throw;
     }
@@ -166,7 +171,7 @@ void providers() {
     try {
         get_full_path("C:\\" + std::string(40000, 'a'));
         throw std::runtime_error("Huge Windows path accepted");
-    } catch (const FullPathError& e) {
+    } catch (const FullPathError &e) {
         if (e.kind != FullPathFailure::PathTooLong || e.win32_code != std::optional<std::uint32_t>(206))
             throw;
     }
@@ -175,18 +180,18 @@ void providers() {
         throw std::runtime_error("Extended prefix did not bypass provider");
     if (get_full_path("\\??\\a/../b", incomplete) != "\\??\\a/../b")
         throw std::runtime_error("NT prefix did not bypass provider");
-    b->normalize = [&](const auto&) {
+    b->normalize = [&](const auto &) {
         calls.push_back("N");
         return std::u16string(u"C:\\folder~1\\child");
     };
-    b->expand_short = [&](const auto&) -> std::u16string {
+    b->expand_short = [&](const auto &) -> std::u16string {
         calls.push_back("E");
         throw std::runtime_error("expansion fault");
     };
     try {
         get_full_path("relative", b);
         throw std::runtime_error("Missing expansion fault");
-    } catch (const std::runtime_error& e) {
+    } catch (const std::runtime_error &e) {
         if (std::string(e.what()) != "expansion fault")
             throw;
     }
@@ -194,8 +199,9 @@ void providers() {
         throw std::runtime_error("Expansion provider order");
 #endif
 }
-}
-int main(int argc, char** argv) {
+} // namespace
+
+int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string_view(argv[1]) == "--unix-probe") {
             std::string line;
@@ -203,8 +209,7 @@ int main(int argc, char** argv) {
                 std::cout << unix_probe(line) << '\n';
             return 0;
         }
-        if (argc > 1 &&
-            (std::string_view(argv[1]) == "--probe" || std::string_view(argv[1]) == "--metadata-probe")) {
+        if (argc > 1 && (std::string_view(argv[1]) == "--probe" || std::string_view(argv[1]) == "--metadata-probe")) {
             std::string line;
             while (std::getline(std::cin, line))
                 std::cout << probe(line, std::string_view(argv[1]) == "--metadata-probe") << '\n';
@@ -221,7 +226,7 @@ int main(int argc, char** argv) {
             throw std::runtime_error("Native cwd path");
         std::cout << "PASS: full-path validation, provider faults and native cwd\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

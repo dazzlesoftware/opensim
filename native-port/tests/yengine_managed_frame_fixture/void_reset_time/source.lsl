@@ -1,0 +1,1 @@
+integer result;integer count;integer inner(){count++;llResetTime();count+=10;return count;}default{state_entry(){result=inner();}}

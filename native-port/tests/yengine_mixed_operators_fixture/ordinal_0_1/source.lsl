@@ -1,0 +1,1 @@
+string left="😀";string right="￿";list result;default{state_entry(){result=[left>right];}}

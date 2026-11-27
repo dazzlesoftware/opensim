@@ -3,6 +3,7 @@
 #include <iostream>
 #include <sstream>
 using namespace opensim::server;
+
 std::string hex(std::string_view s) {
     std::string r;
     for (unsigned char c : s) {
@@ -11,51 +12,64 @@ std::string hex(std::string_view s) {
     }
     return r;
 }
+
 struct Handler : CapabilityStreamHandler, CapabilitySimpleHandler {
     std::optional<std::string> value;
-    explicit Handler(std::optional<std::string> s) : value(std::move(s)) {
-    }
+
+    explicit Handler(std::optional<std::string> s) : value(std::move(s)) {}
+
     std::optional<std::string> path() const override {
         return value;
     }
+
     std::string method() const override {
         return "HEAD";
     }
-    opensim::network::HttpResponse handle(const opensim::network::HttpRequest&) override {
+
+    opensim::network::HttpResponse handle(const opensim::network::HttpRequest &) override {
         return {};
     }
 };
+
 struct Listener : CapabilityListener {
     std::string trace, fail;
     bool ssl = false;
+
     bool use_ssl() const override {
         return ssl;
     }
+
     void log(std::string s) {
         trace += s + ";";
         if (s == fail)
             throw std::runtime_error("injected");
     }
-    void add_stream(const std::shared_ptr<CapabilityStreamHandler>& h) override {
+
+    void add_stream(const std::shared_ptr<CapabilityStreamHandler> &h) override {
         log("A" + h->path().value_or(""));
     }
-    void remove_stream(const std::string& m, const std::optional<std::string>& p) override {
+
+    void remove_stream(const std::string &m, const std::optional<std::string> &p) override {
         log(m + p.value_or(""));
     }
-    void add_simple(const std::shared_ptr<CapabilitySimpleHandler>& h) override {
+
+    void add_simple(const std::shared_ptr<CapabilitySimpleHandler> &h) override {
         log("S" + h->path().value_or(""));
     }
-    void remove_simple(const std::optional<std::string>& p) override {
+
+    void remove_simple(const std::optional<std::string> &p) override {
         log("R" + p.value_or(""));
     }
 };
+
 template <class F> std::string attempt(F f) {
     try {
         return f();
-    } catch (const std::exception&) {
+    } catch (const std::exception &) {
         return "EX";
     }
 }
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -81,9 +95,8 @@ int main() {
         if (setup & 4)
             c.set("Other", n);
         l->trace.clear();
-        std::string fs[] = {
-            "",         "POST/normal<&'\"", "PUT/normal<&'\"", "GET/normal<&'\"", "DELETE/normal<&'\"",
-            "R/simple", "A/normal<&'\"",    "S/simple"};
+        std::string fs[] = {"",         "POST/normal<&'\"", "PUT/normal<&'\"", "GET/normal<&'\"", "DELETE/normal<&'\"",
+                            "R/simple", "A/normal<&'\"",    "S/simple"};
         l->fail = fs[failure];
         std::string result = attempt([&]() {
             switch (action) {
@@ -115,28 +128,28 @@ int main() {
             }
             return std::string("OK");
         });
-        auto dump = [](const auto& map) {
+        auto dump = [](const auto &map) {
             std::vector<std::string> a;
-            for (const auto& e : map)
+            for (const auto &e : map)
                 a.push_back(hex(e.first) + ":" + (e.second ? hex(*e.second) : "-"));
             std::sort(a.begin(), a.end());
             std::string r;
-            for (const auto& v : a)
+            for (const auto &v : a)
                 r += v + ",";
             return r;
         };
         std::vector<std::string> names = c.caps();
         std::sort(names.begin(), names.end());
         std::string caps;
-        for (const auto& name : names)
+        for (const auto &name : names)
             caps += name + ",";
         CapsHandlers::Requested req = {cap, "SEED", "Other", "missing", cap};
         std::string xml;
         c.append_details_xml(&req, &xml);
         auto snapshot = c.streams();
         snapshot.erase("SEED");
-        std::cout << result << "|" << hex(l->trace) << "|" << caps << "|" << dump(c.details(true, nullptr))
-                  << "|" << dump(c.details(true, &req)) << "|" << dump(c.local_paths()) << "|" << hex(xml)
-                  << "|" << c.contains("SEED") << "\n";
+        std::cout << result << "|" << hex(l->trace) << "|" << caps << "|" << dump(c.details(true, nullptr)) << "|"
+                  << dump(c.details(true, &req)) << "|" << dump(c.local_paths()) << "|" << hex(xml) << "|"
+                  << c.contains("SEED") << "\n";
     }
 }

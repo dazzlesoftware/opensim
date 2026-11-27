@@ -3,6 +3,7 @@
 #pragma once
 #include "opensim/framework/task_inventory_item.hpp"
 #include "opensim/framework/asset_base.hpp"
+
 namespace opensim::scene {
 struct ScriptInstanceCreateBackend {
     using Item = std::shared_ptr<framework::TaskInventoryItem>;
@@ -13,8 +14,7 @@ struct ScriptInstanceCreateBackend {
     std::function<std::shared_ptr<framework::AssetBase>(framework::Uuid)> load_asset;
     std::function<framework::Uuid(framework::Uuid, framework::Uuid, framework::Uuid)> restore_saved_state;
     std::function<std::uint32_t()> local_id;
-    std::function<void(std::uint32_t, framework::Uuid, const std::string&, int, bool, const std::string&,
-                       int)>
+    std::function<void(std::uint32_t, framework::Uuid, const std::string &, int, bool, const std::string &, int)>
         trigger_rez;
     // nullopt means source StoreScriptErrors(item,null): retrieve actual compiler
     // errors. Nonnull vector is source StoreScriptError's concrete diagnostics.
@@ -23,15 +23,16 @@ struct ScriptInstanceCreateBackend {
     std::function<void()> schedule_full;
     std::function<void(std::string)> error;
 };
+
 class ScriptInstanceCreateController {
   public:
     explicit ScriptInstanceCreateController(ScriptInstanceCreateBackend);
     // Does not increment inventory serial or invent compiler success. A stopped
     // script still follows construction and adds +1 after real rez/error handling.
-    bool create(std::shared_ptr<framework::TaskInventoryItem>, int start, bool post_on_rez,
-                const std::string& engine, int state_source) const;
+    bool create(std::shared_ptr<framework::TaskInventoryItem>, int start, bool post_on_rez, const std::string &engine,
+                int state_source) const;
 
   private:
     ScriptInstanceCreateBackend backend_;
 };
-}
+} // namespace opensim::scene

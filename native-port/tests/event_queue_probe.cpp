@@ -1,6 +1,7 @@
 #define EVENT_QUEUE_PROBE
 #include "event_queue_tests.cpp"
-std::string probe_hex(const std::string& value) {
+
+std::string probe_hex(const std::string &value) {
     std::string out;
     for (unsigned char c : value) {
         out += "0123456789abcdef"[c >> 4];
@@ -8,7 +9,9 @@ std::string probe_hex(const std::string& value) {
     }
     return out;
 }
+
 #include "event_queue_producers.hpp"
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {

@@ -1,0 +1,32 @@
+{
+  "accepted": true,
+  "executed": true,
+  "globals": {
+    "result": {
+      "type": "integer",
+      "clr": "System.Int32",
+      "value": 92
+    },
+    "value": {
+      "type": "char",
+      "clr": "System.Char",
+      "utf16": 92
+    }
+  },
+  "errors": [],
+  "exception": null,
+  "exceptionType": null,
+  "stackSize": 1000000,
+  "stackLimit": 1024,
+  "finalStackLeft": 1000000,
+  "stackSamples": [],
+  "name": "literal_backslash",
+  "source": "YOption chars;char value;integer result;default{state_entry(){value='\\\\';result=(integer)value;}}",
+  "sha256": {
+    "original.il.txt": "ceb7c5885178ce7b52fdc253b848194dff6e9a84ef2eb53c4b42ca61844da249",
+    "original.yobj": "13df56ad3310c847e77a1f41c62cb63fb45201bbb03372b3d6274115a0e95df8",
+    "source.lsl": "bf91fc6f11f0cc51b894964f6afd14518c58fa4a9256ac55bb387c6d08d81f07",
+    "source_hash.txt": "d19e7eb98f6ab339c5816ef4dfe365b468deacfcd72d00b1e9acd554af2d6e47",
+    "generator_source": "d86517a13d8f4094e933279614d487a0e69d44a49f2296c4af7562bf7386d651"
+  }
+}

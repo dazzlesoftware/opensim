@@ -33,11 +33,13 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sstream>
 using namespace opensim::services;
 using opensim::framework::Uuid;
+
 Uuid id(int value) {
     std::ostringstream text;
     text << "00000000-0000-0000-0000-" << std::hex << std::setfill('0') << std::setw(12) << value;
     return Uuid(text.str());
 }
+
 int main(int argc, char **argv) {
     if (argc == 3 && std::string(argv[1]) == "--initialize") {
         try {
@@ -96,8 +98,7 @@ int main(int argc, char **argv) {
             item.name = "Updated";
             item.asset_id = id(301);
             flag(service.update_item(item));
-            flag(item.owner == owner && item.parent == folder.id && item.asset_type == 6 &&
-                 item.inventory_type == 6);
+            flag(item.owner == owner && item.parent == folder.id && item.asset_type == 6 && item.inventory_type == 6);
             observations.push_back(item.creator_id);
             flag(service.item(owner, item.id)->asset_id == id(301));
             InventoryItem link;
@@ -114,7 +115,7 @@ int main(int argc, char **argv) {
             flag(service.delete_items(other, {item.id, link.id}));
             flag(service.item(owner, item.id).has_value());
             flag(service.item(owner, link.id).has_value());
-            auto contents = service.content(other, folder.id);
+            auto contents = service.content(other, folder.id).value();
             flag(contents.owner == owner);
             observations.push_back(std::to_string(contents.items.size()));
             auto skeleton = *service.skeleton(owner);
@@ -123,8 +124,8 @@ int main(int argc, char **argv) {
                 names[value.id] = value.name;
             std::vector<std::string> rows;
             for (const auto &value : skeleton)
-                rows.push_back(value.name + ":" + std::to_string(value.type) + ":" +
-                               std::to_string(value.version) + ":" +
+                rows.push_back(value.name + ":" + std::to_string(value.type) + ":" + std::to_string(value.version) +
+                               ":" +
                                (value.parent.is_zero()         ? "-"
                                 : names.contains(value.parent) ? names[value.parent]
                                                                : "?"));

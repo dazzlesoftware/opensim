@@ -1,18 +1,20 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/scene/inventory_script_rez.hpp"
+
 namespace opensim::scene {
 InventoryScriptRezController::InventoryScriptRezController(InventoryScriptRezBackend backend)
     : backend_(std::move(backend)) {}
-void InventoryScriptRezController::rez(framework::Uuid agent, const services::InventoryItem &item,
-                                       framework::Uuid, std::uint32_t local) const {
+
+void InventoryScriptRezController::rez(framework::Uuid agent, const services::InventoryItem &item, framework::Uuid,
+                                       std::uint32_t local) const {
     auto part = item.id.is_zero() ? backend_.rez_new(agent, item) : rez_existing(agent, item.id, local);
     if (part)
         backend_.properties(*part, agent);
 }
-std::optional<InventoryScriptPart> InventoryScriptRezController::rez_existing(framework::Uuid agent,
-                                                                              framework::Uuid item_id,
-                                                                              std::uint32_t local) const {
+
+std::optional<InventoryScriptPart>
+InventoryScriptRezController::rez_existing(framework::Uuid agent, framework::Uuid item_id, std::uint32_t local) const {
     auto copy_id = backend_.random_uuid();
     auto item = backend_.inventory_item(agent, item_id);
     if (!item && backend_.library_item)
@@ -36,6 +38,7 @@ std::optional<InventoryScriptPart> InventoryScriptRezController::rez_existing(fr
     backend_.resume(*part);
     return part;
 }
+
 bool InventoryScriptRezController::add_to_group(framework::Uuid agent, const InventoryScriptPart &context,
                                                 std::uint32_t local, const services::InventoryItem &source,
                                                 framework::Uuid copy_id, bool modify) const {
@@ -77,4 +80,4 @@ bool InventoryScriptRezController::add_to_group(framework::Uuid agent, const Inv
     backend_.invalidate_deep_permissions(*part);
     return true;
 }
-}
+} // namespace opensim::scene

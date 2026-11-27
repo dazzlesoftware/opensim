@@ -2,21 +2,25 @@
 // BSD license: native-port/LICENSE.txt.
 #pragma once
 #include "opensim/server/poll_types.hpp"
+
 namespace opensim::server {
 class PollRequestBackend {
-public:
+  public:
     virtual ~PollRequestBackend() = default;
     virtual std::int32_t tick_count() const;
+
     virtual framework::Uuid random_id() const {
         return framework::Uuid::random();
     }
-    virtual PollResponsePtr make_response(const std::shared_ptr<PollIncomingRequest>& request) = 0;
-    virtual void warn(const std::string& message, const std::exception& error) = 0;
+
+    virtual PollResponsePtr make_response(const std::shared_ptr<PollIncomingRequest> &request) = 0;
+    virtual void warn(const std::string &message, const std::exception &error) = 0;
 };
+
 class PollServiceHttpRequest {
-public:
+  public:
     PollServiceHttpRequest(std::shared_ptr<services::CapabilityPollHandler> args,
-                           std::shared_ptr<PollIncomingRequest> request, PollRequestBackend& backend);
+                           std::shared_ptr<PollIncomingRequest> request, PollRequestBackend &backend);
     const std::shared_ptr<services::CapabilityPollHandler> poll_args;
     const std::shared_ptr<PollIncomingRequest> request;
     const std::int32_t request_time;
@@ -25,7 +29,7 @@ public:
     void send_no_content_error(PollResponsePtr response);
     void do_http_stop();
 
-private:
-    PollRequestBackend& backend_;
+  private:
+    PollRequestBackend &backend_;
 };
-}
+} // namespace opensim::server

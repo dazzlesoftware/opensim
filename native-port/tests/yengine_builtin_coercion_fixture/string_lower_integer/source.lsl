@@ -1,0 +1,1 @@
+string result;integer after;default{state_entry(){result=llToLower(7);after=1;}}

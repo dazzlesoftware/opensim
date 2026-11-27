@@ -1,0 +1,1 @@
+string result;string join(){return <1,2,3>+"a";}default{state_entry(){result=join();}}

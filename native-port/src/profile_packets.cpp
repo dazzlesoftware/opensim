@@ -3,19 +3,21 @@
 #include "opensim/scene/profile_packets.hpp"
 #include "opensim/framework/culture_sort.hpp"
 #include "dotnet_regex_sort.hpp"
+
 namespace opensim::scene {
 namespace {
-std::u16string_view text(const ProfileText& value) {
+std::u16string_view text(const ProfileText &value) {
     return value ? std::u16string_view(*value) : std::u16string_view{};
 }
-}
+} // namespace
+
 network::lludp::Packet avatar_profile_properties_packet(framework::Uuid recipient,
-                                                        const AvatarProfileProperties& props) {
+                                                        const AvatarProfileProperties &props) {
     auto p = network::lludp::make_packet("AvatarPropertiesReply");
-    auto& a = p.block("AgentData");
+    auto &a = p.block("AgentData");
     a["AgentID"] = recipient;
     a["AvatarID"] = props.avatar;
-    auto& data = p.block("PropertiesData");
+    auto &data = p.block("PropertiesData");
     data["ImageID"] = props.image;
     data["FLImageID"] = props.first_life_image;
     data["PartnerID"] = props.partner;
@@ -29,13 +31,14 @@ network::lludp::Packet avatar_profile_properties_packet(framework::Uuid recipien
     data["Flags"] = static_cast<std::uint64_t>(props.flags);
     return p;
 }
+
 network::lludp::Packet avatar_profile_interests_packet(framework::Uuid recipient,
-                                                       const AvatarProfileInterests& interests) {
+                                                       const AvatarProfileInterests &interests) {
     auto p = network::lludp::make_packet("AvatarInterestsReply");
-    auto& a = p.block("AgentData");
+    auto &a = p.block("AgentData");
     a["AgentID"] = recipient;
     a["AvatarID"] = interests.avatar;
-    auto& data = p.block("PropertiesData");
+    auto &data = p.block("PropertiesData");
     data["WantToMask"] = static_cast<std::uint64_t>(interests.wants);
     data["WantToText"] = profile_string_bytes(text(interests.want_text));
     data["SkillsMask"] = static_cast<std::uint64_t>(interests.skills);
@@ -43,30 +46,32 @@ network::lludp::Packet avatar_profile_interests_packet(framework::Uuid recipient
     data["LanguagesText"] = profile_string_bytes(text(interests.languages));
     return p;
 }
+
 network::lludp::Packet avatar_profile_notes_packet(framework::Uuid recipient, framework::Uuid target,
-                                                   const ProfileText& notes) {
+                                                   const ProfileText &notes) {
     auto p = network::lludp::make_packet("AvatarNotesReply");
     p.block("AgentData")["AgentID"] = recipient;
-    auto& data = p.block("Data");
+    auto &data = p.block("Data");
     data["TargetID"] = target;
     data["Notes"] = profile_string_bytes(text(notes), 1022);
     return p;
 }
+
 network::lludp::Packet user_profile_info_packet(framework::Uuid recipient, bool im_via_email, bool visible,
-                                                const ProfileText& email) {
+                                                const ProfileText &email) {
     auto p = network::lludp::make_packet("UserInfoReply");
     p.block("AgentData")["AgentID"] = recipient;
-    auto& data = p.block("UserData");
+    auto &data = p.block("UserData");
     data["IMViaEMail"] = im_via_email;
     data["DirectoryVisibility"] = profile_string_bytes(visible ? u"default" : u"hidden");
     data["EMail"] = profile_string_bytes(text(email));
     return p;
 }
-network::lludp::Packet avatar_classified_info_packet(framework::Uuid recipient,
-                                                     const AvatarClassifiedInfo& info) {
+
+network::lludp::Packet avatar_classified_info_packet(framework::Uuid recipient, const AvatarClassifiedInfo &info) {
     auto p = network::lludp::make_packet("ClassifiedInfoReply");
     p.block("AgentData")["AgentID"] = recipient;
-    auto& d = p.block("Data");
+    auto &d = p.block("Data");
     d["ClassifiedID"] = info.classified;
     d["CreatorID"] = info.creator;
     d["ParcelID"] = info.parcel;
@@ -84,10 +89,11 @@ network::lludp::Packet avatar_classified_info_packet(framework::Uuid recipient,
     d["PriceForListing"] = static_cast<std::int64_t>(info.price);
     return p;
 }
-network::lludp::Packet avatar_pick_info_packet(framework::Uuid recipient, const AvatarPickInfo& info) {
+
+network::lludp::Packet avatar_pick_info_packet(framework::Uuid recipient, const AvatarPickInfo &info) {
     auto p = network::lludp::make_packet("PickInfoReply");
     p.block("AgentData")["AgentID"] = recipient;
-    auto& d = p.block("Data");
+    auto &d = p.block("Data");
     d["PickID"] = info.pick;
     d["CreatorID"] = info.creator;
     d["ParcelID"] = info.parcel;
@@ -103,10 +109,11 @@ network::lludp::Packet avatar_pick_info_packet(framework::Uuid recipient, const 
     d["PosGlobal"] = std::vector<double>(info.global_position.begin(), info.global_position.end());
     return p;
 }
+
 network::lludp::Packet avatar_picks_list_packet(framework::Uuid recipient, framework::Uuid target,
-                                                const ProfileList* picks, ProfileNameCompare compare) {
+                                                const ProfileList *picks, ProfileNameCompare compare) {
     auto p = network::lludp::make_packet("AvatarPicksReply");
-    auto& agent = p.block("AgentData");
+    auto &agent = p.block("AgentData");
     agent["AgentID"] = recipient;
     agent["TargetID"] = target;
     if (!picks)
@@ -115,18 +122,17 @@ network::lludp::Packet avatar_picks_list_packet(framework::Uuid recipient, frame
         return p;
     std::vector<std::pair<framework::Uuid, ProfileText>> ordered;
     ordered.reserve(picks->size());
-    for (const auto& entry : *picks)
+    for (const auto &entry : *picks)
         ordered.emplace_back(entry.first, entry.second);
     if (!compare)
-        compare = [](const ProfileText& a, const ProfileText& b) {
+        compare = [](const ProfileText &a, const ProfileText &b) {
             if (!a)
                 return b ? -1 : 0;
             if (!b)
                 return 1;
             return framework::invariant_compare_utf16(*a, *b);
         };
-    framework::regex_detail::sort(ordered,
-                                  [&](const auto& a, const auto& b) { return compare(a.second, b.second); });
+    framework::regex_detail::sort(ordered, [&](const auto &a, const auto &b) { return compare(a.second, b.second); });
     const auto count = std::min<std::size_t>(20, ordered.size());
     const auto limit = std::min<std::size_t>(128, (1400 - 128) / count - 1);
     for (std::size_t i = 0; i < count; ++i) {
@@ -137,15 +143,16 @@ network::lludp::Packet avatar_picks_list_packet(framework::Uuid recipient, frame
     }
     return p;
 }
+
 network::lludp::Packet avatar_classifieds_list_packet(framework::Uuid recipient, framework::Uuid target,
-                                                      const ProfileList* classifieds) {
+                                                      const ProfileList *classifieds) {
     auto p = network::lludp::make_packet("AvatarClassifiedReply");
-    auto& agent = p.block("AgentData");
+    auto &agent = p.block("AgentData");
     agent["AgentID"] = recipient;
     agent["TargetID"] = target;
     if (!classifieds)
         throw std::runtime_error("Object reference not set to an instance of an object.");
-    for (const auto& entry : *classifieds) {
+    for (const auto &entry : *classifieds) {
         network::lludp::Block row;
         row["ClassifiedID"] = entry.first;
         row["Name"] = profile_string_bytes(text(entry.second));
@@ -153,10 +160,10 @@ network::lludp::Packet avatar_classifieds_list_packet(framework::Uuid recipient,
     }
     return p;
 }
-std::optional<network::lludp::Packet> avatar_classifieds_list_packet(framework::Uuid recipient,
-                                                                     framework::Uuid target,
-                                                                     const std::vector<framework::Uuid>* ids,
-                                                                     const std::vector<ProfileText>* names) {
+
+std::optional<network::lludp::Packet> avatar_classifieds_list_packet(framework::Uuid recipient, framework::Uuid target,
+                                                                     const std::vector<framework::Uuid> *ids,
+                                                                     const std::vector<ProfileText> *names) {
     if (!ids || !names)
         throw std::runtime_error("Object reference not set to an instance of an object.");
     if (ids->size() != names->size())
@@ -168,25 +175,27 @@ std::optional<network::lludp::Packet> avatar_classifieds_list_packet(framework::
     ProfileList empty;
     return avatar_classifieds_list_packet(recipient, target, &empty);
 }
+
 namespace {
 class ProfileEventsBinding final : public ProfileEvents {
     std::shared_ptr<services::EventQueueModule> queue_;
 
   public:
-    explicit ProfileEventsBinding(std::shared_ptr<services::EventQueueModule> queue)
-        : queue_(std::move(queue)) {
-    }
+    explicit ProfileEventsBinding(std::shared_ptr<services::EventQueueModule> queue) : queue_(std::move(queue)) {}
+
     bool enqueue(server::PollBytes bytes, framework::Uuid agent) override {
         return queue_->enqueue(std::move(bytes), agent);
     }
 };
-void group_uuid(std::string& xml, std::string_view key, framework::Uuid id) {
+
+void group_uuid(std::string &xml, std::string_view key, framework::Uuid id) {
     xml += "<key>";
     xml += key;
     xml += "</key>";
     xml += id.is_zero() ? "<uuid />" : "<uuid>" + id.str() + "</uuid>";
 }
-void group_text(std::string& xml, std::string_view key, const ProfileText& input) {
+
+void group_text(std::string &xml, std::string_view key, const ProfileText &input) {
     xml += "<key>";
     xml += key;
     xml += "</key>";
@@ -244,21 +253,22 @@ void group_text(std::string& xml, std::string_view key, const ProfileText& input
     }
     xml += "</string>";
 }
-}
+} // namespace
+
 std::shared_ptr<ProfileEvents> profile_events(std::shared_ptr<services::EventQueueModule> queue) {
     if (!queue)
         return {};
     return std::make_shared<ProfileEventsBinding>(std::move(queue));
 }
+
 void send_avatar_groups(framework::Uuid recipient, framework::Uuid avatar,
-                        const std::vector<std::shared_ptr<AvatarProfileGroup>>* groups,
-                        ProfileEvents* events) {
+                        const std::vector<std::shared_ptr<AvatarProfileGroup>> *groups, ProfileEvents *events) {
     if (!events)
         return;
     auto buffer = events->start_event("AvatarGroupsReply");
     if (!buffer)
         throw services::EventQueueNullReference();
-    auto& xml = buffer->text;
+    auto &xml = buffer->text;
     xml += "<key>AgentData</key><array><map>";
     group_uuid(xml, "AgentID", recipient);
     group_uuid(xml, "AvatarID", avatar);
@@ -269,7 +279,7 @@ void send_avatar_groups(framework::Uuid recipient, framework::Uuid avatar,
         xml += "<key>GroupData</key><array />";
     else {
         xml += "<key>GroupData</key><array>";
-        for (const auto& group : *groups) {
+        for (const auto &group : *groups) {
             if (avatar != recipient) {
                 if (!group)
                     throw services::EventQueueNullReference();
@@ -295,4 +305,4 @@ void send_avatar_groups(framework::Uuid recipient, framework::Uuid avatar,
     }
     events->enqueue(events->end_event(buffer), recipient);
 }
-}
+} // namespace opensim::scene

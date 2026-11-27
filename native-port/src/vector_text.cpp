@@ -37,6 +37,7 @@
 #include <limits>
 #include <stdexcept>
 #include <bit>
+
 namespace opensim::framework {
 std::string invariant_float_string(float value) {
     if (std::isnan(value))
@@ -71,12 +72,13 @@ std::string invariant_float_string(float value) {
     scientific[separator] = 'E';
     return scientific;
 }
+
 namespace {
-bool floating(std::u16string_view input, float& value, bool allow_grouping = false) {
+bool floating(std::u16string_view input, float &value, bool allow_grouping = false) {
     const auto nul = input.find(char16_t{});
     const bool has_nul = nul != std::u16string_view::npos;
-    if (has_nul && !std::all_of(input.begin() + static_cast<std::ptrdiff_t>(nul), input.end(),
-                                [](char16_t c) { return c == 0; }))
+    if (has_nul &&
+        !std::all_of(input.begin() + static_cast<std::ptrdiff_t>(nul), input.end(), [](char16_t c) { return c == 0; }))
         return false;
     bool non_ascii_padding = false;
     while (!input.empty() && unicode_whitespace(input.front())) {
@@ -100,8 +102,8 @@ bool floating(std::u16string_view input, float& value, bool allow_grouping = fal
         value = negative ? -std::numeric_limits<float>::infinity() : std::numeric_limits<float>::infinity();
         return true;
     }
-    if (input.size() == 3 && (input[0] == u'N' || input[0] == u'n') &&
-        (input[1] == u'A' || input[1] == u'a') && (input[2] == u'N' || input[2] == u'n')) {
+    if (input.size() == 3 && (input[0] == u'N' || input[0] == u'n') && (input[1] == u'A' || input[1] == u'a') &&
+        (input[2] == u'N' || input[2] == u'n')) {
         value = std::numeric_limits<float>::quiet_NaN();
         return true;
     }
@@ -177,18 +179,22 @@ bool floating(std::u16string_view input, float& value, bool allow_grouping = fal
         value = -value;
     return true;
 }
-}
-bool parse_invariant_float(std::string_view text, float& value) {
+} // namespace
+
+bool parse_invariant_float(std::string_view text, float &value) {
     const auto converted = utf16(text);
     return floating(converted, value);
 }
-bool parse_invariant_float_with_grouping(std::string_view text, float& value) {
+
+bool parse_invariant_float_with_grouping(std::string_view text, float &value) {
     return floating(utf16(text), value, true);
 }
-std::string vector3_string(const Vector3& value) {
+
+std::string vector3_string(const Vector3 &value) {
     return "<" + invariant_float_string(value.x) + ", " + invariant_float_string(value.y) + ", " +
            invariant_float_string(value.z) + ">";
 }
+
 Vector3 parse_sdk_vector3(std::string_view text) {
     const auto storage = utf16_replacing(text);
     const std::u16string_view input = storage;
@@ -232,7 +238,8 @@ Vector3 parse_sdk_vector3(std::string_view text) {
         bad();
     return {x, y, z};
 }
-bool parse_vector3(std::string_view text, Vector3& value) {
+
+bool parse_vector3(std::string_view text, Vector3 &value) {
     value = {};
     const auto storage = utf16(text);
     const std::u16string_view input = storage;
@@ -276,7 +283,8 @@ bool parse_vector3(std::string_view text, Vector3& value) {
     value = {x, y, z};
     return true;
 }
-bool try_parse_sdk_vector3(std::u16string_view input, Vector3& value) {
+
+bool try_parse_sdk_vector3(std::u16string_view input, Vector3 &value) {
     value = {};
     const auto size = input.size();
     if (size < 7)
@@ -321,12 +329,13 @@ bool try_parse_sdk_vector3(std::u16string_view input, Vector3& value) {
     value = {canonical(x), canonical(y), canonical(z)};
     return true;
 }
-std::string quaternion_string(const Quaternion& value) {
+
+std::string quaternion_string(const Quaternion &value) {
     return "<" + invariant_float_string(value.x) + ", " + invariant_float_string(value.y) + ", " +
-           invariant_float_string(value.z) + ", " + invariant_float_string(value.w) +
-           ">";
+           invariant_float_string(value.z) + ", " + invariant_float_string(value.w) + ">";
 }
-bool parse_quaternion(std::string_view text, Quaternion& value) {
+
+bool parse_quaternion(std::string_view text, Quaternion &value) {
     const auto storage = utf16_replacing(text);
     const std::u16string_view input = storage;
     const auto size = input.size();
@@ -395,4 +404,4 @@ bool parse_quaternion(std::string_view text, Quaternion& value) {
     return true;
 }
 
-}
+} // namespace opensim::framework

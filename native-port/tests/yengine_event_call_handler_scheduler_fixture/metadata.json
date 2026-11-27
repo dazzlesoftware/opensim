@@ -1,0 +1,6214 @@
+[
+  {
+    "name": "complex_default",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "641BEC8CA7D46F25148A993C346238F9",
+    "compiled_version": -11,
+    "suspended": true,
+    "migrated": true,
+    "initial_exception": null,
+    "live_cycles": [
+      {
+        "cycle": 1,
+        "exception": {
+          "type": "System.Exception",
+          "message": "frame mismatch default state_entry vs default touch_start",
+          "stack": "   at default touch_start(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 558\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstance.ResumeEx() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRScriptUThread.cs:line 85"
+        },
+        "checks": 0,
+        "state": {
+          "globals": {
+            "after": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            },
+            "count": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 7
+            }
+          },
+          "event_code": "touch_start",
+          "call_mode": 2,
+          "sleep_until_ticks": 639312672064324449,
+          "object_description": "",
+          "event_arguments": [
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 7
+            }
+          ],
+          "state_index": 0,
+          "new_state_index": -1,
+          "initialize_globals": false,
+          "running": true,
+          "detectors": [
+            {
+              "key": "11111111-2222-3333-4444-555555555555",
+              "owner": "22222222-3333-4444-5555-666666666666",
+              "group": "33333333-4444-5555-6666-777777777777",
+              "name": "original rich detector 3",
+              "link_number": 5,
+              "type": 11,
+              "grab": [
+                3.125,
+                3.25,
+                3.5
+              ],
+              "position": [
+                13.00000003,
+                14.00000003,
+                15.00000003
+              ],
+              "rotation": [
+                0.125,
+                0.25,
+                0.5,
+                0.875
+              ],
+              "velocity": [
+                23.00000003,
+                24.00000003,
+                25.00000003
+              ],
+              "touch_st": [
+                4.00000003,
+                5.00000003,
+                6.00000003
+              ],
+              "touch_normal": [
+                7.00000003,
+                8.000000029999999,
+                9.000000029999999
+              ],
+              "touch_binormal": [
+                10.000000029999999,
+                11.000000029999999,
+                12.000000029999999
+              ],
+              "touch_pos": [
+                13.000000029999999,
+                14.000000029999999,
+                15.000000029999999
+              ],
+              "touch_uv": [
+                16.00000003,
+                17.00000003,
+                18.00000003
+              ],
+              "touch_face": 6
+            }
+          ],
+          "queue": [],
+          "frames": [
+            {
+              "function": "default state_entry",
+              "call_no": 0,
+              "slots": 2,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32"
+              ]
+            },
+            {
+              "function": "default touch_start",
+              "call_no": 1,
+              "slots": 4,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32",
+                "System.Int32",
+                null
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "migrated_cycles": [
+      {
+        "cycle": 1,
+        "exception": {
+          "type": "System.Exception",
+          "message": "frame mismatch default state_entry vs default touch_start",
+          "stack": "   at default touch_start(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 558\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstance.ResumeEx() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRScriptUThread.cs:line 85"
+        },
+        "checks": 0,
+        "state": {
+          "globals": {
+            "after": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            },
+            "count": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 7
+            }
+          },
+          "event_code": "touch_start",
+          "call_mode": 2,
+          "sleep_until_ticks": 0,
+          "object_description": "",
+          "event_arguments": [
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 7
+            }
+          ],
+          "state_index": 0,
+          "new_state_index": -1,
+          "initialize_globals": false,
+          "running": true,
+          "detectors": [],
+          "queue": [],
+          "frames": [
+            {
+              "function": "default state_entry",
+              "call_no": 0,
+              "slots": 2,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32"
+              ]
+            },
+            {
+              "function": "default touch_start",
+              "call_no": 1,
+              "slots": 4,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32",
+                "System.Int32",
+                null
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "prefix_resume": null,
+    "live_resume_exception": {
+      "type": "System.Exception",
+      "message": "frame mismatch default state_entry vs default touch_start",
+      "stack": "   at default touch_start(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 558\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstance.ResumeEx() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRScriptUThread.cs:line 85"
+    },
+    "live_resume": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 7
+        }
+      },
+      "event_code": "touch_start",
+      "call_mode": 2,
+      "sleep_until_ticks": 639312672064324449,
+      "object_description": "",
+      "event_arguments": [
+        {
+          "type": "integer",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+          "value": 7
+        }
+      ],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 0,
+          "slots": 2,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32"
+          ]
+        },
+        {
+          "function": "default touch_start",
+          "call_no": 1,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        }
+      ]
+    },
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 7
+        }
+      },
+      "event_code": "touch_start",
+      "call_mode": 1,
+      "sleep_until_ticks": 639312672064324449,
+      "object_description": "",
+      "event_arguments": [
+        {
+          "type": "integer",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+          "value": 7
+        }
+      ],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 0,
+          "slots": 2,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32"
+          ]
+        },
+        {
+          "function": "default touch_start",
+          "call_no": 1,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        }
+      ]
+    },
+    "after_followup": null,
+    "after_load": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 7
+        }
+      },
+      "event_code": "touch_start",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": [
+        {
+          "type": "integer",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+          "value": 7
+        }
+      ],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 0,
+          "slots": 2,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32"
+          ]
+        },
+        {
+          "function": "default touch_start",
+          "call_no": 1,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        }
+      ]
+    },
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": {
+      "type": "System.Exception",
+      "message": "frame mismatch default state_entry vs default touch_start",
+      "stack": "   at default touch_start(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 558\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstance.ResumeEx() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRScriptUThread.cs:line 85"
+    },
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 7
+        }
+      },
+      "event_code": "touch_start",
+      "call_mode": 2,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": [
+        {
+          "type": "integer",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+          "value": 7
+        }
+      ],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 0,
+          "slots": 2,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32"
+          ]
+        },
+        {
+          "function": "default touch_start",
+          "call_no": 1,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        }
+      ]
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual unchanged CodeGen, base CheckRunWork, StartEx/ResumeEx and MigrateOut/In. A nonvirtual call delegates every generated CheckRunWork to the unchanged original implementation, including RESTORE; m_SliceStart is set from original Util.GetTimeStampMS before each source slice. Three bounded resume cycles model scheduler waking after each explicit sleep; no subsequent sleep requests are suppressed. Original generated frame capture and actual StackHibernateException are used. Real minimal Scene resources and original empty async plugins; no backend replacement.",
+    "sha256": {
+      "cache_key.txt": "8cb3bb82960dff11148703830c17d9611a024f4e5b93ec64e7871829d847993d",
+      "event-queue.xml": "09030ac3a8d5dbaa452ef2076d8c8a18f45eb5608570c79b134fc4ffc843309e",
+      "live-cycle-1.bin": "605dbdedfc2df3f7d5319d901da418320f1d94ca73b863a0ea613dc34c6c8525",
+      "migrated-cycle-1.bin": "605dbdedfc2df3f7d5319d901da418320f1d94ca73b863a0ea613dc34c6c8525",
+      "original.il.txt": "d804c620694d379773ce5d2e52322db2236c29486318f9d024f326e1719905f8",
+      "original.yobj": "23c94d3bd20f2ea5f43c4622df097e194a1cde4f453b44e909265a3e129b1a41",
+      "snapshot.bin": "605dbdedfc2df3f7d5319d901da418320f1d94ca73b863a0ea613dc34c6c8525",
+      "source.lsl": "eb0296df01255de31f626641e7f435490dc93e8b232a5e83bd9903d852485607",
+      "generator_source": "95d8cd51244d1d258017919355f63f212fc85b4ade15bbe3152d919f08ac1752",
+      "generator_assembly": "3915d80946f53500c3bc2b5492ef6ab5f67e6dd1874d7c23cdb6e2cfdda44c8e",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "complex_api_prefix",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "2EF8001AE1DCB0A4A7E1A86DAAA4B4B8",
+    "compiled_version": -11,
+    "suspended": true,
+    "migrated": true,
+    "initial_exception": null,
+    "live_cycles": [
+      {
+        "cycle": 1,
+        "exception": null,
+        "checks": 3,
+        "state": {
+          "globals": {
+            "after": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            },
+            "count": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 7
+            }
+          },
+          "event_code": "touch_start",
+          "call_mode": 1,
+          "sleep_until_ticks": 639312672064832145,
+          "object_description": "prefix",
+          "event_arguments": [
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 7
+            }
+          ],
+          "state_index": 0,
+          "new_state_index": -1,
+          "initialize_globals": false,
+          "running": true,
+          "detectors": [
+            {
+              "key": "11111111-2222-3333-4444-555555555555",
+              "owner": "22222222-3333-4444-5555-666666666666",
+              "group": "33333333-4444-5555-6666-777777777777",
+              "name": "original rich detector 3",
+              "link_number": 5,
+              "type": 11,
+              "grab": [
+                3.125,
+                3.25,
+                3.5
+              ],
+              "position": [
+                13.00000003,
+                14.00000003,
+                15.00000003
+              ],
+              "rotation": [
+                0.125,
+                0.25,
+                0.5,
+                0.875
+              ],
+              "velocity": [
+                23.00000003,
+                24.00000003,
+                25.00000003
+              ],
+              "touch_st": [
+                4.00000003,
+                5.00000003,
+                6.00000003
+              ],
+              "touch_normal": [
+                7.00000003,
+                8.000000029999999,
+                9.000000029999999
+              ],
+              "touch_binormal": [
+                10.000000029999999,
+                11.000000029999999,
+                12.000000029999999
+              ],
+              "touch_pos": [
+                13.000000029999999,
+                14.000000029999999,
+                15.000000029999999
+              ],
+              "touch_uv": [
+                16.00000003,
+                17.00000003,
+                18.00000003
+              ],
+              "touch_face": 6
+            }
+          ],
+          "queue": [],
+          "frames": [
+            {
+              "function": "default state_entry",
+              "call_no": 2,
+              "slots": 2,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32"
+              ]
+            },
+            {
+              "function": "default touch_start",
+              "call_no": 1,
+              "slots": 4,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32",
+                "System.Int32",
+                null
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "cycle": 2,
+        "exception": {
+          "type": "System.Exception",
+          "message": "frame mismatch default state_entry vs default touch_start",
+          "stack": "   at default touch_start(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 558\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstance.ResumeEx() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRScriptUThread.cs:line 85"
+        },
+        "checks": 0,
+        "state": {
+          "globals": {
+            "after": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            },
+            "count": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 7
+            }
+          },
+          "event_code": "touch_start",
+          "call_mode": 2,
+          "sleep_until_ticks": 639312672064832145,
+          "object_description": "prefix",
+          "event_arguments": [
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 7
+            }
+          ],
+          "state_index": 0,
+          "new_state_index": -1,
+          "initialize_globals": false,
+          "running": true,
+          "detectors": [
+            {
+              "key": "11111111-2222-3333-4444-555555555555",
+              "owner": "22222222-3333-4444-5555-666666666666",
+              "group": "33333333-4444-5555-6666-777777777777",
+              "name": "original rich detector 3",
+              "link_number": 5,
+              "type": 11,
+              "grab": [
+                3.125,
+                3.25,
+                3.5
+              ],
+              "position": [
+                13.00000003,
+                14.00000003,
+                15.00000003
+              ],
+              "rotation": [
+                0.125,
+                0.25,
+                0.5,
+                0.875
+              ],
+              "velocity": [
+                23.00000003,
+                24.00000003,
+                25.00000003
+              ],
+              "touch_st": [
+                4.00000003,
+                5.00000003,
+                6.00000003
+              ],
+              "touch_normal": [
+                7.00000003,
+                8.000000029999999,
+                9.000000029999999
+              ],
+              "touch_binormal": [
+                10.000000029999999,
+                11.000000029999999,
+                12.000000029999999
+              ],
+              "touch_pos": [
+                13.000000029999999,
+                14.000000029999999,
+                15.000000029999999
+              ],
+              "touch_uv": [
+                16.00000003,
+                17.00000003,
+                18.00000003
+              ],
+              "touch_face": 6
+            }
+          ],
+          "queue": [],
+          "frames": [
+            {
+              "function": "default state_entry",
+              "call_no": 2,
+              "slots": 2,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32"
+              ]
+            },
+            {
+              "function": "default touch_start",
+              "call_no": 1,
+              "slots": 4,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32",
+                "System.Int32",
+                null
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "migrated_cycles": [
+      {
+        "cycle": 1,
+        "exception": null,
+        "checks": 3,
+        "state": {
+          "globals": {
+            "after": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            },
+            "count": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 7
+            }
+          },
+          "event_code": "touch_start",
+          "call_mode": 1,
+          "sleep_until_ticks": 639312672064835472,
+          "object_description": "",
+          "event_arguments": [
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 7
+            }
+          ],
+          "state_index": 0,
+          "new_state_index": -1,
+          "initialize_globals": false,
+          "running": true,
+          "detectors": [],
+          "queue": [],
+          "frames": [
+            {
+              "function": "default state_entry",
+              "call_no": 2,
+              "slots": 2,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32"
+              ]
+            },
+            {
+              "function": "default touch_start",
+              "call_no": 1,
+              "slots": 4,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32",
+                "System.Int32",
+                null
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "cycle": 2,
+        "exception": {
+          "type": "System.Exception",
+          "message": "frame mismatch default state_entry vs default touch_start",
+          "stack": "   at default touch_start(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 558\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstance.ResumeEx() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRScriptUThread.cs:line 85"
+        },
+        "checks": 0,
+        "state": {
+          "globals": {
+            "after": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            },
+            "count": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 7
+            }
+          },
+          "event_code": "touch_start",
+          "call_mode": 2,
+          "sleep_until_ticks": 639312672064835472,
+          "object_description": "",
+          "event_arguments": [
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 7
+            }
+          ],
+          "state_index": 0,
+          "new_state_index": -1,
+          "initialize_globals": false,
+          "running": true,
+          "detectors": [],
+          "queue": [],
+          "frames": [
+            {
+              "function": "default state_entry",
+              "call_no": 2,
+              "slots": 2,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32"
+              ]
+            },
+            {
+              "function": "default touch_start",
+              "call_no": 1,
+              "slots": 4,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32",
+                "System.Int32",
+                null
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "prefix_resume": null,
+    "live_resume_exception": {
+      "type": "System.Exception",
+      "message": "frame mismatch default state_entry vs default touch_start",
+      "stack": "   at default touch_start(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 558\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstance.ResumeEx() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRScriptUThread.cs:line 85"
+    },
+    "live_resume": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 7
+        }
+      },
+      "event_code": "touch_start",
+      "call_mode": 2,
+      "sleep_until_ticks": 639312672064832145,
+      "object_description": "prefix",
+      "event_arguments": [
+        {
+          "type": "integer",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+          "value": 7
+        }
+      ],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 2,
+          "slots": 2,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32"
+          ]
+        },
+        {
+          "function": "default touch_start",
+          "call_no": 1,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        }
+      ]
+    },
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      },
+      "event_code": "state_entry",
+      "call_mode": 1,
+      "sleep_until_ticks": 639312672054819590,
+      "object_description": "prefix",
+      "event_arguments": [],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 2,
+          "slots": 2,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32"
+          ]
+        }
+      ]
+    },
+    "after_followup": null,
+    "after_load": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      },
+      "event_code": "state_entry",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": [],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 2,
+          "slots": 2,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32"
+          ]
+        }
+      ]
+    },
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": {
+      "type": "System.Exception",
+      "message": "frame mismatch default state_entry vs default touch_start",
+      "stack": "   at default touch_start(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 558\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstance.ResumeEx() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRScriptUThread.cs:line 85"
+    },
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 7
+        }
+      },
+      "event_code": "touch_start",
+      "call_mode": 2,
+      "sleep_until_ticks": 639312672064835472,
+      "object_description": "",
+      "event_arguments": [
+        {
+          "type": "integer",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+          "value": 7
+        }
+      ],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 2,
+          "slots": 2,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32"
+          ]
+        },
+        {
+          "function": "default touch_start",
+          "call_no": 1,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        }
+      ]
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual unchanged CodeGen, base CheckRunWork, StartEx/ResumeEx and MigrateOut/In. A nonvirtual call delegates every generated CheckRunWork to the unchanged original implementation, including RESTORE; m_SliceStart is set from original Util.GetTimeStampMS before each source slice. Three bounded resume cycles model scheduler waking after each explicit sleep; no subsequent sleep requests are suppressed. Original generated frame capture and actual StackHibernateException are used. Real minimal Scene resources and original empty async plugins; no backend replacement.",
+    "sha256": {
+      "cache_key.txt": "2199c50217da9c9a3050457b40f1acb60c1fb4920c57eef85aacc0c61219ace8",
+      "event-queue.xml": "09030ac3a8d5dbaa452ef2076d8c8a18f45eb5608570c79b134fc4ffc843309e",
+      "live-cycle-1.bin": "c1c9efcce488f1570eef4ca61d43a2b1b6a26bad35f5b1e3c4165f9e6af64a36",
+      "live-cycle-2.bin": "c1c9efcce488f1570eef4ca61d43a2b1b6a26bad35f5b1e3c4165f9e6af64a36",
+      "migrated-cycle-1.bin": "c1c9efcce488f1570eef4ca61d43a2b1b6a26bad35f5b1e3c4165f9e6af64a36",
+      "migrated-cycle-2.bin": "c1c9efcce488f1570eef4ca61d43a2b1b6a26bad35f5b1e3c4165f9e6af64a36",
+      "original.il.txt": "301eff6946924b8a942e6edb0d91a74b3c2acc40733d13169e1b804d83e63341",
+      "original.yobj": "3e5175bd791050b173b692be7ca3fcad0d1f94a8a89a76c2ded93d684dc76266",
+      "snapshot.bin": "5570e588b004cdfc30a198c7d5328c0f7bb7ce6010b62aef50719e7a82ef9b59",
+      "source.lsl": "631de98f80b1d83c96b52f1039ae951a6811b7acaf27de6196a399cf9c846e86",
+      "generator_source": "95d8cd51244d1d258017919355f63f212fc85b4ade15bbe3152d919f08ac1752",
+      "generator_assembly": "3915d80946f53500c3bc2b5492ef6ab5f67e6dd1874d7c23cdb6e2cfdda44c8e",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "complex_function",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "AF015FD8411ADC46FFBBEFAD0891E0F4",
+    "compiled_version": -11,
+    "suspended": true,
+    "migrated": true,
+    "initial_exception": null,
+    "live_cycles": [
+      {
+        "cycle": 1,
+        "exception": {
+          "type": "System.Exception",
+          "message": "frame mismatch default state_entry vs default touch_start",
+          "stack": "   at default touch_start(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 558\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstance.ResumeEx() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRScriptUThread.cs:line 85"
+        },
+        "checks": 0,
+        "state": {
+          "globals": {
+            "after": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            },
+            "count": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 7
+            }
+          },
+          "event_code": "touch_start",
+          "call_mode": 2,
+          "sleep_until_ticks": 639312672064974508,
+          "object_description": "",
+          "event_arguments": [
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 7
+            }
+          ],
+          "state_index": 0,
+          "new_state_index": -1,
+          "initialize_globals": false,
+          "running": true,
+          "detectors": [
+            {
+              "key": "11111111-2222-3333-4444-555555555555",
+              "owner": "22222222-3333-4444-5555-666666666666",
+              "group": "33333333-4444-5555-6666-777777777777",
+              "name": "original rich detector 3",
+              "link_number": 5,
+              "type": 11,
+              "grab": [
+                3.125,
+                3.25,
+                3.5
+              ],
+              "position": [
+                13.00000003,
+                14.00000003,
+                15.00000003
+              ],
+              "rotation": [
+                0.125,
+                0.25,
+                0.5,
+                0.875
+              ],
+              "velocity": [
+                23.00000003,
+                24.00000003,
+                25.00000003
+              ],
+              "touch_st": [
+                4.00000003,
+                5.00000003,
+                6.00000003
+              ],
+              "touch_normal": [
+                7.00000003,
+                8.000000029999999,
+                9.000000029999999
+              ],
+              "touch_binormal": [
+                10.000000029999999,
+                11.000000029999999,
+                12.000000029999999
+              ],
+              "touch_pos": [
+                13.000000029999999,
+                14.000000029999999,
+                15.000000029999999
+              ],
+              "touch_uv": [
+                16.00000003,
+                17.00000003,
+                18.00000003
+              ],
+              "touch_face": 6
+            }
+          ],
+          "queue": [],
+          "frames": [
+            {
+              "function": "default state_entry",
+              "call_no": 1,
+              "slots": 2,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32"
+              ]
+            },
+            {
+              "function": "call()",
+              "call_no": 0,
+              "slots": 1,
+              "slot_types": [
+                "System.Int32"
+              ]
+            },
+            {
+              "function": "default touch_start",
+              "call_no": 1,
+              "slots": 4,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32",
+                "System.Int32",
+                null
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "migrated_cycles": [
+      {
+        "cycle": 1,
+        "exception": {
+          "type": "System.Exception",
+          "message": "frame mismatch default state_entry vs default touch_start",
+          "stack": "   at default touch_start(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 558\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstance.ResumeEx() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRScriptUThread.cs:line 85"
+        },
+        "checks": 0,
+        "state": {
+          "globals": {
+            "after": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            },
+            "count": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 7
+            }
+          },
+          "event_code": "touch_start",
+          "call_mode": 2,
+          "sleep_until_ticks": 0,
+          "object_description": "",
+          "event_arguments": [
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 7
+            }
+          ],
+          "state_index": 0,
+          "new_state_index": -1,
+          "initialize_globals": false,
+          "running": true,
+          "detectors": [],
+          "queue": [],
+          "frames": [
+            {
+              "function": "default state_entry",
+              "call_no": 1,
+              "slots": 2,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32"
+              ]
+            },
+            {
+              "function": "call()",
+              "call_no": 0,
+              "slots": 1,
+              "slot_types": [
+                "System.Int32"
+              ]
+            },
+            {
+              "function": "default touch_start",
+              "call_no": 1,
+              "slots": 4,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32",
+                "System.Int32",
+                null
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "prefix_resume": null,
+    "live_resume_exception": {
+      "type": "System.Exception",
+      "message": "frame mismatch default state_entry vs default touch_start",
+      "stack": "   at default touch_start(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 558\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstance.ResumeEx() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRScriptUThread.cs:line 85"
+    },
+    "live_resume": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 7
+        }
+      },
+      "event_code": "touch_start",
+      "call_mode": 2,
+      "sleep_until_ticks": 639312672064974508,
+      "object_description": "",
+      "event_arguments": [
+        {
+          "type": "integer",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+          "value": 7
+        }
+      ],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 1,
+          "slots": 2,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32"
+          ]
+        },
+        {
+          "function": "call()",
+          "call_no": 0,
+          "slots": 1,
+          "slot_types": [
+            "System.Int32"
+          ]
+        },
+        {
+          "function": "default touch_start",
+          "call_no": 1,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        }
+      ]
+    },
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 7
+        }
+      },
+      "event_code": "touch_start",
+      "call_mode": 1,
+      "sleep_until_ticks": 639312672064974508,
+      "object_description": "",
+      "event_arguments": [
+        {
+          "type": "integer",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+          "value": 7
+        }
+      ],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 1,
+          "slots": 2,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32"
+          ]
+        },
+        {
+          "function": "call()",
+          "call_no": 0,
+          "slots": 1,
+          "slot_types": [
+            "System.Int32"
+          ]
+        },
+        {
+          "function": "default touch_start",
+          "call_no": 1,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        }
+      ]
+    },
+    "after_followup": null,
+    "after_load": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 7
+        }
+      },
+      "event_code": "touch_start",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": [
+        {
+          "type": "integer",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+          "value": 7
+        }
+      ],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 1,
+          "slots": 2,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32"
+          ]
+        },
+        {
+          "function": "call()",
+          "call_no": 0,
+          "slots": 1,
+          "slot_types": [
+            "System.Int32"
+          ]
+        },
+        {
+          "function": "default touch_start",
+          "call_no": 1,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        }
+      ]
+    },
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": {
+      "type": "System.Exception",
+      "message": "frame mismatch default state_entry vs default touch_start",
+      "stack": "   at default touch_start(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 558\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstance.ResumeEx() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRScriptUThread.cs:line 85"
+    },
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 7
+        }
+      },
+      "event_code": "touch_start",
+      "call_mode": 2,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": [
+        {
+          "type": "integer",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+          "value": 7
+        }
+      ],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 1,
+          "slots": 2,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32"
+          ]
+        },
+        {
+          "function": "call()",
+          "call_no": 0,
+          "slots": 1,
+          "slot_types": [
+            "System.Int32"
+          ]
+        },
+        {
+          "function": "default touch_start",
+          "call_no": 1,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        }
+      ]
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual unchanged CodeGen, base CheckRunWork, StartEx/ResumeEx and MigrateOut/In. A nonvirtual call delegates every generated CheckRunWork to the unchanged original implementation, including RESTORE; m_SliceStart is set from original Util.GetTimeStampMS before each source slice. Three bounded resume cycles model scheduler waking after each explicit sleep; no subsequent sleep requests are suppressed. Original generated frame capture and actual StackHibernateException are used. Real minimal Scene resources and original empty async plugins; no backend replacement.",
+    "sha256": {
+      "cache_key.txt": "b1e6ef918e26fe50f8f343535e82c6e7ead15d553a8f251e877bf5b178acabb0",
+      "event-queue.xml": "09030ac3a8d5dbaa452ef2076d8c8a18f45eb5608570c79b134fc4ffc843309e",
+      "live-cycle-1.bin": "7ccc9b1670b94fb4998ad7ff9e825e908d490a17bb7d2e35a97c53ec7ef5922d",
+      "migrated-cycle-1.bin": "7ccc9b1670b94fb4998ad7ff9e825e908d490a17bb7d2e35a97c53ec7ef5922d",
+      "original.il.txt": "af95503f34be2723d2a29899b2fb4218b80ed351584a9c18b2ef7f5dcfad83ac",
+      "original.yobj": "167a0de98ade639c601a2f13fd4d9522b3c5162ea82b6f74b925e7038c4be97c",
+      "snapshot.bin": "7ccc9b1670b94fb4998ad7ff9e825e908d490a17bb7d2e35a97c53ec7ef5922d",
+      "source.lsl": "50c13495122624b66e07f817580275a0d1c8d392616680270233c962862baed9",
+      "generator_source": "95d8cd51244d1d258017919355f63f212fc85b4ade15bbe3152d919f08ac1752",
+      "generator_assembly": "3915d80946f53500c3bc2b5492ef6ab5f67e6dd1874d7c23cdb6e2cfdda44c8e",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "same_handler_recursive",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "AD41E650F6E3D81C4B63F4F1787493A2",
+    "compiled_version": -11,
+    "suspended": true,
+    "migrated": true,
+    "initial_exception": null,
+    "live_cycles": [
+      {
+        "cycle": 1,
+        "exception": null,
+        "checks": 4,
+        "state": {
+          "globals": {
+            "after": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            },
+            "count": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 6
+            }
+          },
+          "event_code": "touch_start",
+          "call_mode": 1,
+          "sleep_until_ticks": 639312672065076845,
+          "object_description": "",
+          "event_arguments": [
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 0
+            }
+          ],
+          "state_index": 0,
+          "new_state_index": -1,
+          "initialize_globals": false,
+          "running": true,
+          "detectors": [
+            {
+              "key": "11111111-2222-3333-4444-555555555555",
+              "owner": "22222222-3333-4444-5555-666666666666",
+              "group": "33333333-4444-5555-6666-777777777777",
+              "name": "original rich detector 3",
+              "link_number": 5,
+              "type": 11,
+              "grab": [
+                3.125,
+                3.25,
+                3.5
+              ],
+              "position": [
+                13.00000003,
+                14.00000003,
+                15.00000003
+              ],
+              "rotation": [
+                0.125,
+                0.25,
+                0.5,
+                0.875
+              ],
+              "velocity": [
+                23.00000003,
+                24.00000003,
+                25.00000003
+              ],
+              "touch_st": [
+                4.00000003,
+                5.00000003,
+                6.00000003
+              ],
+              "touch_normal": [
+                7.00000003,
+                8.000000029999999,
+                9.000000029999999
+              ],
+              "touch_binormal": [
+                10.000000029999999,
+                11.000000029999999,
+                12.000000029999999
+              ],
+              "touch_pos": [
+                13.000000029999999,
+                14.000000029999999,
+                15.000000029999999
+              ],
+              "touch_uv": [
+                16.00000003,
+                17.00000003,
+                18.00000003
+              ],
+              "touch_face": 6
+            }
+          ],
+          "queue": [],
+          "frames": [
+            {
+              "function": "default touch_start",
+              "call_no": 0,
+              "slots": 4,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32",
+                "System.Int32",
+                null
+              ]
+            },
+            {
+              "function": "default touch_start",
+              "call_no": 0,
+              "slots": 4,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32",
+                "System.Int32",
+                null
+              ]
+            },
+            {
+              "function": "default touch_start",
+              "call_no": 1,
+              "slots": 4,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32",
+                "System.Int32",
+                null
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "cycle": 2,
+        "exception": null,
+        "checks": 4,
+        "state": {
+          "globals": {
+            "after": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            },
+            "count": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 9
+            }
+          },
+          "event_code": "touch_start",
+          "call_mode": 1,
+          "sleep_until_ticks": 639312672065078453,
+          "object_description": "",
+          "event_arguments": [
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 0
+            }
+          ],
+          "state_index": 0,
+          "new_state_index": -1,
+          "initialize_globals": false,
+          "running": true,
+          "detectors": [
+            {
+              "key": "11111111-2222-3333-4444-555555555555",
+              "owner": "22222222-3333-4444-5555-666666666666",
+              "group": "33333333-4444-5555-6666-777777777777",
+              "name": "original rich detector 3",
+              "link_number": 5,
+              "type": 11,
+              "grab": [
+                3.125,
+                3.25,
+                3.5
+              ],
+              "position": [
+                13.00000003,
+                14.00000003,
+                15.00000003
+              ],
+              "rotation": [
+                0.125,
+                0.25,
+                0.5,
+                0.875
+              ],
+              "velocity": [
+                23.00000003,
+                24.00000003,
+                25.00000003
+              ],
+              "touch_st": [
+                4.00000003,
+                5.00000003,
+                6.00000003
+              ],
+              "touch_normal": [
+                7.00000003,
+                8.000000029999999,
+                9.000000029999999
+              ],
+              "touch_binormal": [
+                10.000000029999999,
+                11.000000029999999,
+                12.000000029999999
+              ],
+              "touch_pos": [
+                13.000000029999999,
+                14.000000029999999,
+                15.000000029999999
+              ],
+              "touch_uv": [
+                16.00000003,
+                17.00000003,
+                18.00000003
+              ],
+              "touch_face": 6
+            }
+          ],
+          "queue": [],
+          "frames": [
+            {
+              "function": "default touch_start",
+              "call_no": 0,
+              "slots": 4,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32",
+                "System.Int32",
+                null
+              ]
+            },
+            {
+              "function": "default touch_start",
+              "call_no": 0,
+              "slots": 4,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32",
+                "System.Int32",
+                null
+              ]
+            },
+            {
+              "function": "default touch_start",
+              "call_no": 1,
+              "slots": 4,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32",
+                "System.Int32",
+                null
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "cycle": 3,
+        "exception": null,
+        "checks": 4,
+        "state": {
+          "globals": {
+            "after": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            },
+            "count": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 12
+            }
+          },
+          "event_code": "touch_start",
+          "call_mode": 1,
+          "sleep_until_ticks": 639312672065079772,
+          "object_description": "",
+          "event_arguments": [
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 0
+            }
+          ],
+          "state_index": 0,
+          "new_state_index": -1,
+          "initialize_globals": false,
+          "running": true,
+          "detectors": [
+            {
+              "key": "11111111-2222-3333-4444-555555555555",
+              "owner": "22222222-3333-4444-5555-666666666666",
+              "group": "33333333-4444-5555-6666-777777777777",
+              "name": "original rich detector 3",
+              "link_number": 5,
+              "type": 11,
+              "grab": [
+                3.125,
+                3.25,
+                3.5
+              ],
+              "position": [
+                13.00000003,
+                14.00000003,
+                15.00000003
+              ],
+              "rotation": [
+                0.125,
+                0.25,
+                0.5,
+                0.875
+              ],
+              "velocity": [
+                23.00000003,
+                24.00000003,
+                25.00000003
+              ],
+              "touch_st": [
+                4.00000003,
+                5.00000003,
+                6.00000003
+              ],
+              "touch_normal": [
+                7.00000003,
+                8.000000029999999,
+                9.000000029999999
+              ],
+              "touch_binormal": [
+                10.000000029999999,
+                11.000000029999999,
+                12.000000029999999
+              ],
+              "touch_pos": [
+                13.000000029999999,
+                14.000000029999999,
+                15.000000029999999
+              ],
+              "touch_uv": [
+                16.00000003,
+                17.00000003,
+                18.00000003
+              ],
+              "touch_face": 6
+            }
+          ],
+          "queue": [],
+          "frames": [
+            {
+              "function": "default touch_start",
+              "call_no": 0,
+              "slots": 4,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32",
+                "System.Int32",
+                null
+              ]
+            },
+            {
+              "function": "default touch_start",
+              "call_no": 0,
+              "slots": 4,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32",
+                "System.Int32",
+                null
+              ]
+            },
+            {
+              "function": "default touch_start",
+              "call_no": 1,
+              "slots": 4,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32",
+                "System.Int32",
+                null
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "migrated_cycles": [
+      {
+        "cycle": 1,
+        "exception": null,
+        "checks": 4,
+        "state": {
+          "globals": {
+            "after": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            },
+            "count": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 6
+            }
+          },
+          "event_code": "touch_start",
+          "call_mode": 1,
+          "sleep_until_ticks": 639312672065080800,
+          "object_description": "",
+          "event_arguments": [
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 0
+            }
+          ],
+          "state_index": 0,
+          "new_state_index": -1,
+          "initialize_globals": false,
+          "running": true,
+          "detectors": [],
+          "queue": [],
+          "frames": [
+            {
+              "function": "default touch_start",
+              "call_no": 0,
+              "slots": 4,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32",
+                "System.Int32",
+                null
+              ]
+            },
+            {
+              "function": "default touch_start",
+              "call_no": 0,
+              "slots": 4,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32",
+                "System.Int32",
+                null
+              ]
+            },
+            {
+              "function": "default touch_start",
+              "call_no": 1,
+              "slots": 4,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32",
+                "System.Int32",
+                null
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "cycle": 2,
+        "exception": null,
+        "checks": 4,
+        "state": {
+          "globals": {
+            "after": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            },
+            "count": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 9
+            }
+          },
+          "event_code": "touch_start",
+          "call_mode": 1,
+          "sleep_until_ticks": 639312672065081701,
+          "object_description": "",
+          "event_arguments": [
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 0
+            }
+          ],
+          "state_index": 0,
+          "new_state_index": -1,
+          "initialize_globals": false,
+          "running": true,
+          "detectors": [],
+          "queue": [],
+          "frames": [
+            {
+              "function": "default touch_start",
+              "call_no": 0,
+              "slots": 4,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32",
+                "System.Int32",
+                null
+              ]
+            },
+            {
+              "function": "default touch_start",
+              "call_no": 0,
+              "slots": 4,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32",
+                "System.Int32",
+                null
+              ]
+            },
+            {
+              "function": "default touch_start",
+              "call_no": 1,
+              "slots": 4,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32",
+                "System.Int32",
+                null
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "cycle": 3,
+        "exception": null,
+        "checks": 4,
+        "state": {
+          "globals": {
+            "after": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            },
+            "count": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 12
+            }
+          },
+          "event_code": "touch_start",
+          "call_mode": 1,
+          "sleep_until_ticks": 639312672065082555,
+          "object_description": "",
+          "event_arguments": [
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 0
+            }
+          ],
+          "state_index": 0,
+          "new_state_index": -1,
+          "initialize_globals": false,
+          "running": true,
+          "detectors": [],
+          "queue": [],
+          "frames": [
+            {
+              "function": "default touch_start",
+              "call_no": 0,
+              "slots": 4,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32",
+                "System.Int32",
+                null
+              ]
+            },
+            {
+              "function": "default touch_start",
+              "call_no": 0,
+              "slots": 4,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32",
+                "System.Int32",
+                null
+              ]
+            },
+            {
+              "function": "default touch_start",
+              "call_no": 1,
+              "slots": 4,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32",
+                "System.Int32",
+                null
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "prefix_resume": null,
+    "live_resume_exception": null,
+    "live_resume": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 12
+        }
+      },
+      "event_code": "touch_start",
+      "call_mode": 1,
+      "sleep_until_ticks": 639312672065079772,
+      "object_description": "",
+      "event_arguments": [
+        {
+          "type": "integer",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+          "value": 0
+        }
+      ],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default touch_start",
+          "call_no": 0,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        },
+        {
+          "function": "default touch_start",
+          "call_no": 0,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        },
+        {
+          "function": "default touch_start",
+          "call_no": 1,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        }
+      ]
+    },
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 3
+        }
+      },
+      "event_code": "touch_start",
+      "call_mode": 1,
+      "sleep_until_ticks": 639312672065070889,
+      "object_description": "",
+      "event_arguments": [
+        {
+          "type": "integer",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+          "value": 0
+        }
+      ],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default touch_start",
+          "call_no": 0,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        },
+        {
+          "function": "default touch_start",
+          "call_no": 0,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        },
+        {
+          "function": "default touch_start",
+          "call_no": 1,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        }
+      ]
+    },
+    "after_followup": null,
+    "after_load": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 3
+        }
+      },
+      "event_code": "touch_start",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": [
+        {
+          "type": "integer",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+          "value": 0
+        }
+      ],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default touch_start",
+          "call_no": 0,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        },
+        {
+          "function": "default touch_start",
+          "call_no": 0,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        },
+        {
+          "function": "default touch_start",
+          "call_no": 1,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        }
+      ]
+    },
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 12
+        }
+      },
+      "event_code": "touch_start",
+      "call_mode": 1,
+      "sleep_until_ticks": 639312672065082555,
+      "object_description": "",
+      "event_arguments": [
+        {
+          "type": "integer",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+          "value": 0
+        }
+      ],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default touch_start",
+          "call_no": 0,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        },
+        {
+          "function": "default touch_start",
+          "call_no": 0,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        },
+        {
+          "function": "default touch_start",
+          "call_no": 1,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        }
+      ]
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual unchanged CodeGen, base CheckRunWork, StartEx/ResumeEx and MigrateOut/In. A nonvirtual call delegates every generated CheckRunWork to the unchanged original implementation, including RESTORE; m_SliceStart is set from original Util.GetTimeStampMS before each source slice. Three bounded resume cycles model scheduler waking after each explicit sleep; no subsequent sleep requests are suppressed. Original generated frame capture and actual StackHibernateException are used. Real minimal Scene resources and original empty async plugins; no backend replacement.",
+    "sha256": {
+      "cache_key.txt": "71ba26f999924cdbade94b8c52a561d4ee5bc7bb9f3f9d75bbb810a29d051b48",
+      "event-queue.xml": "09030ac3a8d5dbaa452ef2076d8c8a18f45eb5608570c79b134fc4ffc843309e",
+      "live-cycle-1.bin": "2e2ccb364d4abd7452b9d459ae659367f0f9f4ce5f63b978b929483c887c8d19",
+      "live-cycle-2.bin": "55a7bc8e2977413848189e9a53ba69409c9cdde6359dfb4deff05da76f97b36c",
+      "live-cycle-3.bin": "4fbe665403a35c24dcc80170887c5cc71a433ed3be80be67e9d697a9171a974f",
+      "migrated-cycle-1.bin": "2e2ccb364d4abd7452b9d459ae659367f0f9f4ce5f63b978b929483c887c8d19",
+      "migrated-cycle-2.bin": "55a7bc8e2977413848189e9a53ba69409c9cdde6359dfb4deff05da76f97b36c",
+      "migrated-cycle-3.bin": "4fbe665403a35c24dcc80170887c5cc71a433ed3be80be67e9d697a9171a974f",
+      "original.il.txt": "84e4a7604bacb0556549da6d137f02c6f9ee2e4cb21d43ae93342768ea55a464",
+      "original.yobj": "a2f91f01d7bf5d7f39fb2c8aff08779a605c08e9e522c1fc0f82279d17ee9c28",
+      "snapshot.bin": "292ec9d488441f50ce61636ab05a442fd4a98f27ffd15823fec978541d0be217",
+      "source.lsl": "085a94ea6d0dd6346747b0074ba9d9a4a6d9085bb3f2981b017007746ff895fd",
+      "generator_source": "95d8cd51244d1d258017919355f63f212fc85b4ade15bbe3152d919f08ac1752",
+      "generator_assembly": "3915d80946f53500c3bc2b5492ef6ab5f67e6dd1874d7c23cdb6e2cfdda44c8e",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "background_direct",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "33889CC907600CBD0B6061CF0CBBE39D",
+    "compiled_version": -11,
+    "suspended": true,
+    "migrated": true,
+    "initial_exception": null,
+    "live_cycles": [
+      {
+        "cycle": 1,
+        "exception": null,
+        "checks": 1,
+        "state": {
+          "globals": {
+            "after": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 1
+            },
+            "count": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 1123
+            },
+            "result": {
+              "type": "list",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+              "value": [
+                {
+                  "type": "integer",
+                  "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+                  "value": 29
+                },
+                {
+                  "type": "integer",
+                  "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+                  "value": 3
+                }
+              ]
+            }
+          },
+          "event_code": "None",
+          "call_mode": 0,
+          "sleep_until_ticks": 639312672065161986,
+          "object_description": "",
+          "event_arguments": null,
+          "state_index": 0,
+          "new_state_index": -1,
+          "initialize_globals": false,
+          "running": true,
+          "detectors": [
+            {
+              "key": "11111111-2222-3333-4444-555555555555",
+              "owner": "22222222-3333-4444-5555-666666666666",
+              "group": "33333333-4444-5555-6666-777777777777",
+              "name": "original rich detector 3",
+              "link_number": 5,
+              "type": 11,
+              "grab": [
+                3.125,
+                3.25,
+                3.5
+              ],
+              "position": [
+                13.00000003,
+                14.00000003,
+                15.00000003
+              ],
+              "rotation": [
+                0.125,
+                0.25,
+                0.5,
+                0.875
+              ],
+              "velocity": [
+                23.00000003,
+                24.00000003,
+                25.00000003
+              ],
+              "touch_st": [
+                4.00000003,
+                5.00000003,
+                6.00000003
+              ],
+              "touch_normal": [
+                7.00000003,
+                8.000000029999999,
+                9.000000029999999
+              ],
+              "touch_binormal": [
+                10.000000029999999,
+                11.000000029999999,
+                12.000000029999999
+              ],
+              "touch_pos": [
+                13.000000029999999,
+                14.000000029999999,
+                15.000000029999999
+              ],
+              "touch_uv": [
+                16.00000003,
+                17.00000003,
+                18.00000003
+              ],
+              "touch_face": 6
+            }
+          ],
+          "queue": [],
+          "frames": []
+        }
+      }
+    ],
+    "migrated_cycles": [
+      {
+        "cycle": 1,
+        "exception": null,
+        "checks": 1,
+        "state": {
+          "globals": {
+            "after": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 1
+            },
+            "count": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 1123
+            },
+            "result": {
+              "type": "list",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+              "value": [
+                {
+                  "type": "integer",
+                  "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+                  "value": 29
+                },
+                {
+                  "type": "integer",
+                  "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+                  "value": 3
+                }
+              ]
+            }
+          },
+          "event_code": "None",
+          "call_mode": 0,
+          "sleep_until_ticks": 0,
+          "object_description": "",
+          "event_arguments": null,
+          "state_index": 0,
+          "new_state_index": -1,
+          "initialize_globals": false,
+          "running": true,
+          "detectors": [
+            {
+              "key": "11111111-2222-3333-4444-555555555555",
+              "owner": "22222222-3333-4444-5555-666666666666",
+              "group": "33333333-4444-5555-6666-777777777777",
+              "name": "original rich detector 3",
+              "link_number": 5,
+              "type": 11,
+              "grab": [
+                3.125,
+                3.25,
+                3.5
+              ],
+              "position": [
+                13,
+                14,
+                15
+              ],
+              "rotation": [
+                0.125,
+                0.25,
+                0.5,
+                0.875
+              ],
+              "velocity": [
+                23,
+                24,
+                25
+              ],
+              "touch_st": [
+                -1,
+                -1,
+                0
+              ],
+              "touch_normal": [
+                0,
+                0,
+                0
+              ],
+              "touch_binormal": [
+                0,
+                0,
+                0
+              ],
+              "touch_pos": [
+                0,
+                0,
+                0
+              ],
+              "touch_uv": [
+                -1,
+                -1,
+                0
+              ],
+              "touch_face": -1
+            }
+          ],
+          "queue": [],
+          "frames": []
+        }
+      }
+    ],
+    "prefix_resume": null,
+    "live_resume_exception": null,
+    "live_resume": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1123
+        },
+        "result": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 29
+            },
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 3
+            }
+          ]
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 639312672065161986,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 16
+        },
+        "result": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": []
+        }
+      },
+      "event_code": "state_entry",
+      "call_mode": 1,
+      "sleep_until_ticks": 639312672065161986,
+      "object_description": "",
+      "event_arguments": [],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [
+        {
+          "name": "touch_end",
+          "arguments": [
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 3
+            }
+          ],
+          "detectors": [
+            {
+              "key": "11111111-2222-3333-4444-555555555555",
+              "owner": "22222222-3333-4444-5555-666666666666",
+              "group": "33333333-4444-5555-6666-777777777777",
+              "name": "original rich detector 3",
+              "link_number": 5,
+              "type": 11,
+              "grab": [
+                3.125,
+                3.25,
+                3.5
+              ],
+              "position": [
+                13.00000003,
+                14.00000003,
+                15.00000003
+              ],
+              "rotation": [
+                0.125,
+                0.25,
+                0.5,
+                0.875
+              ],
+              "velocity": [
+                23.00000003,
+                24.00000003,
+                25.00000003
+              ],
+              "touch_st": [
+                4.00000003,
+                5.00000003,
+                6.00000003
+              ],
+              "touch_normal": [
+                7.00000003,
+                8.000000029999999,
+                9.000000029999999
+              ],
+              "touch_binormal": [
+                10.000000029999999,
+                11.000000029999999,
+                12.000000029999999
+              ],
+              "touch_pos": [
+                13.000000029999999,
+                14.000000029999999,
+                15.000000029999999
+              ],
+              "touch_uv": [
+                16.00000003,
+                17.00000003,
+                18.00000003
+              ],
+              "touch_face": 6
+            }
+          ]
+        }
+      ],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 1,
+          "slots": 2,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32"
+          ]
+        },
+        {
+          "function": "xmrEventDequeue",
+          "call_no": 1,
+          "slots": 9,
+          "slot_types": [
+            "System.String",
+            "System.Int32",
+            "System.Int32",
+            "System.Int32",
+            "System.Int32",
+            "System.Int32",
+            "System.Int32",
+            "System.Object[]",
+            "System.Object[]"
+          ]
+        },
+        {
+          "function": "default touch_end",
+          "call_no": 1,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        }
+      ]
+    },
+    "after_followup": null,
+    "after_load": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 16
+        },
+        "result": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": []
+        }
+      },
+      "event_code": "state_entry",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": [],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [],
+      "queue": [
+        {
+          "name": "touch_end",
+          "arguments": [
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 3
+            }
+          ],
+          "detectors": [
+            {
+              "key": "11111111-2222-3333-4444-555555555555",
+              "owner": "22222222-3333-4444-5555-666666666666",
+              "group": "33333333-4444-5555-6666-777777777777",
+              "name": "original rich detector 3",
+              "link_number": 5,
+              "type": 11,
+              "grab": [
+                3.125,
+                3.25,
+                3.5
+              ],
+              "position": [
+                13,
+                14,
+                15
+              ],
+              "rotation": [
+                0.125,
+                0.25,
+                0.5,
+                0.875
+              ],
+              "velocity": [
+                23,
+                24,
+                25
+              ],
+              "touch_st": [
+                -1,
+                -1,
+                0
+              ],
+              "touch_normal": [
+                0,
+                0,
+                0
+              ],
+              "touch_binormal": [
+                0,
+                0,
+                0
+              ],
+              "touch_pos": [
+                0,
+                0,
+                0
+              ],
+              "touch_uv": [
+                -1,
+                -1,
+                0
+              ],
+              "touch_face": -1
+            }
+          ]
+        }
+      ],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 1,
+          "slots": 2,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32"
+          ]
+        },
+        {
+          "function": "xmrEventDequeue",
+          "call_no": 1,
+          "slots": 9,
+          "slot_types": [
+            "System.String",
+            "System.Int32",
+            "System.Int32",
+            "System.Int32",
+            "System.Int32",
+            "System.Int32",
+            "System.Int32",
+            "System.Object[]",
+            "System.Object[]"
+          ]
+        },
+        {
+          "function": "default touch_end",
+          "call_no": 1,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        }
+      ]
+    },
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1123
+        },
+        "result": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 29
+            },
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 3
+            }
+          ]
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13,
+            14,
+            15
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23,
+            24,
+            25
+          ],
+          "touch_st": [
+            -1,
+            -1,
+            0
+          ],
+          "touch_normal": [
+            0,
+            0,
+            0
+          ],
+          "touch_binormal": [
+            0,
+            0,
+            0
+          ],
+          "touch_pos": [
+            0,
+            0,
+            0
+          ],
+          "touch_uv": [
+            -1,
+            -1,
+            0
+          ],
+          "touch_face": -1
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual unchanged CodeGen, base CheckRunWork, StartEx/ResumeEx and MigrateOut/In. A nonvirtual call delegates every generated CheckRunWork to the unchanged original implementation, including RESTORE; m_SliceStart is set from original Util.GetTimeStampMS before each source slice. Three bounded resume cycles model scheduler waking after each explicit sleep; no subsequent sleep requests are suppressed. Original generated frame capture and actual StackHibernateException are used. Real minimal Scene resources and original empty async plugins; no backend replacement.",
+    "sha256": {
+      "cache_key.txt": "88d275fa9375711883c1295993805d39210fe40e7d8857f9a385f7d8f0d255d7",
+      "event-queue.xml": "b0a90a33ba07ae839daf17892bb6b53cea3cace66f2e99f349c2a9ca76e75fb6",
+      "original.il.txt": "da2ec3c1ebec9e990b3c5b276ed02442b45aa43b3e176d7e7ac8eba11498d96b",
+      "original.yobj": "44f28c70a243255a9f6261e32c4a9a789e15bf66db351e1cde27b7fe8008a93f",
+      "snapshot.bin": "64b61b68c28dcd68812ac91699d53fefe7e9b2c58914175d430f42fcca58bfb4",
+      "source.lsl": "1466d29e9e3dc01a541b214ae9aaa41bb2c73b5f1a7d134f88cebb63a78fa029",
+      "generator_source": "95d8cd51244d1d258017919355f63f212fc85b4ade15bbe3152d919f08ac1752",
+      "generator_assembly": "3915d80946f53500c3bc2b5492ef6ab5f67e6dd1874d7c23cdb6e2cfdda44c8e",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "complex_global",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "8982430F1DEB7458BCD383B7881EA08B",
+    "compiled_version": -11,
+    "suspended": true,
+    "migrated": true,
+    "initial_exception": null,
+    "live_cycles": [
+      {
+        "cycle": 1,
+        "exception": {
+          "type": "System.Exception",
+          "message": "frame mismatch default state_entry vs default touch_start",
+          "stack": "   at default touch_start(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 558\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstance.ResumeEx() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRScriptUThread.cs:line 85"
+        },
+        "checks": 0,
+        "state": {
+          "globals": {
+            "after": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            },
+            "count": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 8
+            },
+            "value": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            }
+          },
+          "event_code": "touch_start",
+          "call_mode": 2,
+          "sleep_until_ticks": 639312672065391558,
+          "object_description": "",
+          "event_arguments": [
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 7
+            }
+          ],
+          "state_index": 0,
+          "new_state_index": -1,
+          "initialize_globals": true,
+          "running": true,
+          "detectors": [
+            {
+              "key": "11111111-2222-3333-4444-555555555555",
+              "owner": "22222222-3333-4444-5555-666666666666",
+              "group": "33333333-4444-5555-6666-777777777777",
+              "name": "original rich detector 3",
+              "link_number": 5,
+              "type": 11,
+              "grab": [
+                3.125,
+                3.25,
+                3.5
+              ],
+              "position": [
+                13.00000003,
+                14.00000003,
+                15.00000003
+              ],
+              "rotation": [
+                0.125,
+                0.25,
+                0.5,
+                0.875
+              ],
+              "velocity": [
+                23.00000003,
+                24.00000003,
+                25.00000003
+              ],
+              "touch_st": [
+                4.00000003,
+                5.00000003,
+                6.00000003
+              ],
+              "touch_normal": [
+                7.00000003,
+                8.000000029999999,
+                9.000000029999999
+              ],
+              "touch_binormal": [
+                10.000000029999999,
+                11.000000029999999,
+                12.000000029999999
+              ],
+              "touch_pos": [
+                13.000000029999999,
+                14.000000029999999,
+                15.000000029999999
+              ],
+              "touch_uv": [
+                16.00000003,
+                17.00000003,
+                18.00000003
+              ],
+              "touch_face": 6
+            }
+          ],
+          "queue": [],
+          "frames": [
+            {
+              "function": "default state_entry",
+              "call_no": 0,
+              "slots": 2,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32"
+              ]
+            },
+            {
+              "function": "$globalvarinit()",
+              "call_no": 1,
+              "slots": 0,
+              "slot_types": []
+            },
+            {
+              "function": "init()",
+              "call_no": 0,
+              "slots": 1,
+              "slot_types": [
+                "System.Int32"
+              ]
+            },
+            {
+              "function": "default touch_start",
+              "call_no": 1,
+              "slots": 4,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32",
+                "System.Int32",
+                null
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "migrated_cycles": [
+      {
+        "cycle": 1,
+        "exception": {
+          "type": "System.Exception",
+          "message": "frame mismatch default state_entry vs default touch_start",
+          "stack": "   at default touch_start(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 558\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstance.ResumeEx() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRScriptUThread.cs:line 85"
+        },
+        "checks": 0,
+        "state": {
+          "globals": {
+            "after": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            },
+            "count": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 8
+            },
+            "value": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            }
+          },
+          "event_code": "touch_start",
+          "call_mode": 2,
+          "sleep_until_ticks": 0,
+          "object_description": "",
+          "event_arguments": [
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 7
+            }
+          ],
+          "state_index": 0,
+          "new_state_index": -1,
+          "initialize_globals": true,
+          "running": true,
+          "detectors": [],
+          "queue": [],
+          "frames": [
+            {
+              "function": "default state_entry",
+              "call_no": 0,
+              "slots": 2,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32"
+              ]
+            },
+            {
+              "function": "$globalvarinit()",
+              "call_no": 1,
+              "slots": 0,
+              "slot_types": []
+            },
+            {
+              "function": "init()",
+              "call_no": 0,
+              "slots": 1,
+              "slot_types": [
+                "System.Int32"
+              ]
+            },
+            {
+              "function": "default touch_start",
+              "call_no": 1,
+              "slots": 4,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32",
+                "System.Int32",
+                null
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "prefix_resume": null,
+    "live_resume_exception": {
+      "type": "System.Exception",
+      "message": "frame mismatch default state_entry vs default touch_start",
+      "stack": "   at default touch_start(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 558\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstance.ResumeEx() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRScriptUThread.cs:line 85"
+    },
+    "live_resume": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 8
+        },
+        "value": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      },
+      "event_code": "touch_start",
+      "call_mode": 2,
+      "sleep_until_ticks": 639312672065391558,
+      "object_description": "",
+      "event_arguments": [
+        {
+          "type": "integer",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+          "value": 7
+        }
+      ],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": true,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 0,
+          "slots": 2,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32"
+          ]
+        },
+        {
+          "function": "$globalvarinit()",
+          "call_no": 1,
+          "slots": 0,
+          "slot_types": []
+        },
+        {
+          "function": "init()",
+          "call_no": 0,
+          "slots": 1,
+          "slot_types": [
+            "System.Int32"
+          ]
+        },
+        {
+          "function": "default touch_start",
+          "call_no": 1,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        }
+      ]
+    },
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 8
+        },
+        "value": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      },
+      "event_code": "touch_start",
+      "call_mode": 1,
+      "sleep_until_ticks": 639312672065391558,
+      "object_description": "",
+      "event_arguments": [
+        {
+          "type": "integer",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+          "value": 7
+        }
+      ],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": true,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 0,
+          "slots": 2,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32"
+          ]
+        },
+        {
+          "function": "$globalvarinit()",
+          "call_no": 1,
+          "slots": 0,
+          "slot_types": []
+        },
+        {
+          "function": "init()",
+          "call_no": 0,
+          "slots": 1,
+          "slot_types": [
+            "System.Int32"
+          ]
+        },
+        {
+          "function": "default touch_start",
+          "call_no": 1,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        }
+      ]
+    },
+    "after_followup": null,
+    "after_load": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 8
+        },
+        "value": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      },
+      "event_code": "touch_start",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": [
+        {
+          "type": "integer",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+          "value": 7
+        }
+      ],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": true,
+      "running": true,
+      "detectors": [],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 0,
+          "slots": 2,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32"
+          ]
+        },
+        {
+          "function": "$globalvarinit()",
+          "call_no": 1,
+          "slots": 0,
+          "slot_types": []
+        },
+        {
+          "function": "init()",
+          "call_no": 0,
+          "slots": 1,
+          "slot_types": [
+            "System.Int32"
+          ]
+        },
+        {
+          "function": "default touch_start",
+          "call_no": 1,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        }
+      ]
+    },
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": {
+      "type": "System.Exception",
+      "message": "frame mismatch default state_entry vs default touch_start",
+      "stack": "   at default touch_start(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 558\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstance.ResumeEx() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRScriptUThread.cs:line 85"
+    },
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 8
+        },
+        "value": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      },
+      "event_code": "touch_start",
+      "call_mode": 2,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": [
+        {
+          "type": "integer",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+          "value": 7
+        }
+      ],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": true,
+      "running": true,
+      "detectors": [],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 0,
+          "slots": 2,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32"
+          ]
+        },
+        {
+          "function": "$globalvarinit()",
+          "call_no": 1,
+          "slots": 0,
+          "slot_types": []
+        },
+        {
+          "function": "init()",
+          "call_no": 0,
+          "slots": 1,
+          "slot_types": [
+            "System.Int32"
+          ]
+        },
+        {
+          "function": "default touch_start",
+          "call_no": 1,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        }
+      ]
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual unchanged CodeGen, base CheckRunWork, StartEx/ResumeEx and MigrateOut/In. A nonvirtual call delegates every generated CheckRunWork to the unchanged original implementation, including RESTORE; m_SliceStart is set from original Util.GetTimeStampMS before each source slice. Three bounded resume cycles model scheduler waking after each explicit sleep; no subsequent sleep requests are suppressed. Original generated frame capture and actual StackHibernateException are used. Real minimal Scene resources and original empty async plugins; no backend replacement.",
+    "sha256": {
+      "cache_key.txt": "59cbd8f40bb2d9805cd2df74a43f937801d6a4e28e137a73f318698810d761eb",
+      "event-queue.xml": "09030ac3a8d5dbaa452ef2076d8c8a18f45eb5608570c79b134fc4ffc843309e",
+      "live-cycle-1.bin": "cf06eacff2e7978176c636b243a7ffcb2e5f25b96e22d2c3de9a20d8bf3790a9",
+      "migrated-cycle-1.bin": "199683106bfd538cd70319053c5f464b09ba6735f11f64c4afc277333c0851c6",
+      "original.il.txt": "3b3fa6946fa095004049bb20d27395484fa550574207db75226f16e911e6b705",
+      "original.yobj": "f7d549ebe443a44cb27d96757e2c1fd6fcb0486f6f79de15a8275f14d38c3d31",
+      "snapshot.bin": "cf06eacff2e7978176c636b243a7ffcb2e5f25b96e22d2c3de9a20d8bf3790a9",
+      "source.lsl": "761f226e34d1bd5cd9439605fbf0e45ced8a460e2dc42d49d21baaab9f2060f6",
+      "generator_source": "95d8cd51244d1d258017919355f63f212fc85b4ade15bbe3152d919f08ac1752",
+      "generator_assembly": "3915d80946f53500c3bc2b5492ef6ab5f67e6dd1874d7c23cdb6e2cfdda44c8e",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "complex_function_api_prefix",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "2C6144BBB23DBFCB31F89C0343CCEE6E",
+    "compiled_version": -11,
+    "suspended": true,
+    "migrated": true,
+    "initial_exception": null,
+    "live_cycles": [
+      {
+        "cycle": 1,
+        "exception": null,
+        "checks": 3,
+        "state": {
+          "globals": {
+            "after": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            },
+            "count": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 7
+            }
+          },
+          "event_code": "touch_start",
+          "call_mode": 1,
+          "sleep_until_ticks": 639312672065453459,
+          "object_description": "prefix",
+          "event_arguments": [
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 7
+            }
+          ],
+          "state_index": 0,
+          "new_state_index": -1,
+          "initialize_globals": false,
+          "running": true,
+          "detectors": [
+            {
+              "key": "11111111-2222-3333-4444-555555555555",
+              "owner": "22222222-3333-4444-5555-666666666666",
+              "group": "33333333-4444-5555-6666-777777777777",
+              "name": "original rich detector 3",
+              "link_number": 5,
+              "type": 11,
+              "grab": [
+                3.125,
+                3.25,
+                3.5
+              ],
+              "position": [
+                13.00000003,
+                14.00000003,
+                15.00000003
+              ],
+              "rotation": [
+                0.125,
+                0.25,
+                0.5,
+                0.875
+              ],
+              "velocity": [
+                23.00000003,
+                24.00000003,
+                25.00000003
+              ],
+              "touch_st": [
+                4.00000003,
+                5.00000003,
+                6.00000003
+              ],
+              "touch_normal": [
+                7.00000003,
+                8.000000029999999,
+                9.000000029999999
+              ],
+              "touch_binormal": [
+                10.000000029999999,
+                11.000000029999999,
+                12.000000029999999
+              ],
+              "touch_pos": [
+                13.000000029999999,
+                14.000000029999999,
+                15.000000029999999
+              ],
+              "touch_uv": [
+                16.00000003,
+                17.00000003,
+                18.00000003
+              ],
+              "touch_face": 6
+            }
+          ],
+          "queue": [],
+          "frames": [
+            {
+              "function": "default state_entry",
+              "call_no": 1,
+              "slots": 2,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32"
+              ]
+            },
+            {
+              "function": "call()",
+              "call_no": 2,
+              "slots": 1,
+              "slot_types": [
+                "System.Int32"
+              ]
+            },
+            {
+              "function": "default touch_start",
+              "call_no": 1,
+              "slots": 4,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32",
+                "System.Int32",
+                null
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "cycle": 2,
+        "exception": {
+          "type": "System.Exception",
+          "message": "frame mismatch default state_entry vs default touch_start",
+          "stack": "   at default touch_start(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 558\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstance.ResumeEx() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRScriptUThread.cs:line 85"
+        },
+        "checks": 0,
+        "state": {
+          "globals": {
+            "after": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            },
+            "count": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 7
+            }
+          },
+          "event_code": "touch_start",
+          "call_mode": 2,
+          "sleep_until_ticks": 639312672065453459,
+          "object_description": "prefix",
+          "event_arguments": [
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 7
+            }
+          ],
+          "state_index": 0,
+          "new_state_index": -1,
+          "initialize_globals": false,
+          "running": true,
+          "detectors": [
+            {
+              "key": "11111111-2222-3333-4444-555555555555",
+              "owner": "22222222-3333-4444-5555-666666666666",
+              "group": "33333333-4444-5555-6666-777777777777",
+              "name": "original rich detector 3",
+              "link_number": 5,
+              "type": 11,
+              "grab": [
+                3.125,
+                3.25,
+                3.5
+              ],
+              "position": [
+                13.00000003,
+                14.00000003,
+                15.00000003
+              ],
+              "rotation": [
+                0.125,
+                0.25,
+                0.5,
+                0.875
+              ],
+              "velocity": [
+                23.00000003,
+                24.00000003,
+                25.00000003
+              ],
+              "touch_st": [
+                4.00000003,
+                5.00000003,
+                6.00000003
+              ],
+              "touch_normal": [
+                7.00000003,
+                8.000000029999999,
+                9.000000029999999
+              ],
+              "touch_binormal": [
+                10.000000029999999,
+                11.000000029999999,
+                12.000000029999999
+              ],
+              "touch_pos": [
+                13.000000029999999,
+                14.000000029999999,
+                15.000000029999999
+              ],
+              "touch_uv": [
+                16.00000003,
+                17.00000003,
+                18.00000003
+              ],
+              "touch_face": 6
+            }
+          ],
+          "queue": [],
+          "frames": [
+            {
+              "function": "default state_entry",
+              "call_no": 1,
+              "slots": 2,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32"
+              ]
+            },
+            {
+              "function": "call()",
+              "call_no": 2,
+              "slots": 1,
+              "slot_types": [
+                "System.Int32"
+              ]
+            },
+            {
+              "function": "default touch_start",
+              "call_no": 1,
+              "slots": 4,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32",
+                "System.Int32",
+                null
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "migrated_cycles": [
+      {
+        "cycle": 1,
+        "exception": null,
+        "checks": 3,
+        "state": {
+          "globals": {
+            "after": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            },
+            "count": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 7
+            }
+          },
+          "event_code": "touch_start",
+          "call_mode": 1,
+          "sleep_until_ticks": 639312672065456461,
+          "object_description": "",
+          "event_arguments": [
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 7
+            }
+          ],
+          "state_index": 0,
+          "new_state_index": -1,
+          "initialize_globals": false,
+          "running": true,
+          "detectors": [],
+          "queue": [],
+          "frames": [
+            {
+              "function": "default state_entry",
+              "call_no": 1,
+              "slots": 2,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32"
+              ]
+            },
+            {
+              "function": "call()",
+              "call_no": 2,
+              "slots": 1,
+              "slot_types": [
+                "System.Int32"
+              ]
+            },
+            {
+              "function": "default touch_start",
+              "call_no": 1,
+              "slots": 4,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32",
+                "System.Int32",
+                null
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "cycle": 2,
+        "exception": {
+          "type": "System.Exception",
+          "message": "frame mismatch default state_entry vs default touch_start",
+          "stack": "   at default touch_start(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 558\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstance.ResumeEx() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRScriptUThread.cs:line 85"
+        },
+        "checks": 0,
+        "state": {
+          "globals": {
+            "after": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            },
+            "count": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 7
+            }
+          },
+          "event_code": "touch_start",
+          "call_mode": 2,
+          "sleep_until_ticks": 639312672065456461,
+          "object_description": "",
+          "event_arguments": [
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 7
+            }
+          ],
+          "state_index": 0,
+          "new_state_index": -1,
+          "initialize_globals": false,
+          "running": true,
+          "detectors": [],
+          "queue": [],
+          "frames": [
+            {
+              "function": "default state_entry",
+              "call_no": 1,
+              "slots": 2,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32"
+              ]
+            },
+            {
+              "function": "call()",
+              "call_no": 2,
+              "slots": 1,
+              "slot_types": [
+                "System.Int32"
+              ]
+            },
+            {
+              "function": "default touch_start",
+              "call_no": 1,
+              "slots": 4,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32",
+                "System.Int32",
+                null
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "prefix_resume": null,
+    "live_resume_exception": {
+      "type": "System.Exception",
+      "message": "frame mismatch default state_entry vs default touch_start",
+      "stack": "   at default touch_start(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 558\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstance.ResumeEx() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRScriptUThread.cs:line 85"
+    },
+    "live_resume": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 7
+        }
+      },
+      "event_code": "touch_start",
+      "call_mode": 2,
+      "sleep_until_ticks": 639312672065453459,
+      "object_description": "prefix",
+      "event_arguments": [
+        {
+          "type": "integer",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+          "value": 7
+        }
+      ],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 1,
+          "slots": 2,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32"
+          ]
+        },
+        {
+          "function": "call()",
+          "call_no": 2,
+          "slots": 1,
+          "slot_types": [
+            "System.Int32"
+          ]
+        },
+        {
+          "function": "default touch_start",
+          "call_no": 1,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        }
+      ]
+    },
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      },
+      "event_code": "state_entry",
+      "call_mode": 1,
+      "sleep_until_ticks": 639312672055444881,
+      "object_description": "prefix",
+      "event_arguments": [],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 1,
+          "slots": 2,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32"
+          ]
+        },
+        {
+          "function": "call()",
+          "call_no": 2,
+          "slots": 1,
+          "slot_types": [
+            "System.Int32"
+          ]
+        }
+      ]
+    },
+    "after_followup": null,
+    "after_load": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      },
+      "event_code": "state_entry",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": [],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 1,
+          "slots": 2,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32"
+          ]
+        },
+        {
+          "function": "call()",
+          "call_no": 2,
+          "slots": 1,
+          "slot_types": [
+            "System.Int32"
+          ]
+        }
+      ]
+    },
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": {
+      "type": "System.Exception",
+      "message": "frame mismatch default state_entry vs default touch_start",
+      "stack": "   at default touch_start(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 558\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstance.ResumeEx() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRScriptUThread.cs:line 85"
+    },
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 7
+        }
+      },
+      "event_code": "touch_start",
+      "call_mode": 2,
+      "sleep_until_ticks": 639312672065456461,
+      "object_description": "",
+      "event_arguments": [
+        {
+          "type": "integer",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+          "value": 7
+        }
+      ],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 1,
+          "slots": 2,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32"
+          ]
+        },
+        {
+          "function": "call()",
+          "call_no": 2,
+          "slots": 1,
+          "slot_types": [
+            "System.Int32"
+          ]
+        },
+        {
+          "function": "default touch_start",
+          "call_no": 1,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        }
+      ]
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual unchanged CodeGen, base CheckRunWork, StartEx/ResumeEx and MigrateOut/In. A nonvirtual call delegates every generated CheckRunWork to the unchanged original implementation, including RESTORE; m_SliceStart is set from original Util.GetTimeStampMS before each source slice. Three bounded resume cycles model scheduler waking after each explicit sleep; no subsequent sleep requests are suppressed. Original generated frame capture and actual StackHibernateException are used. Real minimal Scene resources and original empty async plugins; no backend replacement.",
+    "sha256": {
+      "cache_key.txt": "3a15cccbb430c9ced1e939f33a8bc297d9f4b368df01d235a8e52b6e88e0b94e",
+      "event-queue.xml": "09030ac3a8d5dbaa452ef2076d8c8a18f45eb5608570c79b134fc4ffc843309e",
+      "live-cycle-1.bin": "a315b2eddc4d6836861ef3780d76e17f0376aa431ca2b1a27ef035f0efb1ee34",
+      "live-cycle-2.bin": "a315b2eddc4d6836861ef3780d76e17f0376aa431ca2b1a27ef035f0efb1ee34",
+      "migrated-cycle-1.bin": "a315b2eddc4d6836861ef3780d76e17f0376aa431ca2b1a27ef035f0efb1ee34",
+      "migrated-cycle-2.bin": "a315b2eddc4d6836861ef3780d76e17f0376aa431ca2b1a27ef035f0efb1ee34",
+      "original.il.txt": "084e0105e94fd918297776942c602dbc0daa98756d489808a0e393a509439065",
+      "original.yobj": "3348e6740933af96781c27a01b8205212505118783d28cf330459acb52bc5f88",
+      "snapshot.bin": "538ac183766de1d11f5446106a9d8832c3fcbc4ae33ad09719731e876c13a6a2",
+      "source.lsl": "a12c9662e81f4f4ac5c93be97dd1723b625e01be49d6d04e54fb744652474388",
+      "generator_source": "95d8cd51244d1d258017919355f63f212fc85b4ade15bbe3152d919f08ac1752",
+      "generator_assembly": "3915d80946f53500c3bc2b5492ef6ab5f67e6dd1874d7c23cdb6e2cfdda44c8e",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "process_handler_restart",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "55723287F756ED6B9E047EB950425F4C",
+    "compiled_version": -11,
+    "suspended": true,
+    "migrated": true,
+    "initial_exception": null,
+    "live_cycles": [
+      {
+        "cycle": 1,
+        "exception": {
+          "type": "System.Exception",
+          "message": "frame mismatch default state_entry vs default touch_start",
+          "stack": "   at default touch_start(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 558\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstance.ResumeEx() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRScriptUThread.cs:line 85"
+        },
+        "checks": 0,
+        "state": {
+          "globals": {
+            "after": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            },
+            "count": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 7
+            },
+            "entries": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 1
+            }
+          },
+          "event_code": "touch_start",
+          "call_mode": 2,
+          "sleep_until_ticks": 639312672085535920,
+          "object_description": "handler sleeping",
+          "event_arguments": [
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 7
+            }
+          ],
+          "state_index": 0,
+          "new_state_index": -1,
+          "initialize_globals": false,
+          "running": true,
+          "detectors": [
+            {
+              "key": "11111111-2222-3333-4444-555555555555",
+              "owner": "22222222-3333-4444-5555-666666666666",
+              "group": "33333333-4444-5555-6666-777777777777",
+              "name": "original rich detector 3",
+              "link_number": 5,
+              "type": 11,
+              "grab": [
+                3.125,
+                3.25,
+                3.5
+              ],
+              "position": [
+                13.00000003,
+                14.00000003,
+                15.00000003
+              ],
+              "rotation": [
+                0.125,
+                0.25,
+                0.5,
+                0.875
+              ],
+              "velocity": [
+                23.00000003,
+                24.00000003,
+                25.00000003
+              ],
+              "touch_st": [
+                4.00000003,
+                5.00000003,
+                6.00000003
+              ],
+              "touch_normal": [
+                7.00000003,
+                8.000000029999999,
+                9.000000029999999
+              ],
+              "touch_binormal": [
+                10.000000029999999,
+                11.000000029999999,
+                12.000000029999999
+              ],
+              "touch_pos": [
+                13.000000029999999,
+                14.000000029999999,
+                15.000000029999999
+              ],
+              "touch_uv": [
+                16.00000003,
+                17.00000003,
+                18.00000003
+              ],
+              "touch_face": 6
+            }
+          ],
+          "queue": [],
+          "frames": [
+            {
+              "function": "default state_entry",
+              "call_no": 0,
+              "slots": 2,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32"
+              ]
+            },
+            {
+              "function": "default touch_start",
+              "call_no": 3,
+              "slots": 4,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32",
+                "System.Int32",
+                null
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "migrated_cycles": [
+      {
+        "cycle": 1,
+        "exception": {
+          "type": "System.Exception",
+          "message": "frame mismatch default state_entry vs default touch_start",
+          "stack": "   at default touch_start(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 558\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstance.ResumeEx() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRScriptUThread.cs:line 85"
+        },
+        "checks": 0,
+        "state": {
+          "globals": {
+            "after": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            },
+            "count": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 7
+            },
+            "entries": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 1
+            }
+          },
+          "event_code": "touch_start",
+          "call_mode": 2,
+          "sleep_until_ticks": 0,
+          "object_description": "",
+          "event_arguments": [
+            {
+              "type": "integer",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+              "value": 7
+            }
+          ],
+          "state_index": 0,
+          "new_state_index": -1,
+          "initialize_globals": false,
+          "running": true,
+          "detectors": [],
+          "queue": [],
+          "frames": [
+            {
+              "function": "default state_entry",
+              "call_no": 0,
+              "slots": 2,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32"
+              ]
+            },
+            {
+              "function": "default touch_start",
+              "call_no": 3,
+              "slots": 4,
+              "slot_types": [
+                "EventHelpersInstance",
+                "System.Int32",
+                "System.Int32",
+                null
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "prefix_resume": null,
+    "live_resume_exception": {
+      "type": "System.Exception",
+      "message": "frame mismatch default state_entry vs default touch_start",
+      "stack": "   at default touch_start(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 558\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstance.ResumeEx() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRScriptUThread.cs:line 85"
+    },
+    "live_resume": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 7
+        },
+        "entries": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        }
+      },
+      "event_code": "touch_start",
+      "call_mode": 2,
+      "sleep_until_ticks": 639312672085535920,
+      "object_description": "handler sleeping",
+      "event_arguments": [
+        {
+          "type": "integer",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+          "value": 7
+        }
+      ],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 0,
+          "slots": 2,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32"
+          ]
+        },
+        {
+          "function": "default touch_start",
+          "call_no": 3,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        }
+      ]
+    },
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 7
+        },
+        "entries": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        }
+      },
+      "event_code": "touch_start",
+      "call_mode": 1,
+      "sleep_until_ticks": 639312672085535920,
+      "object_description": "handler sleeping",
+      "event_arguments": [
+        {
+          "type": "integer",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+          "value": 7
+        }
+      ],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 0,
+          "slots": 2,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32"
+          ]
+        },
+        {
+          "function": "default touch_start",
+          "call_no": 3,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        }
+      ]
+    },
+    "after_followup": null,
+    "after_load": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 7
+        },
+        "entries": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        }
+      },
+      "event_code": "touch_start",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": [
+        {
+          "type": "integer",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+          "value": 7
+        }
+      ],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 0,
+          "slots": 2,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32"
+          ]
+        },
+        {
+          "function": "default touch_start",
+          "call_no": 3,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        }
+      ]
+    },
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": {
+      "type": "System.Exception",
+      "message": "frame mismatch default state_entry vs default touch_start",
+      "stack": "   at default touch_start(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 558\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstance.ResumeEx() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRScriptUThread.cs:line 85"
+    },
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 7
+        },
+        "entries": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        }
+      },
+      "event_code": "touch_start",
+      "call_mode": 2,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": [
+        {
+          "type": "integer",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+          "value": 7
+        }
+      ],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 0,
+          "slots": 2,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32"
+          ]
+        },
+        {
+          "function": "default touch_start",
+          "call_no": 3,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        }
+      ]
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual unchanged CodeGen, base CheckRunWork, StartEx/ResumeEx and MigrateOut/In. A nonvirtual call delegates every generated CheckRunWork to the unchanged original implementation, including RESTORE; m_SliceStart is set from original Util.GetTimeStampMS before each source slice. Three bounded resume cycles model scheduler waking after each explicit sleep; no subsequent sleep requests are suppressed. Original generated frame capture and actual StackHibernateException are used. Real minimal Scene resources and original empty async plugins; no backend replacement.",
+    "sha256": {
+      "cache_key.txt": "b035cded962d26b9533b10990cb7a935995b8c6ecb25625ee8681c683c1810df",
+      "event-queue.xml": "09030ac3a8d5dbaa452ef2076d8c8a18f45eb5608570c79b134fc4ffc843309e",
+      "live-cycle-1.bin": "66534709ac4af83575102d493f79369db7a5a81a687b2d8f6aa5abf06d5a69ce",
+      "migrated-cycle-1.bin": "66534709ac4af83575102d493f79369db7a5a81a687b2d8f6aa5abf06d5a69ce",
+      "original.il.txt": "d1d61352374c4e69a27d2f96ed3b7cf344d6bd316337f1c60f0724a10f992915",
+      "original.yobj": "ee88a9bcce99fca38db37e933f97d4567c307c890a51f97d5c3032a2c2d26f91",
+      "snapshot.bin": "66534709ac4af83575102d493f79369db7a5a81a687b2d8f6aa5abf06d5a69ce",
+      "source.lsl": "e578f988b5b723c0c8d075db28a097952ad4c4b1248d58500447e37e6053de21",
+      "generator_source": "95d8cd51244d1d258017919355f63f212fc85b4ade15bbe3152d919f08ac1752",
+      "generator_assembly": "3915d80946f53500c3bc2b5492ef6ab5f67e6dd1874d7c23cdb6e2cfdda44c8e",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "process_simple_handler_restart",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "ADB8EA3308CE78156E1AB78BA4CD9638",
+    "compiled_version": -11,
+    "suspended": true,
+    "migrated": true,
+    "initial_exception": null,
+    "live_cycles": [
+      {
+        "cycle": 1,
+        "exception": null,
+        "checks": 2,
+        "state": {
+          "globals": {
+            "after": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            },
+            "count": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 107
+            },
+            "entries": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 1
+            }
+          },
+          "event_code": "None",
+          "call_mode": 0,
+          "sleep_until_ticks": 639312672085632100,
+          "object_description": "107:0:1",
+          "event_arguments": null,
+          "state_index": 0,
+          "new_state_index": -1,
+          "initialize_globals": false,
+          "running": true,
+          "detectors": [
+            {
+              "key": "11111111-2222-3333-4444-555555555555",
+              "owner": "22222222-3333-4444-5555-666666666666",
+              "group": "33333333-4444-5555-6666-777777777777",
+              "name": "original rich detector 3",
+              "link_number": 5,
+              "type": 11,
+              "grab": [
+                3.125,
+                3.25,
+                3.5
+              ],
+              "position": [
+                13.00000003,
+                14.00000003,
+                15.00000003
+              ],
+              "rotation": [
+                0.125,
+                0.25,
+                0.5,
+                0.875
+              ],
+              "velocity": [
+                23.00000003,
+                24.00000003,
+                25.00000003
+              ],
+              "touch_st": [
+                4.00000003,
+                5.00000003,
+                6.00000003
+              ],
+              "touch_normal": [
+                7.00000003,
+                8.000000029999999,
+                9.000000029999999
+              ],
+              "touch_binormal": [
+                10.000000029999999,
+                11.000000029999999,
+                12.000000029999999
+              ],
+              "touch_pos": [
+                13.000000029999999,
+                14.000000029999999,
+                15.000000029999999
+              ],
+              "touch_uv": [
+                16.00000003,
+                17.00000003,
+                18.00000003
+              ],
+              "touch_face": 6
+            }
+          ],
+          "queue": [],
+          "frames": []
+        }
+      }
+    ],
+    "migrated_cycles": [
+      {
+        "cycle": 1,
+        "exception": null,
+        "checks": 2,
+        "state": {
+          "globals": {
+            "after": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            },
+            "count": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 107
+            },
+            "entries": {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 1
+            }
+          },
+          "event_code": "None",
+          "call_mode": 0,
+          "sleep_until_ticks": 0,
+          "object_description": "107:0:1",
+          "event_arguments": null,
+          "state_index": 0,
+          "new_state_index": -1,
+          "initialize_globals": false,
+          "running": true,
+          "detectors": [],
+          "queue": [],
+          "frames": []
+        }
+      }
+    ],
+    "prefix_resume": null,
+    "live_resume_exception": null,
+    "live_resume": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 107
+        },
+        "entries": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 639312672085632100,
+      "object_description": "107:0:1",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 7
+        },
+        "entries": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        }
+      },
+      "event_code": "touch_start",
+      "call_mode": 1,
+      "sleep_until_ticks": 639312672085632100,
+      "object_description": "handler sleeping",
+      "event_arguments": [
+        {
+          "type": "integer",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+          "value": 7
+        }
+      ],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            0.125,
+            0.25,
+            0.5,
+            0.875
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default touch_start",
+          "call_no": 3,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        }
+      ]
+    },
+    "after_followup": null,
+    "after_load": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 7
+        },
+        "entries": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        }
+      },
+      "event_code": "touch_start",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": [
+        {
+          "type": "integer",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+          "value": 7
+        }
+      ],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default touch_start",
+          "call_no": 3,
+          "slots": 4,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32",
+            "System.Int32",
+            null
+          ]
+        }
+      ]
+    },
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "count": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 107
+        },
+        "entries": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        }
+      },
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "107:0:1",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual unchanged CodeGen, base CheckRunWork, StartEx/ResumeEx and MigrateOut/In. A nonvirtual call delegates every generated CheckRunWork to the unchanged original implementation, including RESTORE; m_SliceStart is set from original Util.GetTimeStampMS before each source slice. Three bounded resume cycles model scheduler waking after each explicit sleep; no subsequent sleep requests are suppressed. Original generated frame capture and actual StackHibernateException are used. Real minimal Scene resources and original empty async plugins; no backend replacement.",
+    "sha256": {
+      "cache_key.txt": "b7691d21944077c8dd3511564d24070b8eae4274ae15f41026a859246380c954",
+      "event-queue.xml": "09030ac3a8d5dbaa452ef2076d8c8a18f45eb5608570c79b134fc4ffc843309e",
+      "original.il.txt": "314b18cc46ea0e16860bdd2a23dda47a54257d8f7eda8292e5e906187249bce9",
+      "original.yobj": "3cbdfa57ed8f2d537da3d32d9b2afc2570315290dd3c7d001339d311060e952b",
+      "snapshot.bin": "4546d8328ba82f030d0a37b6cae60b5b44b9c6958bd5a6a97ec4c49b7d6fa240",
+      "source.lsl": "206dd0bce58f0d07f4e6b39f7b7f4ed6429c18bcf3ea3ec15a7f15e5b44a80f0",
+      "generator_source": "95d8cd51244d1d258017919355f63f212fc85b4ade15bbe3152d919f08ac1752",
+      "generator_assembly": "3915d80946f53500c3bc2b5492ef6ab5f67e6dd1874d7c23cdb6e2cfdda44c8e",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  }
+]

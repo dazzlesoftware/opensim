@@ -1,0 +1,1 @@
+string n;list result;integer after;default{state_entry(){n=llComputeHash("payload","unsupported");result=llListSort([n,n],1,TRUE);after=1;}}

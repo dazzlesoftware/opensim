@@ -8,19 +8,22 @@
 #include <limits>
 #include <string_view>
 #include <type_traits>
+
 namespace opensim::framework {
 InvariantNumberError::InvariantNumberError(Kind k, std::u16string text)
-    : runtime_error(utf8(text)), kind(k), message(std::move(text)) {
-}
+    : runtime_error(utf8(text)), kind(k), message(std::move(text)) {}
+
 namespace {
 bool space(char16_t c) {
     return c == u' ' || (c >= u'\t' && c <= u'\r');
 }
-[[noreturn]] void format(const std::u16string& value) {
+
+[[noreturn]] void format(const std::u16string &value) {
     throw InvariantNumberError(InvariantNumberError::Kind::Format,
                                u"The input string '" + value + u"' was not in a correct format.");
 }
-template <class T> T integer(const std::optional<std::u16string>& value) {
+
+template <class T> T integer(const std::optional<std::u16string> &value) {
     if (!value)
         return 0;
     std::u16string_view input = *value;
@@ -56,6 +59,7 @@ template <class T> T integer(const std::optional<std::u16string>& value) {
                                                   : u"Value was either too large or too small for an Int64.");
     return std::bit_cast<T>(negative ? U(0) - number : number);
 }
+
 bool equal_ascii(std::u16string_view value, std::u16string_view lower) {
     if (value.size() != lower.size())
         return false;
@@ -68,7 +72,8 @@ bool equal_ascii(std::u16string_view value, std::u16string_view lower) {
     }
     return true;
 }
-template <class T> T real(const std::optional<std::u16string>& value) {
+
+template <class T> T real(const std::optional<std::u16string> &value) {
     if (!value)
         return T(0);
     std::u16string_view input = *value;
@@ -141,9 +146,8 @@ template <class T> T real(const std::optional<std::u16string>& value) {
         auto parsed = std::from_chars(normalized.data(), normalized.data() + normalized.size(), result,
                                       std::chars_format::general);
         if (parsed.ec == std::errc::result_out_of_range) {
-            auto power =
-                exponent + static_cast<std::int64_t>(before) -
-                static_cast<std::int64_t>(first_nonzero == std::string::npos ? digits : first_nonzero) - 1;
+            auto power = exponent + static_cast<std::int64_t>(before) -
+                         static_cast<std::int64_t>(first_nonzero == std::string::npos ? digits : first_nonzero) - 1;
             result = power >= 0 ? std::numeric_limits<T>::infinity() : T(0);
         } else if (parsed.ec != std::errc{} || parsed.ptr != normalized.data() + normalized.size())
             format(*value);
@@ -171,17 +175,21 @@ template <class T> T real(const std::optional<std::u16string>& value) {
     }
     format(*value);
 }
-}
-std::int32_t invariant_convert_to_int32(const std::optional<std::u16string>& v) {
+} // namespace
+
+std::int32_t invariant_convert_to_int32(const std::optional<std::u16string> &v) {
     return integer<std::int32_t>(v);
 }
-std::int64_t invariant_convert_to_int64(const std::optional<std::u16string>& v) {
+
+std::int64_t invariant_convert_to_int64(const std::optional<std::u16string> &v) {
     return integer<std::int64_t>(v);
 }
-float invariant_convert_to_single(const std::optional<std::u16string>& v) {
+
+float invariant_convert_to_single(const std::optional<std::u16string> &v) {
     return real<float>(v);
 }
-double invariant_convert_to_double(const std::optional<std::u16string>& v) {
+
+double invariant_convert_to_double(const std::optional<std::u16string> &v) {
     return real<double>(v);
 }
-}
+} // namespace opensim::framework

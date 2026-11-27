@@ -33,25 +33,36 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <span>
 #include <string>
 #include <string_view>
+
 namespace opensim::framework {
 class Uuid {
-public:
+  public:
     Uuid() = default;
     explicit Uuid(std::string_view text);
     static Uuid from_bytes(std::span<const std::uint8_t> bytes);
     static Uuid random();
-    const std::array<std::uint8_t,16>& bytes() const noexcept { return bytes_; }
+
+    const std::array<std::uint8_t, 16> &bytes() const noexcept {
+        return bytes_;
+    }
+
     std::string str() const;
     bool is_zero() const noexcept;
-    auto operator<=>(const Uuid&) const = default;
-private:
-    std::array<std::uint8_t,16> bytes_{};
+    auto operator<=>(const Uuid &) const = default;
+
+  private:
+    std::array<std::uint8_t, 16> bytes_{};
 };
-struct UuidHash { std::size_t operator()(const Uuid& id) const noexcept; };
-bool try_parse_sdk_uuid(std::string_view text,Uuid& result);
+
+struct UuidHash {
+    std::size_t operator()(const Uuid &id) const noexcept;
+};
+
+bool try_parse_sdk_uuid(std::string_view text, Uuid &result);
 Uuid parse_sdk_uuid(std::string_view text);
+
 struct Vector3 {
     float x = 0, y = 0, z = 0;
-    bool operator==(const Vector3&) const = default;
+    bool operator==(const Vector3 &) const = default;
 };
-}
+} // namespace opensim::framework

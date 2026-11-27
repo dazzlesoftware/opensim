@@ -1,0 +1,32 @@
+{
+  "accepted": true,
+  "executed": true,
+  "globals": {
+    "calls": {
+      "type": "integer",
+      "clr": "System.Int32",
+      "value": 1
+    },
+    "result": {
+      "type": "integer",
+      "clr": "System.Int32",
+      "value": 17
+    }
+  },
+  "errors": [],
+  "exception": null,
+  "exceptionType": null,
+  "stackSize": 1000000,
+  "stackLimit": 1024,
+  "finalStackLeft": 1000000,
+  "stackSamples": [],
+  "name": "nested_break",
+  "source": "YOption advflowctl;YOption chars;integer result;integer calls;default{state_entry(){switch(1){case 1:switch(2){case 2:result=7;break;}result+=10;break;default:result=99;}calls=1;}}",
+  "sha256": {
+    "original.il.txt": "55173f536989f4457d2856e2f1994ee521a5f9dcd21199665842a60f48ec0d76",
+    "original.yobj": "c21eb92a1f6b3a3e7bf30c1084339114ecddb1507ca3c73de01816bd381c9fcb",
+    "source.lsl": "d69bebd2cf65d3ab55c86792ee082c7d22f86125bcd6365ea20ca76d57c030a0",
+    "source_hash.txt": "850b76d93b8cdc0b877bb781d0debc49ba8f25c63a1ff243f896ace2d1d39cec",
+    "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+  }
+}

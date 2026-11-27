@@ -11,20 +11,23 @@
 using namespace opensim;
 using namespace services;
 using Asset = FlotsamAssetEntries::Asset;
+
 namespace {
 std::string bits(double n) {
     return std::to_string(std::bit_cast<std::uint64_t>(n));
 }
-std::string show(const Asset& asset) {
+
+std::string show(const Asset &asset) {
     return asset ? asset->name().value_or("-") : "-";
 }
+
 Asset make(int n) {
-    auto asset =
-        std::make_shared<framework::AssetBase>(std::optional<std::string>("asset" + std::to_string(n)),
-                                               "asset" + std::to_string(n), std::int8_t(0), "creator");
+    auto asset = std::make_shared<framework::AssetBase>(std::optional<std::string>("asset" + std::to_string(n)),
+                                                        "asset" + std::to_string(n), std::int8_t(0), "creator");
     asset->data = std::make_shared<std::vector<std::uint8_t>>(1, static_cast<std::uint8_t>(n));
     return asset;
 }
+
 struct Probe {
     double now = 0, step = 0;
     std::unique_ptr<FlotsamKeyEntries> keys;
@@ -33,24 +36,27 @@ struct Probe {
     std::vector<std::unique_ptr<FlotsamAssetEntries>> retired_assets;
     std::map<int, Asset> held;
     std::map<int, std::weak_ptr<framework::AssetBase>> weak;
+
     double clock() {
         auto value = now;
         now += step;
         return value;
     }
+
     void pump() {
         if (keys)
             keys->pump();
         if (assets)
             assets->pump();
-        for (auto& value : retired_keys)
+        for (auto &value : retired_keys)
             value->pump();
-        for (auto& value : retired_assets)
+        for (auto &value : retired_assets)
             value->pump();
-        std::erase_if(retired_keys, [](auto& value) { return !value->next_due(); });
-        std::erase_if(retired_assets, [](auto& value) { return !value->next_due(); });
+        std::erase_if(retired_keys, [](auto &value) { return !value->next_due(); });
+        std::erase_if(retired_assets, [](auto &value) { return !value->next_due(); });
     }
-    std::string run(const std::string& line) {
+
+    std::string run(const std::string &line) {
         std::istringstream in(line);
         std::string op, result;
         in >> op;
@@ -69,8 +75,7 @@ struct Probe {
                 now = std::bit_cast<double>(std::stoull(initial, nullptr, 16));
                 step = std::bit_cast<double>(std::stoull(increment, nullptr, 16));
                 keys = std::make_unique<FlotsamKeyEntries>(key_check, [this] { return clock(); }, false);
-                assets =
-                    std::make_unique<FlotsamAssetEntries>(asset_check, [this] { return clock(); }, false);
+                assets = std::make_unique<FlotsamAssetEntries>(asset_check, [this] { return clock(); }, false);
                 step = 0;
                 held[999] = make(999);
                 result = "init";
@@ -153,26 +158,27 @@ struct Probe {
                 } else
                     throw std::runtime_error("Unknown entries operation");
             }
-        } catch (const FlotsamEntriesDisposed& e) {
+        } catch (const FlotsamEntriesDisposed &e) {
             result = std::string("EX:NullReferenceException:") + e.what() + ":OUT=" + show(out);
         }
-        auto due = [](const auto& value) {
+        auto due = [](const auto &value) {
             auto n = value->next_due();
             return n ? bits(*n) : "-";
         };
-        return result + "|" + std::to_string(keys->count()) + "," + std::to_string(assets->count()) + "|" +
-               due(keys) + "," + due(assets) + "|" + bits(keys->epoch()) + "," +
-               std::to_string(keys->check_period()) + "," + bits(assets->epoch()) + "," +
-               std::to_string(assets->check_period()) + "|" + bits(now);
+        return result + "|" + std::to_string(keys->count()) + "," + std::to_string(assets->count()) + "|" + due(keys) +
+               "," + due(assets) + "|" + bits(keys->epoch()) + "," + std::to_string(keys->check_period()) + "," +
+               bits(assets->epoch()) + "," + std::to_string(assets->check_period()) + "|" + bits(now);
     }
 };
-template <class F> void until(F condition, const char* message) {
+
+template <class F> void until(F condition, const char *message) {
     auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(6);
     while (!condition() && std::chrono::steady_clock::now() < deadline)
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
     if (!condition())
         throw std::runtime_error(message);
 }
+
 void real() {
     std::weak_ptr<framework::AssetBase> retained;
     {
@@ -199,7 +205,7 @@ void real() {
         try {
             entries.try_get("disposed", out);
             throw std::runtime_error("Disposed map lock did not fail");
-        } catch (const FlotsamEntriesDisposed&) {
+        } catch (const FlotsamEntriesDisposed &) {
             if (show(out) != "asset999")
                 throw std::runtime_error("Disposed get modified caller output");
         }
@@ -209,8 +215,9 @@ void real() {
     until([&] { return !keys.contains("native"); }, "Actual key timer failed to expire");
     keys.dispose();
 }
-}
-int main(int argc, char** argv) {
+} // namespace
+
+int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string_view(argv[1]) == "--retained") {
             real();
@@ -227,7 +234,7 @@ int main(int argc, char** argv) {
         real();
         std::cout << "PASS: actual expiring key/asset timers, armed-state ownership and disposed retention\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

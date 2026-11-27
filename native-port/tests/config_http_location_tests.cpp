@@ -6,6 +6,7 @@
 #include <iomanip>
 using namespace opensim::framework;
 using Text = ConfigUriText;
+
 Text dec(std::string s) {
     if (s == "~")
         return {};
@@ -15,6 +16,7 @@ Text dec(std::string s) {
             text += char16_t(std::stoul(s.substr(i, 4), nullptr, 16));
     return std::make_shared<const std::u16string>(std::move(text));
 }
+
 std::string hex(Text text) {
     if (!text)
         return "~";
@@ -26,36 +28,38 @@ std::string hex(Text text) {
         out << std::setw(4) << unsigned(c);
     return out.str();
 }
-std::string error(const ConfigUriComponentsError& e) {
+
+std::string error(const ConfigUriComponentsError &e) {
     std::ostringstream out;
     out << e.source_type << ':' << std::hex << e.hresult << ':'
         << hex(std::make_shared<const std::u16string>(e.message)) << ':'
         << hex(e.parameter ? std::make_shared<const std::u16string>(*e.parameter) : Text{});
     return out.str();
 }
+
 std::string snapshot(ConfigUriObjectPtr uri) {
     if (!uri)
         return "null";
     auto value = std::string(uri->is_absolute() ? "A/" : "R/") + hex(uri->original_string());
     if (uri->is_absolute()) {
-        for (auto getter :
-             {&ConfigUriObject::scheme, &ConfigUriObject::fragment, &ConfigUriObject::absolute_uri,
-              &ConfigUriObject::to_string, &ConfigUriObject::local_path})
+        for (auto getter : {&ConfigUriObject::scheme, &ConfigUriObject::fragment, &ConfigUriObject::absolute_uri,
+                            &ConfigUriObject::to_string, &ConfigUriObject::local_path})
             try {
                 value += "/" + hex((uri.get()->*getter)());
-            } catch (const ConfigUriComponentsError& e) {
+            } catch (const ConfigUriComponentsError &e) {
                 value += "/" + error(e);
             }
     } else
         value += "/" + hex(uri->to_string());
     return value;
 }
-int main(int argc, char**) {
+
+int main(int argc, char **) {
     auto backend = native_http_uri_object_backend();
     ConfigHttpLocationAdapter adapter(backend);
     if (argc == 1) {
-        auto base = backend.create(dec("0068007400740070003a002f002f0078002f006100230066"),
-                                   ConfigUriObjectKind::Absolute);
+        auto base =
+            backend.create(dec("0068007400740070003a002f002f0078002f006100230066"), ConfigUriObjectKind::Absolute);
         auto target = adapter.redirect(base, 302, {dec("002f0062")});
         if (!target || *target->absolute_uri() != u"http://x/b#f")
             return 1;
@@ -92,7 +96,7 @@ int main(int argc, char**) {
         bool required = false;
         try {
             ConfigHttpLocationAdapter bad({});
-        } catch (const std::invalid_argument&) {
+        } catch (const std::invalid_argument &) {
             required = true;
         }
         if (!required)
@@ -119,8 +123,7 @@ int main(int argc, char**) {
             if (mode == "T") {
                 int kind;
                 row >> a >> kind;
-                std::cout << snapshot(backend.try_create(dec(a), static_cast<ConfigUriObjectKind>(kind)))
-                          << '\n';
+                std::cout << snapshot(backend.try_create(dec(a), static_cast<ConfigUriObjectKind>(kind))) << '\n';
                 continue;
             }
             if (mode == "C") {
@@ -131,24 +134,24 @@ int main(int argc, char**) {
             }
             if (mode == "B") {
                 row >> a >> b;
-                std::cout << snapshot(backend.with_fragment(
-                                 backend.create(dec(a), ConfigUriObjectKind::Absolute), dec(b)))
+                std::cout << snapshot(
+                                 backend.with_fragment(backend.create(dec(a), ConfigUriObjectKind::Absolute), dec(b)))
                           << '\n';
                 continue;
             }
             if (mode == "O") {
                 row >> a >> b;
-                std::cout << snapshot(backend.combine_uri(
-                                 backend.create(dec(a), ConfigUriObjectKind::Absolute),
-                                 backend.create(dec(b), ConfigUriObjectKind::RelativeOrAbsolute)))
+                std::cout << snapshot(
+                                 backend.combine_uri(backend.create(dec(a), ConfigUriObjectKind::Absolute),
+                                                     backend.create(dec(b), ConfigUriObjectKind::RelativeOrAbsolute)))
                           << '\n';
                 continue;
             }
             if (mode == "R") {
                 int status;
                 row >> a >> status;
-                auto request = a == "~" ? ConfigUriObjectPtr{}
-                                        : backend.create(dec(a), ConfigUriObjectKind::RelativeOrAbsolute);
+                auto request =
+                    a == "~" ? ConfigUriObjectPtr{} : backend.create(dec(a), ConfigUriObjectKind::RelativeOrAbsolute);
                 std::vector<Text> values;
                 while (row >> b)
                     values.push_back(dec(b));
@@ -156,9 +159,9 @@ int main(int argc, char**) {
                 continue;
             }
             throw std::runtime_error("Unknown mode");
-        } catch (const ConfigUriComponentsError& e) {
+        } catch (const ConfigUriComponentsError &e) {
             std::cout << error(e) << '\n';
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
             std::cout << "NATIVE:" << e.what() << '\n';
         }
     }

@@ -3,9 +3,10 @@
 #include "opensim/framework/nini_xml_resolver.hpp"
 #include "opensim/framework/nini_xml_file_input.hpp"
 #include "opensim/framework/nini_xml_resolver_policy.hpp"
+
 namespace opensim::framework {
 ConfigUriObjectPtr native_nini_xml_resolve_uri(ConfigUriObjectPtr base, NiniWriterText relative,
-                                               const std::shared_ptr<ConfigUriObjectBackend>& backend) {
+                                               const std::shared_ptr<ConfigUriObjectBackend> &backend) {
     if (!backend || !backend->create || !backend->combine_string)
         throw std::invalid_argument("XML resolver requires complete typed System.Uri operations");
     if (!base || (!base->is_absolute() && base->original_string()->empty())) {
@@ -23,11 +24,11 @@ ConfigUriObjectPtr native_nini_xml_resolve_uri(ConfigUriObjectPtr base, NiniWrit
     if (!relative || relative->empty())
         return base;
     if (!base->is_absolute())
-        throw NiniXmlProviderError("System.NotSupportedException", 0x80131515,
-                                   u"Relative URIs are not supported.");
+        throw NiniXmlProviderError("System.NotSupportedException", 0x80131515, u"Relative URIs are not supported.");
     auto combine = backend->combine_string;
     return combine(std::move(base), std::move(relative));
 }
+
 namespace {
 class UrlResolver final : public NiniXmlUriReaderResolver {
     std::shared_ptr<ConfigUriObjectBackend> uri_;
@@ -36,10 +37,9 @@ class UrlResolver final : public NiniXmlUriReaderResolver {
 
   public:
     UrlResolver(std::shared_ptr<ConfigUriObjectBackend> u,
-                std::function<std::shared_ptr<NativeNiniXmlByteInput>(ConfigUriObjectPtr)> n,
-                std::optional<bool> l)
-        : uri_(std::move(u)), nonfile_(std::move(n)), locking_(l) {
-    }
+                std::function<std::shared_ptr<NativeNiniXmlByteInput>(ConfigUriObjectPtr)> n, std::optional<bool> l)
+        : uri_(std::move(u)), nonfile_(std::move(n)), locking_(l) {}
+
     std::shared_ptr<NiniXmlReaderUri> resolve_uri(NiniWriterText relative) override {
         auto object = native_nini_xml_resolve_uri({}, std::move(relative), uri_);
         auto result = std::make_shared<NiniXmlReaderUri>();
@@ -48,6 +48,7 @@ class UrlResolver final : public NiniXmlUriReaderResolver {
         result->to_string = [object] { return object->to_string(); };
         return result;
     }
+
     std::shared_ptr<NativeNiniXmlByteInput> get_entity(std::shared_ptr<NiniXmlReaderUri> uri) override {
         if (!uri || !uri->config_uri)
             throw std::invalid_argument("XML URL resolver requires its retained typed URI object");
@@ -58,11 +59,12 @@ class UrlResolver final : public NiniXmlUriReaderResolver {
         return download(std::move(object));
     }
 };
-}
-std::shared_ptr<NiniXmlUriReaderBackend> native_nini_xml_url_reader_backend(
-    std::shared_ptr<ConfigUriObjectBackend> uri,
-    std::function<std::shared_ptr<NativeNiniXmlByteInput>(ConfigUriObjectPtr)> entity,
-    std::optional<bool> locking) {
+} // namespace
+
+std::shared_ptr<NiniXmlUriReaderBackend>
+native_nini_xml_url_reader_backend(std::shared_ptr<ConfigUriObjectBackend> uri,
+                                   std::function<std::shared_ptr<NativeNiniXmlByteInput>(ConfigUriObjectPtr)> entity,
+                                   std::optional<bool> locking) {
     if (!uri || !uri->create || !uri->combine_string || !entity)
         throw std::invalid_argument("Native XML URL reader requires URI and non-file transport operations");
     auto result = std::make_shared<NiniXmlUriReaderBackend>();
@@ -79,8 +81,8 @@ class FileSystemResolver final : public NiniXmlUriReaderResolver {
 
   public:
     FileSystemResolver(std::shared_ptr<ConfigUriObjectBackend> u, std::optional<bool> l)
-        : uri_(std::move(u)), locking_(l) {
-    }
+        : uri_(std::move(u)), locking_(l) {}
+
     std::shared_ptr<NiniXmlReaderUri> resolve_uri(NiniWriterText relative) override {
         auto object = native_nini_xml_resolve_uri({}, std::move(relative), uri_);
         auto result = std::make_shared<NiniXmlReaderUri>();
@@ -89,6 +91,7 @@ class FileSystemResolver final : public NiniXmlUriReaderResolver {
         result->to_string = [object] { return object->to_string(); };
         return result;
     }
+
     std::shared_ptr<NativeNiniXmlByteInput> get_entity(std::shared_ptr<NiniXmlReaderUri> value) override {
         if (!value || !value->config_uri)
             throw std::invalid_argument("XML file resolver requires its typed URI");
@@ -101,11 +104,12 @@ class FileSystemResolver final : public NiniXmlUriReaderResolver {
         throw error;
     }
 };
-}
+} // namespace
+
 std::shared_ptr<NiniXmlUriReaderBackend> native_nini_xml_default_uri_reader_backend(
     std::shared_ptr<ConfigUriObjectBackend> uri, std::shared_ptr<NiniXmlResolverPolicy> policy,
-    std::function<std::shared_ptr<NativeNiniXmlByteInput>(ConfigUriObjectPtr)> entity,
-    std::optional<bool> locking, std::function<std::shared_ptr<NiniXmlUriReaderResolver>()> explicit_getter) {
+    std::function<std::shared_ptr<NativeNiniXmlByteInput>(ConfigUriObjectPtr)> entity, std::optional<bool> locking,
+    std::function<std::shared_ptr<NiniXmlUriReaderResolver>()> explicit_getter) {
     if (!policy)
         throw std::invalid_argument("Default XML resolver requires shared AppContext policy");
     auto url = native_nini_xml_url_reader_backend(uri, std::move(entity), locking);
@@ -124,4 +128,4 @@ std::shared_ptr<NiniXmlUriReaderBackend> native_nini_xml_default_uri_reader_back
     };
     return result;
 }
-}
+} // namespace opensim::framework

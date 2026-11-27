@@ -1,0 +1,26 @@
+{
+  "name": "raw_-2147483647",
+  "input": {
+    "clr": "System.Int32",
+    "value": -2147483647,
+    "bits": "80000001"
+  },
+  "append_exception": null,
+  "outer_xml_exception": null,
+  "load_xml_exception": null,
+  "restore_event_queue_exception": null,
+  "restored": {
+    "clr": "System.Int32",
+    "value": -2147483647,
+    "bits": "80000001"
+  },
+  "strict_xml_reader_control_exception": null,
+  "strict_xml_reader_control_restored": {
+    "clr": "System.Int32",
+    "value": -2147483647,
+    "bits": "80000001"
+  },
+  "sha256": {
+    "serialized.xml": "030e67e196025b2c0bf30899cc37e5f2c0f083cd4f92cf68dd9f6bc6a4bbdc39"
+  }
+}

@@ -3,36 +3,39 @@
 #include "opensim/server/poll_manager.hpp"
 #include <bit>
 #include <chrono>
+
 namespace opensim::server {
 namespace {
-template <class T> T& require(const std::shared_ptr<T>& value) {
+template <class T> T &require(const std::shared_ptr<T> &value) {
     if (!value)
         throw std::invalid_argument("Null poll manager dependency");
     return *value;
 }
-}
+} // namespace
+
 std::int32_t PollManagerBackend::tick_count() const {
-    const auto ticks = std::chrono::duration_cast<std::chrono::milliseconds>(
-                           std::chrono::steady_clock::now().time_since_epoch())
-                           .count();
+    const auto ticks =
+        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch())
+            .count();
     return std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(ticks));
 }
+
 PollServiceRequestManager::PollServiceRequestManager(bool, std::uint32_t workers, std::int32_t,
-                                                     PollManagerBackend& backend)
-    : backend_(backend), worker_count_(std::bit_cast<std::int32_t>(workers)) {
-}
+                                                     PollManagerBackend &backend)
+    : backend_(backend), worker_count_(std::bit_cast<std::int32_t>(workers)) {}
+
 PollServiceRequestManager::~PollServiceRequestManager() {
     try {
         stop();
     } catch (...) {
     }
-    for (const auto& watcher : watchers_)
+    for (const auto &watcher : watchers_)
         if (watcher)
             try {
                 watcher->join();
             } catch (...) {
             }
-    for (const auto& retired : retired_pools_)
+    for (const auto &retired : retired_pools_)
         if (retired)
             try {
                 retired->join();
@@ -46,31 +49,35 @@ PollServiceRequestManager::~PollServiceRequestManager() {
         } catch (...) {
         }
 }
+
 std::shared_ptr<PollJobEngine> PollServiceRequestManager::pool() const {
     return worker_pool_.load(std::memory_order_relaxed);
 }
+
 void PollServiceRequestManager::start() {
     if (running())
         return;
     running_.store(true, std::memory_order_relaxed);
-    worker_pool_.store(
-        backend_.make_pool([this](PollRequestPtr request) { pool_worker_job(std::move(request)); },
-                           "PollServiceWorker", 4000, worker_count_),
-        std::memory_order_relaxed);
+    worker_pool_.store(backend_.make_pool([this](PollRequestPtr request) { pool_worker_job(std::move(request)); },
+                                          "PollServiceWorker", 4000, worker_count_),
+                       std::memory_order_relaxed);
     // Retain watcher lifetimes without inserting a join into source Start/Stop.
     watchers_.push_back(backend_.start_watcher([this] { check_retries(); }));
 }
+
 void PollServiceRequestManager::enqueue(PollRequestPtr request) {
     if (running())
         require(pool()).enqueue(std::move(request));
 }
+
 void PollServiceRequestManager::requeue(PollRequestPtr request) {
     if (running()) {
         std::lock_guard lock(retry_mutex_);
         retries_.push_back(std::move(request));
     }
 }
-bool PollServiceRequestManager::take_retry(PollRequestPtr& request) {
+
+bool PollServiceRequestManager::take_retry(PollRequestPtr &request) {
     std::lock_guard lock(retry_mutex_);
     if (retries_.empty())
         return false;
@@ -78,10 +85,12 @@ bool PollServiceRequestManager::take_retry(PollRequestPtr& request) {
     retries_.pop_front();
     return true;
 }
+
 std::size_t PollServiceRequestManager::retry_count() const {
     std::lock_guard lock(retry_mutex_);
     return retries_.size();
 }
+
 void PollServiceRequestManager::check_retries() {
     while (running()) {
         backend_.sleep(100);
@@ -91,6 +100,7 @@ void PollServiceRequestManager::check_retries() {
             require(pool()).enqueue(std::move(request));
     }
 }
+
 void PollServiceRequestManager::stop() {
     if (!running())
         return;
@@ -110,13 +120,14 @@ void PollServiceRequestManager::stop() {
     retired_pools_.push_back(disposed);
     worker_pool_.store({}, std::memory_order_relaxed);
 }
+
 void PollServiceRequestManager::pool_worker_job(PollRequestPtr request) {
     if (!request)
         return;
     try {
         auto context = require(request->request).context();
         if (!require(context).can_send()) {
-            auto& args = require(request->poll_args);
+            auto &args = require(request->poll_args);
             auto callback = args.drop;
             const auto id = args.id;
             callback(request->request_id, id);
@@ -131,7 +142,7 @@ void PollServiceRequestManager::pool_worker_job(PollRequestPtr request) {
             requeue(request);
             return;
         }
-        auto& args = require(request->poll_args);
+        auto &args = require(request->poll_args);
         auto has = args.has_events;
         auto id = args.id;
         if (has(request->request_id, id)) {
@@ -143,9 +154,8 @@ void PollServiceRequestManager::pool_worker_job(PollRequestPtr request) {
             } catch (...) {
             }
         } else {
-            const auto elapsed =
-                std::bit_cast<std::int32_t>(std::bit_cast<std::uint32_t>(backend_.tick_count()) -
-                                            std::bit_cast<std::uint32_t>(request->request_time));
+            const auto elapsed = std::bit_cast<std::int32_t>(std::bit_cast<std::uint32_t>(backend_.tick_count()) -
+                                                             std::bit_cast<std::uint32_t>(request->request_time));
             if (elapsed > args.timeout_ms) {
                 try {
                     auto no = args.no_events;
@@ -156,8 +166,8 @@ void PollServiceRequestManager::pool_worker_job(PollRequestPtr request) {
             } else
                 requeue(request);
         }
-    } catch (const std::exception& error) {
+    } catch (const std::exception &error) {
         backend_.error(error);
     }
 }
-}
+} // namespace opensim::server

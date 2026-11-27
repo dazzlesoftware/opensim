@@ -3,21 +3,24 @@
 using namespace opensim;
 using namespace services;
 using namespace server;
-std::string hex(const std::string& s) {
+
+std::string hex(const std::string &s) {
     std::string out;
-    const char* h = "0123456789abcdef";
+    const char *h = "0123456789abcdef";
     for (unsigned char c : s) {
         out += h[c >> 4];
         out += h[c & 15];
     }
     return out;
 }
-std::string unhex(const std::string& s) {
+
+std::string unhex(const std::string &s) {
     std::string out;
     for (std::size_t i = 0; i < s.size(); i += 2)
         out += static_cast<char>(std::stoi(s.substr(i, 2), nullptr, 16));
     return out;
 }
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -46,26 +49,26 @@ int main() {
             trace += "get:" + id.str() + ";";
             return get(id);
         };
-        operations.get_string = [&](const std::string& id) {
+        operations.get_string = [&](const std::string &id) {
             trace += "string:" + hex(id) + ";";
             framework::Uuid uuid;
             framework::try_parse_sdk_uuid(id, uuid);
             return get(uuid);
         };
-        auto okay = [](const std::string& id) {
+        auto okay = [](const std::string &id) {
             if (id.ends_with('9'))
                 throw std::runtime_error("fixture");
             return !id.ends_with('8');
         };
-        operations.store = [&](const std::string& id, const std::string& f, std::int32_t flags) {
+        operations.store = [&](const std::string &id, const std::string &f, std::int32_t flags) {
             trace += "store:" + hex(id) + ":" + hex(f) + ":" + std::to_string(flags) + ";";
             return okay(id);
         };
-        operations.erase = [&](auto id, const std::string& f) {
+        operations.erase = [&](auto id, const std::string &f) {
             trace += "delete:" + id.str() + ":" + hex(f) + ";";
             return okay(id.str());
         };
-        operations.erase_string = [&](const std::string& id, const std::string& f) {
+        operations.erase_string = [&](const std::string &id, const std::string &f) {
             trace += "delete-string:" + hex(id) + ":" + hex(f) + ";";
             return okay(id);
         };

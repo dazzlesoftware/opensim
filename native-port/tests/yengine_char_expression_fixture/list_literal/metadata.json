@@ -1,0 +1,32 @@
+{
+  "accepted": true,
+  "executed": true,
+  "globals": {
+    "result": {
+      "type": "list",
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+list",
+      "entries": []
+    },
+    "value": {
+      "type": "char",
+      "clr": "System.Char",
+      "utf16": 65
+    }
+  },
+  "errors": [],
+  "exception": "Unknown type in List.Size: System.Char",
+  "exceptionType": "System.Exception",
+  "stackSize": 1000000,
+  "stackLimit": 1024,
+  "finalStackLeft": 1000000,
+  "stackSamples": [],
+  "name": "list_literal",
+  "source": "YOption chars;char value;list result;default{state_entry(){value='A';result=[value];}}",
+  "sha256": {
+    "original.il.txt": "98715bb52d795cb63201b3b1679b479903bf55b46ff527efd70bff3a8443731d",
+    "original.yobj": "ead545f6fb8c4697607fed2b3cfeb6f0f4d3fa56334e752269ad027540b9f22d",
+    "source.lsl": "4eda0e28124dca7d80171f9a2612fca942f46478a355c3635d0f6896e7a4fb14",
+    "source_hash.txt": "e8a1b145e9db95cb9a0d12da5abd804ccff1d220ae81cb47e6c4293742a29496",
+    "generator_source": "7673d801dbf8417561ec385e5286206a754c6c479cb723b7ca2535509236e6c4"
+  }
+}

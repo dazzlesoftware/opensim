@@ -7,19 +7,20 @@
 #include <stdexcept>
 #include <thread>
 using namespace opensim;
-void check(bool passed, const char* message) {
+
+void check(bool passed, const char *message) {
     if (!passed)
         throw std::runtime_error(message);
 }
+
 int main() {
     try {
         const auto url = [](std::u16string_view text) {
             return framework::ConfigUriComponents::absolute(std::make_shared<const std::u16string>(text),
-                framework::native_config_uri_components_backend());
+                                                            framework::native_config_uri_components_backend());
         };
         const framework::OutboundUrlFilter defaults;
-        check(!defaults.allows(*url(u"http://127.0.0.1:9000")) &&
-                  !defaults.allows(*url(u"http://[::1]")) &&
+        check(!defaults.allows(*url(u"http://127.0.0.1:9000")) && !defaults.allows(*url(u"http://[::1]")) &&
                   defaults.allows(*url(u"https://8.8.8.8")),
               "default script HTTP filter blocks loopback and IPv6-only destinations");
         check(defaults.allows(*url(u"http://0.0.0.0")) && defaults.allows(*url(u"http://[::]")),
@@ -27,27 +28,26 @@ int main() {
 
         unsigned invalid_entries = 0;
         using Addresses = std::vector<framework::HostResolver::Address>;
-        const auto lookup = [](const std::string& host) -> std::optional<Addresses> {
+        const auto lookup = [](const std::string &host) -> std::optional<Addresses> {
             if (host == "offline.test")
                 return std::nullopt;
-            const auto address = [](const char* value) {
+            const auto address = [](const char *value) {
                 return std::make_shared<framework::IpAddress>(*framework::IpAddress::parse(std::string(value)));
             };
             if (host == "mixed.test")
                 return Addresses{address("8.8.8.8"), address("127.0.0.2")};
             return Addresses{address("127.0.0.2")};
         };
-        const framework::OutboundUrlFilter filter("127.0.0.2/255.0.0.0|10.0.0.0/33", " exception.test:8080 ",
-            lookup, [&](std::string_view, bool network) { invalid_entries += network; });
+        const framework::OutboundUrlFilter filter("127.0.0.2/255.0.0.0|10.0.0.0/33", " exception.test:8080 ", lookup,
+                                                  [&](std::string_view, bool network) { invalid_entries += network; });
         check(invalid_entries == 1 && !filter.allows(*url(u"http://mixed.test")) &&
-                  filter.allows(*url(u"http://mixed.test:8080")) &&
-                  filter.allows(*url(u"http://offline.test")),
+                  filter.allows(*url(u"http://mixed.test:8080")) && filter.allows(*url(u"http://offline.test")),
               "every IPv4 answer must pass the filter, with port-specific exceptions and DNS failure fallback");
 
         auto address = std::make_shared<framework::IpAddress>(*framework::IpAddress::parse("2001:db8::1"));
         std::atomic<int> lookups = 0;
         auto resolver = std::make_shared<framework::HostResolver>(
-            [&](const auto&) -> std::optional<std::vector<framework::HostResolver::Address>> {
+            [&](const auto &) -> std::optional<std::vector<framework::HostResolver::Address>> {
                 ++lookups;
                 return std::vector<framework::HostResolver::Address>{address};
             });
@@ -62,14 +62,13 @@ int main() {
                         valid = false;
                 }
             });
-        for (auto& reader : readers)
+        for (auto &reader : readers)
             reader.join();
         check(valid && lookups == 1 && resolver->count() == 1,
               "concurrent positive lookups refresh the same cache entry");
         auto old_endpoint = resolver->endpoint(std::string("fixture"), 9001);
         address->scope_id(7);
-        check(old_endpoint->str() == "[2001:db8::1%7]:9001",
-              "existing endpoints observe shared IP scope changes");
+        check(old_endpoint->str() == "[2001:db8::1%7]:9001", "existing endpoints observe shared IP scope changes");
         resolver->clear();
         check(old_endpoint->address == address && resolver->count() == 0,
               "clearing cache retains held endpoint addresses");
@@ -94,7 +93,7 @@ int main() {
         bool threw = false;
         try {
             environment.external_endpoint(region);
-        } catch (const std::invalid_argument&) {
+        } catch (const std::invalid_argument &) {
             threw = true;
         }
         check(threw, "null internal region endpoint fails before DNS");
@@ -110,7 +109,7 @@ int main() {
               "active cache timer shuts down without waiting for its next sweep");
         std::cout << "PASS: native host resolution, cache concurrency and response binding\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what();
         return 1;
     }

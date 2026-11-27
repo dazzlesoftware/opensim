@@ -29,6 +29,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <algorithm>
 #include <bit>
 #include <stdexcept>
+
 namespace opensim::network {
 namespace {
 float read_float(std::span<const std::uint8_t> bytes, std::size_t offset) {
@@ -37,14 +38,15 @@ float read_float(std::span<const std::uint8_t> bytes, std::size_t offset) {
         bits |= static_cast<std::uint32_t>(bytes[offset + i]) << (8 * i);
     return std::bit_cast<float>(bits);
 }
-void write_float(std::vector<std::uint8_t>& bytes, std::size_t offset, float value) {
+
+void write_float(std::vector<std::uint8_t> &bytes, std::size_t offset, float value) {
     const auto bits = std::bit_cast<std::uint32_t>(value);
     for (int i = 0; i < 4; ++i)
         bytes[offset + i] = static_cast<std::uint8_t>(bits >> (8 * i));
 }
-}
-ClientPacketQueue::ClientPacketQueue(const ThrottleRates& rates, TokenBucket* parent,
-                                     TokenBucket::Clock clock)
+} // namespace
+
+ClientPacketQueue::ClientPacketQueue(const ThrottleRates &rates, TokenBucket *parent, TokenBucket::Clock clock)
     : max_rate_(static_cast<float>(rates.client_max_rate)), burst_time_(rates.burst_time),
       flow_(parent, max_rate_, max_rate_ * burst_time_, rates.adaptive_throttles_enabled, clock) {
     for (int i = 0; i < 7; ++i) {
@@ -52,7 +54,8 @@ ClientPacketQueue::ClientPacketQueue(const ThrottleRates& rates, TokenBucket* pa
         buckets_[i] = std::make_unique<TokenBucket>(&flow_, rate, rate * burst_time_, clock);
     }
 }
-bool ClientPacketQueue::enqueue(const Packet& packet) {
+
+bool ClientPacketQueue::enqueue(const Packet &packet) {
     if (closed_)
         return false;
     if (!packet)
@@ -63,8 +66,8 @@ bool ClientPacketQueue::enqueue(const Packet& packet) {
     queues_[category].push_back(packet);
     return true;
 }
-bool ClientPacketQueue::drain(const Send& send, const std::function<int()>& unacked_count,
-                              const Empty& empty) {
+
+bool ClientPacketQueue::drain(const Send &send, const std::function<int()> &unacked_count, const Empty &empty) {
     if (closed_)
         return false;
     bool sent = false;
@@ -104,23 +107,27 @@ bool ClientPacketQueue::drain(const Send& send, const std::function<int()>& unac
         empty(static_cast<ThrottleOutPacketTypeFlags>(empty_flags));
     return sent;
 }
+
 void ClientPacketQueue::clear() {
     closed_ = true;
-    for (auto& queue : queues_)
+    for (auto &queue : queues_)
         queue.clear();
-    for (auto& packet : next_)
+    for (auto &packet : next_)
         packet.reset();
 }
+
 std::size_t ClientPacketQueue::queued(ThrottleOutPacketType category) const {
     const auto index = static_cast<int>(category);
     return index >= 0 && index < 7 ? queues_[index].size() : 0;
 }
+
 std::size_t ClientPacketQueue::queued() const {
     std::size_t count = 0;
-    for (const auto& queue : queues_)
+    for (const auto &queue : queues_)
         count += queue.size();
     return count;
 }
+
 void ClientPacketQueue::set_throttles(std::span<const std::uint8_t> data, float factor) {
     if (data.size() < 28)
         throw std::out_of_range("Viewer throttles require seven little-endian floats");
@@ -132,7 +139,7 @@ void ClientPacketQueue::set_throttles(std::span<const std::uint8_t> data, float 
     }
     if (total > max_rate_) {
         scale = max_rate_ / total;
-        for (auto& rate : rates)
+        for (auto &rate : rates)
             rate *= scale;
     }
     // Preserve the source assignment order, including the asset category first.
@@ -141,6 +148,7 @@ void ClientPacketQueue::set_throttles(std::span<const std::uint8_t> data, float 
         buckets_[i]->requested_burst(rates[i] * burst_time_);
     }
 }
+
 std::vector<std::uint8_t> ClientPacketQueue::packed_throttles(float multiplier) const {
     std::vector<std::uint8_t> bytes(28);
     multiplier *= 8;
@@ -148,18 +156,21 @@ std::vector<std::uint8_t> ClientPacketQueue::packed_throttles(float multiplier) 
         write_float(bytes, i * 4, buckets_[i]->requested_drip_rate() * multiplier);
     return bytes;
 }
+
 int ClientPacketQueue::bytes_can_send(ThrottleOutPacketType category, int time_ms) const {
     const auto index = static_cast<int>(category);
     return index > 0 && index < 7 ? buckets_[index]->get_cat_bytes_can_send(time_ms) : 0;
 }
+
 void ClientPacketQueue::force_setting(int category, int setting, int mtu) {
     if (category > 0 && category < 7)
         buckets_[category]->requested_drip_rate(static_cast<float>(std::max(setting, mtu)));
 }
+
 int ClientPacketQueue::setting(int category) const {
     if (category <= 0 || category >= 7)
         return 0;
     const auto value = buckets_[category]->requested_drip_rate();
     return value >= -2147483648.f && value < 2147483648.f ? static_cast<int>(value) : (-2147483647 - 1);
 }
-}
+} // namespace opensim::network

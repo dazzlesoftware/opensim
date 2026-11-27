@@ -1,0 +1,120 @@
+{
+  "schemaVersion": 1,
+  "checkedAtUtc": "2026-11-26T23:28:28.241114+00:00",
+  "passed": true,
+  "fullParityVerified": false,
+  "scope": "Actual unchanged original PostEvent admission and production queue XML object writer/reader at List65537/100000 and raw/SDK String4194305, Windows/Linux x64",
+  "sourceCompiledOrDispatched": false,
+  "listArgumentTypedEventDispatchClaimed": false,
+  "methodology": "Queue event nodes follow XMRInstCapture production loop. Payload XML comes only from unchanged private AppendXMLObjectArray and AppendXMLDetectArray; unchanged RestoreEventQueue parses it. Python independently parses each XML item/value and hashes complete cell contents.",
+  "generatorSha256": "2132dc5e4fdcff23b6cd0ef5fa18238dccd5eedef094388e418ddebac3a70dd9",
+  "generatorAssemblySha256": "171a84d5971d4f50c4eb856ad9368f71ee0e30d9bac099da6679146337bbb2ea",
+  "platforms": {
+    "windows": {
+      "metadataSha256": "722c84a1f78ebf9d3c4c13e45dd7fee07dd25addb49641f66dd179a98f979e91",
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "processId": 63840,
+      "cases": [
+        {
+          "name": "list_65537",
+          "kind": "list",
+          "length": 65537,
+          "fullCellsSha256": "f8e00a8c88d9c8215dba987eae129e084da6afef2aa12afbb1adc7e00154e28e",
+          "xmlBytes": 5111972,
+          "xmlSha256": "ea161ca7a468cce7229b0b616fc2b6e4490f12062063b4af0fb33ec2fae51e6e",
+          "metadataSha256": "77c04e06701a542136c97d27c05bd48c460c34096b9da551aefb3dfa139802b8",
+          "postAcceptedWrittenRestored": true,
+          "originalClrTypePreserved": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+list"
+        },
+        {
+          "name": "list_100000",
+          "kind": "list",
+          "length": 100000,
+          "fullCellsSha256": "ea0d345c9fbcdb2528bbc7faebdfec6b31d64458ccd3e0291660659e9583bea4",
+          "xmlBytes": 7800086,
+          "xmlSha256": "ff3c801e81f54890b394a092e8470b26e56d71242b6001aafaea5f68cf4e1c85",
+          "metadataSha256": "9d6ce5548729ba734ee4456d7d36289575f4d00d8d2dc6fb4c8a0e461cf3a725",
+          "postAcceptedWrittenRestored": true,
+          "originalClrTypePreserved": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+list"
+        },
+        {
+          "name": "raw_string_4194305",
+          "kind": "string",
+          "length": 4194305,
+          "fullCellsSha256": "3d45c1d2e4d6088e46bc0f63a08eed151ec19b55588f7f6f954bffce040ee9ad",
+          "xmlBytes": 4194663,
+          "xmlSha256": "6c5f7d8d2f94d4686306efdcf86922db1c4304b9e147ee83ba500c0f9a8ad9a2",
+          "metadataSha256": "02722a464d7f0a57e5c814430d8742ddeec686e3d2473d44826bfc61aa76e3d6",
+          "postAcceptedWrittenRestored": true,
+          "originalClrTypePreserved": "System.String"
+        },
+        {
+          "name": "sdk_string_4194305",
+          "kind": "string",
+          "length": 4194305,
+          "fullCellsSha256": "3d45c1d2e4d6088e46bc0f63a08eed151ec19b55588f7f6f954bffce040ee9ad",
+          "xmlBytes": 4194704,
+          "xmlSha256": "186d56cd0d9409012fe92f9fda1ea981fad219e9132ab79af3e9c62f1d0e5878",
+          "metadataSha256": "819c1786914a39a3776e948840dac557cd3afe422b37c3aed5a965a502db18b2",
+          "postAcceptedWrittenRestored": true,
+          "originalClrTypePreserved": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+LSLString"
+        }
+      ]
+    },
+    "linux": {
+      "metadataSha256": "3f23255a673b8863d1badb34d30bd912b8cccd21ea3ab342b3375aa67f85dead",
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "processId": 1,
+      "cases": [
+        {
+          "name": "list_65537",
+          "kind": "list",
+          "length": 65537,
+          "fullCellsSha256": "f8e00a8c88d9c8215dba987eae129e084da6afef2aa12afbb1adc7e00154e28e",
+          "xmlBytes": 5111972,
+          "xmlSha256": "ea161ca7a468cce7229b0b616fc2b6e4490f12062063b4af0fb33ec2fae51e6e",
+          "metadataSha256": "6ae7ac93822576263293c4cb516aaa62641d618de3775465405e0a25c70659a6",
+          "postAcceptedWrittenRestored": true,
+          "originalClrTypePreserved": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+list"
+        },
+        {
+          "name": "list_100000",
+          "kind": "list",
+          "length": 100000,
+          "fullCellsSha256": "ea0d345c9fbcdb2528bbc7faebdfec6b31d64458ccd3e0291660659e9583bea4",
+          "xmlBytes": 7800086,
+          "xmlSha256": "ff3c801e81f54890b394a092e8470b26e56d71242b6001aafaea5f68cf4e1c85",
+          "metadataSha256": "8bed6d5feef1fef3ee14a31dee78dc6d6c498876a5db6a7f25edc38db8a4d2f4",
+          "postAcceptedWrittenRestored": true,
+          "originalClrTypePreserved": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+list"
+        },
+        {
+          "name": "raw_string_4194305",
+          "kind": "string",
+          "length": 4194305,
+          "fullCellsSha256": "3d45c1d2e4d6088e46bc0f63a08eed151ec19b55588f7f6f954bffce040ee9ad",
+          "xmlBytes": 4194663,
+          "xmlSha256": "6c5f7d8d2f94d4686306efdcf86922db1c4304b9e147ee83ba500c0f9a8ad9a2",
+          "metadataSha256": "477546552dd8cdee99acc5f6fe764d0510c8c1a361cf467e1f8df7297fd71c65",
+          "postAcceptedWrittenRestored": true,
+          "originalClrTypePreserved": "System.String"
+        },
+        {
+          "name": "sdk_string_4194305",
+          "kind": "string",
+          "length": 4194305,
+          "fullCellsSha256": "3d45c1d2e4d6088e46bc0f63a08eed151ec19b55588f7f6f954bffce040ee9ad",
+          "xmlBytes": 4194704,
+          "xmlSha256": "186d56cd0d9409012fe92f9fda1ea981fad219e9132ab79af3e9c62f1d0e5878",
+          "metadataSha256": "934afe8ec85b8c500598540b9b8284dadea9c0b14aa17c2afbdaea8fe28171c2",
+          "postAcceptedWrittenRestored": true,
+          "originalClrTypePreserved": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+LSLString"
+        }
+      ]
+    }
+  },
+  "crossPlatformXmlAndContentIdentical": true,
+  "verifierSha256": "821d8fcfd6936e3ed4c360fcec48423304b03dd846e1ebceb376001ef851661a"
+}

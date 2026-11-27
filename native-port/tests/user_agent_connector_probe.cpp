@@ -16,7 +16,8 @@
 using namespace opensim;
 using network::Value;
 using Text = std::optional<std::u16string>;
-std::string H(const Text& t) {
+
+std::string H(const Text &t) {
     if (!t)
         return "-";
     if (t->empty())
@@ -29,22 +30,23 @@ std::string H(const Text& t) {
         }
     return o;
 }
-Text D(const std::string& h) {
+
+Text D(const std::string &h) {
     if (h == "-")
         return {};
     if (h == ".")
         return u"";
     std::u16string o;
     for (std::size_t i = 0; i < h.size(); i += 4)
-        o += char16_t(std::stoi(h.substr(i, 2), nullptr, 16) |
-                      (std::stoi(h.substr(i + 2, 2), nullptr, 16) << 8));
+        o += char16_t(std::stoi(h.substr(i, 2), nullptr, 16) | (std::stoi(h.substr(i + 2, 2), nullptr, 16) << 8));
     return o;
 }
-std::string Dump(const Value* input) {
-    if (!input || (!input->reference &&
-                   (input->kind == Value::Kind::NullReference || input->kind == Value::Kind::Undefined)))
+
+std::string Dump(const Value *input) {
+    if (!input ||
+        (!input->reference && (input->kind == Value::Kind::NullReference || input->kind == Value::Kind::Undefined)))
         return "N";
-    auto& v = input->view();
+    auto &v = input->view();
     using K = Value::Kind;
     switch (v.kind) {
     case K::NullReference:
@@ -73,7 +75,7 @@ std::string Dump(const Value* input) {
     }
     case K::Array: {
         std::string out = "A[";
-        for (auto& x : v.array) {
+        for (auto &x : v.array) {
             if (out.back() != '[')
                 out += ',';
             out += Dump(&x);
@@ -82,10 +84,9 @@ std::string Dump(const Value* input) {
     }
     case K::Map: {
         auto keys = v.ordered_keys();
-        std::sort(keys.begin(), keys.end(),
-                  [](auto& a, auto& b) { return framework::utf16(a) < framework::utf16(b); });
+        std::sort(keys.begin(), keys.end(), [](auto &a, auto &b) { return framework::utf16(a) < framework::utf16(b); });
         std::string out = "M{";
-        for (auto& k : keys) {
+        for (auto &k : keys) {
             if (out.back() != '{')
                 out += ',';
             out += H(framework::utf16(k)) + "=" + Dump(&v.map.at(k));
@@ -96,29 +97,33 @@ std::string Dump(const Value* input) {
         return "X";
     }
 }
+
 struct Host {
     int mode = 0;
     Text xml;
     std::string fail;
     std::vector<std::u16string> events;
     std::shared_ptr<network::NwcXmlRpcResponse> response;
-    void hit(const std::u16string& t) {
+
+    void hit(const std::u16string &t) {
         events.push_back(t);
         if (framework::utf8(t.substr(0, t.find(u':'))) == fail)
             throw network::NwcXmlRpcError("System.InvalidOperationException", framework::utf16(fail));
     }
 };
+
 struct Client : network::XmlRpcRequesterClient {
-    Host& h;
-    Client(Host& x) : h(x) {
-    }
+    Host &h;
+
+    Client(Host &x) : h(x) {}
+
     void close() override {
         h.hit(u"close");
     }
-    std::shared_ptr<network::NwcXmlRpcResponse> send(const std::shared_ptr<network::NwcXmlRpcRequest>& r,
-                                                     const Text& url) override {
-        h.hit(framework::utf16("send:" + H(r->method_name) + ":" + H(url) + ":" +
-                               Dump(r->parameters->at(0).get())));
+
+    std::shared_ptr<network::NwcXmlRpcResponse> send(const std::shared_ptr<network::NwcXmlRpcRequest> &r,
+                                                     const Text &url) override {
+        h.hit(framework::utf16("send:" + H(r->method_name) + ":" + H(url) + ":" + Dump(r->parameters->at(0).get())));
         if (h.xml == Text(u"NULL"))
             return {};
         network::NwcXmlRpcResponseDeserializer parser;
@@ -130,51 +135,52 @@ struct Client : network::XmlRpcRequesterClient {
             if (p->kind == Value::Kind::Map) {
                 p->map_order = p->ordered_keys();
                 std::sort(p->map_order.begin(), p->map_order.end(),
-                          [](auto& a, auto& b) { return framework::utf16(a) < framework::utf16(b); });
+                          [](auto &a, auto &b) { return framework::utf16(a) < framework::utf16(b); });
             }
         }
         return h.response = reply;
     }
 };
+
 std::string Error() {
     try {
         throw;
-    } catch (const network::NwcXmlRpcError& e) {
+    } catch (const network::NwcXmlRpcError &e) {
         return e.source_type + ":" + H(e.message);
-    } catch (const framework::NiniXmlProviderError& e) {
+    } catch (const framework::NiniXmlProviderError &e) {
         return e.source_type + ":" + H(e.message);
-    } catch (const framework::ConfigUriComponentsError& e) {
+    } catch (const framework::ConfigUriComponentsError &e) {
         return e.source_type + ":" + H(e.message);
-    } catch (const framework::InvariantNumberError& e) {
-        return std::string(e.kind == framework::InvariantNumberError::Kind::Overflow
-                               ? "System.OverflowException"
-                               : "System.FormatException") +
+    } catch (const framework::InvariantNumberError &e) {
+        return std::string(e.kind == framework::InvariantNumberError::Kind::Overflow ? "System.OverflowException"
+                                                                                     : "System.FormatException") +
                ":" + H(e.message);
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         return "UNEXPECTED:" + std::string(e.what());
     }
 }
+
 std::string Vec(framework::Vector3 v) {
     std::ostringstream s;
-    s << std::hex << std::setfill('0') << std::setw(8) << std::bit_cast<std::uint32_t>(v.x) << ':'
-      << std::setw(8) << std::bit_cast<std::uint32_t>(v.y) << ':' << std::setw(8)
-      << std::bit_cast<std::uint32_t>(v.z);
+    s << std::hex << std::setfill('0') << std::setw(8) << std::bit_cast<std::uint32_t>(v.x) << ':' << std::setw(8)
+      << std::bit_cast<std::uint32_t>(v.y) << ':' << std::setw(8) << std::bit_cast<std::uint32_t>(v.z);
     return s.str();
 }
-std::string Region(const std::shared_ptr<services::GridRegion>& r) {
+
+std::string Region(const std::shared_ptr<services::GridRegion> &r) {
     if (!r)
         return "N";
-    auto text = [](const std::optional<std::string>& t) -> Text {
+    auto text = [](const std::optional<std::string> &t) -> Text {
         return t ? Text(framework::utf16_replacing(*t)) : Text{};
     };
-    return r->id.str() + ":" + std::to_string(r->x) + ":" + std::to_string(r->y) + ":" +
-           std::to_string(r->size_x) + ":" + std::to_string(r->size_y) + ":" + H(text(r->name)) + ":" +
-           H(text(r->external_host)) + ":" + std::to_string(r->http_port) + ":" + H(text(r->raw_server_uri)) +
-           ":" + H(framework::utf16_replacing(r->server_uri())) + ":" +
-           (r->internal_endpoint
-                ? r->internal_endpoint->address + ":" + std::to_string(r->internal_endpoint->port)
-                : "N");
+    return r->id.str() + ":" + std::to_string(r->x) + ":" + std::to_string(r->y) + ":" + std::to_string(r->size_x) +
+           ":" + std::to_string(r->size_y) + ":" + H(text(r->name)) + ":" + H(text(r->external_host)) + ":" +
+           std::to_string(r->http_port) + ":" + H(text(r->raw_server_uri)) + ":" +
+           H(framework::utf16_replacing(r->server_uri())) + ":" +
+           (r->internal_endpoint ? r->internal_endpoint->address + ":" + std::to_string(r->internal_endpoint->port)
+                                 : "N");
 }
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -191,11 +197,11 @@ int main() {
             h.hit(framework::utf16("factory:" + std::to_string(n)));
             return std::make_shared<Client>(h);
         };
-        s.debug = [&](const auto& t) { h.hit(u"debug:" + t); };
-        s.error = [&](const auto& t) { h.hit(u"error:" + t); };
-        s.warn = [&](const auto& t) { h.hit(u"warn:" + t); };
+        s.debug = [&](const auto &t) { h.hit(u"debug:" + t); };
+        s.error = [&](const auto &t) { h.hit(u"error:" + t); };
+        s.warn = [&](const auto &t) { h.hit(u"warn:" + t); };
         if (mode >= 13 && mode <= 15)
-            s.object_text = [&](const Value& v) -> Text {
+            s.object_text = [&](const Value &v) -> Text {
                 if (v.view().kind == Value::Kind::String) {
                     auto t = services::profile_boxed_object_text(v);
                     if (t == u"__throw__" || t == u"__null__") {
@@ -217,7 +223,7 @@ int main() {
             if (mode == 0) {
                 auto info = c->get_user_info(id);
                 bool same = true;
-                for (const auto& [k, v] : info.map)
+                for (const auto &[k, v] : info.map)
                     if (&v.view() != &h.response->value->view().map.at(k).view())
                         same = false;
                 result = Dump(&info) + (same ? ":True" : ":False");
@@ -257,13 +263,13 @@ int main() {
                     if (*f != u"empty")
                         *friends = {f, D(last)};
                 }
-                auto list = mode == 13 ? c->get_online_friends(id, friends)
-                                       : c->status_notification(friends, id, mode == 14);
+                auto list =
+                    mode == 13 ? c->get_online_friends(id, friends) : c->status_notification(friends, id, mode == 14);
                 std::vector<std::string> names;
-                for (auto& id : list)
+                for (auto &id : list)
                     names.push_back(id.str());
                 result = "F:";
-                for (auto& name : names) {
+                for (auto &name : names) {
                     if (result != "F:")
                         result += ',';
                     result += name;
@@ -274,12 +280,12 @@ int main() {
             result = "E:" + Error();
         }
         std::u16string events;
-        for (auto& t : h.events) {
+        for (auto &t : h.events) {
             if (!events.empty())
                 events += u'\n';
             events += t;
         }
-        std::cout << result << '|' << H(c ? c->server_url() : Text{}) << '|' << H(events) << '|' << H(reason)
-                  << '|' << Vec(position) << '|' << Vec(look) << '\n';
+        std::cout << result << '|' << H(c ? c->server_url() : Text{}) << '|' << H(events) << '|' << H(reason) << '|'
+                  << Vec(position) << '|' << Vec(look) << '\n';
     }
 }

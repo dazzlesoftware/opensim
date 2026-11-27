@@ -113,6 +113,12 @@ def main():
         'URI=invalid',
         'Data Source=$DB;Version=2',
         'Data Source=$DB;Pooling=bogus',
+        'Data Source=$DB;Pooling=True',
+        'Data Source=$DB;FailIfMissing=True',
+        'Data Source=$DB.missing;FailIfMissing=True',
+        'Data Source=$DB;Read Only=True',
+        'FullUri=file:$DB?mode=rw',
+        'FullUri=file:$DB?mode=ro',
         'Data Source=$DB;DATA SOURCE=$DB',
     ]:
         cases.append(

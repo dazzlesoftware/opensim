@@ -9,5 +9,5 @@
 namespace opensim::services {
 using PostgresConnection = std::unique_ptr<PGconn, decltype(&PQfinish)>;
 
-PostgresConnection connect_postgres(const std::string& connection);
-}
+PostgresConnection connect_postgres(const std::string &connection);
+} // namespace opensim::services

@@ -1,0 +1,1 @@
+key left=(key)"bad";vector right=<1,2,3>;default{state_entry(){left+=right;}}

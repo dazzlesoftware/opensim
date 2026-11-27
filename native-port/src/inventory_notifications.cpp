@@ -5,6 +5,7 @@
 #include "opensim/framework/text.hpp"
 #include <stdexcept>
 #include <algorithm>
+
 namespace opensim::scene {
 namespace {
 void uuid(std::string &out, std::string_view key, framework::Uuid value) {
@@ -13,10 +14,10 @@ void uuid(std::string &out, std::string_view key, framework::Uuid value) {
     out += "</key>";
     out += value.is_zero() ? "<uuid />" : "<uuid>" + value.str() + "</uuid>";
 }
-server::PollBytes removal(framework::Uuid agent, framework::Uuid session,
-                          const std::vector<framework::Uuid> *ids, bool folders) {
-    auto buffer =
-        services::EventQueueModule::start_event(folders ? "RemoveInventoryFolder" : "RemoveInventoryItem");
+
+server::PollBytes removal(framework::Uuid agent, framework::Uuid session, const std::vector<framework::Uuid> *ids,
+                          bool folders) {
+    auto buffer = services::EventQueueModule::start_event(folders ? "RemoveInventoryFolder" : "RemoveInventoryItem");
     auto &xml = buffer->text;
     xml += "<key>AgentData</key><array><map>";
     uuid(xml, "AgentID", agent);
@@ -34,6 +35,7 @@ server::PollBytes removal(framework::Uuid agent, framework::Uuid session,
     xml += "</array>";
     return services::EventQueueModule::end_event(buffer);
 }
+
 std::vector<std::uint8_t> bytes(std::string_view value) {
     framework::utf16(value);
     auto nul = value.find('\0');
@@ -49,15 +51,18 @@ std::vector<std::uint8_t> bytes(std::string_view value) {
     out.push_back(0);
     return out;
 }
-}
+} // namespace
+
 server::PollBytes remove_inventory_items_event(framework::Uuid agent, framework::Uuid session,
                                                const std::vector<framework::Uuid> *items) {
     return removal(agent, session, items, false);
 }
+
 server::PollBytes remove_inventory_folders_event(framework::Uuid agent, framework::Uuid session,
                                                  const std::vector<framework::Uuid> *folders) {
     return removal(agent, session, folders, true);
 }
+
 void send_remove_inventory_items(framework::Uuid agent, framework::Uuid session,
                                  const std::vector<framework::Uuid> *items,
                                  const InventoryNotificationBackend &backend) {
@@ -68,6 +73,7 @@ void send_remove_inventory_items(framework::Uuid agent, framework::Uuid session,
     }
     backend.enqueue(remove_inventory_items_event(agent, session, items), agent);
 }
+
 void send_remove_inventory_folders(framework::Uuid agent, framework::Uuid session,
                                    const std::vector<framework::Uuid> *folders,
                                    const InventoryNotificationBackend &backend) {
@@ -78,6 +84,7 @@ void send_remove_inventory_folders(framework::Uuid agent, framework::Uuid sessio
     }
     backend.enqueue(remove_inventory_folders_event(agent, session, folders), agent);
 }
+
 network::lludp::Packet agent_alert(framework::Uuid agent, const std::optional<std::string> &input, bool modal,
                                    AlertPrefix prefix) {
     if (!prefix)
@@ -86,8 +93,7 @@ network::lludp::Packet agent_alert(framework::Uuid agent, const std::optional<st
     if (!modal) {
         if (!message)
             throw std::invalid_argument("Null agent alert message");
-        if (!prefix(*message, "ALERT: ") && !prefix(*message, "NOTIFY: ") &&
-            *message != "Home position set." &&
+        if (!prefix(*message, "ALERT: ") && !prefix(*message, "NOTIFY: ") && *message != "Home position set." &&
             *message != "You died and have been teleported to your home location")
             message = "/" + *message;
     }
@@ -98,4 +104,4 @@ network::lludp::Packet agent_alert(framework::Uuid agent, const std::optional<st
     data["Message"] = bytes(message.value_or(""));
     return packet;
 }
-}
+} // namespace opensim::scene

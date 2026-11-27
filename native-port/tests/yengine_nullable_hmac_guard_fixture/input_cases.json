@@ -1,0 +1,32 @@
+[
+  {
+    "name": "empty_key_null_message",
+    "kind": "Source",
+    "source": "integer order;integer after;string result;string nil(){order=order*10+1;return llComputeHash(\"payload\",\"unsupported\");}default{state_entry(){result=llHMAC(\"\",nil(),\"sha256\");after=1;}}"
+  },
+  {
+    "name": "null_key_empty_message",
+    "kind": "Source",
+    "source": "integer order;integer after;string result;string nil(){order=order*10+1;return llComputeHash(\"payload\",\"unsupported\");}default{state_entry(){result=llHMAC(nil(),\"\",\"sha256\");after=1;}}"
+  },
+  {
+    "name": "nonempty_key_null_message",
+    "kind": "Source",
+    "source": "integer order;integer after;string result;string nil(){order=order*10+1;return llComputeHash(\"payload\",\"unsupported\");}default{state_entry(){result=llHMAC(\"key\",nil(),\"sha256\");after=1;}}"
+  },
+  {
+    "name": "empty_key_nonempty_message",
+    "kind": "Source",
+    "source": "integer order;integer after;string result;string nil(){order=order*10+1;return llComputeHash(\"payload\",\"unsupported\");}default{state_entry(){result=llHMAC(\"\",\"message\",\"sha256\");after=1;}}"
+  },
+  {
+    "name": "nonempty_key_empty_message",
+    "kind": "Source",
+    "source": "integer order;integer after;string result;string nil(){order=order*10+1;return llComputeHash(\"payload\",\"unsupported\");}default{state_entry(){result=llHMAC(\"key\",\"\",\"sha256\");after=1;}}"
+  },
+  {
+    "name": "both_null",
+    "kind": "Source",
+    "source": "integer order;integer after;string result;string nil(){order=order*10+1;return llComputeHash(\"payload\",\"unsupported\");}default{state_entry(){result=llHMAC(nil(),nil(),\"sha256\");after=1;}}"
+  }
+]

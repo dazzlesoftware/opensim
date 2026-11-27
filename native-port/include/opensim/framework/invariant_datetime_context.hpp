@@ -8,21 +8,25 @@
 #include <vector>
 #include <string>
 #include <stdexcept>
+
 namespace opensim::framework {
 class TimeZone;
 class TimeZoneDatabase;
+
 // Source TimeZoneInfo consumed rule model. Tick precision is intentional.
 struct InvariantTimeZoneTransition {
     std::int64_t time_of_day_ticks = 0;
     int month = 1, week = 1, day = 1, day_of_week = 0;
     bool fixed_date = true;
 };
+
 struct InvariantTimeZoneRule {
     AssetDateTime start, end;
     std::int64_t daylight_delta_ticks = 0, base_offset_delta_ticks = 0;
     InvariantTimeZoneTransition daylight_start, daylight_end;
     bool no_daylight_transitions = false;
 };
+
 class InvariantTimeZoneRules {
     struct State;
     std::shared_ptr<const State> state_;
@@ -33,10 +37,11 @@ class InvariantTimeZoneRules {
     bool utc_is_daylight(std::int64_t ticks) const;
     std::int64_t local_offset_no_throw(AssetDateTime) const;
     // Dedicated Windows DateTime.Now path evaluates first current-year rule using UTC year.
-    InvariantDateTimeParseContext::UtcOffset current_year_offset(
-        std::int64_t utc_ticks,
-        std::function<std::shared_ptr<const InvariantTimeZoneRules>()> historical_local) const;
+    InvariantDateTimeParseContext::UtcOffset
+    current_year_offset(std::int64_t utc_ticks,
+                        std::function<std::shared_ptr<const InvariantTimeZoneRules>()> historical_local) const;
 };
+
 struct NativeInvariantDateTimeContextOptions {
     bool globalization_invariant_mode = false;
     bool use_nls = false;
@@ -48,18 +53,23 @@ struct NativeInvariantDateTimeContextOptions {
     // host override bypasses its initialization and does not reset the latch.
     std::optional<bool> disable_file_locking = {};
 };
+
 class NativeDateTimeError : public std::out_of_range {
   public:
     std::optional<std::string> parameter;
+
     explicit NativeDateTimeError(std::string message, std::optional<std::string> name = {})
         : out_of_range(std::move(message)), parameter(std::move(name)) {}
-    const char* source_type() const noexcept {
+
+    const char *source_type() const noexcept {
         return "System.ArgumentOutOfRangeException";
     }
+
     std::uint32_t hresult() const noexcept {
         return 0x80131502u;
     }
 };
+
 // One owner models a source runtime's shared timezone/calendar caches. Share
 // its callbacks/copies across consumers; do not construct a fresh owner per parse.
 // Options are the source runtime configuration, supplied by the native host.
@@ -73,8 +83,7 @@ class NativeInvariantDateTimeContext {
     std::optional<std::u16string> legacy_iana_to_windows_raw(std::u16string_view) const;
     std::shared_ptr<TimeZone> cached_legacy_local(
         std::function<std::shared_ptr<TimeZone>(std::shared_ptr<const InvariantTimeZoneRules>)>) const;
-    std::shared_ptr<TimeZone> cached_legacy_named(std::string,
-                                                  std::function<std::shared_ptr<TimeZone>()>) const;
+    std::shared_ptr<TimeZone> cached_legacy_named(std::string, std::function<std::shared_ptr<TimeZone>()>) const;
     std::shared_ptr<TimeZone>
         cached_legacy_named_raw(std::u16string, std::function<std::shared_ptr<TimeZone>()>,
                                 std::function<bool(std::u16string_view, std::u16string_view)> = {},
@@ -94,6 +103,7 @@ class NativeInvariantDateTimeContext {
     std::int64_t to_file_time_utc(AssetDateTime) const;
     void clear_cached_time_zone_data();
 };
+
 // Shared default source-runtime owner. Constructed lazily without clock reads.
 std::shared_ptr<NativeInvariantDateTimeContext> shared_native_invariant_datetime_context();
-}
+} // namespace opensim::framework

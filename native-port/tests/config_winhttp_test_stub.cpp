@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <optional>
+
 struct Options {
     DWORD flags, detect;
     LPCWSTR config;
@@ -11,23 +12,27 @@ struct Options {
     DWORD reserved2;
     BOOL login;
 };
+
 struct Info {
     DWORD access;
     LPWSTR proxy, bypass;
 };
+
 struct Call {
     std::wstring url;
     std::optional<std::wstring> config;
     DWORD flags, detect;
     BOOL login;
 };
+
 static bool settings_ok = true, detect = false, open_ok = true;
 static int opens = 0, closes = 0;
 static std::optional<std::wstring> auto_url, manual, manual_bypass;
 static std::vector<Call> calls;
 static int sequence[3]{}, index = 0;
 static std::optional<std::wstring> proxy, bypass;
-static LPWSTR allocate(const std::optional<std::wstring>& text) {
+
+static LPWSTR allocate(const std::optional<std::wstring> &text) {
     if (!text)
         return nullptr;
     auto bytes = (text->size() + 1) * sizeof(wchar_t);
@@ -36,6 +41,7 @@ static LPWSTR allocate(const std::optional<std::wstring>& text) {
         CopyMemory(out, text->c_str(), bytes);
     return out;
 }
+
 extern "C" __declspec(dllexport) void WINAPI Configure(int a, int b, int c, LPCWSTR p, LPCWSTR q) {
     calls.clear();
     index = 0;
@@ -45,18 +51,20 @@ extern "C" __declspec(dllexport) void WINAPI Configure(int a, int b, int c, LPCW
     proxy = p ? std::optional<std::wstring>(p) : std::nullopt;
     bypass = q ? std::optional<std::wstring>(q) : std::nullopt;
 }
+
 extern "C" __declspec(dllexport) LPVOID WINAPI WinHttpOpen(LPCWSTR, DWORD, LPCWSTR, LPCWSTR, DWORD) {
     ++opens;
     return open_ok ? reinterpret_cast<LPVOID>(1) : nullptr;
 }
+
 extern "C" __declspec(dllexport) BOOL WINAPI WinHttpCloseHandle(LPVOID) {
     ++closes;
     return TRUE;
 }
-extern "C" __declspec(dllexport) BOOL WINAPI WinHttpGetProxyForUrl(LPVOID, LPCWSTR url, Options* options,
-                                                                   Info* info) {
-    calls.push_back({url, options->config ? std::optional<std::wstring>(options->config) : std::nullopt,
-                     options->flags, options->detect, options->login});
+
+extern "C" __declspec(dllexport) BOOL WINAPI WinHttpGetProxyForUrl(LPVOID, LPCWSTR url, Options *options, Info *info) {
+    calls.push_back({url, options->config ? std::optional<std::wstring>(options->config) : std::nullopt, options->flags,
+                     options->detect, options->login});
     int code = sequence[index < 3 ? index++ : 2];
     *info = {1, nullptr, nullptr};
     if (!code) {
@@ -67,14 +75,17 @@ extern "C" __declspec(dllexport) BOOL WINAPI WinHttpGetProxyForUrl(LPVOID, LPCWS
     SetLastError(code);
     return code == 0;
 }
+
 extern "C" __declspec(dllexport) int WINAPI CallCount() {
     return static_cast<int>(calls.size());
 }
+
 extern "C" __declspec(dllexport) unsigned WINAPI CallNumber(int i, int field) {
     return field == 0 ? calls.at(i).flags : field == 1 ? calls.at(i).detect : calls.at(i).login;
 }
+
 extern "C" __declspec(dllexport) LPCWSTR WINAPI CallText(int i, int field) {
-    auto& c = calls.at(i);
+    auto &c = calls.at(i);
     return field == 0 ? c.url.c_str() : c.config ? c.config->c_str() : nullptr;
 }
 
@@ -82,8 +93,9 @@ struct Settings {
     BOOL detect;
     LPWSTR url, proxy, bypass;
 };
-extern "C" __declspec(dllexport) void WINAPI ConfigureSettings(int success, int autodetect, LPCWSTR url,
-                                                               LPCWSTR proxy, LPCWSTR bypass, int valid) {
+
+extern "C" __declspec(dllexport) void WINAPI ConfigureSettings(int success, int autodetect, LPCWSTR url, LPCWSTR proxy,
+                                                               LPCWSTR bypass, int valid) {
     settings_ok = success != 0;
     detect = autodetect != 0;
     auto_url = url ? std::optional<std::wstring>(url) : std::nullopt;
@@ -92,7 +104,8 @@ extern "C" __declspec(dllexport) void WINAPI ConfigureSettings(int success, int 
     open_ok = valid != 0;
     opens = closes = 0;
 }
-extern "C" __declspec(dllexport) BOOL WINAPI WinHttpGetIEProxyConfigForCurrentUser(Settings* info) {
+
+extern "C" __declspec(dllexport) BOOL WINAPI WinHttpGetIEProxyConfigForCurrentUser(Settings *info) {
     *info = {};
     if (!settings_ok) {
         SetLastError(ERROR_ACCESS_DENIED);
@@ -104,9 +117,11 @@ extern "C" __declspec(dllexport) BOOL WINAPI WinHttpGetIEProxyConfigForCurrentUs
     info->bypass = allocate(manual_bypass);
     return TRUE;
 }
+
 extern "C" __declspec(dllexport) int WINAPI OpenCount() {
     return opens;
 }
+
 extern "C" __declspec(dllexport) int WINAPI CloseCount() {
     return closes;
 }

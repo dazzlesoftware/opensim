@@ -1,0 +1,1 @@
+float left=1.25;string right="a";list result;default{state_entry(){result=[left+right];}}

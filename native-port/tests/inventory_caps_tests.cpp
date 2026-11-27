@@ -7,11 +7,13 @@
 #include <bit>
 using namespace opensim;
 using namespace services;
+
 namespace {
 framework::Uuid id(int n) {
     std::string tail = std::to_string(n);
     return framework::Uuid("00000000-0000-0000-0000-" + std::string(12 - tail.size(), '0') + tail);
 }
+
 InventoryItem sample(int seed, framework::Uuid key) {
     InventoryItem item;
     item.id = key;
@@ -38,6 +40,7 @@ InventoryItem sample(int seed, framework::Uuid key) {
     item.creation_date = seed % 2 ? -seed : 0;
     return item;
 }
+
 std::string hex(std::string_view value) {
     static const char digits[] = "0123456789abcdef";
     std::string out;
@@ -47,6 +50,7 @@ std::string hex(std::string_view value) {
     }
     return out;
 }
+
 std::string probe(int seed, int count, int mode) {
     int calls = 0;
     std::string trace;
@@ -54,22 +58,20 @@ std::string probe(int seed, int count, int mode) {
     InventoryBadRequests bad([&] { return clock; });
     if (mode & 1)
         bad.add(id(2));
-    FetchInventory2Core core(
-        id(42), [&](auto owner, const auto &ids) -> std::optional<FetchInventory2Core::Items> {
-            ++calls;
-            trace = owner.str();
-            for (auto key : ids)
-                trace += "," + key.str();
-            if (mode & 4)
-                throw std::runtime_error("provider");
-            if (mode & 8)
-                return {};
-            FetchInventory2Core::Items out;
-            for (std::size_t i = 0; i < ids.size(); ++i)
-                out.push_back(ids[i].is_zero() || i % 3 == 2 ? std::nullopt
-                                                             : std::optional{sample(seed, ids[i])});
-            return out;
-        });
+    FetchInventory2Core core(id(42), [&](auto owner, const auto &ids) -> std::optional<FetchInventory2Core::Items> {
+        ++calls;
+        trace = owner.str();
+        for (auto key : ids)
+            trace += "," + key.str();
+        if (mode & 4)
+            throw std::runtime_error("provider");
+        if (mode & 8)
+            return {};
+        FetchInventory2Core::Items out;
+        for (std::size_t i = 0; i < ids.size(); ++i)
+            out.push_back(ids[i].is_zero() || i % 3 == 2 ? std::nullopt : std::optional{sample(seed, ids[i])});
+        return out;
+    });
     network::Value request = network::Value::object({});
     network::Value array;
     array.kind = network::Value::Kind::Array;
@@ -97,6 +99,7 @@ std::string probe(int seed, int count, int mode) {
     }
     return result + "|" + std::to_string(calls) + "|" + trace;
 }
+
 std::string unhex(const std::string &value) {
     if (value == "-")
         return {};
@@ -105,6 +108,7 @@ std::string unhex(const std::string &value) {
         out += static_cast<char>(std::stoi(value.substr(i, 2), nullptr, 16));
     return out;
 }
+
 std::string http_probe(const std::string &method, const std::string &content, const std::string &body) {
     int calls = 0;
     std::string trace;
@@ -116,8 +120,7 @@ std::string http_probe(const std::string &method, const std::string &content, co
                 trace += "," + key.str();
             FetchInventory2Core::Items out;
             for (std::size_t i = 0; i < ids.size(); ++i)
-                out.push_back(ids[i].is_zero() || i % 3 == 2 ? std::nullopt
-                                                             : std::optional{sample(0, ids[i])});
+                out.push_back(ids[i].is_zero() || i % 3 == 2 ? std::nullopt : std::optional{sample(0, ids[i])});
             return out;
         });
     auto bad = std::make_shared<InventoryBadRequests>([] { return 0; });
@@ -128,29 +131,31 @@ std::string http_probe(const std::string &method, const std::string &content, co
     request.body = body;
     auto response = route.handle(request);
     return std::to_string(response.status) + ":" + hex(response.body) + "|" +
-           std::to_string(route.requests_received.load()) + "|" +
-           std::to_string(route.requests_handled.load()) + "|" + std::to_string(calls) + "|" + trace;
+           std::to_string(route.requests_received.load()) + "|" + std::to_string(route.requests_handled.load()) + "|" +
+           std::to_string(calls) + "|" + trace;
 }
+
 int checks = 0;
+
 void check(bool value, const char *label) {
     ++checks;
     if (!value)
         throw std::runtime_error(label);
 }
+
 void run() {
     {
         int32_t clock = 0;
         std::string trace;
         {
-            InventoryBadRequests bad(
-                [&] { return clock; },
-                [&](auto event, int32_t delay) {
-                    trace += (event == InventoryBadRequests::TimerEvent::Arm     ? "A"
-                              : event == InventoryBadRequests::TimerEvent::Rearm ? "R"
-                                                                                 : "D");
-                    check(delay == (event == InventoryBadRequests::TimerEvent::Disarm ? 0 : 30000),
-                          "source timer delay");
-                });
+            InventoryBadRequests bad([&] { return clock; },
+                                     [&](auto event, int32_t delay) {
+                                         trace += (event == InventoryBadRequests::TimerEvent::Arm     ? "A"
+                                                   : event == InventoryBadRequests::TimerEvent::Rearm ? "R"
+                                                                                                      : "D");
+                                         check(delay == (event == InventoryBadRequests::TimerEvent::Disarm ? 0 : 30000),
+                                               "source timer delay");
+                                     });
             check(trace.empty(), "cache constructor does not arm timer");
             bad.add(id(1));
             bad.add(id(1));
@@ -197,8 +202,7 @@ void run() {
     check(probe(1, 3, 2) == "404:|0|", "missing negative-cache404 before parsing");
     check(probe(1, 3, 16) == "CAST|0|", "wrong items cast before provider");
     check(probe(1, 3, 32) == "CAST|0|", "wrong item cast before provider");
-    check(probe(1, 3, 1).ends_with(",00000000-0000-0000-0000-000000000000"),
-          "filtered slot preserved as zero tail");
+    check(probe(1, 3, 1).ends_with(",00000000-0000-0000-0000-000000000000"), "filtered slot preserved as zero tail");
     check(probe(1, 3, 4).starts_with("200:"), "provider exception swallowed");
     std::int32_t clock = 0;
     InventoryBadRequests bad([&] { return clock; });
@@ -217,11 +221,11 @@ void run() {
     bad.purge();
     check(bad.contains(id(2)), "nonpositive expiry permanent");
     auto xml = inventory_item_llsd(sample(1, id(1)), 255);
-    check(xml.find("<key>base_mask</key><integer>-1</integer>") != xml.npos,
-          "base mask uses current permissions");
+    check(xml.find("<key>base_mask</key><integer>-1</integer>") != xml.npos, "base mask uses current permissions");
     check(xml.find("<key>flags</key><integer>254</integer>") != xml.npos, "item flags masked to low byte");
 }
-}
+} // namespace
+
 int main(int argc, char **argv) {
     try {
         if (argc == 2 && std::string_view(argv[1]) == "--timer") {
@@ -231,14 +235,13 @@ int main(int argc, char **argv) {
                 std::int32_t clock = 0;
                 std::string trace, result;
                 {
-                    InventoryBadRequests bad(
-                        [&] { return clock; },
-                        [&](auto event, int32_t delay) {
-                            trace += (event == InventoryBadRequests::TimerEvent::Arm     ? "A:"
-                                      : event == InventoryBadRequests::TimerEvent::Rearm ? "R:"
-                                                                                         : "D:") +
-                                     std::to_string(delay) + ":" + std::to_string(clock) + ";";
-                        });
+                    InventoryBadRequests bad([&] { return clock; },
+                                             [&](auto event, int32_t delay) {
+                                                 trace += (event == InventoryBadRequests::TimerEvent::Arm     ? "A:"
+                                                           : event == InventoryBadRequests::TimerEvent::Rearm ? "R:"
+                                                                                                              : "D:") +
+                                                          std::to_string(delay) + ":" + std::to_string(clock) + ";";
+                                             });
                     clock = at;
                     bad.add(id(1), expire);
                     bad.add(id(1), expire);

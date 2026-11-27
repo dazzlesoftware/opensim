@@ -1,0 +1,1 @@
+YOption advflowctl;YOption chars;float value=2.0;integer result;integer calls;default{state_entry(){switch(value){case 2:result=7;break;default:result=9;}}}

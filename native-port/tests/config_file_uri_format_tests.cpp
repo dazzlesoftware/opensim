@@ -5,6 +5,7 @@
 #include <iostream>
 #include <sstream>
 using namespace opensim::framework;
+
 std::string encode(std::u16string_view s) {
     std::string out;
     for (auto c : s)
@@ -12,6 +13,7 @@ std::string encode(std::u16string_view s) {
             out += "0123456789abcdef"[(c >> b) & 15];
     return out;
 }
+
 int main() {
     auto unicode = native_config_uri_unicode_backend();
     std::string line;
@@ -41,7 +43,7 @@ int main() {
         try {
             auto result = config_file_uri_canonical_path(state, u"", format, true);
             std::cout << "S" << encode(result) << '\n';
-        } catch (const ConfigFileUriStateError& e) {
+        } catch (const ConfigFileUriStateError &e) {
             std::u16string message;
             for (auto c : std::string(e.what()))
                 message += c;

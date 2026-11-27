@@ -1,0 +1,1 @@
+YOption arrays;object input;integer result;object echo(){return 7;}default{state_entry(){input=echo();result=(integer)input;}}

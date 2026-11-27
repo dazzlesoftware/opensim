@@ -1,0 +1,1 @@
+YOption objects;vector input=ZERO_VECTOR;integer result;integer after;default{state_entry(){result=xmrHashCode((object)input);after=1;}}

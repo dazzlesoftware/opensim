@@ -7,22 +7,27 @@
 #include "opensim/framework/text.hpp"
 #include <cstdlib>
 using namespace opensim::framework;
+
 namespace {
 NiniWriterText t(std::u16string value) {
     return nini_writer_text(std::move(value));
 }
+
 struct Owned final : NiniConfigObject {
-    int& destroyed;
-    Owned(NiniConfigArena* a, int& n) : NiniConfigObject(a), destroyed(n) {
-    }
+    int &destroyed;
+
+    Owned(NiniConfigArena *a, int &n) : NiniConfigObject(a), destroyed(n) {}
+
     ~Owned() {
         ++destroyed;
     }
+
     NiniWriterText managed_type() const override {
         return t(u"Owned");
     }
 };
-std::string hex(const NiniWriterText& x) {
+
+std::string hex(const NiniWriterText &x) {
     if (!x)
         return "-";
     if (x->empty())
@@ -35,7 +40,8 @@ std::string hex(const NiniWriterText& x) {
         }
     return out;
 }
-NiniWriterText dec(const std::string& x) {
+
+NiniWriterText dec(const std::string &x) {
     if (x == "-")
         return {};
     std::u16string out;
@@ -45,7 +51,8 @@ NiniWriterText dec(const std::string& x) {
                                          (std::stoul(x.substr(i + 2, 2), nullptr, 16) << 8));
     return t(std::move(out));
 }
-std::vector<std::string> split(const std::string& x, char separator) {
+
+std::vector<std::string> split(const std::string &x, char separator) {
     std::vector<std::string> out;
     std::size_t start = 0;
     for (;;) {
@@ -56,6 +63,7 @@ std::vector<std::string> split(const std::string& x, char separator) {
         start = end + 1;
     }
 }
+
 std::string type(NiniWriterText x) {
     if (!x)
         return "-";
@@ -63,9 +71,9 @@ std::string type(NiniWriterText x) {
     auto text = x->substr(i == x->npos ? 0 : i + 1);
     return utf8(text);
 }
+
 struct Probe {
-    std::shared_ptr<NiniConfigArena> arena =
-        std::make_shared<NiniConfigArena>(native_nini_invariant_config_backend());
+    std::shared_ptr<NiniConfigArena> arena = std::make_shared<NiniConfigArena>(native_nini_invariant_config_backend());
     std::vector<std::shared_ptr<NiniConfigSourceBase>> masters;
     std::shared_ptr<NiniConfigSourceBase> current;
     std::shared_ptr<EnvironmentConfigBackend> backend;
@@ -73,28 +81,30 @@ struct Probe {
     int point = 0, nth = 1, hit = 0, mutation = 0;
     bool real = false;
     std::vector<std::string> trace;
+
     void event(int p, std::string text) {
         trace.push_back(std::move(text));
         if (point == p && ++hit == nth)
             throw NiniConfigError(NiniConfigError::Kind::Exception, u"fault");
     }
+
     void bind(std::shared_ptr<NiniConfigSourceBase> source) {
         auto id = masters.size();
         masters.push_back(source);
-        source->saved.add(100 + id, [this, id](auto&, auto) { event(5, "S:" + std::to_string(id)); });
-        source->configs()->config_removed.add(200 + id, [this, id](auto&, auto a) {
+        source->saved.add(100 + id, [this, id](auto &, auto) { event(5, "S:" + std::to_string(id)); });
+        source->configs()->config_removed.add(200 + id, [this, id](auto &, auto a) {
             event(6, "R:" + std::to_string(id) + ":" + hex(a->config->name()));
         });
-        source->configs()->config_added.add(300 + id, [this, id](auto&, auto a) {
+        source->configs()->config_added.add(300 + id, [this, id](auto &, auto a) {
             auto c = a->config;
             event(4, "A:" + std::to_string(id) + ":" + hex(c->name()) + ":" + type(c->managed_type()));
-            c->key_set.add(400 + id, [this, id](auto& c, auto a) {
-                event(3, "K:" + std::to_string(id) + ":" + hex(c.name()) + ":" + hex(a->key) + ":" +
-                             hex(a->value));
+            c->key_set.add(400 + id, [this, id](auto &c, auto a) {
+                event(3, "K:" + std::to_string(id) + ":" + hex(c.name()) + ":" + hex(a->key) + ":" + hex(a->value));
             });
         });
         current = source;
     }
+
     void mutate() {
         auto m = mutation;
         mutation = 0;
@@ -114,6 +124,7 @@ struct Probe {
         else if (m == 5)
             merge_environment_to_config(current, backend);
     }
+
     void setup(bool os) {
         real = os;
         if (real)
@@ -145,6 +156,7 @@ struct Probe {
         }
         bind(arena->create_source(t(u"ProbeSource")));
     }
+
     std::string snapshot() {
         std::string out = "";
         for (std::size_t i = 0; i < masters.size(); ++i) {
@@ -152,9 +164,9 @@ struct Probe {
             auto s = masters[i];
             for (int j = 0; j < s->configs()->count(); ++j) {
                 auto c = s->configs()->at(j);
-                out += hex(c->name()) + ":" + type(c->managed_type()) + ":" +
-                       type(c->config_source()->managed_type()) + "[";
-                for (auto& key : c->get_keys())
+                out += hex(c->name()) + ":" + type(c->managed_type()) + ":" + type(c->config_source()->managed_type()) +
+                       "[";
+                for (auto &key : c->get_keys())
                     out += hex(key) + "=" + hex(c->get(key)) + ";";
                 out += "]";
             }
@@ -167,13 +179,14 @@ struct Probe {
         }
         return out;
     }
-    std::string run(const std::string& row) {
+
+    std::string run(const std::string &row) {
         std::istringstream in(row);
         std::string mode, ops;
         in >> mode >> point >> nth >> mutation >> ops;
         setup(mode == "R");
         std::string output;
-        for (auto& token : split(ops, ',')) {
+        for (auto &token : split(ops, ',')) {
             auto a = split(token, ':');
             auto op = a[0];
             std::string result = op;
@@ -201,11 +214,9 @@ struct Probe {
                             dictionary.erase(*key);
                     }
                 } else if (op == "get")
-                    result =
-                        "V:" + hex(real ? native_environment_get(dec(a.at(1))) : backend->get(dec(a.at(1))));
+                    result = "V:" + hex(real ? native_environment_get(dec(a.at(1))) : backend->get(dec(a.at(1))));
                 else if (op == "emptyid") {
-                    auto first = native_environment_get(dec(a.at(1))),
-                         second = native_environment_get(dec(a.at(2)));
+                    auto first = native_environment_get(dec(a.at(1))), second = native_environment_get(dec(a.at(2)));
                     auto local = std::make_shared<EnvironmentConfigBackend>();
                     local->map = std::make_shared<EnvironmentMap>();
                     NiniWriterText fallback;
@@ -214,15 +225,14 @@ struct Probe {
                     auto auxiliary = arena->create_source();
                     auxiliary->configs()->add(t(u"Environment"))->add(t(u"CHECK_MISSING"), t(u"ignored"));
                     merge_environment_to_config(auxiliary, local);
-                    result = std::string("ID:") + (first && first->empty() && first == second &&
-                                                           first == fallback &&
+                    result = std::string("ID:") + (first && first->empty() && first == second && first == fallback &&
                                                            first == runtime_environment_empty_text() &&
                                                            first == native_environment_get(dec(a.at(1)))
                                                        ? "True"
                                                        : "False");
                 } else if (op == "rawbytes") {
 #ifndef _WIN32
-                    auto bytes = [](const std::string& x) {
+                    auto bytes = [](const std::string &x) {
                         std::string o;
                         for (std::size_t i = 0; i < x.size(); i += 2)
                             o += static_cast<char>(std::stoul(x.substr(i, 2), nullptr, 16));
@@ -261,8 +271,8 @@ struct Probe {
                     std::dynamic_pointer_cast<EnvironmentConfigSource>(c->config_source())
                         ->case_sensitive(a.at(1) == "1");
                 } else if (op == "cache")
-                    backend->map->append(dec(a.at(1)), std::make_shared<EnvironmentItem>(
-                                                           EnvironmentItem{dec(a.at(2)), dec(a.at(3))}));
+                    backend->map->append(
+                        dec(a.at(1)), std::make_shared<EnvironmentItem>(EnvironmentItem{dec(a.at(2)), dec(a.at(3))}));
                 else if (op == "cv")
                     backend->map->item(std::stoi(a.at(1)))->value = dec(a.at(2));
                 else if (op == "rm")
@@ -271,13 +281,12 @@ struct Probe {
                     mutation = std::stoi(a.at(1));
                 else
                     throw std::runtime_error("operation");
-            } catch (const NiniConfigError& e) {
+            } catch (const NiniConfigError &e) {
                 result = "EX:" + std::string(e.source_type()) + ":" + std::to_string(e.hresult()) + ":" +
                          hex(t(e.message)) + ":" + hex(e.parameter ? t(*e.parameter) : NiniWriterText{});
-            } catch (const EnvironmentConfigError& e) {
-                result = "EX:" + e.source_type + ":" +
-                         std::to_string(std::bit_cast<std::uint32_t>(e.hresult)) + ":" + hex(t(e.message)) +
-                         ":" + hex(e.parameter ? t(*e.parameter) : NiniWriterText{});
+            } catch (const EnvironmentConfigError &e) {
+                result = "EX:" + e.source_type + ":" + std::to_string(std::bit_cast<std::uint32_t>(e.hresult)) + ":" +
+                         hex(t(e.message)) + ":" + hex(e.parameter ? t(*e.parameter) : NiniWriterText{});
             }
             if (!output.empty())
                 output += '|';
@@ -307,7 +316,7 @@ std::string identity() {
     merge_environment_to_config(master, backend);
     try {
         merge_environment_to_config(master, backend);
-    } catch (const NiniConfigError&) {
+    } catch (const NiniConfigError &) {
     }
     if (defaults.size() != 3 || !defaults[0] || !defaults[0]->empty() || defaults[0] != defaults[1] ||
         defaults[0] != defaults[2] || defaults[0] != runtime_environment_empty_text())
@@ -320,6 +329,7 @@ std::string identity() {
         throw std::runtime_error("Compiled Environment literal identity must persist across LoadEnv");
     return "3:True";
 }
+
 void units() {
     identity();
     auto backend = native_nini_invariant_config_backend();
@@ -338,7 +348,7 @@ void units() {
     bool caught = false;
     try {
         arena->adopt(std::make_unique<Owned>(other.get(), destroyed));
-    } catch (const std::invalid_argument&) {
+    } catch (const std::invalid_argument &) {
         caught = true;
     }
     if (!caught || destroyed != 2)
@@ -363,7 +373,7 @@ void units() {
     caught = false;
     try {
         merge_environment_to_config(master, access);
-    } catch (const NiniConfigError& e) {
+    } catch (const NiniConfigError &e) {
         caught = e.kind == NiniConfigError::Kind::Argument;
     }
     if (!caught || gets != 2 || access->map->count() != 1)
@@ -401,8 +411,9 @@ void units() {
     if (*replacement->get(t(u"missing")) != u"new" || replacement->get(t(u"MISSING")))
         throw std::runtime_error("EnvConfig CaseSensitive changes Set only");
 }
-}
-int main(int argc, char** argv) {
+} // namespace
+
+int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string_view(argv[1]) == "--identity") {
             std::cout << identity() << '\n';
@@ -419,7 +430,7 @@ int main(int argc, char** argv) {
         units();
         std::cout << "PASS environment merge/arena ownership\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

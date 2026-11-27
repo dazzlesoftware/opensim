@@ -18,4 +18,4 @@ std::exception_ptr config_http_read_error(bool reading_headers, int native_error
                                                            std::move(error)));
     return error;
 }
-}
+} // namespace opensim::framework

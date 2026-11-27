@@ -1,0 +1,1 @@
+YOption chars;char value;integer result;char echo(char x){return x;}default{state_entry(){value=echo('A');result=(integer)value;}}

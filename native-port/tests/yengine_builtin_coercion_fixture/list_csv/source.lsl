@@ -1,0 +1,1 @@
+string result;integer after;default{state_entry(){result=llList2CSV(7);after=1;}}

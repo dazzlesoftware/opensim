@@ -7,9 +7,11 @@
 #include <vector>
 #include <stdexcept>
 using namespace opensim::framework;
+
 namespace opensim::framework::invariant_datetime_test {
 std::vector<std::tuple<std::u16string, int, int>> token_profile(bool);
 }
+
 namespace {
 std::string encode(std::u16string_view value) {
     std::string out;
@@ -20,7 +22,8 @@ std::string encode(std::u16string_view value) {
         }
     return out.empty() ? "." : out;
 }
-std::u16string decode(const std::string& text) {
+
+std::u16string decode(const std::string &text) {
     if (text == ".")
         return {};
     if (text.size() % 4)
@@ -31,13 +34,15 @@ std::u16string decode(const std::string& text) {
                                             (std::stoul(text.substr(i + 2, 2), nullptr, 16) << 8)));
     return out;
 }
-std::string request(const std::string& line) {
+
+std::string request(const std::string &line) {
     std::cout << "CTX " << line << '\n' << std::flush;
     std::string value;
     if (!std::getline(std::cin, value))
         throw std::runtime_error("Missing source context reply");
     return value;
 }
+
 void probe() {
     for (std::string line; std::getline(std::cin, line);) {
         try {
@@ -62,9 +67,8 @@ void probe() {
                 return out;
             };
             ctx.valid_leap_second = [](int y, int m, int d, int h, int minute) {
-                return request("LEAP " + std::to_string(y) + " " + std::to_string(m) + " " +
-                               std::to_string(d) + " " + std::to_string(h) + " " + std::to_string(minute)) ==
-                       "1";
+                return request("LEAP " + std::to_string(y) + " " + std::to_string(m) + " " + std::to_string(d) + " " +
+                               std::to_string(h) + " " + std::to_string(minute)) == "1";
             };
             AssetDateTime out;
             std::u16string units;
@@ -77,13 +81,14 @@ void probe() {
             std::cout << "R:" << (parsed ? 1 : 0) << '|' << out.ticks() << '|' << out.kind() << '|'
                       << out.serialized_data() << '\n'
                       << std::flush;
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
             std::cout << "EX:" << e.what() << '\n' << std::flush;
         }
     }
 }
-}
-int main(int argc, char** argv) {
+} // namespace
+
+int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string_view(argv[1]) == "--probe") {
             probe();
@@ -91,9 +96,9 @@ int main(int argc, char** argv) {
         }
         if (argc > 1 && std::string_view(argv[1]) == "--tokens") {
             int i = 0;
-            for (const auto& [text, type, value] : invariant_datetime_test::token_profile(false))
-                std::cout << "T|" << i++ << '|' << (text.empty() ? "~" : encode(text)) << '|' << type << '|'
-                          << value << '\n';
+            for (const auto &[text, type, value] : invariant_datetime_test::token_profile(false))
+                std::cout << "T|" << i++ << '|' << (text.empty() ? "~" : encode(text)) << '|' << type << '|' << value
+                          << '\n';
             return 0;
         }
         InvariantDateTimeParseContext ctx;
@@ -112,12 +117,11 @@ int main(int argc, char** argv) {
         if (try_parse_invariant_datetime(u"Monday, 02 Jan 2024", value, ctx) || value.ticks() != 0)
             throw std::runtime_error("Rejected weekday must reset output");
         ctx.valid_leap_second = [](auto, auto, auto, auto, auto) { return true; };
-        if (!try_parse_invariant_datetime(u"2016-12-31 23:59:60", value, ctx) ||
-            value.ticks() != 636188255999990000ll)
+        if (!try_parse_invariant_datetime(u"2016-12-31 23:59:60", value, ctx) || value.ticks() != 636188255999990000ll)
             throw std::runtime_error("Source supported leap-second normalization");
         std::cout << "PASS: invariant DateTime grammar smoke checks\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

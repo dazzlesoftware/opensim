@@ -1,0 +1,1 @@
+rotation q=<1,2,3,4>;rotation item;integer truth;integer negated;list boxed;default{state_entry(){item=q-q;truth=xmrRotationToBool(item);negated=!item;boxed=[item,xmrRotationToBool(item)];}}

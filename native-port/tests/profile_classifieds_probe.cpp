@@ -1,9 +1,11 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
 #include "profile_list_fixture.hpp"
+
 namespace {
 struct ClassifiedClient : Client {
     bool nested = false;
+
     void send_classifieds(Uuid target, std::shared_ptr<UserProfileNameList> value) override {
         trace += "classifieds:" + target.str() + ":" + DumpList(value) + ":" + Identity(value) + ";";
         saved = value;
@@ -22,9 +24,11 @@ struct ClassifiedClient : Client {
         }
         Fail(16384, "classifieds");
     }
+
     std::shared_ptr<ClassifiedClient> shared_self;
 };
-std::string ClassifiedState(UserProfileRequests& m, Uuid a) {
+
+std::string ClassifiedState(UserProfileRequests &m, Uuid a) {
     auto snapshot = [&](Uuid id) {
         std::shared_ptr<UserProfileCacheEntry> e;
         m.profile_cache().try_get_value(id, e);
@@ -33,19 +37,20 @@ std::string ClassifiedState(UserProfileRequests& m, Uuid a) {
         return before + ":" + Identity(list) + ":" + DumpList(list);
     };
     std::string first = snapshot(a), second = snapshot(Id(2)), owners, interests;
-    for (const auto& p : m.classified_owners()) {
+    for (const auto &p : m.classified_owners()) {
         if (!owners.empty())
             owners += ',';
         owners += p.first.str() + "=" + p.second.str();
     }
-    for (const auto& p : m.classified_interests()) {
+    for (const auto &p : m.classified_interests()) {
         if (!interests.empty())
             interests += ',';
         interests += p.first.str() + "=" + std::to_string(p.second);
     }
     return first + ";" + second + ";" + owners + ";" + interests;
 }
-}
+} // namespace
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -141,7 +146,7 @@ int main() {
                     }
                     m.profile_cache().add_or_update(target, e, 300.0);
                 }
-            } catch (const std::exception& e) {
+            } catch (const std::exception &e) {
                 result = "EX:" + H(e.what());
             }
             if (!output.empty())

@@ -1,0 +1,1 @@
+integer result;integer count;integer mark(){count+=10;return 3;}integer input(){count++;return -7;}integer inner(){return llAbs(input())+mark();}integer outer(){return inner()+1;}default{state_entry(){result=outer();}}

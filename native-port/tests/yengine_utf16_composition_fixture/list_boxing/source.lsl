@@ -1,0 +1,1 @@
+YOption chars;string h;string l;string text;list items;integer result;default{state_entry(){h=llGetSubString("😀",0,0);l=llGetSubString("😀",1,1);items=[h,l];text=llList2String(items,0);result=llStringLength(text);}}

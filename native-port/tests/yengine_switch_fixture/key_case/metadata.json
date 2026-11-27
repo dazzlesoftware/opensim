@@ -1,0 +1,32 @@
+{
+  "accepted": true,
+  "executed": true,
+  "globals": {
+    "calls": {
+      "type": "integer",
+      "clr": "System.Int32",
+      "value": 0
+    },
+    "result": {
+      "type": "integer",
+      "clr": "System.Int32",
+      "value": 7
+    }
+  },
+  "errors": [],
+  "exception": null,
+  "exceptionType": null,
+  "stackSize": 1000000,
+  "stackLimit": 1024,
+  "finalStackLeft": 1000000,
+  "stackSamples": [],
+  "name": "key_case",
+  "source": "YOption advflowctl;YOption chars;integer result;integer calls;default{state_entry(){switch(\"b\"){case (key)\"b\":result=7;break;}}}",
+  "sha256": {
+    "original.il.txt": "83c453f5fda07831cb59beabcdb4b367447208e0e43eb3b8a60864717afe7545",
+    "original.yobj": "c4d62b1ba2fe51b51b03da2b3a2b6a39175df47299f67376d0f04c02ba611366",
+    "source.lsl": "fdd63ae5a413d6ae52dd25f9838576f0ed0c26e883d49c5f7277697c9dc61dfc",
+    "source_hash.txt": "e04bf15f23dd21671db08b6b07a65ae6bfd4d57e581f1d49f4f12f8cd8982758",
+    "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+  }
+}

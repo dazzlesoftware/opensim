@@ -3,26 +3,29 @@
 #include <sstream>
 using namespace opensim;
 using namespace services;
+
 framework::Uuid id(int n) {
-    return framework::Uuid(n == 1 ? "00000000-0000-0000-0000-000000000001"
-                                  : "00000000-0000-0000-0000-000000000002");
+    return framework::Uuid(n == 1 ? "00000000-0000-0000-0000-000000000001" : "00000000-0000-0000-0000-000000000002");
 }
-std::string hex(const std::optional<std::string>& s) {
+
+std::string hex(const std::optional<std::string> &s) {
     if (!s)
         return "-";
     std::string out;
-    const char* h = "0123456789abcdef";
+    const char *h = "0123456789abcdef";
     for (unsigned char c : *s) {
         out += h[c >> 4];
         out += h[c & 15];
     }
     return out.empty() ? "." : out;
 }
+
 struct Store : FriendsStore {
     int seed;
     std::string trace;
-    explicit Store(int s) : seed(s) {
-    }
+
+    explicit Store(int s) : seed(s) {}
+
     std::vector<std::shared_ptr<FriendsData>> rows() {
         int kind = seed % 12;
         if (kind == 1)
@@ -32,47 +35,50 @@ struct Store : FriendsStore {
         if (kind == 3)
             return {nullptr};
         auto row = std::make_shared<FriendsData>();
-        row->principal =
-            kind == 4 ? std::nullopt : std::optional<std::string>(kind == 5 ? "bad" : id(1).str());
+        row->principal = kind == 4 ? std::nullopt : std::optional<std::string>(kind == 5 ? "bad" : id(1).str());
         row->friend_id =
             kind == 6 ? std::nullopt : std::optional<std::string>(id(2).str() + ";https://grid/;Friend Name");
         if (kind != 7) {
             row->data = std::make_shared<FriendsData::Fields>();
             if (kind != 8)
-                (*row->data)["Flags"] =
-                    kind == 10 ? std::nullopt : std::optional<std::string>(kind == 9 ? "bad" : "7");
+                (*row->data)["Flags"] = kind == 10 ? std::nullopt : std::optional<std::string>(kind == 9 ? "bad" : "7");
             (*row->data)["TheirFlags"] = kind == 11 ? "2147483648" : "-1";
         }
         return {row, row};
     }
-    std::vector<std::shared_ptr<FriendsData>> get(const framework::Uuid& p) override {
+
+    std::vector<std::shared_ptr<FriendsData>> get(const framework::Uuid &p) override {
         trace += "uuid;";
         return rows();
     }
-    std::vector<std::shared_ptr<FriendsData>> get(const std::optional<std::string>& p) override {
+
+    std::vector<std::shared_ptr<FriendsData>> get(const std::optional<std::string> &p) override {
         trace += "string:" + hex(p) + ";";
         return rows();
     }
-    bool store(const std::shared_ptr<FriendsData>& row) override {
-        trace += "store:" + hex(row->principal) + ":" + hex(row->friend_id) + ":" +
-                 hex(row->data->at("Flags")) + ";";
+
+    bool store(const std::shared_ptr<FriendsData> &row) override {
+        trace += "store:" + hex(row->principal) + ":" + hex(row->friend_id) + ":" + hex(row->data->at("Flags")) + ";";
         if (seed & 2)
             throw std::runtime_error("backend");
         return (seed & 1) != 0;
     }
-    bool erase(const framework::Uuid&, const std::optional<std::string>& f) override {
+
+    bool erase(const framework::Uuid &, const std::optional<std::string> &f) override {
         trace += "delete-uuid:" + hex(f) + ";";
         if (seed & 2)
             throw std::runtime_error("backend");
         return (seed & 1) != 0;
     }
-    bool erase(const std::optional<std::string>& p, const std::optional<std::string>& f) override {
+
+    bool erase(const std::optional<std::string> &p, const std::optional<std::string> &f) override {
         trace += "delete-string:" + hex(p) + ":" + hex(f) + ";";
         if (seed & 2)
             throw std::runtime_error("backend");
         return (seed & 1) != 0;
     }
 };
+
 int mock_main() {
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -86,14 +92,12 @@ int mock_main() {
             if (mode < 2) {
                 auto rows = mode ? service.get(std::optional<std::string>("principal")) : service.get(id(1));
                 out = std::to_string(rows.size());
-                for (auto& r : rows)
-                    out += "|" + r.principal.str() + ":" + hex(r.friend_id) + ":" +
-                           std::to_string(r.my_flags) + ":" + std::to_string(r.their_flags);
+                for (auto &r : rows)
+                    out += "|" + r.principal.str() + ":" + hex(r.friend_id) + ":" + std::to_string(r.my_flags) + ":" +
+                           std::to_string(r.their_flags);
             } else if (mode < 5) {
-                std::optional<std::string> p = (seed & 4) ? std::nullopt
-                                                          : std::optional<std::string>("principal"),
-                                           f = (seed & 8) ? std::nullopt
-                                                          : std::optional<std::string>("friend");
+                std::optional<std::string> p = (seed & 4) ? std::nullopt : std::optional<std::string>("principal"),
+                                           f = (seed & 8) ? std::nullopt : std::optional<std::string>("friend");
                 bool okay = mode == 2   ? service.store(p, f, seed % 2 ? -2147483647 : 2147483647)
                             : mode == 3 ? service.erase(id(1), f)
                                         : service.erase(p, f);
@@ -111,7 +115,7 @@ int mock_main() {
                 auto pairs = f.to_key_value_pairs();
                 out += ":" + std::to_string(pairs.size());
             }
-        } catch (const std::exception&) {
+        } catch (const std::exception &) {
             out = "E";
         }
         std::cout << store.trace << "|" << out << "\n";
@@ -119,7 +123,7 @@ int mock_main() {
     return 0;
 }
 
-std::optional<std::string> decode(const std::string& token) {
+std::optional<std::string> decode(const std::string &token) {
     if (token == "-")
         return {};
     if (token == ".")
@@ -129,7 +133,8 @@ std::optional<std::string> decode(const std::string& token) {
         value += static_cast<char>(std::stoi(token.substr(i, 2), nullptr, 16));
     return value;
 }
-int main(int argc, char**) {
+
+int main(int argc, char **) {
     if (argc == 1)
         return mock_main();
     SqliteFriendsStore store(":memory:", true);
@@ -156,13 +161,13 @@ int main(int argc, char**) {
             } else {
                 auto rows = store.get(principal);
                 std::cout << rows.size();
-                for (auto& r : rows)
+                for (auto &r : rows)
                     std::cout << "|" << hex(r->principal) << ":" << hex(r->friend_id) << ":"
                               << hex(r->data->at("Flags")) << ":" << hex(r->data->at("Offered")) << ":"
                               << hex(r->data->at("TheirFlags"));
             }
             std::cout << "\n";
-        } catch (const std::exception&) {
+        } catch (const std::exception &) {
             std::cout << "E\n";
         }
     }

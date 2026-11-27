@@ -30,9 +30,11 @@
 #include <mutex>
 #include <chrono>
 #include <unordered_map>
+
 namespace opensim::framework {
 namespace {
 using Clock = std::chrono::steady_clock;
+
 class NativeTimer final : public ExpiringCacheTimer {
     struct State {
         std::mutex mutex;
@@ -41,6 +43,7 @@ class NativeTimer final : public ExpiringCacheTimer {
         Clock::time_point deadline;
         std::function<void()> callback;
     };
+
     std::shared_ptr<State> state_;
     std::thread worker_;
 
@@ -56,8 +59,8 @@ class NativeTimer final : public ExpiringCacheTimer {
                     continue;
                 }
                 auto deadline = s->deadline;
-                if (s->condition.wait_until(
-                        lock, deadline, [&] { return s->stopped || !s->armed || s->deadline != deadline; }))
+                if (s->condition.wait_until(lock, deadline,
+                                            [&] { return s->stopped || !s->armed || s->deadline != deadline; }))
                     continue;
                 s->armed = false;
                 auto callback = s->callback;
@@ -67,6 +70,7 @@ class NativeTimer final : public ExpiringCacheTimer {
             }
         });
     }
+
     // System.Threading.Timer.Dispose cancels future ticks without waiting for an
     // already-running callback. The worker owns its separate state until it exits.
     ~NativeTimer() override {
@@ -74,6 +78,7 @@ class NativeTimer final : public ExpiringCacheTimer {
         if (worker_.joinable())
             worker_.detach();
     }
+
     void change(std::int32_t due) override {
         std::lock_guard lock(state_->mutex);
         if (state_->stopped)
@@ -82,6 +87,7 @@ class NativeTimer final : public ExpiringCacheTimer {
         state_->armed = true;
         state_->condition.notify_all();
     }
+
     void dispose() override {
         std::lock_guard lock(state_->mutex);
         state_->stopped = true;
@@ -89,16 +95,17 @@ class NativeTimer final : public ExpiringCacheTimer {
         state_->condition.notify_all();
     }
 };
-[[noreturn]] void recursion(const char* text) {
+
+[[noreturn]] void recursion(const char *text) {
     throw std::runtime_error(text);
 }
-}
+} // namespace
+
 ExpiringCacheBackend native_expiring_cache_backend() {
     return {[] { return std::chrono::duration<double, std::milli>(Clock::now().time_since_epoch()).count(); },
-            [](auto callback, std::int32_t due) {
-                return std::make_shared<NativeTimer>(std::move(callback), due);
-            }};
+            [](auto callback, std::int32_t due) { return std::make_shared<NativeTimer>(std::move(callback), due); }};
 }
+
 struct ExpiringCacheLock::State {
     std::mutex mutex;
     std::condition_variable condition;
@@ -107,11 +114,13 @@ struct ExpiringCacheLock::State {
     std::unordered_map<std::thread::id, std::size_t> readers;
     std::size_t total_readers = 0, waiting_writers = 0, waiting = 0;
 };
-ExpiringCacheLock::ExpiringCacheLock() : state_(std::make_unique<State>()) {
-}
+
+ExpiringCacheLock::ExpiringCacheLock() : state_(std::make_unique<State>()) {}
+
 ExpiringCacheLock::~ExpiringCacheLock() = default;
+
 void ExpiringCacheLock::enter(Mode mode) {
-    auto& s = *state_;
+    auto &s = *state_;
     std::unique_lock lock(s.mutex);
     auto self = std::this_thread::get_id();
     if (s.disposed)
@@ -122,9 +131,8 @@ void ExpiringCacheLock::enter(Mode mode) {
         if (s.readers.contains(self))
             recursion("Recursive read lock acquisitions not allowed in this mode.");
         ++s.waiting;
-        s.condition.wait(lock, [&] {
-            return s.writer == std::thread::id{} && (s.waiting_writers == 0 || s.upgrade == self);
-        });
+        s.condition.wait(
+            lock, [&] { return s.writer == std::thread::id{} && (s.waiting_writers == 0 || s.upgrade == self); });
         --s.waiting;
         s.readers[self] = 1;
         ++s.total_readers;
@@ -132,9 +140,8 @@ void ExpiringCacheLock::enter(Mode mode) {
         if (s.upgrade == self)
             recursion("Recursive upgradeable lock acquisitions not allowed in this mode.");
         if (s.writer == self)
-            recursion(
-                "Upgradeable lock may not be acquired with write lock held in this mode. Acquiring Upgradeable "
-                "lock gives the ability to read along with an option to upgrade to a writer.");
+            recursion("Upgradeable lock may not be acquired with write lock held in this mode. Acquiring Upgradeable "
+                      "lock gives the ability to read along with an option to upgrade to a writer.");
         if (s.readers.contains(self))
             recursion("Upgradeable lock may not be acquired with read lock held.");
         ++s.waiting;
@@ -147,10 +154,9 @@ void ExpiringCacheLock::enter(Mode mode) {
         if (s.writer == self)
             recursion("Recursive write lock acquisitions not allowed in this mode.");
         if (s.readers.contains(self))
-            recursion(
-                "Write lock may not be acquired with read lock held. This pattern is prone to deadlocks. Please "
-                "ensure that read locks are released before taking a write lock. If an upgrade is necessary, use "
-                "an upgrade lock in place of the read lock.");
+            recursion("Write lock may not be acquired with read lock held. This pattern is prone to deadlocks. Please "
+                      "ensure that read locks are released before taking a write lock. If an upgrade is necessary, use "
+                      "an upgrade lock in place of the read lock.");
         ++s.waiting_writers;
         ++s.waiting;
         s.condition.wait(lock, [&] {
@@ -162,8 +168,9 @@ void ExpiringCacheLock::enter(Mode mode) {
         s.writer = self;
     }
 }
+
 void ExpiringCacheLock::exit(Mode mode) {
-    auto& s = *state_;
+    auto &s = *state_;
     std::lock_guard lock(s.mutex);
     auto self = std::this_thread::get_id();
     if (mode == Mode::Read) {
@@ -181,8 +188,9 @@ void ExpiringCacheLock::exit(Mode mode) {
     }
     s.condition.notify_all();
 }
+
 void ExpiringCacheLock::dispose() {
-    auto& s = *state_;
+    auto &s = *state_;
     std::lock_guard lock(s.mutex);
     auto self = std::this_thread::get_id();
     if (s.waiting || s.writer == self || s.upgrade == self || s.readers.contains(self))
@@ -191,4 +199,4 @@ void ExpiringCacheLock::dispose() {
             "has active waiters waiting to acquire the lock.");
     s.disposed = true;
 }
-}
+} // namespace opensim::framework

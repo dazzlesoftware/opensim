@@ -1,0 +1,11 @@
+{
+  "overloads": 770,
+  "linuxCompile": {
+    "accepted": 745,
+    "rejected": 25
+  },
+  "platformDisagreements": [],
+  "linuxProbeSha256": "f2aebb16d7461f1de31ee01329891c317654f176041b6d33db403e983f37fa29",
+  "linuxLinkedArchiveSha256": "131b1089860d901790a6b1c9ac27b21a2da59dd2302f2da952afa602c4e2319c",
+  "linuxLslSourceSha256": "215913f395894ac4cde01036c8a9b2163a44bf0f021aad572aa2269e152a193a"
+}

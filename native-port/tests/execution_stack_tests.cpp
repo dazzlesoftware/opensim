@@ -17,6 +17,7 @@ struct Result {
     bool initial = false, stopped = false;
     std::size_t depth = 0;
 };
+
 STACK_NOINLINE bool consume(std::size_t &depth) {
     volatile unsigned char frame[4096];
     for (std::size_t i = 0; i < sizeof(frame); ++i)
@@ -28,11 +29,13 @@ STACK_NOINLINE bool consume(std::size_t &depth) {
     const bool result = consume(depth);
     return result && frame[depth % sizeof(frame)] == 42;
 }
+
 void probe(Result &result, bool recurse) {
     result.initial = opensim::framework::sufficient_execution_stack();
     if (recurse && result.initial)
         result.stopped = consume(result.depth);
 }
+
 struct Work {
     Result *result;
     bool recurse;
@@ -73,7 +76,8 @@ bool run(std::size_t size, Result &result, bool recurse) {
     return error == 0 && pthread_join(thread, nullptr) == 0;
 #endif
 }
-}
+} // namespace
+
 int main() {
     Result small, large;
     // The minimum stack is below both supported reserve sizes. No recursion.

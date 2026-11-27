@@ -3,37 +3,47 @@
 #undef main
 #include <filesystem>
 #include <fstream>
+
 struct Memory : NiniByteStream {
     std::vector<std::uint8_t> data;
     std::size_t pos = 0;
     bool closed = false;
+
     bool can_read() override {
         return !closed;
     }
+
     bool can_write() override {
         return !closed;
     }
+
     bool can_seek() override {
         return !closed;
     }
+
     std::int64_t position() override {
         return pos;
     }
+
     std::size_t read(std::span<std::uint8_t>, std::size_t, std::size_t) override {
         throw std::logic_error("unused read");
     }
+
     void write(std::span<const std::uint8_t> bytes) override {
         if (pos + bytes.size() > data.size())
             data.resize(pos + bytes.size());
         std::copy(bytes.begin(), bytes.end(), data.begin() + pos);
         pos += bytes.size();
     }
+
     void flush() override {}
+
     void close() override {
         closed = true;
     }
 };
-std::string bytehex(const std::vector<std::uint8_t>& bytes) {
+
+std::string bytehex(const std::vector<std::uint8_t> &bytes) {
     if (bytes.empty())
         return "-";
     std::string out;
@@ -43,7 +53,8 @@ std::string bytehex(const std::vector<std::uint8_t>& bytes) {
     }
     return out;
 }
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     if (argc != 2)
         return 2;
     auto path = std::filesystem::absolute(argv[1]) / "output.xml";
@@ -71,13 +82,11 @@ int main(int argc, char** argv) {
         try {
             NiniXmlReaderSettings settings;
             settings.dtd_processing = NiniXmlDtdProcessing::Parse;
-            source = NiniXmlConfigSource::create(arena, backend,
-                                                 NativeNiniXmlReader::from_text(decode(xml), settings));
-            source->saved.add(1, [&](auto&, auto) {
+            source = NiniXmlConfigSource::create(arena, backend, NativeNiniXmlReader::from_text(decode(xml), settings));
+            source->saved.add(1, [&](auto &, auto) {
                 ++saved;
                 if (event == 1)
-                    throw NiniXmlProviderError("System.InvalidOperationException", 0x80131509,
-                                               u"saved event fault");
+                    throw NiniXmlProviderError("System.InvalidOperationException", 0x80131509, u"saved event fault");
                 if (event == 2)
                     source->add_config(nini_writer_text(u"Event"))
                         ->set_text(nini_writer_text(u"key"), nini_writer_text(u"value"));
@@ -95,8 +104,7 @@ int main(int argc, char** argv) {
                 source->save(std::static_pointer_cast<NiniWriterStream>(memory));
                 break;
             case 3:
-                source->save(
-                    std::static_pointer_cast<NiniTextWriter>(std::make_shared<NiniByteTextWriter>(memory)));
+                source->save(std::static_pointer_cast<NiniTextWriter>(std::make_shared<NiniByteTextWriter>(memory)));
                 break;
             case 4:
                 source->save(nini_writer_text(path.u16string()));
@@ -131,8 +139,7 @@ int main(int argc, char** argv) {
         } catch (...) {
             posterror = current_error();
         }
-        std::cout << failure << ';' << payload << ';' << saved << ';'
-                  << hex(source ? source->save_path() : nullptr) << ';' << memory->closed << ';' << hex(post)
-                  << ';' << posterror << '\n';
+        std::cout << failure << ';' << payload << ';' << saved << ';' << hex(source ? source->save_path() : nullptr)
+                  << ';' << memory->closed << ';' << hex(post) << ';' << posterror << '\n';
     }
 }

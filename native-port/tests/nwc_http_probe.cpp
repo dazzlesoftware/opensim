@@ -18,11 +18,12 @@
 #include <sstream>
 #include <iomanip>
 using namespace opensim;
-using network::Value;
-using framework::Uuid;
 using framework::UserProfileProperties;
+using framework::Uuid;
+using network::Value;
 using Text = std::optional<std::u16string>;
-std::string H(const Text& t) {
+
+std::string H(const Text &t) {
     if (!t)
         return "-";
     if (t->empty())
@@ -35,28 +36,30 @@ std::string H(const Text& t) {
         }
     return o;
 }
-Text D(const std::string& h) {
+
+Text D(const std::string &h) {
     if (h == "-")
         return {};
     if (h == ".")
         return u"";
     std::u16string o;
     for (std::size_t i = 0; i < h.size(); i += 4)
-        o += char16_t(std::stoi(h.substr(i, 2), nullptr, 16) |
-                      (std::stoi(h.substr(i + 2, 2), nullptr, 16) << 8));
+        o += char16_t(std::stoi(h.substr(i, 2), nullptr, 16) | (std::stoi(h.substr(i + 2, 2), nullptr, 16) << 8));
     return o;
 }
-Value TextValue(const Text& p) {
+
+Value TextValue(const Text &p) {
     if (!p)
         return Value::null_reference();
     Value v(framework::utf8(*p));
     v.sdk_string = std::make_shared<const std::u16string>(*p);
     return v;
 }
-std::string Dump(const Value* input) {
+
+std::string Dump(const Value *input) {
     if (!input || input->kind == Value::Kind::NullReference)
         return "N";
-    const auto& v = input->view();
+    const auto &v = input->view();
     using K = Value::Kind;
     switch (v.kind) {
     case K::String:
@@ -82,7 +85,7 @@ std::string Dump(const Value* input) {
     }
     case K::Array: {
         std::string out = "A[";
-        for (auto& x : v.array) {
+        for (auto &x : v.array) {
             if (out.back() != '[')
                 out += ',';
             out += Dump(&x);
@@ -91,10 +94,9 @@ std::string Dump(const Value* input) {
     }
     case K::Map: {
         auto keys = v.ordered_keys();
-        std::sort(keys.begin(), keys.end(),
-                  [](auto& a, auto& b) { return framework::utf16(a) < framework::utf16(b); });
+        std::sort(keys.begin(), keys.end(), [](auto &a, auto &b) { return framework::utf16(a) < framework::utf16(b); });
         std::string out = "M{";
-        for (auto& k : keys) {
+        for (auto &k : keys) {
             if (out.back() != '{')
                 out += ',';
             out += H(framework::utf16(k)) + "=" + Dump(&v.map.at(k));
@@ -105,12 +107,14 @@ std::string Dump(const Value* input) {
         return "X";
     }
 }
+
 Uuid Id(int n) {
     std::ostringstream s;
     s << "00000000-0000-0000-0000-" << std::hex << std::setfill('0') << std::setw(12) << n;
     return Uuid(s.str());
 }
-std::shared_ptr<UserProfileProperties> Seed(const Text& text) {
+
+std::shared_ptr<UserProfileProperties> Seed(const Text &text) {
     auto p = std::make_shared<UserProfileProperties>();
     p->UserId = Id(1);
     p->PartnerId = Id(2);
@@ -128,63 +132,64 @@ std::shared_ptr<UserProfileProperties> Seed(const Text& text) {
     p->PublishMature = true;
     return p;
 }
-std::string Props(const std::shared_ptr<UserProfileProperties>& p) {
+
+std::string Props(const std::shared_ptr<UserProfileProperties> &p) {
     if (!p)
         return "N";
-    return p->UserId.str() + ":" + p->PartnerId.str() + ":" + p->ImageId.str() + ":" +
-           p->FirstLifeImageId.str() + ":" + H(p->WebUrl) + ":" + H(p->AboutText) + ":" +
-           H(p->FirstLifeText) + ":" + std::to_string(p->WantToMask) + ":" + H(p->WantToText) + ":" +
-           std::to_string(p->SkillsMask) + ":" + H(p->SkillsText) + ":" + H(p->Language) + ":" +
-           (p->PublishProfile ? "True" : "False") + ":" + (p->PublishMature ? "True" : "False");
+    return p->UserId.str() + ":" + p->PartnerId.str() + ":" + p->ImageId.str() + ":" + p->FirstLifeImageId.str() + ":" +
+           H(p->WebUrl) + ":" + H(p->AboutText) + ":" + H(p->FirstLifeText) + ":" + std::to_string(p->WantToMask) +
+           ":" + H(p->WantToText) + ":" + std::to_string(p->SkillsMask) + ":" + H(p->SkillsText) + ":" +
+           H(p->Language) + ":" + (p->PublishProfile ? "True" : "False") + ":" + (p->PublishMature ? "True" : "False");
 }
+
 std::string Error() {
     try {
         throw;
-    } catch (const services::OpenProfileError& e) {
+    } catch (const services::OpenProfileError &e) {
         return e.source_type + ":" + H(e.message);
-    } catch (const network::NwcXmlRpcError& e) {
+    } catch (const network::NwcXmlRpcError &e) {
         return e.source_type + ":" + H(e.message);
-    } catch (const framework::ConfigXmlHttpError& e) {
+    } catch (const framework::ConfigXmlHttpError &e) {
         return e.source_type + ":" + H(e.message);
-    } catch (const framework::ConfigHttpHeaderError& e) {
+    } catch (const framework::ConfigHttpHeaderError &e) {
         return e.source_type + ":" + H(e.message);
-    } catch (const framework::ConfigUriComponentsError& e) {
+    } catch (const framework::ConfigUriComponentsError &e) {
         return e.source_type + ":" + H(e.message);
-    } catch (const framework::NiniXmlProviderError& e) {
+    } catch (const framework::NiniXmlProviderError &e) {
         return e.source_type + ":" + H(e.message);
-    } catch (const framework::InvariantNumberError& e) {
-        return std::string(e.kind == framework::InvariantNumberError::Kind::Overflow
-                               ? "System.OverflowException"
-                               : "System.FormatException") +
+    } catch (const framework::InvariantNumberError &e) {
+        return std::string(e.kind == framework::InvariantNumberError::Kind::Overflow ? "System.OverflowException"
+                                                                                     : "System.FormatException") +
                ":" + H(e.message);
-    } catch (const framework::XmlEncoderError& e) {
+    } catch (const framework::XmlEncoderError &e) {
         return std::string(e.source_type) + ":" + H(e.message);
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         return "System.Exception:" + H(framework::utf16_replacing(e.what()));
     }
 }
+
 std::string Vec(framework::Vector3 v) {
     std::ostringstream s;
-    s << std::hex << std::setfill('0') << std::setw(8) << std::bit_cast<std::uint32_t>(v.x) << ':'
-      << std::setw(8) << std::bit_cast<std::uint32_t>(v.y) << ':' << std::setw(8)
-      << std::bit_cast<std::uint32_t>(v.z);
+    s << std::hex << std::setfill('0') << std::setw(8) << std::bit_cast<std::uint32_t>(v.x) << ':' << std::setw(8)
+      << std::bit_cast<std::uint32_t>(v.y) << ':' << std::setw(8) << std::bit_cast<std::uint32_t>(v.z);
     return s.str();
 }
-std::string Region(const std::shared_ptr<services::GridRegion>& r) {
+
+std::string Region(const std::shared_ptr<services::GridRegion> &r) {
     if (!r)
         return "N";
-    auto text = [](const std::optional<std::string>& t) -> Text {
+    auto text = [](const std::optional<std::string> &t) -> Text {
         return t ? Text(framework::utf16_replacing(*t)) : Text{};
     };
-    return r->id.str() + ":" + std::to_string(r->x) + ":" + std::to_string(r->y) + ":" +
-           std::to_string(r->size_x) + ":" + std::to_string(r->size_y) + ":" + H(text(r->name)) + ":" +
-           H(text(r->external_host)) + ":" + std::to_string(r->http_port) + ":" + H(text(r->raw_server_uri)) +
-           ":" + H(framework::utf16_replacing(r->server_uri())) + ":" +
-           (r->internal_endpoint
-                ? r->internal_endpoint->address + ":" + std::to_string(r->internal_endpoint->port)
-                : "N");
+    return r->id.str() + ":" + std::to_string(r->x) + ":" + std::to_string(r->y) + ":" + std::to_string(r->size_x) +
+           ":" + std::to_string(r->size_y) + ":" + H(text(r->name)) + ":" + H(text(r->external_host)) + ":" +
+           std::to_string(r->http_port) + ":" + H(text(r->raw_server_uri)) + ":" +
+           H(framework::utf16_replacing(r->server_uri())) + ":" +
+           (r->internal_endpoint ? r->internal_endpoint->address + ":" + std::to_string(r->internal_endpoint->port)
+                                 : "N");
 }
-int main(int argc, char**) {
+
+int main(int argc, char **) {
     framework::ConfigXmlNativeHttpServices services;
     services.proxy = [](auto, auto) -> std::optional<framework::ConfigXmlHttpRoute> { return {}; };
     services.connect_error = framework::config_http_connect_error;
@@ -195,14 +200,12 @@ int main(int argc, char**) {
         if (phase == "timeout" || phase == "headers")
             return std::make_exception_ptr(
                 network::NwcXmlRpcError("System.Net.Http.HttpRequestException", u"request timeout"));
-        return std::make_exception_ptr(
-            std::runtime_error("UNMAPPED HTTP " + phase + ":" + std::to_string(code)));
+        return std::make_exception_ptr(std::runtime_error("UNMAPPED HTTP " + phase + ":" + std::to_string(code)));
     };
     auto make_transport = [&] {
         if (argc == 1)
             return network::NwcXmlRpcHttpTransport(services);
-        auto clients =
-            std::make_shared<network::WebHttpClients>(network::native_web_http_handler_factory(services));
+        auto clients = std::make_shared<network::WebHttpClients>(network::native_web_http_handler_factory(services));
         clients->setup(false, false, nullptr, 32);
         return network::NwcXmlRpcHttpTransport(std::move(clients));
     };
@@ -225,18 +228,17 @@ int main(int argc, char**) {
                 services::UserAgentConnectorServices binding;
                 binding.simulation_options.automatic_purge = false;
                 binding.client = [&](int n) {
-                    return network::xml_rpc_http_client(
-                        std::make_shared<network::NwcXmlRpcHttpTransport>(transport), n);
+                    return network::xml_rpc_http_client(std::make_shared<network::NwcXmlRpcHttpTransport>(transport),
+                                                        n);
                 };
-                binding.debug = binding.error =
-                    binding.warn = [&](const auto& text) { logs.push_back(text); };
+                binding.debug = binding.error = binding.warn = [&](const auto &text) { logs.push_back(text); };
                 services::UserAgentServiceConnector agent(url, std::move(binding));
                 if (mode == 6)
                     result = "G:" + Region(agent.get_home_region(Id(1), position, look));
                 else if (mode == 7) {
                     auto list = agent.get_online_friends(Id(1), std::make_shared<std::vector<Text>>());
                     result = "F:";
-                    for (auto& id : list) {
+                    for (auto &id : list) {
                         if (result != "F:")
                             result += ',';
                         result += id.str();
@@ -253,8 +255,8 @@ int main(int argc, char**) {
             } else if (mode == 1 || mode == 3) {
                 services::OpenProfileClient client(
                     url,
-                    [&](const Value& data, std::u16string_view rpc_method,
-                        const Text& address) -> std::shared_ptr<Value> {
+                    [&](const Value &data, std::u16string_view rpc_method,
+                        const Text &address) -> std::shared_ptr<Value> {
                         network::XmlRpcRequesterServices binding;
                         binding.request_number = [&] { return request_number; };
                         binding.set_request_number = [&](int n) { request_number = n; };
@@ -264,7 +266,7 @@ int main(int argc, char**) {
                                 std::make_shared<network::NwcXmlRpcHttpTransport>(transport), n);
                         };
                         binding.debug = binding.error =
-                            binding.info = [&](const std::u16string& message) { logs.push_back(message); };
+                            binding.info = [&](const std::u16string &message) { logs.push_back(message); };
                         return network::XmlRpcRequester(std::move(binding))
                             .send_request(std::make_shared<Value>(data), std::u16string(rpc_method), address);
                     });
@@ -281,7 +283,7 @@ int main(int argc, char**) {
             result = "E:" + Error();
         }
         std::u16string log_text;
-        for (const auto& log : logs) {
+        for (const auto &log : logs) {
             if (log.starts_with(u"[LOGHTTP]: HTTP OUT ") && log.find(u" took ") != std::u16string::npos)
                 continue;
             if (!log_text.empty())
@@ -289,8 +291,8 @@ int main(int argc, char**) {
             log_text += log;
         }
         std::cout << result << '|' << Props(props) << '|'
-                  << (mode == 3 || mode == 4 || mode == 5 || mode == 6 || mode == 7 ? H(log_text) : "-")
-                  << '|' << (mode == 5 ? H(bool_reason) : "-") << '|' << (mode == 6 ? Vec(position) : "-")
-                  << '|' << (mode == 6 ? Vec(look) : "-") << '\n';
+                  << (mode == 3 || mode == 4 || mode == 5 || mode == 6 || mode == 7 ? H(log_text) : "-") << '|'
+                  << (mode == 5 ? H(bool_reason) : "-") << '|' << (mode == 6 ? Vec(position) : "-") << '|'
+                  << (mode == 6 ? Vec(look) : "-") << '\n';
     }
 }

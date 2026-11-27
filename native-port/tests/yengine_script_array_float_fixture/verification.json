@@ -1,0 +1,292 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "fullParityVerified": false,
+  "nativeParityVerified": false,
+  "scope": "Unchanged original rank1 float[] source execution, production migration capture and fresh-process imports on Windows/Linux x64",
+  "generatorSha256": "444dcddbd9a27a7c3d790e7799a96afdf7514fa7d0f1f74248fa0eda51d7bfad",
+  "generatorAssemblySha256": "00a7e7bb88f7665deb9aa990932eb1f3ee7d76fbbca4b815af09856bfedbc8ae",
+  "decoderSha256": "69c6106ae854fa58b10cc102425731bfff753e24aa69abce93ac868155f4ec2d",
+  "platforms": {
+    "windows": {
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "processId": 57568,
+      "metadataSha256": "401b9586e326ae11082579ac64c8df95425c9062f618e0040dd98674f9594071",
+      "cases": [
+        {
+          "name": "float_members_precision",
+          "sourceSha256": "e97cbd06aee09e9b049ea07f23c260720bf3f528411cf70afeeda299ec8f2bd9",
+          "metadataSha256": "64a9dd8fcd5e5b17eb7523e71fa56be8a6921fc16d8037179e2459569dd0f0ac",
+          "snapshotSha256": "fc3c165ffd9e4644721dbc38771252cee7217e0986da72474e3e79668b7ae409",
+          "snapshotBytes": 342,
+          "originalObjectSha256": "52cc2618ab63723ea74c0d30af5d04b7ef37c04b6f782b07b78fbda98cf80df1",
+          "afterLoadSha256": "6e32e7e3a6e818fb27ef6a0e517ffdb15786328106b4d544b09e63cb697e54ec",
+          "finalSha256": "3355dec693df482d8400db1961621e970f7ebeaee654c4a734143e92088bb108",
+          "independentClassDefinitions": 1,
+          "independentObservedReferences": 2
+        },
+        {
+          "name": "float_public_dimensions_backing_alias",
+          "sourceSha256": "e058d4d9999f75f90280acec0227f39fd88a6d11e6dd524c206a32928587a3b5",
+          "metadataSha256": "afb283c4b813e58a533698f05337839f8bd656e3a9955ac8d36f07817d98d8a3",
+          "snapshotSha256": "0b38332c190c97db21dd3312282031d21cff6d4a960f29fba9e2a049c886ab3d",
+          "snapshotBytes": 294,
+          "originalObjectSha256": "2200582f3d541b1d92334e2e14b8f7db311a2a3f92626912eecf173d68ed874c",
+          "afterLoadSha256": "a285a8ba35223492bd82145beaa447ffbb5dc7c129f5b678d4f69c5f40b7a44e",
+          "finalSha256": "83ae006ae80641f4fb05d989b44a8d3b8452fedf3f5361ab52ac70d354755591",
+          "independentClassDefinitions": 1,
+          "independentObservedReferences": 2
+        },
+        {
+          "name": "float_compound_rhs_yield_rebind",
+          "sourceSha256": "e41c1a1fe13b5e950514e4d410b87001c19950749068eac3ca7dcbcb06750b57",
+          "metadataSha256": "4f37a9b472a210d42e6d61f587a0ca0bc7c2cbfb48d55d81c77c69e993576e26",
+          "snapshotSha256": "247d24a1c10f348518bfd886580a24de15636d730e3ef0e4f4a3711c9edfa59c",
+          "snapshotBytes": 392,
+          "originalObjectSha256": "7ed15d1090ce4e0c8a5acd575bd6d43514285034c4278338e81af9b84b321940",
+          "afterLoadSha256": "f8bda36edf68a3cfa755671b2d5a9c6ba691c5252f9fe14a0fc1b1c09bbe8fd6",
+          "finalSha256": "92349f393fcb4584c2ac01f435099cddb3e1529e3a58f8c8cda2e136f2ac99c0",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4
+        },
+        {
+          "name": "float_receiver_assign_order",
+          "sourceSha256": "fe295856d43acc631e1253c33670cd8fb7bd6c7bdc8e7481a10b10c167698f97",
+          "metadataSha256": "536622d8326d7dc181d16f3777679e346c92f3aafb0ad85ea5d1e168ac5753ad",
+          "snapshotSha256": "8c21bd47762450728a19d7a373600f6264bf45cdef9f90388eb499b4d2ca25ab",
+          "snapshotBytes": 288,
+          "originalObjectSha256": "0b57fcd994a7411380963acccadb346e37f04ae75d9534da6baa969432adefdb",
+          "afterLoadSha256": "daf5f937f9bbb9a5fae7836930127b0080ce36f3384323e31cf3ac2429d6ed25",
+          "finalSha256": "519bf5f5e74957403e39baac4c66fa26827d2244c13703f673223d168329a5b3",
+          "independentClassDefinitions": 1,
+          "independentObservedReferences": 2
+        },
+        {
+          "name": "float_receiver_compound_base_yield",
+          "sourceSha256": "e625773d27079a5a956752a7ebb85f193fed14fd4f41d98ab6a7879d3d054a3d",
+          "metadataSha256": "dd587795fd67871557ecf79cc7edbd76f62bb850cb47c83e76f77fbe2dd80481",
+          "snapshotSha256": "455fccd2b90ac32a4189501a7ba63885a2829b66b78cd122321a3a084dd95681",
+          "snapshotBytes": 405,
+          "originalObjectSha256": "41b6c229fc1475130305d575797e365d9b9a9ef6f8d3511df8a28965807d09e6",
+          "afterLoadSha256": "5a0076e21c62d29663e32165528710a3f0d38fb483e2e44d45b07abc7c389fcd",
+          "finalSha256": "e4619e4e36b5d90418d657751b3e7614d6ecea3dd8ab14a4e392e8590611523b",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4
+        },
+        {
+          "name": "float_mixed_class_cast",
+          "sourceSha256": "c723d8ec1db4dc19c4baa68630732f9e9097f9cd5bb9050f0fa77f7591151cb1",
+          "metadataSha256": "10d54066d2c9020f0a6592ddef29a96982b254c018e4006e1ad2aa58ae919285",
+          "snapshotSha256": "bea278ad43c7ea1f9e0aadd8e2facb98023172749e1391974cc0cdbb813a6be3",
+          "snapshotBytes": 377,
+          "originalObjectSha256": "efe408d3881ec1a6bd7697ac9ee7549a7169d7618f99922418064dda33d94d98",
+          "afterLoadSha256": "16b095007c3f1b0afb6b03add614818db9e9b962d8799e2b66168e92900b9ad9",
+          "finalSha256": "fd27f29cf998718014f186d5ed7842374dccabafb3d95fd3815b5f1a7852a071",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4
+        },
+        {
+          "name": "float_zero_backing",
+          "sourceSha256": "736bb45809fdc1a9dbebeee2fc5e8e6a0cf94d973a37c02841b45b1c66e833d1",
+          "metadataSha256": "9167af3ae1b92f3b39dc3c35ef9804be84827b85936a94733ddfa574140c4e55",
+          "snapshotSha256": "ebbc8f48d305894db6b3ccadc0ecd8b9aa9e56d789f9a7c15f20e7f99d116684",
+          "snapshotBytes": 262,
+          "originalObjectSha256": "ca689afaeb0898edf167a69809fbf12f902f4db6962447f1544d7f7d1610a9b1",
+          "afterLoadSha256": "10b83c06629043a982c4dd2c80144ad65cfb0151406d01feead52c394628492b",
+          "finalSha256": "05316218ef4ba7b17b5c384b82e75035ef21949c5b88a6e521aab5c8f2a3f459",
+          "independentClassDefinitions": 1,
+          "independentObservedReferences": 2
+        },
+        {
+          "name": "float_index_postfix",
+          "sourceSha256": "8f728c06f9e0d34733784bbadffb7c75aa334a9364b7427d724a65e490410719",
+          "metadataSha256": "6c59354dca45a86ec3b311d2dc38a16ff7b0b6038051b5d3b5524715c5b2e69c",
+          "snapshotSha256": "c9e078b93708aea70a5057ea73d1fb613ea2c71102f603dafef5e8ea0b7d5c65",
+          "snapshotBytes": 291,
+          "originalObjectSha256": "c10ebd873fb86581e3f476e6fee8bd48e545b73521840754b05172a6b2d94a4d",
+          "afterLoadSha256": "4d4ab56165a4bb3e5efb6367570723abf901701e03118df770250a422d609af1",
+          "finalSha256": "7592d13fe33677e1cd8804a0b53a1bf1ed6ab39a5b81a12b0e2607340dc77890",
+          "independentClassDefinitions": 1,
+          "independentObservedReferences": 2
+        }
+      ],
+      "originalBackendSha256": {
+        "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+        "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+        "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+        "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+        "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+        "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+        "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+        "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+        "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+        "original_source_XMRInstCapture.cs": "775f1d83bd4610f788891269ea9ea08b1f79cf4bf3b44300d926f49c8a277cbd",
+        "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+        "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+        "original_source_Helpers.cs": "96b7c3090cdded9c12e986bc538705272eae4c0fc12f01deab8f0f1bb94c7bcf",
+        "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+        "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+        "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+        "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+        "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+        "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+        "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+      }
+    },
+    "linux": {
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "processId": 1,
+      "metadataSha256": "b19d987513df449b8a25c834c8bdd04d951d5a1a61a1888a6ab44a92a0573bb5",
+      "cases": [
+        {
+          "name": "float_members_precision",
+          "sourceSha256": "e97cbd06aee09e9b049ea07f23c260720bf3f528411cf70afeeda299ec8f2bd9",
+          "metadataSha256": "977679ca6db28347fd353b60942a4eef01266b269725d3621556d45d311e5ba0",
+          "snapshotSha256": "fc3c165ffd9e4644721dbc38771252cee7217e0986da72474e3e79668b7ae409",
+          "snapshotBytes": 342,
+          "originalObjectSha256": "52cc2618ab63723ea74c0d30af5d04b7ef37c04b6f782b07b78fbda98cf80df1",
+          "afterLoadSha256": "abe6252e0c4e2b9d5b26f8d140723b9f3b78d72bdcf802f12605426e9017653a",
+          "finalSha256": "fe4bc1ebb12fb2aa93b6ac2efa7230fce04d951124bcd691b6cc1f0334992213",
+          "independentClassDefinitions": 1,
+          "independentObservedReferences": 2
+        },
+        {
+          "name": "float_public_dimensions_backing_alias",
+          "sourceSha256": "e058d4d9999f75f90280acec0227f39fd88a6d11e6dd524c206a32928587a3b5",
+          "metadataSha256": "6f82fe8ee67ab6c5d0a4a01fec3900300962d1610d0e2d2ea65a188e94eb07e2",
+          "snapshotSha256": "0b38332c190c97db21dd3312282031d21cff6d4a960f29fba9e2a049c886ab3d",
+          "snapshotBytes": 294,
+          "originalObjectSha256": "2200582f3d541b1d92334e2e14b8f7db311a2a3f92626912eecf173d68ed874c",
+          "afterLoadSha256": "dbcb35a42ca0b60f37aee8afd49d3fce1c7515898a2640929d090b170ec0dde4",
+          "finalSha256": "2e32dfa97bc37da080e8a5ff270e91839d3f85ee4cb1d27a596b07af91aaa965",
+          "independentClassDefinitions": 1,
+          "independentObservedReferences": 2
+        },
+        {
+          "name": "float_compound_rhs_yield_rebind",
+          "sourceSha256": "e41c1a1fe13b5e950514e4d410b87001c19950749068eac3ca7dcbcb06750b57",
+          "metadataSha256": "fbc62cd365bea529f550ff0cad51cba3651841b29c88530125e71a22034df3e6",
+          "snapshotSha256": "247d24a1c10f348518bfd886580a24de15636d730e3ef0e4f4a3711c9edfa59c",
+          "snapshotBytes": 392,
+          "originalObjectSha256": "7ed15d1090ce4e0c8a5acd575bd6d43514285034c4278338e81af9b84b321940",
+          "afterLoadSha256": "d2a0ff810bbf8eb7f825ec1549a54d1d1ae5c963d5e0206b714723e9de87c110",
+          "finalSha256": "f8a5eef9ecfab0db69017748c87d6d109c4faeaf8c413c6b2cb2fe172ceaabaf",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4
+        },
+        {
+          "name": "float_receiver_assign_order",
+          "sourceSha256": "fe295856d43acc631e1253c33670cd8fb7bd6c7bdc8e7481a10b10c167698f97",
+          "metadataSha256": "33d31d0dc12cad81e55473021ce072bf1ee20abbdea5b68d1c7123be4abb943c",
+          "snapshotSha256": "8c21bd47762450728a19d7a373600f6264bf45cdef9f90388eb499b4d2ca25ab",
+          "snapshotBytes": 288,
+          "originalObjectSha256": "0b57fcd994a7411380963acccadb346e37f04ae75d9534da6baa969432adefdb",
+          "afterLoadSha256": "146ba73149c8812c99710e32be70c48b45943be1a9e18898e30d72c6e1480fdc",
+          "finalSha256": "683e1a1da9f283ca75a8e039e4edff8f4aa29951055289e6c1b67e45731374b2",
+          "independentClassDefinitions": 1,
+          "independentObservedReferences": 2
+        },
+        {
+          "name": "float_receiver_compound_base_yield",
+          "sourceSha256": "e625773d27079a5a956752a7ebb85f193fed14fd4f41d98ab6a7879d3d054a3d",
+          "metadataSha256": "f4588b5d6517a904d5f765773ec8291713eaac79c257c7c3905be492f2bd0933",
+          "snapshotSha256": "455fccd2b90ac32a4189501a7ba63885a2829b66b78cd122321a3a084dd95681",
+          "snapshotBytes": 405,
+          "originalObjectSha256": "41b6c229fc1475130305d575797e365d9b9a9ef6f8d3511df8a28965807d09e6",
+          "afterLoadSha256": "782b51147966df96486bbf1f6fb033107343b8e389224c577cc673f373057167",
+          "finalSha256": "0c325ef7bd4257ccf379eaf4133efbb17307c58b67afaef9bad36d8f4ccbd99c",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4
+        },
+        {
+          "name": "float_mixed_class_cast",
+          "sourceSha256": "c723d8ec1db4dc19c4baa68630732f9e9097f9cd5bb9050f0fa77f7591151cb1",
+          "metadataSha256": "8f2c0d51b5f7396eba4cb4bdd7de02419a24aaab2d0ad3c0e032a383a7942353",
+          "snapshotSha256": "bea278ad43c7ea1f9e0aadd8e2facb98023172749e1391974cc0cdbb813a6be3",
+          "snapshotBytes": 377,
+          "originalObjectSha256": "efe408d3881ec1a6bd7697ac9ee7549a7169d7618f99922418064dda33d94d98",
+          "afterLoadSha256": "8adfd6210587f8c2207df56225148a4c9d1fa7c734fa9784e2f29ef4305c08ab",
+          "finalSha256": "b4a7ff2fb1a7c84173f80e0e87b0d2ef98a8f8435678f2be4607cd077552a3aa",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4
+        },
+        {
+          "name": "float_zero_backing",
+          "sourceSha256": "736bb45809fdc1a9dbebeee2fc5e8e6a0cf94d973a37c02841b45b1c66e833d1",
+          "metadataSha256": "1ffdb90e25f2fd5ac5e5443cb71c26af4c8586d28a72c1fae8b1db63cc4b21d8",
+          "snapshotSha256": "ebbc8f48d305894db6b3ccadc0ecd8b9aa9e56d789f9a7c15f20e7f99d116684",
+          "snapshotBytes": 262,
+          "originalObjectSha256": "ca689afaeb0898edf167a69809fbf12f902f4db6962447f1544d7f7d1610a9b1",
+          "afterLoadSha256": "9ed26a5057db054e68ce497b187bfe5a2e33f8a8c0557d57a679c9b45c417a6b",
+          "finalSha256": "388a8fa0fc86ea0fd79cfedce3ec05e5ee442fef8495cf1299f07ccfa0f2c279",
+          "independentClassDefinitions": 1,
+          "independentObservedReferences": 2
+        },
+        {
+          "name": "float_index_postfix",
+          "sourceSha256": "8f728c06f9e0d34733784bbadffb7c75aa334a9364b7427d724a65e490410719",
+          "metadataSha256": "229c384ad0284a1a5735826e6369e35ab561ea500595fe75de3094cc03708c3c",
+          "snapshotSha256": "c9e078b93708aea70a5057ea73d1fb613ea2c71102f603dafef5e8ea0b7d5c65",
+          "snapshotBytes": 291,
+          "originalObjectSha256": "c10ebd873fb86581e3f476e6fee8bd48e545b73521840754b05172a6b2d94a4d",
+          "afterLoadSha256": "42448b3ad498c54ccc03ead0eb999374c4daf008a445f1f5350de45d64f00fa9",
+          "finalSha256": "0415c50811b61e78ea9891505c7efb77034997f3dab6385d849609a30b53109e",
+          "independentClassDefinitions": 1,
+          "independentObservedReferences": 2
+        }
+      ],
+      "originalBackendSha256": {
+        "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+        "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+        "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+        "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+        "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+        "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+        "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+        "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+        "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+        "original_source_XMRInstCapture.cs": "775f1d83bd4610f788891269ea9ea08b1f79cf4bf3b44300d926f49c8a277cbd",
+        "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+        "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+        "original_source_Helpers.cs": "96b7c3090cdded9c12e986bc538705272eae4c0fc12f01deab8f0f1bb94c7bcf",
+        "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+        "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+        "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+        "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+        "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+        "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+        "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+      }
+    }
+  },
+  "freshProcessImports": {
+    "Windows": {
+      "cases": 8,
+      "processId": 68964,
+      "metadataSha256": "ee26b1b7da70559c409e9cf462f053675c85cd41db41b20d2dd0d27d9ccb97bb"
+    },
+    "Linux": {
+      "cases": 8,
+      "processId": 1,
+      "metadataSha256": "d9d75b46e0580e42ca877fb9168906ef226aa21dfce92ec610217deb4d23efd4"
+    }
+  },
+  "measuredBehavior": {
+    "storage": "Generated float[] wraps a distinct System.Double[] (do) backing, never Object[]; own heap=4+8*backingLength.",
+    "precision": "Literal1.2345678901234567 stored/captured/restored as binary64 bits3ff3c0ca428c59fb; arithmetic and nonintegral cells preserved.",
+    "dimensions": "Public len0 changes Length but does not constrain backing bounds; raw Double[] alias mutation visible through wrapper.",
+    "evaluation": "Simple receiver assignment order312; RHS-yield compound order21; receiver-yield compound order231; postfix index increments once and11.5 returns/stores12.5.",
+    "mixedClassTable": "Combined integer[] class index0 /float[] index1; matching cast aliases exact wrapper; cross-type cast fails invalid cast from float[] to integer[].",
+    "zero": "Live empty Double[] stays nonnull; external migration normalizes backing null while wrapper survives."
+  },
+  "crossPlatformSnapshotsIdentical": true,
+  "crossPlatformOriginalObjectsIdentical": true,
+  "boundaries": [
+    "Eight bounded rank1 float[] source cases per original OS and eight fresh-process imports per OS; no native acceptance/parity claim.",
+    "No rectangular/jagged float arrays, NaN/Infinity, all conversions or arbitrary class-table layouts verified.",
+    "No forced GC or GC-cause claim."
+  ],
+  "verifierSha256": "ba0d1e42b2b84cc95c62bbe066109b07dfcd4e465cfc244e63627560bde78165"
+}

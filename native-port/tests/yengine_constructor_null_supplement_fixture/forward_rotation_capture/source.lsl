@@ -1,0 +1,1 @@
+rotation first=read();rotation later;integer after;rotation read(){return later;}default{state_entry(){llSleep(3.0);after=1;}}

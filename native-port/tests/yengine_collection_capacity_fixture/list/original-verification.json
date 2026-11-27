@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "checkedAtUtc": "2026-11-26T23:07:12.095090+00:00",
+  "passed": true,
+  "fullParityVerified": false,
+  "scope": "Actual unchanged original YEngine List source compile/capture/privateproductionbinary import/live and migratedresume at65537 and100000cells onWindows/Linuxx64",
+  "generatorSha256": "374540b24de66b7cb23b22a99894a2c4ab655a22bccd46fbd21c27c5301c0184",
+  "generatorAssemblySha256": "450bda8c6795cc8e971a44f78621a94674e8891ba71ff28715a3b330014b3552",
+  "platforms": {
+    "windows": {
+      "metadataSha256": "7f201aee3921600942fc3a383c2e1975044474d993179be28db20e0a44717bf6",
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "cases": [
+        {
+          "name": "list_65537",
+          "length": 65537,
+          "fullCellsSha256": "f8e00a8c88d9c8215dba987eae129e084da6afef2aa12afbb1adc7e00154e28e",
+          "snapshotBytes": 327859,
+          "snapshotSha256": "85afe580259f37b002fda54bb5a851e93aacfd4a2d649f7fc3a599dea667c1bf",
+          "metadataSha256": "b524ccca467d66449c2d2b7a0c7c2c6d21f1eca77f970de4879722120726f3b4",
+          "acceptedCapturedMigrated": true,
+          "aliasBackingPreserved": true
+        },
+        {
+          "name": "list_100000",
+          "length": 100000,
+          "fullCellsSha256": "ea0d345c9fbcdb2528bbc7faebdfec6b31d64458ccd3e0291660659e9583bea4",
+          "snapshotBytes": 1000178,
+          "snapshotSha256": "7e5ee6028d17a2a548562fe5c8cf7c3a3bee3e4fa4dde21c832b478524b1f7a1",
+          "metadataSha256": "885aa525314b2b69f82d8aa6e0790b7b65ec7a2f221b15b909def9a49da50d32",
+          "acceptedCapturedMigrated": true,
+          "aliasBackingPreserved": true
+        }
+      ]
+    },
+    "linux": {
+      "metadataSha256": "8f790316080750803d2891c4fdc597d5f4b6576a21237bd0fb24b06c7c028f7f",
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "cases": [
+        {
+          "name": "list_65537",
+          "length": 65537,
+          "fullCellsSha256": "f8e00a8c88d9c8215dba987eae129e084da6afef2aa12afbb1adc7e00154e28e",
+          "snapshotBytes": 327859,
+          "snapshotSha256": "85afe580259f37b002fda54bb5a851e93aacfd4a2d649f7fc3a599dea667c1bf",
+          "metadataSha256": "3db09934ce7e75d0ebcbdcb897dad5fd9225fcddd57f4e7c5943cae1d80b34c3",
+          "acceptedCapturedMigrated": true,
+          "aliasBackingPreserved": true
+        },
+        {
+          "name": "list_100000",
+          "length": 100000,
+          "fullCellsSha256": "ea0d345c9fbcdb2528bbc7faebdfec6b31d64458ccd3e0291660659e9583bea4",
+          "snapshotBytes": 1000178,
+          "snapshotSha256": "7e5ee6028d17a2a548562fe5c8cf7c3a3bee3e4fa4dde21c832b478524b1f7a1",
+          "metadataSha256": "1de0942303511fc30b3d44d8982debc022c49577ba1e804b8400dbf6eb88a525",
+          "acceptedCapturedMigrated": true,
+          "aliasBackingPreserved": true
+        }
+      ]
+    }
+  },
+  "summaryMethodology": "Each list cell is emitted as canonical Int32 littleendian and SHA256hashed; first/middle/last retain original CLR scalar type. Independent Python computes expected entiresequencehash. Alias backing identity is observed from original list.Data references. No compiler/runtime/backend substitution."
+}

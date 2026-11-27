@@ -2,16 +2,18 @@
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/network/service_protocol.hpp"
 #include "opensim/framework/text.hpp"
+#include "opensim/framework/culture_prefix.hpp"
 #include <pugixml.hpp>
 #include <set>
 #include <map>
 #include <algorithm>
+#include <utility>
 #include "opensim/network/service_xml_names.hpp"
+
 namespace opensim::network {
-std::string
-build_service_form(const std::vector<std::pair<std::string, std::optional<std::string>>>& fields) {
+std::string build_service_form(const std::vector<std::pair<std::string, std::optional<std::string>>> &fields) {
     std::string out;
-    for (const auto& [key, value] : fields) {
+    for (const auto &[key, value] : fields) {
         if (!out.empty())
             out += '&';
         out += service_url_encode(key);
@@ -22,6 +24,7 @@ build_service_form(const std::vector<std::pair<std::string, std::optional<std::s
     }
     return out;
 }
+
 namespace {
 std::string decoded_name(std::string_view input) {
     auto text = framework::utf16_replacing(input);
@@ -66,10 +69,12 @@ std::string decoded_name(std::string_view input) {
     }
     return framework::utf8(out);
 }
+
 bool xml_char(std::uint32_t c) {
     return c == 9 || c == 10 || c == 13 || (c >= 32 && c <= 0xd7ff) || (c >= 0xe000 && c <= 0xfffd) ||
            (c >= 0x10000 && c <= 0x10ffff);
 }
+
 void validate(std::string_view text) {
     for (auto c : framework::utf16_replacing(text))
         if ((c < 32 && !xml_char(c)) || c == 0xfffe || c == 0xffff)
@@ -95,6 +100,12 @@ void validate(std::string_view text) {
             auto end = text.find("?>", i + 2);
             if (end == std::string_view::npos)
                 throw std::invalid_argument("Unterminated PI");
+            const auto target = text.substr(i + 2, 3);
+            const auto delimiter = i + 5 < text.size() ? text[i + 5] : '\0';
+            if (framework::ordinal_equals_ignore_case(target, "xml") &&
+                (delimiter == ' ' || delimiter == '\t' || delimiter == '\r' || delimiter == '\n' || delimiter == '?') &&
+                (i != 0 || target != "xml"))
+                throw std::invalid_argument("Misplaced or reserved XML declaration target");
             i = end + 1;
             continue;
         }
@@ -142,6 +153,7 @@ void validate(std::string_view text) {
         i = end;
     }
 }
+
 std::string response_prefix(std::string_view text) {
     std::vector<std::string> stack;
     std::size_t target = 0;
@@ -205,21 +217,23 @@ std::string response_prefix(std::string_view text) {
     }
     return std::string(text);
 }
+
 using Namespaces = std::map<std::string, std::string>;
+
 std::pair<std::string, std::string> qualified(std::string name) {
     auto colon = name.find(':');
     if (colon != std::string::npos && name.find(':', colon + 1) != std::string::npos)
         throw std::invalid_argument("Invalid XML qualified name");
-    std::pair<std::string, std::string> parts =
-        colon == std::string::npos ? std::pair{std::string{}, name}
-                                   : std::pair{name.substr(0, colon), name.substr(colon + 1)};
-    auto check = [](const std::string& value) {
+    std::pair<std::string, std::string> parts = colon == std::string::npos
+                                                    ? std::pair{std::string{}, name}
+                                                    : std::pair{name.substr(0, colon), name.substr(colon + 1)};
+    auto check = [](const std::string &value) {
         auto text = framework::utf16_replacing(value);
         if (text.empty())
             throw std::invalid_argument("Empty XML name");
         for (std::size_t i = 0; i < text.size(); ++i) {
             auto c = text[i];
-            auto valid = [&](const auto& ranges) {
+            auto valid = [&](const auto &ranges) {
                 auto at = std::lower_bound(ranges.begin(), ranges.end(), c,
                                            [](auto range, char16_t n) { return range.second < n; });
                 return at != ranges.end() && at->first <= c;
@@ -233,6 +247,7 @@ std::pair<std::string, std::string> qualified(std::string name) {
     check(parts.second);
     return parts;
 }
+
 Namespaces namespaces(pugi::xml_node node, Namespaces values) {
     for (auto attr : node.attributes()) {
         std::string name = attr.name(), uri = attr.value();
@@ -241,15 +256,14 @@ Namespaces namespaces(pugi::xml_node node, Namespaces values) {
         else if (name.starts_with("xmlns:")) {
             auto prefix = name.substr(6);
             qualified(prefix);
-            if (prefix.empty() || uri.empty() || prefix == "xmlns" ||
-                uri == "http://www.w3.org/2000/xmlns/" ||
+            if (prefix.empty() || uri.empty() || prefix == "xmlns" || uri == "http://www.w3.org/2000/xmlns/" ||
                 (prefix == "xml" && uri != "http://www.w3.org/XML/1998/namespace") ||
                 (prefix != "xml" && uri == "http://www.w3.org/XML/1998/namespace"))
                 throw std::invalid_argument("Invalid namespace declaration");
             values[prefix] = uri;
         }
     }
-    auto resolve = [&](const std::string& name, bool attribute) {
+    auto resolve = [&](const std::string &name, bool attribute) {
         auto [prefix, local] = qualified(name);
         if (!prefix.empty() && !values.contains(prefix))
             throw std::invalid_argument("Undeclared XML prefix");
@@ -266,10 +280,12 @@ Namespaces namespaces(pugi::xml_node node, Namespaces values) {
     }
     return values;
 }
+
 struct Event {
     pugi::xml_node node;
     bool end = false, empty = false;
 };
+
 bool self_closing(pugi::xml_node node, std::string_view text) {
     auto pos = static_cast<std::size_t>(node.offset_debug());
     char quote = 0;
@@ -286,7 +302,7 @@ bool self_closing(pugi::xml_node node, std::string_view text) {
     throw std::invalid_argument("Unterminated XML element");
 }
 
-void events(pugi::xml_node parent, std::string_view text, std::vector<Event>& out, bool preserve = false,
+void events(pugi::xml_node parent, std::string_view text, std::vector<Event> &out, bool preserve = false,
             unsigned depth = 0, Namespaces ns = {{"xml", "http://www.w3.org/XML/1998/namespace"}}) {
     if (depth > 512)
         throw std::invalid_argument("Service XML nesting limit");
@@ -294,8 +310,7 @@ void events(pugi::xml_node parent, std::string_view text, std::vector<Event>& ou
         if (node.type() == pugi::node_element) {
             auto bindings = namespaces(node, ns);
             auto space = node.attribute("xml:space");
-            if (space && std::string_view(space.value()) != "preserve" &&
-                std::string_view(space.value()) != "default")
+            if (space && std::string_view(space.value()) != "preserve" && std::string_view(space.value()) != "default")
                 throw std::invalid_argument("Invalid XML space value");
             bool keep = space ? std::string_view(space.value()) == "preserve" : preserve;
             std::set<std::string> names;
@@ -323,15 +338,17 @@ void events(pugi::xml_node parent, std::string_view text, std::vector<Event>& ou
             throw std::invalid_argument("DTD prohibited");
     }
 }
-void set(ServiceXmlValue& target, std::string key, ServiceXmlValue value) {
-    for (auto& field : target.fields)
+
+void set(ServiceXmlValue &target, std::string key, ServiceXmlValue value) {
+    for (auto &field : target.fields)
         if (field.first == key) {
             field.second = std::move(value);
             return;
         }
     target.fields.push_back({std::move(key), std::move(value)});
 }
-ServiceXmlValue scan(const std::vector<Event>& values, std::size_t& pos, unsigned depth = 0) {
+
+ServiceXmlValue scan(const std::vector<Event> &values, std::size_t &pos, unsigned depth = 0) {
     if (depth > 512)
         throw std::invalid_argument("Service XML nesting limit");
     auto result = ServiceXmlValue::object({});
@@ -365,28 +382,132 @@ ServiceXmlValue scan(const std::vector<Event>& values, std::size_t& pos, unsigne
     }
     return result;
 }
-}
-ServiceXmlValue parse_service_xml(std::string_view text) {
-    try {
-        if (text.size() > 50000000)
-            throw std::invalid_argument("Service XML length limit");
-        auto prefix = response_prefix(text);
-        text = prefix;
-        validate(text);
-        pugi::xml_document doc;
-        auto parsed = doc.load_buffer(text.data(), text.size(),
-                                      pugi::parse_default | pugi::parse_fragment | pugi::parse_ws_pcdata |
-                                          pugi::parse_doctype);
-        if (!parsed)
-            return ServiceXmlValue::object({});
-        std::vector<Event> values;
-        events(doc, text, values);
-        for (std::size_t pos = 0; pos < values.size(); ++pos)
-            if (!values[pos].end && values[pos].node.type() == pugi::node_element &&
-                std::string_view(values[pos].node.name()) == "ServerResponse")
-                return scan(values, pos);
-    } catch (const std::exception&) {
+} // namespace
+
+static std::pair<std::size_t, std::string> xml_declaration(std::string_view bytes) {
+    // The original XmlParserContext supplies UTF8NoBomEncoding. Unlike a
+    // StreamReader, it neither detects UTF16 BOMs nor consumes a UTF8 BOM.
+    const auto declaration_start = [](std::string_view text) {
+        return text.starts_with("<?xml") && text.size() > 5 &&
+               (text[5] == ' ' || text[5] == '\t' || text[5] == '\r' || text[5] == '\n' ||
+                (text[5] == '?' && text.size() > 6 && text[6] == '>'));
+    };
+    if (bytes.starts_with("\xef\xbb\xbf") && declaration_start(bytes.substr(3)))
+        throw std::invalid_argument("XML declaration follows a BOM character");
+    std::string encoding = "utf-8";
+    std::size_t body = 0;
+    if (declaration_start(bytes)) {
+        const auto end = bytes.find("?>");
+        if (end == std::string_view::npos)
+            throw std::invalid_argument("Unterminated XML declaration");
+        body = end + 2;
+        const auto space = [](char c) { return c == ' ' || c == '\t' || c == '\r' || c == '\n'; };
+        bool version = false, encoded = false, standalone = false;
+        std::size_t cursor = 5;
+        while (cursor < end) {
+            const auto before_space = cursor;
+            while (cursor < end && space(bytes[cursor]))
+                ++cursor;
+            if (cursor == end)
+                break;
+            if (cursor == before_space)
+                throw std::invalid_argument("XML declaration attributes require whitespace");
+            const auto name_start = cursor;
+            while (cursor < end && !space(bytes[cursor]) && bytes[cursor] != '=')
+                ++cursor;
+            const auto name = bytes.substr(name_start, cursor - name_start);
+            while (cursor < end && space(bytes[cursor]))
+                ++cursor;
+            if (cursor == end || bytes[cursor++] != '=')
+                throw std::invalid_argument("Invalid XML declaration attribute");
+            while (cursor < end && space(bytes[cursor]))
+                ++cursor;
+            if (cursor == end || (bytes[cursor] != '\'' && bytes[cursor] != '"'))
+                throw std::invalid_argument("Unquoted XML declaration attribute");
+            const auto quote = bytes[cursor++];
+            const auto value_start = cursor;
+            while (cursor < end && bytes[cursor] != quote)
+                ++cursor;
+            if (cursor == end)
+                throw std::invalid_argument("Unterminated XML declaration attribute");
+            const auto value = bytes.substr(value_start, cursor++ - value_start);
+            if (!version && name == "version" && value == "1.0")
+                version = true;
+            else if (version && !encoded && !standalone && name == "encoding") {
+                const auto letter = [](char c) { return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'); };
+                if (value.empty() || !letter(value.front()) || !std::all_of(value.begin(), value.end(), [&](char c) {
+                        return letter(c) || (c >= '0' && c <= '9') || c == '.' || c == '_' || c == '-';
+                    }))
+                    throw std::invalid_argument("Invalid XML encoding name");
+                encoding = value;
+                encoded = true;
+            } else if (version && !standalone && name == "standalone" && (value == "yes" || value == "no"))
+                standalone = true;
+            else
+                throw std::invalid_argument("Invalid XML declaration attribute or order");
+        }
+        if (!version)
+            throw std::invalid_argument("XML declaration requires version 1.0");
+        std::transform(encoding.begin(), encoding.end(), encoding.begin(),
+                       [](unsigned char c) { return c >= 'A' && c <= 'Z' ? c + ('a' - 'A') : c; });
     }
+    return {body, std::move(encoding)};
+}
+
+static ServiceXmlValue parse_service_xml_value(std::string_view text) {
+    (void)xml_declaration(text);
+    if (text.size() > 50000000)
+        throw std::invalid_argument("Service XML length limit");
+    auto prefix = response_prefix(text);
+    text = prefix;
+    validate(text);
+    pugi::xml_document doc;
+    auto parsed = doc.load_buffer(
+        text.data(), text.size(),
+        pugi::parse_default | pugi::parse_fragment | pugi::parse_ws_pcdata | pugi::parse_doctype, pugi::encoding_utf8);
+    if (!parsed)
+        throw std::invalid_argument("Invalid service XML stream");
+    std::vector<Event> values;
+    events(doc, text, values);
+    for (std::size_t pos = 0; pos < values.size(); ++pos)
+        if (!values[pos].end && values[pos].node.type() == pugi::node_element &&
+            std::string_view(values[pos].node.name()) == "ServerResponse")
+            return scan(values, pos);
     return ServiceXmlValue::object({});
 }
+
+ServiceXmlValue parse_service_xml_stream(std::string_view bytes) {
+    const auto [body, encoding] = xml_declaration(bytes);
+    const auto input = bytes.substr(body);
+    std::string decoded;
+    if (encoding == "utf-8") {
+        decoded = framework::utf8(framework::utf16_replacing(input));
+    } else if (encoding == "iso-8859-1" || encoding == "latin1" || encoding == "us-ascii" || encoding == "ascii") {
+        std::u16string characters;
+        const bool ascii = encoding == "us-ascii" || encoding == "ascii";
+        for (const unsigned char c : input)
+            characters.push_back(ascii && c > 127 ? u'?' : static_cast<char16_t>(c));
+        decoded = framework::utf8(characters);
+    } else if (encoding == "utf-16be" || encoding == "utf-32") {
+        // These explicit encodings can switch after an ASCII declaration.
+        const auto bom = encoding == "utf-16be" ? std::string("\xfe\xff", 2) : std::string("\xff\xfe\0\0", 4);
+        decoded = read_service_body(bom + std::string(input));
+    } else {
+        // Switching from the context's UTF8 decoder to UTF16LE requires a
+        // byte-order mark; unsupported code pages likewise fail in XmlReader.
+        throw std::invalid_argument("Unsupported XML stream encoding");
+    }
+    // Parsing is already decoded UTF8; do not let the XML library select a
+    // different decoder from the original declaration a second time.
+    return parse_service_xml_value(body ? std::string("<?xml version=\"1.0\" encoding=\"utf-8\"?>") + decoded
+                                        : decoded);
 }
+
+ServiceXmlValue parse_service_xml(std::string_view text) {
+    try {
+        return parse_service_xml_value(text);
+    } catch (const std::exception &) {
+        return ServiceXmlValue::object({});
+    }
+}
+} // namespace opensim::network

@@ -32,14 +32,17 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <chrono>
 #include <iomanip>
 #include <sstream>
+
 namespace opensim::server {
 using namespace network;
+
 namespace {
-std::string text(const FormValue& value) {
-    if (const auto* scalar = std::get_if<std::string>(&value))
+std::string text(const FormValue &value) {
+    if (const auto *scalar = std::get_if<std::string>(&value))
         return *scalar;
     return "System.Collections.Generic.List`1[System.String]";
 }
+
 // OpenSim's server sets the invariant culture. DateTime.ToString uses this
 // Gregorian UTC date without a timezone suffix, including pre-epoch values.
 std::string date(std::int32_t seconds) {
@@ -56,7 +59,8 @@ std::string date(std::int32_t seconds) {
         << time.seconds().count();
     return out.str();
 }
-ServiceXmlValue info(const services::GridUserInfo& value) {
+
+ServiceXmlValue info(const services::GridUserInfo &value) {
     return ServiceXmlValue::object({{"UserID", value.user_id},
                                     {"HomeRegionID", value.home_region.str()},
                                     {"HomePosition", framework::vector3_string(value.home_position)},
@@ -68,8 +72,9 @@ ServiceXmlValue info(const services::GridUserInfo& value) {
                                     {"Login", date(value.login)},
                                     {"Logout", date(value.logout)}});
 }
-bool unpack(const Form& fields, std::string& user, framework::Uuid& region, framework::Vector3& position,
-            framework::Vector3& look) {
+
+bool unpack(const Form &fields, std::string &user, framework::Uuid &region, framework::Vector3 &position,
+            framework::Vector3 &look) {
     if (!fields.contains("UserID") || !fields.contains("RegionID"))
         return false;
     user = text(fields.at("UserID"));
@@ -83,8 +88,9 @@ bool unpack(const Form& fields, std::string& user, framework::Uuid& region, fram
         framework::parse_vector3(text(fields.at("LookAt")), look);
     return true;
 }
-}
-HttpResponse GridUserEndpoint::handle(const HttpRequest& request) {
+} // namespace
+
+HttpResponse GridUserEndpoint::handle(const HttpRequest &request) {
     HttpResponse response;
     response.content_type = "application/xml";
     response.headers["Cache-Control"] = "no-store";
@@ -104,21 +110,21 @@ HttpResponse GridUserEndpoint::handle(const HttpRequest& request) {
             return response;
         const auto name = text(method->second);
         if (name == "loggedin" && fields.contains("UserID"))
-            response.body = service_xml(
-                ServiceXmlValue::object({{"result", info(service_.logged_in(text(fields.at("UserID"))))}}));
+            response.body =
+                service_xml(ServiceXmlValue::object({{"result", info(service_.logged_in(text(fields.at("UserID"))))}}));
         else if (name == "getgriduserinfo" && fields.contains("UserID")) {
             const auto value = service_.info(text(fields.at("UserID")));
             if (value)
                 response.body = service_xml(ServiceXmlValue::object({{"result", info(*value)}}));
         } else if (name == "getgriduserinfos" && fields.contains("AgentIDs")) {
-            if (const auto* users = std::get_if<std::vector<std::string>>(&fields.at("AgentIDs"))) {
+            if (const auto *users = std::get_if<std::vector<std::string>>(&fields.at("AgentIDs"))) {
                 const auto values = service_.info(*users);
                 auto result = ServiceXmlValue::object({});
                 if (values.empty())
                     result.fields.push_back({"result", "null"});
                 else {
                     std::size_t index = 0;
-                    for (const auto& value : values)
+                    for (const auto &value : values)
                         if (value)
                             result.fields.push_back({"griduser" + std::to_string(index++), info(*value)});
                 }
@@ -129,10 +135,9 @@ HttpResponse GridUserEndpoint::handle(const HttpRequest& request) {
             framework::Uuid region;
             framework::Vector3 position, look;
             if (unpack(fields, user, region, position, look)) {
-                const bool success =
-                    name == "loggedout" ? service_.logged_out(user, {}, region, position, look)
-                    : name == "sethome" ? service_.set_home(user, region, position, look)
-                                        : service_.set_last_position(user, {}, region, position, look);
+                const bool success = name == "loggedout" ? service_.logged_out(user, {}, region, position, look)
+                                     : name == "sethome" ? service_.set_home(user, region, position, look)
+                                                         : service_.set_last_position(user, {}, region, position, look);
                 response.body = service_result(success);
             }
         }
@@ -141,4 +146,4 @@ HttpResponse GridUserEndpoint::handle(const HttpRequest& request) {
     }
     return response;
 }
-}
+} // namespace opensim::server

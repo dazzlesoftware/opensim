@@ -1,0 +1,1 @@
+string item="<1,2,3>";float result;default{state_entry(){result=(float)item;}}

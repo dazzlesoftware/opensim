@@ -6,6 +6,8 @@ import tempfile
 import math
 import sqlite3
 import contextlib
+from collections import deque
+import sys
 import xml.etree.ElementTree as ET
 import base64
 import concurrent.futures
@@ -25,6 +27,7 @@ import xmlrpc.server
 import gzip
 import urllib.parse
 import os
+from connected_failure_diagnostics import capture_server_threads
 
 
 def main():
@@ -73,6 +76,9 @@ def main():
     p.add_argument('--public-terrain', action='store_true')
     p.add_argument('--sl-landing', action='store_true')
     p.add_argument('--os-landing', action='store_true')
+    p.add_argument('--disable-user-management', action='store_true')
+    p.add_argument('--basic-group-names', action='store_true')
+    p.add_argument('--hypergrid-groups', action='store_true')
     p.add_argument('--map-tile-refresh', action='store_true')
     p.add_argument('--static-map-file', action='store_true')
     p.add_argument('--warp-map', action='store_true')
@@ -82,7 +88,30 @@ def main():
     p.add_argument('--late-pbr-terrain', action='store_true')
     p.add_argument('--extended-pbr-terrain', action='store_true')
     a = p.parse_args()
+    trace_run_id = uuid.uuid4().hex
     a.work.mkdir(parents=True, exist_ok=True)
+    trace_process_launches = os.environ.get(
+        'OPENSIM_TRACE_PROCESS_LAUNCHES', os.environ.get('OPENSIM_TRACE_CIRCUITS')
+    ) == '1'
+    if os.name == 'nt' and trace_process_launches:
+        import _winapi
+        create_process = _winapi.CreateProcess
+
+        def traced_create_process(*arguments, **keywords):
+            result = create_process(*arguments, **keywords)
+            if 'viewer_session_probe' in str(arguments[:2]):
+                try:
+                    with (a.work / f'process-launch-{os.getpid()}.log').open('a', encoding='utf-8') as trace:
+                        trace.write(f'Created viewer PID {result[2]}\n')
+                        frame = sys._getframe(1)
+                        while frame:
+                            trace.write(f'{frame.f_code.co_filename}:{frame.f_lineno} {frame.f_code.co_name}\n')
+                            frame = frame.f_back
+                except OSError:
+                    pass
+            return result
+
+        _winapi.CreateProcess = traced_create_process
     checks = []
     if a.script_restart:
         a.script_https_external = True
@@ -132,6 +161,10 @@ def main():
             p.error('Set OPENSIM_GRID_USER_TEST_CONNECTION to an isolated test database')
     if a.touch:
         a.assets = True  # A configured script override must store the exact executed asset.
+
+    def llsd_map(node):
+        values = list(node)
+        return {values[i].text: values[i + 1] for i in range(0, len(values), 2)}
 
     def check(ok, name):
         if not ok:
@@ -183,6 +216,7 @@ DestinationGuide = https://example.invalid/guide/[USERID]
             grid_lifecycle = queue.Queue()
             reject_map_refresh = threading.Event()
             web_region_requests = queue.Queue()
+            neighbour_announcements = queue.Queue()
             grid_lookups = queue.Queue()
             remote_map_calls = queue.Queue()
             map_peer_alias_lookup = threading.Event()
@@ -216,14 +250,25 @@ DestinationGuide = https://example.invalid/guide/[USERID]
 
             class FeatureGrid(http.server.BaseHTTPRequestHandler):
                 def do_GET(self):
+                    if a.late_pbr_terrain and self.path == '/fsapi/region-config':
+                        self.reply(json.dumps({
+                            'Realm': 'voice.example.test', 'SIPProxy': 'voice.example.test:5060',
+                            'AttemptUseSTUN': True, 'EchoServer': 'echo.example.test<&>', 'EchoPort': 50506,
+                            'DefaultWellKnownIP': 'voice.example.test', 'DefaultTimeout': 6200,
+                            'Context': 'default', 'APIPrefix': '/remote-voice',
+                        }).encode(), 'text/json')
+                        return
                     if self.path == '/regions.xml' and a.web_region_config:
                         first_request = web_region_requests.empty()
                         web_region_requests.put(self.path)
-                        document = '<Nini/>' if first_request else web_region_xml
-                        self.reply(document.encode('utf-8'), 'text/xml')
+                        document = '<?xml version="1.0"?>' + web_region_xml if first_request else web_region_xml
+                        self.reply(document.encode('utf-16'), 'text/xml')
                         return
                     if self.path == '/empty-regions.xml' and a.web_region_config:
                         self.reply(b'<Nini/>', 'text/xml')
+                        return
+                    if self.path == '/comment-regions.xml' and a.web_region_config:
+                        self.reply(b'<Nini><!-- RegionInfo expects an element here. --></Nini>', 'text/xml')
                         return
                     if self.path == '/missing-regions.xml' and a.web_region_config:
                         self.send_error(404)
@@ -244,9 +289,13 @@ DestinationGuide = https://example.invalid/guide/[USERID]
                             'application/xml+llsd',
                         )
                         return
-                    if self.path == f'/MAP/MapItems/{(1280 << 32) | 768}':
+                    if self.path == f'/MAP/MapItems/{(256256 << 32) | 256000}':
                         remote_map_calls.put(self.path)
                         self.send_error(503)
+                        return
+                    if self.path == f'/MAP/MapItems/{(256512 << 32) | 256000}':
+                        remote_map_calls.put(self.path)
+                        self.reply(b'<llsd><map/></llsd>', 'application/xml+llsd')
                         return
                     if self.path != f'/MAP/MapItems/{(1024 << 32) | 768}':
                         self.send_error(404)
@@ -305,6 +354,10 @@ DestinationGuide = https://example.invalid/guide/[USERID]
                         self.reply(b'{"success":true}')
                         return
                     payload = self.rfile.read(int(self.headers['Content-Length']))
+                    if self.path.startswith('/region/'):
+                        neighbour_announcements.put((self.path, json.loads(payload)))
+                        self.reply(b'{"success":true}')
+                        return
                     if self.path == '/' and a.pbr_terrain:
                         parameters, method = xmlrpc.client.loads(payload)
                         land_requests.put((method, parameters))
@@ -329,7 +382,7 @@ DestinationGuide = https://example.invalid/guide/[USERID]
                             'SalePrice': '750',
                             'SnapshotID': destination_id,
                             'UserLocation': '<0, 0, 0>',
-                            'RegionAccess': '42',
+                            'RegionAccess': '298',  # The managed connector casts this to access level 42.
                             'Dwell': '7.5',
                         }
                         self.reply(
@@ -356,6 +409,25 @@ DestinationGuide = https://example.invalid/guide/[USERID]
                                     fields['AcceptNotices'][0],
                                     fields['ListInProfile'][0],
                                 )
+                        elif fields.get('METHOD') == ['FINDGROUPS']:
+                            if fields.get('Query') == ['parcel'] and fields.get('RequestingAgentID') == [manager]:
+                                body = (
+                                    b'<ServerResponse><RESULT type="List"><n-0 type="List">'
+                                    b'<GroupID>00000000-0000-4000-8000-000000000003suffix</GroupID>'
+                                    b'<Name>Parcel Group</Name><NMembers>7</NMembers><SearchOrder>1.25</SearchOrder>'
+                                    b'</n-0></RESULT></ServerResponse>'
+                                )
+                            elif fields.get('Query') == ['incomplete']:
+                                body = (
+                                    b'<ServerResponse><RESULT type="List"><n-0 type="List">'
+                                    b'<GroupID>00000000-0000-4000-8000-000000000003</GroupID>'
+                                    b'<Name>Incomplete Group</Name><NMembers>7</NMembers>'
+                                    b'</n-0></RESULT></ServerResponse>'
+                                )
+                        elif fields.get('METHOD') == ['GETGROUP']:
+                            if (fields.get('GroupID') == ['00000000-0000-4000-8000-000000000003']
+                                    and fields.get('RequestingAgentID') == [manager]):
+                                body = b'<ServerResponse><RESULT type="List"><GroupName>Parcel Group</GroupName></RESULT></ServerResponse>'
                         elif fields.get('METHOD') == ['GETAGENTROLES'] and group_agent == manager:
                             body = (
                                 f'<ServerResponse><RESULT type="List"><r-0 type="List"><Name>Builders</Name><RoleID>{remote_builder}</RoleID></r-0>'
@@ -383,7 +455,7 @@ DestinationGuide = https://example.invalid/guide/[USERID]
                                 '</m-0></RESULT></ServerResponse>'
                             ).encode()
                         elif (
-                            a.group_parcel_access or a.group_terrain
+                            a.group_parcel_access or a.group_terrain or a.script_parcel_access
                         ) and group_agent == parcel_observer:
                             body = (
                                 '<ServerResponse><RESULT type="List"><m-0 type="List">'
@@ -426,6 +498,22 @@ DestinationGuide = https://example.invalid/guide/[USERID]
                             body = b'<ServerResponse><Result>Failure</Result><Message>Fixture rejected map</Message></ServerResponse>'
                         else:
                             body = b'<ServerResponse><Result>Success</Result></ServerResponse>'
+                    elif fields.get('METHOD') == ['get_neighbours'] and a.remote_data:
+                        body = (
+                            f'<ServerResponse><region0 type="List"><uuid>{destination_id}</uuid>'
+                            '<locX>256256</locX><locY>256000</locY><flags>4</flags>'
+                            '<serverURI>http://127.0.0.1:1/stale/</serverURI></region0></ServerResponse>'
+                        ).encode()
+                    elif a.remote_data and fields.get('METHOD') == ['get_region_by_position'] and (
+                        fields.get('X') == ['256256'] and fields.get('Y') == ['256000']
+                    ):
+                        port = self.server.server_port
+                        body = (
+                            f'<ServerResponse><result type="List"><uuid>{destination_id}</uuid>'
+                            '<locX>256256</locX><locY>256000</locY><serverIP>127.0.0.1</serverIP>'
+                            f'<serverHttpPort>{port}</serverHttpPort>'
+                            f'<serverURI>http://127.0.0.1:{port}/</serverURI></result></ServerResponse>'
+                        ).encode()
                     elif fields.get('METHOD') in (['get_regions_by_name'], ['get_region_range']):
                         body = b'<ServerResponse><result>null</result></ServerResponse>'
                         by_name = fields.get('NAME') == ['Remote.Test'] and fields.get('MAX') == ['20']
@@ -479,7 +567,7 @@ DestinationGuide = https://example.invalid/guide/[USERID]
                             grid_lookups.put(fields)
                         body = b'<ServerResponse><result>null</result></ServerResponse>'
                         requested_region = fields.get('REGIONID', [''])[0]
-                        map_failure = a.os_landing and by_position and fields.get('X') == ['1280']
+                        map_failure = a.os_landing and by_position and fields.get('X') == ['256256']
                         map_peer_alias = a.os_landing and by_position and fields.get('X') == ['3072']
                         if map_peer_alias:
                             map_peer_alias_lookup.set()
@@ -496,7 +584,8 @@ DestinationGuide = https://example.invalid/guide/[USERID]
                             location_x = int(fields['X'][0]) if by_position else 1024
                             body = (
                                 f'<ServerResponse><result type="List"><uuid>{region_id}</uuid>'
-                                f'<locX>{location_x}</locX><locY>768</locY><sizeX>256</sizeX><sizeY>256</sizeY>'
+                                f'<locX>{location_x}</locX><locY>{256000 if map_failure else 768}</locY>'
+                                '<sizeX>256</sizeX><sizeY>256</sizeY>'
                                 '<regionName>Remote Test Region</regionName><serverIP>127.0.0.1</serverIP>'
                                 f'<serverHttpPort>{port}</serverHttpPort><serverURI>http://127.0.0.1:{port}/</serverURI>'
                                 '<serverPort>19000</serverPort></result></ServerResponse>'
@@ -669,8 +758,9 @@ UserProfilesServices=LocalUserProfilesServicesConnector
             config.write_text(settings, encoding='utf-8')
         if a.os_landing and not a.assets:
             with config.open('a', encoding='utf-8') as settings:
-                settings.write('\n[ClientStack.LindenCaps]\nCap_EstateChangeInfo=localhost\n')
-        if a.assets or a.raw_fps:
+                settings.write('\n[ClientStack.LindenCaps]\nCap_EstateChangeInfo=localhost\n'
+                               'Cap_AvatarPickerSearch=localhost\n')
+        if a.assets or a.raw_fps or a.restart_shutdown:
             source = Path(__file__).resolve().parents[2]
             original_control = source / 'bin/assets/AssetSets.xml'
             staged_control = Path(a.native).resolve().parent / 'share/opensim-native/assets/AssetSets.xml'
@@ -683,11 +773,12 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                 + '\n[ClientStack.LindenCaps]\nCap_GetTexture=localhost\nCap_GetMesh=localhost\nCap_GetMesh2=localhost\nCap_GetAsset=localhost\n'
             )
             if a.os_landing:
-                asset_config += 'Cap_EstateChangeInfo=localhost\n'
+                asset_config += 'Cap_EstateChangeInfo=localhost\nCap_AvatarPickerSearch=localhost\n'
             if a.pbr_terrain:
                 asset_config = asset_config.replace(
                     '[Modules]\n',
                     '[Modules]\nLandServiceInConnector=true\n'
+                    + ('FreeswitchServiceInConnector=true\n' if not a.late_pbr_terrain else '') +
                     'LandServices=RemoteLandServicesConnector\n',
                 )
                 asset_config += (
@@ -828,6 +919,18 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                     '&& llGetListLength(llGetBoundingBox(NULL_KEY)) == 2)',
                 )
                 if ground_bounds_probe:
+                    if not a.block_flight:
+                        script = script.replace('llSay( 0, "I am Alive!");',
+                                                'llListen(17262, "", llGetOwner(), ""); llSay(0, "I am Alive!");')
+                        script = script.rsplit('}', 1)[0] + '''
+    listen(integer channel, string name, key sender, string message) {
+        osSetOwnerSpeed((float)message);
+        llOwnerSay("Speed modifier set " + message);
+    }
+}
+'''
+                        with config.open('a', encoding='utf-8') as settings:
+                            settings.write('\n[OSSL]\nAllow_osSetOwnerSpeed=true\n')
                     script = "vector standing_upper;\n" + script.replace(
                         'llSay( 0, "Touched.',
                         '''key avatar = llDetectedKey(0);
@@ -893,14 +996,22 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                     xmlrpc.server.SimpleXMLRPCServer(('127.0.0.1', 0), logRequests=False)
                 )
                 foreign_key_calls = []
+                foreign_home_calls = []
+
+                def get_foreign_home(request):
+                    foreign_home_calls.append(request)
+                    return {'SRV_HomeURI': 'https://published-home.example/'}
 
                 def get_foreign_key(request):
                     foreign_key_calls.append(request)
                     if request == {'first': 'Foreign', 'last': 'Avatar'}:
                         return {'UUID': foreign_id}
+                    if request == {'first': 'Broken', 'last': 'Avatar'}:
+                        return {'UUID': 'invalid'}
                     return {'UUID': str(uuid.UUID(int=0))}
 
                 key_server.register_function(get_foreign_key, 'get_uuid')
+                key_server.register_function(get_foreign_home, 'get_server_urls')
                 key_worker = threading.Thread(target=key_server.serve_forever, daemon=True)
                 key_worker.start()
                 cleanup.callback(key_worker.join, 5)
@@ -911,16 +1022,25 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                         'string fixtureName = "Rotating fixture"; '
                         'default { '
                         'state_entry() { '
+                        'osSetRot(llGetKey(), llGetRot()); '
                         'llTargetOmega(<0,0,1>,2.5,1); '
                         'llSay(0,fixtureName); '
                         'llSay(0,"Root agents " + (string)llGetRegionAgentCount()); '
+                        'llSay(0,"Other avatars " + (string)llGetListLength(osGetAvatarList())); '
                         'llSay(0,"Region agents " + llList2CSV(llGetAgentList(AGENT_LIST_REGION | AGENT_LIST_EXCLUDENPC, []))); '
                         'llSay(0,"Parcel agents " + llList2CSV(llGetAgentList(AGENT_LIST_PARCEL, []))); '
                         'llSay(0,"Parcel owner agents " + llList2CSV(llGetAgentList(AGENT_LIST_PARCEL_OWNER, []))); '
                         'llSay(0,"Water " + (string)llWater(<1,2,3>) + " Ground " + (string)llGround(<1,2,3>)); '
-                        'llSay(0,"Region terraform flag " + (string)(llGetRegionFlags() & (REGION_FLAG_BLOCK_TERRAFORM | REGION_FLAG_ALLOW_DAMAGE | REGION_FLAG_BLOCK_FLY | REGION_FLAG_DISABLE_PHYSICS))); '
+                        'integer regionFlags = REGION_FLAG_BLOCK_TERRAFORM | REGION_FLAG_ALLOW_DAMAGE '
+                        '| REGION_FLAG_BLOCK_FLY | REGION_FLAG_DISABLE_PHYSICS; '
+                        'llSay(0,"Region terraform flag " + (string)(llGetRegionFlags() & regionFlags)); '
                         'llSay(0,"Parcel flags " + (string)llGetParcelFlags(<128,128,25>) + " " + (string)llGetParcelFlags(<132,128,25>)); '
-                        'llSay(0,"Parcel details " + llList2CSV(llGetParcelDetails(<132,128,25>, [PARCEL_DETAILS_OWNER, PARCEL_DETAILS_AREA, PARCEL_DETAILS_ID, PARCEL_DETAILS_FLAGS, PARCEL_DETAILS_NAME, PARCEL_DETAILS_DESC, PARCEL_DETAILS_GROUP, PARCEL_DETAILS_GETCLAIMDATE, PARCEL_DETAILS_LANDING_POINT, PARCEL_DETAILS_LANDING_LOOKAT, PARCEL_DETAILS_TP_ROUTING, PARCEL_DETAILS_SEE_AVATARS, PARCEL_DETAILS_DWELL, PARCEL_DETAILS_PRIM_CAPACITY, PARCEL_DETAILS_PRIM_USED, PARCEL_DETAILS_SCRIPT_DANGER]))); '
+                        'list parcelFields = [PARCEL_DETAILS_OWNER, PARCEL_DETAILS_AREA, PARCEL_DETAILS_ID, '
+                        'PARCEL_DETAILS_FLAGS, PARCEL_DETAILS_NAME, PARCEL_DETAILS_DESC, PARCEL_DETAILS_GROUP, '
+                        'PARCEL_DETAILS_GETCLAIMDATE, PARCEL_DETAILS_LANDING_POINT, PARCEL_DETAILS_LANDING_LOOKAT, '
+                        'PARCEL_DETAILS_TP_ROUTING, PARCEL_DETAILS_SEE_AVATARS, PARCEL_DETAILS_DWELL, '
+                        'PARCEL_DETAILS_PRIM_CAPACITY, PARCEL_DETAILS_PRIM_USED, PARCEL_DETAILS_SCRIPT_DANGER]; '
+                        'llSay(0,"Parcel details " + llList2CSV(llGetParcelDetails(<132,128,25>, parcelFields))); '
                         'llSay(0,"Script danger " + (string)llScriptDanger(<128,128,25>) + " " + (string)llScriptDanger(<132,128,25>) + " " + (string)llScriptDanger(<-1,128,25>)); '
                         'llSay(0,"Parcel center " + (string)(llVecDist(llList2Vector(llGetParcelDetails(<132,128,25>, [PARCEL_DETAILS_GEOMETRICCENTER]), 0), <194,128,0>) < 0.001)); '
                         'llSay(0,"Unix " + (string)llGetUnixTime()); '
@@ -1063,14 +1183,24 @@ UserProfilesServices=LocalUserProfilesServicesConnector
       missing_key_query = llRequestUserKey("Missing Resident");
       foreign_key_query = llRequestUserKey("Foreign.Avatar @127.0.0.1:FOREIGN_KEY_PORT");
       cached_key_query = llRequestUserKey("foreign.avatar @127.0.0.1:FOREIGN_KEY_PORT");
+      integer homeUriMatches = HOME_URI_CHECK;
+      llSay(0, "Avatar shape lookup " + osGetGender(llGetOwner()) + "|" + osGetGender("invalid"));
+      osRegionNotice("Script broadcast fixture");
+      osRegionNotice(llGetOwner(), "Script targeted fixture");
       online_data_query = llRequestAgentData(llGetOwner(), DATA_ONLINE);
       name_data_query = llRequestAgentData(llGetOwner(), DATA_NAME);
       rating_data_query = llRequestAgentData(llGetOwner(), DATA_RATING);
       maturity_query = llRequestSimulatorData(llGetRegionName(), DATA_SIM_RATING);
-      llSay(0, "Invalid requests " + (string)(llRequestUsername(NULL_KEY) == "") + " " +
+      llSay(0, "Invalid requests " + (string)(homeUriMatches && llRequestUsername(NULL_KEY) == "") + " " +
           (string)(llRequestDisplayName("invalid") == "") + " " +
           (string)(llRequestUserKey("Invalid") == NULL_KEY));
-    '''.replace('FOREIGN_KEY_PORT', str(key_server.server_address[1])),
+    '''.replace('FOREIGN_KEY_PORT', str(key_server.server_address[1])).replace(
+                        'HOME_URI_CHECK',
+                        'TRUE' if a.grid_user_provider else (
+                            f'osGetAvatarHomeURI("{foreign_id}") == "https://published-home.example:443" && '
+                            f'osGetAvatarHomeURI("{foreign_id}") == "https://published-home.example:443"'
+                        ),
+                    ),
                 )
                 script = (
                     '''
@@ -1114,13 +1244,27 @@ UserProfilesServices=LocalUserProfilesServicesConnector
       http_request(key id, string method, string body) {
           if (method == URL_REQUEST_GRANTED)
               llOwnerSay("Script HTTP URL " + body);
-          if (method == URL_REQUEST_DENIED)
+          if (method == URL_REQUEST_DENIED) {
+              if (body == "Could not resolve ExternalHostNameForLSL, HTTP listener for LSL disabled") {
+                  key missing = "00000000-0000-4000-8000-000000000077";
+                  if (llGetHTTPHeader(missing, "host") != "")
+                      return;
+                  llHTTPResponse(missing, 200, "ignored");
+                  llSetContentType(missing, CONTENT_TYPE_JSON);
+                  llSetContentType(missing, CONTENT_TYPE_HTML);
+              }
               llOwnerSay("Script HTTP denied " + body + "|" + (string)llGetFreeURLs() +
                   "|" + llGetSimulatorHostname());
+          }
           if (method == "PROPFIND" || method == "PURGE" || method == "TRACE" ||
               method == "CONNECT" || method == "PRI")
               llHTTPResponse(id, 202, method + "|" + body);
           if (method == "POST") {
+              if (body == "custom-content-type") {
+                  osSetContentType(id, "application/x-opensim-fixture");
+                  llHTTPResponse(id, 200, "custom response");
+                  return;
+              }
               if (body == "hostname") {
                   llHTTPResponse(id, 200, llGetSimulatorHostname() + "|" +
                       llGetEnv("SIMULATOR_HOSTNAME") + "|" + llGetEnv("region_start_time") + "|" +
@@ -1260,13 +1404,39 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                     settings.write(
                         '\n[YEngine]\nMinTimerInterval = 2\nLinksetDataLimit = 4096\nAutomaticLinkPermission = true\n'
                     )
-                    settings.write('\n[OSSL]\nAllow_osRequestURL = true\n')
+                    settings.write('\n[OSSL]\nAllow_osRequestURL = true\nAllow_osSetContentType = true\n')
+                    settings.write('Allow_osGetAvatarHomeURI = true\n')
+                    settings.write('Allow_osGetAvatarList = true\n')
+                    settings.write('Allow_osSetRot = true\n')
+                    if a.script_email and a.script_smtp_tls:
+                        settings.write('OSFunctionThreatLevel = NoAccess\nAllow_osGetGender = true\n')
+                    settings.write('Allow_osRegionNotice = true\n')
+                    if a.restart_shutdown:
+                        settings.write('Allow_osRegionRestart = true\n')
+                    if a.script_parcel_access:
+                        settings.write('Allow_osParcelSubdivide = true\nAllow_osParcelJoin = true\n'
+                                       'Allow_osSetParcelDetails = true\n')
+                    if a.script_parcel_denied:
+                        settings.write('Allow_osSetParcelDetails = true\n')
                     if a.pbr_terrain:
-                        settings.write('Allow_osSetRegionSunSettings = true\n')
+                        settings.write('Allow_osSetRegionSunSettings = true\nAllow_osSetTerrainTexture = true\n')
+                        settings.write('Allow_osLoadedCreationDate = true\nAllow_osLoadedCreationTime = true\n'
+                                       'Allow_osLoadedCreationID = true\n')
+                        settings.write('Allow_osSetParcelSIPAddress = true\n')
                     if a.script_https:
                         settings.write('Allow_osRequestSecureURL = true\n')
                     if a.script_url_quota:
                         settings.write('\n[LL-Functions]\nmax_external_urls_per_simulator = 2\n')
+                    if a.pbr_terrain:
+                        settings.write('\n[Chat]\nshout_distance = 2048\n')
+                        settings.write('\n[FreeSwitchVoice]\nEnabled = true\n')
+                        if a.late_pbr_terrain:
+                            settings.write(
+                                'LocalServiceModule = OpenSim.Services.Connectors.dll:RemoteFreeswitchConnector\n'
+                                f'FreeswitchServiceURL = http://127.0.0.1:{grid_features.server_port}/fsapi/\n'
+                            )
+                        else:
+                            settings.write('[FreeswitchService]\nServerAddress = voice.example.test\n')
                 if a.script_https:
                     tls_fixture = Path(__file__).resolve().parent / 'fixtures'
                     settings = config.read_text(encoding='utf-8')
@@ -1425,6 +1595,12 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                    'SMTP_SERVER_PASSWORD = fixture-password\n')
                 settings.write('\n[LL-Functions]\nRestrictEmail = true\n')
         cmd = [str(Path(a.native).resolve()), '--config', str(config)]
+        if a.map_tile_refresh and not a.warp_map:
+            config.write_text(config.read_text(encoding='utf-8').replace(
+                'EnableLocalRegion = true',
+                'EnableLocalRegion = true\nGridRegionProvider = SQLite\nGridRegionDatabase = regions.db',
+                1,
+            ), encoding='utf-8')
         if a.raw_fps or rotating_prim:
             settings = config.read_text(encoding='utf-8').replace(
                 'EnableLocalRegion = true',
@@ -1605,6 +1781,12 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                         [(36, parcel_observer), (4, str(ban_target)), (32, str(home_target))],
                     )
             with contextlib.closing(sqlite3.connect(root / 'gridusers.db')) as database, database:
+                if rotating_prim and not a.grid_user_provider:
+                    home = f'http://127.0.0.1:{key_server.server_address[1]}/'
+                    database.execute(
+                        'INSERT INTO GridUser (UserID) VALUES (?)',
+                        (f'{foreign_id};{home};Foreign Avatar',),
+                    )
                 database.executemany(
                     'INSERT INTO GridUser (UserID,HomeRegionID,HomePosition,HomeLookAt) VALUES (?,?,?,?)',
                     (
@@ -1613,6 +1795,10 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                     ),
                 )
                 if a.os_landing:
+                    offline_foreign_id = uuid.uuid4()
+                    database.execute('INSERT INTO GridUser (UserID) VALUES (?)', (
+                        f'{offline_foreign_id};http://foreign.example:8002/;Offline Resident',
+                    ))
                     database.executemany(
                         'INSERT INTO GridUser (UserID,HomeRegionID,HomePosition,HomeLookAt) VALUES (?,?,?,?)',
                         (
@@ -1684,14 +1870,26 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                 database.executemany(
                     'INSERT INTO estate_users VALUES (100,?)', ((str(agent),) for agent in allowed)
                 )
+            groups_connector = 'Groups Remote Service Connector'
+            if a.basic_group_names:
+                # A V2 connector entry alone must leave the Default module selected.
+                groups_config = 'GroupsServerURI=unused-by-default\n'
+            else:
+                groups_config = (
+                    'Module=Groups Module V2\n'
+                    f'GroupsServerURI=http://127.0.0.1:{grid_features.server_port}\n'
+                    'AuthType=BasicHttpAuthentication\nHttpAuthUsername=grid\nHttpAuthPassword=fixture\n'
+                )
+                if a.hypergrid_groups:
+                    groups_connector = 'Groups HG Service Connector'
+                    groups_config += 'LocalService=remote\n'
             with config.open('a', encoding='utf-8') as settings:
                 settings.write(
                     '\n[Permissions]\nallow_grid_gods = true\nregion_manager_is_god = true\nimplicit_gods = true\n'
                     '\n[Messaging]\nMessageKey=parcel-moderation-fixture\n'
                     '\n[Estates]\nToken=estate-covenant-fixture\n'
-                    '\n[Groups]\nEnabled=true\nServicesConnectorModule=Groups Remote Service Connector\n'
-                    f'GroupsServerURI=http://127.0.0.1:{grid_features.server_port}\n'
-                    'AuthType=BasicHttpAuthentication\nHttpAuthUsername=grid\nHttpAuthPassword=fixture\n'
+                    f'\n[Groups]\nEnabled=true\nServicesConnectorModule={groups_connector}\n'
+                    + groups_config
                 )
             config.write_text(
                 config.read_text(encoding='utf-8').replace(
@@ -1721,6 +1919,7 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                         '\n[Map]\nGenerateMaptiles=true\n'
                         'MaptileStaticUUID=00000000-0000-0000-0000-000000000001\n'
                         f'\n[RestartModule]\nMarkerPath={root.resolve().as_posix()}\n'
+                        '\n[Chat]\nshout_distance=512\n'
                     )
                 elif a.os_landing and (not a.pbr_terrain or a.extended_pbr_terrain):
                     if a.warp_map:
@@ -2420,6 +2619,10 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                             )
                             startup_script = b'''default {
            state_entry() {
+               if (osLoadedCreationDate() != "Wednesday, 31 December 1969"
+                   || osLoadedCreationTime() != "23:59:59"
+                   || osLoadedCreationID() != "fixture-original-region")
+                   return;
                if (osGetSunParam("DAY_LENGTH") != 36000 || osGetApparentRegionTime() <= 0)
                    return;
                if (llGetDayLength() != 36000 || llGetRegionDayLength() != 36000
@@ -2431,19 +2634,55 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                    return;
                osSetRegionSunSettings(FALSE, TRUE, 11.25);
                osSetEstateSunSettings(TRUE, 17.5);
+               llListen(17262, "", NULL_KEY, "");
                llSetObjectName("Restored script executed");
                llSetRemoteScriptAccessPin(-123);
                llCollisionSound("", -1);
+           }
+           listen(integer channel, string name, key sender, string message) {
+               if (message == "terrain texture fixture")
+                   osSetTerrainTextures(["", "", "936fefd6-7d38-48c4-b055-53a452958c37", ""], 2);
+               if (message == "parcel voice fixture")
+                   osSetParcelSIPAddress("sip:override@voice.example.test");
            }
        }'''
                         if a.script_parcel_access:
                             startup_script = f'''default {{
            state_entry() {{
+               integer originalParcels = llGetListLength(osGetParcelIDs());
+               osParcelSubdivide(<12.9, 12.9, 0>, <4.9, 4.9, 0>);
+               if (llGetListLength(osGetParcelIDs()) != originalParcels + 1)
+                   return;
+               osParcelJoin(<12.9, 12.9, 0>, <0.9, 0.9, 0>);
+               if (llGetListLength(osGetParcelIDs()) != originalParcels)
+                   return;
+               osSetParcelDetails(<8, 8, 0>, [PARCEL_DETAILS_NAME, "Updated parcel",
+                   PARCEL_DETAILS_DESC, "Updated by OSSL", PARCEL_DETAILS_CLAIMDATE, 1700012345,
+                   PARCEL_DETAILS_SEE_AVATARS, FALSE, PARCEL_DETAILS_ANY_AVATAR_SOUNDS, FALSE,
+                   PARCEL_DETAILS_GROUP_SOUNDS, FALSE]);
+               osSetParcelDetails(<8, 8, 0>, [PARCEL_DETAILS_OWNER, "{parcel_observer}"]);
+               list ownership = llGetParcelDetails(<8, 8, 0>, [PARCEL_DETAILS_OWNER, PARCEL_DETAILS_GROUP]);
+               if (llList2Key(ownership, 0) != "{parcel_observer}" || llList2Key(ownership, 1) != NULL_KEY)
+                   return;
+               osSetParcelDetails(<8, 8, 0>, [PARCEL_DETAILS_GROUP, "00000000-0000-4000-8000-000000000003"]);
+               ownership = llGetParcelDetails(<8, 8, 0>, [PARCEL_DETAILS_GROUP]);
+               if (llList2Key(ownership, 0) != "00000000-0000-4000-8000-000000000003")
+                   return;
+               osSetParcelDetails(<8, 8, 0>, [PARCEL_DETAILS_GROUP, "00000000-0000-4000-8000-000000000099"]);
+               ownership = llGetParcelDetails(<8, 8, 0>, [PARCEL_DETAILS_GROUP]);
+               if (llList2Key(ownership, 0) != "00000000-0000-4000-8000-000000000003")
+                   return;
+               osSetParcelDetails(<8, 8, 0>, [PARCEL_DETAILS_OWNER, llGetOwner()]);
                llSetParcelMusicURL("https://stream.example/audio");
                llParcelMediaCommandList([PARCEL_MEDIA_COMMAND_URL, "https://stream.example/video",
                    PARCEL_MEDIA_COMMAND_TYPE, "video/mp4", PARCEL_MEDIA_COMMAND_SIZE, 320, 240,
                    PARCEL_MEDIA_COMMAND_TEXTURE, "12345678-1234-4321-8123-123456789abc",
                    PARCEL_MEDIA_COMMAND_AUTO_ALIGN, TRUE]);
+               osSetParcelMusicURL("https://stream.example/ossl-audio");
+               osSetParcelMusicURL("relative/path");
+               osSetParcelMediaURL("   ");
+               if (llList2String(llParcelMediaQuery([PARCEL_MEDIA_COMMAND_URL]), 0) == "")
+                   osSetParcelMediaURL("https://stream.example/ossl-video");
                llResetLandBanList();
                llAddToLandBanList("{cancel_target}", 0);
                llRemoveFromLandBanList("{cancel_target}");
@@ -2461,6 +2700,7 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                         if a.script_parcel_denied:
                             startup_script = f'''default {{
            touch_start(integer count) {{
+               osSetParcelDetails(<8, 8, 0>, [PARCEL_DETAILS_DESC, "Unauthorized change"]);
                llResetLandBanList();
                llAddToLandBanList("{cancel_target}", 0);
                llRemoveFromLandBanList("{ban_target}");
@@ -2470,6 +2710,21 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                llSay(0, "Unauthorized parcel edit script finished");
            }}
        }}'''.encode()
+                        if a.restart_shutdown:
+                            startup_script = b'''default {
+                                state_entry() {
+                                    llListen(17261, "", NULL_KEY, "");
+                                    llSetObjectDesc("Restart listener ready");
+                                }
+                                listen(integer channel, string name, key sender, string message) {
+                                    if (message == "schedule") {
+                                        integer accepted = osRegionRestart(30, "Script maintenance");
+                                        llSetObjectDesc("Script restart " + (string)accepted);
+                                    }
+                                    if (message == "cancel")
+                                        osRegionRestart(0);
+                                }
+                            }'''
                         asset_db.execute(
                             'INSERT INTO assets(UUID,Name,Description,Type,Local,Temporary,asset_flags,CreatorID,Data) '
                             'VALUES(?,?,?,?,?,?,?,?,?)',
@@ -2485,6 +2740,37 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                 startup_script,
                             ),
                         )
+                    if a.pbr_terrain:
+                        voice_prim = str(uuid.uuid4())
+                        voice_script = str(uuid.uuid4())
+                        voice_asset = str(uuid.uuid4())
+                        prim = list(database.execute('SELECT * FROM prims WHERE UUID=?', (stored_root,)).fetchone())
+                        for column, value in (
+                            ('UUID', voice_prim), ('SceneGroupID', voice_prim), ('Name', 'Parcel voice fixture'),
+                            ('GroupPositionX', 120), ('GroupPositionY', 120), ('GroupPositionZ', 30),
+                            ('PositionX', 0), ('PositionY', 0), ('PositionZ', 0), ('ObjectFlags', 0),
+                        ):
+                            prim[prim_columns.index(column)] = value
+                        database.execute('INSERT INTO prims VALUES (' + ','.join('?' for _ in prim) + ')', prim)
+                        shape = list(database.execute('SELECT * FROM primshapes WHERE UUID=?', (stored_child,)).fetchone())
+                        shape[0] = voice_prim
+                        database.execute('INSERT INTO primshapes VALUES (' + ','.join('?' for _ in shape) + ')', shape)
+                        item = list(database.execute('SELECT * FROM primitems WHERE assetID=?', (stored_script,)).fetchone())
+                        item[:4] = [voice_script, voice_prim, voice_prim, voice_asset]
+                        database.execute('INSERT INTO primitems VALUES (' + ','.join('?' for _ in item) + ')', item)
+                        with contextlib.closing(sqlite3.connect(root / 'assets.db')) as voice_assets, voice_assets:
+                            voice_assets.execute(
+                                'INSERT INTO assets(UUID,Name,Description,Type,Local,Temporary,asset_flags,CreatorID,Data) '
+                                'VALUES(?,?,?,?,?,?,?,?,?)',
+                                (voice_asset, 'Parcel voice fixture', '', 10, 0, 0, 0, principal, b'''
+                                    default {
+                                        state_entry() { llListen(17263, "", NULL_KEY, "set parcel voice"); }
+                                        listen(integer channel, string name, key sender, string message) {
+                                            osSetParcelSIPAddress("sip:owned-parcel@voice.example.test");
+                                        }
+                                    }
+                                '''),
+                            )
                     database.execute(
                         'CREATE TABLE regionsettings (regionUUID TEXT, terrain_raise_limit REAL, terrain_lower_limit REAL, block_terraform INTEGER, water_height REAL, object_bonus REAL, allow_damage INTEGER, block_fly INTEGER, disable_physics INTEGER, disable_scripts INTEGER)'
                     )
@@ -2574,6 +2860,13 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                         database.execute(
                             'UPDATE regionsettings SET elevation_1_nw=-101, elevation_2_ne=4001'
                         )
+                        database.execute(
+                            'ALTER TABLE regionsettings ADD COLUMN loaded_creation_datetime INTEGER DEFAULT -1'
+                        )
+                        database.execute(
+                            "ALTER TABLE regionsettings ADD COLUMN loaded_creation_id TEXT DEFAULT 'fixture-original-region'"
+                        )
+                        database.execute('UPDATE land SET LandFlags=CAST(LandFlags AS INTEGER)|0x60000000')
                     database.execute(
                         'ALTER TABLE regionsettings ADD COLUMN allow_land_resell INTEGER NOT NULL DEFAULT 0'
                     )
@@ -2841,34 +3134,57 @@ UserProfilesServices=LocalUserProfilesServicesConnector
         simulator_environment = None
         if a.remote_data:
             region_file_map_id = '56905727-9fd8-4397-a5d9-ec7b82a1884e'
+            # Both UInt32 grid coordinates wrap to cell 1000 when multiplied by 256.
             web_region_xml = f'''<Nini>
-    <Section Name="Connected Native">
+    <Section Name="Connected
+ Native">
         <Key Name="RegionUUID" Value="11111111-1111-4111-8111-111111111111"/>
-        <Key Name="Location" Value="1000, 1000, 0"/>
+        <Key Name="Location" Value="4278191080, 16778216, 0"/>
         <Key Name="SizeX" Value="4294967295"/>
         <Key Name="SizeY" Value="300"/>
+        <Key Name="SizeZ" Value="8192"/>
         <Key Name="InternalAddress" Value="127.0.0.1"/>
         <Key Name="InternalPort" Value="0"/>
         <Key Name="ExternalHostName" Value="127.0.0.1"/>
         <Key Name="NonPhysicalPrimMax" Value="64"/>
         <Key Name="RegionType" Value="Region file product"/>
-        <Key Name="MaptileStaticUUID" Value="{region_file_map_id}"/>
+        <Key Name="MaptileStaticUUID" Value="&#x2003;{region_file_map_id}&#x2003;"/>
     </Section>
 </Nini>'''
             settings = config.read_text(encoding='utf-8')
             settings = settings.replace('EnableLocalRegion = true\n', '', 1)
             settings = settings.replace('Name = Connected Native\n', 'Name = Inline fallback\n', 1)
-            settings += '\n[Map]\nGenerateMaptiles = false\n'
+            settings += ('\n[Map]\nGenerateMaptiles = false\n'
+                         'MaptileStaticUUID = 00000000-0000-0000-0000-000000000000\n')
+            settings = settings.replace(
+                '[Modules]\n', '[Modules]\nNeighbourServices = NeighbourServicesOutConnector\n', 1,
+            )
             if a.web_region_config:
-                settings += ('\n[Startup]\nregion_info_source = web\n'
+                # The managed loader selects HTTP for any value other than "filesystem".
+                settings += ('\n[Startup]\nregion_info_source = WebServer\n'
                              f'regionload_webserver_url = http://127.0.0.1:{grid_features.server_port}/regions.xml\n')
             else:
                 regions = root / 'Regions'
                 regions.mkdir()
-                xml = web_region_xml.replace('</Nini>', '    <Section Name="Ignored XML section"/>\n</Nini>')
+                xml = web_region_xml.replace('Connected\n Native', 'Connected Native')
+                xml = xml.replace('</Nini>', '    <Section Name="Ignored XML section"/>\n</Nini>')
                 (regions / 'Regions.xml').write_text(xml, encoding='utf-8')
             config.write_text(settings, encoding='utf-8')
             if a.web_region_config:
+                config.write_text(
+                    settings.replace('/regions.xml', '/comment-regions.xml') + 'allow_regionless = true\n',
+                    encoding='utf-8',
+                )
+                invalid_region = subprocess.run(
+                    cmd + ['--console'], input='"quit"\n', capture_output=True,
+                    text=True, encoding='utf-8', timeout=15,
+                )
+                check(
+                    invalid_region.returncode != 0
+                    and 'non-element child of Nini' in invalid_region.stderr
+                    and grid_lifecycle.empty(),
+                    f'A comment inside Nini fails region loading: {invalid_region.stderr}',
+                )
                 for endpoint in ('empty-regions.xml', 'missing-regions.xml'):
                     config.write_text(
                         settings.replace('/regions.xml', '/' + endpoint) + 'allow_regionless = true\n',
@@ -2928,6 +3244,64 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                         }
                         settings = settings.replace(http_url, tls_base + '/regions.xml')
                 config.write_text(settings, encoding='utf-8')
+        if a.map_tile_refresh and not a.warp_map:
+            with contextlib.closing(sqlite3.connect(root / 'terrain.db')) as database:
+                previous_maps = database.execute(
+                    'SELECT map_tile_ID, parcel_tile_ID FROM regionsettings'
+                ).fetchone()
+            check(previous_maps is not None, 'Startup rollback fixture has a saved map record')
+            reject_map_refresh.set()
+            try:
+                rejected = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            finally:
+                reject_map_refresh.clear()
+            check(rejected.returncode != 0 and 'Remote region registration failed: Fixture rejected map' in rejected.stderr,
+                  f'Rejected startup registration fails the process: {rejected.stderr}')
+            rejected_registration = grid_lifecycle.get(timeout=5)
+            check(rejected_registration.get('METHOD') == ['register'],
+                  'Startup attempted remote grid registration')
+            rejected_tile = rejected_registration['regionMapTexture'][0]
+            check(uuid.UUID(rejected_tile).int != 0, 'Rejected startup generated a terrain tile')
+            with contextlib.closing(sqlite3.connect(root / 'assets.db')) as database:
+                check(database.execute('SELECT 1 FROM assets WHERE UUID=?', (rejected_tile,)).fetchone() is None,
+                      'Rejected startup removes its generated terrain tile')
+            with contextlib.closing(sqlite3.connect(root / 'terrain.db')) as database:
+                check(database.execute('SELECT map_tile_ID, parcel_tile_ID FROM regionsettings').fetchone() ==
+                      previous_maps, 'Rejected startup restores both saved map IDs')
+            with contextlib.closing(sqlite3.connect(root / 'regions.db')) as database, database:
+                check(database.execute('SELECT COUNT(*) FROM regions').fetchone() == (0,),
+                      'Rejected startup registration rolls back the durable local region')
+                database.execute(
+                    'INSERT INTO regions (uuid, regionName, locX, locY, sizeX, sizeY, serverIP, serverPort, last_seen) '
+                    'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    ('11111111-1111-4111-8111-111111111111', 'Previous Region', 256000, 256000,
+                     256, 256, '127.0.0.1', 19001, 1234),
+                )
+            reject_map_refresh.set()
+            try:
+                rejected = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            finally:
+                reject_map_refresh.clear()
+            check(rejected.returncode != 0 and 'Remote region registration failed: Fixture rejected map' in rejected.stderr,
+                  f'Rejected replacement registration fails startup: {rejected.stderr}')
+            check(grid_lifecycle.get(timeout=5).get('METHOD') == ['register'],
+                  'Startup attempted to replace the existing registration')
+            with contextlib.closing(sqlite3.connect(root / 'regions.db')) as database:
+                check(database.execute('SELECT regionName, serverPort, flags, last_seen FROM regions').fetchall() ==
+                      [('Previous Region', 19001, 0, 1234)], 'Rejected replacement restores the previous region')
+        if a.os_landing:
+            settings = config.read_text(encoding='utf-8')
+            module_settings = 'NeighbourServiceInConnector=true\n'
+            if a.disable_user_management:
+                module_settings += 'UserManagementModule=None\n'
+            elif rotating_prim and not a.basic_group_names:
+                module_settings += 'UserManagementModule=HGUserManagementModule\n'
+            before, section, after = settings.rpartition('[Modules]\n')
+            if section:
+                settings = before + section + module_settings + after
+            else:
+                settings += '\n[Modules]\n' + module_settings
+            config.write_text(settings, encoding='utf-8')
         proc = subprocess.Popen(
             cmd + ['--console'],
             cwd=root if a.warp_map else None,
@@ -2939,15 +3313,31 @@ UserProfilesServices=LocalUserProfilesServicesConnector
             encoding='utf-8',
         )
         lines = queue.Queue()
+        server_trace_path = a.work / f'circuit-trace-{trace_run_id}-{proc.pid}.log'
         errors = []
+        script_faults = deque(maxlen=20)
+        recent_server_output = deque(maxlen=40)
+        missing_http_request_logs = queue.Queue()
 
         def read():
             for line in proc.stdout:
+                recent_server_output.append(line)
+                if 'Native script ' in line:
+                    script_faults.append(line)
+                if a.script_url_denied and line.startswith("[HttpRequestHandler]"):
+                    missing_http_request_logs.put(line.rstrip())
                 lines.put(line)
             lines.put(None)
 
         def err():
             for line in proc.stderr:
+                if line.startswith('[NATIVE CIRCUIT]'):
+                    recent_server_output.append(line)
+                    try:
+                        with server_trace_path.open('a', encoding='utf-8') as trace:
+                            trace.write(line)
+                    except OSError:
+                        pass
                 errors.append(line)
 
         threading.Thread(target=read, daemon=True).start()
@@ -2969,13 +3359,22 @@ UserProfilesServices=LocalUserProfilesServicesConnector
             check(bool(url), 'Native region starts HTTP and UDP')
             if a.remote_data:
                 if a.web_region_config:
-                    check(web_region_requests.qsize() == 2, 'The web loader retries an empty region document')
+                    check(web_region_requests.qsize() == 2, 'The web loader retries when an XML declaration precedes Nini')
                 registration = grid_lifecycle.get(timeout=5)
                 check(registration.get('METHOD') == ['register']
                       and registration.get('regionMapTexture') == [region_file_map_id]
                       and registration.get('locX') == ['256000'] and registration.get('locY') == ['256000']
                       and registration.get('sizeX') == ['256'] and registration.get('sizeY') == ['256'],
                       'Grid registration advertises the region file location, normalized size and static map')
+                announcement_path, announcement = neighbour_announcements.get(timeout=5)
+                check(
+                    announcement_path == '/region/11111111-1111-4111-8111-111111111111/'
+                    and announcement.get('destination_handle') == str((256256 << 32) | 256000)
+                    and announcement.get('region_xloc') == '1000'
+                    and announcement.get('region_size_z') == '8192'
+                    and announcement.get('server_uri') == url,
+                    f'Region announces its live endpoint and dimensions to an online neighbour: {announcement}',
+                )
                 # The running script publishes its channel in the persisted prim description.
                 channel = None
                 deadline = time.monotonic() + 15
@@ -2987,6 +3386,18 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                         break
                     time.sleep(.1)
                 check(channel is not None, 'Running LSL script opens a remote-data channel')
+                remote_data_xml = xmlrpc.client.dumps(
+                    ({'Channel': channel, 'IntValue': 41, 'StringValue': 'request'},),
+                    methodname='llRemoteData',
+                ).encode()
+                compressed_request = urllib.request.Request(
+                    f'http://127.0.0.1:{remote_data_port}/', gzip.compress(remote_data_xml),
+                    {'Content-Type': 'text/xml', 'X-Content-Encoding': 'gzip'},
+                )
+                with urllib.request.urlopen(compressed_request, timeout=10) as reply:
+                    result = xmlrpc.client.loads(reply.read())[0][0]
+                    check(result == [{'IntValue': 42, 'StringValue': 'native:request'}],
+                          'Legacy gzip XML-RPC reaches the script and returns its reply')
                 with xmlrpc.client.ServerProxy(f'http://127.0.0.1:{remote_data_port}/', allow_none=True) as rpc:
                     for channel_value, integer_value, expected in (
                         (channel, 41, 42),
@@ -4796,9 +5207,19 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
                 )
+                viewer_trace_path = a.work / f'viewer-trace-{trace_run_id}-{process.pid}-{uuid.uuid4().hex[:8]}.log'
+                if os.environ.get('OPENSIM_TRACE_CIRCUITS') == '1':
+                    with viewer_trace_path.open('a', encoding='utf-8') as trace:
+                        trace.write(f'Created by fixture {os.getpid()}; run={trace_run_id}\n')
 
                 def read_probe():
                     for line in process.stdout:
+                        if line.startswith('[NATIVE CIRCUIT]'):
+                            try:
+                                with viewer_trace_path.open('a', encoding='utf-8') as trace:
+                                    trace.write(line)
+                            except OSError:
+                                pass
                         inbox.put(line)
                     inbox.put(None)
 
@@ -4900,7 +5321,8 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                 animation.find('CreatorID/UUID').text = (
                                     '12345678-1234-4234-8234-123456789abc'
                                 )
-                                animation.find('CreationDate').text = '4294967295'
+                                # The managed XML reader reads Int32, then casts to UInt32.
+                                animation.find('CreationDate').text = '-1'
                                 root_part.find('TaskInventory').append(animation)
                                 data = (
                                     bytes([1, 0x80, 0x80, 0x10, 2])
@@ -5781,6 +6203,21 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                 f'HTTP listener for LSL disabled|0|{script_host}',
                                 'A disabled listener still exposes the configured script hostname',
                             )
+                            request_id = '00000000-0000-4000-8000-000000000077'
+                            expected_logs = [
+                                f'[HttpRequestHandler] There was no http-in request with id {request_id}',
+                                f'[HttpRequestHandler] There is no http-in request with id {request_id}',
+                                f'[HttpRequestHandler] There is no http-in request with id {request_id}',
+                                f'[HttpRequestHandler] There is no http-in request with id {request_id}',
+                                f'[HttpRequestHandler] There was no http-in request with id {request_id}',
+                            ]
+                            observed_logs = [
+                                missing_http_request_logs.get(timeout=5) for _ in expected_logs
+                            ]
+                            check(
+                                observed_logs == expected_logs,
+                                'Missing HTTP requests log header, response, JSON and HTML diagnostics in order',
+                            )
                             process.stdin.write('HTTP complete\n')
                             process.stdin.flush()
                         if line.startswith('Script HTTP URLs ') and (
@@ -5813,6 +6250,17 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                 for entry in lines
                                 if entry.startswith('Primary viewer prim ')
                             )
+                            check(
+                                post(match[1] + 'fixture/lslhttps', b'payload', 'text/plain')[0]
+                                == (404 if match[2].startswith('https://') else 400),
+                                'The original URL scheme lookup includes the path suffix',
+                            )
+                            url_prefix, url_id = match[1].rstrip('/').rsplit('/', 1)
+                            check(
+                                post(f'{url_prefix}/{url_id.upper()}/fixture', b'payload', 'text/plain')[0]
+                                == 404,
+                                'LSL HTTP URL lookup requires the registered UUID spelling',
+                            )
                             request = urllib.request.Request(
                                 match[1] + 'fixture?q=123',
                                 b'payload',
@@ -5836,6 +6284,13 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                     and response.headers['User-Agent'] == 'Native Fixture Agent'
                                     and response.headers['Access-Control-Allow-Origin'] == '*',
                                     'Script HTTP replies include the configured MIME type and simulator metadata',
+                                )
+                            custom_request = urllib.request.Request(match[1], b'custom-content-type')
+                            with urllib.request.urlopen(custom_request, timeout=8) as response:
+                                check(
+                                    response.headers.get_content_type() == 'application/x-opensim-fixture'
+                                    and response.read() == b'custom response',
+                                    'OSSL sets a custom MIME type on the live script response',
                                 )
                             hostname_request = urllib.request.Request(match[1], b'hostname')
                             with urllib.request.urlopen(hostname_request, timeout=8) as response:
@@ -5866,7 +6321,15 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                 'LSL reads the last simulator statistics sample',
                             )
                             parcel_request = urllib.request.Request(match[1], b'parcel-prims')
-                            with urllib.request.urlopen(parcel_request, timeout=8) as response:
+                            try:
+                                parcel_response = urllib.request.urlopen(parcel_request, timeout=8)
+                            except (TimeoutError, ConnectionError) as failure:
+                                raise AssertionError(
+                                    f'Parcel prim-count request failed: {failure}; '
+                                    f'simulator exit={proc.poll()}, '
+                                    f'script faults={list(script_faults)}, stderr={errors[-10:]}'
+                                ) from failure
+                            with parcel_response as response:
                                 capacity, owner_capacity, count, owner_count, unsupported, temporary, outside = (
                                     map(int, response.read().decode().split('|'))
                                 )
@@ -7037,9 +7500,18 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                             )
 
                     process.wait(timeout=5)
+                    if rotating_prim and not a.disable_scripts and not a.grid_user_provider:
+                        check(
+                            foreign_home_calls == [{'userID': foreign_id}],
+                            'Offline Hypergrid home lookup queries the peer once and caches its response',
+                        )
+                    diagnostics = (
+                        capture_server_threads(proc, a.native, a.work) if process.returncode != 0 else ''
+                    )
                     check(
                         process.returncode == 0,
-                        'Connected viewer probe: ' + ''.join(lines) + ''.join(errors),
+                        'Connected viewer probe: ' + ''.join(lines + errors) + ''.join(script_faults)
+                        + '\nRecent server output:\n' + ''.join(recent_server_output) + diagnostics,
                     )
                     if (
                         a.primary_https
@@ -7417,7 +7889,7 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                         parcel_overlays = {}
 
                         def connect_privacy_viewer(
-                            sock, last, x, session=None, expected_arrival=None
+                            sock, last, x, session=None, expected_arrival=None, inspect_handshake=None
                         ):
                             verify_estate = session is None
                             if session is None:
@@ -7487,12 +7959,14 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                     result = predicate(payload)
                                     if result is not None:
                                         return result
-                                raise AssertionError(f'Parcel privacy {last} packet missing')
+                                raise socket.timeout(f'Parcel privacy {last} packet missing')
 
                             send(bytes.fromhex('ffff0003') + code + session_id + agent)
 
                             def estate_handshake(payload):
                                 if payload[:4] == bytes.fromhex('ffff0094'):
+                                    if inspect_handshake:
+                                        inspect_handshake(payload)
                                     offset = 10 + payload[9]
                                     flags = struct.unpack_from('<I', payload, 4)[0]
                                     return (
@@ -7502,7 +7976,44 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                         flags,
                                     )
 
+                            if a.basic_group_names and last == 'Mover':
+                                send(bytes.fromhex('ffff0182') + agent + session_id)
+                                testing_group = uuid.UUID('00000000-68f9-1111-024e-222222111123').bytes
+
+                                def group_before_movement(payload):
+                                    if not payload.startswith(bytes.fromhex('ffff0183') + agent):
+                                        return None
+                                    offset = 20
+                                    for _ in range(3):
+                                        offset += 1 + payload[offset]
+                                    return bytes(payload[offset:offset + 16])
+
+                                check(
+                                    receive(group_before_movement) == testing_group,
+                                    'Basic Groups replies before the viewer completes movement',
+                                )
+                            def negotiate_terrain_pbr(capability):
+                                seed = urllib.request.Request(
+                                    session['seed_capability'],
+                                    f'<llsd><array><string>{capability}</string></array></llsd>'.encode(),
+                                    {'Content-Type': 'application/llsd+xml'},
+                                )
+                                with urllib.request.urlopen(seed, timeout=5) as response:
+                                    response.read()
+
+                            if a.pbr_terrain and not a.late_pbr_terrain and last == 'Mover':
+                                negotiate_terrain_pbr(
+                                    'VETPBR' if a.extended_pbr_terrain else 'VTPBR'
+                                )
+                            send(bytes.fromhex('ffff00f9') + agent + session_id + code)
                             estate = receive(estate_handshake)
+                            arrival = receive(
+                                lambda p: (
+                                    struct.unpack_from('<6f', p, 36)
+                                    if p[:4] == bytes.fromhex('ffff00fa')
+                                    else None
+                                )
+                            )
                             profile_restrictions = 0x40800000
                             expected_restrictions = (
                                 profile_restrictions if a.estate_profile_access else 0
@@ -7567,27 +8078,6 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                     f'Viewer receives the stored estate covenant for {last}',
                                 )
 
-                            def negotiate_terrain_pbr(capability):
-                                seed = urllib.request.Request(
-                                    session['seed_capability'],
-                                    f'<llsd><array><string>{capability}</string></array></llsd>'.encode(),
-                                    {'Content-Type': 'application/llsd+xml'},
-                                )
-                                with urllib.request.urlopen(seed, timeout=5) as response:
-                                    response.read()
-
-                            if a.pbr_terrain and not a.late_pbr_terrain and last == 'Mover':
-                                negotiate_terrain_pbr(
-                                    'VETPBR' if a.extended_pbr_terrain else 'VTPBR'
-                                )
-                            send(bytes.fromhex('ffff00f9') + agent + session_id + code)
-                            arrival = receive(
-                                lambda p: (
-                                    struct.unpack_from('<6f', p, 36)
-                                    if p[:4] == bytes.fromhex('ffff00fa')
-                                    else None
-                                )
-                            )
                             if a.late_pbr_terrain and last == 'Mover':
                                 negotiate_terrain_pbr('VTPBR')
                             if a.extended_pbr_terrain and last == 'Observer':
@@ -7717,19 +8207,29 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                         time.sleep(0.05)
                                     check(
                                         database.execute(
+                                            'SELECT Name, Desc, ClaimDate, SeeAVs, AnyAVSounds, GroupAVSounds, OwnerUUID, GroupUUID '
+                                            'FROM land WHERE LocalLandID=1'
+                                        ).fetchone() == (
+                                            'Updated parcel', 'Updated by OSSL', 1700012345, 0, 0, 0,
+                                            principal, str(uuid.UUID(int=0)),
+                                        ),
+                                        'OSSL parcel details persist text, claim date, visibility, sound, and ownership',
+                                    )
+                                    check(
+                                        database.execute(
                                             'SELECT 1 FROM land WHERE MusicURL=?',
-                                            ('https://stream.example/audio',),
+                                            ('https://stream.example/ossl-audio',),
                                         ).fetchone(),
-                                        'Restored parcel owner script persists its music URL',
+                                        'OSSL music URL persists and survives a subsequent invalid relative URL',
                                     )
                                     check(
                                         database.execute(
                                             'SELECT MediaType, MediaSize, MediaTextureUUID, MediaAutoScale '
                                             'FROM land WHERE MediaURL=?',
-                                            ('https://stream.example/video',),
+                                            ('https://stream.example/ossl-video',),
                                         ).fetchone()
                                         == ('video/mp4', '320,240', '12345678-1234-4321-8123-123456789abc', '1'),
-                                        'Restored parcel owner script persists its video settings',
+                                        'OSSL media URL clears and replaces the URL while preserving video settings',
                                     )
                             denied = proxy.login_to_simulator(
                                 dict(credentials, first='Privacy', last='BanTarget', start=start)
@@ -8480,6 +8980,12 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                 with contextlib.closing(
                                     sqlite3.connect(root / 'terrain.db')
                                 ) as database:
+                                    check(
+                                        database.execute(
+                                            "SELECT Desc FROM land WHERE LocalLandID=1"
+                                        ).fetchone() == ('Fixture parcel',),
+                                        'Script without LandOptions cannot change saved parcel details',
+                                    )
                                     saved = set(
                                         database.execute(
                                             "SELECT AccessUUID, Flags FROM landaccesslist WHERE LandUUID LIKE 'a0000000%'"
@@ -9019,6 +9525,16 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                                     (refreshed_id, refreshed_parcel_id),
                                                 ).fetchone()
                                             check(retained == 2, 'Rejected refresh keeps both advertised assets')
+                                            rejected_ids = {
+                                                rejected[key][0] for key in ('regionMapTexture', 'parcelMapTexture')
+                                                if key in rejected
+                                            } - {refreshed_id, refreshed_parcel_id}
+                                            check(bool(rejected_ids), 'Rejected refresh generated new map assets')
+                                            with contextlib.closing(sqlite3.connect(root / 'assets.db')) as database:
+                                                check(all(database.execute(
+                                                    'SELECT 1 FROM assets WHERE UUID=?', (asset_id,),
+                                                ).fetchone() is None for asset_id in rejected_ids),
+                                                      'Rejected refresh removes unadvertised map assets')
                                         finally:
                                             reject_map_refresh.clear()
                                     if not a.static_map_file and not a.warp_map:
@@ -9078,6 +9594,11 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                         )
                                         local_tile = root / 'MAP-11111111-1111-4111-8111-111111111111.png'
                                         local_tile.write_bytes(static_file.read_bytes())
+                                        root_export = root / 'root map.jpg'
+                                        proc.stdin.write(f'export-map "{root_export.as_posix()}"\n'
+                                                         'change region Connected Native\n')
+                                        proc.stdin.flush()
+
                                         def export_world_map(filename):
                                             export_path = root / filename
                                             proc.stdin.write(f'export-map "{export_path.as_posix()}"\n')
@@ -9091,6 +9612,7 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                                 time.sleep(0.05)
 
                                         exported = export_world_map('world map.jpg')
+                                        check(not root_export.exists(), 'Root console requires a region before exporting')
                                         export_neighbor.set()
                                         check(
                                             export_world_map('world map with neighbor.jpg') != exported,
@@ -9197,6 +9719,18 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                             and error.headers['Retry-After'] == '5',
                                             'ExtEnvironment asks the viewer to retry before presence is connected',
                                         )
+                            if a.pbr_terrain and not a.late_pbr_terrain:
+                                pending_voice_cap = environment_capability(
+                                    manager_login['seed_capability'], 'ProvisionVoiceAccountRequest'
+                                )
+                                missing_voice_viewer = urllib.request.Request(pending_voice_cap, data=b'')
+                                started = time.monotonic()
+                                with urllib.request.urlopen(missing_voice_viewer, timeout=5) as response:
+                                    check(
+                                        response.status == 200 and response.read() == b'<llsd>undef</llsd>'
+                                        and time.monotonic() - started >= 1.9,
+                                        'Voice provisioning retries once before reporting a missing viewer',
+                                    )
                             manager_id, manager_session, manager_send, manager_receive, _ = (
                                 connect_privacy_viewer(
                                     mover_socket,
@@ -9231,7 +9765,8 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                     region_environment['success']
                                     and region_environment['parcel_id'] == -1
                                     and region_environment['environment']['day_length'] == 36000
-                                    and region_environment['environment']['day_offset'] == 3600,
+                                    and region_environment['environment']['day_offset'] == 3600
+                                    and region_environment['environment']['env_version'] == 1,
                                     'ExtEnvironment returns the saved region timing',
                                 )
                                 parcel_environment = read_environment('?parcelid=2')
@@ -9239,7 +9774,8 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                     parcel_environment['success']
                                     and parcel_environment['parcel_id'] == 2
                                     and parcel_environment['environment']['day_length'] == 18000
-                                    and parcel_environment['environment']['day_offset'] == 1200,
+                                    and parcel_environment['environment']['day_offset'] == 1200
+                                    and parcel_environment['environment']['env_version'] == 1,
                                     'ExtEnvironment returns the saved parcel override',
                                 )
                                 default_environment = read_environment('?parcelid=1')
@@ -9249,6 +9785,18 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                     and default_environment['environment']['is_default'],
                                     'ExtEnvironment identifies parcels without an override',
                                 )
+                                for invalid_query in (
+                                    '?parcelid=%2B-1',
+                                    '?parcelid=2&PARCELID=1',
+                                    '?parcelid=2=1',
+                                ):
+                                    invalid_parcel = read_environment(invalid_query)
+                                    check(
+                                        invalid_parcel['success']
+                                        and invalid_parcel['parcel_id'] == 0
+                                        and invalid_parcel['environment']['is_default'],
+                                        f'ExtEnvironment rejects malformed parcel selection {invalid_query}',
+                                    )
 
                                 def sun_time_packet(packet):
                                     if packet[:4] == bytes.fromhex('ffff0096'):
@@ -9418,7 +9966,7 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                             'Area': str(124 * 256),
                                             'AuctionID': str(0x80000002),
                                             'Description': 'Fixture parcel',
-                                            'Flags': '36',
+                                            'Flags': str(36 | 0x60000000),
                                             'GlobalID': '00000000-0000-4000-8000-000000000002',
                                             'Name': 'Parcel 2',
                                             'OwnerID': manager,
@@ -9843,8 +10391,62 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                 check(
                                     change_environment(environment_url, 'PUT', 43200)['success']
                                     and read_environment()['environment']['day_length'] == 43200
-                                    and read_environment()['environment']['day_offset'] == 3600,
+                                    and read_environment()['environment']['day_offset'] == 3600
+                                    and read_environment()['environment']['env_version'] == 2,
                                     'ExtEnvironment updates the region and preserves omitted timing fields',
+                                )
+                                with contextlib.closing(sqlite3.connect(root / 'terrain.db')) as database, database:
+                                    database.execute(
+                                        "CREATE TRIGGER reject_environment_update BEFORE UPDATE ON regionenvironment "
+                                        "BEGIN SELECT RAISE(ABORT, 'fixture rejects environment update'); END"
+                                    )
+                                try:
+                                    rejected_write = change_environment(environment_url, 'PUT', 45000)
+                                    after_rejected_write = read_environment()['environment']
+                                    check(
+                                        rejected_write['success']
+                                        and after_rejected_write['day_length'] == 43200
+                                        and after_rejected_write['env_version'] == 2,
+                                        'Region environment storage failure preserves the last saved settings',
+                                    )
+                                finally:
+                                    with contextlib.closing(sqlite3.connect(root / 'terrain.db')) as database, database:
+                                        database.execute('DROP TRIGGER reject_environment_update')
+                                check(
+                                    change_environment(environment_url, 'PUT', 43200)['success']
+                                    and read_environment()['environment']['env_version'] == 4,
+                                    'A subsequent environment edit advances past the failed write version',
+                                )
+
+                                malformed_cycle_request = urllib.request.Request(
+                                    environment_url,
+                                    b'<llsd><map><key>environment</key><map><key>day_cycle</key>'
+                                    b'<map><key>tracks</key><array><array><string>invalid</string>'
+                                    b'</array></array></map></map></map></llsd>',
+                                    {'Content-Type': 'application/llsd+xml'},
+                                    method='PUT',
+                                )
+                                with urllib.request.urlopen(malformed_cycle_request, timeout=5) as response:
+                                    malformed_cycle_reply = decode_environment(ET.fromstring(response.read())[0])
+                                check(
+                                    not malformed_cycle_reply['success']
+                                    and read_environment()['environment']['env_version'] == 4,
+                                    'ExtEnvironment rejects malformed inline day cycles before saving',
+                                )
+                                invalid_settings_request = urllib.request.Request(
+                                    environment_url,
+                                    b'<llsd><map><key>environment</key><string>invalid</string></map></llsd>',
+                                    {'Content-Type': 'application/llsd+xml'},
+                                    method='PUT',
+                                )
+                                with urllib.request.urlopen(invalid_settings_request, timeout=5) as response:
+                                    invalid_settings_reply = decode_environment(ET.fromstring(response.read())[0])
+                                check(
+                                    not invalid_settings_reply['success']
+                                    and invalid_settings_reply['message'].startswith('ExtEnvironment Set for region ')
+                                    and invalid_settings_reply['message'].endswith(' has failed, settings not saved.')
+                                    and read_environment()['environment']['env_version'] == 4,
+                                    'ExtEnvironment uses the source failure reply for a non-map environment',
                                 )
 
                                 def import_environment_asset(asset, name=None):
@@ -9871,6 +10473,32 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                             'ExtEnvironment imports the requested asset',
                                         )
                                     return read_environment()['environment']['day_cycle']
+
+                                malformed_asset = str(uuid.uuid4())
+                                with contextlib.closing(sqlite3.connect(root / 'assets.db')) as assets, assets:
+                                    assets.execute(
+                                        'INSERT INTO assets(UUID,Name,Description,Type,Local,Temporary,'
+                                        'asset_flags,CreatorID,Data) VALUES(?,?,?,?,?,?,?,?,?)',
+                                        (malformed_asset, 'Malformed day cycle', '', 56, 0, 0, 0, '',
+                                         b"<? llsd/notation ?>\n{'type':'daycycle','tracks':[['invalid']]}"),
+                                    )
+                                for asset in ('missing-environment-asset', malformed_asset):
+                                    rejected_asset_request = urllib.request.Request(
+                                        environment_url,
+                                        (f'<llsd><map><key>environment</key><map><key>day_asset</key>'
+                                         f'<string>{asset}</string></map></map></llsd>').encode(),
+                                        {'Content-Type': 'application/llsd+xml'},
+                                        method='PUT',
+                                    )
+                                    try:
+                                        with urllib.request.urlopen(rejected_asset_request, timeout=5) as response:
+                                            status = response.status
+                                    except urllib.error.HTTPError as error:
+                                        status = error.code
+                                    check(
+                                        status == 404 and read_environment()['environment']['day_length'] == 43200,
+                                        'Rejected environment imports leave the saved settings intact',
+                                    )
 
                                 default_cycle = import_environment_asset(
                                     '5646d39e-d3d7-6aff-ed71-30fc87d64a92'
@@ -10789,6 +11417,36 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                         struct.unpack_from('<II', terrain) == (512, 512),
                                         'Extended PBR test uses a 512-meter region',
                                     )
+                            if a.pbr_terrain:
+                                script_terrain_texture = uuid.UUID('936fefd6-7d38-48c4-b055-53a452958c37')
+                                command = b'terrain texture fixture\0'
+                                manager_send(
+                                    bytes.fromhex('ffff0050') + manager_id + manager_session
+                                    + struct.pack('<H', len(command)) + command + struct.pack('<Bi', 2, 17262)
+                                )
+
+                                def scripted_texture_assets(payload):
+                                    assets = handshake_assets(payload)
+                                    return assets if assets and assets[2] == script_terrain_texture.bytes else None
+
+                                try:
+                                    scripted_pbr = manager_receive(scripted_texture_assets)
+                                    scripted_legacy = observer_receive(scripted_texture_assets)
+                                except TimeoutError as failure:
+                                    raise AssertionError(f'Terrain script handshake missing, faults {list(script_faults)}') from failure
+                                check(
+                                    scripted_pbr[1] == texture.bytes
+                                    and scripted_legacy[1] == uuid.UUID(int=22).bytes,
+                                    'Mode 2 updates both terrain handshakes and preserves untouched corners',
+                                )
+                                with contextlib.closing(sqlite3.connect(root / 'terrain.db')) as database:
+                                    check(
+                                        database.execute(
+                                            'SELECT terrain_texture_3,TerrainPBR3 FROM regionsettings'
+                                        ).fetchone() == (str(script_terrain_texture),) * 2,
+                                        'Script terrain edit persists both texture columns',
+                                    )
+
                             def updated_region_terrain(payload):
                                 if payload[:4] != bytes.fromhex('ffff008e'):
                                     return None
@@ -11083,6 +11741,219 @@ UserProfilesServices=LocalUserProfilesServicesConnector
 
                             check(cap_status(manager_estate_cap, estate_edit) == 200, 'Estate cap edit succeeds')
                             check_estate_flags((0, 0, 1, 0, 0, 0, 0, 1, 0))
+                            if a.pbr_terrain:
+                                account_cap = estate_cap(manager_login, 'ProvisionVoiceAccountRequest')
+                                check(cap_status(account_cap) == 404, 'Voice account capability requires POST')
+                                unsupported_voice = b'<llsd><map><key>voice_server_type</key><string>other</string></map></llsd>'
+                                with urllib.request.urlopen(
+                                    urllib.request.Request(account_cap, data=unsupported_voice), timeout=5
+                                ) as response:
+                                    check(
+                                        ET.fromstring(response.read()).find('undef') is not None,
+                                        'Voice account capability declines an unsupported voice protocol',
+                                    )
+                                vivox_request = b'<llsd><map><key>voice_server_type</key><string>ViVoX</string></map></llsd>'
+                                with urllib.request.urlopen(
+                                    urllib.request.Request(account_cap, data=vivox_request), timeout=5
+                                ) as response:
+                                    account = decode_environment(ET.fromstring(response.read())[0])
+                                check(
+                                    account['username'] == 'x' + base64.urlsafe_b64encode(manager_id).decode()
+                                    and account['password'] == '1234'
+                                    and account['voice_sip_uri_hostname'] == 'voice.example.test'
+                                    and account['voice_account_server_name'] == url.rstrip('/')
+                                    + ('/remote-voice/' if a.late_pbr_terrain else '/fsapi/'),
+                                    f'Voice account capability returns the FreeSwitch credentials and URL: {account}',
+                                )
+                                voice_cap = estate_cap(manager_login, 'ParcelVoiceInfoRequest')
+                                voice_api = account['voice_account_server_name']
+                                with urllib.request.urlopen(voice_api + 'viv_get_prelogin.php', timeout=5) as response:
+                                    prelogin = ET.fromstring(response.read())
+                                check(prelogin.findtext('DefaultRealm') == 'voice.example.test'
+                                      and prelogin.findtext('DefaultSIPProxy') == 'voice.example.test:5060',
+                                      'Voice prelogin serves the configured realm and SIP proxy')
+                                if a.late_pbr_terrain:
+                                    check(
+                                        prelogin.findtext('DefaultAttemptUseSTUN') == 'True'
+                                        and prelogin.findtext('DefaultEchoServer') == 'echo.example.test<&>'
+                                        and prelogin.findtext('DefaultEchoPort') == '50506'
+                                        and prelogin.findtext('DefaultTimeout') == '6200',
+                                        'Voice prelogin uses settings fetched from the grid service',
+                                    )
+                                signin = urllib.parse.urlencode({'userid': account['username'], 'pwd': account['password']})
+                                with urllib.request.urlopen(voice_api + 'viv_signin.php', signin.encode(), timeout=5) as response:
+                                    sign_in_body = ET.fromstring(response.read()).find('./level0/body')
+                                check(sign_in_body.findtext('displayname') == 'Privacy Mover'
+                                      and sign_in_body.findtext('account_id') == '0',
+                                      'Voice sign-in finds the account cached during provisioning')
+                                unknown_user = 'x<&>'
+                                unknown_signin = urllib.parse.urlencode({'userid': unknown_user}).encode()
+                                with urllib.request.urlopen(
+                                    voice_api + 'viv_signin.php', unknown_signin, timeout=5
+                                ) as response:
+                                    unknown_body = ET.fromstring(response.read()).find('./level0/body')
+                                check(
+                                    unknown_body.findtext('account_id') == '-1'
+                                    and unknown_body.findtext('auth_token') == unknown_user + ':-1:9303959503950::',
+                                    'Voice sign-in preserves XML punctuation in the account token',
+                                )
+                                token = account['username'] + ':0:9303959503950::'
+                                if not a.late_pbr_terrain:
+                                    with urllib.request.urlopen(voice_api + 'region-config', timeout=5) as response:
+                                        grid_voice_config = json.load(response)
+                                    check(
+                                        grid_voice_config['Realm'] == 'voice.example.test'
+                                        and grid_voice_config['APIPrefix'] == '/fsapi',
+                                        'Simulator inbound FreeSwitch connector serves region configuration',
+                                    )
+
+                                    def freeswitch_config(**fields):
+                                        request = urllib.request.Request(
+                                            voice_api + 'freeswitch-config',
+                                            urllib.parse.urlencode(fields).encode(),
+                                        )
+                                        with urllib.request.urlopen(request, timeout=5) as response:
+                                            return response.read()
+
+                                    realm = account['voice_sip_uri_hostname']
+                                    directory = ET.fromstring(freeswitch_config(
+                                        section='directory', domain=realm,
+                                        user=account['username'], sip_auth_method='REGISTER',
+                                    ))
+                                    user = directory.find('./section/domain/user')
+                                    check(
+                                        user.get('id') == account['username']
+                                        and user.find('./params/param[@name="password"]').get('value') == account['password'],
+                                        'FreeSwitch registration directory returns the provisioned SIP credentials',
+                                    )
+                                    invitation = ET.fromstring(freeswitch_config(
+                                        section='directory', domain=realm, user=account['username'],
+                                        sip_auth_method='INVITE', sip_request_user='xRecipient',
+                                    ))
+                                    check(
+                                        [entry.get('id') for entry in invitation.findall('./section/domain/user')]
+                                        == [account['username'], 'xRecipient'],
+                                        'FreeSwitch invitation directory includes both call participants',
+                                    )
+                                    located = ET.fromstring(freeswitch_config(
+                                        section='directory', domain=realm, user='xRecipient',
+                                        **{'Event-Calling-Function': 'switch_xml_locate_user'},
+                                    ))
+                                    check(
+                                        located.find('./section/domain/user').get('id') == 'xRecipient',
+                                        'FreeSwitch directory locates a direct call recipient',
+                                    )
+                                    sofia = ET.fromstring(freeswitch_config(
+                                        section='directory', domain=realm,
+                                        **{'Event-Calling-Function': 'config_sofia'},
+                                    ))
+                                    gateway = sofia.find('./section/domain/groups/users/user/gateways/gateway')
+                                    check(
+                                        gateway.get('name') == '$${default_provider}'
+                                        and gateway.find('param[@name="context"]').get('value') == 'default',
+                                        'FreeSwitch Sofia lookup returns the configured gateway context',
+                                    )
+                                    dialplan = ET.fromstring(freeswitch_config(
+                                        section='dialplan', **{'Hunt-Context': 'default'}
+                                    ))
+                                    context = dialplan.find('./section/context')
+                                    check(
+                                        context.find('./extension[@name="opensim_conf"]/condition/action[@application="conference"]')
+                                        .get('data') == '$1-' + realm + '@default'
+                                        and context.find('./extension[@name="avatar"]/condition/action').get('data') == 'user/$1',
+                                        'FreeSwitch dialplan routes conferences and direct avatar calls',
+                                    )
+                                    check(
+                                        freeswitch_config(section='directory', domain='other.example.test') == b''
+                                        and freeswitch_config(section='dialplan', **{'Hunt-Context': 'other'}) == b'',
+                                        'FreeSwitch ignores requests for other realms and contexts',
+                                    )
+                                else:
+                                    try:
+                                        urllib.request.urlopen(
+                                            voice_api + 'freeswitch-config', b'section=directory', timeout=5
+                                        ).close()
+                                    except urllib.error.HTTPError as error:
+                                        with error:
+                                            check(
+                                                error.code == 500 and error.read() == b'No response could be obtained',
+                                                'Remote voice configuration preserves the simulator HTTP error response',
+                                            )
+                                    else:
+                                        raise AssertionError('Remote voice simulator unexpectedly served a directory')
+                                voice_form = urllib.parse.urlencode({'auth_token': token}).encode()
+                                vivox = {'v': 'http://www.vivox.com'}
+                                with urllib.request.urlopen(voice_api + 'viv_buddy.php', voice_form, timeout=5) as response:
+                                    buddy = ET.fromstring(response.read()).find('v:level0', vivox)
+                                check(
+                                    buddy.findtext('v:auth_token', namespaces=vivox) == token
+                                    and buddy.findtext('v:body/v:buddies/v:level3/v:bdy_uri', namespaces=vivox)
+                                    == 'sip:' + account['username'] + '@voice.example.test',
+                                    'Voice buddy response returns the provisioned account and echoes the token',
+                                )
+                                with urllib.request.urlopen(voice_api + 'viv_watcher.php', voice_form, timeout=5) as response:
+                                    watcher = ET.fromstring(response.read()).find('v:level0', vivox)
+                                check(
+                                    watcher.findtext('v:status', namespaces=vivox) == 'OK'
+                                    and watcher.findtext('v:cookie', namespaces=vivox) == token
+                                    and len(watcher.find('v:body', vivox)) == 0,
+                                    'Voice watcher acknowledges the account token with an empty watcher body',
+                                )
+                                check(cap_status(voice_cap) == 404, 'Parcel voice capability requires POST')
+                                with urllib.request.urlopen(
+                                    urllib.request.Request(voice_cap, data=b''), timeout=5
+                                ) as response:
+                                    voice_info = decode_environment(ET.fromstring(response.read())[0])
+                                check(
+                                    voice_info['region_name'] == 'Connected Native'
+                                    and voice_info['parcel_local_id'] > 0
+                                    and voice_info['voice_credentials']['channel_uri']
+                                    == 'sip:conf-x' + base64.b64encode(registration['uuid'][0].encode()).decode()
+                                    + '@voice.example.test',
+                                    'Parcel voice capability returns the estate channel for the current parcel',
+                                )
+                                observer_voice_cap = estate_cap(observer_login, 'ParcelVoiceInfoRequest')
+                                voice_command = b'parcel voice fixture\0'
+                                manager_send(
+                                    bytes.fromhex('ffff0050') + manager_id + manager_session
+                                    + struct.pack('<H', len(voice_command)) + voice_command
+                                    + struct.pack('<Bi', 2, 17262)
+                                )
+
+                                def parcel_channel(endpoint):
+                                    with urllib.request.urlopen(
+                                        urllib.request.Request(endpoint, data=b''), timeout=5
+                                    ) as response:
+                                        info = decode_environment(ET.fromstring(response.read())[0])
+                                    return info['voice_credentials']['channel_uri']
+
+                                expected_fault = 'osSetParcelSIPAddress: Sorry, you need to own the land to use this function'
+                                deadline = time.monotonic() + 5
+                                while (not any(expected_fault in fault for fault in list(script_faults))
+                                       and time.monotonic() < deadline):
+                                    time.sleep(0.05)
+                                channels = (parcel_channel(voice_cap), parcel_channel(observer_voice_cap))
+                                check(
+                                    any(expected_fault in fault for fault in list(script_faults))
+                                    and channels == (voice_info['voice_credentials']['channel_uri'],) * 2,
+                                    f'OSSL rejects a SIP override from outside owned land: {channels}, '
+                                    f'faults {list(script_faults)}',
+                                )
+                                voice_command = b'set parcel voice\0'
+                                manager_send(
+                                    bytes.fromhex('ffff0050') + manager_id + manager_session
+                                    + struct.pack('<H', len(voice_command)) + voice_command
+                                    + struct.pack('<Bi', 2, 17263)
+                                )
+                                deadline = time.monotonic() + 5
+                                override = 'sip:owned-parcel@voice.example.test'
+                                while parcel_channel(voice_cap) != override and time.monotonic() < deadline:
+                                    time.sleep(0.05)
+                                check(
+                                    parcel_channel(voice_cap) == override
+                                    and parcel_channel(observer_voice_cap) == voice_info['voice_credentials']['channel_uri'],
+                                    f'OSSL replaces only the owned parcel voice channel, faults {list(script_faults)}',
+                                )
                             manager_send(
                                 texture_edit(
                                     manager_id, manager_session, b'estatechangeinfo',
@@ -11090,6 +11961,15 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                 )
                             )
                             check_estate_flags((1, 1, 1, 1, 1, 0, 0, 0, 1))
+                            if a.pbr_terrain:
+                                with urllib.request.urlopen(
+                                    urllib.request.Request(voice_cap, data=b''), timeout=5
+                                ) as response:
+                                    voice_info = decode_environment(ET.fromstring(response.read())[0])
+                                check(
+                                    voice_info['voice_credentials']['channel_uri'] == '',
+                                    'Disabling estate voice suppresses the viewer channel',
+                                )
                             event_seed_request = urllib.request.Request(
                                 manager_login['seed_capability'],
                                 b'<llsd><array><string>EventQueueGet</string></array></llsd>',
@@ -11237,7 +12117,7 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                 'EstateID': ['100'],
                                 'CovenantID': ['99887766-5544-4332-8110-010203040506'],
                             }
-                            for _ in range(5 + len(terrain_cases) + len(decimal_capacity_cases)):
+                            for _ in range(5 + len(terrain_cases) + len(decimal_capacity_cases) + int(a.pbr_terrain)):
                                 check(
                                     estate_deliveries.get(timeout=5) == notice,
                                     'Each accepted estate region edit forwards the current covenant once',
@@ -11614,7 +12494,7 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                             )
                             markers = {receive_map_items(6)[0][0] for _ in concurrent_map_x}
                             check(markers == set(concurrent_map_x), 'All six remote markers reach the viewer')
-                            failed_handle = (1280 << 32) | 768
+                            failed_handle = (256256 << 32) | 256000
                             request_map_items(6, failed_handle)
                             check(remote_map_calls.get(timeout=5).endswith(f'/{failed_handle}'), 'Failed peer is tried once')
                             request_map_items(6, failed_handle)
@@ -11637,6 +12517,347 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                 pass
                             else:
                                 raise AssertionError(f'Failed map server was contacted again: {unexpected_map_call}')
+
+                            announcement = dict(
+                                destination_handle=str((origin_x << 32) | origin_y),
+                                region_id=destination_id, region_xloc='1001', region_yloc='1000',
+                                region_size_x='512', region_size_y='512',
+                                server_uri=f'http://127.0.0.1:{grid_features.server_port}/',
+                                internal_ep_address='127.0.0.1', internal_ep_port='9000',
+                            )
+                            request = urllib.request.Request(
+                                url + f'region/{destination_id}/', json.dumps(announcement).encode(),
+                                {'Content-Type': 'application/json'},
+                            )
+                            with urllib.request.urlopen(request, timeout=5) as reply:
+                                check(json.load(reply) == {'success': True}, 'Region accepts neighbour announcement')
+                            neighbour_uuid = uuid.UUID(destination_id).bytes
+                            name_targets = (manager_id, cancel_target.bytes, offline_foreign_id.bytes)
+                            manager_send(bytes.fromhex('ffff00eb03') + b''.join(name_targets))
+
+                            def avatar_name_reply(packet, targets=name_targets):
+                                target = bytes(packet[5:21])
+                                if packet[:5] != bytes.fromhex('ffff00ec01') or target not in targets:
+                                    return None
+                                first_end = 22 + packet[21]
+                                last_end = first_end + 1 + packet[first_end]
+                                return target, (packet[22:first_end].rstrip(b'\0'),
+                                                packet[first_end + 1:last_end].rstrip(b'\0'))
+
+                            if a.disable_user_management:
+                                try:
+                                    manager_receive(avatar_name_reply, timeout=0.75)
+                                except TimeoutError:
+                                    check(True, 'Disabled user management suppresses UUIDNameReply')
+                                else:
+                                    raise AssertionError('Disabled user management sent a UUIDNameReply')
+                            else:
+                                names = dict(manager_receive(avatar_name_reply) for _ in name_targets)
+                                check(names == {
+                                    manager_id: (b'Privacy', b'Mover'),
+                                    cancel_target.bytes: (b'Privacy', b'CancelTarget'),
+                                    offline_foreign_id.bytes: (b'Offline.Resident', b'@foreign.example:8002'),
+                                }, 'One UUIDNameRequest resolves connected, offline local and Hypergrid avatars')
+                                with contextlib.closing(sqlite3.connect(root / 'users.db')) as database:
+                                    database.execute('BEGIN IMMEDIATE')
+                                    try:
+                                        database.execute('UPDATE UserAccounts SET LastName=? WHERE PrincipalID=?',
+                                                         ('ChangedAfterLookup', str(cancel_target)))
+                                        database.commit()
+                                        manager_send(bytes.fromhex('ffff00eb01') + cancel_target.bytes)
+                                        check(manager_receive(avatar_name_reply) ==
+                                              (cancel_target.bytes, (b'Privacy', b'CancelTarget')),
+                                              'Repeat UUID lookup retains the cached offline account name')
+                                    finally:
+                                        database.execute('UPDATE UserAccounts SET LastName=? WHERE PrincipalID=?',
+                                                         ('CancelTarget', str(cancel_target)))
+                                        database.commit()
+                                unknown_id = uuid.uuid4()
+                                unknown_request = bytes.fromhex('ffff00eb01') + unknown_id.bytes
+
+                                def unknown_reply(packet):
+                                    return avatar_name_reply(packet, (unknown_id.bytes,))
+
+                                manager_send(unknown_request)
+                                try:
+                                    manager_receive(unknown_reply, timeout=0.75)
+                                except TimeoutError:
+                                    pass
+                                else:
+                                    raise AssertionError('First unknown UUID request received a reply')
+                                manager_send(unknown_request)
+                                check(manager_receive(unknown_reply) ==
+                                      (unknown_id.bytes, (b'Unknown', str(unknown_id).encode())),
+                                      'A repeated unknown UUID request returns the cached fallback name')
+                            manager_send(bytes.fromhex('ffff0135') + neighbour_uuid)
+
+                            def announced_handle_reply(packet):
+                                if packet[:4] == bytes.fromhex('ffff0136') and packet[4:20] == neighbour_uuid:
+                                    return struct.unpack_from('<Q', packet, 20)[0]
+                                return None
+
+                            check(manager_receive(announced_handle_reply) == failed_handle,
+                                  'RegionHandleRequest returns the announced handle instead of the grid record')
+                            missing_group = uuid.uuid4().bytes
+                            manager_send(bytes.fromhex('ffff00ed01') + missing_group)
+                            missing_reply_id = bytes(16) if a.basic_group_names else missing_group
+
+                            def missing_group_reply(packet):
+                                if packet[:5] == bytes.fromhex('ffff00ee01') and packet[5:21] == missing_reply_id:
+                                    return packet[22:22 + packet[21]].rstrip(b'\0')
+                                return None
+
+                            check(manager_receive(missing_group_reply) == b'Unknown',
+                                  'Unknown group replies use the selected module fallback')
+                            if a.basic_group_names:
+                                known_group_id = uuid.UUID('00000000-68f9-1111-024e-222222111123')
+                                expected_group_name = b'OpenSimulator Testing'
+                            else:
+                                known_group_id = uuid.UUID('00000000-0000-4000-8000-000000000003')
+                                expected_group_name = b'Parcel Group'
+                            known_group = known_group_id.bytes
+                            manager_send(bytes.fromhex('ffff00ed01') + known_group)
+
+                            def known_group_reply(packet):
+                                if packet[:5] == bytes.fromhex('ffff00ee01') and packet[5:21] == known_group:
+                                    return packet[22:22 + packet[21]].rstrip(b'\0')
+                                return None
+
+                            check(manager_receive(known_group_reply) == expected_group_name,
+                                  'Group name resolution uses the selected module')
+                            if a.basic_group_names:
+                                manager_send(bytes.fromhex('ffff0182') + manager_id + manager_session)
+
+                                def basic_agent_data(packet):
+                                    if not packet.startswith(bytes.fromhex('ffff0183') + manager_id):
+                                        return None
+                                    offset = 20
+                                    fields = []
+                                    for _ in range(3):
+                                        length = packet[offset]
+                                        offset += 1
+                                        fields.append(packet[offset:offset + length].rstrip(b'\0'))
+                                        offset += length
+                                    group = packet[offset:offset + 16]
+                                    powers = struct.unpack_from('<Q', packet, offset + 16)[0]
+                                    length = packet[offset + 24]
+                                    name = packet[offset + 25:offset + 25 + length].rstrip(b'\0')
+                                    return fields[2], group, powers, name
+
+                                check(
+                                    manager_receive(basic_agent_data)
+                                    == (b'I IZ N0T', known_group, (1 << 26) | (1 << 28), expected_group_name),
+                                    'Basic Groups returns its original active group, title and powers',
+                                )
+                                manager_send(bytes.fromhex('ffff0170') + manager_id + manager_session + bytes(16))
+                                try:
+                                    manager_receive(basic_agent_data, timeout=0.75)
+                                except TimeoutError:
+                                    pass
+                                else:
+                                    raise AssertionError('Basic Groups replied to an activation request')
+                                manager_send(bytes.fromhex('ffff0182') + manager_id + manager_session)
+                                check(
+                                    manager_receive(basic_agent_data)
+                                    == (b'I IZ N0T', known_group, (1 << 26) | (1 << 28), expected_group_name),
+                                    'Basic Groups retains its active group after an activation request',
+                                )
+                            def directory_search(text, flags, reply_id, start=0):
+                                query_id = uuid.uuid4().bytes
+                                manager_send(
+                                    bytes.fromhex('ffff001f') + manager_id + manager_session + query_id
+                                    + bytes([len(text)]) + text + struct.pack('<Ii', flags, start)
+                                )
+                                prefix = bytes.fromhex(reply_id) + manager_id + query_id
+
+                                def result(packet):
+                                    if packet.startswith(prefix):
+                                        return packet[len(prefix):]
+                                    return None
+
+                                return manager_receive(result)
+
+                            expected_person = (
+                                b'\x01' + cancel_target.bytes + b'\x08Privacy\0\x0dCancelTarget\0'
+                                + bytes(6)
+                            )
+                            check(directory_search(b'  cAnCeLtArGeT  \0', 17, 'ffff0024') == expected_person,
+                                  'People search takes precedence and returns the matching local account')
+                            check(directory_search(b'no_matching_account\0', 1, 'ffff0024') == b'\x00',
+                                  'People search sends an empty reply when no accounts match')
+                            check(directory_search(b"o'neill\0", 1, 'ffff0024') == b'\x00',
+                                  'People search treats apostrophes as literal account name characters')
+
+                            def avatar_picker(text):
+                                query_id = uuid.uuid4().bytes
+                                manager_send(
+                                    bytes.fromhex('ffff001a') + manager_id + manager_session + query_id
+                                    + bytes([len(text)]) + text
+                                )
+                                prefix = bytes.fromhex('ffff001c') + manager_id + query_id
+
+                                def result(packet):
+                                    if packet.startswith(prefix):
+                                        return packet[len(prefix):]
+                                    return None
+
+                                return manager_receive(result)
+
+                            if a.disable_user_management:
+                                check(not estate_cap(manager_login, 'AvatarPickerSearch'),
+                                      'Local avatar picker capability requires user management')
+                            else:
+                                expected_avatar = b'\x01' + cancel_target.bytes + b'\x08Privacy\0\x0dCancelTarget\0'
+                                check(avatar_picker(b'CancelTarget\0') == expected_avatar,
+                                      'Avatar picker returns the matching account once')
+                                check(avatar_picker(b'no_matching_account\0') == b'\x00',
+                                      'Avatar picker returns a reply with zero entries for a miss')
+                                picker_cap = estate_cap(manager_login, 'AvatarPickerSearch')
+                                picker_url = picker_cap + '?names=CancelTarget&names=Ignore&page_size=1&page=2'
+                                with urllib.request.urlopen(picker_url, timeout=5) as response:
+                                    check(response.headers.get_content_type() == 'application/llsd+xml',
+                                          'Avatar picker capability returns LLSD')
+                                    picker = llsd_map(ET.fromstring(response.read())[0])
+                                person = llsd_map(picker['agents'][0])
+                                check(len(picker['agents']) == 1
+                                      and person['id'].text == str(cancel_target)
+                                      and person['username'].text == 'privacy.canceltarget'
+                                      and person['display_name'].text == 'Privacy CancelTarget'
+                                      and picker['next_page_url'].text == urllib.parse.urlsplit(picker_url).path
+                                      + '?' + urllib.parse.urlsplit(picker_url).query,
+                                      'Avatar picker capability returns the first name query and raw next-page URL')
+                                check(cap_status(picker_cap + '?names=ab') == 400
+                                      and cap_status(picker_cap + '?names=CancelTarget&page=bad') == 400
+                                      and cap_status(picker_cap, b'') == 404,
+                                      'Avatar picker capability rejects short names, invalid pagination, and POST')
+                                if rotating_prim and not a.basic_group_names:
+                                    domain = f'127.0.0.1:{key_server.server_address[1]}'
+                                    foreign_query = 'Foreign.Avatar@' + domain
+                                    previous_calls = len(foreign_key_calls)
+                                    for query in (foreign_query, foreign_query, '@' + domain):
+                                        params = urllib.parse.urlencode({'names': query})
+                                        with urllib.request.urlopen(picker_cap + '?' + params, timeout=5) as response:
+                                            foreign = llsd_map(ET.fromstring(response.read())[0])
+                                        check(len(foreign['agents']) == 1, 'Hypergrid picker returns one foreign avatar')
+                                        person = llsd_map(foreign['agents'][0])
+                                        check(person['id'].text == foreign_id
+                                              and person['username'].text == foreign_query.lower(),
+                                              'Hypergrid picker returns the remote UUID and qualified username')
+                                    check(foreign_key_calls[previous_calls:] == [{'first': 'Foreign', 'last': 'Avatar'}],
+                                          'Hypergrid picker uses one get_uuid call and reuses the cached identity')
+                                    for query, expected_count in (
+                                        ('Broken.Avatar@' + domain, 0),
+                                        ('Foreign.Avatar.Alias@' + domain, 1),
+                                        (foreign_query, 1),
+                                    ):
+                                        params = urllib.parse.urlencode({'names': query})
+                                        with urllib.request.urlopen(picker_cap + '?' + params, timeout=5) as response:
+                                            entries = llsd_map(ET.fromstring(response.read())[0])['agents']
+                                        check(len(entries) == expected_count, 'Hypergrid picker handles the remote response')
+                                        if entries:
+                                            check(llsd_map(entries[0])['username'].text == query.lower(),
+                                                  'Hypergrid picker preserves the established cached avatar name')
+                                    check(foreign_key_calls[previous_calls + 1:] == [
+                                        {'first': 'Broken', 'last': 'Avatar'},
+                                        {'first': 'Foreign', 'last': 'Avatar'},
+                                    ], 'A malformed UUID does not prevent valid lookups on the same grid')
+                                    request_name = foreign_query.encode() + b'\0'
+                                    first = b'Foreign.Avatar\0'
+                                    last = ('@' + domain).encode() + b'\0'
+                                    expected_foreign = (
+                                        b'\x01' + uuid.UUID(foreign_id).bytes
+                                        + bytes([len(first)]) + first + bytes([len(last)]) + last
+                                    )
+                                    call_count = len(foreign_key_calls)
+                                    check(avatar_picker(request_name) == expected_foreign,
+                                          'UDP avatar picker returns the Hypergrid identity found over HTTP')
+                                    check(len(foreign_key_calls) == call_count,
+                                          'HTTP and UDP avatar pickers share the Hypergrid cache')
+                            if not a.basic_group_names:
+
+                                expected = (
+                                    b'\x01' + known_group + b'\x0dParcel Group\0' + struct.pack('<if', 7, 1.25)
+                                )
+                                check(directory_search(b'  PaRcEl  \0', 16, 'ffff0026') == expected,
+                                      'Viewer group search returns the authenticated V2 directory result')
+                                check(directory_search(b'parcel\0', 16, 'ffff0026') == expected,
+                                      'Viewer group search reuses the normalized query result')
+                                search_calls = [
+                                    fields for fields in list(group_requests.queue)
+                                    if fields.get('METHOD') == ['FINDGROUPS']
+                                ]
+                                check(len(search_calls) == 1, 'Normalized group search uses one connector request')
+                                check(
+                                    directory_search(b'incomplete\0', 16, 'ffff0026') == b'\x00',
+                                    'An incomplete remote group row produces an empty viewer reply',
+                                )
+                                check(
+                                    directory_search(b'parcel\0', 16, 'ffff0026') == expected,
+                                    'The viewer can still search after an incomplete group row',
+                                )
+                            if a.basic_group_names:
+                                def basic_group_update(packet):
+                                    if packet[:4] != bytes.fromhex('ffff0183') or packet[4:20] != manager_id:
+                                        return None
+                                    offset = 20
+                                    for _ in range(2):
+                                        offset += 1 + packet[offset]
+                                    end = offset + 1 + packet[offset]
+                                    name_length_offset = end + 16 + 8
+                                    name_start = name_length_offset + 1
+                                    name_end = name_start + packet[name_length_offset]
+                                    return (
+                                        bytes(packet[offset + 1:end]).rstrip(b'\0'),
+                                        bytes(packet[end:end + 16]),
+                                        struct.unpack_from('<Q', packet, end + 16)[0],
+                                        bytes(packet[name_start:name_end]).rstrip(b'\0'),
+                                    )
+
+                                try:
+                                    manager_receive(basic_group_update, timeout=0.2)
+                                except (socket.timeout, AssertionError):
+                                    pass
+                                else:
+                                    raise AssertionError('Default Groups sent an unsolicited active group update')
+                                manager_send(bytes.fromhex('ffff0182') + manager_id + manager_session)
+
+                                allow_landmark = 1 << 26
+                                allow_set_home = 1 << 28
+                                expected_powers = allow_landmark | allow_set_home
+                                check(manager_receive(basic_group_update) ==
+                                      (b'I IZ N0T', known_group, expected_powers, expected_group_name),
+                                      'Basic Groups reports its built-in active group and powers')
+                            inner_handle = (256512 << 32) | 256000
+                            request_map_items(6, inner_handle)
+                            check(remote_map_calls.get(timeout=5).endswith(f'/{inner_handle}'),
+                                  'An interior cell uses the announced large-region endpoint')
+                            request_map_items(6, failed_handle)
+                            check(remote_map_calls.get(timeout=5).endswith(f'/{failed_handle}'),
+                                  'Neighbour announcement allows a failed map request to retry')
+                            check(sum(lookup.get('X') == ['256256'] for lookup in list(grid_lookups.queue)) == 1,
+                                  'Map retry uses the announced endpoint without asking the grid again')
+
+                            announcement.update(region_xloc='1000', region_yloc='1001')
+                            moved = urllib.request.Request(
+                                request.full_url, json.dumps(announcement).encode(),
+                                {'Content-Type': 'application/json'},
+                            )
+                            with urllib.request.urlopen(moved, timeout=5) as reply:
+                                check(json.load(reply) == {'success': True}, 'Region accepts a moved neighbour')
+                            manager_send(bytes.fromhex('ffff0135') + neighbour_uuid)
+                            check(manager_receive(announced_handle_reply) == (256000 << 32) | 256256,
+                                  'RegionHandleRequest returns the moved neighbour handle')
+                            # This cell was inside the old footprint and outside the new one.
+                            request_map_items(6, (256512 << 32) | 256256)
+                            deadline = time.monotonic() + 5
+                            old_cell_resolved = False
+                            while time.monotonic() < deadline:
+                                lookup = grid_lookups.get(timeout=max(0.01, deadline - time.monotonic()))
+                                if lookup.get('X') == ['256512'] and lookup.get('Y') == ['256256']:
+                                    old_cell_resolved = True
+                                    break
+                            check(old_cell_resolved,
+                                  'An old interior cell falls back to the grid after the neighbour moves')
 
                             def next_estate_home():
                                 deadline = time.monotonic() + 5
@@ -11802,7 +13023,8 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                     )
 
                                 maintenance = 'Maintenance {{in}} [{0,12:ignored}][{0,-11}]' + 'x' * 250
-                                proc.stdin.write(f'region restart notice "{maintenance}" 2 5\n')
+                                proc.stdin.write('change region Connected Native\n'
+                                                 f'region restart notice "{maintenance}" 2 5\n')
                                 proc.stdin.flush()
 
                                 def formatted_restart_alert(payload):
@@ -11829,6 +13051,30 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                 )
                                 if a.restart_shutdown:
                                     check(not marker.exists(), 'Aborting a restart removes the region marker')
+                                    def script_restart_command(message):
+                                        encoded = message.encode() + b'\0'
+                                        manager_send(
+                                            bytes.fromhex('ffff0050') + manager_id + manager_session
+                                            + struct.pack('<H', len(encoded)) + encoded + struct.pack('<Bi', 2, 17261)
+                                        )
+
+                                    script_restart_command('schedule')
+                                    try:
+                                        manager_receive(restart_alert(b'Script maintenance\n\nTime remaining: 30 seconds.\n'))
+                                    except TimeoutError as failure:
+                                        proc.stdin.write('backup\n')
+                                        proc.stdin.flush()
+                                        time.sleep(0.5)
+                                        with contextlib.closing(sqlite3.connect(root / 'terrain.db')) as database:
+                                            status = database.execute(
+                                                'SELECT Description FROM prims WHERE UUID=?', (stored_child,)
+                                            ).fetchone()
+                                        raise AssertionError(f'Script restart status {status}, faults {list(script_faults)}') from failure
+                                    script_restart_command('cancel')
+                                    check(
+                                        manager_receive(region_notice(b'/Region restart has been aborted\n', manager_id)),
+                                        'Estate-owned script cancels the pending restart',
+                                    )
                                     manager_send(
                                         texture_edit(manager_id, manager_session, b'restart', b'1')
                                     )
@@ -11897,10 +13143,6 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                         )
                         with urllib.request.urlopen(event_seed, timeout=5) as response:
                             event_cap = ET.fromstring(response.read()).find('map/string').text
-
-                        def llsd_map(node):
-                            values = list(node)
-                            return {values[i].text: values[i + 1] for i in range(0, len(values), 2)}
 
                         group_ack = None
 
@@ -12901,7 +14143,7 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                         with urllib.request.urlopen(request, timeout=5, context=primary_context) as response:
                             check(response.status == 201, 'The script URL still serves requests before restart')
 
-                    proc.stdin.write('region restart notice "Restarting" 0\n')
+                    proc.stdin.write('change region Connected Native\nregion restart notice "Restarting" 0\n')
                     proc.stdin.flush()
                     deadline = time.monotonic() + 25
                     while True:
@@ -12911,6 +14153,12 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                         if line.startswith('LISTENING '):
                             break
                     check(line.split(' ', 1)[1].strip() == url, 'The primary listener rebinds its original port')
+                    restarted_login = proxy.login_to_simulator(credentials)
+                    check(
+                        restarted_login.get('login') == 'true'
+                        and restarted_login['sim_port'] == login['sim_port'],
+                        'The restarted region advertises its original UDP port to a fresh login',
+                    )
                     for old_url in restart_script_urls:
                         request = urllib.request.Request(old_url, b'after restart')
                         try:
@@ -13121,6 +14369,7 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                     'Native offline endpoint queues a message before shutdown',
                 )
         finally:
+            original_failure = sys.exc_info()[1]
             if proc.poll() is None:
                 proc.stdin.write('"quit"\n')
                 proc.stdin.flush()
@@ -13129,10 +14378,13 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                 except subprocess.TimeoutExpired:
                     proc.kill()
                     proc.wait()
-                    raise
-            check(
-                proc.returncode == 0, 'Clean region/socket/capability shutdown: ' + ''.join(errors)
-            )
+                    if original_failure is None:
+                        raise
+                    original_failure.add_note('The simulator also timed out during shutdown.')
+            if original_failure is None:
+                check(
+                    proc.returncode == 0, 'Clean region/socket/capability shutdown: ' + ''.join(errors)
+                )
         if a.script_email:
             check(smtp_messages.qsize() == 2, 'The configured daily SMTP quota admits only two script messages')
             envelope, data = smtp_messages.get_nowait()
@@ -13484,6 +14736,21 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                     if line.startswith('LISTENING '):
                         break
                 restart_proxy = xmlrpc.client.ServerProxy(line.split(' ', 1)[1].strip())
+                if a.pbr_terrain:
+                    restarted_observer = restart_proxy.login_to_simulator(
+                        dict(credentials, first='Privacy', last='Observer', start='uri:Connected Native&128&128&25')
+                    )
+                    def inspect_restored_terrain(payload):
+                        check(
+                            scripted_texture_assets(payload) is not None,
+                            'Fresh viewer handshake restores the script-set terrain texture from SQLite',
+                        )
+
+                    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as restarted_socket:
+                        connect_privacy_viewer(
+                            restarted_socket, 'Observer', 128, restarted_observer,
+                            inspect_handshake=inspect_restored_terrain,
+                        )
                 if rotating_prim and not a.disable_scripts:
                     private_start = 'uri:Connected Native&124&128&25'
                     check(
@@ -13513,14 +14780,16 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                 start=private_start,
                             )
                         )['login']
-                        == 'true',
-                        'Private estate admits a member of an allowed group',
+                        == ('false' if a.basic_group_names else 'true'),
+                        'Private estate group admission follows the selected Groups module',
                     )
                     requests = []
                     while not group_requests.empty():
                         requests.append(group_requests.get_nowait())
-                    check(
-                        any(
+                    if a.basic_group_names:
+                        check(not requests, 'Default Groups leaves the V2 connector inactive')
+                    else:
+                        check(any(
                             fields
                             == {
                                 'METHOD': ['GETMEMBERSHIP'],
@@ -13529,9 +14798,7 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                 'RequestingAgentID': [str(uuid.UUID(int=0))],
                             }
                             for fields in requests
-                        ),
-                        'Private estate queries the authenticated Groups service for memberships',
-                    )
+                        ), 'Private estate queries the authenticated Groups service for memberships')
                 session = restart_proxy.login_to_simulator(credentials)
                 check(
                     session.get('login') == 'true',
@@ -13594,14 +14861,15 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                 'TerrainDatabase = terrain.db\nPhysics = ubODE\nPhysicsLibrary = deliberately-missing-ubode',
                 'TerrainDatabase = fresh-region.db',
             )
-            check_local_groups = rotating_prim and not a.disable_scripts
+            check_local_groups = rotating_prim and not a.disable_scripts and not a.basic_group_names
             if check_local_groups:
                 while not group_requests.empty():
                     group_requests.get_nowait()
                 orphan_group = 'fc64b140-cc4a-42d0-a44b-0431772c3c15'
                 with contextlib.closing(sqlite3.connect(root / 'groups.db')) as database, database:
                     database.execute(
-                        'CREATE TABLE os_groups_groups (GroupID CHAR(36) PRIMARY KEY, Name TEXT)'
+                        'CREATE TABLE os_groups_groups (GroupID CHAR(36) PRIMARY KEY, Name TEXT, '
+                        'ShowInList INT, Location TEXT)'
                     )
                     database.execute(
                         'CREATE TABLE os_groups_membership (GroupID CHAR(36), PrincipalID VARCHAR(255), SelectedRoleID CHAR(36), AcceptNotices INT DEFAULT 1, ListInProfile INT DEFAULT 0, PRIMARY KEY(GroupID,PrincipalID))'
@@ -13617,9 +14885,15 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                     )
                     role = str(uuid.uuid4())
                     alternate_role = str(uuid.uuid4())
-                    database.execute(
-                        'INSERT INTO os_groups_groups VALUES (?,?)',
-                        (estate_access_group, 'Local Parcel Group'),
+                    hidden_group, proxy_group, empty_group = (str(uuid.uuid4()) for _ in range(3))
+                    database.executemany(
+                        'INSERT INTO os_groups_groups VALUES (?,?,?,?)',
+                        (
+                            (estate_access_group, 'Local Parcel Group', 1, ''),
+                            (hidden_group, 'Hidden Parcel Group', 0, ''),
+                            (proxy_group, 'Proxy Parcel Group', 1, 'https://foreign.example'),
+                            (empty_group, 'Empty Parcel Group', 1, ''),
+                        ),
                     )
                     database.executemany(
                         'INSERT INTO os_groups_roles VALUES (?,?,?,?,?)',
@@ -13646,6 +14920,8 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                         (
                             (estate_access_group, str(timeout_target), role),
                             (orphan_group, str(ban_target), role),
+                            (hidden_group, str(ban_target), role),
+                            (proxy_group, str(ban_target), role),
                         ),
                     )
                 with contextlib.closing(sqlite3.connect(root / 'estate.db')) as database, database:
@@ -13743,6 +15019,25 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                 'Local active group change reaches the viewer',
                             )
                             if check_local_groups:
+                                directory_id = uuid.uuid4().bytes
+                                search_text = b'  PaRcEl  \0'
+                                send(
+                                    bytes.fromhex('ffff001f') + agent + session_id + directory_id
+                                    + bytes([len(search_text)]) + search_text + struct.pack('<Ii', 16, 0)
+                                )
+                                prefix = bytes.fromhex('ffff0026') + agent + directory_id
+
+                                def directory_reply(payload):
+                                    if payload.startswith(prefix):
+                                        return payload[len(prefix):]
+                                    return None
+
+                                expected = (
+                                    b'\x01' + group_id.bytes + b'\x13Local Parcel Group\0'
+                                    + struct.pack('<if', 1, 0.0)
+                                )
+                                check(receive(directory_reply) == expected,
+                                      'Local group directory returns listed groups with members and excludes proxies')
 
                                 def read_titles():
                                     request = uuid.uuid4().bytes
@@ -14463,18 +15758,41 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                 check(restart.returncode == 0, 'Restarted region shuts down cleanly')
     report = dict(
         passed=True,
+        traceRunId=trace_run_id,
         basicProfileDisabled=a.profiles_disabled,
         checks=checks,
-        scope='Native executable HTTP login/seed plus UDP handshake/root/terrain/avatar/wearables, primitive create/edit, actual default LSL state_entry and optional touch_start, optional real ubODE walk/turn/run/jump/fly/hover and animation UUIDs, optional shipped SQLite assets/capabilities/ranges/concurrent requests, actual region-loaded default XML cache retrieval after deleting its SQL copy before the first HTTP request, actual SQLite FetchInventory2 item retrieval/source serialization/statuses, before-root legacy item/folder/library fetches, real task Contents/Xfer cache and mutation, script assets, GetScriptRunning EventQueue and two-stage script save/compile/error/stopped/recovery plus viewer start/stop/reset and stopped-reset continuation with exact stored invalid-UTF8/trailing-NUL bytes and real ObjectProperties serials, logout/relogin. Actual viewer rendering, complete physics/collision engines, complete objects/permissions, full YEngine language/runtime, asset/inventory transfer and macOS execution remain pending.',
+        scope=(
+            'Native executable HTTP login/seed plus UDP handshake/root/terrain/avatar/wearables, '
+            'primitive create/edit, actual default LSL state_entry and optional touch_start, optional '
+            'real ubODE walk/turn/run/jump/fly/hover and animation UUIDs, optional shipped SQLite '
+            'assets/capabilities/ranges/concurrent requests, actual region-loaded default XML cache '
+            'retrieval after deleting its SQL copy before the first HTTP request, actual SQLite '
+            'FetchInventory2 item retrieval/source serialization/statuses, before-root legacy '
+            'item/folder/library fetches, real task Contents/Xfer cache and mutation, script assets, '
+            'GetScriptRunning EventQueue and two-stage script save/compile/error/stopped/recovery plus '
+            'viewer start/stop/reset and stopped-reset continuation with exact stored '
+            'invalid-UTF8/trailing-NUL bytes and real ObjectProperties serials, logout/relogin. Actual '
+            'viewer rendering, complete physics/collision engines, complete objects/permissions, full '
+            'YEngine language/runtime, asset/inventory transfer and macOS execution remain pending.'
+        ),
     )
     if a.advanced_profiles:
         report['advancedProfiles'] = True
         report[
             'scope'
-        ] += ' OfflineIM covers authenticated remote GET and STORE, local SQLite mailbox limits and rollback on corrupt rows, restart persistence and expiration, and viewer UDP delivery of stored inventory offers. The same account can reconnect after clean shutdown with a pending circuit.'
+        ] += (
+            ' OfflineIM covers authenticated remote GET and STORE, local SQLite mailbox limits and '
+            'rollback on corrupt rows, restart persistence and expiration, and viewer UDP delivery of '
+            'stored inventory offers. The same account can reconnect after clean shutdown with a pending '
+            'circuit.'
+        )
         report[
             'scope'
-        ] += ' Configured advanced profiles cover console queue counts, system avatar properties, session validation, malformed generic requests, SQLite picks and notes, preference updates and the original SQLite preference read failure, and background avatar property replies.'
+        ] += (
+            ' Configured advanced profiles cover console queue counts, system avatar properties, session '
+            'validation, malformed generic requests, SQLite picks and notes, preference updates and the '
+            'original SQLite preference read failure, and background avatar property replies.'
+        )
     (a.work / 'connected-region-results.json').write_text(
         json.dumps(report, indent=2) + '\n', encoding='utf-8'
     )

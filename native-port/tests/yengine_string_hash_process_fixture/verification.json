@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "source_sha256": "4445dbaea4e9b3e068878e7789c95e9c9f11f3d343adc6d4b4b12eaf48150286",
+  "generator_sha256": "e8605ab39efab363d3cbbd725c862c0b6b81f275c55812485e773ad1927c7c30",
+  "process_a_metadata_sha256": "3187e50d8749fcfffa8bfc80bb654f0c524f3de2c6050ab8b6990d979fb3f1c4",
+  "process_import_metadata_sha256": "a7fd4ebb3936cd7c530933bd58aa2c96f6bc2477ca0e33c2d0beca755a6e8f6b",
+  "process_a_seed": "caf343e11bf93845",
+  "process_import_seed": "b91861b096831a1e",
+  "same_process_hash": 228162272,
+  "cross_process_hash": 405523070,
+  "old_saved_before_hash": 228162272,
+  "scope": "Actual source private production capture and separate original process import. No portable numeric hash or probabilistic hash inequality requirement.",
+  "full_parity_claim": false
+}

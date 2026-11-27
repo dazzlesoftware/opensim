@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "nativeParityVerified": false,
+  "fullParityVerified": false,
+  "scope": "5684 actual unchanged original xmrChars2String/xmrString2Chars direct backend calls perOS on source-created char[] wrapper, with explicit backend backing/null injection; exact range/null/cast order, partial UTF16 writes, bounded at3loopiterations.",
+  "generatorSha256": "5a42a27ea694894dbe38977d255093edc60b4a2597fa356d54d04070043e7613",
+  "generatorAssemblySha256": "202cd3927284c0f6de7fa2b5f30330a5fac594c1fc257f99c20826d857ddd023",
+  "verifierSha256": "a7abb831c75ccea6321cbf434758f5ae4bb2ae6bd4e892c2fdffab32b3aa53b2",
+  "originalBackendAssemblySha256": {
+    "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+    "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+    "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a"
+  },
+  "originalSourceSha256": {
+    "XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+    "XMRSDTypeClObj.cs": "526bcaa0bac500bdce6bc0ada35eb22f1bef5d4f645f71f73ea0113ed8e9811c"
+  },
+  "platforms": {
+    "windows": {
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "rows": 5684,
+      "matrixSha256": "df44bd339f8360ae8808b891345b0927cfcae585f5aff2b312bf295cd6b84f8e",
+      "metadataSha256": "be42f456b9f5dede33f5443d1ab567d748947e53300907ac677b4f33ec57ecd6",
+      "sourceSha256": "db2344f4690dc38497dbad44b8458888470673631e4cdabf49d7361bc7bdb5fb",
+      "objectSha256": "ea4825574d6500e29d9652c804df946e683b1922522f88cefb22272844d8f31d",
+      "snapshotSha256": "f1477d324ea2051f2b194285421b739e39609cbf940d458e9909c149c5f98005",
+      "faultCounts": {
+        "System.ArgumentOutOfRangeException": 43,
+        "System.ArgumentNullException": 49,
+        "System.InvalidCastException": 1421,
+        "System.NullReferenceException": 1925,
+        "System.IndexOutOfRangeException": 1054
+      },
+      "successes": 1192
+    },
+    "linux": {
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "rows": 5684,
+      "matrixSha256": "c60a03ec045f0cb942786d3c82e6b9b985b3df2ea928f87982b1d557607fa73d",
+      "metadataSha256": "32999a35cab075973a4987c0e3d24b480fd2f90733916934a911ddc79eae9992",
+      "sourceSha256": "db2344f4690dc38497dbad44b8458888470673631e4cdabf49d7361bc7bdb5fb",
+      "objectSha256": "ea4825574d6500e29d9652c804df946e683b1922522f88cefb22272844d8f31d",
+      "snapshotSha256": "f1477d324ea2051f2b194285421b739e39609cbf940d458e9909c149c5f98005",
+      "faultCounts": {
+        "System.ArgumentOutOfRangeException": 43,
+        "System.ArgumentNullException": 49,
+        "System.InvalidCastException": 1421,
+        "System.NullReferenceException": 1925,
+        "System.IndexOutOfRangeException": 1054
+      },
+      "successes": 1192
+    }
+  },
+  "findings": [
+    "Negative startIndex precedes negative length validation; knownCtor range messages include actualvalue and OS newline.",
+    "Null wrapper or wrong Int32[] backing checked even fornegative/zerocount; null backing CharsToString alwaysArgumentNull(value).",
+    "StringToChars count<=0 skips source/backing access afterdestinationcast; positive counts readsourcebeforewritingdestination and preservepartialUTF16writes.",
+    "No huge loops/allocations: normal source/destinationlength2 andanypositive count beyond2faults byiteration3."
+  ],
+  "pending": [
+    "No native helper parity claim in this oracle.",
+    "No arrayslongerthan2 or additional malformedtypes tested.",
+    "No macOS/ARM64 claim."
+  ]
+}

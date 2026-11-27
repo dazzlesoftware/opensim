@@ -8,37 +8,44 @@
 #include "opensim/framework/text.hpp"
 #include <algorithm>
 #include <mutex>
+
 namespace opensim::framework {
 namespace {
 using Text = ConfigUriText;
 using Object = ConfigUriObjectPtr;
 using Kind = ConfigUriObjectKind;
+
 Text t(std::u16string value) {
     if (value.empty())
         return runtime_empty_text();
     return std::make_shared<const std::u16string>(std::move(value));
 }
+
 [[noreturn]] void format(std::u16string message) {
     throw ConfigUriComponentsError("System.UriFormatException", std::move(message), 0x80131537);
 }
+
 [[noreturn]] void nullarg(std::u16string name) {
-    throw ConfigUriComponentsError("System.ArgumentNullException",
-                                   u"Value cannot be null. (Parameter '" + name + u"')", 0x80004003, name);
+    throw ConfigUriComponentsError("System.ArgumentNullException", u"Value cannot be null. (Parameter '" + name + u"')",
+                                   0x80004003, name);
 }
+
 [[noreturn]] void missing() {
     throw std::logic_error("Native URI object requires the file/other-scheme SDK provider");
 }
+
 void kind_check(Kind kind) {
     auto n = static_cast<std::int32_t>(kind);
     if (n < 0 || n > 2)
-        throw ConfigUriComponentsError("System.ArgumentException",
-                                       u"The value '" + utf16(std::to_string(n)) +
-                                           u"' passed for the UriKind parameter is invalid.",
-                                       0x80070057);
+        throw ConfigUriComponentsError(
+            "System.ArgumentException",
+            u"The value '" + utf16(std::to_string(n)) + u"' passed for the UriKind parameter is invalid.", 0x80070057);
 }
+
 bool http(std::u16string_view scheme) {
     return scheme == u"http" || scheme == u"https";
 }
+
 [[noreturn]] void scan_error(int error) {
     switch (error) {
     case 1:
@@ -59,56 +66,70 @@ bool http(std::u16string_view scheme) {
         format(u"Invalid URI: The hostname could not be parsed.");
     }
 }
+
 class Http final : public ConfigUriObject {
     std::shared_ptr<ConfigUriComponents> value_;
     ConfigUriObjectPtr source_;
 
   public:
     Http(std::shared_ptr<ConfigUriComponents> value, ConfigUriObjectPtr source)
-        : value_(std::move(value)), source_(std::move(source)) {
-    }
+        : value_(std::move(value)), source_(std::move(source)) {}
+
     bool is_absolute() const override {
         return true;
     }
+
     Text original_string() const override {
         return source_->original_string();
     }
+
     Text scheme() const override {
         return source_->scheme();
     }
+
     Text fragment() const override {
         return source_->fragment();
     }
+
     Text absolute_uri() const override {
         return source_->absolute_uri();
     }
+
     Text local_path() const override {
         return source_->local_path();
     }
+
     Text to_string() const override {
         return source_->to_string();
     }
+
     std::shared_ptr<ConfigUriComponents> http_components() const override {
         return value_;
     }
+
     Object source_object() const {
         return source_;
     }
+
     Object clone_source() const {
         auto source = config_generic_uri_clone(source_);
         return std::make_shared<Http>(value_->rebind(source), std::move(source));
     }
 };
+
 struct Backend {
     ConfigHttpUriObjectOptions options;
+
     explicit Backend(ConfigHttpUriObjectOptions o) : options(std::move(o)) {
         if (!options.components)
             options.components = native_config_uri_components_backend();
     }
+
     Object wrap(std::shared_ptr<ConfigUriComponents> value) {
         auto source = value->source_object();
         return std::make_shared<Http>(std::move(value), std::move(source));
     }
+
     Object retain_http_components(Object result) {
         if (result && result->is_absolute() && http(*result->scheme()) && !result->http_components()) {
             auto components = ConfigUriComponents::from_object(result, options.components, options.windows);
@@ -116,6 +137,7 @@ struct Backend {
         }
         return result;
     }
+
     bool foreign(Text value, Kind kind) {
         if (!value)
             return false;
@@ -124,6 +146,7 @@ struct Backend {
                !config_file_uri_implicit_kind_is_relative(scan, *value, static_cast<std::int32_t>(kind),
                                                           options.windows);
     }
+
     Object create(Text value, Kind kind) {
         if (!value)
             nullarg(u"uriString");
@@ -132,12 +155,10 @@ struct Backend {
         if (scan.error) {
             if (scan.error > 4 || kind == Kind::Absolute)
                 scan_error(scan.error);
-            auto parsed =
-                config_uri_has_iri_characters(*value) ? t(config_uri_escape_unescape_iri(*value, 0)) : value;
+            auto parsed = config_uri_has_iri_characters(*value) ? t(config_uri_escape_unescape_iri(*value, 0)) : value;
             return config_uri_relative_object(value, parsed);
         }
-        if (config_file_uri_implicit_kind_is_relative(scan, *value, static_cast<std::int32_t>(kind),
-                                                      options.windows))
+        if (config_file_uri_implicit_kind_is_relative(scan, *value, static_cast<std::int32_t>(kind), options.windows))
             return config_uri_relative_object(value, value);
         if (!http(scan.scheme)) {
             if (!options.other_schemes.create)
@@ -149,6 +170,7 @@ struct Backend {
             return source;
         return wrap(ConfigUriComponents::from_object(std::move(source), options.components, options.windows));
     }
+
     Object try_create(Text value, Kind kind) {
         if (!value)
             return {};
@@ -163,12 +185,13 @@ struct Backend {
         }
         try {
             return create(value, kind);
-        } catch (const ConfigUriComponentsError& e) {
+        } catch (const ConfigUriComponentsError &e) {
             if (e.source_type == "System.UriFormatException")
                 return {};
             throw;
         }
     }
+
     Object combine_string(Object base, Text relative) {
         if (!base)
             nullarg(u"baseUri");
@@ -182,6 +205,7 @@ struct Backend {
         return retain_http_components(
             config_generic_uri_combine_string(native->source_object(), relative, constructor));
     }
+
     Object combine_uri(Object base, Object relative) {
         if (!base)
             nullarg(u"baseUri");
@@ -192,8 +216,7 @@ struct Backend {
                 u"baseUri");
         if (!relative)
             throw ConfigUriComponentsError("System.NullReferenceException",
-                                           u"Object reference not set to an instance of an object.",
-                                           0x80004003);
+                                           u"Object reference not set to an instance of an object.", 0x80004003);
         if (relative->is_absolute()) {
             if (auto native = std::dynamic_pointer_cast<const Http>(relative))
                 return native->clone_source();
@@ -210,6 +233,7 @@ struct Backend {
             missing();
         return options.other_schemes.combine_uri(base, relative);
     }
+
     Object with_fragment(Object uri, Text value) {
         if (!uri)
             nullarg(u"uri");
@@ -227,7 +251,8 @@ struct Backend {
         return std::make_shared<Http>(std::move(components), std::move(source));
     }
 };
-}
+} // namespace
+
 ConfigUriObjectBackend native_http_uri_object_backend(ConfigHttpUriObjectOptions options) {
     auto state = std::make_shared<Backend>(std::move(options));
     ConfigUriObjectBackend b;
@@ -238,4 +263,4 @@ ConfigUriObjectBackend native_http_uri_object_backend(ConfigHttpUriObjectOptions
     b.with_fragment = [state](auto a, auto f) { return state->with_fragment(a, f); };
     return b;
 }
-}
+} // namespace opensim::framework

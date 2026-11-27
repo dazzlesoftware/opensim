@@ -1,0 +1,273 @@
+{
+  "originalRoute": "XMRInstCtor.cs382-384 new XmlDocument().LoadXml(xml), then LoadScriptState -\u003E RestoreEventQueue; strict XmlReader is separate control",
+  "controlScope": "Actual private original serialization/restore of backend CLR inputs; no invented LSL source types",
+  "generatorSha256": "635432aca5ac2f4be5e319646164603b68ecca95320283207282bb15fdd0469c",
+  "assemblySha256": "13a3e642ece343e65adff500390690003bb6a3d62de8124a03f42832965e025e",
+  "originalAssemblySha256": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+  "runtime": ".NET 8.0.34",
+  "architecture": "X64",
+  "originalCaptureSha256": "775f1d83bd4610f788891269ea9ea08b1f79cf4bf3b44300d926f49c8a277cbd",
+  "originalCtorSha256": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+  "cases": [
+    {
+      "name": "raw_-2147483648",
+      "input": {
+        "clr": "System.Int32",
+        "value": -2147483648,
+        "bits": "80000000"
+      },
+      "append_exception": null,
+      "outer_xml_exception": null,
+      "load_xml_exception": null,
+      "restore_event_queue_exception": null,
+      "restored": {
+        "clr": "System.Int32",
+        "value": -2147483648,
+        "bits": "80000000"
+      },
+      "strict_xml_reader_control_exception": null,
+      "strict_xml_reader_control_restored": {
+        "clr": "System.Int32",
+        "value": -2147483648,
+        "bits": "80000000"
+      },
+      "sha256": {
+        "serialized.xml": "60e32d44003eabb70ba52053f468fc671f415d52c86d8a9316022fc08386882a"
+      }
+    },
+    {
+      "name": "boxed_-2147483648",
+      "input": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+        "value": -2147483648,
+        "bits": "80000000"
+      },
+      "append_exception": null,
+      "outer_xml_exception": null,
+      "load_xml_exception": null,
+      "restore_event_queue_exception": null,
+      "restored": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+        "value": -1,
+        "bits": "ffffffff"
+      },
+      "strict_xml_reader_control_exception": null,
+      "strict_xml_reader_control_restored": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+        "value": -1,
+        "bits": "ffffffff"
+      },
+      "sha256": {
+        "serialized.xml": "c09facabea1a258d218d5d0935e0a38fe23e08404b20dd09e7bd0c6fe05e5df8"
+      }
+    },
+    {
+      "name": "raw_-2147483647",
+      "input": {
+        "clr": "System.Int32",
+        "value": -2147483647,
+        "bits": "80000001"
+      },
+      "append_exception": null,
+      "outer_xml_exception": null,
+      "load_xml_exception": null,
+      "restore_event_queue_exception": null,
+      "restored": {
+        "clr": "System.Int32",
+        "value": -2147483647,
+        "bits": "80000001"
+      },
+      "strict_xml_reader_control_exception": null,
+      "strict_xml_reader_control_restored": {
+        "clr": "System.Int32",
+        "value": -2147483647,
+        "bits": "80000001"
+      },
+      "sha256": {
+        "serialized.xml": "030e67e196025b2c0bf30899cc37e5f2c0f083cd4f92cf68dd9f6bc6a4bbdc39"
+      }
+    },
+    {
+      "name": "boxed_-2147483647",
+      "input": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+        "value": -2147483647,
+        "bits": "80000001"
+      },
+      "append_exception": null,
+      "outer_xml_exception": null,
+      "load_xml_exception": null,
+      "restore_event_queue_exception": null,
+      "restored": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+        "value": -2147483647,
+        "bits": "80000001"
+      },
+      "strict_xml_reader_control_exception": null,
+      "strict_xml_reader_control_restored": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+        "value": -2147483647,
+        "bits": "80000001"
+      },
+      "sha256": {
+        "serialized.xml": "badb672d18376e6faa5ca81c44b96dfdc0f87a7037473550300526fba904f73a"
+      }
+    },
+    {
+      "name": "raw_-1",
+      "input": {
+        "clr": "System.Int32",
+        "value": -1,
+        "bits": "ffffffff"
+      },
+      "append_exception": null,
+      "outer_xml_exception": null,
+      "load_xml_exception": null,
+      "restore_event_queue_exception": null,
+      "restored": {
+        "clr": "System.Int32",
+        "value": -1,
+        "bits": "ffffffff"
+      },
+      "strict_xml_reader_control_exception": null,
+      "strict_xml_reader_control_restored": {
+        "clr": "System.Int32",
+        "value": -1,
+        "bits": "ffffffff"
+      },
+      "sha256": {
+        "serialized.xml": "8e20eeb63e4d7dbe56c758ec843ee18d5c0f538e91a10e293f2953d81dc47f68"
+      }
+    },
+    {
+      "name": "boxed_-1",
+      "input": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+        "value": -1,
+        "bits": "ffffffff"
+      },
+      "append_exception": null,
+      "outer_xml_exception": null,
+      "load_xml_exception": null,
+      "restore_event_queue_exception": null,
+      "restored": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+        "value": -1,
+        "bits": "ffffffff"
+      },
+      "strict_xml_reader_control_exception": null,
+      "strict_xml_reader_control_restored": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+        "value": -1,
+        "bits": "ffffffff"
+      },
+      "sha256": {
+        "serialized.xml": "6904ebedb5e86f1aee5e39fb20a7e510c8c0ef7f8d13e192ae8a3709e619861c"
+      }
+    },
+    {
+      "name": "raw_0",
+      "input": {
+        "clr": "System.Int32",
+        "value": 0,
+        "bits": "00000000"
+      },
+      "append_exception": null,
+      "outer_xml_exception": null,
+      "load_xml_exception": null,
+      "restore_event_queue_exception": null,
+      "restored": {
+        "clr": "System.Int32",
+        "value": 0,
+        "bits": "00000000"
+      },
+      "strict_xml_reader_control_exception": null,
+      "strict_xml_reader_control_restored": {
+        "clr": "System.Int32",
+        "value": 0,
+        "bits": "00000000"
+      },
+      "sha256": {
+        "serialized.xml": "a1d7a9ae370a845163d0a70a7efa1c83c7e69942fc9d243fa9612205af211a20"
+      }
+    },
+    {
+      "name": "boxed_0",
+      "input": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+        "value": 0,
+        "bits": "00000000"
+      },
+      "append_exception": null,
+      "outer_xml_exception": null,
+      "load_xml_exception": null,
+      "restore_event_queue_exception": null,
+      "restored": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+        "value": 0,
+        "bits": "00000000"
+      },
+      "strict_xml_reader_control_exception": null,
+      "strict_xml_reader_control_restored": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+        "value": 0,
+        "bits": "00000000"
+      },
+      "sha256": {
+        "serialized.xml": "075ddac5faf9471a03b7d49d61a8408e8c83919b47bcfe6d4f62db22a4f6d547"
+      }
+    },
+    {
+      "name": "raw_2147483647",
+      "input": {
+        "clr": "System.Int32",
+        "value": 2147483647,
+        "bits": "7fffffff"
+      },
+      "append_exception": null,
+      "outer_xml_exception": null,
+      "load_xml_exception": null,
+      "restore_event_queue_exception": null,
+      "restored": {
+        "clr": "System.Int32",
+        "value": 2147483647,
+        "bits": "7fffffff"
+      },
+      "strict_xml_reader_control_exception": null,
+      "strict_xml_reader_control_restored": {
+        "clr": "System.Int32",
+        "value": 2147483647,
+        "bits": "7fffffff"
+      },
+      "sha256": {
+        "serialized.xml": "5c1f38b70aaf40cd75b894b8d3d0c2d2433cfd0e914e7086e96e40d555eeb489"
+      }
+    },
+    {
+      "name": "boxed_2147483647",
+      "input": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+        "value": 2147483647,
+        "bits": "7fffffff"
+      },
+      "append_exception": null,
+      "outer_xml_exception": null,
+      "load_xml_exception": null,
+      "restore_event_queue_exception": null,
+      "restored": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+        "value": 2147483647,
+        "bits": "7fffffff"
+      },
+      "strict_xml_reader_control_exception": null,
+      "strict_xml_reader_control_restored": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+        "value": 2147483647,
+        "bits": "7fffffff"
+      },
+      "sha256": {
+        "serialized.xml": "57ccc0134e21dcbdec4278a792fa781db350ca40192f1cd32231d47a6fbbbce9"
+      }
+    }
+  ]
+}

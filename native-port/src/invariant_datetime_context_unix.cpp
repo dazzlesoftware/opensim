@@ -30,27 +30,33 @@
 #endif
 namespace opensim::framework::invariant_datetime_platform {
 namespace {
-constexpr std::int64_t minute_ticks = 600000000ll, day_ticks = 864000000000ll,
-                       maximum_ticks = 3155378975999999999ll, epoch_ticks = 621355968000000000ll;
+constexpr std::int64_t minute_ticks = 600000000ll, day_ticks = 864000000000ll, maximum_ticks = 3155378975999999999ll,
+                       epoch_ticks = 621355968000000000ll;
+
 struct InvalidZone : std::runtime_error {
     using std::runtime_error::runtime_error;
 };
+
 using Text = std::u16string_view;
+
 std::int64_t span_add(std::int64_t a, std::int64_t b) {
     if ((b > 0 && a > std::numeric_limits<std::int64_t>::max() - b) ||
         (b < 0 && a < std::numeric_limits<std::int64_t>::min() - b))
         throw std::overflow_error("TimeSpan addition overflow");
     return a + b;
 }
+
 std::int64_t span_subtract(std::int64_t a, std::int64_t b) {
     if ((b > 0 && a < std::numeric_limits<std::int64_t>::min() + b) ||
         (b < 0 && a > std::numeric_limits<std::int64_t>::max() + b))
         throw std::overflow_error("TimeSpan subtraction overflow");
     return a - b;
 }
+
 bool ascii(char16_t c) {
     return c >= u'0' && c <= u'9';
 }
+
 bool digit(char16_t c) {
     for (auto r : decimal_digit_ranges) {
         if (c < r[0])
@@ -60,7 +66,8 @@ bool digit(char16_t c) {
     }
     return false;
 }
-bool integer(Text input, int& result) {
+
+bool integer(Text input, int &result) {
     auto white = [](char16_t c) { return c == u' ' || (c >= u'\t' && c <= u'\r'); };
     while (!input.empty() && white(input.front()))
         input.remove_prefix(1);
@@ -90,6 +97,7 @@ bool integer(Text input, int& result) {
     result = negative ? static_cast<int>(-static_cast<std::int64_t>(number)) : static_cast<int>(number);
     return true;
 }
+
 // TimeSpan.TryParseExact("g", invariant) specialized only to the consumed
 // POSIX scanner alphabet: decimal digits, colon, plus/minus. Source matching
 // order is HM, HMS then DHM, DHMS. Fraction/whitespace cannot reach this helper.
@@ -137,6 +145,7 @@ std::optional<std::int64_t> general_span(Text value) {
         return convert(n[0], n[1], n[2], n[3]);
     return {};
 }
+
 std::optional<std::int64_t> offset(Text value) {
     if (value.empty())
         return {};
@@ -156,6 +165,7 @@ std::optional<std::int64_t> offset(Text value) {
         *result = -*result;
     return result;
 }
+
 std::int64_t time_of_day(Text value) {
     auto t = offset(value);
     if (!t)
@@ -165,12 +175,13 @@ std::int64_t time_of_day(Text value) {
         seconds += 86400;
     return seconds * 10000000ll;
 }
-void validate_transition(const InvariantTimeZoneTransition& t) {
-    if (t.time_of_day_ticks < 0 || t.time_of_day_ticks >= day_ticks || t.time_of_day_ticks % 10000 ||
-        t.month < 1 || t.month > 12 || t.day < 1 || t.day > 31 || t.week < 1 || t.week > 5 ||
-        t.day_of_week < 0 || t.day_of_week > 6)
+
+void validate_transition(const InvariantTimeZoneTransition &t) {
+    if (t.time_of_day_ticks < 0 || t.time_of_day_ticks >= day_ticks || t.time_of_day_ticks % 10000 || t.month < 1 ||
+        t.month > 12 || t.day < 1 || t.day > 31 || t.week < 1 || t.week > 5 || t.day_of_week < 0 || t.day_of_week > 6)
         throw InvalidZone("Invalid POSIX transition");
 }
+
 std::optional<InvariantTimeZoneTransition> posix_transition(Text date, Text time) {
     if (date.empty())
         return {};
@@ -221,20 +232,23 @@ std::optional<InvariantTimeZoneTransition> posix_transition(Text date, Text time
     validate_transition(t);
     return t;
 }
+
 std::int64_t truncate_minutes(std::int64_t ticks) {
     return ticks % minute_ticks ? (ticks / minute_ticks % 1440) * minute_ticks : ticks;
 }
-bool has_dst(const InvariantTimeZoneRule& r) {
-    return r.daylight_delta_ticks != 0 ||
-           (r.daylight_start.month != 0 && r.daylight_start.time_of_day_ticks != 0) ||
+
+bool has_dst(const InvariantTimeZoneRule &r) {
+    return r.daylight_delta_ticks != 0 || (r.daylight_start.month != 0 && r.daylight_start.time_of_day_ticks != 0) ||
            (r.daylight_end.month != 0 && r.daylight_end.time_of_day_ticks != 10000);
 }
+
 InvariantTimeZoneTransition empty_transition() {
     return {0, 0, 0, 0, 0, false};
 }
+
 InvariantTimeZoneRule rule(AssetDateTime start, AssetDateTime end, std::int64_t delta,
-                           InvariantTimeZoneTransition begin, InvariantTimeZoneTransition finish,
-                           std::int64_t base, bool no) {
+                           InvariantTimeZoneTransition begin, InvariantTimeZoneTransition finish, std::int64_t base,
+                           bool no) {
     if (!no && begin.time_of_day_ticks == finish.time_of_day_ticks && begin.month == finish.month &&
         begin.fixed_date == finish.fixed_date &&
         (begin.fixed_date ? begin.day == finish.day
@@ -254,9 +268,9 @@ InvariantTimeZoneRule rule(AssetDateTime start, AssetDateTime end, std::int64_t 
         throw InvalidZone("Invalid adjustment rule");
     return {start, end, delta, base, begin, finish, no};
 }
-void normalize(InvariantTimeZoneRule& r, std::int64_t base) {
-    auto actual =
-        span_add(span_add(base, r.base_offset_delta_ticks), has_dst(r) ? r.daylight_delta_ticks : 0);
+
+void normalize(InvariantTimeZoneRule &r, std::int64_t base) {
+    auto actual = span_add(span_add(base, r.base_offset_delta_ticks), has_dst(r) ? r.daylight_delta_ticks : 0);
     auto adjustment = actual > 840 * minute_ticks    ? span_subtract(840 * minute_ticks, actual)
                       : actual < -840 * minute_ticks ? span_subtract(-840 * minute_ticks, actual)
                                                      : 0;
@@ -264,6 +278,7 @@ void normalize(InvariantTimeZoneRule& r, std::int64_t base) {
         r = rule(r.start, r.end, r.daylight_delta_ticks, r.daylight_start, r.daylight_end,
                  span_add(r.base_offset_delta_ticks, adjustment), r.no_daylight_transitions);
 }
+
 std::optional<InvariantTimeZoneRule> posix(Text format, AssetDateTime start, std::int64_t base) {
     std::size_t i = 0;
     auto scan = [&](auto stop) {
@@ -282,14 +297,12 @@ std::optional<InvariantTimeZoneRule> posix(Text format, AssetDateTime start, std
         }
         return scan([](auto c) { return digit(c) || c == u'+' || c == u'-' || c == u','; });
     };
-    auto off = [&]() {
-        return scan([](auto c) { return !digit(c) && c != u'+' && c != u'-' && c != u':'; });
-    };
+    auto off = [&]() { return scan([](auto c) { return !digit(c) && c != u'+' && c != u'-' && c != u':'; }); };
     auto standard = name(), standard_offset = off(), daylight = name();
     Text daylight_offset, begin, begin_time, end, end_time;
     if (!daylight.empty()) {
         daylight_offset = off();
-        auto date_time = [&](Text& d, Text& t) {
+        auto date_time = [&](Text &d, Text &t) {
             d = scan([](auto c) { return c == u'/' || c == u','; });
             if (i < format.size() && format[i] == u'/') {
                 ++i;
@@ -312,53 +325,58 @@ std::optional<InvariantTimeZoneRule> posix(Text format, AssetDateTime start, std
         return {};
     auto base_delta = truncate_minutes(span_subtract(-*standard_parsed, base));
     if (daylight.empty())
-        return rule(start, AssetDateTime(maximum_ticks, 0), 0, empty_transition(), empty_transition(),
-                    base_delta, true);
+        return rule(start, AssetDateTime(maximum_ticks, 0), 0, empty_transition(), empty_transition(), base_delta,
+                    true);
     auto daylight_parsed = offset(daylight_offset);
-    auto daylight_delta = daylight_parsed
-                              ? truncate_minutes(span_subtract(
-                                    truncate_minutes(span_subtract(-*daylight_parsed, base)), base_delta))
-                              : 60 * minute_ticks;
+    auto daylight_delta =
+        daylight_parsed
+            ? truncate_minutes(span_subtract(truncate_minutes(span_subtract(-*daylight_parsed, base)), base_delta))
+            : 60 * minute_ticks;
     auto a = posix_transition(begin, begin_time), b = posix_transition(end, end_time);
     if (!a || !b)
         return {};
     return rule(start, AssetDateTime(maximum_ticks, 0), daylight_delta, *a, *b, base_delta, false);
 }
+
 struct Type {
     std::int64_t offset;
     bool dst;
     std::uint8_t abbreviation;
 };
+
 struct Raw {
     std::vector<AssetDateTime> transitions;
     std::vector<std::uint8_t> indices;
     std::vector<Type> types;
     std::u16string abbreviations, future;
 };
+
 struct Reader {
-    const std::vector<std::uint8_t>& data;
+    const std::vector<std::uint8_t> &data;
+
     std::uint32_t u32(std::size_t p) const {
         if (p > data.size() || data.size() - p < 4)
             throw InvalidZone("Truncated TZif integer");
-        return (std::uint32_t(data[p]) << 24) | (std::uint32_t(data[p + 1]) << 16) |
-               (std::uint32_t(data[p + 2]) << 8) | data[p + 3];
+        return (std::uint32_t(data[p]) << 24) | (std::uint32_t(data[p + 1]) << 16) | (std::uint32_t(data[p + 2]) << 8) |
+               data[p + 3];
     }
+
     std::uint8_t byte(std::size_t p) const {
         if (p >= data.size())
             throw std::out_of_range("TZif array index");
         return data[p];
     }
+
     struct Header {
         int version;
         std::uint32_t gmt, std, leap, time, type, chars;
     };
+
     Header header(std::size_t p) {
         if (data.size() < 44 || u32(p) != 0x545a6966)
             throw InvalidZone("Invalid TZif header");
         auto v = byte(p + 4);
-        return {v == '2'   ? 2
-                : v == '3' ? 3
-                           : 1,
+        return {v == '2' ? 2 : v == '3' ? 3 : 1,
                 u32(p + 20),
                 u32(p + 24),
                 u32(p + 28),
@@ -367,18 +385,19 @@ struct Reader {
                 u32(p + 40)};
     }
 };
+
 std::int32_t add_index(std::int32_t index, std::uint64_t amount) {
-    return std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(index) +
-                                       static_cast<std::uint32_t>(amount));
+    return std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(index) + static_cast<std::uint32_t>(amount));
 }
-Raw parse(const std::vector<std::uint8_t>& bytes) {
+
+Raw parse(const std::vector<std::uint8_t> &bytes) {
     Reader r{bytes};
     auto h = r.header(0);
     std::int32_t i = 44;
     int width = 4;
     if (h.version != 1) {
-        i = add_index(i, std::uint64_t(4) * h.time + h.time + std::uint64_t(6) * h.type +
-                             std::uint64_t(8) * h.leap + h.std + h.gmt + h.chars);
+        i = add_index(i, std::uint64_t(4) * h.time + h.time + std::uint64_t(6) * h.type + std::uint64_t(8) * h.leap +
+                             h.std + h.gmt + h.chars);
         h = r.header(i);
         i = add_index(i, 44);
         width = 8;
@@ -407,15 +426,14 @@ Raw parse(const std::vector<std::uint8_t>& bytes) {
     for (std::uint32_t k = 0; k < h.type; ++k) {
         if (add_index(i, 6) > static_cast<std::int64_t>(bytes.size()))
             throw InvalidZone("Truncated TZif type");
-        out.types.push_back({std::int64_t(std::bit_cast<std::int32_t>(r.u32(i))) * 10000000ll,
-                             r.byte(i + 4) != 0, r.byte(i + 5)});
+        out.types.push_back(
+            {std::int64_t(std::bit_cast<std::int32_t>(r.u32(i))) * 10000000ll, r.byte(i + 4) != 0, r.byte(i + 5)});
         i = add_index(i, 6);
     }
     if (i < 0 || static_cast<std::size_t>(i) > bytes.size() || h.chars > 2147483647u ||
         h.chars > bytes.size() - static_cast<std::size_t>(i))
         throw InvalidZone("Truncated TZif abbreviations");
-    out.abbreviations =
-        utf16_replacing(std::string_view(reinterpret_cast<const char*>(bytes.data() + i), h.chars));
+    out.abbreviations = utf16_replacing(std::string_view(reinterpret_cast<const char *>(bytes.data() + i), h.chars));
     i = add_index(i, h.chars);
     i = add_index(i, std::uint64_t(h.leap) * (width + 4));
     i = add_index(i, std::min(h.std, h.type));
@@ -427,29 +445,33 @@ Raw parse(const std::vector<std::uint8_t>& bytes) {
             if (i < 0 || static_cast<std::size_t>(i) > bytes.size() - 1)
                 throw InvalidZone("Invalid TZif footer");
             out.future = utf16_replacing(
-                std::string_view(reinterpret_cast<const char*>(bytes.data() + i), bytes.size() - i - 1));
+                std::string_view(reinterpret_cast<const char *>(bytes.data() + i), bytes.size() - i - 1));
         }
     }
     return out;
 }
-const Type& type(const Raw& raw, std::size_t index) {
+
+const Type &type(const Raw &raw, std::size_t index) {
     if (index >= raw.types.size())
         throw std::out_of_range("TZif type array index");
     return raw.types[index];
 }
-void abbreviation(const Raw& raw, unsigned index) {
+
+void abbreviation(const Raw &raw, unsigned index) {
     if (index > raw.abbreviations.size())
         throw InvalidZone(
             "Invalid TZif abbreviation index"); /* Source substring only validates starting index; names are not exposed by context. */
 }
-bool utc_alias(const std::string& id) {
+
+bool utc_alias(const std::string &id) {
     for (auto s : {"Etc/UTC", "Etc/UCT", "Etc/Universal", "Etc/Zulu", "UCT", "UTC", "Universal", "Zulu"})
         if (ordinal_equals_ignore_case(id, s))
             return true;
     return false;
 }
-}
-ZoneModel unix_tzif_zone(const std::vector<std::uint8_t>& bytes, const std::string& id, bool disabled,
+} // namespace
+
+ZoneModel unix_tzif_zone(const std::vector<std::uint8_t> &bytes, const std::string &id, bool disabled,
                          std::function<std::int64_t()> clock) {
     if (id.empty())
         throw InvalidZone("Empty timezone identifier");
@@ -459,13 +481,13 @@ ZoneModel unix_tzif_zone(const std::vector<std::uint8_t>& bytes, const std::stri
     auto utc_now = clock();
     ZoneModel m;
     for (std::size_t i = 0; i < raw.transitions.size() && raw.transitions[i].ticks() <= utc_now; ++i) {
-        auto& t = type(raw, raw.indices[i]);
+        auto &t = type(raw, raw.indices[i]);
         if (!t.dst)
             m.base_offset = t.offset;
         abbreviation(raw, t.abbreviation);
     }
     if (raw.transitions.empty())
-        for (auto& t : raw.types) {
+        for (auto &t : raw.types) {
             if (!t.dst)
                 m.base_offset = t.offset;
             abbreviation(raw, t.abbreviation);
@@ -479,15 +501,14 @@ ZoneModel unix_tzif_zone(const std::vector<std::uint8_t>& bytes, const std::stri
             InvariantTimeZoneRule next;
             if (m.rules.empty() && i < raw.transitions.size()) {
                 auto early = std::find_if(raw.types.begin(), raw.types.end(), [](auto t) { return !t.dst; });
-                auto& t = early == raw.types.end() ? type(raw, 0) : *early;
+                auto &t = early == raw.types.end() ? type(raw, 0) : *early;
                 auto delta = truncate_minutes(t.offset - m.base_offset);
                 next =
-                    rule(AssetDateTime(0, 0),
-                         AssetDateTime(raw.transitions[i].ticks() - 1, raw.transitions[i].kind()),
+                    rule(AssetDateTime(0, 0), AssetDateTime(raw.transitions[i].ticks() - 1, raw.transitions[i].kind()),
                          t.dst ? delta : 0, empty_transition(), empty_transition(), t.dst ? 0 : delta, true);
             } else if (i < raw.transitions.size()) {
                 auto start = raw.transitions[i - 1];
-                auto& t = type(raw, raw.indices[i - 1]);
+                auto &t = type(raw, raw.indices[i - 1]);
                 auto delta = truncate_minutes(t.offset - m.base_offset);
                 auto marker = empty_transition();
                 if (t.dst)
@@ -503,7 +524,7 @@ ZoneModel unix_tzif_zone(const std::vector<std::uint8_t>& bytes, const std::stri
                 if (future)
                     next = *future;
                 else {
-                    auto& t = type(raw, raw.indices[i - 1]);
+                    auto &t = type(raw, raw.indices[i - 1]);
                     auto delta = truncate_minutes(t.offset - m.base_offset);
                     next = rule(start, AssetDateTime(maximum_ticks, 0), t.dst ? delta : 0, empty_transition(),
                                 empty_transition(), t.dst ? 0 : delta, true);
@@ -517,28 +538,30 @@ ZoneModel unix_tzif_zone(const std::vector<std::uint8_t>& bytes, const std::stri
     if (m.base_offset < -840 * minute_ticks || m.base_offset > 840 * minute_ticks)
         throw InvalidZone("TZif base offset out of range");
     for (std::size_t i = 0; i < m.rules.size(); ++i) {
-        auto& r = m.rules[i];
-        auto combined = span_add(span_add(m.base_offset, r.base_offset_delta_ticks),
-                                 has_dst(r) ? r.daylight_delta_ticks : 0);
+        auto &r = m.rules[i];
+        auto combined =
+            span_add(span_add(m.base_offset, r.base_offset_delta_ticks), has_dst(r) ? r.daylight_delta_ticks : 0);
         if (combined < -840 * minute_ticks || combined > 840 * minute_ticks ||
             (i && r.start.ticks() <= m.rules[i - 1].end.ticks()))
             throw InvalidZone("Invalid TZif adjustment rules");
     }
     return m;
 }
-ZoneModel unix_tzif_local_data(const std::vector<std::uint8_t>& bytes, const std::string& id,
+
+ZoneModel unix_tzif_local_data(const std::vector<std::uint8_t> &bytes, const std::string &id,
                                std::function<std::int64_t()> clock) {
     try {
         return unix_tzif_zone(bytes, id, false, clock);
-    } catch (const InvalidZone&) {
+    } catch (const InvalidZone &) {
         try {
             return unix_tzif_zone(bytes, id, true, clock);
-        } catch (const InvalidZone&) {
+        } catch (const InvalidZone &) {
             return {};
         }
     }
 }
-ZoneModel unix_tzif_zone(const std::vector<std::uint8_t>& bytes, const std::string& id, bool disabled,
+
+ZoneModel unix_tzif_zone(const std::vector<std::uint8_t> &bytes, const std::string &id, bool disabled,
                          std::int64_t now) {
     return unix_tzif_zone(bytes, id, disabled, [now] { return now; });
 }
@@ -556,14 +579,16 @@ bool io_path_error(FullPathFailure kind) {
         return false;
     }
 }
+
 struct File {
     int fd = -1;
     bool locked = false, random_access = true;
-    File(const std::filesystem::path& path, std::optional<bool> disabled) {
+
+    File(const std::filesystem::path &path, std::optional<bool> disabled) {
         std::filesystem::path full;
         try {
             full = get_full_path(path.native());
-        } catch (const FullPathError& e) {
+        } catch (const FullPathError &e) {
             if (io_path_error(e.kind))
                 return;
             throw;
@@ -598,8 +623,10 @@ struct File {
             }
         }
     }
-    File(const File&) = delete;
-    File& operator=(const File&) = delete;
+
+    File(const File &) = delete;
+    File &operator=(const File &) = delete;
+
     ~File() {
         if (fd >= 0) {
             if (locked)
@@ -607,11 +634,11 @@ struct File {
             ::close(fd);
         }
     }
-    ssize_t read(std::uint8_t* buffer, std::size_t count, std::int64_t offset) {
+
+    ssize_t read(std::uint8_t *buffer, std::size_t count, std::int64_t offset) {
         ssize_t n;
         do {
-            n = random_access ? ::pread(fd, buffer, count, static_cast<off_t>(offset))
-                              : ::read(fd, buffer, count);
+            n = random_access ? ::pread(fd, buffer, count, static_cast<off_t>(offset)) : ::read(fd, buffer, count);
         } while (n < 0 && errno == EINTR);
         if (n < 0 && random_access && (errno == ENXIO || errno == ESPIPE)) {
             random_access = false;
@@ -622,14 +649,13 @@ struct File {
         return n;
     }
 };
-std::optional<std::vector<std::uint8_t>> read_file(const std::filesystem::path& path,
-                                                   std::optional<bool> disabled) {
+
+std::optional<std::vector<std::uint8_t>> read_file(const std::filesystem::path &path, std::optional<bool> disabled) {
     std::filesystem::path full;
     try {
         full = get_full_path(path.native());
-    } catch (const FullPathError& e) {
-        if (io_path_error(e.kind) || e.kind == FullPathFailure::Argument ||
-            e.kind == FullPathFailure::ArgumentNull)
+    } catch (const FullPathError &e) {
+        if (io_path_error(e.kind) || e.kind == FullPathFailure::Argument || e.kind == FullPathFailure::ArgumentNull)
             return {};
         throw;
     }
@@ -695,8 +721,9 @@ std::optional<std::vector<std::uint8_t>> read_file(const std::filesystem::path& 
         count += static_cast<std::size_t>(n);
     }
 }
-bool compare_file(const std::string& path, const std::vector<std::uint8_t>& data,
-                  std::vector<std::uint8_t>& buffer, std::optional<bool> disabled) {
+
+bool compare_file(const std::string &path, const std::vector<std::uint8_t> &data, std::vector<std::uint8_t> &buffer,
+                  std::optional<bool> disabled) {
     File file(path, disabled);
     if (file.fd < 0)
         return false;
@@ -728,7 +755,8 @@ bool compare_file(const std::string& path, const std::vector<std::uint8_t>& data
     }
     return true;
 }
-}
+} // namespace
+
 std::string timezone_directory() {
     auto value = runtime_environment_get(std::make_shared<const std::u16string>(u"TZDIR"));
     auto out = value ? utf8(*value) : std::string("/usr/share/zoneinfo/");
@@ -736,8 +764,9 @@ std::string timezone_directory() {
         out += '/';
     return out;
 }
-std::string find_id(const std::filesystem::path& path, const std::vector<std::uint8_t>& data,
-                    const std::string& directory, std::optional<bool> disabled) {
+
+std::string find_id(const std::filesystem::path &path, const std::vector<std::uint8_t> &data,
+                    const std::string &directory, std::optional<bool> disabled) {
     std::vector<std::uint8_t> buffer(data.size());
     std::error_code ec;
     auto link = std::filesystem::read_symlink(path, ec);
@@ -751,7 +780,7 @@ std::string find_id(const std::filesystem::path& path, const std::vector<std::ui
     std::vector<std::string> stack;
     std::string current = directory;
     for (;;) {
-        DIR* handle = ([&]() {
+        DIR *handle = ([&]() {
             decltype(::opendir(current.c_str())) result;
             do {
                 result = ::opendir(current.c_str());
@@ -802,6 +831,7 @@ std::string find_id(const std::filesystem::path& path, const std::vector<std::ui
         stack.pop_back();
     }
 }
+
 ZoneModel unix_local_zone(std::optional<bool> disabled) {
     auto tz = runtime_environment_get(std::make_shared<const std::u16string>(u"TZ"));
     auto directory = timezone_directory();
@@ -835,4 +865,4 @@ ZoneModel unix_local_zone(std::optional<bool> disabled) {
     return unix_tzif_local_data(*data, *id, clock);
 }
 #endif
-}
+} // namespace opensim::framework::invariant_datetime_platform

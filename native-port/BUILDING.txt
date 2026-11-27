@@ -99,6 +99,9 @@ through CMake. Unix builds require system zlib for the outgoing gzip profile use
 by the original runtime. Windows x86/x64 embeds the isolated native Intel zlib
 profile; optional system zlib enables general HTTP Content-Encoding support.
 --features reports the server HTTP/TLS features that were built.
+The OSSL AES functions require an OpenSSL-enabled build as well; a build without
+that dependency rejects those calls during script compilation instead of
+accepting nonfunctional crypto calls.
 OpenSSL must be version 3.0 or newer. The optional vcpkg.json manifest pins a
 registry baseline for OpenSSL and zlib. To build with those dependencies through
 an installed vcpkg instance, use a fresh build directory:

@@ -1,6 +1,7 @@
 #pragma once
 #include <bit>
-void produce(EventQueueModule& m, framework::Uuid a, char op, int p) {
+
+void produce(EventQueueModule &m, framework::Uuid a, char op, int p) {
     using framework::Uuid;
     using framework::Vector3;
     using S = std::optional<std::string>;
@@ -29,8 +30,8 @@ void produce(EventQueueModule& m, framework::Uuid a, char op, int p) {
         text = std::string("a\0b", 3);
     }
     auto endpoint = std::make_shared<framework::IpEndpoint>();
-    endpoint->address = std::make_shared<framework::IpAddress>(
-        *framework::IpAddress::parse(p & 1 ? "fe80::1%12" : "192.0.2.37"));
+    endpoint->address =
+        std::make_shared<framework::IpAddress>(*framework::IpAddress::parse(p & 1 ? "fe80::1%12" : "192.0.2.37"));
     endpoint->port = p & 2 ? 65535 : 0;
     if (p & 16)
         endpoint.reset();
@@ -43,9 +44,8 @@ void produce(EventQueueModule& m, framework::Uuid a, char op, int p) {
                                      1,          0x7f7fffff, 0x3eaaaaab, 0x00800000};
         v.x = std::bit_cast<float>(bits[p % 8]);
     }
-    auto bucket =
-        p & 4 ? server::PollBytes{}
-              : std::make_shared<std::vector<uint8_t>>(std::initializer_list<uint8_t>{0, 128, 255, '<', '&'});
+    auto bucket = p & 4 ? server::PollBytes{}
+                        : std::make_shared<std::vector<uint8_t>>(std::initializer_list<uint8_t>{0, 128, 255, '<', '&'});
     switch (op) {
     case 'e':
         m.enable_simulator(handle, endpoint, a, n, 256);
@@ -60,8 +60,7 @@ void produce(EventQueueModule& m, framework::Uuid a, char op, int p) {
         m.establish_communication(a, endpoint, text, handle, n, 256);
         break;
     case 'i':
-        m.chatterbox_invitation(id, text, id, text, a, text, uint8_t(u), u, p & 1, n, v, u, id, p & 2,
-                                bucket);
+        m.chatterbox_invitation(id, text, id, text, a, text, uint8_t(u), u, p & 1, n, v, u, id, p & 2, bucket);
         break;
     case 'u': {
         std::vector<EventGroupMember> list;
@@ -139,14 +138,14 @@ void produce(EventQueueModule& m, framework::Uuid a, char op, int p) {
         break;
     case 'l': {
         std::vector<S> list{text, S("next")};
-        m.large_message(a, p & 1 ? std::optional(id) : std::nullopt, p & 2 ? std::optional(id) : std::nullopt,
-                        text, id, p == 31 ? nullptr : &list);
+        m.large_message(a, p & 1 ? std::optional(id) : std::nullopt, p & 2 ? std::optional(id) : std::nullopt, text, id,
+                        p == 31 ? nullptr : &list);
         break;
     }
     case 't': {
         std::vector<server::PollBytes> list{bucket, bytes("next")};
-        m.large_message_bytes(a, p & 1 ? std::optional(id) : std::nullopt,
-                              p & 2 ? std::optional(id) : std::nullopt, text, id, p == 31 ? nullptr : &list);
+        m.large_message_bytes(a, p & 1 ? std::optional(id) : std::nullopt, p & 2 ? std::optional(id) : std::nullopt,
+                              text, id, p == 31 ? nullptr : &list);
         break;
     }
     case 'v': {
@@ -175,8 +174,7 @@ void produce(EventQueueModule& m, framework::Uuid a, char op, int p) {
         break;
     }
     case 'b': {
-        auto value =
-            p == 31 ? std::shared_ptr<network::Value>{} : std::make_shared<network::Value>(text.value_or(""));
+        auto value = p == 31 ? std::shared_ptr<network::Value>{} : std::make_shared<network::Value>(text.value_or(""));
         auto data = m.build_event(text, value);
         std::cout << probe_hex(std::string(data->begin(), data->end()));
         break;

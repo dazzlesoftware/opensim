@@ -5,29 +5,36 @@
 #include "opensim/framework/animation_set.hpp"
 #include <bit>
 #include <stdexcept>
+
 namespace opensim::scene {
 namespace {
 std::int32_t s(std::uint32_t n) {
     return std::bit_cast<std::int32_t>(n);
 }
+
 std::uint32_t u(int n) {
     return static_cast<std::uint32_t>(n);
 }
+
 int byte(int n) {
     return std::bit_cast<std::int8_t>(static_cast<std::uint8_t>(n));
 }
-}
+} // namespace
+
 void animation_set_create_permissions(TaskInventoryAgentItem *value) {
     framework::AnimationSet::set_create_item_permissions(value ? &value->item : nullptr);
 }
+
 void animation_set_enforce_permissions(TaskInventoryAgentItem *value, bool creator) {
     framework::AnimationSet::enforce_item_permissions(value ? &value->item : nullptr, creator);
 }
+
 InventoryCopyController::InventoryCopyController(InventoryCopyBackend b) : backend_(std::move(b)) {
     if (!backend_.item || !backend_.bypass_permissions || !backend_.can_copy_user || !backend_.unix_time ||
         !backend_.random_uuid || !backend_.add || !backend_.create_update || !backend_.alert)
         throw std::invalid_argument("Incomplete inventory copy backend");
 }
+
 void InventoryCopyController::create(framework::Uuid agent, std::uint32_t callback,
                                      const TaskInventoryAgentItem &parameters) const {
     auto item = std::make_shared<TaskInventoryAgentItem>();
@@ -60,6 +67,7 @@ void InventoryCopyController::create(framework::Uuid agent, std::uint32_t callba
             backend_.warn("Failed to add new inventory item");
     }
 }
+
 void InventoryCopyController::copy(framework::Uuid agent, std::uint32_t callback, framework::Uuid old_agent,
                                    framework::Uuid old_item, framework::Uuid folder,
                                    const std::optional<std::string> &requested_name) const {
@@ -99,14 +107,14 @@ void InventoryCopyController::copy(framework::Uuid agent, std::uint32_t callback
     parameters.item.parent = folder;
     parameters.item.name = *name;
     if (!same) {
-        parameters.item.base_permissions = parameters.item.current_permissions =
-            source->item.next_permissions;
+        parameters.item.base_permissions = parameters.item.current_permissions = source->item.next_permissions;
         parameters.item.everyone_permissions =
             s(u(source->item.everyone_permissions) & u(source->item.next_permissions));
     }
     parameters.item.creation_date = backend_.unix_time();
     create(agent, callback, parameters);
 }
+
 void InventoryCopyController::link(framework::Uuid agent, std::uint32_t callback, framework::Uuid folder,
                                    framework::Uuid target, const std::optional<std::string> &name,
                                    const std::optional<std::string> &description, std::int8_t inventory_type,
@@ -130,12 +138,11 @@ void InventoryCopyController::link(framework::Uuid agent, std::uint32_t callback
     item.asset_id = target;
     item.asset_type = asset_type;
     item.inventory_type = inventory_type;
-    item.base_permissions = item.current_permissions = item.next_permissions = item.group_permissions =
-        0x9e000;
+    item.base_permissions = item.current_permissions = item.next_permissions = item.group_permissions = 0x9e000;
     item.everyone_permissions = 0x8e000;
     // The original bool overload ignores assetUpload=false and calls the normal
     // creation overload, including its ordinary AddInventoryItem notifications.
     item.creation_date = backend_.unix_time();
     create(agent, callback, parameters);
 }
-}
+} // namespace opensim::scene

@@ -7,6 +7,7 @@ root = Path(__file__).resolve().parents[2]
 p = argparse.ArgumentParser()
 p.add_argument('--native', required=True)
 p.add_argument('--dotnet', required=True)
+p.add_argument('--runtime-dotnet', help='Optional runtime host for the pinned reference; --dotnet still builds it')
 p.add_argument('--work', required=True, type=Path)
 p.add_argument('--global-client', action='store_true')
 a = p.parse_args()
@@ -501,7 +502,7 @@ captures = {}
 pool_reused = {}
 try:
     for label, cmd in [
-        ('source', [a.dotnet, str(w / 'app/Reference.dll')]),
+        ('source', [a.runtime_dotnet or a.dotnet, str(w / 'app/Reference.dll')]),
         ('native', [a.native] + (['--global-client'] if a.global_client else [])),
     ]:
         with record_lock:

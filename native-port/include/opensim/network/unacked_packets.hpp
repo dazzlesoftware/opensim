@@ -36,15 +36,18 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <mutex>
 #include <optional>
 #include <vector>
+
 namespace opensim::network {
 struct UdpClientAccounting {
     std::atomic<std::int32_t> unacked_bytes{0};
     std::function<void(std::int32_t)> expire_packets, acknowledge_packets;
 };
+
 struct PacketBuffer {
     std::vector<std::uint8_t> data;
     std::int32_t data_length = 0;
 };
+
 struct OutgoingPacket {
     std::shared_ptr<UdpClientAccounting> client;
     std::shared_ptr<PacketBuffer> buffer;
@@ -52,32 +55,36 @@ struct OutgoingPacket {
     std::int32_t resend_count = 0;
     std::atomic<std::int32_t> tick_count{0};
     ThrottleOutPacketType category = ThrottleOutPacketType::Unknown;
-    std::function<void(const std::shared_ptr<OutgoingPacket>&)> unacked_method;
+    std::function<void(const std::shared_ptr<OutgoingPacket> &)> unacked_method;
 };
+
 class UnackedPacketCollection {
-public:
+  public:
     using Packet = std::shared_ptr<OutgoingPacket>;
     using Clock = std::function<std::int32_t()>;
-    using FreeBuffer = std::function<void(const std::shared_ptr<PacketBuffer>&)>;
+    using FreeBuffer = std::function<void(const std::shared_ptr<PacketBuffer> &)>;
     explicit UnackedPacketCollection(Clock clock = {}, FreeBuffer free_buffer = {});
     void clear();
     std::int32_t count() const;
+
     std::uint32_t oldest() const noexcept {
         return oldest_.load();
     }
-    void add(const Packet& packet);
+
+    void add(const Packet &packet);
     void acknowledge(std::uint32_t sequence, std::int32_t time, bool from_resend);
     void remove(std::uint32_t sequence);
     std::optional<std::vector<Packet>> get_expired_packets(std::int32_t timeout_ms);
 
-private:
+  private:
     struct PendingAck {
         std::uint32_t sequence;
         std::int32_t time;
         bool from_resend;
     };
+
     void process_queues();
-    void free(const Packet& packet);
+    void free(const Packet &packet);
     void require_open() const;
     Clock clock_;
     FreeBuffer free_buffer_;
@@ -89,4 +96,4 @@ private:
     std::atomic<std::uint32_t> oldest_{0};
     bool closed_ = false;
 };
-}
+} // namespace opensim::network

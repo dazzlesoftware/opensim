@@ -1,0 +1,21 @@
+{
+  "accepted": false,
+  "executed": false,
+  "globals": {},
+  "errors": [
+    "illegal to cast from char to float"
+  ],
+  "exception": null,
+  "exceptionType": null,
+  "stackSize": 1000000,
+  "stackLimit": 1024,
+  "finalStackLeft": null,
+  "stackSamples": [],
+  "name": "cast_to_float",
+  "source": "YOption chars;char value;float result;default{state_entry(){value='A';result=(float)value;}}",
+  "sha256": {
+    "source.lsl": "5ff6d49ffbd9de52834f7e5ffe60a7c89ece88c64ab4033416fabd6bb1c35386",
+    "source_hash.txt": "cbe4473fca1eed0cb629a58fa7e6f13c55b8da518238284f0bd0e78208b85f09",
+    "generator_source": "d86517a13d8f4094e933279614d487a0e69d44a49f2296c4af7562bf7386d651"
+  }
+}

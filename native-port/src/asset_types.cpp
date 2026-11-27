@@ -6,29 +6,45 @@
 #include <stdexcept>
 #include <string_view>
 #include <utility>
+
 namespace opensim::framework {
 namespace {
 constexpr std::pair<std::string_view, AssetType> types[] = {
-    {"OSMaterial", AssetType::OSMaterial}, {"Unknown", AssetType::Unknown},
-    {"Texture", AssetType::Texture}, {"Sound", AssetType::Sound},
-    {"CallingCard", AssetType::CallingCard}, {"Landmark", AssetType::Landmark},
-    {"Clothing", AssetType::Clothing}, {"Object", AssetType::Object},
-    {"Notecard", AssetType::Notecard}, {"Folder", AssetType::Folder},
-    {"LSLText", AssetType::LSLText}, {"LSLBytecode", AssetType::LSLBytecode},
-    {"TextureTGA", AssetType::TextureTGA}, {"Bodypart", AssetType::Bodypart},
-    {"SoundWAV", AssetType::SoundWAV}, {"ImageTGA", AssetType::ImageTGA},
-    {"ImageJPEG", AssetType::ImageJPEG}, {"Animation", AssetType::Animation},
-    {"Gesture", AssetType::Gesture}, {"Simstate", AssetType::Simstate},
-    {"Link", AssetType::Link}, {"LinkFolder", AssetType::LinkFolder},
-    {"MarketplaceFolder", AssetType::MarketplaceFolder}, {"Mesh", AssetType::Mesh},
-    {"Settings", AssetType::Settings}, {"Material", AssetType::Material},
-    {"GLTF", AssetType::GLTF}, {"GLTF_bin", AssetType::GLTF_bin},
+    {"OSMaterial", AssetType::OSMaterial},
+    {"Unknown", AssetType::Unknown},
+    {"Texture", AssetType::Texture},
+    {"Sound", AssetType::Sound},
+    {"CallingCard", AssetType::CallingCard},
+    {"Landmark", AssetType::Landmark},
+    {"Clothing", AssetType::Clothing},
+    {"Object", AssetType::Object},
+    {"Notecard", AssetType::Notecard},
+    {"Folder", AssetType::Folder},
+    {"LSLText", AssetType::LSLText},
+    {"LSLBytecode", AssetType::LSLBytecode},
+    {"TextureTGA", AssetType::TextureTGA},
+    {"Bodypart", AssetType::Bodypart},
+    {"SoundWAV", AssetType::SoundWAV},
+    {"ImageTGA", AssetType::ImageTGA},
+    {"ImageJPEG", AssetType::ImageJPEG},
+    {"Animation", AssetType::Animation},
+    {"Gesture", AssetType::Gesture},
+    {"Simstate", AssetType::Simstate},
+    {"Link", AssetType::Link},
+    {"LinkFolder", AssetType::LinkFolder},
+    {"MarketplaceFolder", AssetType::MarketplaceFolder},
+    {"Mesh", AssetType::Mesh},
+    {"Settings", AssetType::Settings},
+    {"Material", AssetType::Material},
+    {"GLTF", AssetType::GLTF},
+    {"GLTF_bin", AssetType::GLTF_bin},
 };
 
 struct Mapping {
     std::int8_t asset, inventory;
     std::string_view content, alias, extension;
 };
+
 constexpr Mapping mappings[] = {
     {-1, -1, "application/octet-stream", "", "bin"},
     {0, 0, "image/x-j2c", "image/jp2", "j2c"},
@@ -65,45 +81,52 @@ constexpr Mapping mappings[] = {
     {8, 48, "application/vnd.ll.myoutfitsfolder", "", "myoutfitsfolder"},
     {8, 8, "application/vnd.ll.folder", "", "folder"},
     {-2, -1, "application/llsd+xml", "", "material"}};
+
 struct NameMapping {
     std::string_view name;
     std::int8_t type;
 };
+
 constexpr NameMapping asset_names[] = {
     {"texture", 0},   {"sound", 1},    {"callcard", 2},  {"landmark", 3}, {"script", 4},   {"clothing", 5},
     {"object", 6},    {"notecard", 7}, {"category", 8},  {"lsltext", 10}, {"lslbyte", 11}, {"txtr_tga", 12},
     {"bodypart", 13}, {"snd_wav", 17}, {"img_tga", 18},  {"jpeg", 19},    {"animatn", 20}, {"gesture", 21},
     {"simstate", 22}, {"mesh", 49},    {"settings", 56}, {"material", 57}};
 constexpr NameMapping inventory_names[] = {
-    {"texture", 0},   {"sound", 1},      {"callcard", 2},       {"landmark", 3},      {"script", 4},
-    {"clothing", 5},  {"object", 6},     {"notecard", 7},       {"root", 8},          {"lsltext", 10},
-    {"bodypart", 13}, {"trash", 14},     {"snapshot", 15},      {"lostandfound", 16}, {"animatn", 20},
-    {"gesture", 21},  {"favorites", 23}, {"currentoutfit", 46}, {"outfit", 47},       {"myoutfits", 48},
-    {"mesh", 49},     {"settings", 56},  {"material", 57},      {"suitcase", 100}};
+    {"texture", 0},   {"sound", 1},         {"callcard", 2}, {"landmark", 3},  {"script", 4},     {"clothing", 5},
+    {"object", 6},    {"notecard", 7},      {"root", 8},     {"lsltext", 10},  {"bodypart", 13},  {"trash", 14},
+    {"snapshot", 15}, {"lostandfound", 16}, {"animatn", 20}, {"gesture", 21},  {"favorites", 23}, {"currentoutfit", 46},
+    {"outfit", 47},   {"myoutfits", 48},    {"mesh", 49},    {"settings", 56}, {"material", 57},  {"suitcase", 100}};
+
 std::int8_t wrapped(int value) {
     return std::bit_cast<std::int8_t>(static_cast<std::uint8_t>(value));
 }
+
 const std::string &nonnull(const std::optional<std::string> &value) {
     if (!value)
         throw std::invalid_argument("Null asset type lookup key");
     return *value;
 }
-}
+} // namespace
+
 AssetType asset_type_from_code(std::int8_t code) {
     return asset_type_enum_name(code).empty() ? AssetType::Unknown : static_cast<AssetType>(code);
 }
+
 std::string_view asset_type_enum_name(std::int8_t code) {
     for (const auto &[name, type] : types)
         if (static_cast<std::int8_t>(type) == code)
             return name;
     return {};
 }
+
 std::optional<AssetType> asset_type_from_enum_name(std::string_view name) {
     for (const auto &[candidate, type] : types)
         if (ordinal_equals_ignore_case(name, candidate))
             return type;
     return std::nullopt;
 }
+
 std::int8_t asset_name_type(const std::optional<std::string> &name) {
     const auto &key = nonnull(name);
     for (const auto &[text, type] : asset_names)
@@ -111,6 +134,7 @@ std::int8_t asset_name_type(const std::optional<std::string> &name) {
             return type;
     return -1;
 }
+
 std::int8_t inventory_name_type(const std::optional<std::string> &name) {
     const auto &key = nonnull(name);
     for (const auto &[text, type] : inventory_names)
@@ -118,6 +142,7 @@ std::int8_t inventory_name_type(const std::optional<std::string> &name) {
             return type;
     return -1;
 }
+
 std::string asset_content_type(int type) {
     const auto code = wrapped(type);
     for (const auto &row : mappings)
@@ -125,6 +150,7 @@ std::string asset_content_type(int type) {
             return std::string(row.content);
     return "application/octet-stream";
 }
+
 std::string inventory_content_type(int type) {
     const auto code = wrapped(type);
     for (const auto &row : mappings)
@@ -132,6 +158,7 @@ std::string inventory_content_type(int type) {
             return std::string(row.content);
     return "application/octet-stream";
 }
+
 std::string asset_extension(int type) {
     const auto code = wrapped(type);
     for (const auto &row : mappings)
@@ -139,6 +166,7 @@ std::string asset_extension(int type) {
             return std::string(row.extension);
     return "bin";
 }
+
 std::int8_t content_asset_type(const std::optional<std::string> &content) {
     const auto &key = nonnull(content);
     for (const auto &row : mappings)
@@ -146,6 +174,7 @@ std::int8_t content_asset_type(const std::optional<std::string> &content) {
             return row.asset;
     return -1;
 }
+
 std::int8_t content_inventory_type(const std::optional<std::string> &content) {
     const auto &key = nonnull(content);
     for (const auto &row : mappings)
@@ -153,4 +182,4 @@ std::int8_t content_inventory_type(const std::optional<std::string> &content) {
             return row.inventory;
     return -1;
 }
-}
+} // namespace opensim::framework

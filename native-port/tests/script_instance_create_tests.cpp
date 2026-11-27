@@ -4,11 +4,13 @@
 #include <iostream>
 using namespace opensim;
 using namespace scene;
+
 namespace {
 framework::Uuid id(int n) {
     auto s = std::to_string(n);
     return framework::Uuid("11223344-5566-7788-99aa-" + std::string(12 - s.size(), '0') + s);
 }
+
 std::string hex(std::string_view s) {
     std::string out;
     for (unsigned char b : s) {
@@ -17,11 +19,13 @@ std::string hex(std::string_view s) {
     }
     return out;
 }
-std::string row(const std::shared_ptr<framework::TaskInventoryItem>& i) {
-    return i ? i->item_id.str() + ":" + i->old_item_id.str() + ":" + std::to_string(i->permissions_mask) +
-                   ":" + i->permissions_granter.str() + ":" + (i->script_running ? "1" : "0")
+
+std::string row(const std::shared_ptr<framework::TaskInventoryItem> &i) {
+    return i ? i->item_id.str() + ":" + i->old_item_id.str() + ":" + std::to_string(i->permissions_mask) + ":" +
+                   i->permissions_granter.str() + ":" + (i->script_running ? "1" : "0")
              : "NULL";
 }
+
 std::string probe(int mode, int state, int failure) {
     std::string trace;
     int active = 0;
@@ -99,19 +103,17 @@ std::string probe(int mode, int state, int failure) {
         step(9, "LOCAL");
         return 123u;
     };
-    b.trigger_rez = [&](auto local, auto key, const auto& text, int start, bool post, const auto& engine,
-                        int source) {
-        step(10, "REZ:" + std::to_string(local) + ":" + key.str() + ":" + hex(text) + ":" +
-                     std::to_string(start) + ":" + (post ? "1" : "0") + ":" + engine + ":" +
-                     std::to_string(source));
+    b.trigger_rez = [&](auto local, auto key, const auto &text, int start, bool post, const auto &engine, int source) {
+        step(10, "REZ:" + std::to_string(local) + ":" + key.str() + ":" + hex(text) + ":" + std::to_string(start) +
+                     ":" + (post ? "1" : "0") + ":" + engine + ":" + std::to_string(source));
         compiler_error = bool(mode & 8192);
     };
-    b.store_errors = [&](auto key, const auto& errors) {
+    b.store_errors = [&](auto key, const auto &errors) {
         std::string value = "ERRORS:" + key.str() + ":";
         if (!errors)
             value += "NULL";
         else
-            for (const auto& e : *errors)
+            for (const auto &e : *errors)
                 value += hex(e) + ",";
         step(11, value);
     };
@@ -128,11 +130,12 @@ std::string probe(int mode, int state, int failure) {
     } catch (...) {
         result = "THROW";
     }
-    return result + ":" + std::to_string(active) + ":" + (flagged ? "1" : "0") + ":" +
-           (compiler_error ? "1" : "0") + ":" + row(input) + ":" + row(stored) + trace;
+    return result + ":" + std::to_string(active) + ":" + (flagged ? "1" : "0") + ":" + (compiler_error ? "1" : "0") +
+           ":" + row(input) + ":" + row(stored) + trace;
 }
-}
-int main(int argc, char** argv) {
+} // namespace
+
+int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string_view(argv[1]) == "--probe") {
             int m, s, f;
@@ -141,7 +144,7 @@ int main(int argc, char** argv) {
             return 0;
         }
         int n = 0;
-        auto check = [&](bool b, const char* s) {
+        auto check = [&](bool b, const char *s) {
             ++n;
             if (!b)
                 throw std::runtime_error(s);
@@ -156,7 +159,7 @@ int main(int argc, char** argv) {
         check(probe(8 | 64, 0, 0).find("|RESTORE:") != std::string::npos, "savedstaterestoration");
         std::cout << "PASS: " << n << " script instance create checks\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

@@ -1,0 +1,23 @@
+{
+  "accepted": false,
+  "executed": false,
+  "globals": {},
+  "errors": [
+    "looking for open paren after assuming object is a function name"
+  ],
+  "exception": null,
+  "exceptionType": null,
+  "stackSize": 1000000,
+  "stackLimit": 1024,
+  "finalStackLeft": null,
+  "stackSamples": [],
+  "name": "objects_not_arrays",
+  "source": "YOption objects;object a;integer result;default{state_entry(){a=xmrFixedArrayAllocI(2);}}",
+  "methodology": "Actual original CodeGen/CallSEH; scheduler CheckRunWork no-op. Separate process per case. No migration claim.",
+  "sha256": {
+    "source.lsl": "9222a448f7cf45039f14a1b4645103f82c8d8233f26fb54eac0be874d42474bf",
+    "source_hash.txt": "12b2c956b380606d494a48b6b6d10ba0b4e225f0e89c7dacb284ff4cfe96d49f",
+    "generator_source": "d86517a13d8f4094e933279614d487a0e69d44a49f2296c4af7562bf7386d651",
+    "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056"
+  }
+}

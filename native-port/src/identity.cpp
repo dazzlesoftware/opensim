@@ -46,10 +46,10 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace opensim::framework {
 namespace {
 constexpr char hex[] = "0123456789abcdef";
+
 void secure_random(std::span<std::uint8_t> bytes) {
 #ifdef _WIN32
-    if (BCryptGenRandom(nullptr, bytes.data(), static_cast<ULONG>(bytes.size()),
-                        BCRYPT_USE_SYSTEM_PREFERRED_RNG) != 0)
+    if (BCryptGenRandom(nullptr, bytes.data(), static_cast<ULONG>(bytes.size()), BCRYPT_USE_SYSTEM_PREFERRED_RNG) != 0)
         throw std::runtime_error("Operating system random generator failed");
 #elif defined(__APPLE__)
     arc4random_buf(bytes.data(), bytes.size());
@@ -65,7 +65,8 @@ void secure_random(std::span<std::uint8_t> bytes) {
     }
 #endif
 }
-}
+} // namespace
+
 std::string normalize_uuid(std::string_view text) {
     if (text.size() == 38 && text.front() == '{' && text.back() == '}')
         text = text.substr(1, 36);
@@ -85,9 +86,10 @@ std::string normalize_uuid(std::string_view text) {
     }
     if (digits.size() != 32 || (text.size() != 32 && text.size() != 36))
         throw std::invalid_argument("Invalid UUID");
-    return digits.substr(0, 8) + '-' + digits.substr(8, 4) + '-' + digits.substr(12, 4) + '-' +
-           digits.substr(16, 4) + '-' + digits.substr(20);
+    return digits.substr(0, 8) + '-' + digits.substr(8, 4) + '-' + digits.substr(12, 4) + '-' + digits.substr(16, 4) +
+           '-' + digits.substr(20);
 }
+
 std::string random_uuid() {
     std::array<std::uint8_t, 16> bytes{};
     secure_random(bytes);
@@ -100,6 +102,7 @@ std::string random_uuid() {
     }
     return normalize_uuid(digits);
 }
+
 bool constant_time_equal(std::string_view a, std::string_view b) noexcept {
     if (a.size() != b.size())
         return false;
@@ -108,6 +111,7 @@ bool constant_time_equal(std::string_view a, std::string_view b) noexcept {
         difference = static_cast<std::uint8_t>(difference | static_cast<std::uint8_t>(a[i] ^ b[i]));
     return difference == 0;
 }
+
 std::string md5(std::string_view text) {
     constexpr std::uint32_t k[] = {
         0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee, 0xf57c0faf, 0x4787c62a, 0xa8304613, 0xfd469501,
@@ -169,4 +173,4 @@ std::string md5(std::string_view text) {
         }
     return output;
 }
-}
+} // namespace opensim::framework

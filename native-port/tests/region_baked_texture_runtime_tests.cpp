@@ -9,47 +9,56 @@
 #include <thread>
 using namespace opensim;
 using namespace services;
+
 namespace {
 int checks = 0;
-void check(bool value, const char* label) {
+
+void check(bool value, const char *label) {
     ++checks;
     if (!value)
         throw std::runtime_error(label);
 }
+
 struct Backend final : SceneCapabilityBackend {
     std::shared_ptr<server::RegistryCapabilityListener> registry;
-    explicit Backend(std::shared_ptr<server::RegistryCapabilityListener> r) : registry(std::move(r)) {
-    }
+
+    explicit Backend(std::shared_ptr<server::RegistryCapabilityListener> r) : registry(std::move(r)) {}
+
     std::string scene_name() const override {
         return "Script scene";
     }
+
     std::optional<std::string> region_name() const override {
         return "Scripts";
     }
+
     std::optional<std::string> external_host() const override {
         return "127.0.0.1";
     }
+
     std::shared_ptr<CapabilityRuntimeListener> listener() const override {
         return registry;
     }
-    bool check_client(framework::Uuid, const network::HttpRequest&) override {
+
+    bool check_client(framework::Uuid, const network::HttpRequest &) override {
         return true;
     }
-    void debug(const std::string&) override {
-    }
-    void warn(const std::string&) override {
-    }
-    void error(const std::string&) override {
-    }
-    void console(const std::string&) override {
-    }
-    void add_command(CapabilityCommand) override {
-    }
+
+    void debug(const std::string &) override {}
+
+    void warn(const std::string &) override {}
+
+    void error(const std::string &) override {}
+
+    void console(const std::string &) override {}
+
+    void add_command(CapabilityCommand) override {}
 };
+
 void registration_profiles() {
     for (int mode = 0; mode < 3; ++mode) {
-        auto registry = std::make_shared<server::RegistryCapabilityListener>(
-            server::CapabilityListenerInfo{false, 19009, 0, {}});
+        auto registry =
+            std::make_shared<server::RegistryCapabilityListener>(server::CapabilityListenerInfo{false, 19009, 0, {}});
         SceneCapabilities scene(std::make_shared<Backend>(registry));
         std::shared_ptr<framework::IAssetCache> cache;
         if (mode)
@@ -68,24 +77,23 @@ void registration_profiles() {
         check(!caps->local_paths().contains("UploadBakedTexture"),
               "no invented local handler for missing cache, whitespace or external URL");
         auto external = caps->external_paths();
-        check(mode == 2
-                  ? (external.contains("UploadBakedTexture") && external.at("UploadBakedTexture") == url)
-                  : !external.contains("UploadBakedTexture"),
+        check(mode == 2 ? (external.contains("UploadBakedTexture") && external.at("UploadBakedTexture") == url)
+                        : !external.contains("UploadBakedTexture"),
               "source external URL and whitespace selection");
         runtime.stop();
         scene.shutdown();
     }
 }
+
 void run(bool expiry) {
-    auto registry = std::make_shared<server::RegistryCapabilityListener>(
-        server::CapabilityListenerInfo{false, 19007, 0, {}});
+    auto registry =
+        std::make_shared<server::RegistryCapabilityListener>(server::CapabilityListenerInfo{false, 19007, 0, {}});
     SceneCapabilities scene(std::make_shared<Backend>(registry));
     auto before = scene.events().on_register_caps.snapshot().size();
     auto agent = framework::Uuid::random();
     {
         RegionBakedTextureRuntime absent(scene.shared_events(), {}, "localhost");
-        check(scene.events().on_register_caps.snapshot().size() == before,
-              "no cache means no source subscription");
+        check(scene.events().on_register_caps.snapshot().size() == before, "no cache means no source subscription");
     }
     auto cache = std::make_shared<FlotsamMemoryCache>(FlotsamMemoryCache::Options{true, true, 600, 120});
     RegionBakedTextureRuntime runtime(scene.shared_events(), cache, "localhost");
@@ -132,8 +140,7 @@ void run(bool expiry) {
         check(runtime.pending_uploads() == 0, "real30-second timer retires upload");
         std::shared_ptr<server::CapabilitySimpleHandler> missing;
         check(!registry->routes.try_simple(path, missing), "expiry removes real route");
-        check(upload->handle(binary).status == 200,
-              "source cached baked handle remains callable after timer disposal");
+        check(upload->handle(binary).status == 200, "source cached baked handle remains callable after timer disposal");
     } else {
         auto response = upload->handle(binary);
         check(response.status == 200, "bake success");
@@ -142,8 +149,7 @@ void run(bool expiry) {
         auto stored = cache->get_cached(id.str());
         check(stored && stored->type() == 0 && stored->name() == "Baked Texture" &&
                   stored->creator_id() == agent.str() && stored->temporary() && stored->local() &&
-                  stored->flags() == 0 &&
-                  std::string(stored->data->begin(), stored->data->end()) == binary.body,
+                  stored->flags() == 0 && std::string(stored->data->begin(), stored->data->end()) == binary.body,
               "actual cache metadata and raw bytes");
         check(runtime.pending_uploads() == 0, "one-shot released registry ownership");
         std::shared_ptr<server::CapabilitySimpleHandler> missing;
@@ -170,14 +176,15 @@ void run(bool expiry) {
     scene.shutdown();
     check(registry->routes.simple_keys().empty(), "named and child routes released");
 }
-}
-int main(int argc, char** argv) {
+} // namespace
+
+int main(int argc, char **argv) {
     try {
         registration_profiles();
         run(argc > 1 && std::string_view(argv[1]) == "--expiry");
         std::cout << "PASS: " << checks << " baked registration/cache/lifetime checks\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

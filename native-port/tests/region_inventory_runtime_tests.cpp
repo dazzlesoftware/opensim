@@ -8,51 +8,69 @@
 #include <iostream>
 using namespace opensim;
 using namespace services;
+
 namespace {
 int checks = 0;
+
 void check(bool value, const char *text) {
     ++checks;
     if (!value)
         throw std::runtime_error(text);
 }
+
 struct Backend final : SceneCapabilityBackend {
     std::shared_ptr<server::RegistryCapabilityListener> registry;
+
     explicit Backend(std::shared_ptr<server::RegistryCapabilityListener> r) : registry(std::move(r)) {}
+
     std::string scene_name() const override {
         return "Inventory scene";
     }
+
     std::optional<std::string> region_name() const override {
         return "Inventory region";
     }
+
     std::optional<std::string> external_host() const override {
         return "127.0.0.1";
     }
+
     std::shared_ptr<CapabilityRuntimeListener> listener() const override {
         return registry;
     }
+
     bool check_client(framework::Uuid, const network::HttpRequest &) override {
         return true;
     }
+
     void debug(const std::string &) override {}
+
     void warn(const std::string &) override {}
+
     void error(const std::string &) override {}
+
     void console(const std::string &) override {}
+
     void add_command(CapabilityCommand) override {}
 };
+
 struct ConfigFile {
-    std::filesystem::path path = std::filesystem::temp_directory_path() /
-                                 ("opensim-inventory-" + framework::Uuid::random().str() + ".ini");
+    std::filesystem::path path =
+        std::filesystem::temp_directory_path() / ("opensim-inventory-" + framework::Uuid::random().str() + ".ini");
+
     explicit ConfigFile(const std::string &url, std::optional<std::string> library_url = {}) {
         std::ofstream file(path);
         file << "[ClientStack.LindenCaps]\nCap_FetchInventory2=" << url << "\n";
         if (library_url)
             file << "Cap_FetchLib2=" << *library_url << "\n";
     }
+
     ~ConfigFile() {
         std::error_code error;
         std::filesystem::remove(path, error);
     }
 };
+
 std::shared_ptr<Caps> create(SceneCapabilities &scene, framework::Uuid agent, int code) {
     auto circuit = std::make_shared<framework::AgentCircuitData>();
     circuit->agent_id = agent;
@@ -63,15 +81,16 @@ std::shared_ptr<Caps> create(SceneCapabilities &scene, framework::Uuid agent, in
     scene.capabilities().activate_caps(code);
     return std::dynamic_pointer_cast<Caps>(scene.capabilities().get_caps_for_user(code));
 }
+
 void run() {
-    auto registry = std::make_shared<server::RegistryCapabilityListener>(
-        server::CapabilityListenerInfo{false, 19002, 0, {}});
+    auto registry =
+        std::make_shared<server::RegistryCapabilityListener>(server::CapabilityListenerInfo{false, 19002, 0, {}});
     SceneCapabilities scene(std::make_shared<Backend>(registry));
     auto before = scene.events().on_register_caps.snapshot().size();
     ConfigFile file("localhost");
     auto config = server::IniConfig::load(file.path);
-    framework::Uuid first("00000000-0000-0000-0000-000000000001"),
-        second("00000000-0000-0000-0000-000000000002"), item_id("00000000-0000-0000-0000-000000000003");
+    framework::Uuid first("00000000-0000-0000-0000-000000000001"), second("00000000-0000-0000-0000-000000000002"),
+        item_id("00000000-0000-0000-0000-000000000003");
     framework::Uuid selected;
     int calls = 0;
     auto provider = [&](auto agent, const auto &ids) -> std::optional<FetchInventory2Core::Items> {
@@ -105,17 +124,14 @@ void run() {
     request.body = "<llsd><map><key>items</key><array><map><key>item_id</key><uuid>" + item_id.str() +
                    "</uuid></map></array></map></llsd>";
     auto response = route_a->handle(request);
-    check(response.status == 200 && response.body.find("native item") != response.body.npos &&
-              selected == first,
+    check(response.status == 200 && response.body.find("native item") != response.body.npos && selected == first,
           "first route returns item for captured owner");
     response = route_b->handle(request);
-    check(response.status == 200 && selected == second && calls == 2,
-          "second route retains distinct captured owner");
+    check(response.status == 200 && selected == second && calls == 2, "second route retains distinct captured owner");
     std::shared_ptr<server::CapabilitySimpleHandler> seed;
     check(registry->routes.try_simple("/CAPS/inventory1230000", seed), "seed route available");
     auto seed_request = request;
-    seed_request.body =
-        "<llsd><array><string>FetchInventory2</string><string>FetchLib2</string></array></llsd>";
+    seed_request.body = "<llsd><array><string>FetchInventory2</string><string>FetchLib2</string></array></llsd>";
     response = seed->handle(seed_request);
     check(response.status == 200 && response.body.find("FetchInventory2") != response.body.npos &&
               response.body.find("FetchLib2") != response.body.npos,
@@ -144,8 +160,7 @@ void run() {
         RegionInventoryRuntime empty(server::IniConfig::load(disabled.path), scene.shared_events(), {});
         empty.poll();
         empty.stop();
-        check(scene.events().on_register_caps.snapshot().empty(),
-              "disabled module needs no provider or subscription");
+        check(scene.events().on_register_caps.snapshot().empty(), "disabled module needs no provider or subscription");
     }
     bool failed = false;
     try {
@@ -156,15 +171,14 @@ void run() {
     check(failed && scene.events().on_register_caps.snapshot().empty(),
           "enabled module missing provider fails without subscription");
     {
-        auto external_registry = std::make_shared<server::RegistryCapabilityListener>(
-            server::CapabilityListenerInfo{false, 19003, 0, {}});
+        auto external_registry =
+            std::make_shared<server::RegistryCapabilityListener>(server::CapabilityListenerInfo{false, 19003, 0, {}});
         SceneCapabilities external_scene(std::make_shared<Backend>(external_registry));
         ConfigFile external("https://inventory.invalid/");
-        RegionInventoryRuntime external_runtime(server::IniConfig::load(external.path),
-                                                external_scene.shared_events(), provider);
+        RegionInventoryRuntime external_runtime(server::IniConfig::load(external.path), external_scene.shared_events(),
+                                                provider);
         auto caps = create(external_scene, first, 126);
-        check(!caps->local_paths().contains("FetchInventory2") &&
-                  !caps->external_paths().contains("FetchInventory2"),
+        check(!caps->local_paths().contains("FetchInventory2") && !caps->external_paths().contains("FetchInventory2"),
               "source RegisterCaps skips non-localhost inventory value");
         check(caps->local_paths().contains("FetchLib2"),
               "library default localhost registers independently of external inventory URL");
@@ -172,8 +186,8 @@ void run() {
         external_scene.shutdown();
     }
     {
-        auto other_registry = std::make_shared<server::RegistryCapabilityListener>(
-            server::CapabilityListenerInfo{false, 19004, 0, {}});
+        auto other_registry =
+            std::make_shared<server::RegistryCapabilityListener>(server::CapabilityListenerInfo{false, 19004, 0, {}});
         SceneCapabilities other(std::make_shared<Backend>(other_registry));
         SceneCapabilityEvents::CapsEvent::Handler saved;
         {
@@ -182,21 +196,19 @@ void run() {
         }
         auto caps = create(other, first, 127);
         saved.invoke(first, caps);
-        check(!caps->local_paths().contains("FetchInventory2"),
-              "weak delegate does not resurrect destroyed runtime");
+        check(!caps->local_paths().contains("FetchInventory2"), "weak delegate does not resurrect destroyed runtime");
         other.shutdown();
     }
     {
-        auto r = std::make_shared<server::RegistryCapabilityListener>(
-            server::CapabilityListenerInfo{false, 19007, 0, {}});
+        auto r =
+            std::make_shared<server::RegistryCapabilityListener>(server::CapabilityListenerInfo{false, 19007, 0, {}});
         SceneCapabilities library_scene(std::make_shared<Backend>(r));
         LibraryItemBackend library;
         library.root_owner = second;
         int library_calls = 0;
         library.get_items = [&](const auto &ids) -> std::optional<FetchInventory2Core::Items> {
             ++library_calls;
-            check(ids.size() == 1 && ids.front() == item_id,
-                  "library provider receives actual requested IDs");
+            check(ids.size() == 1 && ids.front() == item_id, "library provider receives actual requested IDs");
             InventoryItem item;
             item.id = item_id;
             item.owner = second;
@@ -229,12 +241,11 @@ void run() {
               "library capability routes cleaned by caps owner");
     }
     for (const auto &url : {std::string{}, std::string("https://library.invalid/")}) {
-        auto r = std::make_shared<server::RegistryCapabilityListener>(
-            server::CapabilityListenerInfo{false, 19008, 0, {}});
+        auto r =
+            std::make_shared<server::RegistryCapabilityListener>(server::CapabilityListenerInfo{false, 19008, 0, {}});
         SceneCapabilities scoped(std::make_shared<Backend>(r));
         ConfigFile selected_config("localhost", url);
-        RegionInventoryRuntime host(server::IniConfig::load(selected_config.path), scoped.shared_events(),
-                                    provider);
+        RegionInventoryRuntime host(server::IniConfig::load(selected_config.path), scoped.shared_events(), provider);
         auto caps = create(scoped, first, 131);
         check(!caps->local_paths().contains("FetchLib2") && !caps->external_paths().contains("FetchLib2"),
               "explicit nonlocal library URL is skipped as source RegisterCaps");
@@ -242,7 +253,8 @@ void run() {
         scoped.shutdown();
     }
 }
-}
+} // namespace
+
 int main() {
     try {
         run();

@@ -1,0 +1,1 @@
+vector item=<1,2,3>;string result;default{state_entry(){result=(string)item;}}

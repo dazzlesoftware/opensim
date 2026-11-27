@@ -32,21 +32,26 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sstream>
 using namespace opensim::services;
 using namespace opensim::framework;
+
 class TestStore : public GridUserStore {
   public:
     SqliteGridUserStore database{":memory:", true};
     bool allowed = true;
-    std::shared_ptr<GridUserData> get(const std::string& user) override {
+
+    std::shared_ptr<GridUserData> get(const std::string &user) override {
         return database.get(user);
     }
-    std::vector<std::shared_ptr<GridUserData>> get_all(const std::string& prefix) override {
+
+    std::vector<std::shared_ptr<GridUserData>> get_all(const std::string &prefix) override {
         return database.get_all(prefix);
     }
-    bool store(const std::shared_ptr<GridUserData>& row) override {
+
+    bool store(const std::shared_ptr<GridUserData> &row) override {
         return allowed && database.store(row);
     }
 };
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     try {
         if (argc == 3 && std::string(argv[1]) == "--initialize") {
             SqliteGridUserStore store(argv[2], true);
@@ -76,14 +81,14 @@ int main(int argc, char** argv) {
         const auto user = id(1).str();
         std::vector<std::string> rows;
         auto flag = [&](bool value) { rows.push_back(value ? "1" : "0"); };
-        auto info = [&](const std::optional<GridUserInfo>& value) {
+        auto info = [&](const std::optional<GridUserInfo> &value) {
             if (!value) {
                 rows.push_back("-");
                 return;
             }
-            const auto& v = *value;
-            rows.push_back(v.user_id + "~" + v.home_region.str() + "~" + vector3_string(v.home_position) +
-                           "~" + vector3_string(v.home_look_at) + "~" + v.last_region.str() + "~" +
+            const auto &v = *value;
+            rows.push_back(v.user_id + "~" + v.home_region.str() + "~" + vector3_string(v.home_position) + "~" +
+                           vector3_string(v.home_look_at) + "~" + v.last_region.str() + "~" +
                            vector3_string(v.last_position) + "~" + vector3_string(v.last_look_at) + "~" +
                            (v.online ? "True" : "False") + "~" + std::to_string(v.login) + "~" +
                            std::to_string(v.logout));
@@ -96,7 +101,7 @@ int main(int argc, char** argv) {
         flag(service.set_last_position(user, id(99), id(3), {1e9f, .1f, -0.f}, {1, 0, 0}));
         flag(service.logged_out(user, id(98), id(4), {3, 4, 5}, {0, 0, 1}));
         info(service.info(user));
-        for (const auto& result : service.info(std::vector<std::string>{user, "missing", user}))
+        for (const auto &result : service.info(std::vector<std::string>{user, "missing", user}))
             info(result);
         const auto short_user = "short" + std::to_string(seed);
         info(service.info(short_user));
@@ -125,9 +130,9 @@ int main(int argc, char** argv) {
         store.allowed = true;
         const auto snapshot = store.get(user);
         std::map<std::string, std::string> sorted;
-        for (const auto& pair : *snapshot->data)
+        for (const auto &pair : *snapshot->data)
             sorted[pair.first] = pair.second.value_or("");
-        for (const auto& pair : sorted)
+        for (const auto &pair : sorted)
             rows.push_back(pair.first + "=" + pair.second);
         for (std::size_t i = 0; i < rows.size(); ++i) {
             if (i)
@@ -136,7 +141,7 @@ int main(int argc, char** argv) {
         }
         std::cout << '\n';
         return 0;
-    } catch (const std::exception& error) {
+    } catch (const std::exception &error) {
         std::cerr << error.what() << '\n';
         return 1;
     }

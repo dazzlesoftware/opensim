@@ -8,6 +8,7 @@
 #include "opensim/framework/text.hpp"
 #include <iostream>
 using namespace opensim::framework;
+
 std::string hex(std::u16string_view s) {
     std::string r;
     for (auto c : s)
@@ -15,7 +16,8 @@ std::string hex(std::u16string_view s) {
             r += "0123456789abcdef"[(c >> n) & 15];
     return r;
 }
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     bool defaults = false, disabled = false;
     for (int i = 1; i < argc; ++i) {
         if (std::string_view(argv[i]) == "--default")
@@ -35,11 +37,9 @@ int main(int argc, char** argv) {
                     cause = message->substr(prefix.size());
             };
             options.xml_http_services = std::make_shared<ConfigXmlNativeHttpServices>();
-            auto& services = *options.xml_http_services;
+            auto &services = *options.xml_http_services;
             if (!defaults)
-                services.proxy = [](auto, auto) -> std::optional<ConfigXmlHttpRoute> {
-                    return {};
-                };
+                services.proxy = [](auto, auto) -> std::optional<ConfigXmlHttpRoute> { return {}; };
             services.error = [](auto, int) {
                 return std::make_exception_ptr(std::logic_error("Unmapped test HTTP failure"));
             };
@@ -48,20 +48,20 @@ int main(int argc, char** argv) {
             services.read_error = config_http_read_error;
             services.write_error = config_http_write_error;
             if (disabled)
-                options.xml_resolver_policy = std::make_shared<NiniXmlResolverPolicy>(
-                    [](std::u16string_view name) -> std::optional<bool> {
+                options.xml_resolver_policy =
+                    std::make_shared<NiniXmlResolverPolicy>([](std::u16string_view name) -> std::optional<bool> {
                         if (name == u"System.Xml.XmlResolver.IsNetworkingEnabledByDefault")
                             return false;
                         return {};
                     });
-            auto config = opensim::server::IniConfig::load_startup(std::filesystem::path(utf16(row)),
-                                                                   std::move(options));
+            auto config =
+                opensim::server::IniConfig::load_startup(std::filesystem::path(utf16(row)), std::move(options));
             std::cout << hex(utf16(config.get("Startup", "Name"))) << ":"
                       << hex(utf16(config.get("Startup", "Greeting"))) << "\n";
-        } catch (const opensim::server::ConfigurationStartupExit& e) {
+        } catch (const opensim::server::ConfigurationStartupExit &e) {
             std::cerr << "EXIT:" << e.code << "\n" << e.what() << "\n";
             std::cout << "E:" << (cause.empty() ? e.what() : utf8(cause)) << "\n";
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
             std::cerr << e.what() << "\n";
             std::cout << "E:" << e.what() << "\n";
         }

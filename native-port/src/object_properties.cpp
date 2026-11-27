@@ -3,6 +3,7 @@
 #include "opensim/scene/object_properties.hpp"
 #include "opensim/framework/text.hpp"
 #include <bit>
+
 namespace opensim::scene {
 namespace {
 std::vector<std::uint8_t> limited(std::string_view text, std::size_t max) {
@@ -21,10 +22,11 @@ std::vector<std::uint8_t> limited(std::string_view text, std::size_t max) {
     bytes.push_back(0);
     return bytes;
 }
-}
-network::lludp::Packet object_properties_family(const ObjectPropertiesData& o, std::uint32_t request_flags) {
+} // namespace
+
+network::lludp::Packet object_properties_family(const ObjectPropertiesData &o, std::uint32_t request_flags) {
     auto packet = network::lludp::make_packet("ObjectPropertiesFamily");
-    auto& b = packet.block("ObjectData");
+    auto &b = packet.block("ObjectData");
     b["RequestFlags"] = std::uint64_t(request_flags);
     b["ObjectID"] = o.id;
     b["OwnerID"] = o.owner == o.group ? framework::Uuid{} : o.owner;
@@ -42,7 +44,8 @@ network::lludp::Packet object_properties_family(const ObjectPropertiesData& o, s
     b["Description"] = limited(o.description, 127);
     return packet;
 }
-network::lludp::Packet object_properties(const ObjectPropertiesData& o) {
+
+network::lludp::Packet object_properties(const ObjectPropertiesData &o) {
     using namespace network;
     auto packet = lludp::make_packet("ObjectProperties");
     auto b = lludp::make_block(packet.spec->blocks.at(0));
@@ -59,8 +62,7 @@ network::lludp::Packet object_properties(const ObjectPropertiesData& o) {
     b["SaleType"] = std::uint64_t(o.sale_type);
     b["SalePrice"] = std::int64_t(o.sale_price);
     b["Category"] = std::uint64_t(o.category);
-    b["InventorySerial"] =
-        std::int64_t(std::bit_cast<std::int16_t>(static_cast<std::uint16_t>(o.inventory_serial)));
+    b["InventorySerial"] = std::int64_t(std::bit_cast<std::int16_t>(static_cast<std::uint16_t>(o.inventory_serial)));
     b["ItemID"] = o.from_inventory_item;
     b["LastOwnerID"] = o.last_owner;
     b["Name"] = limited(o.name, 63);
@@ -72,4 +74,4 @@ network::lludp::Packet object_properties(const ObjectPropertiesData& o) {
     packet.blocks["ObjectData"].push_back(std::move(b));
     return packet;
 }
-}
+} // namespace opensim::scene

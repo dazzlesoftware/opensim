@@ -4,23 +4,28 @@
 #define OPENSIM_PROFILE_PICK_INFO_NO_MAIN
 #include "profile_pick_info_probe.cpp"
 #undef OPENSIM_PROFILE_PICK_INFO_NO_MAIN
+
 namespace {
 int edit_seams, get_mode, update_mode;
 std::uint32_t world_x, world_y;
 Vector3 edit_position;
-void EditFail(int mask, const char* message) {
+
+void EditFail(int mask, const char *message) {
     if (edit_seams & mask)
         throw std::runtime_error(message);
 }
+
 std::string FloatBits(float v) {
     std::ostringstream s;
     s << std::hex << std::setfill('0') << std::setw(8) << std::bit_cast<std::uint32_t>(v);
     return s.str();
 }
+
 void MissingRegion() {
     if (edit_seams & 32)
         throw std::runtime_error("Object reference not set to an instance of an object.");
 }
+
 struct EditLand : ProfileRequestLand {
     ProfileText name() override {
         if (edit_seams & 256)
@@ -30,39 +35,46 @@ struct EditLand : ProfileRequestLand {
         return text;
     }
 };
+
 struct EditScene : ProfileRequestScene {
     bool presence;
-    explicit EditScene(bool value) : presence(value) {
-    }
+
+    explicit EditScene(bool value) : presence(value) {}
+
     std::uint32_t world_x() override {
         MissingRegion();
         trace += "worldx;";
         EditFail(64, "worldx");
         return ::world_x;
     }
+
     std::uint32_t world_y() override {
         MissingRegion();
         trace += "worldy;";
         EditFail(128, "worldy");
         return ::world_y;
     }
+
     std::uint64_t region_handle() override {
         MissingRegion();
         trace += "handle;";
         EditFail(1024, "handle");
         return (std::uint64_t{::world_x} << 32) | ::world_y;
     }
+
     ProfileText region_name() override {
         MissingRegion();
         trace += "regionname;";
         EditFail(131072, "regionname");
         return text;
     }
+
     ProfileText scene_name() override {
         trace += "scenename;";
         EditFail(65536, "scenename");
         return text;
     }
+
     std::shared_ptr<ProfileRequestLand> land(float x, float y) override {
         if (edit_seams & 2048)
             throw std::runtime_error("Object reference not set to an instance of an object.");
@@ -70,30 +82,36 @@ struct EditScene : ProfileRequestScene {
         EditFail(4096, "land");
         return edit_seams & 32768 ? nullptr : std::make_shared<EditLand>();
     }
+
     std::shared_ptr<ProfileRequestMoney> money() override {
         throw std::logic_error("unexpected money");
     }
 };
+
 struct EditPresence : ProfileRequestPresence {
     std::shared_ptr<ProfileNpcClient> npc_client() override {
         throw std::logic_error("unexpected NPC");
     }
+
     bool viewer_ui_god() override {
         trace += "god;";
         EditFail(1, "god");
         return edit_seams & 2;
     }
+
     Vector3 absolute_position() override {
         trace += "position;";
         EditFail(4, "position");
         return edit_position;
     }
+
     std::shared_ptr<ProfileRequestScene> scene() override {
         trace += "pscene;";
         EditFail(8, "pscene");
         return edit_seams & 16 ? nullptr : std::make_shared<EditScene>(true);
     }
 };
+
 struct EditHomeGrid : PickHomeGrid {
     ProfileText gatekeeper_url() override {
         trace += "gatekeeper;";
@@ -101,10 +119,12 @@ struct EditHomeGrid : PickHomeGrid {
         return gate;
     }
 };
+
 struct EditContext : PickContext {
     EditContext() {
         home = std::make_shared<EditHomeGrid>();
     }
+
     std::shared_ptr<ProfileRequestPresence> presence(Uuid id) override {
         auto value = Context::presence(id);
         if (!value)
@@ -115,14 +135,15 @@ struct EditContext : PickContext {
         p->current_parcel = value->current_parcel;
         return p;
     }
-    void warn_pick_parcel(float x, float y, const ProfileText& name) override {
-        trace +=
-            "warn:" + T(ProfileText(u"[PROFILES]: PickInfoUpdate found no parcel info at {0},{1} in {2}")) +
-            ":" + FloatBits(x) + ":" + FloatBits(y) + ":" + T(name) + ";";
+
+    void warn_pick_parcel(float x, float y, const ProfileText &name) override {
+        trace += "warn:" + T(ProfileText(u"[PROFILES]: PickInfoUpdate found no parcel info at {0},{1} in {2}")) + ":" +
+                 FloatBits(x) + ":" + FloatBits(y) + ":" + T(name) + ";";
         EditFail(16384, "warn");
     }
-    bool request_object(std::shared_ptr<server::JsonRpcMembers>& data, const ProfileText& method,
-                        const ProfileText& url, const ProfileText& id) override {
+
+    bool request_object(std::shared_ptr<server::JsonRpcMembers> &data, const ProfileText &method,
+                        const ProfileText &url, const ProfileText &id) override {
         int previous = mode;
         mode = method == ProfileText(u"picks_update") ? update_mode : get_mode;
         try {
@@ -135,18 +156,20 @@ struct EditContext : PickContext {
         }
     }
 };
+
 struct EditClient : PickClient {
     std::shared_ptr<ProfileRequestScene> scene() override {
         trace += "scene;";
         EditFail(262144, "scene");
         return edit_seams & 524288 ? nullptr : std::make_shared<EditScene>(false);
     }
+
     void send_picks(Uuid target, std::shared_ptr<UserProfileNameList> list) override {
         PicksClient::send_picks(target, list);
         if (edit_seams & 1048576) {
             std::shared_ptr<UserProfileCacheEntry> e;
             if (active_module->profile_cache().try_get_value(target_id, e) && e && e->picks)
-                for (auto& row : *e->picks)
+                for (auto &row : *e->picks)
                     if (row.second) {
                         row.second->Name = u"callback-edit";
                         row.second->GlobalPos = u"<9,8,7>";
@@ -156,14 +179,15 @@ struct EditClient : PickClient {
             active_module->profile_cache().clear();
     }
 };
-}
+} // namespace
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {
         std::istringstream in(line);
         std::string u, c, n, p, old, g;
-        in >> mode >> get_mode >> update_mode >> flags >> edit_seams >> ::world_x >> ::world_y >> u >> c >>
-            n >> p >> old >> g;
+        in >> mode >> get_mode >> update_mode >> flags >> edit_seams >> ::world_x >> ::world_y >> u >> c >> n >> p >>
+            old >> g;
         uri = Decode(u);
         auto creator = Decode(c);
         target_id = {};
@@ -235,8 +259,8 @@ int main() {
                     e->props->UserId = Id(7);
                     if (token != "L") {
                         e->picksList = std::make_shared<UserProfileNameList>();
-                        e->picks = std::make_shared<
-                            OrderedDictionary<Uuid, std::shared_ptr<UserProfilePick>, UuidHash>>();
+                        e->picks =
+                            std::make_shared<OrderedDictionary<Uuid, std::shared_ptr<UserProfilePick>, UuidHash>>();
                         if (token == "A" || token == "D" || token == "E") {
                             (*e->picksList)[query_id] = u"existing";
                             auto seed = FillPick(query_id);
@@ -250,7 +274,7 @@ int main() {
                     }
                     m.profile_cache().add_or_update(target_id, e, 300.0);
                 }
-            } catch (const std::exception& error) {
+            } catch (const std::exception &error) {
                 result = "EX:" + H(error.what());
             }
             if (!output.empty())

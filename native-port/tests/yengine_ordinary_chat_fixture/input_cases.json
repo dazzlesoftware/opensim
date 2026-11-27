@@ -1,0 +1,7 @@
+[
+  {
+    "name": "implicit_owner_say_list",
+    "kind": "Source",
+    "source": "integer after;default{state_entry(){llOwnerSay([1,2]);after=1;}}"
+  }
+]

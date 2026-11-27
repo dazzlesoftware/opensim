@@ -6,6 +6,7 @@
 #include <functional>
 #include <optional>
 #include <vector>
+
 namespace opensim::scene {
 struct RezLocationRequest {
     framework::Vector3 ray_start, ray_end;
@@ -15,17 +16,21 @@ struct RezLocationRequest {
     bool front_faces_only = true, face_center = false;
     framework::Vector3 scale{.5f, .5f, .5f};
 };
+
 struct RezContact {
     std::uint32_t consumer_id = 0;
     framework::Vector3 position, normal;
 };
+
 struct RezIntersection {
     bool hit = false;
     framework::Vector3 point, normal, axis_aligned_face_normal;
 };
-RezIntersection intersect_rez_box(framework::Vector3 position, framework::Quaternion rotation,
-                                  framework::Vector3 scale, framework::Vector3 origin,
-                                  framework::Vector3 direction, bool front_faces_only, bool face_center);
+
+RezIntersection intersect_rez_box(framework::Vector3 position, framework::Quaternion rotation, framework::Vector3 scale,
+                                  framework::Vector3 origin, framework::Vector3 direction, bool front_faces_only,
+                                  bool face_center);
+
 struct RezLocationBackend {
     float water_height = 20.f;
     // An absent filtered callback means SupportsRayCastFiltered()==false.
@@ -39,7 +44,8 @@ struct RezLocationBackend {
         target_intersection;
     std::function<RezIntersection(framework::Vector3, framework::Vector3, bool, bool)> closest_intersection;
 };
+
 // Complete Scene.GetNewRezLocation control flow. Physics/geometry are supplied
 // by the scene backend. Missing callbacks needed by a branch throw explicitly.
-framework::Vector3 get_new_rez_location(const RezLocationRequest&, const RezLocationBackend&);
-}
+framework::Vector3 get_new_rez_location(const RezLocationRequest &, const RezLocationBackend &);
+} // namespace opensim::scene

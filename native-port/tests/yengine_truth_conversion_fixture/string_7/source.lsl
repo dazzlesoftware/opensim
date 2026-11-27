@@ -1,0 +1,1 @@
+string item="00000000-0000-0000-0000-000000000000";integer converted;integer ordinary;integer negated;integer casted;list boxed;integer as_string;default{state_entry(){converted=xmrStringToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrStringToBool(item);boxed=[xmrStringToBool(item)];if((string)item)as_string=1;}}

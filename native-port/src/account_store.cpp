@@ -40,40 +40,48 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace opensim::services {
 using namespace opensim::framework;
+
 namespace {
 // The native host has no CLR finalizer thread. Collect unreachable provider
 // readers at completed service calls so idle requests do not pin file locks.
 // Standalone provider callers retain explicit collection/lifetime control.
 struct AuthenticationCollection {
-    SqliteAuthenticationTable* table;
+    SqliteAuthenticationTable *table;
+
     ~AuthenticationCollection() {
         if (table)
             table->collect_readers();
     }
 };
+
 class Statement {
   public:
-    Statement(sqlite3* db, const std::string& sql) : db_(db) {
+    Statement(sqlite3 *db, const std::string &sql) : db_(db) {
         if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt_, nullptr) != SQLITE_OK)
             throw std::runtime_error(std::string("SQLite prepare: ") + sqlite3_errmsg(db));
     }
+
     ~Statement() {
         sqlite3_finalize(stmt_);
     }
+
     void text(int index, std::string_view value) {
         if (sqlite3_bind_text(stmt_, index, value.data(), static_cast<int>(value.size()), SQLITE_TRANSIENT) !=
             SQLITE_OK)
             throw std::runtime_error("SQLite text binding failed");
     }
+
     void integer(int index, std::int64_t value) {
         sqlite3_bind_int64(stmt_, index, value);
     }
-    void nullable_text(int index, const std::optional<std::string>& value) {
+
+    void nullable_text(int index, const std::optional<std::string> &value) {
         if (value)
             text(index, *value);
         else if (sqlite3_bind_null(stmt_, index) != SQLITE_OK)
             throw std::runtime_error("SQLite null binding failed");
     }
+
     bool row() {
         const auto result = sqlite3_step(stmt_);
         if (result == SQLITE_ROW)
@@ -82,42 +90,49 @@ class Statement {
             return false;
         throw std::runtime_error(std::string("SQLite step: ") + sqlite3_errmsg(db_));
     }
+
     std::string text(int col) const {
-        const auto* value = sqlite3_column_text(stmt_, col);
-        return value ? std::string(reinterpret_cast<const char*>(value), sqlite3_column_bytes(stmt_, col))
-                     : "";
+        const auto *value = sqlite3_column_text(stmt_, col);
+        return value ? std::string(reinterpret_cast<const char *>(value), sqlite3_column_bytes(stmt_, col)) : "";
     }
+
     int integer(int col) const {
         return sqlite3_column_int(stmt_, col);
     }
+
     int columns() const {
         return sqlite3_column_count(stmt_);
     }
+
     std::string name(int col) const {
         return sqlite3_column_name(stmt_, col);
     }
 
   private:
-    sqlite3* db_;
-    sqlite3_stmt* stmt_ = nullptr;
+    sqlite3 *db_;
+    sqlite3_stmt *stmt_ = nullptr;
 };
-void execute(sqlite3* db, const std::string& sql) {
-    char* message = nullptr;
+
+void execute(sqlite3 *db, const std::string &sql) {
+    char *message = nullptr;
     if (sqlite3_exec(db, sql.c_str(), nullptr, nullptr, &message) != SQLITE_OK) {
         std::string error = message ? message : "SQLite operation failed";
         sqlite3_free(message);
         throw std::runtime_error(error);
     }
 }
-bool nonempty_file(const std::string& name) {
+
+bool nonempty_file(const std::string &name) {
     return name != ":memory:" && std::filesystem::exists(utf8_path(name)) &&
            std::filesystem::file_size(utf8_path(name)) > 0;
 }
+
 std::string account_columns(bool country) {
     return "PrincipalID,ScopeID,FirstName,LastName,UserLevel,UserFlags,ServiceURLs,Email,Created,UserTitle," +
            std::string(country ? "UserCountry" : "''");
 }
-UserAccount read_account(Statement& query) {
+
+UserAccount read_account(Statement &query) {
     Uuid principal, scope;
     try_parse_sdk_uuid(query.text(0), principal);
     try_parse_sdk_uuid(query.text(1), scope);
@@ -131,16 +146,17 @@ UserAccount read_account(Statement& query) {
     account.service_urls = decode_account_service_urls(query.text(6));
     return account;
 }
-UserAccount read_account(const UserAccountRecord& row) {
+
+UserAccount read_account(const UserAccountRecord &row) {
     if (!row.data)
         throw std::invalid_argument("Null account Data");
-    auto& fields = *row.data;
+    auto &fields = *row.data;
     UserAccount result;
     result.principal_id = row.principal.str();
     result.scope_id = row.scope.str();
     result.first_name = row.first;
     result.last_name = row.last;
-    auto value = [&](const std::string& key) {
+    auto value = [&](const std::string &key) {
         auto i = fields.find(key);
         return i == fields.end() ? std::optional<std::string>{} : i->second;
     };
@@ -156,16 +172,16 @@ UserAccount read_account(const UserAccountRecord& row) {
     return result;
 }
 
-}
-AccountStore::AccountStore(const std::string& accounts, const std::string& auth, bool initialize,
-                           bool source_accounts, std::string account_realm, std::string auth_realm,
-                           bool local_authentication) {
+} // namespace
+
+AccountStore::AccountStore(const std::string &accounts, const std::string &auth, bool initialize, bool source_accounts,
+                           std::string account_realm, std::string auth_realm, bool local_authentication) {
     if (accounts.empty() || (local_authentication && auth.empty()))
         throw std::invalid_argument("Database paths must not be empty");
     if (initialize && (nonempty_file(accounts) || (local_authentication && nonempty_file(auth))))
         throw std::runtime_error("Initialization refuses nonempty databases; use an empty destination");
-    const int flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX |
-                      ((initialize || source_accounts) ? SQLITE_OPEN_CREATE : 0);
+    const int flags =
+        SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX | ((initialize || source_accounts) ? SQLITE_OPEN_CREATE : 0);
     if (sqlite3_open_v2(accounts.c_str(), &db_, flags, nullptr) != SQLITE_OK) {
         const std::string error = db_ ? sqlite3_errmsg(db_) : "SQLite allocation failed";
         if (db_)
@@ -182,21 +198,20 @@ AccountStore::AccountStore(const std::string& accounts, const std::string& auth,
                                 std::string("UserAccount"));
             migration.update();
             auto borrowed = SqliteDatabase::borrow(db_);
-            account_table_ = std::make_unique<SqliteUserAccountTable>([borrowed] { return borrowed; },
-                                                                      std::move(account_realm));
+            account_table_ =
+                std::make_unique<SqliteUserAccountTable>([borrowed] { return borrowed; }, std::move(account_realm));
         }
         if (source_accounts && local_authentication) {
             // Each source provider migrates its own selected database before
             // serving requests, including when both stores share one file.
             if (accounts == auth) {
-                Migration migration(sqlite_migration_database(db_), auth_store_migrations(),
-                                    std::string("AuthStore"));
+                Migration migration(sqlite_migration_database(db_), auth_store_migrations(), std::string("AuthStore"));
                 migration.update();
             } else {
                 SqliteDatabase authentication;
                 authentication.open_path(auth, true);
-                Migration migration(sqlite_migration_database(authentication.handle()),
-                                    auth_store_migrations(), std::string("AuthStore"));
+                Migration migration(sqlite_migration_database(authentication.handle()), auth_store_migrations(),
+                                    std::string("AuthStore"));
                 migration.update();
             }
         }
@@ -216,31 +231,29 @@ AccountStore::AccountStore(const std::string& accounts, const std::string& auth,
             execute(db_, "BEGIN IMMEDIATE");
             // Same current columns as SQLite/Resources/UserAccount.migrations.
             if (!source_accounts)
-                execute(
-                    db_,
-                    "CREATE TABLE UserAccounts (PrincipalID CHAR(36) PRIMARY KEY, ScopeID CHAR(36) NOT NULL,"
-                    "FirstName VARCHAR(64) NOT NULL,LastName VARCHAR(64) NOT NULL,Email VARCHAR(64),ServiceURLs TEXT,Created INT,"
-                    "UserLevel INTEGER NOT NULL DEFAULT 0,UserFlags INTEGER NOT NULL DEFAULT 0,UserTitle VARCHAR(64) NOT NULL DEFAULT '',"
-                    "active BOOLEAN NOT NULL DEFAULT TRUE)");
+                execute(db_, "CREATE TABLE UserAccounts (PrincipalID CHAR(36) PRIMARY KEY, ScopeID CHAR(36) NOT NULL,"
+                             "FirstName VARCHAR(64) NOT NULL,LastName VARCHAR(64) NOT NULL,Email "
+                             "VARCHAR(64),ServiceURLs TEXT,Created INT,"
+                             "UserLevel INTEGER NOT NULL DEFAULT 0,UserFlags INTEGER NOT NULL DEFAULT 0,UserTitle "
+                             "VARCHAR(64) NOT NULL DEFAULT '',"
+                             "active BOOLEAN NOT NULL DEFAULT TRUE)");
             if (local_authentication) {
-                execute(
-                    db_,
-                    "CREATE TABLE " + auth_schema_ +
-                        ".auth (UUID CHAR(36) PRIMARY KEY NOT NULL,passwordHash CHAR(32) NOT NULL DEFAULT '',"
-                        "passwordSalt CHAR(32) NOT NULL DEFAULT '',webLoginKey VARCHAR(255) NOT NULL DEFAULT '',"
-                        "accountType VARCHAR(32) NOT NULL DEFAULT 'UserAccount')");
-                execute(
-                    db_,
-                    "CREATE TABLE " + auth_schema_ +
-                        ".tokens (UUID CHAR(36) NOT NULL,token VARCHAR(255) NOT NULL,validity DATETIME NOT NULL)");
+                execute(db_,
+                        "CREATE TABLE " + auth_schema_ +
+                            ".auth (UUID CHAR(36) PRIMARY KEY NOT NULL,passwordHash CHAR(32) NOT NULL DEFAULT '',"
+                            "passwordSalt CHAR(32) NOT NULL DEFAULT '',webLoginKey VARCHAR(255) NOT NULL DEFAULT '',"
+                            "accountType VARCHAR(32) NOT NULL DEFAULT 'UserAccount')");
+                execute(db_,
+                        "CREATE TABLE " + auth_schema_ +
+                            ".tokens (UUID CHAR(36) NOT NULL,token VARCHAR(255) NOT NULL,validity DATETIME NOT NULL)");
             }
             execute(db_, "COMMIT");
         }
         // Source providers defer column access to query materialization.
         if (!source_accounts) {
-            Statement accounts_check(
-                db_,
-                "SELECT PrincipalID,ScopeID,FirstName,LastName,UserLevel,UserFlags,ServiceURLs FROM UserAccounts LIMIT 0");
+            Statement accounts_check(db_,
+                                     "SELECT PrincipalID,ScopeID,FirstName,LastName,UserLevel,UserFlags,ServiceURLs "
+                                     "FROM UserAccounts LIMIT 0");
         }
         if (source_accounts && local_authentication) {
             auto borrowed = SqliteDatabase::borrow(db_);
@@ -248,10 +261,9 @@ AccountStore::AccountStore(const std::string& accounts, const std::string& auth,
                 [borrowed] { return borrowed; }, std::move(auth_realm), SqliteAuthenticationTable::Clock{},
                 SqliteAuthenticationTable::Diagnostic{}, auth_schema_);
         } else if (local_authentication) {
-            Statement auth_check(db_, "SELECT UUID,passwordHash,passwordSalt,webLoginKey FROM " +
-                                          auth_schema_ + ".auth LIMIT 0");
-            Statement tokens_check(db_,
-                                   "SELECT UUID,token,validity FROM " + auth_schema_ + ".tokens LIMIT 0");
+            Statement auth_check(db_, "SELECT UUID,passwordHash,passwordSalt,webLoginKey FROM " + auth_schema_ +
+                                          ".auth LIMIT 0");
+            Statement tokens_check(db_, "SELECT UUID,token,validity FROM " + auth_schema_ + ".tokens LIMIT 0");
         }
         Statement columns(db_, "PRAGMA table_info(UserAccounts)");
         while (columns.row())
@@ -265,25 +277,36 @@ AccountStore::AccountStore(const std::string& accounts, const std::string& auth,
         throw;
     }
 }
+
 AccountStore::~AccountStore() {
     authentication_table_.reset();
     account_table_.reset();
     if (db_)
         sqlite3_close(db_);
 }
-std::optional<UserAccount> AccountStore::find(std::string_view scope, std::string_view first,
-                                              std::string_view last) {
+
+void AccountStore::set_backend(AccountBackend backend) {
+    if (!backend.find || !backend.search || !backend.store)
+        throw std::invalid_argument("Account backend requires lookup, search and store operations");
+    backend_ = std::move(backend);
+}
+
+std::optional<UserAccount> AccountStore::find(std::string_view scope, std::string_view first, std::string_view last) {
     return find_fields(scope, {{"FirstName", std::string(first)}, {"LastName", std::string(last)}});
 }
+
 std::optional<UserAccount> AccountStore::find_by_email(std::string_view scope, std::string_view email) {
     return find_fields(scope, {{"Email", std::string(email)}});
 }
+
 std::optional<UserAccount> AccountStore::find_by_id(std::string_view scope, std::string_view principal) {
     return find_fields(scope, {{"PrincipalID", normalize_uuid(principal)}});
 }
-std::optional<UserAccount>
-AccountStore::find_fields(std::string_view scope,
-                          const std::vector<std::pair<std::string, std::string>>& fields) {
+
+std::optional<UserAccount> AccountStore::find_fields(std::string_view scope,
+                                                     const std::vector<std::pair<std::string, std::string>> &fields) {
+    if (backend_)
+        return backend_->find(normalize_uuid(scope), fields);
     std::lock_guard lock(mutex_);
     if (account_table_) {
         SqliteTableStrings names, values;
@@ -292,7 +315,7 @@ AccountStore::find_fields(std::string_view scope,
             names.push_back("ScopeID");
             values.push_back(normalized);
         }
-        for (auto& [field, value] : fields) {
+        for (auto &[field, value] : fields) {
             names.push_back(field);
             values.push_back(value);
         }
@@ -305,19 +328,18 @@ AccountStore::find_fields(std::string_view scope,
     }
     const bool scoped = scope != ZeroUuid;
     std::string where;
-    for (const auto& [field, value] : fields) {
+    for (const auto &[field, value] : fields) {
         if (!where.empty())
             where += " AND ";
         where += field + "=?";
     }
     Statement query(
-        db_, "SELECT " + account_columns(has_country_) + " FROM UserAccounts WHERE " + where +
-                 std::string(
-                     scoped ? " AND (ScopeID=? OR ScopeID=?) ORDER BY CASE WHEN ScopeID=? THEN 0 ELSE 1 END"
-                            : "") +
-                 " LIMIT 1");
+        db_,
+        "SELECT " + account_columns(has_country_) + " FROM UserAccounts WHERE " + where +
+            std::string(scoped ? " AND (ScopeID=? OR ScopeID=?) ORDER BY CASE WHEN ScopeID=? THEN 0 ELSE 1 END" : "") +
+            " LIMIT 1");
     int index = 1;
-    for (const auto& [field, value] : fields)
+    for (const auto &[field, value] : fields)
         query.text(index++, value);
     if (scoped) {
         query.text(index++, scope);
@@ -328,12 +350,15 @@ AccountStore::find_fields(std::string_view scope,
         return std::nullopt;
     return read_account(query);
 }
+
 std::vector<UserAccount> AccountStore::search_accounts(std::string_view scope, std::string_view text) {
+    if (backend_)
+        return backend_->search(normalize_uuid(scope), text);
     if (account_table_) {
         std::lock_guard lock(mutex_);
         auto rows = account_table_->get_users(Uuid(normalize_uuid(scope)), trim_utf8(std::string(text)));
         std::vector<UserAccount> result;
-        for (auto& row : rows)
+        for (auto &row : rows)
             result.push_back(read_account(*row));
         return result;
     }
@@ -359,9 +384,8 @@ std::vector<UserAccount> AccountStore::search_accounts(std::string_view scope, s
     // SQLiteUserAccountData constructs this expression directly. Keep its
     // wildcard, two-term OR and malformed-quote behavior for source parity.
     const auto sql = "SELECT " + account_columns(has_country_) + " FROM UserAccounts WHERE (ScopeID='" +
-                     normalized_scope +
-                     "' OR ScopeID='00000000-0000-0000-0000-000000000000') AND (FirstName LIKE '" + words[0] +
-                     "%' OR LastName LIKE '" + words[words.size() - 1] + "%')";
+                     normalized_scope + "' OR ScopeID='00000000-0000-0000-0000-000000000000') AND (FirstName LIKE '" +
+                     words[0] + "%' OR LastName LIKE '" + words[words.size() - 1] + "%')";
     std::lock_guard lock(mutex_);
     Statement query(db_, sql);
     std::vector<UserAccount> result;
@@ -369,7 +393,10 @@ std::vector<UserAccount> AccountStore::search_accounts(std::string_view scope, s
         result.push_back(read_account(query));
     return result;
 }
-bool AccountStore::store_service_urls(const UserAccount& account) {
+
+bool AccountStore::store_service_urls(const UserAccount &account) {
+    if (backend_)
+        return backend_->store(account);
     if (account_table_)
         return store_account(account);
     const auto principal = normalize_uuid(account.principal_id);
@@ -381,12 +408,15 @@ bool AccountStore::store_service_urls(const UserAccount& account) {
     update.row();
     return sqlite3_changes(db_) > 0;
 }
-bool AccountStore::store_account(const UserAccount& account) {
+
+bool AccountStore::store_account(const UserAccount &account) {
+    if (backend_)
+        return backend_->store(account);
     // The service creates the record before serializing URL objects. Callbacks
     // may mutate the original account; the captured metadata must stay fixed.
     const auto principal = normalize_uuid(account.principal_id), scope = normalize_uuid(account.scope_id);
-    const auto first = account.first_name, last = account.last_name, email = account.email,
-               title = account.user_title, country = account.user_country;
+    const auto first = account.first_name, last = account.last_name, email = account.email, title = account.user_title,
+               country = account.user_country;
     const auto created = account.created, level = account.user_level, flags = account.user_flags;
     auto urls = encode_account_service_urls(account.service_urls);
     if (account_table_) {
@@ -396,7 +426,7 @@ bool AccountStore::store_account(const UserAccount& account) {
         row->first = first;
         row->last = last;
         row->data = std::make_shared<SqliteTableFields>();
-        auto& data = *row->data;
+        auto &data = *row->data;
         data["Email"] = email;
         data["Created"] = std::to_string(created);
         data["UserLevel"] = std::to_string(level);
@@ -413,8 +443,8 @@ bool AccountStore::store_account(const UserAccount& account) {
         throw std::invalid_argument("Null account row name");
     const bool with_title = title && !title->empty(), with_country = country && !country->empty();
     std::lock_guard lock(mutex_);
-    std::string sql =
-        "REPLACE INTO UserAccounts (PrincipalID,ScopeID,FirstName,LastName,Email,Created,UserLevel,UserFlags,ServiceURLs";
+    std::string sql = "REPLACE INTO UserAccounts "
+                      "(PrincipalID,ScopeID,FirstName,LastName,Email,Created,UserLevel,UserFlags,ServiceURLs";
     if (with_title)
         sql += ",UserTitle";
     if (with_country)
@@ -443,7 +473,8 @@ bool AccountStore::store_account(const UserAccount& account) {
     row.row();
     return sqlite3_changes(db_) > 0;
 }
-bool AccountStore::set_password(std::string_view principal, const std::optional<std::string>& password,
+
+bool AccountStore::set_password(std::string_view principal, const std::optional<std::string> &password,
                                 std::function<Uuid()> random) {
     if (auth_schema_.empty())
         return false;
@@ -480,9 +511,8 @@ bool AccountStore::set_password(std::string_view principal, const std::optional<
     }
     if (!exists)
         values = {{"accountType", "UserAccount"}, {"webLoginKey", std::string(ZeroUuid)}};
-    for (const auto& item : {std::pair{"passwordHash", hash}, std::pair{"passwordSalt", salt}}) {
-        auto i = std::find_if(values.begin(), values.end(),
-                              [&](auto& value) { return value.first == item.first; });
+    for (const auto &item : {std::pair{"passwordHash", hash}, std::pair{"passwordSalt", salt}}) {
+        auto i = std::find_if(values.begin(), values.end(), [&](auto &value) { return value.first == item.first; });
         if (i == values.end())
             values.push_back(item);
         else
@@ -492,7 +522,7 @@ bool AccountStore::set_password(std::string_view principal, const std::optional<
         std::string sql;
         if (exists) {
             sql = "UPDATE " + auth_schema_ + ".auth SET ";
-            for (const auto& [key, value] : values) {
+            for (const auto &[key, value] : values) {
                 if (sql.back() != ' ')
                     sql += ",";
                 sql += "`" + key + "`=?";
@@ -500,7 +530,7 @@ bool AccountStore::set_password(std::string_view principal, const std::optional<
             sql += " WHERE UUID=?";
         } else {
             sql = "INSERT INTO " + auth_schema_ + ".auth (";
-            for (const auto& [key, value] : values) {
+            for (const auto &[key, value] : values) {
                 if (sql.back() != '(')
                     sql += ",";
                 sql += "`" + key + "`";
@@ -515,22 +545,24 @@ bool AccountStore::set_password(std::string_view principal, const std::optional<
         }
         Statement row(db_, sql);
         int index = 1;
-        for (const auto& [key, value] : values)
+        for (const auto &[key, value] : values)
             row.text(index++, value);
         row.text(index, id);
         row.row();
         return sqlite3_changes(db_) > 0;
-    } catch (const std::runtime_error&) {
+    } catch (const std::runtime_error &) {
         return false;
     }
 }
-std::string AccountStore::create_user(std::string_view first, std::string_view last,
-                                      std::string_view password, std::string_view scope, int level) {
+
+std::string AccountStore::create_user(std::string_view first, std::string_view last, std::string_view password,
+                                      std::string_view scope, int level) {
+    if (backend_)
+        throw std::invalid_argument("Create users on the configured remote user account service");
     std::lock_guard lock(mutex_);
     AuthenticationCollection collection{authentication_table_.get()};
     if (first.empty() || last.empty() || password.empty() || first.size() > 64 || last.size() > 64)
-        throw std::invalid_argument(
-            "User names and password must be nonempty; names are limited to 64 UTF-8 bytes");
+        throw std::invalid_argument("User names and password must be nonempty; names are limited to 64 UTF-8 bytes");
     const auto normalized_scope = normalize_uuid(scope);
     execute(db_, "BEGIN IMMEDIATE");
     try {
@@ -553,7 +585,8 @@ std::string AccountStore::create_user(std::string_view first, std::string_view l
         } else {
             Statement account(
                 db_,
-                "INSERT INTO UserAccounts (PrincipalID,ScopeID,FirstName,LastName,Email,ServiceURLs,Created,UserLevel) VALUES (?,?,?,?,?,?,?,?)");
+                "INSERT INTO UserAccounts (PrincipalID,ScopeID,FirstName,LastName,Email,ServiceURLs,Created,UserLevel) "
+                "VALUES (?,?,?,?,?,?,?,?)");
             account.text(1, principal);
             account.text(2, normalized_scope);
             account.text(3, first);
@@ -568,7 +601,7 @@ std::string AccountStore::create_user(std::string_view first, std::string_view l
             auto record = std::make_shared<AuthenticationRecord>();
             record->principal = Uuid(principal);
             record->data = std::make_shared<OrderedDictionary<std::string, std::any>>();
-            auto& data = *record->data;
+            auto &data = *record->data;
             data["passwordHash"] = md5(md5(password) + ":" + salt);
             data["passwordSalt"] = salt;
             data["webLoginKey"] = std::string(ZeroUuid);
@@ -591,8 +624,9 @@ std::string AccountStore::create_user(std::string_view first, std::string_view l
         throw;
     }
 }
-AuthenticationResult AccountStore::authenticate(std::string_view principal, std::string_view password,
-                                                int lifetime, bool web_keys) {
+
+AuthenticationResult AccountStore::authenticate(std::string_view principal, std::string_view password, int lifetime,
+                                                bool web_keys) {
     if (auth_schema_.empty())
         return {};
     std::lock_guard lock(mutex_);
@@ -602,14 +636,12 @@ AuthenticationResult AccountStore::authenticate(std::string_view principal, std:
         auto record = authentication_table_->get(id);
         if (!record)
             return {};
-        auto field = [&](const std::string& name) {
-            return std::any_cast<std::string>(record->data->at(name));
-        };
+        auto field = [&](const std::string &name) { return std::any_cast<std::string>(record->data->at(name)); };
         bool accepted = false;
         if (web_keys && password != ZeroUuid && constant_time_equal(field("webLoginKey"), password)) {
             try {
                 accepted = normalize_uuid(password) != ZeroUuid;
-            } catch (const std::invalid_argument&) {
+            } catch (const std::invalid_argument &) {
             }
             if (accepted) {
                 (*record->data)["webLoginKey"] = std::string(ZeroUuid);
@@ -617,8 +649,8 @@ AuthenticationResult AccountStore::authenticate(std::string_view principal, std:
             }
         }
         if (!accepted)
-            accepted = constant_time_equal(field("passwordHash"),
-                                           md5(std::string(password) + ":" + field("passwordSalt")));
+            accepted =
+                constant_time_equal(field("passwordHash"), md5(std::string(password) + ":" + field("passwordSalt")));
         if (!accepted)
             return {};
         auto token = random_uuid();
@@ -630,21 +662,20 @@ AuthenticationResult AccountStore::authenticate(std::string_view principal, std:
     try {
         bool accepted = false, used_web_key = false;
         {
-            Statement query(db_, "SELECT passwordHash,passwordSalt,webLoginKey FROM " + auth_schema_ +
-                                     ".auth WHERE UUID=?");
+            Statement query(db_,
+                            "SELECT passwordHash,passwordSalt,webLoginKey FROM " + auth_schema_ + ".auth WHERE UUID=?");
             query.text(1, principal);
             if (query.row()) {
                 if (web_keys && password != ZeroUuid && constant_time_equal(query.text(2), password)) {
                     // WebkeyAuthenticationService also requires the supplied key to parse as a UUID.
                     try {
                         accepted = normalize_uuid(password) != ZeroUuid;
-                    } catch (const std::invalid_argument&) {
+                    } catch (const std::invalid_argument &) {
                     }
                     used_web_key = accepted;
                 }
                 if (!accepted)
-                    accepted =
-                        constant_time_equal(query.text(0), md5(std::string(password) + ":" + query.text(1)));
+                    accepted = constant_time_equal(query.text(0), md5(std::string(password) + ":" + query.text(1)));
             }
         }
         if (!accepted) {
@@ -672,45 +703,47 @@ AuthenticationResult AccountStore::authenticate(std::string_view principal, std:
         throw;
     }
 }
+
 bool AccountStore::verify(std::string_view principal, std::string_view token, int lifetime) {
     if (auth_schema_.empty())
         return false;
     std::lock_guard lock(mutex_);
     if (authentication_table_)
-        return authentication_table_->check_token(Uuid(normalize_uuid(principal)), std::string(token),
-                                                  lifetime);
-    Statement update(
-        db_,
-        "UPDATE " + auth_schema_ +
-            ".tokens SET validity=datetime('now','localtime',?) WHERE UUID=? AND token=? AND validity>datetime('now','localtime')");
+        return authentication_table_->check_token(Uuid(normalize_uuid(principal)), std::string(token), lifetime);
+    Statement update(db_, "UPDATE " + auth_schema_ +
+                              ".tokens SET validity=datetime('now','localtime',?) WHERE UUID=? AND token=? AND "
+                              "validity>datetime('now','localtime')");
     update.text(1, std::to_string(lifetime) + " minutes");
     update.text(2, principal);
     update.text(3, token);
     update.row();
     return sqlite3_changes(db_) > 0;
 }
+
 bool AccountStore::release(std::string_view principal, std::string_view token) {
     return verify(principal, token, 0);
 }
+
 std::shared_ptr<AuthInfo> AccountStore::get_auth_info(Uuid principal) {
     if (auth_schema_.empty())
         return {};
     std::lock_guard lock(mutex_);
     auto borrowed = SqliteDatabase::borrow(db_);
     SqliteAuthenticationTable fallback([borrowed] { return borrowed; }, "auth", {}, {}, auth_schema_);
-    auto* table = authentication_table_ ? authentication_table_.get() : &fallback;
+    auto *table = authentication_table_ ? authentication_table_.get() : &fallback;
     AuthenticationCollection collection{table};
     return authentication_info(table->get(principal));
 }
-bool AccountStore::set_auth_info(const std::shared_ptr<AuthInfo>& info) {
+
+bool AccountStore::set_auth_info(const std::shared_ptr<AuthInfo> &info) {
     if (auth_schema_.empty())
         return false;
     std::lock_guard lock(mutex_);
     auto record = authentication_record(info);
     auto borrowed = SqliteDatabase::borrow(db_);
     SqliteAuthenticationTable fallback([borrowed] { return borrowed; }, "auth", {}, {}, auth_schema_);
-    auto* table = authentication_table_ ? authentication_table_.get() : &fallback;
+    auto *table = authentication_table_ ? authentication_table_.get() : &fallback;
     AuthenticationCollection collection{table};
     return table->store(record);
 }
-}
+} // namespace opensim::services

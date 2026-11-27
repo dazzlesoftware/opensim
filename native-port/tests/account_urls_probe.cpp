@@ -4,7 +4,8 @@
 #include <iostream>
 using namespace opensim;
 using Urls = framework::AgentCircuitData::ServiceUrls;
-std::string hx(const std::string& s) {
+
+std::string hx(const std::string &s) {
     constexpr char a[] = "0123456789abcdef";
     std::string out;
     for (unsigned char c : s) {
@@ -13,11 +14,12 @@ std::string hx(const std::string& s) {
     }
     return out;
 }
-std::string snapshot(const std::shared_ptr<Urls>& urls) {
+
+std::string snapshot(const std::shared_ptr<Urls> &urls) {
     if (!urls)
         return "null";
     std::string s;
-    for (auto& [key, value] : *urls) {
+    for (auto &[key, value] : *urls) {
         s += hx(key) + ":";
         if (auto p = std::any_cast<std::string>(&value))
             s += "s" + hx(*p);
@@ -29,6 +31,7 @@ std::string snapshot(const std::shared_ptr<Urls>& urls) {
     }
     return s;
 }
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -88,7 +91,7 @@ int main() {
                 }
                 value = hx(services::encode_account_service_urls(urls));
             }
-        } catch (const std::exception&) {
+        } catch (const std::exception &) {
             status = "EX";
         }
         std::cout << status << '|' << value << '|' << snapshot(urls) << '\n';

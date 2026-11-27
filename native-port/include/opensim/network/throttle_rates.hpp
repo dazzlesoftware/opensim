@@ -36,16 +36,28 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace opensim::network {
 enum class ThrottleOutPacketType : std::int32_t {
-    Unknown = -1, Resend = 0, Land = 1, Wind = 2, Cloud = 3, Task = 4, Texture = 5, Asset = 6
+    Unknown = -1,
+    Resend = 0,
+    Land = 1,
+    Wind = 2,
+    Cloud = 3,
+    Task = 4,
+    Texture = 5,
+    Asset = 6
 };
 enum class ThrottleOutPacketTypeFlags : std::int32_t {
-    Land = 1 << 0, Wind = 1 << 1, Cloud = 1 << 2,
-    Task = 1 << 3, Texture = 1 << 4, Asset = 1 << 5
+    Land = 1 << 0,
+    Wind = 1 << 1,
+    Cloud = 1 << 2,
+    Task = 1 << 3,
+    Texture = 1 << 4,
+    Asset = 1 << 5
 };
+
 struct ThrottleRates {
     using ReadInt = std::function<std::int32_t(std::string_view, std::int32_t)>;
-    std::int32_t resend = 6625, land = 9125, wind = 1750, cloud = 1750,
-        task = 18500, texture = 18500, asset = 10500, total = 66750;
+    std::int32_t resend = 6625, land = 9125, wind = 1750, cloud = 1750, task = 18500, texture = 18500, asset = 10500,
+                 total = 66750;
     bool adaptive_throttles_enabled = false;
     std::int64_t minimum_adaptive_throttle_rate = 0;
     std::int32_t client_max_rate = 640000;
@@ -53,7 +65,7 @@ struct ThrottleRates {
 
     // Callback reads integers from the ClientStack.LindenUDP configuration section.
     // An empty callback represents an absent section. Error handling matches C#.
-    explicit ThrottleRates(const ReadInt& read = {}) {
+    explicit ThrottleRates(const ReadInt &read = {}) {
         try {
             if (read) {
                 client_max_rate = read("client_throttle_max_bps", client_max_rate);
@@ -61,19 +73,29 @@ struct ThrottleRates {
                 adaptive_throttles_enabled = false;
                 minimum_adaptive_throttle_rate = read("adaptive_throttle_min_bps", 32000);
             }
-        } catch (...) { }
+        } catch (...) {
+        }
     }
+
     [[nodiscard]] std::int32_t get_rate(ThrottleOutPacketType type) const noexcept {
         switch (type) {
-        case ThrottleOutPacketType::Resend: return resend;
-        case ThrottleOutPacketType::Land: return land;
-        case ThrottleOutPacketType::Wind: return wind;
-        case ThrottleOutPacketType::Cloud: return cloud;
-        case ThrottleOutPacketType::Task: return task;
-        case ThrottleOutPacketType::Texture: return texture;
-        case ThrottleOutPacketType::Asset: return asset;
-        default: return 0;
+        case ThrottleOutPacketType::Resend:
+            return resend;
+        case ThrottleOutPacketType::Land:
+            return land;
+        case ThrottleOutPacketType::Wind:
+            return wind;
+        case ThrottleOutPacketType::Cloud:
+            return cloud;
+        case ThrottleOutPacketType::Task:
+            return task;
+        case ThrottleOutPacketType::Texture:
+            return texture;
+        case ThrottleOutPacketType::Asset:
+            return asset;
+        default:
+            return 0;
         }
     }
 };
-}
+} // namespace opensim::network

@@ -2,6 +2,7 @@
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/services/sqlite_connection.hpp"
 #include <iostream>
+
 std::string hex(std::string_view value) {
     std::string out;
     for (unsigned char c : value) {
@@ -10,6 +11,7 @@ std::string hex(std::string_view value) {
     }
     return out;
 }
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -29,7 +31,7 @@ int main() {
                     continue;
                 }
                 std::string out;
-                for (auto& [key, v] : fields)
+                for (auto &[key, v] : fields)
                     out += hex(key) + ":" + hex(v) + ";";
                 std::cout << out;
             }

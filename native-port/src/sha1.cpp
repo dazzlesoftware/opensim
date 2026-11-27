@@ -3,10 +3,11 @@
 #include "opensim/framework/sha1.hpp"
 #include <algorithm>
 #include <bit>
+
 namespace opensim::framework {
 std::array<uint8_t, 20> sha1(std::span<const uint8_t> input) {
     std::array<uint32_t, 5> state{0x67452301u, 0xefcdab89u, 0x98badcfeu, 0x10325476u, 0xc3d2e1f0u};
-    auto compress = [&](const uint8_t* block) {
+    auto compress = [&](const uint8_t *block) {
         std::array<uint32_t, 80> words{};
         for (size_t i = 0; i < 16; ++i)
             for (size_t j = 0; j < 4; ++j)
@@ -67,6 +68,7 @@ std::array<uint8_t, 20> sha1(std::span<const uint8_t> input) {
             result[4 * i + j] = static_cast<uint8_t>(state[i] >> (24 - 8 * j));
     return result;
 }
+
 std::string sha1_hex(std::span<const uint8_t> input) {
     constexpr char digits[] = "0123456789abcdef";
     auto bytes = sha1(input);
@@ -78,4 +80,4 @@ std::string sha1_hex(std::span<const uint8_t> input) {
     }
     return out;
 }
-}
+} // namespace opensim::framework

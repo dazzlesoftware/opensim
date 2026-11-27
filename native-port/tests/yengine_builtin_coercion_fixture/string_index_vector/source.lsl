@@ -1,0 +1,1 @@
+integer result;integer after;default{state_entry(){result=llSubStringIndex(<1,2,3>,2);after=1;}}

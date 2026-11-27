@@ -2,12 +2,14 @@
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/services/appearance_provisioner.hpp"
 #include <bit>
+
 namespace opensim::services {
-void AppearanceProvisioner::apply_next_owner_permissions(InventoryItem& item) {
+void AppearanceProvisioner::apply_next_owner_permissions(InventoryItem &item) {
     item.current_permissions &= item.next_permissions;
     item.base_permissions &= item.next_permissions;
     item.everyone_permissions &= item.next_permissions;
 }
+
 void AppearanceProvisioner::copy_model(framework::Uuid destination, framework::Uuid source,
                                        std::shared_ptr<framework::AvatarAppearance> appearance) {
     if (!appearance || !appearance->wearables)
@@ -33,7 +35,7 @@ void AppearanceProvisioner::copy_model(framework::Uuid destination, framework::U
         operations_.add_folder(folder);
     }
     auto copied_wearable = std::make_shared<framework::AvatarWearable>();
-    auto copy = [&](const std::shared_ptr<InventoryItem>& item) {
+    auto copy = [&](const std::shared_ptr<InventoryItem> &item) {
         auto result = new_item(destination);
         auto id = result->id;
         *result = *item;
@@ -61,15 +63,15 @@ void AppearanceProvisioner::copy_model(framework::Uuid destination, framework::U
                 copied_wearable->add(created->id, wearable.asset);
                 if (!outfit)
                     throw std::invalid_argument("Null Current Outfit folder");
-                create_outfit_link(18, std::bit_cast<std::uint32_t>(item->flags), item->name, created->id,
-                                   destination, outfit->id);
+                create_outfit_link(18, std::bit_cast<std::uint32_t>(item->flags), item->name, created->id, destination,
+                                   outfit->id);
             }
         }
         appearance->set_wearable(static_cast<int>(i), copied_wearable);
     }
     auto attachments = appearance->attachments();
     appearance->clear_attachments();
-    for (const auto& attachment : attachments) {
+    for (const auto &attachment : attachments) {
         auto point = attachment.point;
         auto item_id = attachment.item;
         if (item_id.is_zero())
@@ -86,4 +88,4 @@ void AppearanceProvisioner::copy_model(framework::Uuid destination, framework::U
         }
     }
 }
-}
+} // namespace opensim::services

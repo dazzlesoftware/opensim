@@ -1,0 +1,1 @@
+YOption arrays;YOption chars;object input;list result;integer after;default{state_entry(){input=xmrFixedArrayAllocO(1);xmrEventEnqueue([21,input,input]);llSleep(0.1);result=xmrEventDequeue(0,2097152,0,0,0);after=1;}touch_start(integer n){}}

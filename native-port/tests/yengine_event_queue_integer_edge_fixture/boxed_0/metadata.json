@@ -1,0 +1,26 @@
+{
+  "name": "boxed_0",
+  "input": {
+    "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+    "value": 0,
+    "bits": "00000000"
+  },
+  "append_exception": null,
+  "outer_xml_exception": null,
+  "load_xml_exception": null,
+  "restore_event_queue_exception": null,
+  "restored": {
+    "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+    "value": 0,
+    "bits": "00000000"
+  },
+  "strict_xml_reader_control_exception": null,
+  "strict_xml_reader_control_restored": {
+    "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+    "value": 0,
+    "bits": "00000000"
+  },
+  "sha256": {
+    "serialized.xml": "075ddac5faf9471a03b7d49d61a8408e8c83919b47bcfe6d4f62db22a4f6d547"
+  }
+}

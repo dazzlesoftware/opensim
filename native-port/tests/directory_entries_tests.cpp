@@ -7,8 +7,9 @@
 #include <chrono>
 #include <algorithm>
 using namespace opensim::framework;
+
 namespace {
-DirectoryEntriesText dec(const std::string& s) {
+DirectoryEntriesText dec(const std::string &s) {
     if (s == "-")
         return {};
     std::u16string t;
@@ -18,7 +19,8 @@ DirectoryEntriesText dec(const std::string& s) {
                                        (std::stoul(s.substr(i + 2, 2), nullptr, 16) << 8));
     return std::make_shared<const std::u16string>(std::move(t));
 }
-std::string hex(const std::u16string& t) {
+
+std::string hex(const std::u16string &t) {
     if (t.empty())
         return ".";
     std::string o;
@@ -29,10 +31,12 @@ std::string hex(const std::u16string& t) {
         }
     return o;
 }
-std::string error(const DirectoryEntriesError& e) {
-    return e.source_type + ":" + std::to_string(std::bit_cast<std::uint32_t>(e.hresult)) + ":" +
-           hex(e.message) + ":" + (e.parameter ? hex(*e.parameter) : "-");
+
+std::string error(const DirectoryEntriesError &e) {
+    return e.source_type + ":" + std::to_string(std::bit_cast<std::uint32_t>(e.hresult)) + ":" + hex(e.message) + ":" +
+           (e.parameter ? hex(*e.parameter) : "-");
 }
+
 DirectoryEntriesPlatform platform() {
 #ifdef _WIN32
     return DirectoryEntriesPlatform::Windows;
@@ -43,25 +47,29 @@ DirectoryEntriesPlatform platform() {
 #endif
 }
 struct Probe;
+
 struct Cursor : DirectoryEntriesCursor {
-    Probe& p;
+    Probe &p;
     std::size_t index = 0;
     bool closed = false;
-    explicit Cursor(Probe& p) : p(p) {
-    }
+
+    explicit Cursor(Probe &p) : p(p) {}
+
     std::optional<DirectoryEntry> next() override;
     void close() override;
 };
+
 struct Probe {
     int point = 0, nth = 1, hit = 0;
     std::vector<std::string> trace;
+
     void event(int p, std::string t) {
         trace.push_back(std::move(t));
         if (point == p && ++hit == nth)
-            throw DirectoryEntriesError("System.Exception", std::bit_cast<std::int32_t>(0x80131500u),
-                                        u"fault");
+            throw DirectoryEntriesError("System.Exception", std::bit_cast<std::int32_t>(0x80131500u), u"fault");
     }
 };
+
 std::optional<DirectoryEntry> Cursor::next() {
     p.event(3, "N:" + std::to_string(index));
     static const std::vector<DirectoryEntry> entries = {
@@ -75,13 +83,15 @@ std::optional<DirectoryEntry> Cursor::next() {
         return {};
     return entries[index++];
 }
+
 void Cursor::close() {
     if (!closed) {
         closed = true;
         p.event(4, "C");
     }
 }
-std::string run(const std::string& row) {
+
+std::string run(const std::string &row) {
     std::istringstream in(row);
     std::string mode, p, e;
     int target;
@@ -92,8 +102,8 @@ std::string run(const std::string& row) {
     try {
         if (mode == "N") {
             auto n = normalize_directory_search(path, expr, platform());
-            result = hex(*n.directory) + ":" + hex(*n.expression) + ":" + (n.directory == path ? "1" : "0") +
-                     ":" + (n.expression == expr ? "1" : "0") + ":" +
+            result = hex(*n.directory) + ":" + hex(*n.expression) + ":" + (n.directory == path ? "1" : "0") + ":" +
+                     (n.expression == expr ? "1" : "0") + ":" +
                      (n.expression == file_system_name::star_literal() ? "1" : "0") + ":" +
                      (n.unchanged_directory ? "1" : "0");
         } else {
@@ -104,8 +114,7 @@ std::string run(const std::string& row) {
                 backend->full_path = [&](DirectoryEntriesText t) {
                     probe.event(1, "F:" + hex(*t));
                     return std::make_shared<const std::u16string>(
-                        platform() == DirectoryEntriesPlatform::Windows ? u"X:\\normalized\\"
-                                                                        : u"/normalized/");
+                        platform() == DirectoryEntriesPlatform::Windows ? u"X:\\normalized\\" : u"/normalized/");
                 };
                 backend->open = [&](DirectoryEntriesText t) {
                     probe.event(2, "O:" + hex(*t));
@@ -117,10 +126,10 @@ std::string run(const std::string& row) {
                            : target      ? directory_get_directories(path, expr, backend)
                                          : directory_get_files(path, expr, backend);
             result = "A";
-            for (auto& entry : entries)
+            for (auto &entry : entries)
                 result += ":" + hex(*entry);
         }
-    } catch (const DirectoryEntriesError& e) {
+    } catch (const DirectoryEntriesError &e) {
         result = "EX:" + error(e);
     }
     if (mode == "P") {
@@ -133,14 +142,17 @@ std::string run(const std::string& row) {
     }
     return result;
 }
+
 void native_units() {
     auto folder = std::filesystem::temp_directory_path() /
                   ("directory-entries-native-" +
                    std::to_string(std::chrono::high_resolution_clock::now().time_since_epoch().count()));
     if (!std::filesystem::create_directory(folder))
         throw std::runtime_error("Cannot create owned directory fixture");
+
     struct Cleanup {
         std::filesystem::path root;
+
         ~Cleanup() {
             std::error_code e;
             for (auto name : {"alpha", "alpha.txt", ".hidden", "sub"})
@@ -148,6 +160,7 @@ void native_units() {
             std::filesystem::remove(root, e);
         }
     } cleanup{folder};
+
     for (auto name : {"alpha", "alpha.txt", ".hidden"}) {
         std::ofstream file(folder / name);
         file << 'x';
@@ -159,17 +172,16 @@ void native_units() {
     if (files.size() != 3 || directory_get_files(path).size() != 3)
         throw std::runtime_error("Win32 *.* compatibility must include extensionless/hidden files");
     auto dirs = directory_get_directories(path);
-    if (dirs.size() != 1 || *dirs[0] != folder.u16string() +
-                                            (platform() == DirectoryEntriesPlatform::Windows ? u"\\" : u"/") +
-                                            u"sub")
+    if (dirs.size() != 1 ||
+        *dirs[0] != folder.u16string() + (platform() == DirectoryEntriesPlatform::Windows ? u"\\" : u"/") + u"sub")
         throw std::runtime_error("Default directory filter/projection");
     if (!directory_get_files(path, std::make_shared<const std::u16string>(u"sub/*")).empty())
         throw std::runtime_error("Pattern directory prefix");
     bool caught = false;
     try {
-        directory_get_files(std::make_shared<const std::u16string>(
-            (folder / std::filesystem::path(u"missing-配置😀")).u16string()));
-    } catch (const std::exception& e) {
+        directory_get_files(
+            std::make_shared<const std::u16string>((folder / std::filesystem::path(u"missing-配置😀")).u16string()));
+    } catch (const std::exception &e) {
         caught = true;
         std::string message = e.what();
         if (message.find("Could not find a part of the path '") == std::string::npos ||
@@ -186,8 +198,8 @@ void native_units() {
         if (*received != u"original")
             throw std::runtime_error("Argument snapshot changed");
         caller = std::make_shared<const std::u16string>(u"mutated");
-        return std::make_shared<const std::u16string>(
-            platform() == DirectoryEntriesPlatform::Windows ? u"X:\\root" : u"/root");
+        return std::make_shared<const std::u16string>(platform() == DirectoryEntriesPlatform::Windows ? u"X:\\root"
+                                                                                                      : u"/root");
     };
     backend->open = [&](DirectoryEntriesText) { return std::make_shared<Cursor>(probe); };
     auto output = directory_get_files(caller, file_system_name::star_literal(), backend);
@@ -195,8 +207,9 @@ void native_units() {
         throw std::runtime_error("Provider callback mutated by-value directory argument");
 }
 
-}
-int main(int argc, char** argv) {
+} // namespace
+
+int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string_view(argv[1]) == "--probe") {
             std::string row;
@@ -211,7 +224,7 @@ int main(int argc, char** argv) {
             throw std::runtime_error("Directory normalization identity");
         std::cout << "PASS Directory default compatibility enumeration\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

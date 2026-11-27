@@ -13,6 +13,7 @@
 #include <stdexcept>
 #define Z_PREFIX
 #include "../third_party/zlib/zlib.h"
+
 namespace opensim::scene {
 namespace {
 int source_int(float value) {
@@ -20,16 +21,19 @@ int source_int(float value) {
         return std::numeric_limits<std::int32_t>::min();
     return static_cast<int>(value);
 }
+
 char terrain_gray(float height) {
     const auto index = std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(source_int(height)) * 2u);
     return static_cast<char>(std::clamp(index, 0, 255));
 }
-}
+} // namespace
+
 std::vector<std::uint8_t> Terrain::llraw() const {
     struct Entry {
         std::uint16_t index;
         int product;
     };
+
     static const auto table = [] {
         std::vector<Entry> entries;
         entries.reserve(65536);
@@ -63,6 +67,7 @@ std::vector<std::uint8_t> Terrain::llraw() const {
     }
     return bytes;
 }
+
 std::string Terrain::terragen() const {
     const auto samples = serialized_floats();
     if (samples.empty() || width_ > 32767 || height_ > 32767 ||
@@ -78,7 +83,7 @@ std::string Terrain::terragen() const {
         for (unsigned i = 0; i < bytes; ++i)
             output.push_back(static_cast<char>(value >> (i * 8)));
     };
-    for (const auto& [tag, value] :
+    for (const auto &[tag, value] :
          {std::pair{"SIZE", width_}, std::pair{"XPTS", width_}, std::pair{"YPTS", height_}}) {
         output += tag;
         write(value, 2);
@@ -102,6 +107,7 @@ std::string Terrain::terragen() const {
     output += "EOF ";
     return output;
 }
+
 void Terrain::merge_terragen(std::span<const std::uint8_t> data, bool exact_size) {
     constexpr std::string_view signature = "TERRAGENTERRAIN ";
     if (data.size() < signature.size() || !std::equal(signature.begin(), signature.end(), data.begin())) {
@@ -122,7 +128,7 @@ void Terrain::merge_terragen(std::span<const std::uint8_t> data, bool exact_size
     };
     int width = 256, height = 256;
     while (data.size() >= 4) {
-        const std::string_view chunk(reinterpret_cast<const char*>(data.data()), 4);
+        const std::string_view chunk(reinterpret_cast<const char *>(data.data()), 4);
         data = data.subspan(4);
         if (chunk == "ALTW") {
             const float scale = read16() / 65536.f;
@@ -161,6 +167,7 @@ void Terrain::merge_terragen(std::span<const std::uint8_t> data, bool exact_size
     }
     throw std::ios_base::failure("Terragen terrain has no altitude chunk");
 }
+
 std::string Terrain::bitmap() const {
     const auto heights = serialized_floats();
     if (width_ == 0 || height_ == 0 || heights.size() > (std::numeric_limits<std::uint32_t>::max() - 54) / 4)
@@ -191,6 +198,7 @@ std::string Terrain::bitmap() const {
     }
     return output;
 }
+
 void Terrain::merge_bitmap(std::span<const std::uint8_t> data, bool exact_size) {
     const auto word = [&](std::size_t offset) {
         return std::uint32_t(data[offset]) | (std::uint32_t(data[offset + 1]) << 8);
@@ -201,10 +209,9 @@ void Terrain::merge_bitmap(std::span<const std::uint8_t> data, bool exact_size) 
     const auto offset = dword(10), header = dword(14), bits = word(28);
     const auto compression = dword(30);
     const bool rle = compression == 1 || compression == 2;
-    const auto width = std::bit_cast<std::int32_t>(dword(18)),
-               height = std::bit_cast<std::int32_t>(dword(22));
-    if (header < 40 || std::uint64_t(header) + 14 > offset || offset > data.size() || width <= 0 ||
-        height == 0 || word(26) != 1 ||
+    const auto width = std::bit_cast<std::int32_t>(dword(18)), height = std::bit_cast<std::int32_t>(dword(22));
+    if (header < 40 || std::uint64_t(header) + 14 > offset || offset > data.size() || width <= 0 || height == 0 ||
+        word(26) != 1 ||
         (rle ? (height < 0 || bits != (compression == 1 ? 8u : 4u))
              : (compression != 0 && (compression != 3 || (bits != 16 && bits != 32)))) ||
         (bits != 1 && bits != 4 && bits != 8 && bits != 16 && bits != 24 && bits != 32))
@@ -239,7 +246,7 @@ void Terrain::merge_bitmap(std::span<const std::uint8_t> data, bool exact_size) 
                 throw std::runtime_error("Non-contiguous bitmap color mask");
         }
     }
-    const auto pixel = [&](const std::uint8_t* row, std::size_t x) {
+    const auto pixel = [&](const std::uint8_t *row, std::size_t x) {
         if (bits >= 24)
             return row + x * (bits / 8);
         const auto shift = 8 - bits - (x * bits) % 8;
@@ -299,18 +306,17 @@ void Terrain::merge_bitmap(std::span<const std::uint8_t> data, bool exact_size) 
     std::vector<float> samples;
     samples.reserve(columns * merged_rows);
     for (std::size_t y = 0; y < merged_rows; ++y) {
-        const auto* row = rle ? nullptr : data.data() + offset + (height > 0 ? y : rows - y - 1) * stride;
+        const auto *row = rle ? nullptr : data.data() + offset + (height > 0 ? y : rows - y - 1) * stride;
         for (std::size_t x = 0; x < columns; ++x) {
             std::array<std::uint32_t, 3> rgb{};
             if (bits == 16 || compression == 3) {
                 const auto index = static_cast<std::size_t>(row - data.data()) + x * (bits / 8);
                 const auto value = bits == 16 ? word(index) : dword(index);
                 for (std::size_t i = 0; i < rgb.size(); ++i)
-                    rgb[i] = static_cast<std::uint32_t>(
-                        (std::uint64_t((value >> shifts[i]) & masks[i]) * 255) / masks[i]);
+                    rgb[i] =
+                        static_cast<std::uint32_t>((std::uint64_t((value >> shifts[i]) & masks[i]) * 255) / masks[i]);
             } else {
-                const auto* sample =
-                    rle ? data.data() + palette + indices[y * columns + x] * 4 : pixel(row, x);
+                const auto *sample = rle ? data.data() + palette + indices[y * columns + x] * 4 : pixel(row, x);
                 rgb = {sample[0], sample[1], sample[2]};
             }
             const auto [low, high] = std::minmax({rgb[0], rgb[1], rgb[2]});
@@ -321,6 +327,7 @@ void Terrain::merge_bitmap(std::span<const std::uint8_t> data, bool exact_size) 
         for (std::size_t x = 0; x < columns; ++x)
             set(static_cast<int>(x), static_cast<int>(y), samples[y * columns + x]);
 }
+
 std::string Terrain::png() const {
     const auto heights = serialized_floats();
     if (!width_ || !height_ || std::uint64_t(heights.size()) * 4 + height_ > 128u * 1024u * 1024u)
@@ -337,21 +344,24 @@ std::string Terrain::png() const {
     z_stream stream{};
     if (deflateInit(&stream, Z_DEFAULT_COMPRESSION) != Z_OK)
         throw std::runtime_error("Cannot initialize PNG terrain encoder");
+
     struct End {
-        z_stream& stream;
+        z_stream &stream;
+
         ~End() {
             deflateEnd(&stream);
         }
     } end{stream};
+
     std::string compressed(deflateBound(&stream, static_cast<uLong>(rows.size())), 0);
-    stream.next_in = reinterpret_cast<Bytef*>(rows.data());
+    stream.next_in = reinterpret_cast<Bytef *>(rows.data());
     stream.avail_in = static_cast<uInt>(rows.size());
-    stream.next_out = reinterpret_cast<Bytef*>(compressed.data());
+    stream.next_out = reinterpret_cast<Bytef *>(compressed.data());
     stream.avail_out = static_cast<uInt>(compressed.size());
     if (deflate(&stream, Z_FINISH) != Z_STREAM_END)
         throw std::runtime_error("Cannot encode PNG terrain pixels");
     compressed.resize(stream.total_out);
-    const auto write = [](std::string& output, std::uint32_t value) {
+    const auto write = [](std::string &output, std::uint32_t value) {
         for (int shift = 24; shift >= 0; shift -= 8)
             output.push_back(static_cast<char>(value >> shift));
     };
@@ -361,7 +371,7 @@ std::string Terrain::png() const {
         const auto start = output.size();
         output.append(type);
         output.append(payload);
-        write(output, crc32(0, reinterpret_cast<const Bytef*>(output.data() + start),
+        write(output, crc32(0, reinterpret_cast<const Bytef *>(output.data() + start),
                             static_cast<uInt>(output.size() - start)));
     };
     std::string header;
@@ -382,13 +392,14 @@ std::string Terrain::png() const {
     chunk("IEND", {});
     return output;
 }
+
 void Terrain::merge_png(std::span<const std::uint8_t> data, bool exact_size) {
     constexpr std::array<std::uint8_t, 8> signature{137, 80, 78, 71, 13, 10, 26, 10};
     if (data.size() < 8 || !std::equal(signature.begin(), signature.end(), data.begin()))
         throw std::runtime_error("Invalid PNG terrain signature");
-    const auto be32 = [](const std::uint8_t* bytes) {
-        return (std::uint32_t(bytes[0]) << 24) | (std::uint32_t(bytes[1]) << 16) |
-               (std::uint32_t(bytes[2]) << 8) | bytes[3];
+    const auto be32 = [](const std::uint8_t *bytes) {
+        return (std::uint32_t(bytes[0]) << 24) | (std::uint32_t(bytes[1]) << 16) | (std::uint32_t(bytes[2]) << 8) |
+               bytes[3];
     };
     data = data.subspan(8);
     std::uint32_t width = 0, height = 0;
@@ -401,7 +412,7 @@ void Terrain::merge_png(std::span<const std::uint8_t> data, bool exact_size) {
         if (length > data.size() - 12)
             throw std::runtime_error("Truncated PNG terrain chunk");
         const auto chunk = data.subspan(8, length);
-        const std::string_view tag(reinterpret_cast<const char*>(data.data() + 4), 4);
+        const std::string_view tag(reinterpret_cast<const char *>(data.data() + 4), 4);
         const auto crc = crc32(0, data.data() + 4, static_cast<uInt>(length + 4));
         if (crc != be32(data.data() + 8 + length))
             throw std::runtime_error("Invalid PNG terrain checksum");
@@ -454,9 +465,11 @@ void Terrain::merge_png(std::span<const std::uint8_t> data, bool exact_size) {
     constexpr std::uint64_t limit = 128u * 1024u * 1024u;
     if (!ended || !width || compressed.empty() || compressed.size() > std::numeric_limits<uInt>::max())
         throw std::runtime_error("Invalid or oversized PNG terrain");
+
     struct Pass {
         unsigned x, y, dx, dy;
     };
+
     constexpr Pass plain{0, 0, 1, 1};
     constexpr std::array<Pass, 7> adam7{
         {{0, 0, 8, 8}, {4, 0, 8, 8}, {0, 4, 4, 8}, {2, 0, 4, 4}, {0, 2, 2, 4}, {1, 0, 2, 2}, {0, 1, 1, 2}}};
@@ -468,7 +481,7 @@ void Terrain::merge_png(std::span<const std::uint8_t> data, bool exact_size) {
         return (std::uint64_t(columns) * channels * depth + 7) / 8 + 1;
     };
     std::uint64_t total = 0;
-    for (const auto& pass : passes) {
+    for (const auto &pass : passes) {
         const auto columns = extent(width, pass.x, pass.dx), rows = extent(height, pass.y, pass.dy);
         if (!columns || !rows)
             continue;
@@ -491,11 +504,10 @@ void Terrain::merge_png(std::span<const std::uint8_t> data, bool exact_size) {
         throw std::runtime_error("Invalid PNG terrain pixels");
     const auto paeth = [](int left, int above, int diagonal) {
         const int estimate = left + above - diagonal;
-        const int a = std::abs(estimate - left), b = std::abs(estimate - above),
-                  c = std::abs(estimate - diagonal);
+        const int a = std::abs(estimate - left), b = std::abs(estimate - above), c = std::abs(estimate - diagonal);
         return a <= b && a <= c ? left : b <= c ? above : diagonal;
     };
-    const auto sample_at = [&](const std::uint8_t* row, std::size_t index) {
+    const auto sample_at = [&](const std::uint8_t *row, std::size_t index) {
         if (depth == 16)
             return unsigned(row[index * 2]);
         if (depth == 8)
@@ -506,16 +518,16 @@ void Terrain::merge_png(std::span<const std::uint8_t> data, bool exact_size) {
     const auto merged_width = std::min(width, width_), merged_height = std::min(height, height_);
     std::vector<float> samples(std::size_t(merged_width) * merged_height);
     std::size_t offset = 0;
-    for (const auto& pass : passes) {
+    for (const auto &pass : passes) {
         const auto columns = extent(width, pass.x, pass.dx), rows = extent(height, pass.y, pass.dy);
         if (!columns || !rows)
             continue;
         const auto stride = row_stride(columns);
         for (std::size_t y = 0; y < rows; ++y) {
-            auto* row = pixels.data() + offset;
+            auto *row = pixels.data() + offset;
             offset += stride;
             const auto filter = *row++;
-            const auto* previous = y ? row - stride : nullptr;
+            const auto *previous = y ? row - stride : nullptr;
             if (filter > 4)
                 throw std::runtime_error("Invalid PNG terrain filter");
             for (std::size_t x = 0; x < stride - 1; ++x) {
@@ -540,7 +552,7 @@ void Terrain::merge_png(std::span<const std::uint8_t> data, bool exact_size) {
                 } else if (type == 3) {
                     if (first * 3 >= palette.size())
                         throw std::runtime_error("Invalid PNG terrain palette index");
-                    const auto* color = palette.data() + first * 3;
+                    const auto *color = palette.data() + first * 3;
                     range = std::minmax({unsigned(color[0]), unsigned(color[1]), unsigned(color[2])});
                 } else
                     range = std::minmax({first, sample_at(row, index + 1), sample_at(row, index + 2)});
@@ -555,6 +567,7 @@ void Terrain::merge_png(std::span<const std::uint8_t> data, bool exact_size) {
         for (std::uint32_t x = 0; x < merged_width; ++x)
             set(x, y, samples[std::size_t(y) * merged_width + x]);
 }
+
 void Terrain::merge_raw(std::span<const std::uint8_t> data, bool floating_point, bool exact_size) {
     const std::size_t stride = floating_point ? 4 : 13;
     const auto dimension =
@@ -567,8 +580,7 @@ void Terrain::merge_raw(std::span<const std::uint8_t> data, bool floating_point,
         throw std::ios_base::failure("Truncated terrain upload");
     for (std::size_t y = 0; y < std::min<std::size_t>(dimension, height_); ++y)
         for (std::size_t x = 0; x < std::min<std::size_t>(dimension, width_); ++x) {
-            const auto* sample =
-                data.data() + ((floating_point ? y : dimension - y - 1) * dimension + x) * stride;
+            const auto *sample = data.data() + ((floating_point ? y : dimension - y - 1) * dimension + x) * stride;
             float height = sample[0] * sample[1] / 128.f;
             if (floating_point) {
                 std::uint32_t bits = 0;
@@ -581,6 +593,7 @@ void Terrain::merge_raw(std::span<const std::uint8_t> data, bool floating_point,
             set(static_cast<int>(x), static_cast<int>(y), height);
         }
 }
+
 Terrain::Terrain(std::uint32_t width, std::uint32_t height) : width_(width), height_(height) {
     auto points = static_cast<std::uint64_t>(width) * height;
     if (points > heights_.max_size())
@@ -591,6 +604,7 @@ Terrain::Terrain(std::uint32_t width, std::uint32_t height) : width_(width), hei
         throw std::length_error("Terrain taint dimensions overflow");
     taints_.resize(static_cast<std::size_t>((bits + 31) / 32), 0);
 }
+
 void Terrain::initialize_island() {
     const float center_x = width_ * .5f, center_y = height_ * .5f;
     for (std::uint32_t x = 0; x < width_; ++x)
@@ -602,13 +616,15 @@ void Terrain::initialize_island() {
             set(x, y, std::max(peak, base));
         }
 }
-Terrain::Terrain(const Terrain& other) : width_(other.width_), height_(other.height_) {
+
+Terrain::Terrain(const Terrain &other) : width_(other.width_), height_(other.height_) {
     std::shared_lock lock(other.mutex_);
     heights_ = other.heights_;
     taints_ = other.taints_;
     tainted_count_ = other.tainted_count_;
 }
-void Terrain::replace_heights(const Terrain& source) {
+
+void Terrain::replace_heights(const Terrain &source) {
     if (this == &source)
         return;
     if (width_ != source.width_ || height_ != source.height_)
@@ -628,20 +644,24 @@ void Terrain::replace_heights(const Terrain& source) {
                 taint_set_unlocked(x / patch_size + (y / patch_size) * patches_x(), true);
         }
 }
+
 std::size_t Terrain::index(int x, int y) const {
     if (x < 0 || y < 0 || static_cast<std::uint32_t>(x) >= width_ || static_cast<std::uint32_t>(y) >= height_)
         throw std::out_of_range("Terrain coordinate");
     return static_cast<std::size_t>(x) * height_ + static_cast<std::size_t>(y);
 }
+
 std::size_t Terrain::patch_index(std::uint32_t px, std::uint32_t py) const {
     if (px >= patches_x() || py >= patches_y())
         throw std::out_of_range("Terrain patch");
     return static_cast<std::size_t>(px) * patch_size * height_ + py * patch_size;
 }
+
 float Terrain::get(int x, int y) const {
     std::shared_lock lock(mutex_);
     return heights_[index(x, y)];
 }
+
 void Terrain::set(int x, int y, float value) {
     std::unique_lock lock(mutex_);
     auto i = index(x, y);
@@ -651,15 +671,18 @@ void Terrain::set(int x, int y, float value) {
         taint_set_unlocked(x / 16 + (y / 16) * static_cast<int>(patches_x()), true);
     }
 }
+
 void Terrain::clear_land(float value) {
     std::unique_lock lock(mutex_);
     std::fill(heights_.begin(), heights_.end(), value);
     ++revision_;
 }
+
 std::uint64_t Terrain::revision() const {
     std::shared_lock lock(mutex_);
     return revision_;
 }
+
 std::string Terrain::database_blob() const {
     const auto samples = serialized_floats();
     std::string bytes;
@@ -677,6 +700,7 @@ std::string Terrain::database_blob() const {
     }
     return network::gzip_compress(bytes);
 }
+
 void Terrain::load_database_blob(int format, std::string_view blob) {
     std::string uncompressed;
     if (format == database_format) {
@@ -708,9 +732,8 @@ void Terrain::load_database_blob(int format, std::string_view blob) {
         for (std::uint64_t y = 0; y < rows; ++y)
             for (std::uint64_t x = 0; x < columns; ++x) {
                 replacement[x * height_ + y] =
-                    compressed
-                        ? float(std::bit_cast<std::int16_t>(static_cast<std::uint16_t>(read(2)))) / factor
-                        : std::bit_cast<float>(static_cast<std::uint32_t>(read(4)));
+                    compressed ? float(std::bit_cast<std::int16_t>(static_cast<std::uint16_t>(read(2)))) / factor
+                               : std::bit_cast<float>(static_cast<std::uint32_t>(read(4)));
             }
     } else {
         for (std::uint32_t x = 0; x < 256; ++x)
@@ -726,6 +749,7 @@ void Terrain::load_database_blob(int format, std::string_view blob) {
     std::fill(taints_.begin(), taints_.end(), 0);
     tainted_count_ = 0;
 }
+
 framework::Vector3 Terrain::script_ground_normal(float x, float y, float offset_x, float offset_y) const {
     if (width_ == 0 || height_ == 0)
         return {0.f, 0.f, 1.f};
@@ -806,6 +830,7 @@ float Terrain::height_at(float x, float y) const {
     }
     return h0 + h1 + h2;
 }
+
 std::array<float, 256> Terrain::patch(std::uint32_t px, std::uint32_t py, float sub, float premult) const {
     std::shared_lock lock(mutex_);
     auto start = patch_index(px, py);
@@ -816,6 +841,7 @@ std::array<float, 256> Terrain::patch(std::uint32_t px, std::uint32_t py, float 
             result[k++] = (heights_[start + x * height_ + y] - sub) * premult;
     return result;
 }
+
 std::pair<float, float> Terrain::patch_min_max(std::uint32_t px, std::uint32_t py) const {
     std::shared_lock lock(mutex_);
     auto start = patch_index(px, py);
@@ -832,6 +858,7 @@ std::pair<float, float> Terrain::patch_min_max(std::uint32_t px, std::uint32_t p
         }
     return {min, max};
 }
+
 std::vector<float> Terrain::serialized_floats() const {
     std::shared_lock lock(mutex_);
     std::vector<float> out;
@@ -841,14 +868,16 @@ std::vector<float> Terrain::serialized_floats() const {
             out.push_back(heights_[static_cast<std::size_t>(x) * height_ + y]);
     return out;
 }
+
 std::vector<float> Terrain::compressed_map() const {
     std::shared_lock lock(mutex_);
     return heights_;
 }
+
 void Terrain::taint_set_unlocked(int bit, bool value) {
     if (bit < 0 || static_cast<std::size_t>(bit / 32) >= taints_.size())
         throw std::out_of_range("Terrain taint");
-    auto& word = taints_[static_cast<std::size_t>(bit / 32)];
+    auto &word = taints_[static_cast<std::size_t>(bit / 32)];
     auto mask = std::uint32_t(1) << (bit & 31);
     bool old = (word & mask) != 0;
     if (old == value)
@@ -861,10 +890,11 @@ void Terrain::taint_set_unlocked(int bit, bool value) {
         --tainted_count_;
     }
 }
+
 bool Terrain::taint_get_unlocked(int bit, bool clear) {
     if (bit < 0 || static_cast<std::size_t>(bit / 32) >= taints_.size())
         throw std::out_of_range("Terrain taint");
-    auto& word = taints_[static_cast<std::size_t>(bit / 32)];
+    auto &word = taints_[static_cast<std::size_t>(bit / 32)];
     auto mask = std::uint32_t(1) << (bit & 31);
     if (!(word & mask))
         return false;
@@ -874,32 +904,39 @@ bool Terrain::taint_get_unlocked(int bit, bool clear) {
     }
     return true;
 }
+
 void Terrain::clear_taint() {
     std::unique_lock lock(mutex_);
     std::fill(taints_.begin(), taints_.end(), 0);
     tainted_count_ = 0;
 }
+
 void Terrain::taint_all() {
     std::unique_lock lock(mutex_);
     std::fill(taints_.begin(), taints_.end(), ~std::uint32_t(0));
     tainted_count_ = static_cast<std::int32_t>(patches_x() * patches_y());
 }
+
 bool Terrain::tainted() const {
     std::shared_lock lock(mutex_);
     return tainted_count_ > 0;
 }
+
 std::int32_t Terrain::tainted_count() const {
     std::shared_lock lock(mutex_);
     return tainted_count_;
 }
+
 bool Terrain::tainted_at(int x, int y, bool clear) {
     std::unique_lock lock(mutex_);
     return taint_get_unlocked(x / 16 + (y / 16) * static_cast<int>(patches_x()), clear);
 }
+
 bool Terrain::tainted_patch(int px, int py, bool clear) {
     std::unique_lock lock(mutex_);
     return taint_get_unlocked(px + py * static_cast<int>(patches_x()), clear);
 }
+
 int Terrain::next_taint(int start) {
     std::unique_lock lock(mutex_);
     auto logical = patches_x() * patches_y();
@@ -910,10 +947,11 @@ int Terrain::next_taint(int start) {
             return static_cast<int>(bit);
     return -1;
 }
+
 Terrain Terrain::clone() const {
     Terrain copy(width_, height_);
     std::shared_lock lock(mutex_);
     copy.heights_ = heights_;
     return copy;
 }
-}
+} // namespace opensim::scene

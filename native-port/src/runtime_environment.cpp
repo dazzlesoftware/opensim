@@ -16,32 +16,33 @@
 #elif defined(__APPLE__)
 #include <crt_externs.h>
 #else
-extern char** environ;
+extern char **environ;
 #endif
 namespace opensim::framework {
 RuntimeEnvironmentText runtime_environment_empty_text() {
     return runtime_empty_text();
 }
+
 RuntimeEnvironmentError::RuntimeEnvironmentError(std::string t, std::int32_t h, std::u16string m,
                                                  std::optional<std::u16string> p)
-    : runtime_error(utf8(m)), source_type(std::move(t)), hresult(h), message(std::move(m)),
-      parameter(std::move(p)) {
-}
+    : runtime_error(utf8(m)), source_type(std::move(t)), hresult(h), message(std::move(m)), parameter(std::move(p)) {}
+
 namespace {
 using Text = RuntimeEnvironmentText;
+
 Text text(std::u16string value) {
-    return value.empty() ? runtime_environment_empty_text()
-                         : std::make_shared<const std::u16string>(std::move(value));
+    return value.empty() ? runtime_environment_empty_text() : std::make_shared<const std::u16string>(std::move(value));
 }
+
 [[noreturn]] void env_error(std::string type, std::uint32_t h, std::u16string message,
                             std::optional<std::u16string> p = {}) {
-    throw RuntimeEnvironmentError(std::move(type), std::bit_cast<std::int32_t>(h), std::move(message),
-                                  std::move(p));
+    throw RuntimeEnvironmentError(std::move(type), std::bit_cast<std::int32_t>(h), std::move(message), std::move(p));
 }
-void validate_variable(const Text& name) {
+
+void validate_variable(const Text &name) {
     if (!name)
-        env_error("System.ArgumentNullException", 0x80004003u,
-                  u"Value cannot be null. (Parameter 'variable')", u"variable");
+        env_error("System.ArgumentNullException", 0x80004003u, u"Value cannot be null. (Parameter 'variable')",
+                  u"variable");
     if (name->empty())
         env_error("System.ArgumentException", 0x80070057u,
                   u"The value cannot be an empty string. (Parameter 'variable')", u"variable");
@@ -50,8 +51,7 @@ void validate_variable(const Text& name) {
                   u"The first char in the string is the null character. (Parameter 'variable')", u"variable");
     if (name->find(u'=') != name->npos)
         env_error("System.ArgumentException", 0x80070057u,
-                  u"Environment variable name cannot contain equal character. (Parameter 'variable')",
-                  u"variable");
+                  u"Environment variable name cannot contain equal character. (Parameter 'variable')", u"variable");
 }
 #ifndef _WIN32
 // CoreCLR uses the PAL Windows-compatible environment layer on Unix, not
@@ -61,6 +61,7 @@ void validate_variable(const Text& name) {
 struct UnixEnvironment {
     std::mutex mutex;
     std::vector<std::string> entries;
+
     UnixEnvironment() {
 #ifdef __APPLE__
         auto source = *_NSGetEnviron();
@@ -72,10 +73,13 @@ struct UnixEnvironment {
                 entries.emplace_back(*p);
     }
 };
+
 UnixEnvironment unix_environment_state;
-UnixEnvironment& unix_environment() {
+
+UnixEnvironment &unix_environment() {
     return unix_environment_state;
 }
+
 // minipal/utf8.c consumes the offending second continuation byte before
 // rejecting an overlong or surrogate prefix, unlike System.Text.UTF8Encoding.
 std::u16string pal_utf16(std::string_view bytes) {
@@ -123,6 +127,7 @@ std::u16string pal_utf16(std::string_view bytes) {
     }
     return result;
 }
+
 std::string environment_bytes(Text value) {
     auto result = utf8(*value);
     result.resize(result.find('\0') == result.npos ? result.size() : result.find('\0'));
@@ -130,62 +135,59 @@ std::string environment_bytes(Text value) {
 }
 
 #endif
-}
+} // namespace
+
 RuntimeEnvironmentText runtime_environment_get(Text variable) {
     if (!variable)
-        env_error("System.ArgumentNullException", 0x80004003u,
-                  u"Value cannot be null. (Parameter 'variable')", u"variable");
+        env_error("System.ArgumentNullException", 0x80004003u, u"Value cannot be null. (Parameter 'variable')",
+                  u"variable");
 #ifdef _WIN32
     std::vector<wchar_t> buffer(128);
     DWORD length;
     while ((SetLastError(ERROR_SUCCESS),
-            length = GetEnvironmentVariableW(reinterpret_cast<const wchar_t*>(variable->c_str()),
-                                             buffer.data(), static_cast<DWORD>(buffer.size()))) >
-           buffer.size())
+            length = GetEnvironmentVariableW(reinterpret_cast<const wchar_t *>(variable->c_str()), buffer.data(),
+                                             static_cast<DWORD>(buffer.size()))) > buffer.size())
         buffer.resize(std::max<std::size_t>(length, buffer.size() * 2));
     if (length == 0 && GetLastError() == ERROR_ENVVAR_NOT_FOUND)
         return {};
-    return text(std::u16string(reinterpret_cast<const char16_t*>(buffer.data()), length));
+    return text(std::u16string(reinterpret_cast<const char16_t *>(buffer.data()), length));
 #else
     auto name = environment_bytes(variable);
     if (name.empty() || name.find('=') != name.npos)
         return {};
-    auto& state = unix_environment();
+    auto &state = unix_environment();
     std::lock_guard guard(state.mutex);
-    for (auto& entry : state.entries)
-        if (entry.compare(0, name.size(), name) == 0 &&
-            (entry.size() == name.size() || entry[name.size()] == '='))
-            return text(pal_utf16(entry.size() == name.size()
-                                      ? std::string_view{}
-                                      : std::string_view(entry).substr(name.size() + 1)));
+    for (auto &entry : state.entries)
+        if (entry.compare(0, name.size(), name) == 0 && (entry.size() == name.size() || entry[name.size()] == '='))
+            return text(pal_utf16(entry.size() == name.size() ? std::string_view{}
+                                                              : std::string_view(entry).substr(name.size() + 1)));
     return {};
 
 #endif
 }
+
 void runtime_environment_set(Text variable, Text value) {
     validate_variable(variable);
     if (!value || value->empty() || (*value)[0] == u'\0')
         value = {};
 #ifdef _WIN32
     SetLastError(ERROR_SUCCESS);
-    if (!SetEnvironmentVariableW(reinterpret_cast<const wchar_t*>(variable->c_str()),
-                                 value ? reinterpret_cast<const wchar_t*>(value->c_str()) : nullptr)) {
+    if (!SetEnvironmentVariableW(reinterpret_cast<const wchar_t *>(variable->c_str()),
+                                 value ? reinterpret_cast<const wchar_t *>(value->c_str()) : nullptr)) {
         auto code = GetLastError();
         if (code == ERROR_ENVVAR_NOT_FOUND)
             return;
         if (code == ERROR_FILENAME_EXCED_RANGE)
-            env_error("System.ArgumentException", 0x80070057u,
-                      u"Environment variable name or value is too long.");
-        wchar_t* buffer = nullptr;
-        auto n = FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
-                                    FORMAT_MESSAGE_IGNORE_INSERTS,
-                                nullptr, code, 0, reinterpret_cast<wchar_t*>(&buffer), 0, nullptr);
+            env_error("System.ArgumentException", 0x80070057u, u"Environment variable name or value is too long.");
+        wchar_t *buffer = nullptr;
+        auto n =
+            FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                           nullptr, code, 0, reinterpret_cast<wchar_t *>(&buffer), 0, nullptr);
         std::u16string message;
         if (n) {
-            message.assign(reinterpret_cast<char16_t*>(buffer), n);
+            message.assign(reinterpret_cast<char16_t *>(buffer), n);
             LocalFree(buffer);
-            while (!message.empty() &&
-                   (message.back() == u'\r' || message.back() == u'\n' || message.back() == u' '))
+            while (!message.empty() && (message.back() == u'\r' || message.back() == u'\n' || message.back() == u' '))
                 message.pop_back();
         }
         if (code == ERROR_NOT_ENOUGH_MEMORY || code == ERROR_NO_SYSTEM_RESOURCES)
@@ -194,7 +196,7 @@ void runtime_environment_set(Text variable, Text value) {
     }
 #else
     auto name = environment_bytes(variable);
-    auto& state = unix_environment();
+    auto &state = unix_environment();
     std::lock_guard guard(state.mutex);
     if (!value) {
         for (std::size_t i = 0; i < state.entries.size(); ++i) {
@@ -208,7 +210,7 @@ void runtime_environment_set(Text variable, Text value) {
         }
     } else {
         auto entry = name + "=" + environment_bytes(value);
-        for (auto& old : state.entries) {
+        for (auto &old : state.entries) {
             auto split = old.find('=');
             if (split == old.npos)
                 split = old.size();
@@ -222,4 +224,4 @@ void runtime_environment_set(Text variable, Text value) {
 
 #endif
 }
-}
+} // namespace opensim::framework

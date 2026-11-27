@@ -4,6 +4,7 @@
 #include <iostream>
 using namespace opensim;
 using namespace scene;
+
 namespace {
 framework::Uuid id(int n) {
     if (!n)
@@ -11,6 +12,7 @@ framework::Uuid id(int n) {
     auto s = std::to_string(n);
     return framework::Uuid("11223344-5566-7788-99aa-" + std::string(12 - s.size(), '0') + s);
 }
+
 std::string hex(std::span<const std::uint8_t> bytes) {
     std::string out;
     constexpr char d[] = "0123456789abcdef";
@@ -20,10 +22,11 @@ std::string hex(std::span<const std::uint8_t> bytes) {
     }
     return out;
 }
+
 std::string probe(int mode, int object, int item, int agent) {
     std::vector<std::string> trace;
     bool stored = true;
-    auto add = [&](const std::string& s) { trace.push_back(s); };
+    auto add = [&](const std::string &s) { trace.push_back(s); };
     ScriptRunningBackend backend;
     backend.find_instance = [&](auto key) -> std::optional<ScriptRunningInstance> {
         add("F:" + key.str());
@@ -63,34 +66,37 @@ std::string probe(int mode, int object, int item, int agent) {
     std::string status = "OK";
     try {
         controller.request(id(agent), id(object), id(item));
-    } catch (const std::exception&) {
+    } catch (const std::exception &) {
         status = "ERROR";
     }
     status += stored ? ":1" : ":0";
-    for (const auto& event : trace) {
+    for (const auto &event : trace) {
         status += '|';
         status += event;
     }
     return status;
 }
+
 int checks = 0;
-void check(bool value, const char* text) {
+
+void check(bool value, const char *text) {
     ++checks;
     if (!value)
         throw std::runtime_error(text);
 }
+
 void run() {
     check(probe(0, 20, 99, 42) == "OK:1|F:" + id(99).str(), "missing instance sends no response");
-    check(probe(0, 20, 10, 42).find("|G|S0|UDP:") != std::string::npos,
-          "false running updates metadata and replies");
+    check(probe(0, 20, 10, 42).find("|G|S0|UDP:") != std::string::npos, "false running updates metadata and replies");
     check(probe(1 | 64, 77, 10, 42).find("EQ:" + id(77).str()) != std::string::npos,
           "source echoes mismatching request object");
     check(probe(8, 20, 10, 42).find("|S") == std::string::npos, "getter failure prevents metadata/reply");
     check(probe(16, 20, 10, 42).find("UDP:") == std::string::npos, "metadata failure prevents response");
     check(probe(32, 20, 10, 42).starts_with("ERROR:0"), "metadata update precedes reply failure");
 }
-}
-int main(int argc, char** argv) {
+} // namespace
+
+int main(int argc, char **argv) {
     try {
         if (argc == 2 && std::string_view(argv[1]) == "--probe") {
             int mode, obj, item, agent;
@@ -101,7 +107,7 @@ int main(int argc, char** argv) {
         run();
         std::cout << "PASS: " << checks << " script running checks\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

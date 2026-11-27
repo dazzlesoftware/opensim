@@ -6,7 +6,8 @@
 #include <iostream>
 #include <sstream>
 using namespace opensim::framework;
-std::string hex(const NiniWriterText& s) {
+
+std::string hex(const NiniWriterText &s) {
     if (!s)
         return "~";
     if (s->empty())
@@ -17,7 +18,8 @@ std::string hex(const NiniWriterText& s) {
             out += "0123456789abcdef"[(c >> shift) & 15];
     return out;
 }
-NiniWriterText decode(const std::string& s) {
+
+NiniWriterText decode(const std::string &s) {
     if (s == "~")
         return {};
     std::u16string out;
@@ -26,41 +28,42 @@ NiniWriterText decode(const std::string& s) {
             out += static_cast<char16_t>(std::stoul(s.substr(i, 4), nullptr, 16));
     return nini_writer_text(out);
 }
-std::string error(const std::string& type, unsigned code, const std::u16string& message,
-                  const std::optional<std::u16string>& parameter = {}) {
+
+std::string error(const std::string &type, unsigned code, const std::u16string &message,
+                  const std::optional<std::u16string> &parameter = {}) {
     std::ostringstream h;
     h << std::hex << code;
-    return type + ":" + h.str() + ":" + hex(nini_writer_text(message)) + ":" +
-           hex(nini_writer_text(parameter));
+    return type + ":" + h.str() + ":" + hex(nini_writer_text(message)) + ":" + hex(nini_writer_text(parameter));
 }
+
 std::string current_error() {
     try {
         throw;
-    } catch (const NiniXmlProviderError& e) {
+    } catch (const NiniXmlProviderError &e) {
         return error(e.source_type, e.hresult, e.message, e.parameter);
-    } catch (const NiniConfigError& e) {
+    } catch (const NiniConfigError &e) {
         return error(e.source_type(), e.hresult(), e.message, e.parameter);
-    } catch (const XmlTextWriterError& e) {
+    } catch (const XmlTextWriterError &e) {
         return error(e.source_type, e.hresult, e.message, e.parameter);
-    } catch (const XmlEncoderError& e) {
+    } catch (const XmlEncoderError &e) {
         return error(e.source_type, e.hresult, e.message);
-    } catch (const XmlEncoderArrayError& e) {
+    } catch (const XmlEncoderArrayError &e) {
         return error(e.source_type, e.hresult, e.message, e.parameter);
-    } catch (const NiniStreamError& e) {
+    } catch (const NiniStreamError &e) {
         return error(e.source_type, static_cast<unsigned>(e.hresult), e.message, e.parameter);
-    } catch (const NiniWriterError& e) {
+    } catch (const NiniWriterError &e) {
         return error(e.source_type(), static_cast<unsigned>(e.hresult()), e.message, e.parameter);
     }
 }
-int main(int argc, char**) {
+
+int main(int argc, char **) {
     if (argc == 1) {
         auto uri = std::make_shared<NiniXmlUriReaderBackend>();
         uri->get_temp_resolver = []() -> std::shared_ptr<NiniXmlUriReaderResolver> {
             throw std::logic_error("No URI read in this string Save unit");
         };
         auto arena = std::make_shared<NiniConfigArena>(native_nini_invariant_config_backend());
-        auto source =
-            NiniXmlConfigSource::create(arena, native_nini_xml_config_backend(native_xml_document_io(uri)));
+        auto source = NiniXmlConfigSource::create(arena, native_nini_xml_config_backend(native_xml_document_io(uri)));
         source->add_config(nini_writer_text(u"s"))->set_text(nini_writer_text(u"k"), nini_writer_text(u"<&"));
         auto text = source->to_string();
         if (!text || text->find(u"Value=\"&lt;&amp;\"") == text->npos)
@@ -70,7 +73,7 @@ int main(int argc, char**) {
             native_xml_document_save_to_path(empty, {}, false, native_nini_file_stream_provider(),
                                              native_xml_intrinsic_encoding);
             throw std::runtime_error("Missing root check before path validation");
-        } catch (const NiniXmlProviderError& e) {
+        } catch (const NiniXmlProviderError &e) {
             if (e.source_type != "System.Xml.XmlException" || e.line_number != 0 || e.line_position != 0)
                 throw;
         }
@@ -125,8 +128,7 @@ int main(int argc, char**) {
         try {
             if (xml == "decl1" || xml == "declbad") {
                 document.document_node()->append_child(document.create_declaration(
-                    nini_writer_text(u"1.1"),
-                    nini_writer_text(xml == "decl1" ? u"utf-8" : u"not-an-encoding"),
+                    nini_writer_text(u"1.1"), nini_writer_text(xml == "decl1" ? u"utf-8" : u"not-an-encoding"),
                     nini_writer_text(u"yes")));
             } else if (xml != "empty") {
                 auto settings = NiniXmlReaderSettings::legacy_document();

@@ -31,8 +31,10 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sstream>
 using namespace opensim;
 using namespace network::lludp;
+
 namespace {
 const framework::Uuid FixtureId("12345678-1234-5678-90ab-123456789abc");
+
 std::string hex(std::span<const std::uint8_t> bytes) {
     std::ostringstream out;
     out << std::hex << std::setfill('0');
@@ -40,7 +42,8 @@ std::string hex(std::span<const std::uint8_t> bytes) {
         out << std::setw(2) << static_cast<unsigned>(byte);
     return out.str();
 }
-FieldValue fixture(const FieldSpec& field, std::uint32_t index, int seed) {
+
+FieldValue fixture(const FieldSpec &field, std::uint32_t index, int seed) {
     const bool zero = seed == 0;
     switch (field.type) {
     case FieldType::U8:
@@ -93,7 +96,8 @@ FieldValue fixture(const FieldSpec& field, std::uint32_t index, int seed) {
     }
     throw std::invalid_argument("Unhandled fixture type");
 }
-}
+} // namespace
+
 int main() {
     std::string name;
     int seed;
@@ -105,8 +109,8 @@ int main() {
             packet.appended_acks = seed % 4 != 0;
             for (int i = 0; i < seed % 4; ++i)
                 packet.acknowledgements.push_back(i == 0 ? 0 : 0xabcdef00u + i);
-            for (const auto& block : packet.spec->blocks) {
-                auto& rows = packet.blocks.at(block.name);
+            for (const auto &block : packet.spec->blocks) {
+                auto &rows = packet.blocks.at(block.name);
                 const auto count = block.variable ? static_cast<std::size_t>(seed < 4    ? seed % 4
                                                                              : seed == 4 ? 0
                                                                              : seed == 5 ? 17
@@ -138,13 +142,12 @@ int main() {
             std::string decoded;
             try {
                 decoded = hex(encode_packet(decode_datagram(wire)));
-            } catch (const BaselineDecodeError&) {
+            } catch (const BaselineDecodeError &) {
                 decoded = "BASELINE_FIXED_BLOCK_ERROR";
             }
-            std::cout << hex(raw) << '|' << hex(wire) << '|' << decoded << '|'
-                      << packet.valid_ids(FixtureId, FixtureId) << '|'
-                      << packet.valid_ids(framework::Uuid{}, FixtureId) << '\n';
-        } catch (const std::exception& error) {
+            std::cout << hex(raw) << '|' << hex(wire) << '|' << decoded << '|' << packet.valid_ids(FixtureId, FixtureId)
+                      << '|' << packet.valid_ids(framework::Uuid{}, FixtureId) << '\n';
+        } catch (const std::exception &error) {
             std::cout << "ERROR:" << error.what() << '\n';
         }
     }

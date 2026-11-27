@@ -6,10 +6,12 @@
 #include <stdexcept>
 using namespace opensim;
 using network::Value;
-void check(bool passed, const char* message) {
+
+void check(bool passed, const char *message) {
     if (!passed)
         throw std::runtime_error(message);
 }
+
 int main() {
     try {
         services::LoginResponse response({}, [] { return 1700000000.; });
@@ -40,22 +42,20 @@ int main() {
               "all prior UI entries share the source dictionary");
         auto target = std::make_shared<Value>(std::int32_t{7});
         auto alias = Value::alias(target);
-        check(network::osd_integer(alias) == 7 && network::osd_boolean(alias),
-              "scalar conversion resolves references");
+        check(network::osd_integer(alias) == 7 && network::osd_boolean(alias), "scalar conversion resolves references");
         auto cycle = std::make_shared<Value>();
         cycle->reference = cycle;
         bool threw = false;
         try {
             cycle->set("key", "value");
-        } catch (const std::invalid_argument&) {
+        } catch (const std::invalid_argument &) {
             threw = true;
         }
         cycle->reference.reset();
         check(threw, "reference cycles have a bounded failure");
         // Connect the constructor to actual SQLite models, the agent factory and the bundled library.
         services::AccountStore accounts(":memory:", ":memory:", true);
-        const auto principal =
-            accounts.create_user("Constructor", "Resident", "secret", framework::ZeroUuid, 0);
+        const auto principal = accounts.create_user("Constructor", "Resident", "secret", framework::ZeroUuid, 0);
         auto account = *accounts.find_by_id(std::string(framework::ZeroUuid), principal);
         const framework::Uuid owner(principal);
         services::InventoryFolderStore store(":memory:", true);
@@ -87,8 +87,8 @@ int main() {
         users.set_home(principal, region.id, {128, 128, 30}, {0, 1, 0});
         auto info = users.info(principal);
         services::LoginAgentFactory factory(
-            services::LoginAgentFactory::Config{}, std::nullopt,
-            [&](auto& a) { return accounts.store_account(a); }, [] { return "seed"; });
+            services::LoginAgentFactory::Config{}, std::nullopt, [&](auto &a) { return accounts.store_account(a); },
+            [] { return "seed"; });
         services::LoginAgentDetails details;
         details.session = framework::Uuid::random();
         details.secure_session = framework::Uuid::random();
@@ -99,18 +99,19 @@ int main() {
             services::LibraryService(std::string(OPENSIM_REPOSITORY_ROOT) + "/bin/inventory/Libraries.xml"));
         check(retained_library->root() && retained_library->folders()->size() == 19,
               "library binding owns the shared service state");
-        services::LibraryService library(std::string(OPENSIM_REPOSITORY_ROOT) +
-                                         "/bin/inventory/Libraries.xml");
+        services::LibraryService library(std::string(OPENSIM_REPOSITORY_ROOT) + "/bin/inventory/Libraries.xml");
         services::LoginResponseInput input;
         input.account = &account;
         input.circuit = circuit.get();
         input.grid_user = &*info;
         input.destination = input.home = &region;
         input.skeleton = services::LoginResponseLibrary::Folders{};
-        for (const auto& f : *skeleton)
+        for (const auto &f : *skeleton)
             input.skeleton->push_back(std::make_shared<services::LoginInventoryFolder>(f));
         input.gestures = std::vector<std::shared_ptr<services::InventoryItem>>{};
-        for (const auto& i : inventory.active_gestures(owner))
+        const auto gestures = inventory.active_gestures(owner);
+        check(gestures.has_value(), "Local active gestures returned null");
+        for (const auto &i : *gestures)
             input.gestures->push_back(std::make_shared<services::InventoryItem>(i));
         input.friends = std::vector<std::shared_ptr<services::LoginFriendInfo>>{};
         input.library = services::LoginResponseLibrary::bind(library);
@@ -124,15 +125,13 @@ int main() {
         services::LoginResponseEnvironment environment;
         services::bind_login_response_network(environment);
         services::LoginResponse assembled(input, environment, {}, [] { return 1700000000.; });
-        auto assembled_rpc =
-            network::parse_xml_rpc_response(network::xml_rpc_response(assembled.to_xml_rpc()));
+        auto assembled_rpc = network::parse_xml_rpc_response(network::xml_rpc_response(assembled.to_xml_rpc()));
         auto assembled_llsd = network::parse_llsd_xml(network::llsd_xml(assembled.to_llsd()));
         check(assembled_rpc.get("agent_id").as_string() == principal &&
                   assembled_rpc.get("session_id").as_string() == details.session.str() &&
                   assembled_rpc.get("circuit_code").integer == 65537,
               "account and factory circuit feed response identity");
-        check(assembled_rpc.get("inventory-root").array.at(0).get("folder_id").as_string() ==
-                      root->id.str() &&
+        check(assembled_rpc.get("inventory-root").array.at(0).get("folder_id").as_string() == root->id.str() &&
                   assembled_llsd.get("inventory-skeleton").array.size() == skeleton->size(),
               "real SQLite inventory root and skeleton survive response serialization");
         check(assembled_llsd.get("gestures").array.size() == 1 &&
@@ -142,14 +141,13 @@ int main() {
                   assembled_llsd.get("inventory-skel-lib").array.size() == 19,
               "bound bundled library populates LLSD response");
         check(assembled_rpc.get("seed_capability").as_string() == "http://destination:9001/CAPS/seed0000/" &&
-                  assembled_rpc.get("sim_port").integer == 9000 &&
-                  assembled_rpc.get("http_port").integer == 0,
+                  assembled_rpc.get("sim_port").integer == 9000 && assembled_rpc.get("http_port").integer == 0,
               "constructor preserves source seed, simulator endpoint and untouched HTTP-port behavior");
         check(!users.info(principal)->online,
               "response construction alone does not mark a user online or admit an agent");
         std::cout << "PASS: login response wire serialization and shared state\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what();
         return 1;
     }

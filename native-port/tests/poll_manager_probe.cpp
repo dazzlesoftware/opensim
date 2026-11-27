@@ -4,6 +4,7 @@
 #include <sstream>
 using namespace opensim;
 using namespace server;
+
 namespace {
 struct State {
     std::string trace, fail;
@@ -11,135 +12,163 @@ struct State {
     int watch_sleeps = 0;
     int32_t now = 0, started = 0;
     std::size_t pending = 0;
-    PollServiceRequestManager* manager = nullptr;
-    void event(const std::string& s) {
+    PollServiceRequestManager *manager = nullptr;
+
+    void event(const std::string &s) {
         trace += s + ";";
         if (s == fail)
             throw std::runtime_error("injected");
     }
 };
+
 struct Body : PollBody {
-    State& s;
-    explicit Body(State& x) : s(x) {
-    }
+    State &s;
+
+    explicit Body(State &x) : s(x) {}
+
     bool can_read() const override {
         s.event("read");
         return true;
     }
+
     void dispose() override {
         s.event("dispose");
     }
 };
+
 struct Context : PollContext {
-    State& s;
-    explicit Context(State& x) : s(x) {
-    }
+    State &s;
+
+    explicit Context(State &x) : s(x) {}
+
     bool can_send() const override {
         s.event("can");
         return s.can;
     }
+
     bool is_sending() const override {
         s.event("sending");
         return s.sending;
     }
 };
+
 struct Incoming : PollIncomingRequest {
-    State& s;
+    State &s;
     std::shared_ptr<Body> b;
     std::shared_ptr<Context> c;
-    explicit Incoming(State& x) : s(x), b(std::make_shared<Body>(x)), c(std::make_shared<Context>(x)) {
-    }
+
+    explicit Incoming(State &x) : s(x), b(std::make_shared<Body>(x)), c(std::make_shared<Context>(x)) {}
+
     std::shared_ptr<PollBody> body() const override {
         s.event("body");
         return b;
     }
+
     std::shared_ptr<PollContext> context() const override {
         s.event("context");
         return c;
     }
 };
+
 struct Response : PollResponse {
-    State& s;
-    explicit Response(State& x) : s(x) {
-    }
+    State &s;
+
+    explicit Response(State &x) : s(x) {}
+
     void status_code(int32_t x) override {
         s.event("status:" + std::to_string(x));
     }
+
     void content_length(int64_t x) override {
         s.event("length:" + std::to_string(x));
     }
+
     void utf8_encoding() override {
         s.event("utf8");
     }
+
     void keep_alive(bool x) override {
         s.event(x ? "keep:1" : "keep:0");
     }
-    void keep_alive_timeout(int32_t) override {
-    }
-    void protocol_version(PollName) override {
-    }
-    void status_description(PollName) override {
-    }
-    void add_header(const std::string&, PollName) override {
-    }
-    void redirect(PollName, int32_t) override {
-    }
-    void buffer_start(int32_t) override {
-    }
-    void buffer_length(int32_t) override {
-    }
-    void buffer(PollBytes) override {
-    }
+
+    void keep_alive_timeout(int32_t) override {}
+
+    void protocol_version(PollName) override {}
+
+    void status_description(PollName) override {}
+
+    void add_header(const std::string &, PollName) override {}
+
+    void redirect(PollName, int32_t) override {}
+
+    void buffer_start(int32_t) override {}
+
+    void buffer_length(int32_t) override {}
+
+    void buffer(PollBytes) override {}
+
     void send() override {
         s.event("send");
     }
 };
+
 struct RequestBackend : PollRequestBackend {
-    State& s;
-    explicit RequestBackend(State& x) : s(x) {
-    }
+    State &s;
+
+    explicit RequestBackend(State &x) : s(x) {}
+
     int32_t tick_count() const override {
         return s.started;
     }
+
     framework::Uuid random_id() const override {
         return {};
     }
-    PollResponsePtr make_response(const std::shared_ptr<PollIncomingRequest>&) override {
+
+    PollResponsePtr make_response(const std::shared_ptr<PollIncomingRequest> &) override {
         s.event("factory");
         return std::make_shared<Response>(s);
     }
-    void warn(const std::string&, const std::exception&) override {
+
+    void warn(const std::string &, const std::exception &) override {
         s.event("warn");
     }
 };
+
 struct Pool : PollJobEngine {
-    State& s;
-    explicit Pool(State& x) : s(x) {
-    }
+    State &s;
+
+    explicit Pool(State &x) : s(x) {}
+
     void enqueue(PollRequestPtr) override {
         s.event("enqueue");
     }
+
     std::size_t count() const override {
         s.event("count");
         return s.pending;
     }
+
     void dispose() override {
         s.event("pool_dispose");
     }
 };
+
 struct Watcher : PollWatcher {
-    void join() override {
-    }
+    void join() override {}
 };
+
 struct Backend : PollManagerBackend {
-    State& s;
+    State &s;
     std::function<void()> watch;
-    explicit Backend(State& x) : s(x) {
-    }
+
+    explicit Backend(State &x) : s(x) {}
+
     int32_t tick_count() const override {
         s.event("tick");
         return s.now;
     }
+
     void sleep(int32_t n) override {
         s.event("sleep:" + std::to_string(n));
         if (s.watching && ++s.watch_sleeps == 2) {
@@ -147,24 +176,28 @@ struct Backend : PollManagerBackend {
             s.manager->stop();
         }
     }
+
     void watchdog_update() override {
         s.event("watchdog");
     }
-    void error(const std::exception&) override {
+
+    void error(const std::exception &) override {
         s.event("error");
     }
-    std::shared_ptr<PollJobEngine> make_pool(Worker, const std::string& name, int32_t hold,
-                                             int32_t count) override {
+
+    std::shared_ptr<PollJobEngine> make_pool(Worker, const std::string &name, int32_t hold, int32_t count) override {
         s.event("pool:" + name + ":" + std::to_string(hold) + ":" + std::to_string(count));
         return std::make_shared<Pool>(s);
     }
+
     std::shared_ptr<PollWatcher> start_watcher(std::function<void()> w) override {
         s.event("watcher");
         watch = std::move(w);
         return std::make_shared<Watcher>();
     }
 };
-}
+} // namespace
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -235,8 +268,8 @@ int main() {
                 s.event("caught");
             }
         }
-        std::cout << s.trace << "handled:" << int32_t(args->requests_handled)
-                  << ";running:" << manager.running() << ";exception:" << error << '\n';
+        std::cout << s.trace << "handled:" << int32_t(args->requests_handled) << ";running:" << manager.running()
+                  << ";exception:" << error << '\n';
         s.fail.clear();
     }
 }

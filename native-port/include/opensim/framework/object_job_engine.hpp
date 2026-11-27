@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include <exception>
+
 namespace opensim::framework {
 class ObjectJobQueue {
   public:
@@ -16,12 +17,12 @@ class ObjectJobQueue {
     virtual void cancel() = 0;
     virtual void dispose() = 0;
 };
+
 class ObjectJobEngine : public ObjectJobQueue {
   public:
     using Callback = std::function<void(std::any)>;
-    using Error = std::function<void(const std::string&, const std::exception&)>;
-    ObjectJobEngine(Callback callback, std::string name, int hold_ms = 1000, int concurrency = 1,
-                    Error error = {});
+    using Error = std::function<void(const std::string &, const std::exception &)>;
+    ObjectJobEngine(Callback callback, std::string name, int hold_ms = 1000, int concurrency = 1, Error error = {});
     ~ObjectJobEngine() override;
     bool enqueue(std::any job) override;
     std::size_t count() const override;
@@ -36,4 +37,4 @@ class ObjectJobEngine : public ObjectJobQueue {
     std::shared_ptr<State> state_;
     std::vector<std::unique_ptr<Thread>> threads_;
 };
-}
+} // namespace opensim::framework

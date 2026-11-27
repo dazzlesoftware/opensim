@@ -1,0 +1,1 @@
+string left="a";string right="a";list result;default{state_entry(){result=[left<=right];}}

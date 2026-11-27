@@ -1,0 +1,21 @@
+{
+  "accepted": false,
+  "executed": false,
+  "globals": {},
+  "errors": [
+    "must be compile-time char or integer constant"
+  ],
+  "exception": null,
+  "exceptionType": null,
+  "stackSize": 1000000,
+  "stackLimit": 1024,
+  "finalStackLeft": null,
+  "stackSamples": [],
+  "name": "case_function",
+  "source": "YOption advflowctl;YOption chars;integer result;integer calls;integer get(){calls++;return 2;}default{state_entry(){switch(2){case get():result=7;break;}}}",
+  "sha256": {
+    "source.lsl": "35f5b8de7b6fba6b71388d3d69bfe3b158ee617950730f6194e0b326793f0a54",
+    "source_hash.txt": "1810459fca8e84dc7d17cc345c67a8c2a6cc26eb9cbee939d9395e84cd0ab2d2",
+    "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+  }
+}

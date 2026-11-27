@@ -1,0 +1,1 @@
+integer count;integer after;default{state_entry(){while(FALSE){}xmrEventCallHandler([21,7]);after=1;}touch_start(integer n){count+=n;while(count<8){count++;}count+=100;}touch_end(integer n){}}

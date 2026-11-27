@@ -62,7 +62,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
     def handle_one_request(self):
         try:
             super().handle_one_request()
-        except (ConnectionResetError, BrokenPipeError):
+        except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError):
             self.close_connection = True
 
     def do_GET(self):

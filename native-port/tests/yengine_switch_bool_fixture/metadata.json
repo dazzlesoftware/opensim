@@ -1,0 +1,119 @@
+[
+  {
+    "accepted": true,
+    "executed": true,
+    "globals": {
+      "result": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 7
+      },
+      "value": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 1
+      }
+    },
+    "errors": [],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": 1000000,
+    "stackSamples": [],
+    "name": "constant_selector",
+    "source": "YOption advflowctl;integer value=1;integer result;default{state_entry(){switch(1<2){case 1:result=7;break;default:result=9;}}}",
+    "sha256": {
+      "original.il.txt": "d586fe9f5e127037bf2a00a2b85be629302b6ce02001c17938f0d362aae59869",
+      "original.yobj": "5e9dce7858d49143b4a00ec5e9b6b619cf1cf405e22d0f9086e633b65d718d88",
+      "source.lsl": "648b501b65d92de68e1b0f70214774ec1a05f4a515b4d3f32ab12992c50ef339",
+      "source_hash.txt": "fd6459de5c3113f401d0648fe2d1e5c4697228eb6067ca5b73be528eedfcba00",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  },
+  {
+    "accepted": true,
+    "executed": true,
+    "globals": {
+      "result": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 7
+      },
+      "value": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 1
+      }
+    },
+    "errors": [],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": 1000000,
+    "stackSamples": [],
+    "name": "runtime_selector",
+    "source": "YOption advflowctl;integer value=1;integer result;default{state_entry(){switch(value<2){case 1:result=7;break;default:result=9;}}}",
+    "sha256": {
+      "original.il.txt": "0394f934f77f28ec6346baf56bdd307a07d1dcd282e0e303f840d254c7702148",
+      "original.yobj": "35ca47f0f69c3898c0a0372f7eb983115d8e356c46de0f150be04f2878217a6d",
+      "source.lsl": "47230df3b2e7d8ed1ab481dd7a8b56e53dd5300bb0827a8b8c5dff8e8ffe2d99",
+      "source_hash.txt": "58c1fa3dfbad08598878ba9f9f165e092ea60a825147cd68e0f9dfe0cd23c646",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  },
+  {
+    "accepted": true,
+    "executed": true,
+    "globals": {
+      "result": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 7
+      },
+      "value": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 1
+      }
+    },
+    "errors": [],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": 1000000,
+    "stackSamples": [],
+    "name": "constant_case",
+    "source": "YOption advflowctl;integer value=1;integer result;default{state_entry(){switch(1){case (1<2):result=7;break;default:result=9;}}}",
+    "sha256": {
+      "original.il.txt": "aff75bb1f8cc1407f80fdaaaea44d4c5ef3c30a8f01cda620224fcce83f4a903",
+      "original.yobj": "8a35be2f5353481a6c61d342acc664f22fe96d55dfecd8e555c9f4f2a6696dbc",
+      "source.lsl": "3892b3288d4e7928b14bf8fd9d027ed1378cd226ef3ff77743de4637747dc261",
+      "source_hash.txt": "c7af5b5d572820aa49fedbdd25d6bceb2552769f78bdb13a7b45beb19efeeaca",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  },
+  {
+    "accepted": false,
+    "executed": false,
+    "globals": {},
+    "errors": [
+      "must be compile-time char or integer constant"
+    ],
+    "exception": null,
+    "exceptionType": null,
+    "stackSize": 1000000,
+    "stackLimit": 1024,
+    "finalStackLeft": null,
+    "stackSamples": [],
+    "name": "runtime_case",
+    "source": "YOption advflowctl;integer value=1;integer result;default{state_entry(){switch(1){case (value<2):result=7;break;default:result=9;}}}",
+    "sha256": {
+      "source.lsl": "06282ecfa25ff999ee51dfd2de4ed9e8e0de3ad260e4f2378fe22f6c2c74ea64",
+      "source_hash.txt": "4aa8785e21c4f7dab20f5f9d24aefdd6da584bd961cc3f560dde766cdf2e9b08",
+      "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+    }
+  }
+]

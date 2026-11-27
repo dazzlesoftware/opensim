@@ -1,0 +1,224 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "fullParityVerified": false,
+  "nativeParityVerified": false,
+  "scope": "Original MigrateIn event-argument class first-definition heap phase, backend-injected Object[] arguments",
+  "generatorSha256": "a606d27e86566bdeaa3b829e87bb3631b9c33af0ddaf35c23c4586f0bcd5ed84",
+  "generatorAssemblySha256": "7f6336a1d3d9eb0c1bad00527cb066c051de2ca30fa60dfe3a35d0aaef2e549e",
+  "decoderSha256": "69c6106ae854fa58b10cc102425731bfff753e24aa69abce93ac868155f4ec2d",
+  "platforms": {
+    "windows": {
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "processId": 67052,
+      "metadataSha256": "db633aed6da3bf0d931059422930e880db2db7ae63cc75bda0b797e88b7cb01e",
+      "cases": [
+        {
+          "name": "populated_reject16",
+          "sourceSha256": "dbbb9e2f8e4c7f16584c8a883af6f9603acf9725b2d48cf403b2ab5bf5dded3d",
+          "metadataSha256": "44c91338dc4fc752cb9656ae16e3dfb4d825d361ae3b3e8ebc3d183d7ba19f37",
+          "injectionSha256": "768e9c3422a5910f9f3f90f94c6d9b70304443a3c0fe7a4024f70f4b24eb5ef9",
+          "migrationEntrySha256": "6ae3906284ab55a5d822df9cdd92a22067cacf25971630c9de946601ab6a8c0f",
+          "snapshotSha256": "8a1f7ea50ed84e0ea9e110036d42cd398f1a64832583adc39b32142f9dcae0f8",
+          "snapshotBytes": 256,
+          "oldGlobalHeap": 4,
+          "ownHeap": 16,
+          "targetLimit": 16,
+          "externalMigrationAccepted": false,
+          "eventArgumentFirstDefinitionReference": 1,
+          "globalUsesSameReference": true,
+          "fault": {
+            "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+            "message": "(OWNER)oldtotal=4, newtotal=20, limit=16"
+          }
+        },
+        {
+          "name": "populated_pass20",
+          "sourceSha256": "dbbb9e2f8e4c7f16584c8a883af6f9603acf9725b2d48cf403b2ab5bf5dded3d",
+          "metadataSha256": "c3f41e50ceac23b2b725dafa0df57f4022adafd07e49b23ed11a65202beeca2d",
+          "injectionSha256": "e6801c6d7864e0f0786dfad921e69c859b9a019248ab140b386f1ed8866ca33e",
+          "migrationEntrySha256": "85b4ca405e74504090f6d1c4f10c9baa7d7a4113c279c4fad31e8ece287c00a7",
+          "snapshotSha256": "8a1f7ea50ed84e0ea9e110036d42cd398f1a64832583adc39b32142f9dcae0f8",
+          "snapshotBytes": 256,
+          "oldGlobalHeap": 4,
+          "ownHeap": 16,
+          "targetLimit": 20,
+          "externalMigrationAccepted": true,
+          "eventArgumentFirstDefinitionReference": 1,
+          "globalUsesSameReference": true,
+          "fault": null
+        },
+        {
+          "name": "empty_reject4",
+          "sourceSha256": "7cfff9e4a612c547dc85e3bc7be0402905875f2b6cfa042fd0df162602af85fe",
+          "metadataSha256": "3b64b589076294c4116d3151bf580801f2f64e98cdcd9d230b1e0eb379978397",
+          "injectionSha256": "cbef6d38d8696a94de2640636eede6ff21a42a7eaae5ab59bbfe1f808570e019",
+          "migrationEntrySha256": "fd5e97ac6f071deef5692a17d8e40665c2011c1a3616052691b379dfe162024c",
+          "snapshotSha256": "43ad50334cd5d7c8a413cd05a009853ac858aabcbf5030bc86444dd2f13d8714",
+          "snapshotBytes": 241,
+          "oldGlobalHeap": 4,
+          "ownHeap": 4,
+          "targetLimit": 4,
+          "externalMigrationAccepted": false,
+          "eventArgumentFirstDefinitionReference": 1,
+          "globalUsesSameReference": true,
+          "fault": {
+            "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+            "message": "(OWNER)oldtotal=4, newtotal=8, limit=4"
+          }
+        },
+        {
+          "name": "empty_pass8",
+          "sourceSha256": "7cfff9e4a612c547dc85e3bc7be0402905875f2b6cfa042fd0df162602af85fe",
+          "metadataSha256": "72b1258a6510a19dfb2b17552e532c11804f045675ed459c0159e1bb76b01afe",
+          "injectionSha256": "3c5fbf15bb6b99900bb60d3458fd3889a4cda737e49f3dc79b2440e1e1f4d389",
+          "migrationEntrySha256": "164bbd51c80effec458a18c28a01671fb8fa8c2309f76ab3579178f8d38dcf7b",
+          "snapshotSha256": "43ad50334cd5d7c8a413cd05a009853ac858aabcbf5030bc86444dd2f13d8714",
+          "snapshotBytes": 241,
+          "oldGlobalHeap": 4,
+          "ownHeap": 4,
+          "targetLimit": 8,
+          "externalMigrationAccepted": true,
+          "eventArgumentFirstDefinitionReference": 1,
+          "globalUsesSameReference": true,
+          "fault": null
+        }
+      ],
+      "originalBackendSha256": {
+        "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+        "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+        "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+        "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+        "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+        "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+        "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+        "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+        "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+        "original_source_XMRInstCapture.cs": "775f1d83bd4610f788891269ea9ea08b1f79cf4bf3b44300d926f49c8a277cbd",
+        "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+        "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+        "original_source_Helpers.cs": "96b7c3090cdded9c12e986bc538705272eae4c0fc12f01deab8f0f1bb94c7bcf",
+        "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+        "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+        "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+        "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+        "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+        "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+        "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+      }
+    },
+    "linux": {
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "processId": 1,
+      "metadataSha256": "cedfc245b25b3f3129fbabbd2dc6c706e9d3f87e9f1cc9ffd74779fe723c0eda",
+      "cases": [
+        {
+          "name": "populated_reject16",
+          "sourceSha256": "dbbb9e2f8e4c7f16584c8a883af6f9603acf9725b2d48cf403b2ab5bf5dded3d",
+          "metadataSha256": "bff500cb1883d25e9d67a592d18985990498f9ffefb5c0afe1d6ab677a376fb2",
+          "injectionSha256": "d093f10482778cde12a58e7f19e2f6eb00589e31f61c6cc2d001bdc29712700b",
+          "migrationEntrySha256": "a18d01603eb78bad04bdb77219f79e6197ccb4c6bc00dc13cb2122e5d0a315d6",
+          "snapshotSha256": "8a1f7ea50ed84e0ea9e110036d42cd398f1a64832583adc39b32142f9dcae0f8",
+          "snapshotBytes": 256,
+          "oldGlobalHeap": 4,
+          "ownHeap": 16,
+          "targetLimit": 16,
+          "externalMigrationAccepted": false,
+          "eventArgumentFirstDefinitionReference": 1,
+          "globalUsesSameReference": true,
+          "fault": {
+            "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+            "message": "(OWNER)oldtotal=4, newtotal=20, limit=16"
+          }
+        },
+        {
+          "name": "populated_pass20",
+          "sourceSha256": "dbbb9e2f8e4c7f16584c8a883af6f9603acf9725b2d48cf403b2ab5bf5dded3d",
+          "metadataSha256": "1a783af5135ab0d96f8310b2543241496b47eef08bf4360a1f6dfcc582ff71ad",
+          "injectionSha256": "e54c5a134984727c807b08a93c224cc86a9c046525aaf77e0012a7bfac0b2880",
+          "migrationEntrySha256": "4f9320df3b22796473375c62b02a650066660e9788edc76f0c43213d857125b8",
+          "snapshotSha256": "8a1f7ea50ed84e0ea9e110036d42cd398f1a64832583adc39b32142f9dcae0f8",
+          "snapshotBytes": 256,
+          "oldGlobalHeap": 4,
+          "ownHeap": 16,
+          "targetLimit": 20,
+          "externalMigrationAccepted": true,
+          "eventArgumentFirstDefinitionReference": 1,
+          "globalUsesSameReference": true,
+          "fault": null
+        },
+        {
+          "name": "empty_reject4",
+          "sourceSha256": "7cfff9e4a612c547dc85e3bc7be0402905875f2b6cfa042fd0df162602af85fe",
+          "metadataSha256": "24d3c16f62dab801dfe8ef858c7ba0c2fc1afa6053bfb3c5c413321938969358",
+          "injectionSha256": "1b97c9d862bbde1050be19e496aaec140cfb86b6c2606157aa46e213b9fcb392",
+          "migrationEntrySha256": "e5933c75959bb6d7e5d000bf85c9cee6336680d799d6d22e166556692f2c3058",
+          "snapshotSha256": "43ad50334cd5d7c8a413cd05a009853ac858aabcbf5030bc86444dd2f13d8714",
+          "snapshotBytes": 241,
+          "oldGlobalHeap": 4,
+          "ownHeap": 4,
+          "targetLimit": 4,
+          "externalMigrationAccepted": false,
+          "eventArgumentFirstDefinitionReference": 1,
+          "globalUsesSameReference": true,
+          "fault": {
+            "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+            "message": "(OWNER)oldtotal=4, newtotal=8, limit=4"
+          }
+        },
+        {
+          "name": "empty_pass8",
+          "sourceSha256": "7cfff9e4a612c547dc85e3bc7be0402905875f2b6cfa042fd0df162602af85fe",
+          "metadataSha256": "399a40fda626be85a269235bbd504965eb4a52aabfab57d0c2f62b9fa9c1e93e",
+          "injectionSha256": "4aa450975a138fcb284e19c44231076e30e04cd69c0cf65366f2a9ce57862d44",
+          "migrationEntrySha256": "e2803b06a906260f760c574246ed9669015e52b4d4a4e50c51a8578554623af4",
+          "snapshotSha256": "43ad50334cd5d7c8a413cd05a009853ac858aabcbf5030bc86444dd2f13d8714",
+          "snapshotBytes": 241,
+          "oldGlobalHeap": 4,
+          "ownHeap": 4,
+          "targetLimit": 8,
+          "externalMigrationAccepted": true,
+          "eventArgumentFirstDefinitionReference": 1,
+          "globalUsesSameReference": true,
+          "fault": null
+        }
+      ],
+      "originalBackendSha256": {
+        "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+        "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+        "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+        "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+        "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+        "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+        "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+        "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+        "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+        "original_source_XMRInstCapture.cs": "775f1d83bd4610f788891269ea9ea08b1f79cf4bf3b44300d926f49c8a277cbd",
+        "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+        "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+        "original_source_Helpers.cs": "96b7c3090cdded9c12e986bc538705272eae4c0fc12f01deab8f0f1bb94c7bcf",
+        "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+        "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+        "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+        "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+        "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+        "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+        "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+      }
+    }
+  },
+  "measuredBehavior": {
+    "populated": "Old global ledger4 + class own16 requires20: limit16 rejects,20 accepts.",
+    "empty": "Old global ledger4 + class own4 requires8: limit4 rejects,8 accepts.",
+    "alias": "Class first defined in event arguments; global class lane is a DUPREF alias and does not rerun class receive."
+  },
+  "crossPlatformSnapshotsIdentical": true,
+  "boundaries": [
+    "Event arguments injected directly into ehArgs Object[] after source state_entry suspended; source declares no event parameters.",
+    "Actual unchanged original MigrateOut/MigrateIn backend; no source event dispatch or native runtime parity claim.",
+    "No forced GC or GC cause claim."
+  ],
+  "verifierSha256": "a254667bd42ddb1678046904666018e8af10f0ace242df63fd15535534d256b6"
+}

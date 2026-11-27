@@ -1,6 +1,7 @@
 #define main original_save_probe_main
 #include "nini_xml_document_save_tests.cpp"
 #undef main
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -28,8 +29,7 @@ int main() {
                     a->append_child(doc.create_text(nini_writer_text(u"appended")));
                 break;
             case 10:
-                if (auto a =
-                        std::dynamic_pointer_cast<NiniXmlDomNode>(root->attribute(nini_writer_text(u"a"))))
+                if (auto a = std::dynamic_pointer_cast<NiniXmlDomNode>(root->attribute(nini_writer_text(u"a"))))
                     if (auto c = a->first_child())
                         a->remove_child(c);
                 break;
@@ -38,8 +38,7 @@ int main() {
                     a->append_child(doc.create_fragment());
                 break;
             case 12:
-                if (auto a =
-                        std::dynamic_pointer_cast<NiniXmlDomNode>(root->attribute(nini_writer_text(u"a"))))
+                if (auto a = std::dynamic_pointer_cast<NiniXmlDomNode>(root->attribute(nini_writer_text(u"a"))))
                     if (auto c = a->first_child())
                         c->value(nini_writer_text(u"child"));
                 break;
@@ -117,7 +116,7 @@ int main() {
         } catch (...) {
             failure = current_error();
         }
-        std::cout << hex(sink->to_string()) << ';' << failure << ';' << writer.write_state() << ';' << seen
-                  << ';' << fired << '\n';
+        std::cout << hex(sink->to_string()) << ';' << failure << ';' << writer.write_state() << ';' << seen << ';'
+                  << fired << '\n';
     }
 }

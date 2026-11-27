@@ -1,0 +1,1 @@
+integer after;default{state_entry(){xmrEventCallHandler([4,"bad"]);after=1;}}

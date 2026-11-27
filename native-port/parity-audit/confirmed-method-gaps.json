@@ -1,0 +1,1435 @@
+{
+  "scriptTasks": [
+    {
+      "id": "SCRIPT-primitive-setters",
+      "status": "confirmed_compiler_entry_gap_on_windows_and_linux",
+      "apis": [
+        "llSetPrimitiveParams",
+        "llSetLinkPrimitiveParams",
+        "llSetLinkPrimitiveParamsFast",
+        "osSetPrimitiveParams"
+      ],
+      "acceptance": "Port SetLinkPrimParams and its rule application, link selection, permission, update and sleep boundaries. Existing native primitive query/rule parsing is groundwork; setters need live scene mutation and restart tests.",
+      "implementationEstimate": null,
+      "validationEstimate": null,
+      "reasonEstimatePending": "Dependent scene/module behavior and existing reusable coverage must be scoped before assigning engineering duration.",
+      "methods": [
+        {
+          "id": 344,
+          "api": "llSetPrimitiveParams",
+          "source": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+          "line": 402,
+          "signature": "void llSetPrimitiveParams(LSL_List rules)",
+          "parameterTypes": [
+            "LSL_List"
+          ],
+          "probe": "native-port/parity-audit/probe/calls/call-0344.lsl",
+          "windowsCompile": "rejected",
+          "diagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "runtimeBehavior": "not_executed_by_compile_probe",
+          "linuxCompile": "rejected",
+          "linuxDiagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "originalImplementation": {
+            "source": "OpenSim/Region/ScriptEngine/Shared/Api/Implementation/LSL_Api.cs",
+            "line": 8995,
+            "bodySha256": "0e7bff45c65dde3b3726e2ff5e2155c87b7f75ff297222b250e94790a7785a6d",
+            "directCalls": [
+              "ScriptSleep",
+              "SetLinkPrimParams"
+            ]
+          }
+        },
+        {
+          "id": 331,
+          "api": "llSetLinkPrimitiveParams",
+          "source": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+          "line": 389,
+          "signature": "void llSetLinkPrimitiveParams(int linknumber, LSL_List rules)",
+          "parameterTypes": [
+            "int",
+            "LSL_List"
+          ],
+          "probe": "native-port/parity-audit/probe/calls/call-0331.lsl",
+          "windowsCompile": "rejected",
+          "diagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "runtimeBehavior": "not_executed_by_compile_probe",
+          "linuxCompile": "rejected",
+          "linuxDiagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "originalImplementation": {
+            "source": "OpenSim/Region/ScriptEngine/Shared/Api/Implementation/LSL_Api.cs",
+            "line": 9002,
+            "bodySha256": "26abd8c34617f5675bc27ffd57787faa248e2fa30edf1db5df5e1a801fdd4138",
+            "directCalls": [
+              "ScriptSleep",
+              "SetLinkPrimParams"
+            ]
+          }
+        },
+        {
+          "id": 345,
+          "api": "llSetLinkPrimitiveParamsFast",
+          "source": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+          "line": 403,
+          "signature": "void llSetLinkPrimitiveParamsFast(int linknum, LSL_List rules)",
+          "parameterTypes": [
+            "int",
+            "LSL_List"
+          ],
+          "probe": "native-port/parity-audit/probe/calls/call-0345.lsl",
+          "windowsCompile": "rejected",
+          "diagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "runtimeBehavior": "not_executed_by_compile_probe",
+          "linuxCompile": "rejected",
+          "linuxDiagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "originalImplementation": {
+            "source": "OpenSim/Region/ScriptEngine/Shared/Api/Implementation/LSL_Api.cs",
+            "line": 9009,
+            "bodySha256": "df14d65ec8dda498942a75295abcd5808393cfeace287adeb09e52c3af00ad1e",
+            "directCalls": [
+              "SetLinkPrimParams"
+            ]
+          }
+        },
+        {
+          "id": 634,
+          "api": "osSetPrimitiveParams",
+          "source": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+          "line": 561,
+          "signature": "void osSetPrimitiveParams(LSL_Key prim, LSL_List rules)",
+          "parameterTypes": [
+            "LSL_Key",
+            "LSL_List"
+          ],
+          "probe": "native-port/parity-audit/probe/calls/call-0634.lsl",
+          "windowsCompile": "rejected",
+          "diagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "runtimeBehavior": "not_executed_by_compile_probe",
+          "linuxCompile": "rejected",
+          "linuxDiagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "originalImplementation": {
+            "source": "OpenSim/Region/ScriptEngine/Shared/Api/Implementation/OSSL_Api.cs",
+            "line": 3899,
+            "bodySha256": "477acc36a064692a1896b5cb1e3197b460636543ecb2a970e391997ba54eb63b",
+            "directCalls": [
+              "CheckThreatLevel",
+              "InitLSL",
+              "m_LSL_Api.SetPrimitiveParamsEx"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "SCRIPT-vehicles",
+      "status": "confirmed_compiler_entry_gap_on_windows_and_linux",
+      "apis": [
+        "llSetVehicleType",
+        "llSetVehicleFloatParam",
+        "llSetVehicleVectorParam",
+        "llSetVehicleRotationParam",
+        "llSetVehicleFlags",
+        "llRemoveVehicleFlags"
+      ],
+      "acceptance": "Bind root-part vehicle state to physics, including deleted-group guards, type/flags and parameter-specific conversion. Verify vehicle response, updates and persistence, rather than merely accepting the calls.",
+      "implementationEstimate": null,
+      "validationEstimate": null,
+      "reasonEstimatePending": "Dependent scene/module behavior and existing reusable coverage must be scoped before assigning engineering duration.",
+      "methods": [
+        {
+          "id": 364,
+          "api": "llSetVehicleType",
+          "source": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+          "line": 422,
+          "signature": "void llSetVehicleType(int type)",
+          "parameterTypes": [
+            "int"
+          ],
+          "probe": "native-port/parity-audit/probe/calls/call-0364.lsl",
+          "windowsCompile": "rejected",
+          "diagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "runtimeBehavior": "not_executed_by_compile_probe",
+          "linuxCompile": "rejected",
+          "linuxDiagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "originalImplementation": {
+            "source": "OpenSim/Region/ScriptEngine/Shared/Api/Implementation/LSL_Api.cs",
+            "line": 8140,
+            "bodySha256": "4edc3861da7659d2f047a3d54fe67802aac1e62b434687427338ec7302525851",
+            "directCalls": [
+              "m_host.ParentGroup.RootPart.SetVehicleType"
+            ]
+          }
+        },
+        {
+          "id": 362,
+          "api": "llSetVehicleFloatParam",
+          "source": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+          "line": 420,
+          "signature": "void llSetVehicleFloatParam(int param, LSL_Float value)",
+          "parameterTypes": [
+            "int",
+            "LSL_Float"
+          ],
+          "probe": "native-port/parity-audit/probe/calls/call-0362.lsl",
+          "windowsCompile": "rejected",
+          "diagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "runtimeBehavior": "not_executed_by_compile_probe",
+          "linuxCompile": "rejected",
+          "linuxDiagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "originalImplementation": {
+            "source": "OpenSim/Region/ScriptEngine/Shared/Api/Implementation/LSL_Api.cs",
+            "line": 8151,
+            "bodySha256": "1de2bb4fbff3d03483391693fc48ee0dbbb5303af28783b16a1bb41ea725130b",
+            "directCalls": [
+              "m_host.ParentGroup.RootPart.SetVehicleFloatParam"
+            ]
+          }
+        },
+        {
+          "id": 365,
+          "api": "llSetVehicleVectorParam",
+          "source": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+          "line": 423,
+          "signature": "void llSetVehicleVectorParam(int param, LSL_Vector vec)",
+          "parameterTypes": [
+            "int",
+            "LSL_Vector"
+          ],
+          "probe": "native-port/parity-audit/probe/calls/call-0365.lsl",
+          "windowsCompile": "rejected",
+          "diagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "runtimeBehavior": "not_executed_by_compile_probe",
+          "linuxCompile": "rejected",
+          "linuxDiagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "originalImplementation": {
+            "source": "OpenSim/Region/ScriptEngine/Shared/Api/Implementation/LSL_Api.cs",
+            "line": 8162,
+            "bodySha256": "f0c127ef225d8d1a9d8fe18e507a9ca558f5ccc82772321160e85cf4bee101ad",
+            "directCalls": [
+              "m_host.ParentGroup.RootPart.SetVehicleVectorParam"
+            ]
+          }
+        },
+        {
+          "id": 363,
+          "api": "llSetVehicleRotationParam",
+          "source": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+          "line": 421,
+          "signature": "void llSetVehicleRotationParam(int param, LSL_Rotation rot)",
+          "parameterTypes": [
+            "int",
+            "LSL_Rotation"
+          ],
+          "probe": "native-port/parity-audit/probe/calls/call-0363.lsl",
+          "windowsCompile": "rejected",
+          "diagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "runtimeBehavior": "not_executed_by_compile_probe",
+          "linuxCompile": "rejected",
+          "linuxDiagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "originalImplementation": {
+            "source": "OpenSim/Region/ScriptEngine/Shared/Api/Implementation/LSL_Api.cs",
+            "line": 8173,
+            "bodySha256": "5ef739f9e91154f78a471cb5d26f1689fc8aa61634ddd125773dd38249cb3d05",
+            "directCalls": [
+              "m_host.ParentGroup.RootPart.SetVehicleRotationParam"
+            ]
+          }
+        },
+        {
+          "id": 361,
+          "api": "llSetVehicleFlags",
+          "source": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+          "line": 419,
+          "signature": "void llSetVehicleFlags(int flags)",
+          "parameterTypes": [
+            "int"
+          ],
+          "probe": "native-port/parity-audit/probe/calls/call-0361.lsl",
+          "windowsCompile": "rejected",
+          "diagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "runtimeBehavior": "not_executed_by_compile_probe",
+          "linuxCompile": "rejected",
+          "linuxDiagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "originalImplementation": {
+            "source": "OpenSim/Region/ScriptEngine/Shared/Api/Implementation/LSL_Api.cs",
+            "line": 8182,
+            "bodySha256": "fd1a6e04c5840bfff72d2cf562d0e9f37eb0f7c1edc26a2a7cfe1d3bc9e466ac",
+            "directCalls": [
+              "m_host.ParentGroup.RootPart.SetVehicleFlags"
+            ]
+          }
+        },
+        {
+          "id": 270,
+          "api": "llRemoveVehicleFlags",
+          "source": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+          "line": 328,
+          "signature": "void llRemoveVehicleFlags(int flags)",
+          "parameterTypes": [
+            "int"
+          ],
+          "probe": "native-port/parity-audit/probe/calls/call-0270.lsl",
+          "windowsCompile": "rejected",
+          "diagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "runtimeBehavior": "not_executed_by_compile_probe",
+          "linuxCompile": "rejected",
+          "linuxDiagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "originalImplementation": {
+            "source": "OpenSim/Region/ScriptEngine/Shared/Api/Implementation/LSL_Api.cs",
+            "line": 8191,
+            "bodySha256": "eef52b033a5c6e3a54231ab606a7aad521f2bfac1b6d82e6be3bb14cdbc2fb9e",
+            "directCalls": [
+              "m_host.ParentGroup.RootPart.SetVehicleFlags"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "SCRIPT-dynamic-textures",
+      "status": "confirmed_compiler_entry_gap_on_windows_and_linux",
+      "apis": [
+        "osSetDynamicTextureURL",
+        "osSetDynamicTextureURLBlend",
+        "osSetDynamicTextureURLBlendFace",
+        "osSetDynamicTextureData",
+        "osSetDynamicTextureDataFace",
+        "osSetDynamicTextureDataBlend",
+        "osSetDynamicTextureDataBlendFace",
+        "osGetDrawStringSize"
+      ],
+      "acceptance": "Provide IDynamicTextureManager rendering/measurement/URL/data integration, font and drawing semantics, asset caching and face/blend settings. Preserve threat checks, alpha conversions and unsupported update behavior.",
+      "implementationEstimate": null,
+      "validationEstimate": null,
+      "reasonEstimatePending": "Dependent scene/module behavior and existing reusable coverage must be scoped before assigning engineering duration.",
+      "methods": [
+        {
+          "id": 474,
+          "api": "osSetDynamicTextureURL",
+          "source": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+          "line": 120,
+          "signature": "string osSetDynamicTextureURL(string dynamicID, string contentType, string url, string extraParams, int timer)",
+          "parameterTypes": [
+            "string",
+            "string",
+            "string",
+            "string",
+            "int"
+          ],
+          "probe": "native-port/parity-audit/probe/calls/call-0474.lsl",
+          "windowsCompile": "rejected",
+          "diagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "runtimeBehavior": "not_executed_by_compile_probe",
+          "linuxCompile": "rejected",
+          "linuxDiagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "originalImplementation": {
+            "source": "OpenSim/Region/ScriptEngine/Shared/Api/Implementation/OSSL_Api.cs",
+            "line": 743,
+            "bodySha256": "a45bb0baa5419b0925b3eda09353211b0cca568a7b286ef0f8178447fbf6a32e",
+            "directCalls": [
+              "CheckThreatLevel",
+              "World.RequestModuleInterface<IDynamicTextureManager>",
+              "createdTexture.ToString",
+              "textureManager.AddDynamicTextureURL"
+            ]
+          }
+        },
+        {
+          "id": 475,
+          "api": "osSetDynamicTextureURLBlend",
+          "source": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+          "line": 122,
+          "signature": "string osSetDynamicTextureURLBlend(string dynamicID, string contentType, string url, string extraParams,\r\n                                                int timer, int alpha)",
+          "parameterTypes": [
+            "string",
+            "string",
+            "string",
+            "string",
+            "int",
+            "int"
+          ],
+          "probe": "native-port/parity-audit/probe/calls/call-0475.lsl",
+          "windowsCompile": "rejected",
+          "diagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "runtimeBehavior": "not_executed_by_compile_probe",
+          "linuxCompile": "rejected",
+          "linuxDiagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "originalImplementation": {
+            "source": "OpenSim/Region/ScriptEngine/Shared/Api/Implementation/OSSL_Api.cs",
+            "line": 764,
+            "bodySha256": "a438e57b6c9279cffea5ff01e39b43bfd3793030297452bc345d3ca1d5384ff7",
+            "directCalls": [
+              "CheckThreatLevel",
+              "World.RequestModuleInterface<IDynamicTextureManager>",
+              "createdTexture.ToString",
+              "textureManager.AddDynamicTextureURL"
+            ]
+          }
+        },
+        {
+          "id": 476,
+          "api": "osSetDynamicTextureURLBlendFace",
+          "source": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+          "line": 125,
+          "signature": "string osSetDynamicTextureURLBlendFace(string dynamicID, string contentType, string url, string extraParams,\r\n                                                bool blend, int disp, int timer, int alpha, int face)",
+          "parameterTypes": [
+            "string",
+            "string",
+            "string",
+            "string",
+            "bool",
+            "int",
+            "int",
+            "int",
+            "int"
+          ],
+          "probe": "native-port/parity-audit/probe/calls/call-0476.lsl",
+          "windowsCompile": "rejected",
+          "diagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "runtimeBehavior": "not_executed_by_compile_probe",
+          "linuxCompile": "rejected",
+          "linuxDiagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "originalImplementation": {
+            "source": "OpenSim/Region/ScriptEngine/Shared/Api/Implementation/OSSL_Api.cs",
+            "line": 785,
+            "bodySha256": "3b023d7be6c8bde547133a06072c4622f3b32ad446eb714fdddb1c57459c06fd",
+            "directCalls": [
+              "CheckThreatLevel",
+              "World.RequestModuleInterface<IDynamicTextureManager>",
+              "createdTexture.ToString",
+              "textureManager.AddDynamicTextureURL"
+            ]
+          }
+        },
+        {
+          "id": 477,
+          "api": "osSetDynamicTextureData",
+          "source": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+          "line": 128,
+          "signature": "string osSetDynamicTextureData(string dynamicID, string contentType, string data, string extraParams, int timer)",
+          "parameterTypes": [
+            "string",
+            "string",
+            "string",
+            "string",
+            "int"
+          ],
+          "probe": "native-port/parity-audit/probe/calls/call-0477.lsl",
+          "windowsCompile": "rejected",
+          "diagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "runtimeBehavior": "not_executed_by_compile_probe",
+          "linuxCompile": "rejected",
+          "linuxDiagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "originalImplementation": {
+            "source": "OpenSim/Region/ScriptEngine/Shared/Api/Implementation/OSSL_Api.cs",
+            "line": 806,
+            "bodySha256": "4924245bee6617c0cdd7492dab49638a08d9f315b230d86e1cb90ae6ad0d6cf4",
+            "directCalls": [
+              "osSetDynamicTextureDataFace"
+            ]
+          }
+        },
+        {
+          "id": 478,
+          "api": "osSetDynamicTextureDataFace",
+          "source": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+          "line": 130,
+          "signature": "string osSetDynamicTextureDataFace(string dynamicID, string contentType, string data, string extraParams, int timer, int face)",
+          "parameterTypes": [
+            "string",
+            "string",
+            "string",
+            "string",
+            "int",
+            "int"
+          ],
+          "probe": "native-port/parity-audit/probe/calls/call-0478.lsl",
+          "windowsCompile": "rejected",
+          "diagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "runtimeBehavior": "not_executed_by_compile_probe",
+          "linuxCompile": "rejected",
+          "linuxDiagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "originalImplementation": {
+            "source": "OpenSim/Region/ScriptEngine/Shared/Api/Implementation/OSSL_Api.cs",
+            "line": 812,
+            "bodySha256": "c45e77d1c02365df353ddd79df43cb806e4307ca84a7b9117242ac606c5fc9ed",
+            "directCalls": [
+              "CheckThreatLevel",
+              "World.RequestModuleInterface<IDynamicTextureManager>",
+              "createdTexture.ToString",
+              "textureManager.AddDynamicTextureData"
+            ]
+          }
+        },
+        {
+          "id": 479,
+          "api": "osSetDynamicTextureDataBlend",
+          "source": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+          "line": 132,
+          "signature": "string osSetDynamicTextureDataBlend(string dynamicID, string contentType, string data, string extraParams,\r\n                                                 int timer, int alpha)",
+          "parameterTypes": [
+            "string",
+            "string",
+            "string",
+            "string",
+            "int",
+            "int"
+          ],
+          "probe": "native-port/parity-audit/probe/calls/call-0479.lsl",
+          "windowsCompile": "rejected",
+          "diagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "runtimeBehavior": "not_executed_by_compile_probe",
+          "linuxCompile": "rejected",
+          "linuxDiagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "originalImplementation": {
+            "source": "OpenSim/Region/ScriptEngine/Shared/Api/Implementation/OSSL_Api.cs",
+            "line": 841,
+            "bodySha256": "baa542e2f15dadf499880000c44a1559d409a38ae00afaa101fdf5390b7b96c6",
+            "directCalls": [
+              "CheckThreatLevel",
+              "World.RequestModuleInterface<IDynamicTextureManager>",
+              "createdTexture.ToString",
+              "textureManager.AddDynamicTextureData"
+            ]
+          }
+        },
+        {
+          "id": 480,
+          "api": "osSetDynamicTextureDataBlendFace",
+          "source": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+          "line": 135,
+          "signature": "string osSetDynamicTextureDataBlendFace(string dynamicID, string contentType, string data, string extraParams,\r\n                                                 bool blend, int disp, int timer, int alpha, int face)",
+          "parameterTypes": [
+            "string",
+            "string",
+            "string",
+            "string",
+            "bool",
+            "int",
+            "int",
+            "int",
+            "int"
+          ],
+          "probe": "native-port/parity-audit/probe/calls/call-0480.lsl",
+          "windowsCompile": "rejected",
+          "diagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "runtimeBehavior": "not_executed_by_compile_probe",
+          "linuxCompile": "rejected",
+          "linuxDiagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "originalImplementation": {
+            "source": "OpenSim/Region/ScriptEngine/Shared/Api/Implementation/OSSL_Api.cs",
+            "line": 869,
+            "bodySha256": "2f7dc068853e6641cbfdd7ef1967e5a5275873d5b9cd0d5f0342384f2539a05d",
+            "directCalls": [
+              "CheckThreatLevel",
+              "World.RequestModuleInterface<IDynamicTextureManager>",
+              "createdTexture.ToString",
+              "textureManager.AddDynamicTextureData"
+            ]
+          }
+        },
+        {
+          "id": 535,
+          "api": "osGetDrawStringSize",
+          "source": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+          "line": 308,
+          "signature": "vector osGetDrawStringSize(string contentType, string text, string fontName, int fontSize)",
+          "parameterTypes": [
+            "string",
+            "string",
+            "string",
+            "int"
+          ],
+          "probe": "native-port/parity-audit/probe/calls/call-0535.lsl",
+          "windowsCompile": "rejected",
+          "diagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "runtimeBehavior": "not_executed_by_compile_probe",
+          "linuxCompile": "rejected",
+          "linuxDiagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "originalImplementation": {
+            "source": "OpenSim/Region/ScriptEngine/Shared/Api/Implementation/OSSL_Api.cs",
+            "line": 1496,
+            "bodySha256": "cbfc4ad1d4e11296708085c69d0976bdbf2f8f5f80942ad75ce5b6d9c0509911",
+            "directCalls": [
+              "CheckThreatLevel",
+              "World.RequestModuleInterface<IDynamicTextureManager>",
+              "textureManager.GetDrawStringSize"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "SCRIPT-camera",
+      "status": "confirmed_compiler_entry_gap_on_windows_and_linux",
+      "apis": [
+        "llSetCameraParams",
+        "llClearCameraParams"
+      ],
+      "acceptance": "Use the granted avatar and camera permissions, parse follow-camera rules and send viewer follow-camera property packets. Verify root/child-agent and object/permission guards. Existing obsolete-camera diagnostics do not implement these APIs.",
+      "implementationEstimate": null,
+      "validationEstimate": null,
+      "reasonEstimatePending": "Dependent scene/module behavior and existing reusable coverage must be scoped before assigning engineering duration.",
+      "methods": [
+        {
+          "id": 316,
+          "api": "llSetCameraParams",
+          "source": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+          "line": 374,
+          "signature": "void llSetCameraParams(LSL_List rules)",
+          "parameterTypes": [
+            "LSL_List"
+          ],
+          "probe": "native-port/parity-audit/probe/calls/call-0316.lsl",
+          "windowsCompile": "rejected",
+          "diagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "runtimeBehavior": "not_executed_by_compile_probe",
+          "linuxCompile": "rejected",
+          "linuxDiagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "originalImplementation": {
+            "source": "OpenSim/Region/ScriptEngine/Shared/Api/Implementation/LSL_Api.cs",
+            "line": 14151,
+            "bodySha256": "331a0628bf9751b4a62b0313ac33ee10c46afdee2afac7ad5eb69dca00f5bdfb",
+            "directCalls": [
+              "Convert.ToInt32",
+              "Convert.ToSingle",
+              "Error",
+              "World.GetScenePresence",
+              "agentID.IsZero",
+              "data[i++].ToString",
+              "objectID.IsZero",
+              "parameters.Add",
+              "presence.ControllingClient.SendSetFollowCamProperties",
+              "string.Format"
+            ]
+          }
+        },
+        {
+          "id": 23,
+          "api": "llClearCameraParams",
+          "source": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+          "line": 76,
+          "signature": "void llClearCameraParams()",
+          "parameterTypes": [],
+          "probe": "native-port/parity-audit/probe/calls/call-0023.lsl",
+          "windowsCompile": "rejected",
+          "diagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "runtimeBehavior": "not_executed_by_compile_probe",
+          "linuxCompile": "rejected",
+          "linuxDiagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "originalImplementation": {
+            "source": "OpenSim/Region/ScriptEngine/Shared/Api/Implementation/LSL_Api.cs",
+            "line": 14277,
+            "bodySha256": "21e3ff11597dd49de2588dd4e321dcc83f091a8fa44c84c1baa2aa074ffa992d",
+            "directCalls": [
+              "World.GetScenePresence",
+              "agentID.IsZero",
+              "objectID.IsZero",
+              "presence.ControllingClient.SendClearFollowCamProperties"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "SCRIPT-aes",
+      "status": "implemented_with_bounded_source_and_vm_verification_on_windows_and_linux",
+      "apis": [
+        "osAESEncrypt",
+        "osAESEncryptTo",
+        "osAESDecrypt",
+        "osAESDecryptFrom"
+      ],
+      "acceptance": "Port actual Util AES helpers and their key/IV/encoding/empty/error behavior, then bind OSSL calls with real source comparisons.",
+      "implementationEstimate": null,
+      "validationEstimate": null,
+      "reasonEstimatePending": "Dependent scene/module behavior and existing reusable coverage must be scoped before assigning engineering duration.",
+      "methods": [
+        {
+          "id": 758,
+          "api": "osAESEncrypt",
+          "source": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+          "line": 904,
+          "signature": "LSL_String osAESEncrypt(string secret, string plainText)",
+          "parameterTypes": [
+            "string",
+            "string"
+          ],
+          "probe": "native-port/parity-audit/probe/calls/call-0758.lsl",
+          "windowsCompile": "rejected",
+          "diagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "runtimeBehavior": "not_executed_by_compile_probe",
+          "linuxCompile": "rejected",
+          "linuxDiagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "originalImplementation": {
+            "source": "OpenSim/Region/ScriptEngine/Shared/Api/Implementation/OSSL_Api.cs",
+            "line": 6591,
+            "bodySha256": "6cceed27319e32ac65d7a8d197a1bb6f45c599818d2f00a02764c06367602828",
+            "directCalls": [
+              "OSSLShoutError",
+              "Util.AESEncrypt",
+              "plainText.AsSpan",
+              "ret.ToString",
+              "secret.AsSpan",
+              "string.IsNullOrEmpty"
+            ]
+          }
+        },
+        {
+          "id": 759,
+          "api": "osAESEncryptTo",
+          "source": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+          "line": 906,
+          "signature": "LSL_String osAESEncryptTo(string secret, string plainText, string ivString)",
+          "parameterTypes": [
+            "string",
+            "string",
+            "string"
+          ],
+          "probe": "native-port/parity-audit/probe/calls/call-0759.lsl",
+          "windowsCompile": "rejected",
+          "diagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "runtimeBehavior": "not_executed_by_compile_probe",
+          "linuxCompile": "rejected",
+          "linuxDiagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "originalImplementation": {
+            "source": "OpenSim/Region/ScriptEngine/Shared/Api/Implementation/OSSL_Api.cs",
+            "line": 6619,
+            "bodySha256": "190481e56bc1f6fd2a88f1b4cfcdf4273334c1a1f3566a1ef9aea19aba29ced2",
+            "directCalls": [
+              "OSSLShoutError",
+              "Util.AESEncryptTo",
+              "ivString.AsSpan",
+              "plainText.AsSpan",
+              "ret.ToString",
+              "secret.AsSpan",
+              "string.IsNullOrEmpty"
+            ]
+          }
+        },
+        {
+          "id": 760,
+          "api": "osAESDecrypt",
+          "source": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+          "line": 908,
+          "signature": "LSL_String osAESDecrypt(string secret, string encryptedText)",
+          "parameterTypes": [
+            "string",
+            "string"
+          ],
+          "probe": "native-port/parity-audit/probe/calls/call-0760.lsl",
+          "windowsCompile": "rejected",
+          "diagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "runtimeBehavior": "not_executed_by_compile_probe",
+          "linuxCompile": "rejected",
+          "linuxDiagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "originalImplementation": {
+            "source": "OpenSim/Region/ScriptEngine/Shared/Api/Implementation/OSSL_Api.cs",
+            "line": 6605,
+            "bodySha256": "d784a55f281aee7519cfc81b67ef953423681781240f2e9a267ab8e7c37ca814",
+            "directCalls": [
+              "OSSLShoutError",
+              "Util.AESDecrypt",
+              "encryptedText.AsSpan",
+              "ret.ToString",
+              "secret.AsSpan",
+              "string.IsNullOrEmpty"
+            ]
+          }
+        },
+        {
+          "id": 761,
+          "api": "osAESDecryptFrom",
+          "source": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+          "line": 910,
+          "signature": "LSL_String osAESDecryptFrom(string secret, string encryptedText, string ivString)",
+          "parameterTypes": [
+            "string",
+            "string",
+            "string"
+          ],
+          "probe": "native-port/parity-audit/probe/calls/call-0761.lsl",
+          "windowsCompile": "rejected",
+          "diagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "runtimeBehavior": "not_executed_by_compile_probe",
+          "linuxCompile": "rejected",
+          "linuxDiagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "originalImplementation": {
+            "source": "OpenSim/Region/ScriptEngine/Shared/Api/Implementation/OSSL_Api.cs",
+            "line": 6633,
+            "bodySha256": "c763c340aa43c6f0914bd45b0fc7f7072a406db79bc9c9892ce0a5eaa8c5817f",
+            "directCalls": [
+              "OSSLShoutError",
+              "Util.AESDecryptFrom",
+              "encryptedText.AsSpan",
+              "ivString.AsSpan",
+              "ret.ToString",
+              "secret.AsSpan",
+              "string.IsNullOrEmpty"
+            ]
+          }
+        }
+      ],
+      "latestEvidence": "build-https/ossl-aes-results.json",
+      "remaining": "Exception message/type equality, lone UTF16 surrogates, all arbitrary decrypted binary streams and macOS execution remain outside current evidence. OpenSSL is required; no-OpenSSL builds reject these calls explicitly.",
+      "historicalCompileResultsPreserved": true
+    },
+    {
+      "id": "SCRIPT-groups",
+      "status": "confirmed_compiler_entry_gap_on_windows_and_linux",
+      "apis": [
+        "osInviteToGroup",
+        "osEjectFromGroup"
+      ],
+      "acceptance": "Bind groups module permissions and inviter/ejector behavior through the scene. Verify actual viewer/group state rather than return values only.",
+      "implementationEstimate": null,
+      "validationEstimate": null,
+      "reasonEstimatePending": "Dependent scene/module behavior and existing reusable coverage must be scoped before assigning engineering duration.",
+      "methods": [
+        {
+          "id": 641,
+          "api": "osInviteToGroup",
+          "source": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+          "line": 578,
+          "signature": "LSL_Integer osInviteToGroup(LSL_Key agentId)",
+          "parameterTypes": [
+            "LSL_Key"
+          ],
+          "probe": "native-port/parity-audit/probe/calls/call-0641.lsl",
+          "windowsCompile": "rejected",
+          "diagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "runtimeBehavior": "not_executed_by_compile_probe",
+          "linuxCompile": "rejected",
+          "linuxDiagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "originalImplementation": {
+            "source": "OpenSim/Region/ScriptEngine/Shared/Api/Implementation/OSSL_Api.cs",
+            "line": 4044,
+            "bodySha256": "1482dc92767f0648ed5d279dde7b16d8e4568b53e7c8b7e3abc6287e6e8b84fe",
+            "directCalls": [
+              "CheckThreatLevel",
+              "UUID.TryParse",
+              "World.GetScenePresence",
+              "m_groupsModule.GetFullGroupPowers",
+              "m_groupsModule.InviteGroup",
+              "m_host.GroupID.Equals",
+              "m_host.GroupID.IsZero",
+              "sp.ControllingClient.IsGroupMember"
+            ]
+          }
+        },
+        {
+          "id": 642,
+          "api": "osEjectFromGroup",
+          "source": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+          "line": 580,
+          "signature": "LSL_Integer osEjectFromGroup(LSL_Key agentId)",
+          "parameterTypes": [
+            "LSL_Key"
+          ],
+          "probe": "native-port/parity-audit/probe/calls/call-0642.lsl",
+          "windowsCompile": "rejected",
+          "diagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "runtimeBehavior": "not_executed_by_compile_probe",
+          "linuxCompile": "rejected",
+          "linuxDiagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "originalImplementation": {
+            "source": "OpenSim/Region/ScriptEngine/Shared/Api/Implementation/OSSL_Api.cs",
+            "line": 4082,
+            "bodySha256": "5124603ffbb7da861a0fa7956d3e7b67c7bcf9bf26a0f740fb97bfb72838d45f",
+            "directCalls": [
+              "CheckThreatLevel",
+              "UUID.TryParse",
+              "m_groupsModule.EjectGroupMember",
+              "m_groupsModule.GetFullGroupPowers",
+              "m_host.GroupID.Equals",
+              "m_host.GroupID.IsZero"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "SCRIPT-raycast",
+      "status": "confirmed_compiler_entry_gap_on_windows_and_linux",
+      "apis": [
+        "llCastRay"
+      ],
+      "acceptance": "Implement original ray option/result/error/limit behavior and scene geometry/physics integration.",
+      "implementationEstimate": null,
+      "validationEstimate": null,
+      "reasonEstimatePending": "Dependent scene/module behavior and existing reusable coverage must be scoped before assigning engineering duration.",
+      "methods": [
+        {
+          "id": 21,
+          "api": "llCastRay",
+          "source": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+          "line": 74,
+          "signature": "LSL_List llCastRay(LSL_Vector start, LSL_Vector end, LSL_List options)",
+          "parameterTypes": [
+            "LSL_Vector",
+            "LSL_Vector",
+            "LSL_List"
+          ],
+          "probe": "native-port/parity-audit/probe/calls/call-0021.lsl",
+          "windowsCompile": "rejected",
+          "diagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "runtimeBehavior": "not_executed_by_compile_probe",
+          "linuxCompile": "rejected",
+          "linuxDiagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "originalImplementation": {
+            "source": "OpenSim/Region/ScriptEngine/Shared/Api/Implementation/LSL_Api.cs",
+            "line": 16290,
+            "bodySha256": "ea067cc349124cb0758e8e0755c9e481541b6be83b7a325a94d3e0f6aa345de5",
+            "directCalls": [
+              "AvatarIntersection",
+              "GroundIntersection",
+              "Math.Sqrt",
+              "ObjectIntersection",
+              "Vector3.Distance",
+              "World.GetSceneObjectPart",
+              "World.GetScenePresence",
+              "World.RayCastFiltered",
+              "World.SupportsRayCastFiltered",
+              "a.Depth.CompareTo",
+              "dir.LengthSquared",
+              "itemID.ToString",
+              "list.Add",
+              "options.GetIntegerItem",
+              "result.Pos.ToString",
+              "results.Add",
+              "results.Sort"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "SCRIPT-keyframed-motion",
+      "status": "confirmed_compiler_entry_gap_on_windows_and_linux",
+      "apis": [
+        "llSetKeyframedMotion"
+      ],
+      "acceptance": "Implement keyframe parsing, scheduler, moving/linkset behavior, physics restrictions and stop/pause/resume controls with source-compatible errors.",
+      "implementationEstimate": null,
+      "validationEstimate": null,
+      "reasonEstimatePending": "Dependent scene/module behavior and existing reusable coverage must be scoped before assigning engineering duration.",
+      "methods": [
+        {
+          "id": 416,
+          "api": "llSetKeyframedMotion",
+          "source": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+          "line": 475,
+          "signature": "void llSetKeyframedMotion(LSL_List frames, LSL_List options)",
+          "parameterTypes": [
+            "LSL_List",
+            "LSL_List"
+          ],
+          "probe": "native-port/parity-audit/probe/calls/call-0416.lsl",
+          "windowsCompile": "rejected",
+          "diagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "runtimeBehavior": "not_executed_by_compile_probe",
+          "linuxCompile": "rejected",
+          "linuxDiagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "originalImplementation": {
+            "source": "OpenSim/Region/ScriptEngine/Shared/Api/Implementation/LSL_Api.cs",
+            "line": 9061,
+            "bodySha256": "3bf6737090cc8e1cd840b9239cf17ec03085af4f5448a0f59a5b299d7ff1b2c2",
+            "directCalls": [
+              "frames.GetQuaternionItem",
+              "frames.GetStrictFloatItem",
+              "frames.GetVector3Item",
+              "group.RootPart.KeyframeMotion.Pause",
+              "group.RootPart.KeyframeMotion.SetKeyframes",
+              "group.RootPart.KeyframeMotion.Start",
+              "group.RootPart.KeyframeMotion.Stop",
+              "group.RootPart.KeyframeMotion?.Delete",
+              "keyframes.Add",
+              "keyframes.ToArray",
+              "options.GetIntegerItem"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "SCRIPT-parameterized-rez",
+      "status": "confirmed_compiler_entry_gap_on_windows_and_linux",
+      "apis": [
+        "llRezObjectWithParams"
+      ],
+      "acceptance": "Port rez-rule parsing plus inventory, asset restore, permissions, ownership, position/rotation, velocity/start parameter and error/rollback behavior.",
+      "implementationEstimate": null,
+      "validationEstimate": null,
+      "reasonEstimatePending": "Dependent scene/module behavior and existing reusable coverage must be scoped before assigning engineering duration.",
+      "methods": [
+        {
+          "id": 464,
+          "api": "llRezObjectWithParams",
+          "source": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+          "line": 531,
+          "signature": "LSL_Key llRezObjectWithParams(string inventory, LSL_List lparam)",
+          "parameterTypes": [
+            "string",
+            "LSL_List"
+          ],
+          "probe": "native-port/parity-audit/probe/calls/call-0464.lsl",
+          "windowsCompile": "rejected",
+          "diagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "runtimeBehavior": "not_executed_by_compile_probe",
+          "linuxCompile": "rejected",
+          "linuxDiagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "originalImplementation": {
+            "source": "OpenSim/Region/ScriptEngine/Shared/Api/Implementation/LSL_Api.cs",
+            "line": 3360,
+            "bodySha256": "438675427a2c7acaaa45a2ba614e211281dd0417f14ed7ca36107d8c5ba48c87",
+            "directCalls": [
+              "(pos - m_host.GetWorldPosition()).LengthSquared",
+              "Array.Empty<DetectParams>",
+              "Error",
+              "ScriptSleep",
+              "ScriptUtils.GetAssetIdFromKeyOrItemName",
+              "UUID.Random",
+              "Util.FireAndForget",
+              "Utils.osUTF8GetBytesCount",
+              "World.AddNewSceneObject",
+              "World.Permissions.BypassPermissions",
+              "World.Permissions.CanRezObject",
+              "groot.AddFlag",
+              "groot.KeyframeMotion?.Stop",
+              "groot.RemFlag",
+              "groot.SetDieAtEdge",
+              "groot.UUID.ToString",
+              "groot.UpdateAngularVelocity",
+              "lockAxis.IsNotZero",
+              "lparam.GetFloatItem",
+              "lparam.GetIntegerItem",
+              "lparam.GetQuaternionItem",
+              "lparam.GetStringItem",
+              "lparam.GetVector3Item",
+              "m_ScriptEngine.PostObjectEvent",
+              "m_SoundModule.LoopSound",
+              "m_SoundModule.SendSound",
+              "m_host.GetWorldPosition",
+              "m_host.GetWorldRotation",
+              "m_host.Inventory.GetInventoryItem",
+              "m_host.Inventory.GetSingleRezReadySceneObject",
+              "m_host.Inventory.RemoveInventoryItem",
+              "newID.ToString",
+              "pos.LengthSquared",
+              "rot.Normalize",
+              "sog.CreateScriptInstances",
+              "sog.GetGeometricCenter",
+              "sog.InvalidateEffectivePerms",
+              "sog.ResumeScripts",
+              "sog.ScheduleGroupForUpdate",
+              "soundID.IsNotZero",
+              "string.IsNullOrEmpty"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "SCRIPT-object-teleport",
+      "status": "native_control_and_world_storage_verified_production_runtime_crossing_and_dispatch_missing",
+      "apis": [
+        "osTeleportObject"
+      ],
+      "acceptance": "Bind object teleport and land-owner checks, target transforms, flags and crossing behavior.",
+      "implementationEstimate": null,
+      "validationEstimate": null,
+      "reasonEstimatePending": "Dependent scene/module behavior and existing reusable coverage must be scoped before assigning engineering duration.",
+      "methods": [
+        {
+          "id": 667,
+          "api": "osTeleportObject",
+          "source": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+          "line": 708,
+          "signature": "LSL_Integer osTeleportObject(LSL_Key objectUUID, vector targetPos, rotation targetrotation, LSL_Integer flags)",
+          "parameterTypes": [
+            "LSL_Key",
+            "vector",
+            "rotation",
+            "LSL_Integer"
+          ],
+          "probe": "native-port/parity-audit/probe/calls/call-0667.lsl",
+          "windowsCompile": "rejected",
+          "diagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "runtimeBehavior": "not_executed_by_compile_probe",
+          "linuxCompile": "rejected",
+          "linuxDiagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "originalImplementation": {
+            "source": "OpenSim/Region/ScriptEngine/Shared/Api/Implementation/OSSL_Api.cs",
+            "line": 4976,
+            "bodySha256": "8be6b3e509089f81acc79dd6e4603fabbd10a33566acb706fa3de9a837cd7c51",
+            "directCalls": [
+              "CheckThreatLevel",
+              "OSSLShoutError",
+              "UUID.TryParse",
+              "World.GetSceneObjectGroup",
+              "checkAllowObjectTPbyLandOwner",
+              "sog.OwnerID.NotEqual",
+              "sog.TeleportObject"
+            ]
+          }
+        }
+      ],
+      "latestEvidence": [
+        "build-https/object-teleport-motion-results.json",
+        "build-https/object-teleport-access-results.json",
+        "build-https/object-teleport-control-results.json",
+        "build-https/object-teleport-world-results.json",
+        "build-https/parcel-prim-limits-results.json",
+        "build-https/crossing-completion-results.json",
+        "build-https/crossing-silent-results.json",
+        "build-https/crossing-destination-results.json",
+        "build-https/crossing-script-lifetime-results.json",
+        "build-https/seated-crossing-admission-results.json",
+        "build-https/crossing-snapshot-timing-results.json",
+        "build-https/seated-appearance-results.json",
+        "build-https/seated-script-lifetime-results.json",
+        "build-https/linked-script-retention-results.json",
+        "build-https/seated-crossing-network-results.json",
+        "build-https/scripted-seated-crossing-network-results.json",
+        "build-https/crossing-ban-cache-results.json",
+        "build-https/walking-animation-continuity-results.json"
+      ],
+      "remaining": [
+        "Connect production RegionRuntime adapter using World group lookup and source-land predicate",
+        "Bind live transit/keyframe state and verify PhysicsActor setter/readback effects",
+        "Bind destination parcel script-entry checks and seated avatar restrictions, plus live viewer/seated transform updates",
+        "Implement asynchronous object teleport crossing/completion/rollback including STOPONFAIL and seated transfers",
+        "Bind OSSL dispatch, Severe permissions and invalid-key diagnostic/sleep behavior",
+        "Verify real viewer behavior, persistence/restart and macOS execution"
+      ],
+      "destinationPermissionFinding": "Scene.Permissions.CanObjectEnterWithScripts defaults to allow; the original PrimLimitsModule delegate applies silent DoCommonChecks. Do not reuse ordinary object-entry permissions or the alerting rez/drop wrapper for teleport entry.",
+      "crossingSourceFinding": "Original CrossAsync handles zero seated avatars before assigning tpdata motion/rotation. That unseated teleport branch passes !isTeleport and true into CrossPrimGroupIntoNewRegion. Prepared teleport motion must not be unconditionally applied before remote handoff; source-backed worker/completion tests are still needed.",
+      "crossingCompletionFinding": "Rejected crossing World recovery now preserves linear move-to, disables angular look-at without discarding its parameters and reattaches backup. 640 original/native component comparisons and four live/native gates pass on each OS. Physics-actor-specific, seated and keyframe callbacks and full teleport worker remain pending.",
+      "ordinaryCrossingSilentDeletionFinding": "Production ordinary crossing now suppresses viewer KillObject while preserving internal removal events and cleanup. Fresh four-test gates pass on each OS, including negative crossing and positive normal-deletion UDP assertions. Teleport must still select its own silent/removeScripts behavior; unseated teleport requires non-silent removal.",
+      "crossingDestinationFinding": "Production object worker now follows GetObjectDestination truncation/one-metre lookup offset and 0.2 metre arrival clamp with zero-size fallback. 4664 controlled source comparisons and four integration gates pass per OS; actual grid-provider and other-architecture parity remains separate.",
+      "scriptLifecycleInvestigation": "Seated accepted-object path now stops native VMs/task flags before rider creation and retains script instances/task inventory while rider session transfer work is pending. Three controlled denial cases verify stopped checkpoint/global/inventory across three polls and final removal; retained shutdown is also verified on Windows/Linux. Destination checkpoint stays running. Linked child scripts, successful destination arrival, far-child timing, multiple riders and exact generation/worker lifetime remain pending.",
+      "seatedCrossingAdmissionFinding": "Native production crossing now checks non-NPC rider access before sending the object, rejects in-transit riders and carries admission context into queued rider creation. Three controlled runtime cases (deny, throw, allowed access plus rejected object) and four regression gates pass on Windows/Linux. Full original ban-cache/appearance wrapper, post-admission snapshot ordering, concurrent rider state and successful context propagation remain pending.",
+      "crossingSnapshotTimingFinding": "Production worker now requests object/VM capture after destination lookup and seated admission; poll captures fresh root/checkpoint state. Delayed lookup fixture verifies decoded global 42 and updated description; stop-during-lookup fixture and four regression gates pass on each OS after fixing the standalone test configuration. Complete snapshot payload, seated lifecycle and other shutdown/concurrency paths remain unverified.",
+      "seatedAppearanceAndContextFinding": "Production seated admission now calls existing source-compatible appearance CanTeleport after access negotiation, using live appearance override before circuit data. Seven focused scenarios and five selected gates pass per OS; denied universal wearables/additional bakes retain seat/object, modern protocol and compatible override reach rider creation. Admission context receipt at rider creation and one-query ordering verified; creation is deliberately denied, so successful destination arrival remains pending. Original ban cache, concurrent state and seated stop/remove lifetime remain pending.",
+      "linkedScriptRetentionFinding": "Root/child scripted linkset now verified through accepted object handoff, blocked rider creation, controlled denial and retained shutdown. Child UUID/local offset and running destination checkpoint/global 43 survive transfer; stopped source root/child inventory and checkpoints survive three polls and are later removed. Ten focused scenarios pass on Windows/Linux; production unchanged from previous five-gate verified build. Completed destination avatar arrival, multiple riders and far-child timing remain pending.",
+      "completedSeatedCrossingFinding": "New seated_crossing_network CTest passes on Windows/Linux with two native production executables. Fresh CLI account, UDP sit, ordinary object move, neighbor child connection reuse, object/rider HTTP handoff and destination parented avatar/offset are verified; six checks per OS including clean process shutdown. Scope is one unscripted root and one nearby rider; script destination resume, child seats, multiple riders, far-child timing and full source departure cleanup remain pending.",
+      "scriptedSeatedDestinationFinding": "Two native production executables now verify source script creation through RezScript, legacy task inventory Xfer, UpdateScriptTask upload, global mutation to 42 and resumed destination listener increment to 43 after completed seated crossing. Registered CTest passes eight checks on Windows/Linux. One scripted root/one nearby rider; actual linked-child script arrival, all VM fields, far/multi-rider and final source resource disposal remain separate.",
+      "crossingBanCacheFinding": "Cache source comparison remains 524 scenarios/16828 operations with zero differences per OS. Previously red walking gate is resolved by correcting protocol fixture neighbor connection, acknowledgements/backlog handling and source flight setup, with continuity assertions retained. Snapshot/restore traces match; seven selected network gates pass on Windows/Linux. Full crossing/admission parity remains incomplete."
+    },
+    {
+      "id": "SCRIPT-console",
+      "status": "implemented_with_bounded_source_and_production_runtime_verification_on_windows_and_linux",
+      "apis": [
+        "osConsoleCommand"
+      ],
+      "acceptance": "Bind console dispatch only after threat and owner-console permission checks. Verify denied calls do not run commands.",
+      "implementationEstimate": null,
+      "validationEstimate": null,
+      "reasonEstimatePending": "Dependent scene/module behavior and existing reusable coverage must be scoped before assigning engineering duration.",
+      "methods": [
+        {
+          "id": 490,
+          "api": "osConsoleCommand",
+          "source": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+          "line": 158,
+          "signature": "bool osConsoleCommand(string Command)",
+          "parameterTypes": [
+            "string"
+          ],
+          "probe": "native-port/parity-audit/probe/calls/call-0490.lsl",
+          "windowsCompile": "rejected",
+          "diagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "runtimeBehavior": "not_executed_by_compile_probe",
+          "linuxCompile": "rejected",
+          "linuxDiagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "originalImplementation": {
+            "source": "OpenSim/Region/ScriptEngine/Shared/Api/Implementation/OSSL_Api.cs",
+            "line": 897,
+            "bodySha256": "35c1cc765849c84f1784e9f2cbe9136bbdfe11df6c3268b931cf794b6b6c41a1",
+            "directCalls": [
+              "CheckThreatLevel",
+              "MainConsole.Instance.RunCommand",
+              "World.Permissions.CanRunConsoleCommand"
+            ]
+          }
+        }
+      ],
+      "latestEvidence": "build-https/ossl-console-results.json",
+      "historicalCompileResultsPreserved": true,
+      "remaining": "Complete permission-provider parity, dynamic forced-permission state, command-specific behavior outside existing resolver evidence, real viewer script execution and macOS verification."
+    },
+    {
+      "id": "SCRIPT-format",
+      "status": "implemented_with_bounded_source_and_vm_verification_on_windows_and_linux",
+      "apis": [
+        "osFormatString"
+      ],
+      "acceptance": "Bind original format conversion and list arguments, including errors and source culture behavior.",
+      "implementationEstimate": null,
+      "validationEstimate": null,
+      "reasonEstimatePending": "Dependent scene/module behavior and existing reusable coverage must be scoped before assigning engineering duration.",
+      "methods": [
+        {
+          "id": 573,
+          "api": "osFormatString",
+          "source": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs",
+          "line": 396,
+          "signature": "LSL_String osFormatString(string str, LSL_List strings)",
+          "parameterTypes": [
+            "string",
+            "LSL_List"
+          ],
+          "probe": "native-port/parity-audit/probe/calls/call-0573.lsl",
+          "windowsCompile": "rejected",
+          "diagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "runtimeBehavior": "not_executed_by_compile_probe",
+          "linuxCompile": "rejected",
+          "linuxDiagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "originalImplementation": {
+            "source": "OpenSim/Region/ScriptEngine/Shared/Api/Implementation/OSSL_Api.cs",
+            "line": 2671,
+            "bodySha256": "a554a58ce1078e04128f54b109aef4f5793bda583125f2d1b8b4807d3540fa90",
+            "directCalls": [
+              "CheckThreatLevel",
+              "string.Format"
+            ]
+          }
+        }
+      ],
+      "latestEvidence": "build-https/ossl-format-results.json",
+      "historicalCompileResultsPreserved": true,
+      "remaining": "Complete conversion/culture extremes, exact exception diagnostics, allocation extremes, fresh viewer-hosted execution and macOS verification."
+    },
+    {
+      "id": "SCRIPT-godlike-rez",
+      "status": "confirmed_compiler_entry_gap_on_windows_and_linux",
+      "apis": [
+        "llGodLikeRezObject"
+      ],
+      "acceptance": "Port the original god permission diagnostic, asset lookup and original-XML restore, new object IDs, root transforms, scene insertion, script startup, full update, die-at-edge and script resume behavior. Preserve the original control flow after the diagnostic rather than assuming this is an empty stub.",
+      "implementationEstimate": null,
+      "validationEstimate": null,
+      "reasonEstimatePending": "Dependent scene/module behavior and existing reusable coverage must be scoped before assigning engineering duration.",
+      "methods": [
+        {
+          "id": 177,
+          "api": "llGodLikeRezObject",
+          "source": "OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs",
+          "line": 235,
+          "signature": "void llGodLikeRezObject(string inventory, LSL_Vector pos)",
+          "parameterTypes": [
+            "string",
+            "LSL_Vector"
+          ],
+          "probe": "native-port/parity-audit/probe/calls/call-0177.lsl",
+          "windowsCompile": "rejected",
+          "diagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "runtimeBehavior": "not_executed_by_compile_probe",
+          "linuxCompile": "rejected",
+          "linuxDiagnostics": [
+            "1:27 unsupported expression or undefined name"
+          ],
+          "originalImplementation": {
+            "source": "OpenSim/Region/ScriptEngine/Shared/Api/Implementation/LSL_Api.cs",
+            "line": 17499,
+            "bodySha256": "b44e71fca15a42572d551fe09af38cd5985f5cc3d8e1687059abff80e4e23da8",
+            "directCalls": [
+              "Array.Empty<DetectParams>",
+              "NotImplemented",
+              "SceneObjectSerializer.FromOriginalXmlFormat",
+              "Utils.BytesToString",
+              "World.AddNewSceneObject",
+              "World.AssetService.Get",
+              "World.Permissions.IsGod",
+              "group.CreateScriptInstances",
+              "group.ResetIDs",
+              "group.ResumeScripts",
+              "group.RootPart.SetDieAtEdge",
+              "group.RootPart.UUID.ToString",
+              "group.ScheduleGroupForFullUpdate",
+              "llSay",
+              "m_ScriptEngine.PostObjectEvent"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "admissionTasks": [
+    {
+      "id": "ADMISSION-transit",
+      "original": "OpenSim/Region/Framework/Scenes/Scene.cs:4058",
+      "native": "native-port/src/region_runtime.cpp:2714",
+      "finding": "in_transit(const Uuid&) unconditionally returns false.",
+      "remaining": "Connect actual transfer state and verify admission during active transfer, failure, retry and cleanup on both platforms.",
+      "currentSourceFinding": "Adapter now checks transfer_states, avatar_crossings and pending_teleports under teleport_mutex; original unconditional-false finding is historical."
+    },
+    {
+      "id": "ADMISSION-protected-child",
+      "original": "OpenSim/Region/Framework/Scenes/Scene.cs:4792",
+      "native": "native-port/src/region_runtime.cpp:1085",
+      "finding": "do_not_close_after_teleport(bool) ignores writes. Original CloseAgent consumes a renewed-child flag and refuses one stale close.",
+      "remaining": "Store and consume the actual child lease state through original admission/CloseAgent lifecycle and verify refusal then subsequent valid close.",
+      "currentSourceFinding": "Adapter stores protected_child_lease. Existing transfer_runtime_tests cover renewal and consumed stale-close refusal; original ignored-write finding is historical. Full lifecycle parity is not implied."
+    }
+  ],
+  "hostIntegrationGaps": [
+    {
+      "id": "HOST-teleport-flags",
+      "native": "native-port/src/region_runtime.cpp:1091",
+      "caller": "native-port/src/scene_admission.cpp:171",
+      "finding": "Actor teleport_flags(uint32_t) ignores admission updates on an existing presence.",
+      "acceptance": "Determine whether equivalent stored circuit/viewer state covers each consumer; implement remaining source-required presence updates and test repeated admission."
+    },
+    {
+      "id": "HOST-known-seeds",
+      "native": "native-port/src/region_runtime.cpp:1093",
+      "caller": "native-port/src/scene_admission.cpp:179",
+      "finding": "Actor adjust_known_seeds is empty on child-presence reuse.",
+      "acceptance": "Compare current child-seed dictionaries/capability updates with ScenePresence.AdjustKnownSeeds, then test renewed child circuits and removed seeds."
+    },
+    {
+      "id": "HOST-client-verifier",
+      "native": "native-port/src/region_runtime.cpp:2979",
+      "caller": "native-port/src/scene_client_verification.cpp:45",
+      "finding": "Production user_verification_module returns null; generic verification core can call an injected verifier.",
+      "acceptance": "Compare production HG verification performed elsewhere and bind the missing module/recheck behavior without double verification."
+    },
+    {
+      "id": "HOST-presence-cleanup",
+      "native": "native-port/src/region_runtime.cpp:2983",
+      "caller": "native-port/src/scene_client_verification.cpp:66",
+      "finding": "Production scene_presence returns null; generic failure cleanup waits for this adapter.",
+      "acceptance": "Bind actual presence/client/session lookup where required, then exercise rejected-client cleanup and presence logout instead of only the success path."
+    }
+  ]
+}

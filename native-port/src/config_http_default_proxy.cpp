@@ -1,9 +1,9 @@
 #include "opensim/framework/config_http_default_proxy.hpp"
 #include "opensim/framework/config_uri_components.hpp"
 #include "opensim/framework/config_http_windows_proxy.hpp"
+
 namespace opensim::framework {
-std::shared_ptr<ConfigHttpProxy>
-config_http_construct_default_proxy(const ConfigHttpDefaultProxyOptions &options) {
+std::shared_ptr<ConfigHttpProxy> config_http_construct_default_proxy(const ConfigHttpDefaultProxyOptions &options) {
     auto env = options.environment ? options.environment : native_config_http_environment_proxy_backend();
     auto platform = options.platform == ConfigHttpSystemProxyPlatform::Windows
                         ? ConfigHttpEnvironmentProxyPlatform::Windows
@@ -27,8 +27,9 @@ config_http_construct_default_proxy(const ConfigHttpDefaultProxyOptions &options
     }
     return std::make_shared<ConfigHttpNoProxy>();
 }
-ConfigHttpDefaultProxy::ConfigHttpDefaultProxy(ConfigHttpDefaultProxyOptions options)
-    : options_(std::move(options)) {}
+
+ConfigHttpDefaultProxy::ConfigHttpDefaultProxy(ConfigHttpDefaultProxyOptions options) : options_(std::move(options)) {}
+
 std::shared_ptr<ConfigHttpProxy> ConfigHttpDefaultProxy::get() {
     if (auto value = value_.load())
         return value;
@@ -55,15 +56,17 @@ std::shared_ptr<ConfigHttpProxy> ConfigHttpDefaultProxy::get() {
         return candidate;
     return empty;
 }
+
 void ConfigHttpDefaultProxy::set(std::shared_ptr<ConfigHttpProxy> value) {
     if (!value)
-        throw ConfigUriComponentsError("System.ArgumentNullException",
-                                       u"Value cannot be null. (Parameter 'value')", 0x80004003, u"value");
+        throw ConfigUriComponentsError("System.ArgumentNullException", u"Value cannot be null. (Parameter 'value')",
+                                       0x80004003, u"value");
     value_.store(std::move(value));
 }
+
 std::shared_ptr<ConfigHttpDefaultProxy> native_config_http_default_proxy_selector() {
     static auto selector = std::make_shared<ConfigHttpDefaultProxy>(ConfigHttpDefaultProxyOptions{});
     return selector;
 }
 
-}
+} // namespace opensim::framework

@@ -5,10 +5,12 @@
 #include <thread>
 using namespace opensim;
 using namespace services;
-void check(bool value, const char* message) {
+
+void check(bool value, const char *message) {
     if (!value)
         throw std::runtime_error(message);
 }
+
 int main() {
     try {
         SqliteFriendsStore store(":memory:", true);
@@ -16,8 +18,8 @@ int main() {
         auto a = framework::Uuid::random(), b = framework::Uuid::random();
         check(service.store(a.str(), b.str(), 7), "store one-way friend");
         auto rows = service.get(a);
-        check(rows.size() == 1 && rows[0].principal == a && rows[0].friend_id == b.str() &&
-                  rows[0].my_flags == 7 && rows[0].their_flags == -1,
+        check(rows.size() == 1 && rows[0].principal == a && rows[0].friend_id == b.str() && rows[0].my_flags == 7 &&
+                  rows[0].their_flags == -1,
               "one-way friend has source missing reverse permission -1");
         check(service.get(std::optional<std::string>(a.str())).empty(),
               "source string lookup skips newly constructed null friend");
@@ -29,8 +31,7 @@ int main() {
         check(friend_can_modify_objects(service, a, b, false), "owner grants object editing to friend");
         check(service.store(b.str(), a.str(), 1), "revoke object editing");
         check(friend_is_confirmed(service, a, b, false), "confirmed friendship needs no object edit permission");
-        check(!friend_can_modify_objects(service, a, b, false) &&
-                  friend_can_modify_objects(service, b, a, false),
+        check(!friend_can_modify_objects(service, a, b, false) && friend_can_modify_objects(service, b, a, false),
               "object edit grant is directional and revocation takes effect");
         check(service.store(b.str(), a.str(), 5), "restore object editing");
         auto raw = std::make_shared<FriendsData>();
@@ -54,14 +55,13 @@ int main() {
                         okay = false;
                 }
             });
-        for (auto& thread : threads)
+        for (auto &thread : threads)
             thread.join();
         check(okay, "concurrent friends reads retain paired permissions");
         check(service.erase(b, a.str()) && service.get(a)[0].their_flags == -1,
               "delete reverse relationship updates forward permissions");
         check(service.erase(b, a.str()), "deleting absent friends preserves source true result");
-        check(!friend_can_modify_objects(service, a, b, false),
-              "pending friendship grants no object editing");
+        check(!friend_can_modify_objects(service, a, b, false), "pending friendship grants no object editing");
         FriendInfo empty;
         check(!empty.friend_id && empty.principal.is_zero() && empty.my_flags == 0 &&
                   empty.to_key_value_pairs().size() == 4,
@@ -71,14 +71,14 @@ int main() {
         bool threw = false;
         try {
             service.get(a);
-        } catch (const std::exception&) {
+        } catch (const std::exception &) {
             threw = true;
         }
         check(threw && service.get(std::optional<std::string>(a.str())).empty(),
               "UUID path propagates corrupt permissions while string path skips conversion");
         std::cout << "PASS: native friends storage, directional permissions and concurrency\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what();
         return 1;
     }

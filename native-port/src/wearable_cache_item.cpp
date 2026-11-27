@@ -4,39 +4,45 @@
 #include "opensim/framework/avatar_appearance_constants.hpp"
 #include "opensim/network/osd_value.hpp"
 #include <stdexcept>
+
 namespace opensim::framework {
 namespace {
 using network::Value;
-Value uuid(const Uuid& id) {
+
+Value uuid(const Uuid &id) {
     Value value(id.str());
     value.kind = Value::Kind::Uuid;
     return value;
 }
-WearableCacheItem& required(const std::shared_ptr<WearableCacheItem>& item) {
+
+WearableCacheItem &required(const std::shared_ptr<WearableCacheItem> &item) {
     if (!item)
         throw std::invalid_argument("Null wearable cache entry");
     return *item;
 }
-const WearableCacheItems& required(const WearableCacheItems* items) {
+
+const WearableCacheItems &required(const WearableCacheItems *items) {
     if (!items)
         throw std::invalid_argument("Null wearable cache array");
     return *items;
 }
-Value packed(const WearableCacheItem& item) {
+
+Value packed(const WearableCacheItem &item) {
     auto result = Value::object({});
     result.set("textureindex", network::osd_from_unsigned(item.texture_index));
     result.set("cacheid", uuid(item.cache_id));
     result.set("textureid", uuid(item.texture_id));
     return result;
 }
-template <class Match>
-std::shared_ptr<WearableCacheItem> search(const WearableCacheItems* items, Match match) {
-    for (const auto& item : required(items))
+
+template <class Match> std::shared_ptr<WearableCacheItem> search(const WearableCacheItems *items, Match match) {
+    for (const auto &item : required(items))
         if (match(required(item)))
             return item;
     return {};
 }
-}
+} // namespace
+
 WearableCacheItems WearableCacheItem::defaults() {
     WearableCacheItems result;
     for (int i = 0; i < avatar_appearance::texture_count; ++i) {
@@ -46,14 +52,16 @@ WearableCacheItems WearableCacheItem::defaults() {
     }
     return result;
 }
-WearableCacheItems WearableCacheItem::from_osd(const network::Value& input, IAssetCache* cache) {
+
+WearableCacheItems WearableCacheItem::from_osd(const network::Value &input, IAssetCache *cache) {
     return from_osd(&input, cache);
 }
-WearableCacheItems WearableCacheItem::from_osd(const network::Value* input, IAssetCache* cache) {
+
+WearableCacheItems WearableCacheItem::from_osd(const network::Value *input, IAssetCache *cache) {
     if (!input)
         throw std::invalid_argument("Null wearable cache OSD");
     WearableCacheItems result;
-    const auto append = [&](const Value& row, bool array) {
+    const auto append = [&](const Value &row, bool array) {
         if (row.kind != Value::Kind::Map)
             throw std::invalid_argument("Wearable cache requires map entries");
         auto item = std::make_shared<WearableCacheItem>();
@@ -72,17 +80,18 @@ WearableCacheItems WearableCacheItem::from_osd(const network::Value* input, IAss
         }
     };
     if (input->kind == Value::Kind::Array)
-        for (const auto& row : input->array)
+        for (const auto &row : input->array)
             append(row, true);
     else if (input->kind == Value::Kind::Map)
         append(*input, false);
     return result;
 }
-network::Value WearableCacheItem::to_osd(const WearableCacheItems* items, IAssetCache* cache) {
+
+network::Value WearableCacheItem::to_osd(const WearableCacheItems *items, IAssetCache *cache) {
     Value result;
     result.kind = Value::Kind::Array;
-    for (const auto& pointer : required(items)) {
-        const auto& item = required(pointer);
+    for (const auto &pointer : required(items)) {
+        const auto &item = required(pointer);
         auto row = packed(item);
         if (cache && cache->check(item.texture_id.str())) {
             std::shared_ptr<AssetBase> asset;
@@ -97,8 +106,8 @@ network::Value WearableCacheItem::to_osd(const WearableCacheItems* items, IAsset
     }
     return result;
 }
-std::optional<network::Value> WearableCacheItem::baked_to_osd(const WearableCacheItems* items, int start,
-                                                              int end) {
+
+std::optional<network::Value> WearableCacheItem::baked_to_osd(const WearableCacheItems *items, int start, int end) {
     Value result;
     result.kind = Value::Kind::Array;
     if (start < 0)
@@ -108,26 +117,26 @@ std::optional<network::Value> WearableCacheItem::baked_to_osd(const WearableCach
     if (start > end)
         return std::nullopt;
     for (int i = start; i < end; ++i) {
-        const auto index =
-            static_cast<std::size_t>(avatar_appearance::bake_indices[static_cast<std::size_t>(i)]);
+        const auto index = static_cast<std::size_t>(avatar_appearance::bake_indices[static_cast<std::size_t>(i)]);
         if (index >= required(items).size())
             continue;
         result.array.push_back(packed(required((*items)[index])));
     }
     return result;
 }
-WearableCacheItems WearableCacheItem::baked_from_osd(const network::Value* input) {
+
+WearableCacheItems WearableCacheItem::baked_from_osd(const network::Value *input) {
     auto result = defaults();
     if (!input)
         throw std::invalid_argument("Null wearable cache OSD");
     if (input->kind == Value::Kind::Array) {
-        for (const auto& row : input->array) {
+        for (const auto &row : input->array) {
             if (row.kind != Value::Kind::Map)
                 throw std::invalid_argument("Wearable cache requires map entries");
             const auto index = network::osd_integer(row.get("textureindex"));
             if (index < 0 || static_cast<std::size_t>(index) >= result.size())
                 continue;
-            auto& item = *result[static_cast<std::size_t>(index)];
+            auto &item = *result[static_cast<std::size_t>(index)];
             item.cache_id = network::osd_uuid(row.get("cacheid"));
             item.texture_id = network::osd_uuid(row.get("textureid"));
             item.texture_asset.reset();
@@ -135,16 +144,18 @@ WearableCacheItems WearableCacheItem::baked_from_osd(const network::Value* input
     }
     return result;
 }
+
 std::shared_ptr<WearableCacheItem> WearableCacheItem::search_index(std::uint32_t index,
-                                                                   const WearableCacheItems* items) {
-    return search(items, [&](const auto& item) { return item.texture_index == index; });
+                                                                   const WearableCacheItems *items) {
+    return search(items, [&](const auto &item) { return item.texture_index == index; });
 }
-std::shared_ptr<WearableCacheItem> WearableCacheItem::search_cache(const Uuid& cache,
-                                                                   const WearableCacheItems* items) {
-    return search(items, [&](const auto& item) { return item.cache_id == cache; });
+
+std::shared_ptr<WearableCacheItem> WearableCacheItem::search_cache(const Uuid &cache, const WearableCacheItems *items) {
+    return search(items, [&](const auto &item) { return item.cache_id == cache; });
 }
-std::shared_ptr<WearableCacheItem> WearableCacheItem::search_texture(const Uuid& texture,
-                                                                     const WearableCacheItems* items) {
-    return search(items, [&](const auto& item) { return item.texture_id == texture; });
+
+std::shared_ptr<WearableCacheItem> WearableCacheItem::search_texture(const Uuid &texture,
+                                                                     const WearableCacheItems *items) {
+    return search(items, [&](const auto &item) { return item.texture_id == texture; });
 }
-}
+} // namespace opensim::framework

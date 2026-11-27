@@ -1,5 +1,6 @@
 // Source .NET8.0.31 Uri.CheckCanonical, built-in file flags; MIT .NET license.
 #include "opensim/framework/config_file_uri_canonical.hpp"
+
 namespace opensim::framework {
 namespace {
 int hex(char16_t c) {
@@ -8,16 +9,18 @@ int hex(char16_t c) {
            : c >= u'a' && c <= u'f' ? c - u'a' + 10
                                     : -1;
 }
+
 bool iri(std::uint32_t c) {
     if (c <= 65535)
         return (c >= 160 && c <= 55295) || (c >= 63744 && c <= 64975) || (c >= 65008 && c <= 65519) ||
                (c >= 57344 && c <= 63743);
     return (c & 65535) < 65534 && !(c >= 917504 && c <= 921599);
 }
-}
+} // namespace
+
 ConfigFileUriCanonicalResult config_file_uri_check_canonical(std::u16string_view text, std::size_t start,
-                                                             std::size_t end, char16_t delimiter,
-                                                             bool implicit, bool unicode) {
+                                                             std::size_t end, char16_t delimiter, bool implicit,
+                                                             bool unicode) {
     int check = 0;
     bool flag = false, flag2 = false;
     std::size_t i = start;
@@ -70,8 +73,8 @@ ConfigFileUriCanonicalResult config_file_uri_check_canonical(std::u16string_view
         }
         if (c == u'.') {
             auto next = i + 1 < text.size() ? text[i + 1] : char16_t(0);
-            if ((!(check & 4) && i + 1 == end) || next == u'.' || next == u'/' || next == u'\\' ||
-                next == u'?' || next == u'#')
+            if ((!(check & 4) && i + 1 == end) || next == u'.' || next == u'/' || next == u'\\' || next == u'?' ||
+                next == u'#')
                 check |= 4;
             continue;
         }
@@ -109,4 +112,4 @@ ConfigFileUriCanonicalResult config_file_uri_check_canonical(std::u16string_view
     }
     return {check, i};
 }
-}
+} // namespace opensim::framework

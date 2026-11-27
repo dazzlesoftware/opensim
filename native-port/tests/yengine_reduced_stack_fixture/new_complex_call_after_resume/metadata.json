@@ -1,0 +1,2887 @@
+{
+  "scenario": "new_complex_call_after_resume",
+  "source_hash": "D1AF01D8660566FC98FD415E4F9C3A41",
+  "global_names": {
+    "iarIntegers": {
+      "0": "entries",
+      "1": "calls",
+      "2": "result"
+    }
+  },
+  "cache_key": "lOgo4o6TqsI7aDKxZWv4M9YdBemdVkYUp2_Pl1K6me8",
+  "compiled_version": -11,
+  "migration_version": 12,
+  "original_source_unchanged": true,
+  "environment_stubs": "Only abstract environment methods; CheckRunWork records actual generated stack and scheduler-only suspension at controlled check133",
+  "captureStackSize": 65536,
+  "captureStackLimit": 32768,
+  "captured_check": 133,
+  "capturedGlobals": {
+    "calls": 131,
+    "entries": 1,
+    "result": 0
+  },
+  "capturedFrames": [
+    {
+      "function": "default state_entry",
+      "call_no": 1,
+      "slots": 2
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 1,
+      "slots": 4
+    },
+    {
+      "function": "recur(integer)",
+      "call_no": 2,
+      "slots": 4
+    }
+  ],
+  "captureAfterUnwindStackLeft": 65536,
+  "captureSamples": [
+    {
+      "phase": "capture64K",
+      "stack_left": 65472,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 65400,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 65328,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 65256,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 65184,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 65112,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 65040,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 64968,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 64896,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 64824,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 64752,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 64680,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 64608,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 64536,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 64464,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 64392,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 64320,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 64248,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 64176,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 64104,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 64032,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 63960,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 63888,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 63816,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 63744,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 63672,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 63600,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 63528,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 63456,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 63384,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 63312,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 63240,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 63168,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 63096,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 63024,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 62952,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 62880,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 62808,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 62736,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 62664,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 62592,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 62520,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 62448,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 62376,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 62304,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 62232,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 62160,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 62088,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 62016,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 61944,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 61872,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 61800,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 61728,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 61656,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 61584,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 61512,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 61440,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 61368,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 61296,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 61224,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 61152,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 61080,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 61008,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 60936,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 60864,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 60792,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 60720,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 60648,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 60576,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 60504,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 60432,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 60360,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 60288,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 60216,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 60144,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 60072,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 60000,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 59928,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 59856,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 59784,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 59712,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 59640,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 59568,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 59496,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 59424,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 59352,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 59280,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 59208,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 59136,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 59064,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 58992,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 58920,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 58848,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 58776,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 58704,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 58632,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 58560,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 58488,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 58416,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 58344,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 58272,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 58200,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 58128,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 58056,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 57984,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 57912,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 57840,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 57768,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 57696,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 57624,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 57552,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 57480,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 57408,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 57336,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 57264,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 57192,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 57120,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 57048,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 56976,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 56904,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 56832,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 56760,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 56688,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 56616,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 56544,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 56472,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 56400,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 56328,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 56256,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 56184,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 56112,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 56040,
+      "stack_limit": 32768,
+      "call_mode": 0
+    },
+    {
+      "phase": "capture64K",
+      "stack_left": 56040,
+      "stack_limit": 32768,
+      "call_mode": 0
+    }
+  ],
+  "resumes": [
+    {
+      "stack_size": 65536,
+      "stack_limit": 32768,
+      "loaded": true,
+      "loadError": null,
+      "stackAfterLoad": 65536,
+      "loadedGlobals": {
+        "calls": 131,
+        "entries": 1,
+        "result": 0
+      },
+      "loadedFrames": [
+        {
+          "function": "default state_entry",
+          "call_no": 1,
+          "slots": 2
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 2,
+          "slots": 4
+        }
+      ],
+      "completed": true,
+      "resumeError": null,
+      "finalGlobals": {
+        "calls": 131,
+        "entries": 1,
+        "result": 7
+      },
+      "finalStackLeft": 65536,
+      "remainingFrames": [],
+      "stackSamples": [
+        {
+          "phase": "resume65536",
+          "stack_left": 56040,
+          "stack_limit": 32768,
+          "call_mode": 2
+        },
+        {
+          "phase": "resume65536",
+          "stack_left": 55976,
+          "stack_limit": 32768,
+          "call_mode": 0
+        }
+      ]
+    },
+    {
+      "stack_size": 16384,
+      "stack_limit": 8192,
+      "loaded": true,
+      "loadError": null,
+      "stackAfterLoad": 16384,
+      "loadedGlobals": {
+        "calls": 131,
+        "entries": 1,
+        "result": 0
+      },
+      "loadedFrames": [
+        {
+          "function": "default state_entry",
+          "call_no": 1,
+          "slots": 2
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 1,
+          "slots": 4
+        },
+        {
+          "function": "recur(integer)",
+          "call_no": 2,
+          "slots": 4
+        }
+      ],
+      "completed": false,
+      "resumeError": "OpenSim.Region.ScriptEngine.Yengine.OutOfStackException: Exception of type \u0027OpenSim.Region.ScriptEngine.Yengine.OutOfStackException\u0027 was thrown.\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CheckRunStack() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 627\r\n   at checkedLeaf()(FunctionExecutionReferenceInstance)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at recur(integer)(FunctionExecutionReferenceInstance, Int32)\r\n   at default state_entry(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 558\r\n   at SuspendedProgram.ExecuteInputs() in G:\\GitHub\\SecondLife\\opensim\\native-port\\tests\\yengine_reduced_stack_reference.cs:line 196",
+      "finalGlobals": {
+        "calls": 131,
+        "entries": 1,
+        "result": 0
+      },
+      "finalStackLeft": 16384,
+      "remainingFrames": [],
+      "stackSamples": [
+        {
+          "phase": "resume16384",
+          "stack_left": 6888,
+          "stack_limit": 8192,
+          "call_mode": 2
+        }
+      ]
+    }
+  ],
+  "sha256": {
+    "source.lsl": "161d654466e45be71e4b0a8b3f0f1272e23be773397be5eb9aa0d456001bd783",
+    "original.yobj": "51150ea467b3033aaff916239412c9922a908edd96e506a1943d2c076798fac0",
+    "original.il.txt": "cc70a338125695e6cd6db90f9042d6715acc00b49579a55be423b9e0635479d7",
+    "snapshot.bin": "0e705d754b987a34807b37bbc41d4ae8e5d99777f699a088a7c8fc003a9940cc",
+    "cache_key.txt": "6b8c144171f40767d9c891ae1f97c37dffd7627c6f5822cc35b37c80ce43b399",
+    "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+    "generator_assembly": "4fd0017a607d3f1981dafafbb65398f36bd6b919594e2d90663b33f7aa9e34bc",
+    "generator_source": "8024591ae1f4a8766c47daaf77c146abce0f41b555eb7fe68019ff87ddb7e864"
+  }
+}

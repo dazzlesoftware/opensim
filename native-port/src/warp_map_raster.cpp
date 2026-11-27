@@ -14,10 +14,10 @@ struct RasterVertex {
     double x, y, depth, u, v;
 };
 
-RasterVertex at_row(const RasterVertex& a, const RasterVertex& b, double row) {
+RasterVertex at_row(const RasterVertex &a, const RasterVertex &b, double row) {
     const auto ratio = (row - a.y) / (b.y - a.y);
-    return {std::lerp(a.x, b.x, ratio), row, std::lerp(a.depth, b.depth, ratio),
-            std::lerp(a.u, b.u, ratio), std::lerp(a.v, b.v, ratio)};
+    return {std::lerp(a.x, b.x, ratio), row, std::lerp(a.depth, b.depth, ratio), std::lerp(a.u, b.u, ratio),
+            std::lerp(a.v, b.v, ratio)};
 }
 
 } // namespace
@@ -31,19 +31,19 @@ WarpMapRaster::WarpMapRaster(std::uint32_t width, std::uint32_t height, float ca
     depth_.resize(static_cast<std::size_t>(pixels), std::numeric_limits<std::int32_t>::max());
 }
 
-void WarpMapRaster::draw(const WarpTerrainMesh& mesh, const MapBitmap& texture) {
+void WarpMapRaster::draw(const WarpTerrainMesh &mesh, const MapBitmap &texture) {
     rasterize(mesh.vertices, mesh.triangles, texture, 255, {255, 255, 255}, false, false);
 }
 
-void WarpMapRaster::draw_tinted(const WarpTerrainMesh& mesh, std::shared_ptr<const MapBitmap> texture,
-                               std::array<std::uint8_t, 3> tint, unsigned opacity, bool repeat) {
+void WarpMapRaster::draw_tinted(const WarpTerrainMesh &mesh, std::shared_ptr<const MapBitmap> texture,
+                                std::array<std::uint8_t, 3> tint, unsigned opacity, bool repeat) {
     if (!texture || opacity == 0)
         return;
     if (opacity == 255 && texture->channels == 3) {
         rasterize(mesh.vertices, mesh.triangles, *texture, opacity, tint, repeat, false);
         return;
     }
-    for (const auto& triangle : mesh.triangles) {
+    for (const auto &triangle : mesh.triangles) {
         const std::array points{mesh.vertices.at(triangle[0]), mesh.vertices.at(triangle[1]),
                                 mesh.vertices.at(triangle[2])};
         const double elevation = double(points[0].elevation) + points[1].elevation + points[2].elevation;
@@ -59,8 +59,10 @@ void WarpMapRaster::draw_water(float water_height) {
     const float north = center_y + half_width;
     const WarpTerrainMesh plane{
         0,
-        {{0, water_height, north, 0, 0}, {float(image_.width), water_height, north, 0, 0},
-         {float(image_.width), water_height, south, 0, 0}, {0, water_height, south, 0, 0}},
+        {{0, water_height, north, 0, 0},
+         {float(image_.width), water_height, north, 0, 0},
+         {float(image_.width), water_height, south, 0, 0},
+         {0, water_height, south, 0, 0}},
         {{0, 3, 2}, {0, 2, 1}},
     };
     static const auto texture = std::make_shared<const MapBitmap>(MapBitmap{1, 1, {29, 72, 96}});
@@ -68,20 +70,18 @@ void WarpMapRaster::draw_water(float water_height) {
 }
 
 void WarpMapRaster::finish_transparency() {
-    std::stable_sort(transparent_.begin(), transparent_.end(), [](const auto& a, const auto& b) {
-        return a.elevation < b.elevation;
-    });
+    std::stable_sort(transparent_.begin(), transparent_.end(),
+                     [](const auto &a, const auto &b) { return a.elevation < b.elevation; });
     constexpr std::array<std::array<std::uint32_t, 3>, 1> indices{{{0, 1, 2}}};
-    for (const auto& triangle : transparent_)
-        rasterize(triangle.vertices, indices, *triangle.texture, triangle.opacity,
-                  triangle.tint, triangle.repeat, true);
+    for (const auto &triangle : transparent_)
+        rasterize(triangle.vertices, indices, *triangle.texture, triangle.opacity, triangle.tint, triangle.repeat,
+                  true);
     transparent_.clear();
 }
 
 void WarpMapRaster::rasterize(std::span<const WarpTerrainVertex> points,
-                              std::span<const std::array<std::uint32_t, 3>> triangles,
-                              const MapBitmap& texture, unsigned opacity, std::array<std::uint8_t, 3> tint,
-                              bool repeat, bool transparent) {
+                              std::span<const std::array<std::uint32_t, 3>> triangles, const MapBitmap &texture,
+                              unsigned opacity, std::array<std::uint8_t, 3> tint, bool repeat, bool transparent) {
     const auto texels = std::uint64_t(texture.width) * texture.height;
     if ((texture.channels != 3 && texture.channels != 4) || texels == 0 ||
         texels > std::numeric_limits<std::size_t>::max() / texture.channels ||
@@ -90,7 +90,7 @@ void WarpMapRaster::rasterize(std::span<const WarpTerrainVertex> points,
 
     std::vector<RasterVertex> vertices;
     vertices.reserve(points.size());
-    for (const auto& vertex : points) {
+    for (const auto &vertex : points) {
         const auto projected = project_warp_map_vertex(vertex, image_.height, camera_height_);
         const bool finite = std::isfinite(vertex.x) && std::isfinite(vertex.y) && std::isfinite(vertex.elevation);
         const double depth = finite ? double(projected.depth) : std::numeric_limits<double>::quiet_NaN();
@@ -103,27 +103,25 @@ void WarpMapRaster::rasterize(std::span<const WarpTerrainVertex> points,
         const double wrapped = std::fmod(std::trunc(coordinate * (size - 1)), size);
         return static_cast<std::uint32_t>(wrapped < 0 ? wrapped + size : wrapped);
     };
-    for (const auto& triangle : triangles) {
-        const auto& a = vertices.at(triangle[0]);
-        const auto& b = vertices.at(triangle[1]);
-        const auto& c = vertices.at(triangle[2]);
+    for (const auto &triangle : triangles) {
+        const auto &a = vertices.at(triangle[0]);
+        const auto &b = vertices.at(triangle[1]);
+        const auto &c = vertices.at(triangle[2]);
         const auto area = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
         // Warp3D rejects triangles wholly behind the orthographic camera.
         // A triangle crossing its plane keeps its projected vertices and signed depth.
         const bool behind_camera = a.depth < 0 && b.depth < 0 && c.depth < 0;
-        if (area >= 0 || behind_camera ||
-            !std::isfinite(a.depth) || !std::isfinite(b.depth) || !std::isfinite(c.depth) ||
-            !std::isfinite(a.u) || !std::isfinite(a.v) || !std::isfinite(b.u) ||
+        if (area >= 0 || behind_camera || !std::isfinite(a.depth) || !std::isfinite(b.depth) ||
+            !std::isfinite(c.depth) || !std::isfinite(a.u) || !std::isfinite(a.v) || !std::isfinite(b.u) ||
             !std::isfinite(b.v) || !std::isfinite(c.u) || !std::isfinite(c.v))
             continue;
 
-        std::array<const RasterVertex*, 3> corners{&a, &b, &c};
-        std::sort(corners.begin(), corners.end(), [](const auto* left, const auto* right) {
-            return left->y < right->y;
-        });
-        const auto& top = *corners[0];
-        const auto& middle = *corners[1];
-        const auto& bottom = *corners[2];
+        std::array<const RasterVertex *, 3> corners{&a, &b, &c};
+        std::sort(corners.begin(), corners.end(),
+                  [](const auto *left, const auto *right) { return left->y < right->y; });
+        const auto &top = *corners[0];
+        const auto &middle = *corners[1];
+        const auto &bottom = *corners[2];
         const auto first_row = static_cast<std::uint32_t>(std::clamp(top.y, 0.0, double(image_.height)));
         const auto end_row = static_cast<std::uint32_t>(std::clamp(bottom.y, 0.0, double(image_.height)));
         for (auto row = first_row; row < end_row; ++row) {
@@ -144,8 +142,8 @@ void WarpMapRaster::rasterize(std::span<const WarpTerrainVertex> points,
                 const auto u = texel(std::lerp(left.u, right.u, ratio), texture.width);
                 const auto v = texel(std::lerp(left.v, right.v, ratio), texture.height);
                 const auto offset = (std::size_t(v) * texture.width + u) * texture.channels;
-                auto* target = image_.pixels.data() + pixel * 3;
-                const auto* source = texture.pixels.data() + offset;
+                auto *target = image_.pixels.data() + pixel * 3;
+                const auto *source = texture.pixels.data() + offset;
                 const unsigned alpha = texture.channels == 4 ? (source[3] * opacity + 255) >> 8 : opacity;
                 if (alpha == 0)
                     continue;

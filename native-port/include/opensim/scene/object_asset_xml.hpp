@@ -8,7 +8,9 @@
 #include "opensim/script/lsl_runtime.hpp"
 #include <filesystem>
 
-namespace pugi { class xml_node; }
+namespace pugi {
+class xml_node;
+}
 
 namespace opensim::scene {
 
@@ -17,6 +19,7 @@ struct ManagedScriptState {
         std::int64_t interval_ticks;
         std::int64_t remaining_ticks;
     };
+
     struct PermissionGrant {
         framework::Uuid granter;
         std::int32_t mask;
@@ -32,12 +35,19 @@ struct ManagedScriptState {
     std::vector<script::LslEvent> events;
     std::optional<script::YEngineSnapshot> snapshot;
     std::string source_hash;
+    std::string original_xml;
+    bool has_snapshot_data = false;
+    std::optional<std::uint64_t> event_mask;
 
     bool empty() const {
         return !timer && !elapsed_ticks && !minimum_event_delay && !running && sensors.empty() && listeners.empty() &&
-               events.empty() && !snapshot;
+               events.empty() && !snapshot && !has_snapshot_data;
     }
 };
+
+// Append constructor notifications using the original EventQueue XML format.
+// Existing snapshot and opaque elements remain intact.
+bool append_managed_lifecycle_events(ManagedScriptState &, std::span<const script::LslEvent>);
 
 struct ObjectAssetPart {
     SceneObject object;
@@ -50,9 +60,9 @@ struct ObjectAssetPart {
 };
 
 // Children are supplied in link number order, with transforms relative to root.
-void write_object_asset_xml(framework::NativeXmlTextWriter& writer, const ObjectAssetPart& root,
-                           std::span<const ObjectAssetPart> children);
-void write_crossing_object_xml(framework::NativeXmlTextWriter& writer, const ObjectAssetPart& root,
+void write_object_asset_xml(framework::NativeXmlTextWriter &writer, const ObjectAssetPart &root,
+                            std::span<const ObjectAssetPart> children);
+void write_crossing_object_xml(framework::NativeXmlTextWriter &writer, const ObjectAssetPart &root,
                                std::span<const ObjectAssetPart> children);
 
 struct ObjectAssetLinkset {
@@ -61,8 +71,8 @@ struct ObjectAssetLinkset {
     std::vector<ObjectAssetPart> parts;
 };
 
-void write_coalesced_object_asset_xml(framework::NativeXmlTextWriter& writer,
-                                     std::span<const ObjectAssetLinkset> linksets);
+void write_coalesced_object_asset_xml(framework::NativeXmlTextWriter &writer,
+                                      std::span<const ObjectAssetLinkset> linksets);
 
 struct ObjectAsset {
     framework::Vector3 bounds;
@@ -70,13 +80,14 @@ struct ObjectAsset {
     bool coalesced = false;
 };
 
-std::string write_prim_inertia_xml(const framework::PrimInertiaOverride& inertia);
+std::string write_prim_inertia_xml(const framework::PrimInertiaOverride &inertia);
 std::optional<framework::PrimInertiaOverride> read_prim_inertia_xml(std::string_view xml);
 
-ManagedScriptState read_managed_script_state(const pugi::xml_node& state);
-std::optional<ManagedScriptState> read_yengine_state_file(const std::filesystem::path& directory,
-                                                        framework::Uuid item, framework::Uuid asset);
+ManagedScriptState read_managed_script_state(const pugi::xml_node &state);
+std::optional<ManagedScriptState> read_yengine_state_xml(std::span<const std::uint8_t>, framework::Uuid asset);
+std::optional<ManagedScriptState> read_yengine_state_file(const std::filesystem::path &directory, framework::Uuid item,
+                                                          framework::Uuid asset);
 
 std::optional<ObjectAsset> read_object_asset_xml(std::span<const std::uint8_t> bytes);
 
-}
+} // namespace opensim::scene

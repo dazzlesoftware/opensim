@@ -1,0 +1,1 @@
+YOption arrays;YOption chars;object input=(object)[1,"x"];string typename;integer result;integer after;default{state_entry(){typename=xmrTypeName(input);result=xmrHashCode(input);after=1;}}

@@ -1,30 +1,34 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/services/profiles_configuration.hpp"
+
 namespace opensim::services {
 namespace {
 using namespace framework;
 using Text = UserProfilesService::Text;
-template <class T> T& required(const std::shared_ptr<T>& value) {
+
+template <class T> T &required(const std::shared_ptr<T> &value) {
     if (!value)
         throw std::runtime_error("Object reference not set to an instance of an object.");
     return *value;
 }
-bool empty(const Text& value) {
+
+bool empty(const Text &value) {
     return !value || value->empty();
 }
-Text get(const std::shared_ptr<NiniConfig>& section, const char16_t* key, const Text& fallback) {
-    auto value =
-        required(section).get_string(nini_writer_text(std::u16string(key)), nini_writer_text(fallback));
+
+Text get(const std::shared_ptr<NiniConfig> &section, const char16_t *key, const Text &fallback) {
+    auto value = required(section).get_string(nini_writer_text(std::u16string(key)), nini_writer_text(fallback));
     return value ? Text(*value) : Text{};
 }
-std::shared_ptr<NiniConfig> section(const std::shared_ptr<NiniConfigSourceBase>& config, const Text& name) {
+
+std::shared_ptr<NiniConfig> section(const std::shared_ptr<NiniConfigSourceBase> &config, const Text &name) {
     return required(config).configs()->at(nini_writer_text(name));
 }
-}
-std::shared_ptr<ProfilesService> configured_profiles_service(std::shared_ptr<NiniConfigSourceBase> config,
-                                                             Text name,
-                                                             const ProfilesPluginFactories& factories,
+} // namespace
+
+std::shared_ptr<ProfilesService> configured_profiles_service(std::shared_ptr<NiniConfigSourceBase> config, Text name,
+                                                             const ProfilesPluginFactories &factories,
                                                              ProfilesDiagnostic log) {
     std::shared_ptr<ProfilesData> data;
     if (empty(name)) {
@@ -59,10 +63,10 @@ std::shared_ptr<ProfilesService> configured_profiles_service(std::shared_ptr<Nin
             log(ProfilesDiagnosticLevel::Error, text);
     });
 }
+
 ProfileServiceConnector::ProfileServiceConnector(std::shared_ptr<NiniConfigSourceBase> config,
-                                                 std::shared_ptr<server::JsonRpcDispatcher> dispatcher,
-                                                 Text name, Factory factory,
-                                                 server::JsonRpcProfileHandlers::Logger log) {
+                                                 std::shared_ptr<server::JsonRpcDispatcher> dispatcher, Text name,
+                                                 Factory factory, server::JsonRpcProfileHandlers::Logger log) {
     config_name = empty(name) ? Text(u"UserProfilesService") : name;
     auto profiles = section(config, config_name);
     if (!profiles)
@@ -77,4 +81,4 @@ ProfileServiceConnector::ProfileServiceConnector(std::shared_ptr<NiniConfigSourc
     server::JsonRpcProfileHandlers handlers(service_module, std::move(log));
     handlers.register_handlers(required(server));
 }
-}
+} // namespace opensim::services

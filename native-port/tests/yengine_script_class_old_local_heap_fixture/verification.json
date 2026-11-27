@@ -1,0 +1,402 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "fullParityVerified": false,
+  "nativeParityVerified": false,
+  "scope": "Actual original local heap counters across fresh-allocated versus same-paused MigrateIn and normal handler return",
+  "generatorSha256": "e6d8a4bb176cc8f5ee72b91cab3fb7c4b1032ea447ad37e8cc92dfe4f9da0e04",
+  "generatorAssemblySha256": "9eddbdb1d892cb319926c86005e7e0299e3170d07711113ce471cfeeb08f483d",
+  "decoderSha256": "69c6106ae854fa58b10cc102425731bfff753e24aa69abce93ac868155f4ec2d",
+  "platforms": {
+    "windows": {
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "processId": 63776,
+      "metadataSha256": "0efe9425b2ef53a6cfd4c053956e8fb4d41d6dc5b2f5f3a63cd5085edf2f4ddf",
+      "cases": [
+        {
+          "name": "local_object_string",
+          "charge": 6,
+          "sourceSha256": "493d3e784027f5e45a342b8c2153815641b6188c25866f43786aaf6a9997a07b",
+          "metadataSha256": "7d76a89f7bf35a686b60d17cdcb42d5d490f7c0d277cee4f74329a7fe259b894",
+          "observationsSha256": "a9cdd1b9c907b7f1766d8796faf07d5ea13e2d9b037f9c5de2bf041df50f0330",
+          "snapshotSha256": "5b10414a57d47715ea5d2c957b717bfbe2d6d8c9b1ae49475df48a3ab5ec5058",
+          "snapshotBytes": 277,
+          "originalObjectSha256": "8dad6ffe1197005f4a13a1485a5393f705d8bcc904e169f2cba2d1d0a796bf54",
+          "sourceHash": "DB5ACA43C1BB672E5395FC393D409E7F",
+          "sourceLocalStorage": {
+            "alias": "sdtclobj",
+            "boxed": "htobject"
+          },
+          "observations": [
+            {
+              "mode": "fresh_allocated",
+              "oldLocal": 0,
+              "afterMigrateLocal": 0,
+              "afterReturnLocal": 0,
+              "resumedHeap": 16,
+              "clearedHeap": 10,
+              "afterReturnHeap": 16,
+              "classAliases": 1,
+              "backingAliases": 0
+            },
+            {
+              "mode": "same_paused",
+              "oldLocal": 6,
+              "afterMigrateLocal": 6,
+              "afterReturnLocal": 0,
+              "resumedHeap": 22,
+              "clearedHeap": 16,
+              "afterReturnHeap": 16,
+              "classAliases": 1,
+              "backingAliases": 0
+            }
+          ]
+        },
+        {
+          "name": "local_typed_string",
+          "charge": 6,
+          "sourceSha256": "36b0f7889c31ea277bd00b56c01f67293b2d9cbdec06dfefb908395211cc0236",
+          "metadataSha256": "ad05c0e80174cb4e69add302b1e03aed4b2645936bbd820d45e0c3203ad93074",
+          "observationsSha256": "46ff6490a942855413890377b6057d8464bda23ce21c56a0cf8197cc53cccce2",
+          "snapshotSha256": "0ef72a9eae4edacf0f964f278cfaa3c25d7c3d14f5a79899427adcae2d9963db",
+          "snapshotBytes": 277,
+          "originalObjectSha256": "066de142fff5c6aa6c7e1cbee9e6c2ea418fa61c40fc04bc8e7d45b4b90c1c4e",
+          "sourceHash": "C7FF6F13F9D0694643CCD97836A39421",
+          "sourceLocalStorage": {
+            "alias": "sdtclobj",
+            "text": "htstring"
+          },
+          "observations": [
+            {
+              "mode": "fresh_allocated",
+              "oldLocal": 0,
+              "afterMigrateLocal": 0,
+              "afterReturnLocal": 0,
+              "resumedHeap": 16,
+              "clearedHeap": 10,
+              "afterReturnHeap": 16,
+              "classAliases": 1,
+              "backingAliases": 0
+            },
+            {
+              "mode": "same_paused",
+              "oldLocal": 6,
+              "afterMigrateLocal": 6,
+              "afterReturnLocal": 0,
+              "resumedHeap": 22,
+              "clearedHeap": 16,
+              "afterReturnHeap": 16,
+              "classAliases": 1,
+              "backingAliases": 0
+            }
+          ]
+        },
+        {
+          "name": "local_raw_array",
+          "charge": 12,
+          "sourceSha256": "1624818ec27e0100e410ee740f279ef133059876bf8c2e73b1889e88e7b1a2ec",
+          "metadataSha256": "8333c699491ca732979c719955b5968e480f891c685a6e95eae21d846b8d4836",
+          "observationsSha256": "fa063b4b1daee50b6d1f4dce9182d4fb96a040c05c79c2aae5a410363946787b",
+          "snapshotSha256": "d1758cccc7a97d48ec6712e2339871b72dff3364e595e07efaec64af8b427d91",
+          "snapshotBytes": 277,
+          "originalObjectSha256": "4200ef9eb66370396137c471edb4edc9d689593d3626a00076e8dff57d851f08",
+          "sourceHash": "19D4E89C90A48DBD69529ACE508ABCC3",
+          "sourceLocalStorage": {
+            "alias": "sdtclobj",
+            "raw": "htobject"
+          },
+          "observations": [
+            {
+              "mode": "fresh_allocated",
+              "oldLocal": 0,
+              "afterMigrateLocal": 0,
+              "afterReturnLocal": 0,
+              "resumedHeap": 16,
+              "clearedHeap": 4,
+              "afterReturnHeap": 16,
+              "classAliases": 1,
+              "backingAliases": 1
+            },
+            {
+              "mode": "same_paused",
+              "oldLocal": 12,
+              "afterMigrateLocal": 12,
+              "afterReturnLocal": 0,
+              "resumedHeap": 28,
+              "clearedHeap": 16,
+              "afterReturnHeap": 16,
+              "classAliases": 1,
+              "backingAliases": 1
+            }
+          ]
+        },
+        {
+          "name": "local_combined",
+          "charge": 24,
+          "sourceSha256": "61eb81bd4009f1b1196c1ae08362b0a1a6f82d2ceeb78baa7a88204844cbc17a",
+          "metadataSha256": "2745a511eb498809b02aae459fa7a1d65d026223c4e040ce636a2fe5c1a2a8ae",
+          "observationsSha256": "812a6ec3df308e7214425796f5ab580f82d1e48ce38327ae0ca181b488ca8fa6",
+          "snapshotSha256": "f3034a5607eadd617fca5b2172f6a2dc864e8f9e415b237a2761529926512570",
+          "snapshotBytes": 287,
+          "originalObjectSha256": "3f12157003ffa395d2ae04aada303293deada3c93b6c27f91f8dff94df67fa19",
+          "sourceHash": "E9B879CA30A7A068F823CD8E990429BD",
+          "sourceLocalStorage": {
+            "alias": "sdtclobj",
+            "raw": "htobject",
+            "boxed": "htobject",
+            "text": "htstring"
+          },
+          "observations": [
+            {
+              "mode": "fresh_allocated",
+              "oldLocal": 0,
+              "afterMigrateLocal": 0,
+              "afterReturnLocal": 0,
+              "resumedHeap": 16,
+              "clearedHeap": -8,
+              "afterReturnHeap": 16,
+              "classAliases": 1,
+              "backingAliases": 1
+            },
+            {
+              "mode": "same_paused",
+              "oldLocal": 24,
+              "afterMigrateLocal": 24,
+              "afterReturnLocal": 0,
+              "resumedHeap": 40,
+              "clearedHeap": 16,
+              "afterReturnHeap": 16,
+              "classAliases": 1,
+              "backingAliases": 1
+            }
+          ]
+        }
+      ],
+      "originalBackendSha256": {
+        "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+        "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+        "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+        "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+        "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+        "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+        "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+        "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+        "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+        "original_source_XMRInstCapture.cs": "775f1d83bd4610f788891269ea9ea08b1f79cf4bf3b44300d926f49c8a277cbd",
+        "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+        "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+        "original_source_Helpers.cs": "96b7c3090cdded9c12e986bc538705272eae4c0fc12f01deab8f0f1bb94c7bcf",
+        "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+        "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+        "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+        "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+        "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+        "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+        "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+      }
+    },
+    "linux": {
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "processId": 1,
+      "metadataSha256": "44a8371392f09b2c44a1925cd8a6dcea2b28160e17317ea943aee2d2bf045bfb",
+      "cases": [
+        {
+          "name": "local_object_string",
+          "charge": 6,
+          "sourceSha256": "493d3e784027f5e45a342b8c2153815641b6188c25866f43786aaf6a9997a07b",
+          "metadataSha256": "650a832a5f2e359ebf0c7738dc35528a1f061953170ea527a9151243b763b04a",
+          "observationsSha256": "51349c3a91e3665ce00340fda32cc3c1f1b462a200c588bb1b58334f08b8e20f",
+          "snapshotSha256": "5b10414a57d47715ea5d2c957b717bfbe2d6d8c9b1ae49475df48a3ab5ec5058",
+          "snapshotBytes": 277,
+          "originalObjectSha256": "8dad6ffe1197005f4a13a1485a5393f705d8bcc904e169f2cba2d1d0a796bf54",
+          "sourceHash": "DB5ACA43C1BB672E5395FC393D409E7F",
+          "sourceLocalStorage": {
+            "alias": "sdtclobj",
+            "boxed": "htobject"
+          },
+          "observations": [
+            {
+              "mode": "fresh_allocated",
+              "oldLocal": 0,
+              "afterMigrateLocal": 0,
+              "afterReturnLocal": 0,
+              "resumedHeap": 16,
+              "clearedHeap": 10,
+              "afterReturnHeap": 16,
+              "classAliases": 1,
+              "backingAliases": 0
+            },
+            {
+              "mode": "same_paused",
+              "oldLocal": 6,
+              "afterMigrateLocal": 6,
+              "afterReturnLocal": 0,
+              "resumedHeap": 22,
+              "clearedHeap": 16,
+              "afterReturnHeap": 16,
+              "classAliases": 1,
+              "backingAliases": 0
+            }
+          ]
+        },
+        {
+          "name": "local_typed_string",
+          "charge": 6,
+          "sourceSha256": "36b0f7889c31ea277bd00b56c01f67293b2d9cbdec06dfefb908395211cc0236",
+          "metadataSha256": "08ef0c2d8ad8f42f106e0b879f184ee90371d62646775188be2f60f2a8855648",
+          "observationsSha256": "11e8e6e4cdaead508515e4b250fc83d1f0c4ab1da1663d2cb697d32c2d2c89f3",
+          "snapshotSha256": "0ef72a9eae4edacf0f964f278cfaa3c25d7c3d14f5a79899427adcae2d9963db",
+          "snapshotBytes": 277,
+          "originalObjectSha256": "066de142fff5c6aa6c7e1cbee9e6c2ea418fa61c40fc04bc8e7d45b4b90c1c4e",
+          "sourceHash": "C7FF6F13F9D0694643CCD97836A39421",
+          "sourceLocalStorage": {
+            "alias": "sdtclobj",
+            "text": "htstring"
+          },
+          "observations": [
+            {
+              "mode": "fresh_allocated",
+              "oldLocal": 0,
+              "afterMigrateLocal": 0,
+              "afterReturnLocal": 0,
+              "resumedHeap": 16,
+              "clearedHeap": 10,
+              "afterReturnHeap": 16,
+              "classAliases": 1,
+              "backingAliases": 0
+            },
+            {
+              "mode": "same_paused",
+              "oldLocal": 6,
+              "afterMigrateLocal": 6,
+              "afterReturnLocal": 0,
+              "resumedHeap": 22,
+              "clearedHeap": 16,
+              "afterReturnHeap": 16,
+              "classAliases": 1,
+              "backingAliases": 0
+            }
+          ]
+        },
+        {
+          "name": "local_raw_array",
+          "charge": 12,
+          "sourceSha256": "1624818ec27e0100e410ee740f279ef133059876bf8c2e73b1889e88e7b1a2ec",
+          "metadataSha256": "43a48077849e76684e6abe24ad790e667693958e8640c33bbd379f83835d1f0c",
+          "observationsSha256": "368efeb1503e5cb20d98cc5310ebf3cc4b939fb638edb43b3f8c82b2bcc25deb",
+          "snapshotSha256": "d1758cccc7a97d48ec6712e2339871b72dff3364e595e07efaec64af8b427d91",
+          "snapshotBytes": 277,
+          "originalObjectSha256": "4200ef9eb66370396137c471edb4edc9d689593d3626a00076e8dff57d851f08",
+          "sourceHash": "19D4E89C90A48DBD69529ACE508ABCC3",
+          "sourceLocalStorage": {
+            "alias": "sdtclobj",
+            "raw": "htobject"
+          },
+          "observations": [
+            {
+              "mode": "fresh_allocated",
+              "oldLocal": 0,
+              "afterMigrateLocal": 0,
+              "afterReturnLocal": 0,
+              "resumedHeap": 16,
+              "clearedHeap": 4,
+              "afterReturnHeap": 16,
+              "classAliases": 1,
+              "backingAliases": 1
+            },
+            {
+              "mode": "same_paused",
+              "oldLocal": 12,
+              "afterMigrateLocal": 12,
+              "afterReturnLocal": 0,
+              "resumedHeap": 28,
+              "clearedHeap": 16,
+              "afterReturnHeap": 16,
+              "classAliases": 1,
+              "backingAliases": 1
+            }
+          ]
+        },
+        {
+          "name": "local_combined",
+          "charge": 24,
+          "sourceSha256": "61eb81bd4009f1b1196c1ae08362b0a1a6f82d2ceeb78baa7a88204844cbc17a",
+          "metadataSha256": "d10e511fbc44370fd34ebf910f16b4486f9e3bede38ae3fcfcfd3ced647c9a84",
+          "observationsSha256": "83ca3ba3246af87a6950a616e96062f28486764e9a69a31392d70abffc9d472e",
+          "snapshotSha256": "f3034a5607eadd617fca5b2172f6a2dc864e8f9e415b237a2761529926512570",
+          "snapshotBytes": 287,
+          "originalObjectSha256": "3f12157003ffa395d2ae04aada303293deada3c93b6c27f91f8dff94df67fa19",
+          "sourceHash": "E9B879CA30A7A068F823CD8E990429BD",
+          "sourceLocalStorage": {
+            "alias": "sdtclobj",
+            "raw": "htobject",
+            "boxed": "htobject",
+            "text": "htstring"
+          },
+          "observations": [
+            {
+              "mode": "fresh_allocated",
+              "oldLocal": 0,
+              "afterMigrateLocal": 0,
+              "afterReturnLocal": 0,
+              "resumedHeap": 16,
+              "clearedHeap": -8,
+              "afterReturnHeap": 16,
+              "classAliases": 1,
+              "backingAliases": 1
+            },
+            {
+              "mode": "same_paused",
+              "oldLocal": 24,
+              "afterMigrateLocal": 24,
+              "afterReturnLocal": 0,
+              "resumedHeap": 40,
+              "clearedHeap": 16,
+              "afterReturnHeap": 16,
+              "classAliases": 1,
+              "backingAliases": 1
+            }
+          ]
+        }
+      ],
+      "originalBackendSha256": {
+        "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+        "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+        "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+        "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+        "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+        "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+        "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+        "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+        "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+        "original_source_XMRInstCapture.cs": "775f1d83bd4610f788891269ea9ea08b1f79cf4bf3b44300d926f49c8a277cbd",
+        "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+        "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+        "original_source_Helpers.cs": "96b7c3090cdded9c12e986bc538705272eae4c0fc12f01deab8f0f1bb94c7bcf",
+        "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+        "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+        "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+        "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+        "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+        "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+        "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+      }
+    }
+  },
+  "measuredBehavior": {
+    "migrationBoundary": "MigrateIn preserves target preexisting m_localsHeapUsed: fresh0, same-paused6/6/12/24.",
+    "restoredTrackerCharges": "Local tracker Restore sets saved payload size without incrementing m_localsHeapUsed; clearing subtracts6/6/12/24.",
+    "sourceCounters": "Global16; fresh resumed16 and cleared10/10/4/-8, same-paused resumed22/22/28/40 and cleared16.",
+    "normalReturn": "Saved entry heap base0 restores local counter0 for both modes; heapUsed returns16.",
+    "aliases": "Restored source local class aliases global class; raw local aliases class backing in raw and combined cases."
+  },
+  "crossPlatformSnapshotsIdentical": true,
+  "boundaries": [
+    "Four bounded source cases per OS, two direct MigrateIn target modes each, generous heap limit100000000.",
+    "No native execution/parity or local-counter near-limit admission claim.",
+    "No failed partial-state or forced-GC claim."
+  ],
+  "verifierSha256": "44af69bfe340e15fdcbf5b6561255edd36c72c5a767b913cc029ad9e01769612"
+}

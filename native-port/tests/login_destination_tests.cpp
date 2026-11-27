@@ -7,10 +7,12 @@
 #include <stdexcept>
 using namespace opensim;
 using namespace services;
-void check(bool value, const char* message) {
+
+void check(bool value, const char *message) {
     if (!value)
         throw std::runtime_error(message);
 }
+
 int main() {
     try {
         server::IniConfig config;
@@ -68,7 +70,7 @@ int main() {
         bool threw = false;
         try {
             selector.find({}, info, "");
-        } catch (const std::invalid_argument&) {
+        } catch (const std::invalid_argument &) {
             threw = true;
         }
         check(threw, "malformed starts preserve source failure");
@@ -76,7 +78,7 @@ int main() {
         threw = false;
         try {
             selector.find({}, info, "last");
-        } catch (const std::invalid_argument&) {
+        } catch (const std::invalid_argument &) {
             threw = true;
         }
         check(threw, "invalid clamp bounds throw rather than invoking undefined behavior");
@@ -87,7 +89,7 @@ int main() {
               "missing grid returns initialized destination state");
         std::cout << "PASS: login destination and native persistence integration\n";
         return 0;
-    } catch (const std::exception& error) {
+    } catch (const std::exception &error) {
         std::cerr << error.what() << '\n';
         return 1;
     }

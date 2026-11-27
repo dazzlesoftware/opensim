@@ -8,11 +8,13 @@
 #include "opensim/services/asset_store.hpp"
 using namespace opensim;
 using namespace scene;
+
 namespace {
 framework::Uuid id(int n) {
     auto s = std::to_string(n);
     return framework::Uuid("11223344-5566-7788-99aa-" + std::string(12 - s.size(), '0') + s);
 }
+
 std::string hex(const std::optional<std::string> &s) {
     if (!s)
         return "NULL";
@@ -23,18 +25,22 @@ std::string hex(const std::optional<std::string> &s) {
     }
     return out;
 }
+
 std::string bytes(framework::AssetBytes d) {
     return d ? hex(std::string(d->begin(), d->end())) : "NULL";
 }
+
 std::string dump(const std::shared_ptr<framework::TaskInventoryItem> &i) {
-    return i ? i->item_id.str() + ":" + i->owner_id.str() + ":" + i->asset_id.str() + ":" + hex(i->name) +
-                   ":" + hex(i->description) + ":" + std::to_string(i->type) + ":" +
-                   std::to_string(i->inventory_type) + ":" + std::to_string(i->current_permissions)
+    return i ? i->item_id.str() + ":" + i->owner_id.str() + ":" + i->asset_id.str() + ":" + hex(i->name) + ":" +
+                   hex(i->description) + ":" + std::to_string(i->type) + ":" + std::to_string(i->inventory_type) + ":" +
+                   std::to_string(i->current_permissions)
              : "NULL";
 }
+
 std::string dump(const std::shared_ptr<framework::AssetBase> &a) {
     return a ? a->full_id().str() + ":" + std::to_string(a->type()) + ":" + bytes(a->data) : "NULL";
 }
+
 std::string probe(int agent, int mode, int inv, int type, int failure) {
     auto bit = [&](int n) { return (mode & n) != 0; };
     std::string trace;
@@ -57,9 +63,7 @@ std::string probe(int agent, int mode, int inv, int type, int failure) {
     int inventory_gets = 0;
     auto client = std::make_shared<SceneAssetClient>();
     client->agent = id(1);
-    client->agent_alert = [&](const auto &s, bool modal) {
-        step(12, "AGENT:" + hex(s) + ":" + std::to_string(modal));
-    };
+    client->agent_alert = [&](const auto &s, bool modal) { step(12, "AGENT:" + hex(s) + ":" + std::to_string(modal)); };
     client->alert = [&](const auto &s) {
         step(11, "ALERT:" + hex(s));
         if (bit(1048576)) {
@@ -144,10 +148,9 @@ std::string probe(int agent, int mode, int inv, int type, int failure) {
         step(16, "PERM:" + a.str() + ":" + key.str());
         return 0;
     };
-    b.create_asset = [&](const auto &name, const auto &description, std::int8_t type, auto data,
-                         auto creator) {
-        step(13, "CREATE:" + hex(name) + ":" + hex(description) + ":" + std::to_string(type) + ":" +
-                     bytes(data) + ":" + creator.str());
+    b.create_asset = [&](const auto &name, const auto &description, std::int8_t type, auto data, auto creator) {
+        step(13, "CREATE:" + hex(name) + ":" + hex(description) + ":" + std::to_string(type) + ":" + bytes(data) + ":" +
+                     creator.str());
         if (bit(131072)) {
             item->name = "Mutation";
             item->type = 3;
@@ -183,16 +186,19 @@ std::string probe(int agent, int mode, int inv, int type, int failure) {
     }
     return status + ":" + result + ":" + dump(item) + ":" + dump(asset) + trace;
 }
+
 void integration() {
     auto require = [](bool b, const char *s) {
         if (!b)
             throw std::runtime_error(s);
     };
-    auto directory = std::filesystem::temp_directory_path() /
-                     ("opensim-scene-inventory-asset-" + framework::Uuid::random().str());
+    auto directory =
+        std::filesystem::temp_directory_path() / ("opensim-scene-inventory-asset-" + framework::Uuid::random().str());
     require(std::filesystem::create_directory(directory), "unique integration directory");
+
     struct Cleanup {
         std::filesystem::path path;
+
         ~Cleanup() {
             if (path.parent_path() == std::filesystem::temp_directory_path() &&
                 path.filename().string().starts_with("opensim-scene-inventory-asset-")) {
@@ -201,6 +207,7 @@ void integration() {
             }
         }
     } cleanup{directory};
+
     auto path = [](const std::filesystem::path &p) {
         auto text = p.u8string();
         return std::string(reinterpret_cast<const char *>(text.data()), text.size());
@@ -268,9 +275,7 @@ void integration() {
             ++script_edits;
             return true;
         };
-        agent.asset_permissions = [&](auto owner, auto key) {
-            return inventory.asset_permissions(owner, key);
-        };
+        agent.asset_permissions = [&](auto owner, auto key) { return inventory.asset_permissions(owner, key); };
         agent.create_asset = create_inventory_asset;
         agent.store = [&](auto asset) {
             events.push_back("STORE");
@@ -285,15 +290,11 @@ void integration() {
         agent.console = [](const auto &) {};
         InventoryAssetUpdateController access(agent);
         SceneInventoryAssetBackend backend;
-        backend.presence = [&](auto) -> std::optional<std::shared_ptr<SceneAssetPresence>> {
-            return presence;
-        };
+        backend.presence = [&](auto) -> std::optional<std::shared_ptr<SceneAssetPresence>> { return presence; };
         backend.inventory_access = [&]() -> std::optional<SceneInventoryAccessUpdate> {
             if (!module)
                 return {};
-            return [&](auto current, auto key, auto data) {
-                return access.caps_update(current->agent, key, data);
-            };
+            return [&](auto current, auto key, auto data) { return access.caps_update(current->agent, key, data); };
         };
         backend.part = [&](auto key) { return key == id(3) ? part : nullptr; };
         backend.edit_inventory = [](auto, auto) { return true; };
@@ -317,18 +318,16 @@ void integration() {
                     note->inventory_type == 263,
                 "actual live task reference and serial update without narrowing stored type");
         auto asset = assets.get_asset(result.str());
-        require(asset && *asset->data == payload && asset->creator_id() == id(1).str() &&
-                    note->owner_id == id(9),
+        require(asset && *asset->data == payload && asset->creator_id() == id(1).str() && note->owner_id == id(9),
                 "task ownership does not replace editing actor as asset creator");
         events.clear();
         fail_store = true;
         serial = registry.serial();
         auto missing = controller.update(id(1), id(2), id(3), data);
-        require(
-            !missing.is_zero() && note->asset_id == missing && !assets.get_asset(missing.str()) &&
-                registry.serial() == serial + 1 &&
-                events == std::vector<std::string>{"ALERT:Notecard updated", "STORE", "TASKUPDATE"},
-            "task store failure is ignored once and missing asset reference is retained exactly as source");
+        require(!missing.is_zero() && note->asset_id == missing && !assets.get_asset(missing.str()) &&
+                    registry.serial() == serial + 1 &&
+                    events == std::vector<std::string>{"ALERT:Notecard updated", "STORE", "TASKUPDATE"},
+                "task store failure is ignored once and missing asset reference is retained exactly as source");
         fail_store = false;
         auto script = std::make_shared<framework::TaskInventoryItem>();
         script->item_id = id(30);
@@ -351,19 +350,17 @@ void integration() {
         script->description = std::string{};
         events.clear();
         result = controller.update(id(1), id(30), id(3), data);
-        require(
-            !result.is_zero() && events == std::vector<std::string>{"STORE", "TASKUPDATE"} &&
-                script_edits == 0 && removals == 0 && registry.scripts().size() == 1 &&
-                registry.find(id(30))->asset_id == result,
-            "generic task script update stores raw data without script permission check, engine removal or compilation");
+        require(!result.is_zero() && events == std::vector<std::string>{"STORE", "TASKUPDATE"} && script_edits == 0 &&
+                    removals == 0 && registry.scripts().size() == 1 && registry.find(id(30))->asset_id == result,
+                "generic task script update stores raw data without script permission check, engine removal or "
+                "compilation");
         events.clear();
         retained = controller.update(id(1), id(20), {}, data);
         require(!retained.is_zero() &&
                     events == std::vector<std::string>{"STORE", "AGENTUPDATE", "ALERT:Notecard updated"},
                 "agent dispatch uses real module and post-store success alert");
         require(inventory.item(id(1), id(20))->asset_id == retained &&
-                    inventory.item(id(1), id(20))->inventory_type == 263 &&
-                    *assets.get_data(retained.str()) == payload,
+                    inventory.item(id(1), id(20))->inventory_type == 263 && *assets.get_data(retained.str()) == payload,
                 "wrapped agent type preserves source permission branch and raw stored type");
         module = false;
         events.clear();
@@ -375,13 +372,13 @@ void integration() {
             std::make_shared<services::SqliteAssetStore>(path(directory / "assets.db")));
         services::InventoryFolderStore folders(path(directory / "inventory.db"));
         services::InventoryService inventory(folders);
-        require(inventory.item(id(1), id(20))->asset_id == retained &&
-                    *assets.get_data(retained.str()) == payload,
+        require(inventory.item(id(1), id(20))->asset_id == retained && *assets.get_data(retained.str()) == payload,
                 "scene-dispatched agent reference and raw bytes survive service reopen");
     }
 }
 
-}
+} // namespace
+
 int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string_view(argv[1]) == "--probe") {
@@ -396,21 +393,18 @@ int main(int argc, char **argv) {
             if (!b)
                 throw std::runtime_error(s);
         };
-        check(probe(1, 2 | 4, 7, 7, 0).starts_with("OK:00000000"),
-              "missing module does not dereference null presence");
+        check(probe(1, 2 | 4, 7, 7, 0).starts_with("OK:00000000"), "missing module does not dereference null presence");
         check(probe(0, 2, 10, 10, 0).starts_with("OK:" + id(7).str()),
               "generic task script has no client alert or edit-script gate");
         check(probe(0, 4096, 7, 7, 0).starts_with("OK:" + id(7).str()), "task store result is ignored");
-        check(probe(0, 0, 263, 7, 0).find("|NOTE:") != std::string::npos,
-              "SDK InventoryType narrows to sbyte");
+        check(probe(0, 0, 263, 7, 0).find("|NOTE:") != std::string::npos, "SDK InventoryType narrows to sbyte");
         auto asset = create_scene_inventory_asset({}, {}, 7, {}, id(1));
         check(!asset->full_id().is_zero() && !asset->name() && !asset->description() && asset->data &&
                   *asset->data == std::vector<std::uint8_t>{0},
               "real nullable task asset factory");
         integration();
-        std::cout
-            << "PASS: " << n
-            << " scene inventory asset checks plus actual registry/SQLite/module/alert-order integration\n";
+        std::cout << "PASS: " << n
+                  << " scene inventory asset checks plus actual registry/SQLite/module/alert-order integration\n";
         return 0;
     } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';

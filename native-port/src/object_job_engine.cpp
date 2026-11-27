@@ -8,6 +8,7 @@
 #include <mutex>
 #include <thread>
 #include <vector>
+
 namespace opensim::framework {
 struct ObjectJobEngine::State {
     std::mutex mutex;
@@ -20,10 +21,12 @@ struct ObjectJobEngine::State {
     size_t active = 0;
     bool running = false, cancelled = false;
 };
+
 struct ObjectJobEngine::Thread {
     std::thread thread;
     std::shared_ptr<std::atomic<bool>> done;
 };
+
 ObjectJobEngine::ObjectJobEngine(Callback callback, std::string name, int hold, int concurrency, Error error)
     : state_(std::make_shared<State>()) {
     state_->callback = std::move(callback);
@@ -33,17 +36,18 @@ ObjectJobEngine::ObjectJobEngine(Callback callback, std::string name, int hold, 
     state_->concurrency = std::max(1, concurrency);
     state_->running = bool(state_->callback);
 }
+
 ObjectJobEngine::~ObjectJobEngine() {
     dispose();
-    for (auto& entry : threads_)
+    for (auto &entry : threads_)
         if (entry->thread.joinable()) {
-            if (entry->done->load(std::memory_order_acquire) &&
-                entry->thread.get_id() != std::this_thread::get_id())
+            if (entry->done->load(std::memory_order_acquire) && entry->thread.get_id() != std::this_thread::get_id())
                 entry->thread.join();
             else
                 entry->thread.detach();
         }
 }
+
 bool ObjectJobEngine::enqueue(std::any job) {
     auto state = state_;
     std::lock_guard lock(state->mutex);
@@ -79,14 +83,17 @@ bool ObjectJobEngine::enqueue(std::any job) {
     state->available.notify_one();
     return true;
 }
+
 size_t ObjectJobEngine::count() const {
     std::lock_guard lock(state_->mutex);
     return state_->jobs.size();
 }
+
 size_t ObjectJobEngine::active_threads() const {
     std::lock_guard lock(state_->mutex);
     return state_->active;
 }
+
 void ObjectJobEngine::cancel() {
     std::lock_guard lock(state_->mutex);
     if (!state_->running || state_->jobs.empty())
@@ -95,6 +102,7 @@ void ObjectJobEngine::cancel() {
     state_->cancelled = true;
     state_->available.notify_all();
 }
+
 void ObjectJobEngine::dispose() {
     auto state = state_;
     {
@@ -117,6 +125,7 @@ void ObjectJobEngine::dispose() {
     state->jobs.clear();
     state->callback = {};
 }
+
 void ObjectJobEngine::run(std::shared_ptr<State> state) {
     for (;;) {
         std::any item;
@@ -153,10 +162,10 @@ void ObjectJobEngine::run(std::shared_ptr<State> state) {
         }
         try {
             callback(std::move(item));
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
             if (state->error)
                 state->error(state->name, e);
         }
     }
 }
-}
+} // namespace opensim::framework

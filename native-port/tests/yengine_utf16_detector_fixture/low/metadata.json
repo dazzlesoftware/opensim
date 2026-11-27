@@ -1,0 +1,1626 @@
+{
+  "name": "low",
+  "accepted": true,
+  "diagnostics": [],
+  "compile_exception": null,
+  "source_hash": "31D4309D7FBCFE43FA462740B6DEFB5B",
+  "compiled_version": -11,
+  "suspended": true,
+  "migrated": true,
+  "production_write_exception": null,
+  "detect_xml_write_exception": {
+    "type": "System.ArgumentException",
+    "message": "Invalid high surrogate character (0xDE00). A high surrogate character must have a value from range (0xD800 - 0xDBFF).",
+    "stack": "   at System.Xml.XmlTextEncoder.Write(ReadOnlySpan\u00601 text)\r\n   at System.Xml.XmlTextWriter.WriteString(String text)\r\n   at System.Xml.XmlAttribute.WriteContentTo(XmlWriter w)\r\n   at System.Xml.XmlAttribute.WriteTo(XmlWriter w)\r\n   at System.Xml.XmlElement.WriteStartElement(XmlWriter w)\r\n   at System.Xml.XmlElement.WriteElementTo(XmlWriter writer, XmlElement el)\r\n   at System.Xml.XmlDocument.WriteContentTo(XmlWriter xw)\r\n   at System.Xml.XmlNode.get_OuterXml()\r\n   at Utf16DetectorReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\tests\\yengine_utf16_detector_reference.cs:line 500"
+  },
+  "detect_xml_read_exception": null,
+  "detect_xml_units": null,
+  "detect_xml_restored_name_units": null,
+  "detect_xml_context_restored": false,
+  "production_writer": "Unchanged private XMRInstance.MigrateOutEventHandler(Stream): new BinaryWriter(stream)",
+  "initial_exception": null,
+  "live_cycles": [],
+  "migrated_cycles": [],
+  "prefix_resume": null,
+  "live_resume_exception": null,
+  "live_resume": {
+    "globals": {
+      "after": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 1
+      },
+      "after_name": {
+        "type": "string",
+        "clr": "System.String",
+        "value": "\uFFFD",
+        "utf16": [
+          56832
+        ]
+      },
+      "final_saved": {
+        "type": "list",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+        "value": [
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 1
+          },
+          {
+            "type": "string",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+            "value": "11111111-2222-3333-4444-555555555555",
+            "utf16": [
+              49,
+              49,
+              49,
+              49,
+              49,
+              49,
+              49,
+              49,
+              45,
+              50,
+              50,
+              50,
+              50,
+              45,
+              51,
+              51,
+              51,
+              51,
+              45,
+              52,
+              52,
+              52,
+              52,
+              45,
+              53,
+              53,
+              53,
+              53,
+              53,
+              53,
+              53,
+              53,
+              53,
+              53,
+              53,
+              53
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              3.125,
+              3.25,
+              3.5
+            ]
+          },
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 5
+          },
+          {
+            "type": "string",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+            "value": "33333333-4444-5555-6666-777777777777",
+            "utf16": [
+              51,
+              51,
+              51,
+              51,
+              51,
+              51,
+              51,
+              51,
+              45,
+              52,
+              52,
+              52,
+              52,
+              45,
+              53,
+              53,
+              53,
+              53,
+              45,
+              54,
+              54,
+              54,
+              54,
+              45,
+              55,
+              55,
+              55,
+              55,
+              55,
+              55,
+              55,
+              55,
+              55,
+              55,
+              55,
+              55
+            ]
+          },
+          {
+            "type": "string",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+            "value": "\uFFFD",
+            "utf16": [
+              56832
+            ]
+          },
+          {
+            "type": "string",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+            "value": "22222222-3333-4444-5555-666666666666",
+            "utf16": [
+              50,
+              50,
+              50,
+              50,
+              50,
+              50,
+              50,
+              50,
+              45,
+              51,
+              51,
+              51,
+              51,
+              45,
+              52,
+              52,
+              52,
+              52,
+              45,
+              53,
+              53,
+              53,
+              53,
+              45,
+              54,
+              54,
+              54,
+              54,
+              54,
+              54,
+              54,
+              54,
+              54,
+              54,
+              54,
+              54
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              13.00000003,
+              14.00000003,
+              15.00000003
+            ]
+          },
+          {
+            "type": "rotation",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+            "value": [
+              0.125,
+              0.25,
+              0.5,
+              0.875
+            ]
+          },
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 11
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              23.00000003,
+              24.00000003,
+              25.00000003
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              4,
+              5,
+              6
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              7,
+              8,
+              9
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              10,
+              11,
+              12
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              13,
+              14,
+              15
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              16,
+              17,
+              18
+            ]
+          },
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 6
+          }
+        ]
+      },
+      "name": {
+        "type": "string",
+        "clr": "System.String",
+        "value": "\uFFFD",
+        "utf16": [
+          56832
+        ]
+      },
+      "saved": {
+        "type": "list",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+        "value": [
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 1
+          },
+          {
+            "type": "string",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+            "value": "11111111-2222-3333-4444-555555555555",
+            "utf16": [
+              49,
+              49,
+              49,
+              49,
+              49,
+              49,
+              49,
+              49,
+              45,
+              50,
+              50,
+              50,
+              50,
+              45,
+              51,
+              51,
+              51,
+              51,
+              45,
+              52,
+              52,
+              52,
+              52,
+              45,
+              53,
+              53,
+              53,
+              53,
+              53,
+              53,
+              53,
+              53,
+              53,
+              53,
+              53,
+              53
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              3.125,
+              3.25,
+              3.5
+            ]
+          },
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 5
+          },
+          {
+            "type": "string",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+            "value": "33333333-4444-5555-6666-777777777777",
+            "utf16": [
+              51,
+              51,
+              51,
+              51,
+              51,
+              51,
+              51,
+              51,
+              45,
+              52,
+              52,
+              52,
+              52,
+              45,
+              53,
+              53,
+              53,
+              53,
+              45,
+              54,
+              54,
+              54,
+              54,
+              45,
+              55,
+              55,
+              55,
+              55,
+              55,
+              55,
+              55,
+              55,
+              55,
+              55,
+              55,
+              55
+            ]
+          },
+          {
+            "type": "string",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+            "value": "\uFFFD",
+            "utf16": [
+              56832
+            ]
+          },
+          {
+            "type": "string",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+            "value": "22222222-3333-4444-5555-666666666666",
+            "utf16": [
+              50,
+              50,
+              50,
+              50,
+              50,
+              50,
+              50,
+              50,
+              45,
+              51,
+              51,
+              51,
+              51,
+              45,
+              52,
+              52,
+              52,
+              52,
+              45,
+              53,
+              53,
+              53,
+              53,
+              45,
+              54,
+              54,
+              54,
+              54,
+              54,
+              54,
+              54,
+              54,
+              54,
+              54,
+              54,
+              54
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              13.00000003,
+              14.00000003,
+              15.00000003
+            ]
+          },
+          {
+            "type": "rotation",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+            "value": [
+              0.125,
+              0.25,
+              0.5,
+              0.875
+            ]
+          },
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 11
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              23.00000003,
+              24.00000003,
+              25.00000003
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              4,
+              5,
+              6
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              7,
+              8,
+              9
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              10,
+              11,
+              12
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              13,
+              14,
+              15
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              16,
+              17,
+              18
+            ]
+          },
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 6
+          }
+        ]
+      },
+      "seen": {
+        "type": "string",
+        "clr": "System.String",
+        "value": "\uFFFD",
+        "utf16": [
+          56832
+        ]
+      }
+    },
+    "event_code": "None",
+    "call_mode": 0,
+    "sleep_until_ticks": 639312898781072060,
+    "object_description": "",
+    "event_arguments": null,
+    "state_index": 0,
+    "new_state_index": -1,
+    "initialize_globals": false,
+    "running": true,
+    "detectors": [
+      {
+        "key": "11111111-2222-3333-4444-555555555555",
+        "owner": "22222222-3333-4444-5555-666666666666",
+        "group": "33333333-4444-5555-6666-777777777777",
+        "name": "\uFFFD",
+        "name_utf16": [
+          56832
+        ],
+        "link_number": 5,
+        "type": 11,
+        "grab": [
+          3.125,
+          3.25,
+          3.5
+        ],
+        "position": [
+          13.00000003,
+          14.00000003,
+          15.00000003
+        ],
+        "rotation": [
+          0.125,
+          0.25,
+          0.5,
+          0.875
+        ],
+        "velocity": [
+          23.00000003,
+          24.00000003,
+          25.00000003
+        ],
+        "touch_st": [
+          4,
+          5,
+          6
+        ],
+        "touch_normal": [
+          7,
+          8,
+          9
+        ],
+        "touch_binormal": [
+          10,
+          11,
+          12
+        ],
+        "touch_pos": [
+          13,
+          14,
+          15
+        ],
+        "touch_uv": [
+          16,
+          17,
+          18
+        ],
+        "touch_face": 6
+      }
+    ],
+    "queue": [],
+    "frames": []
+  },
+  "direct_reset_scheduler_boundary": false,
+  "initial": {
+    "globals": {
+      "after": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 0
+      },
+      "after_name": {
+        "type": "string",
+        "clr": "System.String",
+        "value": "",
+        "utf16": []
+      },
+      "final_saved": {
+        "type": "list",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+        "value": []
+      },
+      "name": {
+        "type": "string",
+        "clr": "System.String",
+        "value": "\uFFFD",
+        "utf16": [
+          56832
+        ]
+      },
+      "saved": {
+        "type": "list",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+        "value": [
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 1
+          },
+          {
+            "type": "string",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+            "value": "11111111-2222-3333-4444-555555555555",
+            "utf16": [
+              49,
+              49,
+              49,
+              49,
+              49,
+              49,
+              49,
+              49,
+              45,
+              50,
+              50,
+              50,
+              50,
+              45,
+              51,
+              51,
+              51,
+              51,
+              45,
+              52,
+              52,
+              52,
+              52,
+              45,
+              53,
+              53,
+              53,
+              53,
+              53,
+              53,
+              53,
+              53,
+              53,
+              53,
+              53,
+              53
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              3.125,
+              3.25,
+              3.5
+            ]
+          },
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 5
+          },
+          {
+            "type": "string",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+            "value": "33333333-4444-5555-6666-777777777777",
+            "utf16": [
+              51,
+              51,
+              51,
+              51,
+              51,
+              51,
+              51,
+              51,
+              45,
+              52,
+              52,
+              52,
+              52,
+              45,
+              53,
+              53,
+              53,
+              53,
+              45,
+              54,
+              54,
+              54,
+              54,
+              45,
+              55,
+              55,
+              55,
+              55,
+              55,
+              55,
+              55,
+              55,
+              55,
+              55,
+              55,
+              55
+            ]
+          },
+          {
+            "type": "string",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+            "value": "\uFFFD",
+            "utf16": [
+              56832
+            ]
+          },
+          {
+            "type": "string",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+            "value": "22222222-3333-4444-5555-666666666666",
+            "utf16": [
+              50,
+              50,
+              50,
+              50,
+              50,
+              50,
+              50,
+              50,
+              45,
+              51,
+              51,
+              51,
+              51,
+              45,
+              52,
+              52,
+              52,
+              52,
+              45,
+              53,
+              53,
+              53,
+              53,
+              45,
+              54,
+              54,
+              54,
+              54,
+              54,
+              54,
+              54,
+              54,
+              54,
+              54,
+              54,
+              54
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              13.00000003,
+              14.00000003,
+              15.00000003
+            ]
+          },
+          {
+            "type": "rotation",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+            "value": [
+              0.125,
+              0.25,
+              0.5,
+              0.875
+            ]
+          },
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 11
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              23.00000003,
+              24.00000003,
+              25.00000003
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              4,
+              5,
+              6
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              7,
+              8,
+              9
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              10,
+              11,
+              12
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              13,
+              14,
+              15
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              16,
+              17,
+              18
+            ]
+          },
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 6
+          }
+        ]
+      },
+      "seen": {
+        "type": "string",
+        "clr": "System.String",
+        "value": "\uFFFD",
+        "utf16": [
+          56832
+        ]
+      }
+    },
+    "event_code": "state_entry",
+    "call_mode": 1,
+    "sleep_until_ticks": 639312898781072060,
+    "object_description": "",
+    "event_arguments": [],
+    "state_index": 0,
+    "new_state_index": -1,
+    "initialize_globals": false,
+    "running": true,
+    "detectors": [
+      {
+        "key": "11111111-2222-3333-4444-555555555555",
+        "owner": "22222222-3333-4444-5555-666666666666",
+        "group": "33333333-4444-5555-6666-777777777777",
+        "name": "\uFFFD",
+        "name_utf16": [
+          56832
+        ],
+        "link_number": 5,
+        "type": 11,
+        "grab": [
+          3.125,
+          3.25,
+          3.5
+        ],
+        "position": [
+          13.00000003,
+          14.00000003,
+          15.00000003
+        ],
+        "rotation": [
+          0.125,
+          0.25,
+          0.5,
+          0.875
+        ],
+        "velocity": [
+          23.00000003,
+          24.00000003,
+          25.00000003
+        ],
+        "touch_st": [
+          4,
+          5,
+          6
+        ],
+        "touch_normal": [
+          7,
+          8,
+          9
+        ],
+        "touch_binormal": [
+          10,
+          11,
+          12
+        ],
+        "touch_pos": [
+          13,
+          14,
+          15
+        ],
+        "touch_uv": [
+          16,
+          17,
+          18
+        ],
+        "touch_face": 6
+      }
+    ],
+    "queue": [],
+    "frames": [
+      {
+        "function": "default state_entry",
+        "call_no": 2,
+        "slots": 4,
+        "slot_types": [
+          "EventHelpersInstance",
+          "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+          "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+          "System.Int32"
+        ]
+      }
+    ]
+  },
+  "after_followup": null,
+  "after_load": {
+    "globals": {
+      "after": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 0
+      },
+      "after_name": {
+        "type": "string",
+        "clr": "System.String",
+        "value": "",
+        "utf16": []
+      },
+      "final_saved": {
+        "type": "list",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+        "value": []
+      },
+      "name": {
+        "type": "string",
+        "clr": "System.String",
+        "value": "\uFFFD",
+        "utf16": [
+          65533
+        ]
+      },
+      "saved": {
+        "type": "list",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+        "value": [
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 1
+          },
+          {
+            "type": "string",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+            "value": "11111111-2222-3333-4444-555555555555",
+            "utf16": [
+              49,
+              49,
+              49,
+              49,
+              49,
+              49,
+              49,
+              49,
+              45,
+              50,
+              50,
+              50,
+              50,
+              45,
+              51,
+              51,
+              51,
+              51,
+              45,
+              52,
+              52,
+              52,
+              52,
+              45,
+              53,
+              53,
+              53,
+              53,
+              53,
+              53,
+              53,
+              53,
+              53,
+              53,
+              53,
+              53
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              3.125,
+              3.25,
+              3.5
+            ]
+          },
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 5
+          },
+          {
+            "type": "string",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+            "value": "33333333-4444-5555-6666-777777777777",
+            "utf16": [
+              51,
+              51,
+              51,
+              51,
+              51,
+              51,
+              51,
+              51,
+              45,
+              52,
+              52,
+              52,
+              52,
+              45,
+              53,
+              53,
+              53,
+              53,
+              45,
+              54,
+              54,
+              54,
+              54,
+              45,
+              55,
+              55,
+              55,
+              55,
+              55,
+              55,
+              55,
+              55,
+              55,
+              55,
+              55,
+              55
+            ]
+          },
+          {
+            "type": "string",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+            "value": "\uFFFD",
+            "utf16": [
+              65533
+            ]
+          },
+          {
+            "type": "string",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+            "value": "22222222-3333-4444-5555-666666666666",
+            "utf16": [
+              50,
+              50,
+              50,
+              50,
+              50,
+              50,
+              50,
+              50,
+              45,
+              51,
+              51,
+              51,
+              51,
+              45,
+              52,
+              52,
+              52,
+              52,
+              45,
+              53,
+              53,
+              53,
+              53,
+              45,
+              54,
+              54,
+              54,
+              54,
+              54,
+              54,
+              54,
+              54,
+              54,
+              54,
+              54,
+              54
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              13.00000003,
+              14.00000003,
+              15.00000003
+            ]
+          },
+          {
+            "type": "rotation",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+            "value": [
+              0.125,
+              0.25,
+              0.5,
+              0.875
+            ]
+          },
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 11
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              23.00000003,
+              24.00000003,
+              25.00000003
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              4,
+              5,
+              6
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              7,
+              8,
+              9
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              10,
+              11,
+              12
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              13,
+              14,
+              15
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              16,
+              17,
+              18
+            ]
+          },
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 6
+          }
+        ]
+      },
+      "seen": {
+        "type": "string",
+        "clr": "System.String",
+        "value": "\uFFFD",
+        "utf16": [
+          65533
+        ]
+      }
+    },
+    "event_code": "state_entry",
+    "call_mode": 0,
+    "sleep_until_ticks": 0,
+    "object_description": "",
+    "event_arguments": [],
+    "state_index": 0,
+    "new_state_index": -1,
+    "initialize_globals": false,
+    "running": true,
+    "detectors": [],
+    "queue": [],
+    "frames": [
+      {
+        "function": "default state_entry",
+        "call_no": 2,
+        "slots": 4,
+        "slot_types": [
+          "EventHelpersInstance",
+          "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+          "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+          "System.Int32"
+        ]
+      }
+    ]
+  },
+  "after_stop": null,
+  "after_restart_wait": null,
+  "resume_exception": null,
+  "final": {
+    "globals": {
+      "after": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 1
+      },
+      "after_name": {
+        "type": "string",
+        "clr": "System.String",
+        "value": "",
+        "utf16": []
+      },
+      "final_saved": {
+        "type": "list",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+        "value": [
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 1
+          }
+        ]
+      },
+      "name": {
+        "type": "string",
+        "clr": "System.String",
+        "value": "\uFFFD",
+        "utf16": [
+          65533
+        ]
+      },
+      "saved": {
+        "type": "list",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+        "value": [
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 1
+          },
+          {
+            "type": "string",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+            "value": "11111111-2222-3333-4444-555555555555",
+            "utf16": [
+              49,
+              49,
+              49,
+              49,
+              49,
+              49,
+              49,
+              49,
+              45,
+              50,
+              50,
+              50,
+              50,
+              45,
+              51,
+              51,
+              51,
+              51,
+              45,
+              52,
+              52,
+              52,
+              52,
+              45,
+              53,
+              53,
+              53,
+              53,
+              53,
+              53,
+              53,
+              53,
+              53,
+              53,
+              53,
+              53
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              3.125,
+              3.25,
+              3.5
+            ]
+          },
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 5
+          },
+          {
+            "type": "string",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+            "value": "33333333-4444-5555-6666-777777777777",
+            "utf16": [
+              51,
+              51,
+              51,
+              51,
+              51,
+              51,
+              51,
+              51,
+              45,
+              52,
+              52,
+              52,
+              52,
+              45,
+              53,
+              53,
+              53,
+              53,
+              45,
+              54,
+              54,
+              54,
+              54,
+              45,
+              55,
+              55,
+              55,
+              55,
+              55,
+              55,
+              55,
+              55,
+              55,
+              55,
+              55,
+              55
+            ]
+          },
+          {
+            "type": "string",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+            "value": "\uFFFD",
+            "utf16": [
+              65533
+            ]
+          },
+          {
+            "type": "string",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+            "value": "22222222-3333-4444-5555-666666666666",
+            "utf16": [
+              50,
+              50,
+              50,
+              50,
+              50,
+              50,
+              50,
+              50,
+              45,
+              51,
+              51,
+              51,
+              51,
+              45,
+              52,
+              52,
+              52,
+              52,
+              45,
+              53,
+              53,
+              53,
+              53,
+              45,
+              54,
+              54,
+              54,
+              54,
+              54,
+              54,
+              54,
+              54,
+              54,
+              54,
+              54,
+              54
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              13.00000003,
+              14.00000003,
+              15.00000003
+            ]
+          },
+          {
+            "type": "rotation",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+            "value": [
+              0.125,
+              0.25,
+              0.5,
+              0.875
+            ]
+          },
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 11
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              23.00000003,
+              24.00000003,
+              25.00000003
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              4,
+              5,
+              6
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              7,
+              8,
+              9
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              10,
+              11,
+              12
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              13,
+              14,
+              15
+            ]
+          },
+          {
+            "type": "vector",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+            "value": [
+              16,
+              17,
+              18
+            ]
+          },
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 6
+          }
+        ]
+      },
+      "seen": {
+        "type": "string",
+        "clr": "System.String",
+        "value": "\uFFFD",
+        "utf16": [
+          65533
+        ]
+      }
+    },
+    "event_code": "None",
+    "call_mode": 0,
+    "sleep_until_ticks": 0,
+    "object_description": "",
+    "event_arguments": null,
+    "state_index": 0,
+    "new_state_index": -1,
+    "initialize_globals": false,
+    "running": true,
+    "detectors": [],
+    "queue": [],
+    "frames": []
+  },
+  "incomplete_scene_resource_boundary": false,
+  "scheduler_guard_boundary": false,
+  "stop_scheduler_context": null,
+  "methodology": "Actual unchanged original CodeGen/real SDK and StartEx/base CheckRunWork captures real llSleep. Actual private production MigrateOutEventHandler is invoked unchanged. Encoder exceptions are recorded, not bypassed. Actual AppendXMLDetectArray/OuterXml/XmlDocument.LoadXml/RestoreDetectParams are measured separately from the raw snapshot. A successful snapshot alone does not prove full DetectArray context transfer. Actual CLR name units are recorded before JSON encoding.",
+  "sha256": {
+    "cache_key.txt": "e7c82bf0e676b6e54cbeb1d4ec864511d547fa22014a5493af4f87e2790f6a0a",
+    "event-queue.xml": "09030ac3a8d5dbaa452ef2076d8c8a18f45eb5608570c79b134fc4ffc843309e",
+    "original.il.txt": "e717f9dde2c8cad5965cd115db57469d6d9ff74f7f77758b40a415aae4691363",
+    "original.yobj": "43c2b92c770cf41de127cccc36054a89a1ea7c0b473199987849551fa6134a36",
+    "snapshot.bin": "75435fa7016181ea03308903c8bfdefb08e6e25f584014cbf431bc20b8870243",
+    "source.lsl": "1d1a4a3fc948079a4ef9f276fc3b8c0b588c874262b4b9f4541f4eb650d0cfa8",
+    "generator_source": "8f5c87ff672eb3bf29eb4b475b7ae2e8e91a6c7df934be83f040bc7c537cb640",
+    "generator_assembly": "69cb9b37b62216f193f6c82139b7b3905ba2d2cd36911ad5cef1fdccc9b92bf4",
+    "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+    "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+    "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+    "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+    "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+    "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+    "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+    "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+    "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+    "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+    "original_source_XMRInstCapture.cs": "775f1d83bd4610f788891269ea9ea08b1f79cf4bf3b44300d926f49c8a277cbd",
+    "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+    "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+    "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+    "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+    "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+    "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+    "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+    "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+  }
+}

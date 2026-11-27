@@ -6,22 +6,22 @@
 #include "opensim/services/service_prefix_boundaries.hpp"
 #include <algorithm>
 #include <stdexcept>
+
 namespace opensim::services {
 bool LoginAgentFactory::is_service_key(std::u16string_view key) {
     constexpr std::u16string_view prefix = u"SRV_";
     std::size_t matched = 0;
     for (std::size_t i = 0; i < key.size(); ++i) {
         char32_t point = key[i];
-        if (point >= 0xd800 && point <= 0xdbff && i + 1 < key.size() && key[i + 1] >= 0xdc00 &&
-            key[i + 1] <= 0xdfff)
+        if (point >= 0xd800 && point <= 0xdbff && i + 1 < key.size() && key[i + 1] >= 0xdc00 && key[i + 1] <= 0xdfff)
             point = 0x10000 + ((point - 0xd800) << 10) + (key[++i] - 0xdc00);
-        auto& ranges = network::detail::boolean_ignorables;
+        auto &ranges = network::detail::boolean_ignorables;
         auto ignored = std::lower_bound(ranges.begin(), ranges.end(), point,
                                         [](auto range, char32_t n) { return range.second < n; });
         if (ignored != ranges.end() && ignored->first <= point)
             continue;
         if (matched == prefix.size()) {
-            auto& boundaries = detail::service_prefix_boundaries;
+            auto &boundaries = detail::service_prefix_boundaries;
             auto blocked = std::lower_bound(boundaries.begin(), boundaries.end(), point,
                                             [](auto range, char32_t n) { return range.second < n; });
             return blocked == boundaries.end() || blocked->first > point;
@@ -32,18 +32,18 @@ bool LoginAgentFactory::is_service_key(std::u16string_view key) {
     }
     return matched == prefix.size();
 }
-LoginAgentFactory::LoginAgentFactory(Config config, std::optional<std::string> gatekeeper, Store store,
-                                     CapsPath caps)
+
+LoginAgentFactory::LoginAgentFactory(Config config, std::optional<std::string> gatekeeper, Store store, CapsPath caps)
     : gatekeeper_(std::move(gatekeeper)), store_(std::move(store)), caps_(std::move(caps)) {
     auto values = std::make_shared<Config>(std::move(config));
     keys_ = [values] {
         std::vector<std::string> result;
-        for (auto& [key, value] : *values)
+        for (auto &[key, value] : *values)
             result.push_back(key);
         return result;
     };
-    read_ = [values](const std::string& key, const std::string& fallback) {
-        for (auto& [name, value] : *values)
+    read_ = [values](const std::string &key, const std::string &fallback) {
+        for (auto &[name, value] : *values)
             if (name == key)
                 return value;
         return fallback;
@@ -51,18 +51,20 @@ LoginAgentFactory::LoginAgentFactory(Config config, std::optional<std::string> g
     if (!caps_)
         caps_ = []() { return framework::Uuid::random().str(); };
 }
+
 LoginAgentFactory::LoginAgentFactory(Keys keys, Read read, std::optional<std::string> gatekeeper, Store store,
                                      CapsPath caps)
-    : keys_(std::move(keys)), read_(std::move(read)), gatekeeper_(std::move(gatekeeper)),
-      store_(std::move(store)), caps_(std::move(caps)) {
+    : keys_(std::move(keys)), read_(std::move(read)), gatekeeper_(std::move(gatekeeper)), store_(std::move(store)),
+      caps_(std::move(caps)) {
     if (!keys_ || !read_)
         throw std::invalid_argument("Login configuration callbacks are missing");
     if (!caps_)
         caps_ = []() { return framework::Uuid::random().str(); };
 }
+
 std::shared_ptr<framework::AgentCircuitData>
-LoginAgentFactory::make_agent(UserAccount& account, const framework::AvatarAppearance* appearance,
-                              const LoginAgentDetails& details) const {
+LoginAgentFactory::make_agent(UserAccount &account, const framework::AvatarAppearance *appearance,
+                              const LoginAgentDetails &details) const {
     auto circuit = std::make_shared<framework::AgentCircuitData>();
     circuit->agent_id = framework::Uuid(account.principal_id);
     circuit->appearance = appearance ? std::make_shared<framework::AvatarAppearance>(appearance)
@@ -84,7 +86,8 @@ LoginAgentFactory::make_agent(UserAccount& account, const framework::AvatarAppea
     set_service_urls(*circuit, account);
     return circuit;
 }
-void LoginAgentFactory::set_service_urls(framework::AgentCircuitData& circuit, UserAccount& account) const {
+
+void LoginAgentFactory::set_service_urls(framework::AgentCircuitData &circuit, UserAccount &account) const {
     using Urls = framework::AgentCircuitData::ServiceUrls;
     circuit.service_urls = std::make_shared<Urls>();
     if (!account.service_urls)
@@ -97,7 +100,7 @@ void LoginAgentFactory::set_service_urls(framework::AgentCircuitData& circuit, U
     if (keys.empty())
         return;
     bool changed = false;
-    auto differs = [&](const std::string& key, const std::string& value) {
+    auto differs = [&](const std::string &key, const std::string &value) {
         auto found = account.service_urls->find(key);
         if (found == account.service_urls->end())
             return true;
@@ -108,7 +111,7 @@ void LoginAgentFactory::set_service_urls(framework::AgentCircuitData& circuit, U
             throw std::invalid_argument("Service URL override requires a string value");
         return value != *text;
     };
-    for (auto& key : keys) {
+    for (auto &key : keys) {
         auto units = framework::utf16_replacing(key);
         if (!is_service_key(units))
             continue;
@@ -132,4 +135,4 @@ void LoginAgentFactory::set_service_urls(framework::AgentCircuitData& circuit, U
         (void)store_(account);
     }
 }
-}
+} // namespace opensim::services

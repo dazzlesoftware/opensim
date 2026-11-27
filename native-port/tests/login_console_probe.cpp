@@ -7,19 +7,22 @@
 #include <sstream>
 #include <iomanip>
 using namespace opensim;
-std::string decode(const std::string& value) {
+
+std::string decode(const std::string &value) {
     std::u16string text;
     for (std::size_t i = 0; i < value.size(); i += 4)
         text.push_back(static_cast<char16_t>(std::stoi(value.substr(i, 4), nullptr, 16)));
     return framework::utf8(text);
 }
-std::string encode(const std::string& value) {
+
+std::string encode(const std::string &value) {
     std::ostringstream out;
     out << std::hex << std::setfill('0');
     for (auto c : framework::utf16(value))
         out << std::setw(4) << static_cast<unsigned>(c);
     return out.str();
 }
+
 int main() {
     try {
         services::AccountStore accounts(":memory:", ":memory:", true);
@@ -45,7 +48,7 @@ int main() {
             std::cout << login.minimum_login_level() << '|' << encode(completion.welcome_message()) << '|'
                       << (output ? encode(*output) : "-") << '\n';
         }
-    } catch (const std::exception& error) {
+    } catch (const std::exception &error) {
         std::cerr << error.what() << '\n';
         return 1;
     }

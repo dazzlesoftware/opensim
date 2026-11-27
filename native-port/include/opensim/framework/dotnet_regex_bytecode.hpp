@@ -1,6 +1,7 @@
 // .NET8 RegexWriter and interpreter opcodes; MIT runtime license.
 #pragma once
 #include "opensim/framework/dotnet_regex_parser.hpp"
+
 namespace opensim::framework {
 enum class DotnetRegexOpcode : std::int32_t {
     Onerep = 0,
@@ -56,6 +57,7 @@ enum class DotnetRegexOpcode : std::int32_t {
     CaseInsensitive = 512,
 };
 bool dotnet_regex_opcode_backtracks(std::int32_t);
+
 struct DotnetRegexBytecode {
     std::int32_t options = 0;
     std::int32_t track_count = 0;
@@ -64,7 +66,8 @@ struct DotnetRegexBytecode {
     // Same initial null per-string ASCII cache slots as RegexInterpreterCode.
     std::unique_ptr<DotnetRegexAsciiCacheSlot[]> strings_ascii_lookup;
 };
+
 // Emits execution data. Starting-position optimization and the interpreter are
 // separate consumers still under port; this does not execute a partial engine.
-DotnetRegexBytecode dotnet_regex_write(const DotnetRegexParsedPattern&);
-}
+DotnetRegexBytecode dotnet_regex_write(const DotnetRegexParsedPattern &);
+} // namespace opensim::framework

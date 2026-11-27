@@ -1,0 +1,365 @@
+{
+  "scope": "Unchanged original private detector+queue XML writer/parser first and second pass, with production binary migration and live sleep resume",
+  "cases": [
+    {
+      "name": "max_positive",
+      "initial": {
+        "position": [
+          "7fefffffffffffff",
+          "7fefffffffffffff",
+          "7fefffffffffffff"
+        ],
+        "rotation": [
+          "7fefffffffffffff",
+          "7fefffffffffffff",
+          "7fefffffffffffff",
+          "7fefffffffffffff"
+        ],
+        "velocity": [
+          "7fefffffffffffff",
+          "7fefffffffffffff",
+          "7fefffffffffffff"
+        ],
+        "grab": [
+          "7fefffffffffffff",
+          "7fefffffffffffff",
+          "7fefffffffffffff"
+        ]
+      },
+      "after_load": {
+        "position": [
+          "7ff0000000000000",
+          "7ff0000000000000",
+          "7ff0000000000000"
+        ],
+        "rotation": [
+          "7ff0000000000000",
+          "7ff0000000000000",
+          "7ff0000000000000",
+          "7ff0000000000000"
+        ],
+        "velocity": [
+          "7ff0000000000000",
+          "7ff0000000000000",
+          "7ff0000000000000"
+        ],
+        "grab": [
+          "7ff0000000000000",
+          "7ff0000000000000",
+          "7ff0000000000000"
+        ]
+      },
+      "second_xml_load": {
+        "position": [
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000"
+        ],
+        "rotation": [
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000",
+          "3ff0000000000000"
+        ],
+        "velocity": [
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000"
+        ],
+        "grab": [
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000"
+        ]
+      }
+    },
+    {
+      "name": "max_negative",
+      "initial": {
+        "position": [
+          "ffefffffffffffff",
+          "ffefffffffffffff",
+          "ffefffffffffffff"
+        ],
+        "rotation": [
+          "ffefffffffffffff",
+          "ffefffffffffffff",
+          "ffefffffffffffff",
+          "ffefffffffffffff"
+        ],
+        "velocity": [
+          "ffefffffffffffff",
+          "ffefffffffffffff",
+          "ffefffffffffffff"
+        ],
+        "grab": [
+          "ffefffffffffffff",
+          "ffefffffffffffff",
+          "ffefffffffffffff"
+        ]
+      },
+      "after_load": {
+        "position": [
+          "fff0000000000000",
+          "fff0000000000000",
+          "fff0000000000000"
+        ],
+        "rotation": [
+          "fff0000000000000",
+          "fff0000000000000",
+          "fff0000000000000",
+          "fff0000000000000"
+        ],
+        "velocity": [
+          "fff0000000000000",
+          "fff0000000000000",
+          "fff0000000000000"
+        ],
+        "grab": [
+          "fff0000000000000",
+          "fff0000000000000",
+          "fff0000000000000"
+        ]
+      },
+      "second_xml_load": {
+        "position": [
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000"
+        ],
+        "rotation": [
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000",
+          "3ff0000000000000"
+        ],
+        "velocity": [
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000"
+        ],
+        "grab": [
+          "0000000000000000",
+          "0000000000000000",
+          "0000000000000000"
+        ]
+      }
+    },
+    {
+      "name": "min_normal",
+      "initial": {
+        "position": [
+          "0000000000000000",
+          "0010000000000000",
+          "8010000000000000"
+        ],
+        "rotation": [
+          "0010000000000000",
+          "8010000000000000",
+          "0000000000000000",
+          "8000000000000000"
+        ],
+        "velocity": [
+          "8010000000000000",
+          "0000000000000000",
+          "0010000000000000"
+        ],
+        "grab": [
+          "0010000000000000",
+          "8010000000000000",
+          "0000000000000000"
+        ]
+      },
+      "after_load": {
+        "position": [
+          "0000000000000000",
+          "0000000000000000",
+          "8000000000000000"
+        ],
+        "rotation": [
+          "0000000000000000",
+          "8000000000000000",
+          "0000000000000000",
+          "8000000000000000"
+        ],
+        "velocity": [
+          "8000000000000000",
+          "0000000000000000",
+          "0000000000000000"
+        ],
+        "grab": [
+          "0000000000000000",
+          "8000000000000000",
+          "0000000000000000"
+        ]
+      },
+      "second_xml_load": {
+        "position": [
+          "0000000000000000",
+          "0000000000000000",
+          "8000000000000000"
+        ],
+        "rotation": [
+          "0000000000000000",
+          "8000000000000000",
+          "0000000000000000",
+          "8000000000000000"
+        ],
+        "velocity": [
+          "8000000000000000",
+          "0000000000000000",
+          "0000000000000000"
+        ],
+        "grab": [
+          "0000000000000000",
+          "8000000000000000",
+          "0000000000000000"
+        ]
+      }
+    },
+    {
+      "name": "min_subnormal",
+      "initial": {
+        "position": [
+          "0000000000000001",
+          "0000000000000001",
+          "8000000000000001"
+        ],
+        "rotation": [
+          "0000000000000001",
+          "8000000000000001",
+          "0000000000000001",
+          "8000000000000001"
+        ],
+        "velocity": [
+          "8000000000000001",
+          "0000000000000001",
+          "0000000000000001"
+        ],
+        "grab": [
+          "0000000000000001",
+          "8000000000000001",
+          "0000000000000001"
+        ]
+      },
+      "after_load": {
+        "position": [
+          "0000000000000000",
+          "0000000000000000",
+          "8000000000000000"
+        ],
+        "rotation": [
+          "0000000000000000",
+          "8000000000000000",
+          "0000000000000000",
+          "8000000000000000"
+        ],
+        "velocity": [
+          "8000000000000000",
+          "0000000000000000",
+          "0000000000000000"
+        ],
+        "grab": [
+          "0000000000000000",
+          "8000000000000000",
+          "0000000000000000"
+        ]
+      },
+      "second_xml_load": {
+        "position": [
+          "0000000000000000",
+          "0000000000000000",
+          "8000000000000000"
+        ],
+        "rotation": [
+          "0000000000000000",
+          "8000000000000000",
+          "0000000000000000",
+          "8000000000000000"
+        ],
+        "velocity": [
+          "8000000000000000",
+          "0000000000000000",
+          "0000000000000000"
+        ],
+        "grab": [
+          "0000000000000000",
+          "8000000000000000",
+          "0000000000000000"
+        ]
+      }
+    },
+    {
+      "name": "huge_finite",
+      "initial": {
+        "position": [
+          "7e3d7ee8bcbbd351",
+          "7fe1ccf385ebc8a0",
+          "ffe1ccf385ebc8a0"
+        ],
+        "rotation": [
+          "7fe1ccf385ebc8a0",
+          "ffe1ccf385ebc8a0",
+          "7e3d7ee8bcbbd351",
+          "fe3d7ee8bcbbd351"
+        ],
+        "velocity": [
+          "ffe1ccf385ebc8a0",
+          "7e3d7ee8bcbbd351",
+          "7fe1ccf385ebc8a0"
+        ],
+        "grab": [
+          "7fe1ccf385ebc8a0",
+          "ffe1ccf385ebc8a0",
+          "7e3d7ee8bcbbd351"
+        ]
+      },
+      "after_load": {
+        "position": [
+          "7e3d7ee8bcbbd367",
+          "7fe1ccf385ebc8a0",
+          "ffe1ccf385ebc8a0"
+        ],
+        "rotation": [
+          "7fe1ccf385ebc8a0",
+          "ffe1ccf385ebc8a0",
+          "7e3d7ee8bcbbd367",
+          "fe3d7ee8bcbbd367"
+        ],
+        "velocity": [
+          "ffe1ccf385ebc8a0",
+          "7e3d7ee8bcbbd367",
+          "7fe1ccf385ebc8a0"
+        ],
+        "grab": [
+          "7fe1ccf385ebc8a0",
+          "ffe1ccf385ebc8a0",
+          "7e3d7ee8bcbbd367"
+        ]
+      },
+      "second_xml_load": {
+        "position": [
+          "7e3d7ee8bcbbd367",
+          "7fe1ccf385ebc8a0",
+          "ffe1ccf385ebc8a0"
+        ],
+        "rotation": [
+          "7fe1ccf385ebc8a0",
+          "ffe1ccf385ebc8a0",
+          "7e3d7ee8bcbbd367",
+          "fe3d7ee8bcbbd367"
+        ],
+        "velocity": [
+          "ffe1ccf385ebc8a0",
+          "7e3d7ee8bcbbd367",
+          "7fe1ccf385ebc8a0"
+        ],
+        "grab": [
+          "7fe1ccf385ebc8a0",
+          "ffe1ccf385ebc8a0",
+          "7e3d7ee8bcbbd367"
+        ]
+      }
+    }
+  ]
+}

@@ -8,14 +8,17 @@
 #include <chrono>
 #include <limits>
 #include <stdexcept>
+
 namespace opensim::scene {
 namespace {
 std::uint32_t u(int n) {
     return static_cast<std::uint32_t>(n);
 }
+
 std::int32_t s(std::uint32_t n) {
     return std::bit_cast<std::int32_t>(n);
 }
+
 std::optional<std::size_t> last_index(std::string_view text, std::string_view pattern) {
     if (pattern.empty())
         return text.size();
@@ -27,7 +30,8 @@ std::optional<std::size_t> last_index(std::string_view text, std::string_view pa
     }
     return {};
 }
-}
+} // namespace
+
 std::string user_inventory_text(std::string_view text, bool description) {
     framework::utf16(text);
     if (text.empty() || (description && framework::trim_utf8(text).empty()))
@@ -41,15 +45,16 @@ std::string user_inventory_text(std::string_view text, bool description) {
             result[n] = 0;
     return result;
 }
+
 std::int32_t user_inventory_unix_time() {
-    double seconds =
-        std::chrono::duration<double>(std::chrono::system_clock::now().time_since_epoch()).count();
+    double seconds = std::chrono::duration<double>(std::chrono::system_clock::now().time_since_epoch()).count();
     return seconds >= -2147483648.0 && seconds < 2147483648.0 ? static_cast<std::int32_t>(seconds)
                                                               : std::numeric_limits<std::int32_t>::min();
 }
+
 UserInventoryOperations::UserInventoryOperations(UserInventoryBackend b) : backend_(std::move(b)) {
-    if (!backend_.item || !backend_.update || !backend_.move || !backend_.delete_items ||
-        !backend_.delete_folders || !backend_.bulk || !backend_.unix_time)
+    if (!backend_.item || !backend_.update || !backend_.move || !backend_.delete_items || !backend_.delete_folders ||
+        !backend_.bulk || !backend_.unix_time)
         throw std::invalid_argument("Incomplete user inventory backend");
     if (!backend_.starts_with)
         backend_.starts_with = framework::invariant_starts_with;
@@ -62,6 +67,7 @@ UserInventoryOperations::UserInventoryOperations(UserInventoryBackend b) : backe
             return creator;
         };
 }
+
 void UserInventoryOperations::update(framework::Uuid agent, framework::Uuid transaction, framework::Uuid key,
                                      UserInventoryItem input) const {
     auto item = backend_.item(agent, key);
@@ -83,8 +89,7 @@ void UserInventoryOperations::update(framework::Uuid agent, framework::Uuid tran
         }
         auto at = backend_.last_index(item->description, "@ htt");
         if (at && input->description.rfind('@') == std::string::npos) {
-            input->description =
-                user_inventory_text(input->description + " " + item->description.substr(*at), true);
+            input->description = user_inventory_text(input->description + " " + item->description.substr(*at), true);
             send = true;
         }
     }
@@ -137,6 +142,7 @@ void UserInventoryOperations::update(framework::Uuid agent, framework::Uuid tran
     } else if (send)
         backend_.bulk(agent, item);
 }
+
 void UserInventoryOperations::move(framework::Uuid agent, UserInventoryMoveList *list) const {
     if (!list)
         throw std::invalid_argument("Null inventory move list");
@@ -159,16 +165,17 @@ void UserInventoryOperations::move(framework::Uuid agent, UserInventoryMoveList 
             backend_.bulk(agent, std::move(item));
     }
 }
-void UserInventoryOperations::remove_items(framework::Uuid agent,
-                                           const std::vector<framework::Uuid> &keys) const {
+
+void UserInventoryOperations::remove_items(framework::Uuid agent, const std::vector<framework::Uuid> &keys) const {
     backend_.delete_items(agent, keys);
 }
-void UserInventoryOperations::remove_folders(framework::Uuid agent,
-                                             const std::vector<framework::Uuid> &keys) const {
+
+void UserInventoryOperations::remove_folders(framework::Uuid agent, const std::vector<framework::Uuid> &keys) const {
     if (backend_.debug)
         backend_.debug("Removing " + std::to_string(keys.size()) + " inventory folders");
     backend_.delete_folders(agent, keys);
 }
+
 std::vector<UserInventoryUpdateRequest> user_inventory_update_requests(const network::lludp::Packet &packet) {
     std::vector<UserInventoryUpdateRequest> requests;
     for (const auto &fields : packet.blocks.at("InventoryData")) {
@@ -178,8 +185,8 @@ std::vector<UserInventoryUpdateRequest> user_inventory_update_requests(const net
             return s(static_cast<std::uint32_t>(std::get<std::uint64_t>(fields.at(key))));
         };
         auto text = [&](const char *key, bool description) {
-            return user_inventory_text(
-                framework::field_to_string(std::get<std::vector<std::uint8_t>>(fields.at(key))), description);
+            return user_inventory_text(framework::field_to_string(std::get<std::vector<std::uint8_t>>(fields.at(key))),
+                                       description);
         };
         item->id = uuid("ItemID");
         item->name = text("Name", false);
@@ -199,19 +206,19 @@ std::vector<UserInventoryUpdateRequest> user_inventory_update_requests(const net
     }
     return requests;
 }
-UserInventoryMoveList user_inventory_move_request(framework::Uuid agent,
-                                                  const network::lludp::Packet &packet) {
+
+UserInventoryMoveList user_inventory_move_request(framework::Uuid agent, const network::lludp::Packet &packet) {
     UserInventoryMoveList list;
     for (const auto &fields : packet.blocks.at("InventoryData")) {
         auto item = std::make_shared<services::InventoryItem>();
         item->id = std::get<framework::Uuid>(fields.at("ItemID"));
         item->owner = agent;
         item->parent = std::get<framework::Uuid>(fields.at("FolderID"));
-        item->name = user_inventory_text(
-            framework::field_to_string(std::get<std::vector<std::uint8_t>>(fields.at("NewName"))));
+        item->name =
+            user_inventory_text(framework::field_to_string(std::get<std::vector<std::uint8_t>>(fields.at("NewName"))));
         item->creation_date = user_inventory_unix_time();
         list.add(std::move(item));
     }
     return list;
 }
-}
+} // namespace opensim::scene

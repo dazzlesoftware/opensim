@@ -30,8 +30,8 @@ std::string machine_name(bool domain) {
     return utf8(std::u16string(buffer.begin(), buffer.begin() + size));
 #else
     std::array<char, 256> buffer{};
-    const auto result = domain ? getdomainname(buffer.data(), buffer.size() - 1)
-                               : gethostname(buffer.data(), buffer.size() - 1);
+    const auto result =
+        domain ? getdomainname(buffer.data(), buffer.size() - 1) : gethostname(buffer.data(), buffer.size() - 1);
     return result == 0 ? std::string(buffer.data()) : std::string{};
 #endif
 }
@@ -41,7 +41,7 @@ bool ascii_equal(std::string_view a, std::string_view b) {
     return std::ranges::equal(a, b, [&](char left, char right) { return lower(left) == lower(right); });
 }
 
-bool is_local(const ConfigUriObjectPtr& target, const std::string& host) {
+bool is_local(const ConfigUriObjectPtr &target, const std::string &host) {
     if (native_config_uri_network_identity(target).loopback)
         return true;
     if (const auto ip = IpAddress::parse(host)) {
@@ -49,7 +49,7 @@ bool is_local(const ConfigUriObjectPtr& target, const std::string& host) {
         const auto addresses = name.empty() ? std::nullopt : HostResolver::system_lookup(name);
         if (!addresses)
             return false;
-        return std::ranges::any_of(*addresses, [&](const auto& address) {
+        return std::ranges::any_of(*addresses, [&](const auto &address) {
             return address->v6() == ip->v6() && address->bytes() == ip->bytes() &&
                    (!ip->v6() || address->scope_id() == ip->scope_id());
         });
@@ -59,7 +59,7 @@ bool is_local(const ConfigUriObjectPtr& target, const std::string& host) {
 }
 
 class ScriptHttpProxy final : public ConfigHttpProxy {
-public:
+  public:
     ScriptHttpProxy(ConfigUriObjectPtr address, std::string_view exceptions) : address_(std::move(address)) {
         if (exceptions.empty())
             return;
@@ -67,8 +67,8 @@ public:
             const auto separator = exceptions.find(';');
             auto expression = std::make_shared<const std::u16string>(utf16_replacing(exceptions.substr(0, separator)));
             constexpr int ignore_case_and_invariant = 1 | 512;
-            auto parsed = dotnet_regex_parse(expression, ignore_case_and_invariant,
-                                             [] { return std::u16string{}; }, sufficient_execution_stack);
+            auto parsed = dotnet_regex_parse(
+                expression, ignore_case_and_invariant, [] { return std::u16string{}; }, sufficient_execution_stack);
             bypass_.emplace_back(std::move(expression), std::move(parsed));
             if (separator == exceptions.npos)
                 break;
@@ -95,22 +95,29 @@ public:
         if (port != (scheme == u"https" ? 443 : 80))
             origin += u":" + utf16(std::to_string(port));
         const auto input = std::make_shared<const std::u16string>(std::move(origin));
-        return std::ranges::any_of(bypass_, [&](const auto& pattern) {
+        return std::ranges::any_of(bypass_, [&](const auto &pattern) {
             DotnetRegexInterpreter runner(pattern.second, pattern.first, sufficient_execution_stack);
-            return runner.scan(input, 0, static_cast<std::int32_t>(input->size()), 0, -1,
-                               DotnetRegexRunnerMode::ExistenceRequired).success;
+            return runner
+                .scan(input, 0, static_cast<std::int32_t>(input->size()), 0, -1,
+                      DotnetRegexRunnerMode::ExistenceRequired)
+                .success;
         });
     }
 
-    std::shared_ptr<ConfigXmlCredentials> credentials() const override { return credentials_.load(); }
-    void credentials(std::shared_ptr<ConfigXmlCredentials> value) override { credentials_.store(std::move(value)); }
+    std::shared_ptr<ConfigXmlCredentials> credentials() const override {
+        return credentials_.load();
+    }
 
-private:
+    void credentials(std::shared_ptr<ConfigXmlCredentials> value) override {
+        credentials_.store(std::move(value));
+    }
+
+  private:
     ConfigUriObjectPtr address_;
     std::vector<std::pair<DotnetRegexNodeText, DotnetRegexParsedPattern>> bypass_;
     opensim::framework::AtomicSharedPtr<ConfigXmlCredentials> credentials_;
 };
-}
+} // namespace
 
 std::shared_ptr<framework::ConfigXmlProxy> make_script_http_proxy(std::string address, std::string_view exceptions) {
     if (address.empty())
@@ -124,4 +131,4 @@ std::shared_ptr<framework::ConfigXmlProxy> make_script_http_proxy(std::string ad
         exceptions);
 }
 
-}
+} // namespace opensim::network

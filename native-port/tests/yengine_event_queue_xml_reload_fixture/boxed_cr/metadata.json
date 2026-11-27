@@ -1,0 +1,38 @@
+{
+  "name": "boxed_cr",
+  "input": {
+    "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+    "value": "a\rb",
+    "utf16": [
+      97,
+      13,
+      98
+    ]
+  },
+  "append_exception": null,
+  "outer_xml_exception": null,
+  "load_xml_exception": null,
+  "restore_event_queue_exception": null,
+  "restored": {
+    "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+    "value": "a\rb",
+    "utf16": [
+      97,
+      13,
+      98
+    ]
+  },
+  "strict_xml_reader_control_exception": null,
+  "strict_xml_reader_control_restored": {
+    "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+    "value": "a\nb",
+    "utf16": [
+      97,
+      10,
+      98
+    ]
+  },
+  "sha256": {
+    "serialized.xml": "091d6431d894637035ae8bb05d168c86adce4c46acd94ed418e851d845b36231"
+  }
+}

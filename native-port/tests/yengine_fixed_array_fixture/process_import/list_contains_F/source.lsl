@@ -1,0 +1,1 @@
+YOption arrays;YOption chars;object input;list values;integer after;default{state_entry(){input=xmrFixedArrayAllocF(1);values=[input];after=1;}touch_start(integer n){}}

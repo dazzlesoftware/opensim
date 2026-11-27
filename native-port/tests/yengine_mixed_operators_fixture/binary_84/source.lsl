@@ -1,0 +1,1 @@
+key left=(key)"bad";float right=1.25;list result;default{state_entry(){result=[left<right];}}

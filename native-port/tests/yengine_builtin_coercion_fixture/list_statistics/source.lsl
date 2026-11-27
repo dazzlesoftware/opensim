@@ -1,0 +1,1 @@
+float result;integer after;default{state_entry(){result=llListStatistics(LIST_STAT_SUM,7);after=1;}}

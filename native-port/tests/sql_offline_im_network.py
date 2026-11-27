@@ -21,10 +21,24 @@ def running_server(command, endpoint="/offlineim"):
                           stdout=subprocess.PIPE, text=True, encoding="utf-8") as server:
         try:
             lines = queue.Queue()
+            output_lines = []
 
             def read_output():
-                for line in server.stdout:
-                    lines.put(line)
+                log_root = os.environ.get("OPENSIM_TEST_SERVER_LOG_DIR")
+                log = None
+                if log_root:
+                    Path(log_root).mkdir(parents=True, exist_ok=True)
+                    log = (Path(log_root) / f"server-{server.pid}.log").open("w", encoding="utf-8")
+                try:
+                    for line in server.stdout:
+                        output_lines.append(line)
+                        if log:
+                            log.write(line)
+                            log.flush()
+                        lines.put(line)
+                finally:
+                    if log:
+                        log.close()
                 lines.put(None)
 
             threading.Thread(target=read_output, daemon=True).start()
@@ -44,6 +58,8 @@ def running_server(command, endpoint="/offlineim"):
                 data = urllib.parse.urlencode(fields).encode()
                 with urllib.request.urlopen(url, data, timeout=5) as response:
                     return ET.fromstring(response.read())
+
+            post.output_lines = output_lines
 
             yield post
         finally:
@@ -95,6 +111,18 @@ def main():
         )
         command = [str(args.native.resolve()), "--config", str(config)]
         subprocess.run(command + ["--init-db"], check=True, timeout=30)
+        if args.provider == "SQLite":
+            settings = config.read_text(encoding="utf-8")
+            config.write_text(
+                settings + 'ConnectionString="Data Source=offline-fixture.db;FailIfMissing=True"\n',
+                encoding="utf-8",
+            )
+            result = subprocess.run(command + ["--console"], input='"quit"\n',
+                                    capture_output=True, text=True, timeout=15)
+            assert result.returncode != 0 and "unable to open database file" in result.stderr.lower()
+            assert not (config.parent / "offline-fixture.db").exists()
+            # Provision the empty file explicitly. Both server instances must now open it.
+            (config.parent / "offline-fixture.db").touch()
         recipient = "92929292-9292-4292-8292-929292929292"
         message = {
             "METHOD": "STORE", "ToAgentID": recipient, "Message": "SQL & café",

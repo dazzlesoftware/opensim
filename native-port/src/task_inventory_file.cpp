@@ -5,6 +5,7 @@
 #include <array>
 #include <bit>
 #include <stdexcept>
+
 namespace opensim::scene {
 namespace {
 std::string mask(std::uint32_t value) {
@@ -16,6 +17,7 @@ std::string mask(std::uint32_t value) {
     }
     return out;
 }
+
 std::string_view type_name(int value, bool inventory) {
     // Actual bundled SDK Utils tables, including empty slots and array bounds.
     static const auto assets = [] {
@@ -72,6 +74,7 @@ std::string_view type_name(int value, bool inventory) {
         throw std::out_of_range("SDK inventory type table index");
     return inventory ? types.at(static_cast<std::size_t>(index)) : assets.at(static_cast<std::size_t>(index));
 }
+
 void line(std::string &out, std::string_view name, std::string_view value) {
     out += "\t\t";
     out += name;
@@ -79,6 +82,7 @@ void line(std::string &out, std::string_view name, std::string_view value) {
     out += value;
     out += '\n';
 }
+
 // SDK's unbounded count includes embedded-NUL suffixes, but its encoder stops
 // at the first NUL, leaving that allocated suffix zero-filled. A final NUL is
 // replaced. The bounded filename helper sees only our ASCII UUID filename.
@@ -94,12 +98,14 @@ std::vector<std::uint8_t> bytes(std::string_view value) {
     std::copy_n(value.begin(), count, out.begin());
     return out;
 }
-}
+} // namespace
+
 TaskInventoryFile::TaskInventoryFile(framework::Uuid part, TaskInventoryFileBackend backend)
     : part_(part), backend_(std::move(backend)) {
     if (!backend_.can_edit_inventory || !backend_.random_uuid || !backend_.add_file || !backend_.reply)
         throw std::invalid_argument("Null task inventory file backend");
 }
+
 void TaskInventoryFile::request(framework::Uuid agent, std::uint32_t serial,
                                 std::span<const TaskInventoryFileItem> items, bool god) {
     std::lock_guard lock(mutex_);
@@ -196,4 +202,4 @@ void TaskInventoryFile::request(framework::Uuid agent, std::uint32_t serial,
     }
     backend_.reply(part_, 0, {});
 }
-}
+} // namespace opensim::scene

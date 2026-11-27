@@ -2,6 +2,7 @@
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/services/account_provisioner.hpp"
 #include "opensim/framework/text.hpp"
+
 namespace opensim::services {
 std::shared_ptr<UserAccount>
 AccountProvisioner::create(framework::Uuid scope, framework::Uuid principal, std::optional<std::string> first,
@@ -15,8 +16,7 @@ AccountProvisioner::create(framework::Uuid scope, framework::Uuid principal, std
     *last = framework::trim_utf8(*last);
     if (operations_.by_name({}, *first, *last))
         return {};
-    auto account =
-        std::make_shared<UserAccount>(framework::Uuid{}, principal, *first, *last, std::move(email), clock_);
+    auto account = std::make_shared<UserAccount>(framework::Uuid{}, principal, *first, *last, std::move(email), clock_);
     (*account->service_urls)["HomeURI"] = std::string{};
     (*account->service_urls)["InventoryServerURI"] = std::string{};
     (*account->service_urls)["AssetServerURI"] = std::string{};
@@ -41,4 +41,4 @@ AccountProvisioner::create(framework::Uuid scope, framework::Uuid principal, std
     }
     return account;
 }
-}
+} // namespace opensim::services

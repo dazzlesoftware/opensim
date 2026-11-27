@@ -4,14 +4,16 @@
 #include "opensim/network/osd_value.hpp"
 #include <bit>
 #include <sstream>
+
 namespace fixture {
-inline std::string unhex(const std::string& text) {
+inline std::string unhex(const std::string &text) {
     std::string result;
     for (std::size_t i = 0; i < text.size(); i += 2)
         result += static_cast<char>(std::stoi(text.substr(i, 2), nullptr, 16));
     return result;
 }
-inline std::string base64(const std::string& bytes) {
+
+inline std::string base64(const std::string &bytes) {
     constexpr char alphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     std::string result;
     for (std::size_t i = 0; i < bytes.size(); i += 3) {
@@ -27,11 +29,11 @@ inline std::string base64(const std::string& bytes) {
     }
     return result;
 }
-inline opensim::network::Value build(const std::string& line) {
+
+inline opensim::network::Value build(const std::string &line) {
     using opensim::network::Value;
     const auto space = line.find(' ');
-    const auto kind = line.substr(0, space),
-               text = space == std::string::npos ? std::string{} : line.substr(space + 1);
+    const auto kind = line.substr(0, space), text = space == std::string::npos ? std::string{} : line.substr(space + 1);
     Value value;
     if (kind == "real") {
         value.kind = Value::Kind::Real;
@@ -70,4 +72,4 @@ inline opensim::network::Value build(const std::string& line) {
         value.kind = Value::Kind::Map;
     return value;
 }
-}
+} // namespace fixture

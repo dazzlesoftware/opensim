@@ -1,0 +1,1 @@
+integer after;default{state_entry(){llOwnerSay([1,2]);after=1;}}

@@ -1,0 +1,3 @@
+YOption allowall;
+char[] input; char[] alias; object backing; string text; string type_name; integer default_cell; integer length; integer dimension; integer invalid_dimension; integer flat_index; integer observed; integer after;
+default{state_entry(){input=new char[](4);default_cell=(integer)input[0];input[0]=(char)65;input.Set(1,(char)0);input[2]=(char)233;input[3]=(char)90;alias=input;backing=input.obj;length=input.Length;dimension=input.Length(0);invalid_dimension=input.Length(-1);flat_index=input.Index(2);observed=(integer)input.Get(2);text=xmrChars2String(input,0,4);type_name=xmrTypeName((object)input);llSleep(0.1);after=(alias==input)&&(backing==input.obj);}}

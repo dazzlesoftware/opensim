@@ -1,0 +1,1 @@
+list input=read();list later;integer result;list read(){return later;}default{state_entry(){result=xmrHashCode(input);}}

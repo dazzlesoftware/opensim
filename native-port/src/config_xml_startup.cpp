@@ -7,6 +7,7 @@
 #include "opensim/framework/nini_xml_document_save.hpp"
 #include "opensim/framework/nini_xml_resolver.hpp"
 #include "opensim/framework/nini_xml_reader.hpp"
+
 namespace opensim::server {
 std::function<std::shared_ptr<framework::NiniConfigSourceBase>(framework::NiniWriterText)>
 native_startup_xml_source(std::shared_ptr<framework::NiniConfigArena> arena,
@@ -23,8 +24,8 @@ native_startup_xml_source(std::shared_ptr<framework::NiniConfigArena> arena,
             policy = std::move(policy)](framework::NiniWriterText path) {
         auto uris = framework::native_config_uri_object_backend();
         framework::ConfigXmlUriObjects objects;
-        auto readers = framework::native_nini_xml_default_uri_reader_backend(
-            uris, policy, [objects, services, uris](auto uri) {
+        auto readers =
+            framework::native_nini_xml_default_uri_reader_backend(uris, policy, [objects, services, uris](auto uri) {
                 // Resolver policy and file dispatch run before HTTP provider validation.
                 auto bound = services;
                 // Bind inside this URI provenance domain, after resolver/file policy dispatch.
@@ -46,11 +47,9 @@ native_startup_xml_source(std::shared_ptr<framework::NiniConfigArena> arena,
         settings.dtd_processing = framework::NiniXmlDtdProcessing::Ignore;
         settings.close_input = true;
         settings.base_uri = uri->to_string();
-        auto reader =
-            framework::NativeNiniXmlReader::from_stream(resolver->get_entity(uri), std::move(settings));
-        auto xml =
-            framework::native_nini_xml_config_backend(framework::native_xml_document_io(std::move(readers)));
+        auto reader = framework::NativeNiniXmlReader::from_stream(resolver->get_entity(uri), std::move(settings));
+        auto xml = framework::native_nini_xml_config_backend(framework::native_xml_document_io(std::move(readers)));
         return framework::NiniXmlConfigSource::create(arena, std::move(xml), std::move(reader));
     };
 }
-}
+} // namespace opensim::server

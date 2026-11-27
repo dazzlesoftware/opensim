@@ -1,0 +1,102 @@
+  state[0] = default
+  numGblArrays       0
+  numGblChars        0
+  numGblFloats       0
+  numGblIntegers     1
+  numGblLists        0
+  numGblObjects      0
+  numGblRotations    0
+  numGblStrings      1
+  numGblVectors      0
+  numGblSDTClObjs    0
+  numGblSDTIntfObjs  0
+  result = iarStrings[0]
+  after = iarIntegers[0]
+  delegate void $anondel$void()();
+
+Void $globalvarinit() (EventHelpersInstance)
+{
+  0000    ldarg.0     
+  0001    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0006    ldc.i4.0    
+  0007    ldstr       ""   (string)
+  000C    call        XMRInstArrays:PopString(Int32,String) -> Void
+  0011    ldarg.0     
+  0012    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0017    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  001C    ldc.i4.0    
+  001D    ldc.i4.0    
+  001E    stelem.i4   
+  001F    leave       __retlbl$0   (label)
+  0024  __retlbl$0:
+  0024    ret         
+}
+
+Void default state_entry (XMRInstAbstract)
+{
+          xmrsuper    __xmrinst$0
+  0000    ldarg.0     
+  0001    castclass   EventHelpersInstance   (type)
+  0006    stloc       __xmrinst$0   (local)
+  0007    ldloc       __xmrinst$0   (local)
+  0008    ldfld       XMRInstAbstract:m_localsHeapUsed -> Int32   (field)
+          int         __curHeap$1
+  000D    stloc       __curHeap$1   (local)
+          double      tmp$1$2
+          double      tmp$2$3
+          double      tmp$3$4
+          double      tmp$4$5
+          string      tmp$5$6
+  000E    ldloc       __xmrinst$0   (local)
+  000F    ldfld       XMRInstAbstract:doGblInit -> Boolean   (field)
+  0014    brfalse     __skipGblInit$1   (label)
+  0019    ldloc       __xmrinst$0   (local)
+  001A    call        $globalvarinit()(EventHelpersInstance) -> Void
+  001F    ldloc       __xmrinst$0   (local)
+  0020    ldc.i4.0    
+  0021    stfld       XMRInstAbstract:doGblInit -> Boolean   (field)
+  0026  __skipGblInit$1:
+  0026    ldloc       __xmrinst$0   (local)
+  0027    ldstr       "NaN"   (string)
+  002C    call        XMRInstAbstract:xmrString2Float(String) -> Double
+  0031    stloc       tmp$1$2   (local)
+  0032    ldloc       __xmrinst$0   (local)
+  0033    ldstr       "Infinity"   (string)
+  0038    call        XMRInstAbstract:xmrString2Float(String) -> Double
+  003D    stloc       tmp$2$3   (local)
+  003E    ldloc       __xmrinst$0   (local)
+  003F    ldstr       "-Infinity"   (string)
+  0044    call        XMRInstAbstract:xmrString2Float(String) -> Double
+  0049    stloc       tmp$3$4   (local)
+  004B    ldloc       __xmrinst$0   (local)
+  004C    ldstr       "5e-324"   (string)
+  0051    call        XMRInstAbstract:xmrString2Float(String) -> Double
+  0056    stloc       tmp$4$5   (local)
+  0058    ldloc       __xmrinst$0   (local)
+  0059    ldloc       tmp$1$2   (local)
+  005A    ldloc       tmp$2$3   (local)
+  005B    ldloc       tmp$3$4   (local)
+  005D    ldloc       tmp$4$5   (local)
+  005F    newobj      Quaternion:(Double,Double,Double,Double)
+  0064    ldstr       "0.0%"   (string)
+  0069    call        XMRInstAbstract:xmrRotation2String(Quaternion,String) -> String
+  006E    stloc       tmp$5$6   (local)
+  0070    ldloc       __xmrinst$0   (local)
+  0071    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0076    ldc.i4.0    
+  0077    ldloc       tmp$5$6   (local)
+  0079    call        XMRInstArrays:PopString(Int32,String) -> Void
+  007E    ldloc       __xmrinst$0   (local)
+  007F    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0084    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  0089    ldc.i4.0    
+  008A    ldc.i4.1    
+  008B    stelem.i4   
+  008C    leave       __retlbl$0   (label)
+  0091  __retlbl$0:
+  0091    ldloc       __xmrinst$0   (local)
+  0092    ldloc       __curHeap$1   (local)
+  0093    stfld       XMRInstAbstract:m_localsHeapUsed -> Int32   (field)
+  0098    ret         
+}
+TheEnd.

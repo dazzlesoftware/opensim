@@ -8,33 +8,40 @@
 #include <limits>
 #include <stdexcept>
 #include <cstring>
+
 namespace opensim::server {
 namespace {
-template <class T> T& require(const std::shared_ptr<T>& value) {
+template <class T> T &require(const std::shared_ptr<T> &value) {
     if (!value)
         throw std::invalid_argument("Null HTTP response dependency");
     return *value;
 }
+
 template <class T> std::shared_ptr<T> held(std::shared_ptr<T> value) {
     if (!value)
         throw std::invalid_argument("Null HTTP response dependency");
     return value;
 }
+
 std::int32_t add(std::int32_t a, std::int32_t b) {
     return std::bit_cast<int32_t>(std::bit_cast<uint32_t>(a) + std::bit_cast<uint32_t>(b));
 }
+
 std::int32_t subtract(std::int32_t a, std::int32_t b) {
     return std::bit_cast<int32_t>(std::bit_cast<uint32_t>(a) - std::bit_cast<uint32_t>(b));
 }
-void ascii(std::string& out, const std::string& value) {
+
+void ascii(std::string &out, const std::string &value) {
     for (char16_t c : framework::utf16_replacing(value))
         out += static_cast<char>(c & 255);
 }
-void utf8(std::string& out, const std::string& value) {
+
+void utf8(std::string &out, const std::string &value) {
     out += framework::utf8(framework::utf16_replacing(value));
 }
+
 std::string status_text(int32_t code) {
-    const std::pair<int32_t, const char*> names[] = {
+    const std::pair<int32_t, const char *> names[] = {
 #include "../protocol/http_status_names.inc"
     };
     for (auto [value, name] : names)
@@ -42,57 +49,71 @@ std::string status_text(int32_t code) {
             return name;
     return std::to_string(code);
 }
-bool equal(const HttpName& left, const HttpName& right) {
+
+bool equal(const HttpName &left, const HttpName &right) {
     if (!left || !right)
         return left == right;
     return framework::invariant_equals_ignore_case(*left, *right);
 }
-void append_bytes(const HttpBytes& target, const HttpBytes& source, int32_t start, int32_t length) {
+
+void append_bytes(const HttpBytes &target, const HttpBytes &source, int32_t start, int32_t length) {
     if (!source || start < 0 || length < 0 || static_cast<size_t>(start) > source->size() ||
         static_cast<size_t>(length) > source->size() - static_cast<size_t>(start))
         throw std::out_of_range("HTTP byte range");
     target->insert(target->end(), source->begin() + start, source->begin() + start + length);
 }
-}
+} // namespace
+
 std::shared_ptr<HttpEncoding> http_utf8_encoding() {
     static auto value = std::make_shared<HttpEncoding>(HttpEncoding{"utf-8"});
     return value;
 }
+
 std::size_t HttpBodyStream::read(std::span<uint8_t>) {
     throw std::logic_error("Stream cannot read");
 }
+
 void HttpBodyStream::write(std::span<const uint8_t>) {
     throw std::logic_error("Stream cannot write");
 }
+
 int64_t HttpBodyStream::position() const {
     throw std::logic_error("Stream cannot seek");
 }
+
 void HttpBodyStream::position(int64_t) {
     throw std::logic_error("Stream cannot seek");
 }
+
 int64_t HttpBodyStream::seek(int64_t, HttpSeekOrigin) {
     throw std::logic_error("Stream cannot seek");
 }
+
 void HttpBodyStream::set_length(int64_t) {
     throw std::logic_error("Stream cannot resize");
 }
+
 void HttpMemoryStream::require_open() const {
     if (!open_)
         throw std::logic_error("Memory stream is closed");
 }
+
 bool HttpMemoryStream::can_read() const {
     std::lock_guard lock(mutex_);
     return open_;
 }
+
 int64_t HttpMemoryStream::length() const {
     std::lock_guard lock(mutex_);
     require_open();
     return length_;
 }
+
 void HttpMemoryStream::dispose() {
     std::lock_guard lock(mutex_);
     open_ = false;
 }
+
 std::size_t HttpMemoryStream::read(std::span<uint8_t> bytes) {
     std::lock_guard lock(mutex_);
     require_open();
@@ -104,6 +125,7 @@ std::size_t HttpMemoryStream::read(std::span<uint8_t> bytes) {
     position_ += static_cast<int32_t>(count);
     return count;
 }
+
 int32_t HttpMemoryStream::read_byte() {
     std::lock_guard lock(mutex_);
     require_open();
@@ -111,15 +133,18 @@ int32_t HttpMemoryStream::read_byte() {
         return -1;
     return (*buffer_)[position_++];
 }
+
 HttpBytes HttpMemoryStream::get_buffer() const {
     std::lock_guard lock(mutex_);
     return buffer_;
 }
+
 int64_t HttpMemoryStream::position() const {
     std::lock_guard lock(mutex_);
     require_open();
     return position_;
 }
+
 void HttpMemoryStream::position(int64_t value) {
     std::lock_guard lock(mutex_);
     if (value < 0)
@@ -129,6 +154,7 @@ void HttpMemoryStream::position(int64_t value) {
         throw std::out_of_range("Stream position overflow");
     position_ = static_cast<int32_t>(value);
 }
+
 int64_t HttpMemoryStream::seek(int64_t offset, HttpSeekOrigin origin) {
     std::lock_guard lock(mutex_);
     require_open();
@@ -148,6 +174,7 @@ int64_t HttpMemoryStream::seek(int64_t offset, HttpSeekOrigin origin) {
     position_ = static_cast<int32_t>(result);
     return result;
 }
+
 void HttpMemoryStream::capacity(size_t minimum) {
     if (minimum <= buffer_->size())
         return;
@@ -156,6 +183,7 @@ void HttpMemoryStream::capacity(size_t minimum) {
     std::copy_n(buffer_->begin(), length_, next->begin());
     buffer_ = std::move(next);
 }
+
 void HttpMemoryStream::set_length(int64_t value) {
     std::lock_guard lock(mutex_);
     if (value < 0 || value > INT32_MAX)
@@ -168,6 +196,7 @@ void HttpMemoryStream::set_length(int64_t value) {
     if (position_ > length_)
         position_ = length_;
 }
+
 void HttpMemoryStream::write(std::span<const uint8_t> bytes) {
     std::lock_guard lock(mutex_);
     require_open();
@@ -184,10 +213,12 @@ void HttpMemoryStream::write(std::span<const uint8_t> bytes) {
     if (end > length_)
         length_ = end;
 }
+
 std::vector<uint8_t> HttpMemoryStream::to_array() const {
     std::lock_guard lock(mutex_);
     return {buffer_->begin(), buffer_->begin() + length_};
 }
+
 void HttpMemoryStream::write_to(std::shared_ptr<HttpBodyStream> target) {
     [[maybe_unused]] const auto lifetime = weak_from_this().lock();
     HttpBytes buffer;
@@ -202,8 +233,8 @@ void HttpMemoryStream::write_to(std::shared_ptr<HttpBodyStream> target) {
     }
     target->write(std::span(buffer->data(), length));
 }
-HttpResponseState::HttpResponseState(std::shared_ptr<HttpResponseRequest> request, HttpClock& clock)
-    : clock_(clock) {
+
+HttpResponseState::HttpResponseState(std::shared_ptr<HttpResponseRequest> request, HttpClock &clock) : clock_(clock) {
     protocol_version_ = require(request).http_version();
     if (!protocol_version_ || protocol_version_->empty())
         protocol_version_ = "HTTP/1.1";
@@ -215,53 +246,62 @@ HttpResponseState::HttpResponseState(std::shared_ptr<HttpResponseRequest> reques
     raw_start_ = -1;
     raw_length_ = -1;
 }
+
 HttpResponseState::HttpResponseState(std::shared_ptr<HttpResponseContext> context, HttpName version,
-                                     HttpConnectionType connection, HttpClock& clock)
-    : context_(std::move(context)), clock_(clock), connection_(connection),
-      protocol_version_(std::move(version)) {
-}
+                                     HttpConnectionType connection, HttpClock &clock)
+    : context_(std::move(context)), clock_(clock), connection_(connection), protocol_version_(std::move(version)) {}
+
 int32_t HttpResponseState::priority() const {
     std::lock_guard lock(mutex_);
     return priority_;
 }
+
 void HttpResponseState::priority(int32_t value) {
     std::lock_guard lock(mutex_);
     priority_ = (value > 0 && priority_ < 3) ? value : 0;
 }
+
 int32_t HttpResponseState::keep_alive() const {
     std::lock_guard lock(mutex_);
     return keep_alive_;
 }
+
 void HttpResponseState::keep_alive(int32_t value) {
     std::lock_guard lock(mutex_);
     keep_alive_ = value > 400 ? 400 : (value <= 0 ? 0 : value);
 }
+
 bool HttpResponseState::headers_sent() const {
     std::lock_guard lock(mutex_);
     return headers_sent_;
 }
+
 bool HttpResponseState::sent() const {
     std::lock_guard lock(mutex_);
     return sent_;
 }
+
 HttpBytes HttpResponseState::header_bytes() const {
     std::lock_guard lock(mutex_);
     return header_bytes_;
 }
+
 std::shared_ptr<HttpBodyStream> HttpResponseState::body() {
     std::lock_guard lock(mutex_);
     if (!body_)
         body_ = std::make_shared<HttpMemoryStream>();
     return body_;
 }
+
 void HttpResponseState::set_header(HttpName name, HttpName value) {
-    for (auto& [key, existing] : headers_)
+    for (auto &[key, existing] : headers_)
         if (equal(key, name)) {
             existing = std::move(value);
             return;
         }
     headers_.emplace_back(std::move(name), std::move(value));
 }
+
 void HttpResponseState::redirect(HttpName url, int32_t status) {
     std::lock_guard lock(mutex_);
     if (headers_sent_)
@@ -269,6 +309,7 @@ void HttpResponseState::redirect(HttpName url, int32_t status) {
     set_header("Location", std::move(url));
     status_ = status;
 }
+
 void HttpResponseState::add_header(HttpName name, HttpName value) {
     std::lock_guard lock(mutex_);
     if (headers_sent_)
@@ -284,6 +325,7 @@ void HttpResponseState::add_header(HttpName name, HttpName value) {
     }
     set_header(std::move(name), std::move(value));
 }
+
 void HttpResponseState::get_headers() {
     [[maybe_unused]] const auto lifetime = weak_from_this().lock();
     std::lock_guard lock(mutex_);
@@ -300,11 +342,11 @@ void HttpResponseState::get_headers() {
     ascii(out, "\r\nDate: " + http_rfc_date(clock_.local_now()) + "\r\n");
     int64_t length = body_ ? held(body_)->length() : 0;
     if (raw_buffer_)
-        length = std::bit_cast<int64_t>(std::bit_cast<uint64_t>(length) +
-                                        std::bit_cast<uint64_t>(int64_t(raw_length_)));
+        length =
+            std::bit_cast<int64_t>(std::bit_cast<uint64_t>(length) + std::bit_cast<uint64_t>(int64_t(raw_length_)));
     ascii(out, "Content-Length: " + std::to_string(length) + "\r\n");
     HttpName type;
-    for (const auto& [name, value] : headers_)
+    for (const auto &[name, value] : headers_)
         if (equal(name, HttpName("Content-Type"))) {
             type = value;
             break;
@@ -314,8 +356,8 @@ void HttpResponseState::get_headers() {
     if (status_ == 200 || status_ == 206 || status_ == 202 || status_ == 100 || status_ == 302) {
         const auto seconds = require(context_).timeout_keep_alive() / 1000;
         if (connection_ == HttpConnectionType::KeepAlive && seconds > 0 && context_->max_requests() > 0) {
-            ascii(out, "Keep-Alive:timeout=" + std::to_string(seconds) + ", max=" +
-                           std::to_string(context_->max_requests()) + "\r\nConnection: Keep-Alive\r\n");
+            ascii(out, "Keep-Alive:timeout=" + std::to_string(seconds) +
+                           ", max=" + std::to_string(context_->max_requests()) + "\r\nConnection: Keep-Alive\r\n");
         } else {
             ascii(out, "Connection: close\r\n");
             connection_ = HttpConnectionType::Close;
@@ -326,8 +368,8 @@ void HttpResponseState::get_headers() {
     }
     for (size_t i = 0; i < headers_.size(); ++i) {
         auto [name, value] = headers_[i];
-        if (name && (name == "Connection" || name == "Content-Length" || name == "Date" ||
-                     name == "Keep-Alive" || name == "Server"))
+        if (name && (name == "Connection" || name == "Content-Length" || name == "Date" || name == "Keep-Alive" ||
+                     name == "Server"))
             continue;
         if (value) {
             ascii(out, name.value_or("") + ": ");
@@ -337,13 +379,13 @@ void HttpResponseState::get_headers() {
     }
     ascii(out, "Server: OSWebServer\r\n");
     cookies_->each([&](std::shared_ptr<ResponseCookie> cookie) {
-        utf8(out,
-             "Set-Cookie: " + (cookie ? cookie->to_string(clock_).value_or("") : std::string{}) + "\r\n");
+        utf8(out, "Set-Cookie: " + (cookie ? cookie->to_string(clock_).value_or("") : std::string{}) + "\r\n");
     });
     ascii(out, "\r\n");
     headers_.clear();
     header_bytes_ = std::make_shared<std::vector<uint8_t>>(out.begin(), out.end());
 }
+
 void HttpResponseState::send() {
     [[maybe_unused]] const auto lifetime = weak_from_this().lock();
     std::lock_guard lock(mutex_);
@@ -388,6 +430,7 @@ void HttpResponseState::send() {
     } else
         context_->start_send_response(shared_from_this());
 }
+
 bool HttpResponseState::send_next_async(int32_t limit) {
     [[maybe_unused]] const auto lifetime = weak_from_this().lock();
     std::lock_guard lock(mutex_);
@@ -477,6 +520,7 @@ bool HttpResponseState::send_next_async(int32_t limit) {
     require(context_).end_send_response(request_id_, connection_);
     return false;
 }
+
 void HttpResponseState::check_send_next_async_continue() {
     [[maybe_unused]] const auto lifetime = weak_from_this().lock();
     std::lock_guard lock(mutex_);
@@ -488,6 +532,7 @@ void HttpResponseState::check_send_next_async_continue() {
     } else
         require(context_).continue_send_response();
 }
+
 void HttpResponseState::clear() {
     [[maybe_unused]] const auto lifetime = weak_from_this().lock();
     std::lock_guard lock(mutex_);
@@ -499,4 +544,4 @@ void HttpResponseState::clear() {
     }
     raw_buffer_.reset();
 }
-}
+} // namespace opensim::server

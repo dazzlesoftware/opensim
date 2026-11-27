@@ -1,0 +1,17 @@
+{
+  "accepted": null,
+  "executed": false,
+  "process_boundary": "Stack overflow.\nRepeat 6868 times:\n--------------------------------\n   at OpenSim.Region.ScriptEngine.Yengine.HeapTrackerObject.Size(System.Object)\n--------------------------------\n   at DynamicClass.default state_entry(OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract)\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH()\n   at FixedArrayReference.ExecuteInputs()\n   at FixedArrayReference.Main(System.String[])\n",
+  "exit_code": 3221225725,
+  "name": "self_cycle",
+  "source": "YOption arrays;object a;object b;default{state_entry(){a=xmrFixedArrayAllocO(1);xmrFixedArraySetO(a,0,a);b=xmrFixedArrayGetO(a,0);}}",
+  "methodology": "Actual original CodeGen/CallSEH; scheduler CheckRunWork no-op. Separate process per case. No migration claim.",
+  "sha256": {
+    "original.il.txt": "85fa65bfac1c2b2663b70748543e1dad95014d9bbe5922fd82e462c75036fbfe",
+    "original.yobj": "80eceaaaa3383d022f3346e50bac82f0c2658fb5a1e88882c7563ea972f172bb",
+    "source.lsl": "469101173e3acdbf784de0a621142518cb07802482e763d9c76caf0752779da4",
+    "source_hash.txt": "085c7ff6d73a859820447cfcd9f999f9769b6d3d2e3d0cd1755de47fae7b0fc9",
+    "generator_source": "d86517a13d8f4094e933279614d487a0e69d44a49f2296c4af7562bf7386d651",
+    "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056"
+  }
+}

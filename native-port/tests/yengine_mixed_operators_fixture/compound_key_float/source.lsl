@@ -1,0 +1,1 @@
+key left=(key)"bad";float right=1.25;default{state_entry(){left+=right;}}

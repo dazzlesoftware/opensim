@@ -6,6 +6,7 @@
 #include <fstream>
 #include <iostream>
 #include <set>
+
 namespace opensim::tests {
 void run_generic_asset_probe(framework::Uuid agent, const std::filesystem::path &metadata,
                              const LegacyInventoryProbeIo &io) {
@@ -21,8 +22,7 @@ void run_generic_asset_probe(framework::Uuid agent, const std::filesystem::path 
         return;
     std::cout << "Generic agent uploads" << std::endl;
     std::string reply;
-    require(bool(std::getline(std::cin, reply)) && reply == "OK",
-            "actual agent HTTP uploads and persistence");
+    require(bool(std::getline(std::cin, reply)) && reply == "OK", "actual agent HTTP uploads and persistence");
     auto before = io.snapshot();
     std::set<Uuid> previous;
     for (const auto &p : before)
@@ -95,7 +95,7 @@ void run_generic_asset_probe(framework::Uuid agent, const std::filesystem::path 
                 require(std::get<Uuid>(b.at("ObjectID")) != object ||
                             std::get<std::int64_t>(b.at("InventorySerial")) != 2,
                         "generic source update does not invent an ObjectProperties reply");
-    std::cout
-        << "Verified production generic inventory upload aliases, raw asset persistence and actual task Contents/Xfer cache mutation\n";
+    std::cout << "Verified production generic inventory upload aliases, raw asset persistence and actual task "
+                 "Contents/Xfer cache mutation\n";
 }
-}
+} // namespace opensim::tests

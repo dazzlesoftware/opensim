@@ -10,8 +10,9 @@
 #include <stdexcept>
 #include <vector>
 using namespace opensim::services;
+
 namespace {
-std::string hex(const std::string& s) {
+std::string hex(const std::string &s) {
     std::string out;
     for (unsigned char c : s) {
         out += "0123456789abcdef"[c >> 4];
@@ -19,45 +20,55 @@ std::string hex(const std::string& s) {
     }
     return out;
 }
-std::string text(const std::optional<std::string>& value) {
+
+std::string text(const std::optional<std::string> &value) {
     return value ? hex(*value) : "~";
 }
+
 struct Handle {
     int tag;
 };
 struct Probe;
+
 struct Section : FlotsamConfigSection {
-    Probe& p;
+    Probe &p;
     std::string name;
     std::map<std::string, std::string> values;
-    Section(Probe& p, std::string name) : p(p), name(std::move(name)) {
-    }
-    std::optional<std::string> text(const std::string&, const std::optional<std::string>&) override;
-    bool boolean(const std::string&, bool) override;
-    std::int32_t integer(const std::string&, std::int32_t) override;
-    std::int64_t long_integer(const std::string&, std::int64_t) override;
-    double real(const std::string&, double) override;
+
+    Section(Probe &p, std::string name) : p(p), name(std::move(name)) {}
+
+    std::optional<std::string> text(const std::string &, const std::optional<std::string> &) override;
+    bool boolean(const std::string &, bool) override;
+    std::int32_t integer(const std::string &, std::int32_t) override;
+    std::int64_t long_integer(const std::string &, std::int64_t) override;
+    double real(const std::string &, double) override;
 };
+
 struct Source : FlotsamConfigSource {
-    Probe& p;
+    Probe &p;
     std::map<std::string, std::shared_ptr<Section>> sections;
-    explicit Source(Probe& p) : p(p) {
-    }
-    std::shared_ptr<FlotsamConfigSection> section(const std::string&) override;
+
+    explicit Source(Probe &p) : p(p) {}
+
+    std::shared_ptr<FlotsamConfigSection> section(const std::string &) override;
 };
+
 struct Probe {
     int point = 0, nth = 1, seen = 0, serial = 0;
     std::vector<std::string> trace;
     std::shared_ptr<FlotsamStaticConfig> shared;
     std::shared_ptr<FlotsamInstanceConfig> instances[2];
     std::shared_ptr<FlotsamCacheConfig> modules[2];
+
     void hit(int n) {
         if (n == point && ++seen == nth)
             throw std::runtime_error("fault");
     }
-    void log(const std::string& s) {
+
+    void log(const std::string &s) {
         trace.push_back(s);
     }
+
     void reset() {
         point = seen = serial = 0;
         nth = 1;
@@ -65,7 +76,7 @@ struct Probe {
         for (int n = 0; n < 2; ++n) {
             instances[n] = std::make_shared<FlotsamInstanceConfig>();
             auto b = std::make_shared<FlotsamConfigBackend>();
-            b->full_path = [this](auto& value) {
+            b->full_path = [this](auto &value) {
                 log("P:" + text(value));
                 hit(7);
                 if (!value || value->empty())
@@ -100,15 +111,15 @@ struct Probe {
                 hit(10);
                 return std::static_pointer_cast<void>(std::make_shared<Handle>(Handle{tag}));
             };
-            b->info = [this](auto& s) {
+            b->info = [this](auto &s) {
                 log("I:" + s);
                 hit(11);
             };
-            b->debug = [this](auto& s) {
+            b->debug = [this](auto &s) {
                 log("D:" + s);
                 hit(12);
             };
-            b->register_command = [this](auto& c) {
+            b->register_command = [this](auto &c) {
                 log("C:" + c.category + ":" + (c.shared ? "1" : "0") + ":" + c.command + ":" + c.usage + ":" +
                     c.description);
                 hit(13);
@@ -116,11 +127,12 @@ struct Probe {
             modules[n] = std::make_shared<FlotsamCacheConfig>(instances[n], shared, b);
         }
     }
+
     std::shared_ptr<Source> source(int profile) {
         if (profile < 0)
             return {};
         auto s = std::make_shared<Source>(*this);
-        auto add = [&](const std::string& name) {
+        auto add = [&](const std::string &name) {
             auto section = std::make_shared<Section>(*this, name);
             s->sections[name] = section;
             return section;
@@ -199,13 +211,15 @@ struct Probe {
         }
         return s;
     }
-    int tag(const std::shared_ptr<void>& h) {
+
+    int tag(const std::shared_ptr<void> &h) {
         return h ? std::static_pointer_cast<Handle>(h)->tag : 0;
     }
+
     std::string snapshot() {
         std::string out;
-        for (auto& p : instances) {
-            auto& s = *p;
+        for (auto &p : instances) {
+            auto &s = *p;
             if (!out.empty())
                 out += ';';
             out += (s.enabled ? "1" : "0") + std::string(s.file ? "1" : "0") + (s.memory ? "1" : "0") +
@@ -213,15 +227,15 @@ struct Probe {
                    std::to_string(std::bit_cast<std::uint64_t>(s.memory_seconds)) + "," +
                    std::to_string(s.negative_milliseconds) + "," + std::to_string(s.log_level) + "," +
                    std::to_string(s.hit_rate_display) + "," + std::to_string(s.expiration_ticks) + "," +
-                   std::to_string(s.cleanup_ticks) + "," + text(s.loader) + "," + text(s.loader_arguments) +
-                   "," + std::to_string(tag(s.negative_entries)) + "," +
-                   std::to_string(tag(s.memory_entries));
+                   std::to_string(s.cleanup_ticks) + "," + text(s.loader) + "," + text(s.loader_arguments) + "," +
+                   std::to_string(tag(s.negative_entries)) + "," + std::to_string(tag(s.memory_entries));
         }
         return out + "|" + std::to_string(shared->tiers) + "," + std::to_string(shared->tier_length) + "," +
                std::to_string(shared->warn_at) + "," + (shared->update_access ? "1" : "0") + "," +
                std::to_string(tag(shared->access_entries)) + "," + std::to_string(serial);
     }
-    std::string run(const std::string& line) {
+
+    std::string run(const std::string &line) {
         trace.clear();
         std::istringstream in(line);
         std::string op, result;
@@ -246,7 +260,7 @@ struct Probe {
             result = "EX";
         }
         std::string events;
-        for (auto& s : trace) {
+        for (auto &s : trace) {
             if (!events.empty())
                 events += ';';
             events += s;
@@ -254,19 +268,22 @@ struct Probe {
         return result + "|" + hex(events) + "|" + snapshot();
     }
 };
-std::shared_ptr<FlotsamConfigSection> Source::section(const std::string& name) {
+
+std::shared_ptr<FlotsamConfigSection> Source::section(const std::string &name) {
     p.log("S:" + name);
     p.hit(1);
     auto i = sections.find(name);
     return i == sections.end() ? nullptr : i->second;
 }
-std::optional<std::string> Section::text(const std::string& key, const std::optional<std::string>& fallback) {
+
+std::optional<std::string> Section::text(const std::string &key, const std::optional<std::string> &fallback) {
     p.log("G:" + name + ":" + key + ":" + ::text(fallback));
     p.hit(2);
     auto i = values.find(key);
     return i == values.end() ? fallback : std::optional<std::string>(i->second);
 }
-bool Section::boolean(const std::string& key, bool fallback) {
+
+bool Section::boolean(const std::string &key, bool fallback) {
     p.log("B:" + name + ":" + key + ":" + (fallback ? "1" : "0"));
     p.hit(3);
     auto i = values.find(key);
@@ -278,7 +295,8 @@ bool Section::boolean(const std::string& key, bool fallback) {
         return false;
     throw std::runtime_error("boolean");
 }
-std::int32_t Section::integer(const std::string& key, std::int32_t fallback) {
+
+std::int32_t Section::integer(const std::string &key, std::int32_t fallback) {
     p.log("N:" + name + ":" + key + ":" + std::to_string(fallback));
     p.hit(5);
     auto i = values.find(key);
@@ -290,7 +308,8 @@ std::int32_t Section::integer(const std::string& key, std::int32_t fallback) {
         throw std::runtime_error("integer");
     return static_cast<std::int32_t>(v);
 }
-std::int64_t Section::long_integer(const std::string& key, std::int64_t fallback) {
+
+std::int64_t Section::long_integer(const std::string &key, std::int64_t fallback) {
     p.log("L:" + name + ":" + key + ":" + std::to_string(fallback));
     p.hit(6);
     auto i = values.find(key);
@@ -302,7 +321,8 @@ std::int64_t Section::long_integer(const std::string& key, std::int64_t fallback
         throw std::runtime_error("long");
     return v;
 }
-double Section::real(const std::string& key, double fallback) {
+
+double Section::real(const std::string &key, double fallback) {
     p.log("R:" + name + ":" + key + ":" + std::to_string(std::bit_cast<std::uint64_t>(fallback)));
     p.hit(4);
     auto i = values.find(key);
@@ -316,8 +336,9 @@ double Section::real(const std::string& key, double fallback) {
         throw std::runtime_error("double");
     return v;
 }
-}
-int main(int argc, char** argv) {
+} // namespace
+
+int main(int argc, char **argv) {
     try {
         Probe p;
         p.reset();
@@ -337,7 +358,7 @@ int main(int argc, char** argv) {
             throw std::runtime_error("Shared settings or instance state");
         std::cout << "PASS: Flotsam initializer state, shared fields and partial-failure core\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

@@ -28,10 +28,12 @@
 #include <iostream>
 #include <stdexcept>
 using opensim::framework::RegionUri;
-void check(bool value, const char* message) {
+
+void check(bool value, const char *message) {
     if (!value)
         throw std::runtime_error(message);
 }
+
 int main() {
     try {
         RegionUri uri("https://grid.example:8002/Alpha/1/2/-3");
@@ -42,8 +44,7 @@ int main() {
         check(uri.flags == 32 && uri.x == 7 && uri.y == 2 && uri.z == -3 && uri.schema == "https://" &&
                   uri.port == 8002,
               "reparse resets flags while retaining unspecified fields");
-        check(uri.original == "https://grid.example:8002/Alpha/1/2/-3",
-              "reparse retains constructor original");
+        check(uri.original == "https://grid.example:8002/Alpha/1/2/-3", "reparse retains constructor original");
         RegionUri local("Alpha");
         check(local.local() && !local.has_host() && local.region_name == "Alpha", "local name constructor");
         RegionUri localhost("https://localhost");
@@ -60,14 +61,14 @@ int main() {
         check(RegionUri("Alpha%2BBeta").region_name == "Alpha Beta", "escaped plus becomes source space");
         check(!RegionUri("http://_bad.example/Alpha").valid(), "leading underscore hostname rejected");
         int calls = 0;
-        RegionUri::Resolver resolver = [&](const auto&) -> std::optional<std::string> {
+        RegionUri::Resolver resolver = [&](const auto &) -> std::optional<std::string> {
             ++calls;
             return "203.0.113.7";
         };
-        RegionUri recognized("https://local.example/Alpha", [](const auto&) { return 1; }, resolver);
+        RegionUri recognized("https://local.example/Alpha", [](const auto &) { return 1; }, resolver);
         check(recognized.local() && !recognized.has_host() && calls == 0,
               "local-grid constructor bypasses DNS and clears host");
-        RegionUri remote("https://remote.example/Alpha", [](const auto&) { return 0; }, resolver);
+        RegionUri remote("https://remote.example/Alpha", [](const auto &) { return 0; }, resolver);
         check(remote.has_host() && remote.ip == "203.0.113.7" && calls == 1 &&
                   (remote.flags & RegionUri::HasResolvedHost),
               "remote constructor resolves through host resolver");
@@ -86,7 +87,7 @@ int main() {
         check(ipv6.resolve_dns() && ipv6.ip == "::1", "native numeric IPv6 resolution");
         std::cout << "PASS: region URI state and native address resolution\n";
         return 0;
-    } catch (const std::exception& error) {
+    } catch (const std::exception &error) {
         std::cerr << error.what() << '\n';
         return 1;
     }

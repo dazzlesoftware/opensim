@@ -5,11 +5,13 @@
 #include <stdexcept>
 using namespace opensim;
 using namespace scene;
+
 static std::string h(float f) {
     std::ostringstream s;
     s << std::hex << std::bit_cast<std::uint32_t>(f);
     return s.str();
 }
+
 static MovementAnimationContext context(int frame, int mode) {
     MovementAnimationContext c;
     c.colliding = true;
@@ -61,6 +63,7 @@ static MovementAnimationContext context(int frame, int mode) {
         c.pid_hover_active = true;
     return c;
 }
+
 static void probe(int mode, std::int32_t base) {
     std::int32_t clock = base;
     MovementAnimator animator([&] { return clock; });
@@ -72,19 +75,19 @@ static void probe(int mode, std::int32_t base) {
         e.jump = [&](float v) { trace += "J:" + h(v) + ";"; };
         e.set_flying = [&](bool b) { trace += "F:" + std::to_string(b) + ";"; };
         e.set_selected = [&](bool b) { trace += "S:" + std::to_string(b) + ";"; };
-        e.try_set_animation = [&](const std::string& name) {
+        e.try_set_animation = [&](const std::string &name) {
             trace += "A:" + name + ";";
             return !(mode & 128);
         };
         auto r = (mode & 512) && frame % 3 == 0 ? animator.force_update(c, e) : animator.update(c, e);
         auto s = animator.snapshot();
-        std::cout << r.animation << "|" << int(s.state) << "|" << s.is_jumping << s.falling << "|"
-                  << s.tick_fall << "," << s.tick_land << "," << s.tick_jump << "|" << h(s.last_fall_velocity)
-                  << "|" << c.flying << "|" << r.name_changed << r.apply_attempted << r.applied << "|"
-                  << trace << "\n";
+        std::cout << r.animation << "|" << int(s.state) << "|" << s.is_jumping << s.falling << "|" << s.tick_fall << ","
+                  << s.tick_land << "," << s.tick_jump << "|" << h(s.last_fall_velocity) << "|" << c.flying << "|"
+                  << r.name_changed << r.apply_attempted << r.applied << "|" << trace << "\n";
     }
 }
-int main(int argc, char**) {
+
+int main(int argc, char **) {
     try {
         if (argc > 1) {
             int mode;
@@ -94,7 +97,7 @@ int main(int argc, char**) {
             return 0;
         }
         int checks = 0;
-        auto test = [&](bool ok, const char* message) {
+        auto test = [&](bool ok, const char *message) {
             if (!ok)
                 throw std::runtime_error(message);
             checks++;
@@ -146,15 +149,13 @@ int main(int argc, char**) {
         bool physics_flying = true;
         e.set_flying = [&](bool b) { physics_flying = b; };
         r = landing.update(c, e);
-        test(!c.flying && !physics_flying && r.animation == "LAND",
-             "landing clears actual flying via callback");
+        test(!c.flying && !physics_flying && r.animation == "LAND", "landing clears actual flying via callback");
         MovementAnimator nudge([&] { return clock; });
         c = context(4, 32);
         r = nudge.update(c, e);
-        test(r.animation == "STAND" && nudge.state() == MotionControlState::onsurface,
-             "nudge up does not jump");
+        test(r.animation == "STAND" && nudge.state() == MotionControlState::onsurface, "nudge up does not jump");
         std::cout << "PASS: " << checks << " movement animation state/effect checks\n";
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << "\n";
         return 1;
     }

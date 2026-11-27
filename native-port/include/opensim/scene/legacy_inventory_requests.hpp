@@ -19,43 +19,31 @@ struct LegacyFolderRequest {
 
 struct LegacyInventoryBackend {
     std::function<std::optional<services::InventoryItem>(framework::Uuid, framework::Uuid)> item;
-    std::function<services::InventoryCollection(framework::Uuid, framework::Uuid)> content;
+    std::function<std::optional<services::InventoryCollection>(framework::Uuid, framework::Uuid)> content;
     std::function<std::optional<services::InventoryFolder>(framework::Uuid, framework::Uuid)> folder;
     std::function<std::optional<services::InventoryCollection>(framework::Uuid)> library_folder;
 };
 
-enum class LegacyFolderDisposition {
-    Ignored,
-    Answered,
-    Queued
-};
+enum class LegacyFolderDisposition { Ignored, Answered, Queued };
 
 class LegacyInventoryRequests {
-public:
+  public:
     explicit LegacyInventoryRequests(LegacyInventoryBackend backend);
 
-    bool process_items(framework::Uuid agent,
-                       std::span<const LegacyItemRequest> requests,
-                       const std::function<bool()>& is_active,
-                       const InventoryPacketSink& sink) const;
-    LegacyFolderDisposition receive_folder(framework::Uuid agent,
-                                           const LegacyFolderRequest& request,
-                                           const InventoryPacketSink& sink) const;
+    bool process_items(framework::Uuid agent, std::span<const LegacyItemRequest> requests,
+                       const std::function<bool()> &is_active, const InventoryPacketSink &sink) const;
+    LegacyFolderDisposition receive_folder(framework::Uuid agent, const LegacyFolderRequest &request,
+                                           const InventoryPacketSink &sink) const;
 
     // A true result means the original ordinary-folder worker reaches Sleep(50).
     // Exceptions propagate before that point and are handled by the host queue.
-    bool process_folder(framework::Uuid agent,
-                        const LegacyFolderRequest& request,
-                        const std::function<bool()>& is_active,
-                        const InventoryPacketSink& sink) const;
+    bool process_folder(framework::Uuid agent, const LegacyFolderRequest &request,
+                        const std::function<bool()> &is_active, const InventoryPacketSink &sink) const;
 
-private:
-    void send_folder(framework::Uuid agent,
-                     const LegacyFolderRequest& request,
-                     const services::InventoryCollection& content,
-                     int version,
-                     int descendants,
-                     const InventoryPacketSink& sink) const;
+  private:
+    void send_folder(framework::Uuid agent, const LegacyFolderRequest &request,
+                     const services::InventoryCollection &content, int version, int descendants,
+                     const InventoryPacketSink &sink) const;
 
     LegacyInventoryBackend backend_;
 };

@@ -3,17 +3,20 @@
 #include "opensim/framework/config_http_environment_proxy_native.hpp"
 #include <chrono>
 #include <bit>
+
 namespace opensim::framework {
 namespace {
 void key(ConfigUriObjectPtr uri) {
     if (!uri)
-        throw ConfigUriComponentsError("System.ArgumentNullException",
-                                       u"Value cannot be null. (Parameter 'key')", 0x80004003, u"key");
+        throw ConfigUriComponentsError("System.ArgumentNullException", u"Value cannot be null. (Parameter 'key')",
+                                       0x80004003, u"key");
 }
+
 std::int64_t plus(std::int64_t tick, std::uint64_t delta) {
     return std::bit_cast<std::int64_t>(std::bit_cast<std::uint64_t>(tick) + delta);
 }
-}
+} // namespace
+
 ConfigHttpFailedProxyCacheBackend native_config_http_failed_proxy_cache_backend() {
     return {[] {
                 return std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -22,27 +25,30 @@ ConfigHttpFailedProxyCacheBackend native_config_http_failed_proxy_cache_backend(
             },
             config_http_proxy_http_uri_equal};
 }
+
 ConfigHttpFailedProxyCache::ConfigHttpFailedProxyCache(ConfigHttpFailedProxyCacheBackend backend)
     : backend_(std::move(backend)), next_flush_(0) {
     if (!backend_.ticks || !backend_.equal)
         throw ConfigHttpProxyProviderError("FailedProxyCache requires tick and Uri.Equals providers");
     next_flush_.store(plus(backend_.ticks(), 300000));
 }
+
 std::optional<std::int64_t> ConfigHttpFailedProxyCache::find(ConfigUriObjectPtr uri) {
     key(uri);
     std::lock_guard lock(mutex_);
-    for (auto& entry : entries_)
+    for (auto &entry : entries_)
         if (backend_.equal(entry.uri, uri))
             return entry.ticks;
     return {};
 }
+
 void ConfigHttpFailedProxyCache::set_proxy_failed(ConfigUriObjectPtr uri) {
     auto ticks = plus(backend_.ticks(), 1800000);
     key(uri);
     {
         std::lock_guard lock(mutex_);
         bool found = false;
-        for (auto& entry : entries_)
+        for (auto &entry : entries_)
             if (backend_.equal(entry.uri, uri)) {
                 entry.ticks = ticks;
                 found = true;
@@ -53,11 +59,12 @@ void ConfigHttpFailedProxyCache::set_proxy_failed(ConfigUriObjectPtr uri) {
     }
     cleanup();
 }
+
 bool ConfigHttpFailedProxyCache::try_renew_proxy(ConfigUriObjectPtr uri, std::int64_t ticks) {
     if (!uri)
         throw ConfigUriComponentsError("System.ArgumentNullException",
-                                       u"TKey is a reference type and item.Key is null. (Parameter 'item')",
-                                       0x80004003, u"item");
+                                       u"TKey is a reference type and item.Key is null. (Parameter 'item')", 0x80004003,
+                                       u"item");
     std::lock_guard lock(mutex_);
     for (auto it = entries_.begin(); it != entries_.end(); ++it)
         if (backend_.equal(it->uri, uri)) {
@@ -68,6 +75,7 @@ bool ConfigHttpFailedProxyCache::try_renew_proxy(ConfigUriObjectPtr uri, std::in
         }
     return false;
 }
+
 std::int64_t ConfigHttpFailedProxyCache::get_proxy_renew_ticks(ConfigUriObjectPtr uri) {
     cleanup();
     auto ticks = find(uri);
@@ -79,6 +87,7 @@ std::int64_t ConfigHttpFailedProxyCache::get_proxy_renew_ticks(ConfigUriObjectPt
         return 0;
     return find(uri).value_or(0);
 }
+
 void ConfigHttpFailedProxyCache::cleanup() {
     {
         std::lock_guard lock(mutex_);
@@ -97,7 +106,7 @@ void ConfigHttpFailedProxyCache::cleanup() {
             std::lock_guard lock(mutex_);
             snapshot = entries_;
         }
-        for (auto& entry : snapshot)
+        for (auto &entry : snapshot)
             if (now >= entry.ticks)
                 try_renew_proxy(entry.uri, entry.ticks);
     } catch (...) {
@@ -106,4 +115,4 @@ void ConfigHttpFailedProxyCache::cleanup() {
     }
     next_flush_.store(plus(backend_.ticks(), 300000));
 }
-}
+} // namespace opensim::framework

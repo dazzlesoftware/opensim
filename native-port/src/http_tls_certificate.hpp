@@ -4,5 +4,5 @@
 
 namespace opensim::network {
 struct HttpServerOptions;
-bool load_http_pem_certificate(void* context, const HttpServerOptions& options);
-}
+bool load_http_pem_certificate(void *context, const HttpServerOptions &options);
+} // namespace opensim::network

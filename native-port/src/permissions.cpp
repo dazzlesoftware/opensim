@@ -45,13 +45,14 @@ std::string PermissionsUtil::permissions_to_string(std::uint32_t perms) {
         result += 'X';
     return result.empty() ? "." : result;
 }
-std::string PermissionsUtil::log_permissions(const std::string& name, const std::string& message,
-    std::uint32_t base, std::uint32_t current, std::uint32_t next) {
+
+std::string PermissionsUtil::log_permissions(const std::string &name, const std::string &message, std::uint32_t base,
+                                             std::uint32_t current, std::uint32_t next) {
     std::ostringstream out;
     out.imbue(std::locale::classic());
     const auto append = [&out](std::uint32_t value) {
-        out << permissions_to_string(value) << " (" << std::uppercase << std::hex
-            << std::setfill('0') << std::setw(4) << value << ')';
+        out << permissions_to_string(value) << " (" << std::uppercase << std::hex << std::setfill('0') << std::setw(4)
+            << value << ')';
     };
     out << "Permissions of \"" << name << "\" at \"" << message << "\": Base ";
     append(base);
@@ -61,20 +62,23 @@ std::string PermissionsUtil::log_permissions(const std::string& name, const std:
     append(next);
     return out.str();
 }
-void PermissionsUtil::apply_folded_permissions(std::uint32_t source, std::uint32_t& target) noexcept {
+
+void PermissionsUtil::apply_folded_permissions(std::uint32_t source, std::uint32_t &target) noexcept {
     auto folded = source & bits(PermissionMask::FoldedMask);
     if (folded == 0 || folded == bits(PermissionMask::FoldedMask))
         return;
     folded <<= bits(PermissionMask::FoldingShift);
     target &= folded | ~bits(PermissionMask::UnfoldedMask);
 }
-void PermissionsUtil::apply_no_mod_folded_permissions(std::uint32_t source, std::uint32_t& target) noexcept {
+
+void PermissionsUtil::apply_no_mod_folded_permissions(std::uint32_t source, std::uint32_t &target) noexcept {
     auto folded = source & bits(PermissionMask::FoldedMask);
     if (folded == 0 || folded == bits(PermissionMask::FoldedMask))
         return;
     folded <<= bits(PermissionMask::FoldingShift);
     target &= folded | ~bits(PermissionMask::UnfoldedMask) | bits(PermissionMask::Modify);
 }
+
 std::uint32_t PermissionsUtil::fix_and_fold_permissions(std::uint32_t perms) noexcept {
     if ((perms & (bits(PermissionMask::Copy) | bits(PermissionMask::Transfer))) == 0)
         perms |= bits(PermissionMask::Transfer);
@@ -82,4 +86,4 @@ std::uint32_t PermissionsUtil::fix_and_fold_permissions(std::uint32_t perms) noe
     perms &= ~bits(PermissionMask::FoldedMask);
     return perms | ((perms >> bits(PermissionMask::FoldingShift)) & bits(PermissionMask::FoldedMask));
 }
-}
+} // namespace opensim::framework

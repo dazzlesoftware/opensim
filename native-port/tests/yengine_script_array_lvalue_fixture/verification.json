@@ -1,0 +1,457 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "fullParityVerified": false,
+  "nativeParityVerified": false,
+  "scope": "Actual original generated-array assignment evaluation order and suspension/rebinding, Windows/Linux x64",
+  "generatorSha256": "cbaad4c555ddf1db83a1c917cbd33706ca3af07b08b23b7c8f9987befe3faca3",
+  "generatorAssemblySha256": "29feb5a2dbcb43a72840ca7d085b43d64d1b27b3f316d91e4ee7789546d8d967",
+  "platforms": {
+    "windows": {
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "metadataSha256": "5f09b5e000fc5d9453b143d4ab145e0187dec17dd3372b6c9084694f7f49c5ff",
+      "cases": [
+        {
+          "name": "element_compound_order",
+          "sourceSha256": "d35d8b496030a6dac7f624343f463fda48a572ceb47244865438b77253ea61e3",
+          "metadataSha256": "0894717c644e76d96b3c7885b4e07dbcac6cf8e856d4842d7616a485ecf294ea",
+          "snapshotSha256": "b8aa7907fd921e5f1e569916b23a3a28ce704221b247feb8fbbc48570951763f",
+          "snapshotBytes": 268,
+          "independentScriptClassDefinitions": 1,
+          "initialClasses": {
+            "input": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                18
+              ]
+            },
+            "alias": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                18
+              ]
+            }
+          },
+          "finalClasses": {
+            "input": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                18
+              ]
+            },
+            "alias": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                18
+              ]
+            }
+          }
+        },
+        {
+          "name": "element_compound_right_yield_rebind",
+          "sourceSha256": "e2836d7f3382cc45697dd9a498b0db24d1e37334eb0e798cd2ff62b817acc12e",
+          "metadataSha256": "92c8e098791e52b2ff4c9471fd6e87d936d5c50afaa676f596f1053d9bdcd293",
+          "snapshotSha256": "d22065675389fd05d96f1732dd790d14ed5bd8eadadf984280f20a63ed1c8593",
+          "snapshotBytes": 373,
+          "independentScriptClassDefinitions": 2,
+          "initialClasses": {
+            "input": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                100
+              ]
+            },
+            "alias": {
+              "reference": 3,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                11
+              ]
+            }
+          },
+          "finalClasses": {
+            "input": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                107
+              ]
+            },
+            "alias": {
+              "reference": 3,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                11
+              ]
+            }
+          }
+        },
+        {
+          "name": "element_index_postfix",
+          "sourceSha256": "f4a2f823c6c5922176d849c0bf46f9276d089d7a6a1a96aa4351eef5e6b1bac7",
+          "metadataSha256": "427df6becbb93db5ba2a748a3539ad40692cc65b9a121ae960550b054ea5deb3",
+          "snapshotSha256": "b1d0940295789baa3344ac249dbb57dc4286f4f8fb0efdbc0ca50b879f68a114",
+          "snapshotBytes": 283,
+          "independentScriptClassDefinitions": 1,
+          "initialClasses": {
+            "input": {
+              "reference": 1,
+              "dimensions": [
+                2
+              ],
+              "backing": [
+                12,
+                23
+              ]
+            },
+            "alias": {
+              "reference": 1,
+              "dimensions": [
+                2
+              ],
+              "backing": [
+                12,
+                23
+              ]
+            }
+          },
+          "finalClasses": {
+            "input": {
+              "reference": 1,
+              "dimensions": [
+                2
+              ],
+              "backing": [
+                12,
+                23
+              ]
+            },
+            "alias": {
+              "reference": 1,
+              "dimensions": [
+                2
+              ],
+              "backing": [
+                12,
+                23
+              ]
+            }
+          }
+        },
+        {
+          "name": "member_compound_right_yield_rebind",
+          "sourceSha256": "a4b2557c9e6ac9ed4f33a0c5d576a5fbfa50d6a5b810a308890c6cac1aafdc2b",
+          "metadataSha256": "5673c9e902584d402ec67a4f73ab46aa392dba8563fdd14523b298398031ca51",
+          "snapshotSha256": "eba3b2c5a62e6fd696b2585749f041a6a411ff2ed10697caffc973bd4e784ec4",
+          "snapshotBytes": 388,
+          "independentScriptClassDefinitions": 2,
+          "initialClasses": {
+            "input": {
+              "reference": 1,
+              "dimensions": [
+                10
+              ],
+              "backing": [
+                0,
+                0
+              ]
+            },
+            "alias": {
+              "reference": 3,
+              "dimensions": [
+                3
+              ],
+              "backing": [
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "finalClasses": {
+            "input": {
+              "reference": 1,
+              "dimensions": [
+                14
+              ],
+              "backing": [
+                0,
+                0
+              ]
+            },
+            "alias": {
+              "reference": 3,
+              "dimensions": [
+                3
+              ],
+              "backing": [
+                0,
+                0,
+                0
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "linux": {
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "metadataSha256": "e36d71f4d83abbf664987f27ce8dd5d36eedea89f20fad409a4139d119894597",
+      "cases": [
+        {
+          "name": "element_compound_order",
+          "sourceSha256": "d35d8b496030a6dac7f624343f463fda48a572ceb47244865438b77253ea61e3",
+          "metadataSha256": "1d051e9408b99167a2fa48c5cd361c87163b783faaf2465386b1943e62f713dd",
+          "snapshotSha256": "b8aa7907fd921e5f1e569916b23a3a28ce704221b247feb8fbbc48570951763f",
+          "snapshotBytes": 268,
+          "independentScriptClassDefinitions": 1,
+          "initialClasses": {
+            "input": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                18
+              ]
+            },
+            "alias": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                18
+              ]
+            }
+          },
+          "finalClasses": {
+            "input": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                18
+              ]
+            },
+            "alias": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                18
+              ]
+            }
+          }
+        },
+        {
+          "name": "element_compound_right_yield_rebind",
+          "sourceSha256": "e2836d7f3382cc45697dd9a498b0db24d1e37334eb0e798cd2ff62b817acc12e",
+          "metadataSha256": "690c4ac0484e56eecdb1c765e5bb54369062d3a3a2f02955e08bbf78fdcfcc5a",
+          "snapshotSha256": "d22065675389fd05d96f1732dd790d14ed5bd8eadadf984280f20a63ed1c8593",
+          "snapshotBytes": 373,
+          "independentScriptClassDefinitions": 2,
+          "initialClasses": {
+            "input": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                100
+              ]
+            },
+            "alias": {
+              "reference": 3,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                11
+              ]
+            }
+          },
+          "finalClasses": {
+            "input": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                107
+              ]
+            },
+            "alias": {
+              "reference": 3,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                11
+              ]
+            }
+          }
+        },
+        {
+          "name": "element_index_postfix",
+          "sourceSha256": "f4a2f823c6c5922176d849c0bf46f9276d089d7a6a1a96aa4351eef5e6b1bac7",
+          "metadataSha256": "aaf43c4e1b847ec3875ccb4aa9f0ed4594e28323d6d410d638ce63ef7e8a40fa",
+          "snapshotSha256": "b1d0940295789baa3344ac249dbb57dc4286f4f8fb0efdbc0ca50b879f68a114",
+          "snapshotBytes": 283,
+          "independentScriptClassDefinitions": 1,
+          "initialClasses": {
+            "input": {
+              "reference": 1,
+              "dimensions": [
+                2
+              ],
+              "backing": [
+                12,
+                23
+              ]
+            },
+            "alias": {
+              "reference": 1,
+              "dimensions": [
+                2
+              ],
+              "backing": [
+                12,
+                23
+              ]
+            }
+          },
+          "finalClasses": {
+            "input": {
+              "reference": 1,
+              "dimensions": [
+                2
+              ],
+              "backing": [
+                12,
+                23
+              ]
+            },
+            "alias": {
+              "reference": 1,
+              "dimensions": [
+                2
+              ],
+              "backing": [
+                12,
+                23
+              ]
+            }
+          }
+        },
+        {
+          "name": "member_compound_right_yield_rebind",
+          "sourceSha256": "a4b2557c9e6ac9ed4f33a0c5d576a5fbfa50d6a5b810a308890c6cac1aafdc2b",
+          "metadataSha256": "ebd6e9d1c8e45e699560d4b6202104185918214cbd2bb1cb5271390ff2470630",
+          "snapshotSha256": "eba3b2c5a62e6fd696b2585749f041a6a411ff2ed10697caffc973bd4e784ec4",
+          "snapshotBytes": 388,
+          "independentScriptClassDefinitions": 2,
+          "initialClasses": {
+            "input": {
+              "reference": 1,
+              "dimensions": [
+                10
+              ],
+              "backing": [
+                0,
+                0
+              ]
+            },
+            "alias": {
+              "reference": 3,
+              "dimensions": [
+                3
+              ],
+              "backing": [
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "finalClasses": {
+            "input": {
+              "reference": 1,
+              "dimensions": [
+                14
+              ],
+              "backing": [
+                0,
+                0
+              ]
+            },
+            "alias": {
+              "reference": 3,
+              "dimensions": [
+                3
+              ],
+              "backing": [
+                0,
+                0,
+                0
+              ]
+            }
+          }
+        }
+      ]
+    }
+  },
+  "freshProcessImports": {
+    "Windows": {
+      "metadataSha256": "d13fb960731b4510b2390055c2457b8b190cebdf5f23f206743d2408de608589",
+      "cases": 4,
+      "processId": 56616
+    },
+    "Linux": {
+      "metadataSha256": "3c23c8bd0d88b54798bd743a895e9cdd4a8c6e5df972987b652abcaa7b1d8118",
+      "cases": 4,
+      "processId": 1
+    }
+  },
+  "measuredBehavior": {
+    "compoundElementOrder": "Right() then Index(), each once; order21",
+    "rhsSleepRebinding": "Target is resolved after RHS resumes: new input107, old alias11",
+    "memberSleepRebinding": "Target field is on new wrapper after RHS resumes: new len0=14, old alias len0=3",
+    "postfixIndex": "cursor increments once; old11 returned and element12 stored",
+    "captureDuringRight": "index_count0/right_count1/order2, then resumed index_count1/order21"
+  },
+  "crossPlatformSnapshotsIdentical": true,
+  "observationCorrection": "Script-class integer lane is copied with ToArray before observation retention; earlier aliasing observations/source+assembly preserved, production backend unchanged.",
+  "executedOutputFolders": {
+    "Windows": "windows-frozen-observations",
+    "Linux": "linux-frozen-observations",
+    "WindowsImported": "windows-imported-frozen-observations",
+    "LinuxImported": "linux-imported-windows-frozen-observations"
+  },
+  "verifierSha256": "132f8da9d3395842acfe28e5bd307983a4596123c45c3d0df0cc79c643fd2afb"
+}

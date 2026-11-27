@@ -1,0 +1,1 @@
+integer result;integer count;integer mark(){count++;return 3;}integer leaf(integer n){while(n>0){n--;}return 7;}default{state_entry(){result=leaf(2)+mark();}}

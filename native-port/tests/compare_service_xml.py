@@ -1,4 +1,4 @@
-"""Actual ServerUtils string XML parser, settings, and recursive reader."""
+"""Actual ServerUtils string/stream XML parser, settings, and recursive reader."""
 
 import argparse, json, re, subprocess, xml.etree.ElementTree as ET
 from pathlib import Path
@@ -10,56 +10,66 @@ def main():
     p.add_argument('--native', required=True)
     p.add_argument('--dotnet', required=True)
     p.add_argument('--work', required=True, type=Path)
+    p.add_argument('--stream', action='store_true')
+    p.add_argument('--reference', type=Path)
     a = p.parse_args()
     w = a.work.resolve()
     w.mkdir(parents=True, exist_ok=True)
-    source = (ROOT / 'OpenSim/Server/Base/ServerUtils.cs').read_text(encoding='utf-8-sig')
-    parts = [
-        extract(source, r'private static Dictionary<string, object> ScanXmlResponse\('),
-        extract(source, r'public static Dictionary<string, object> ParseXmlResponse\(string'),
-    ]
-    for name in ['ParseXmlStringResponseXmlReaderSettings', 'ParseXmlResponseXmlParserContext']:
-        parts.append(
-            re.search(r'private static readonly [^;]+ ' + name + r' = [\s\S]+?;', source).group()
+    if not a.reference:
+        source = (ROOT / 'OpenSim/Server/Base/ServerUtils.cs').read_text(encoding='utf-8-sig')
+        parts = [
+            extract(source, r'private static Dictionary<string, object> ScanXmlResponse\('),
+            extract(source, r'public static Dictionary<string, object> ParseXmlResponse\(' + ('Stream' if a.stream else 'string')),
+        ]
+        for name in [('ParseXmlStreamResponseXmlReaderSettings' if a.stream else 'ParseXmlStringResponseXmlReaderSettings'), 'ParseXmlResponseXmlParserContext']:
+            parts.append(
+                re.search(r'private static readonly [^;]+ ' + name + r' = [\s\S]+?;', source).group()
+            )
+        wrapper = w / 'Parser.cs'
+        wrapper.write_text(
+            'using System;using System.IO;using System.Xml;using System.Collections.Generic;public static partial class Reference{'
+            + ''.join(parts)
+            + '}',
+            encoding='utf-8',
         )
-    wrapper = w / 'Parser.cs'
-    wrapper.write_text(
-        'using System;using System.IO;using System.Xml;using System.Collections.Generic;public static partial class Reference{'
-        + ''.join(parts)
-        + '}',
-        encoding='utf-8',
-    )
-    project = ET.Element('Project', Sdk='Microsoft.NET.Sdk')
-    props = ET.SubElement(project, 'PropertyGroup')
-    for k, v in {
-        'TargetFramework': 'net8.0',
-        'OutputType': 'Exe',
-        'EnableDefaultCompileItems': 'false',
-    }.items():
-        ET.SubElement(props, k).text = v
-    group = ET.SubElement(project, 'ItemGroup')
-    for f in [wrapper, ROOT / 'native-port/tests/service_xml_reference.cs']:
-        ET.SubElement(group, 'Compile', Include=str(f))
-    path = w / 'ServiceXml.csproj'
-    ET.ElementTree(project).write(path, encoding='utf-8', xml_declaration=True)
-    r = subprocess.run(
-        [
-            a.dotnet,
-            'build',
-            str(path),
-            '-c',
-            'Release',
-            '-o',
-            str(w / 'app'),
-            '--nologo',
-            '-v',
-            'quiet',
-        ],
-        capture_output=True,
-        text=True,
-    )
-    if r.returncode:
-        raise RuntimeError(r.stdout + r.stderr)
+        driver = ROOT / 'native-port/tests/service_xml_reference.cs'
+        if a.stream:
+            driver_text = driver.read_text().replace(
+                'Console.WriteLine(Snap(ParseXmlResponse(Encoding.UTF8.GetString(Convert.FromHexString(line)))));',
+                'try { using var stream=new MemoryStream(Convert.FromHexString(line)); Console.WriteLine(Snap(ParseXmlResponse(stream))); } catch(Exception) { Console.WriteLine("THROW"); }')
+            driver = w / 'Driver.cs'
+            driver.write_text(driver_text)
+        project = ET.Element('Project', Sdk='Microsoft.NET.Sdk')
+        props = ET.SubElement(project, 'PropertyGroup')
+        for k, v in {
+            'TargetFramework': 'net8.0',
+            'OutputType': 'Exe',
+            'EnableDefaultCompileItems': 'false',
+        }.items():
+            ET.SubElement(props, k).text = v
+        group = ET.SubElement(project, 'ItemGroup')
+        for f in [wrapper, driver]:
+            ET.SubElement(group, 'Compile', Include=str(f))
+        path = w / 'ServiceXml.csproj'
+        ET.ElementTree(project).write(path, encoding='utf-8', xml_declaration=True)
+        r = subprocess.run(
+            [
+                a.dotnet,
+                'build',
+                str(path),
+                '-c',
+                'Release',
+                '-o',
+                str(w / 'app'),
+                '--nologo',
+                '-v',
+                'quiet',
+            ],
+            capture_output=True,
+            text=True,
+        )
+        if r.returncode:
+            raise RuntimeError(r.stdout + r.stderr)
     contents = [
         '',
         '<a/>',
@@ -148,11 +158,40 @@ def main():
         '<_x0000D800_>v</_x0000D800_>',
     ]:
         profiles.append('<ServerResponse>' + body + '</ServerResponse>')
+    document = '<ServerResponse><a>ok</a></ServerResponse>'
+    for declaration in ['<?xml version="1.0"?>', '<?xml version="1.1"?>', '<?xml version="2.0"?>',
+        '<?xml encoding="utf-8"?>', '<?xml version="1.0" unknown="x"?>',
+        '<?xml version="1.0" standalone="maybe"?>', '<?xml standalone="yes" version="1.0"?>',
+        '<?xml version="1.0" encoding="utf-8" standalone="yes"?>',
+        "<?xml\nversion = '1.0'\tstandalone='no' ?>", '<?xml?>', '<?XML version="1.0"?>',
+        '<?xml version="1.0"version="1.0"?>', '<?xml version="1.0" encoding="utf-8" encoding="utf-8"?>',
+        '<?xml version="1&#46;0"?>', '<?xml version="1.0" standalone="yes" encoding="utf-8"?>']:
+        profiles.append(declaration + document)
+    profiles.extend([' <?xml version="1.0"?>' + document, '<!--comment--><?xml version="1.0"?>' + document,
+        '<?xml version="1.0"?><?xml version="1.0"?>' + document,
+        '<ServerResponse><?xml version="1.0"?></ServerResponse>',
+        '\ufeff<?xml-stylesheet href="example"?>' + document])
+    payloads = [x.encode() for x in profiles]
+    if a.stream:
+        document = '<ServerResponse><a>café 😀</a></ServerResponse>'
+        for encoding, bom in [('utf-8', b'\xef\xbb\xbf'), ('utf-16-le', b'\xff\xfe'),
+                              ('utf-16-be', b'\xfe\xff'), ('utf-32-le', b'\xff\xfe\0\0'),
+                              ('utf-32-be', b'\0\0\xfe\xff')]:
+            for declaration in ['', '<?xml version="1.0" encoding="utf-8"?>',
+                                '<?xml version="1.0" encoding="utf-16"?>']:
+                encoded = (declaration + document).encode(encoding)
+                payloads.extend([encoded, bom + encoded])
+        for invalid in [b'\x80', b'\xc0\xaf', b'\xed\xa0\x80', b'\xf4\x90\x80\x80', b'\xff', b'\xe2\x82']:
+            payloads.append(b'<ServerResponse><a>' + invalid + b'</a></ServerResponse>')
+        for encoding in ['iso-8859-1', 'windows-1252', 'unknown-encoding', 'us-ascii', 'ascii',
+                         'latin1', 'UTF-8', 'utf8', 'utf-16BE', 'utf-32']:
+            payloads.append(('<?xml version="1.0" encoding="' + encoding + '"?><ServerResponse><a>caf').encode()
+                            + b'\xe9</a></ServerResponse>')
     rows = []
-    for command in [[a.dotnet, str(w / 'app/ServiceXml.dll')], [a.native]]:
+    for command in [[a.dotnet, str(a.reference or w / 'app/ServiceXml.dll')], [a.native] + (['--stream'] if a.stream else [])]:
         r = subprocess.run(
             command,
-            input='\n'.join(x.encode().hex() for x in profiles) + '\n',
+            input='\n'.join(x.hex() for x in payloads) + '\n',
             capture_output=True,
             text=True,
             timeout=45,
@@ -160,20 +199,20 @@ def main():
         if r.returncode:
             raise RuntimeError(r.stderr)
         rows.append(r.stdout.splitlines())
-    assert len(rows[0]) == len(rows[1]) == len(profiles)
+    assert len(rows[0]) == len(rows[1]) == len(payloads)
     differences = [
-        {'input': c, 'source': x, 'native': y} for c, x, y in zip(profiles, *rows) if x != y
+        {'inputHex': c.hex(), 'source': x, 'native': y} for c, x, y in zip(payloads, *rows) if x != y
     ]
     (w / 'service-xml-parity-results.json').write_text(
         json.dumps(
-            {'passed': not differences, 'observations': len(profiles), 'differences': differences},
+            {'passed': not differences, 'observations': len(payloads), 'differences': differences},
             indent=2,
         ),
         encoding='utf-8',
     )
     if differences:
         raise AssertionError(str(differences[:12]))
-    print(f'PASS: {len(profiles)} service XML source observations')
+    print(f'PASS: {len(payloads)} service XML source observations')
 
 
 if __name__ == '__main__':

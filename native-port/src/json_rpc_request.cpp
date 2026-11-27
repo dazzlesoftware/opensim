@@ -6,35 +6,42 @@
 #include "opensim/framework/text.hpp"
 #include "opensim/framework/uuid.hpp"
 #include <algorithm>
+
 namespace opensim::server {
 using namespace network;
+
 namespace {
 [[noreturn]] void null_reference() {
     throw std::runtime_error("Object reference not set to an instance of an object.");
 }
-Value& required(const std::shared_ptr<Value>& value) {
+
+Value &required(const std::shared_ptr<Value> &value) {
     if (!value)
         null_reference();
-    return const_cast<Value&>(value->view());
+    return const_cast<Value &>(value->view());
 }
-Value text(const JsonRpcRequestManager::Text& source) {
+
+Value text(const JsonRpcRequestManager::Text &source) {
     auto value = source.value_or(u"");
     Value result(framework::utf8(value));
     result.sdk_string = std::make_shared<const std::u16string>(std::move(value));
     return result;
 }
-Value boxed(const std::shared_ptr<Value>& value) {
+
+Value boxed(const std::shared_ptr<Value> &value) {
     return value ? Value::alias(value) : Value::null_reference();
 }
-std::u16string json(const std::shared_ptr<Value>& value) {
+
+std::u16string json(const std::shared_ptr<Value> &value) {
     return framework::utf16_replacing(osd_json(required(value)));
 }
-std::shared_ptr<Value> child(const std::shared_ptr<Value>& owner, const char* name) {
-    auto& map = required(owner);
+
+std::shared_ptr<Value> child(const std::shared_ptr<Value> &owner, const char *name) {
+    auto &map = required(owner);
     auto found = map.map.find(name);
     if (found == map.map.end())
         return {};
-    auto& slot = found->second;
+    auto &slot = found->second;
     if (slot.reference)
         return slot.reference;
     if (slot.kind == Value::Kind::NullReference)
@@ -43,11 +50,12 @@ std::shared_ptr<Value> child(const std::shared_ptr<Value>& owner, const char* na
     slot = Value::alias(value);
     return value;
 }
-std::u16string prefix(const JsonRpcRequestManager::Text& method, const JsonRpcRequestManager::Text& uri) {
+
+std::u16string prefix(const JsonRpcRequestManager::Text &method, const JsonRpcRequestManager::Text &uri) {
     return u"JsonRpc request '" + method.value_or(u"") + u"' to " + uri.value_or(u"");
 }
-Value envelope(const JsonRpcRequestManager::Text& method, const JsonRpcRequestManager::Text& id,
-               Value parameters) {
+
+Value envelope(const JsonRpcRequestManager::Text &method, const JsonRpcRequestManager::Text &id, Value parameters) {
     Value result;
     result.kind = Value::Kind::Map;
     result.set("jsonrpc", Value("2.0"));
@@ -56,24 +64,25 @@ Value envelope(const JsonRpcRequestManager::Text& method, const JsonRpcRequestMa
     result.set("params", std::move(parameters));
     return result;
 }
-}
+} // namespace
+
 JsonRpcRequestManager::JsonRpcRequestManager(Post post, NewId id, Logger logger)
     : post_(std::move(post)), new_id_(std::move(id)), logger_(std::move(logger)) {
     if (!post_)
-        post_ = [](const Text& uri, const Value& data, int timeout, bool) {
-            return std::make_shared<Value>(
-                osd_json_rpc_request(framework::utf8(uri.value_or(u"")), data, timeout));
+        post_ = [](const Text &uri, const Value &data, int timeout, bool) {
+            return std::make_shared<Value>(osd_json_rpc_request(framework::utf8(uri.value_or(u"")), data, timeout));
         };
     if (!new_id_)
         new_id_ = [] { return framework::utf16_replacing(framework::Uuid::random().str()); };
 }
-void JsonRpcRequestManager::log(std::u16string message,
-                                const std::optional<std::u16string>& exception) const {
+
+void JsonRpcRequestManager::log(std::u16string message, const std::optional<std::u16string> &exception) const {
     if (logger_)
         logger_({std::move(message), exception});
 }
-bool JsonRpcRequestManager::request(std::shared_ptr<Value>& data, const Text& method, const Text& uri,
-                                    const Text& supplied_id) {
+
+bool JsonRpcRequestManager::request(std::shared_ptr<Value> &data, const Text &method, const Text &uri,
+                                    const Text &supplied_id) {
     Text id = supplied_id;
     if (!id || id->empty())
         id = new_id_();
@@ -81,7 +90,7 @@ bool JsonRpcRequestManager::request(std::shared_ptr<Value>& data, const Text& me
     std::shared_ptr<Value> outer;
     try {
         outer = post_(uri, request, 10000, true);
-    } catch (const std::exception& error) {
+    } catch (const std::exception &error) {
         log(prefix(method, uri) + u" failed", framework::utf16_replacing(error.what()));
         return false;
     }
@@ -102,8 +111,9 @@ bool JsonRpcRequestManager::request(std::shared_ptr<Value>& data, const Text& me
     data = std::move(response);
     return true;
 }
-bool JsonRpcRequestManager::request_object(std::shared_ptr<JsonRpcMembers>& parameters, const Text& method,
-                                           const Text& uri, const Text& id) {
+
+bool JsonRpcRequestManager::request_object(std::shared_ptr<JsonRpcMembers> &parameters, const Text &method,
+                                           const Text &uri, const Text &id) {
     if (!id)
         throw JsonRpcRequestArgumentError("jsonId");
     if (!uri)
@@ -118,7 +128,7 @@ bool JsonRpcRequestManager::request_object(std::shared_ptr<JsonRpcMembers>& para
     std::shared_ptr<Value> outer;
     try {
         outer = post_(uri, request, 10000, true);
-    } catch (const std::exception& error) {
+    } catch (const std::exception &error) {
         log(prefix(method, uri) + u" failed", framework::utf16_replacing(error.what()));
         return false;
     }
@@ -149,4 +159,4 @@ bool JsonRpcRequestManager::request_object(std::shared_ptr<JsonRpcMembers>& para
     parameters->deserialize_members(required(result));
     return true;
 }
-}
+} // namespace opensim::server

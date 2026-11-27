@@ -5,14 +5,17 @@
 #include <thread>
 #include <map>
 #include <chrono>
+
 namespace opensim::services {
 struct RegionInventoryAssetRuntime::State : std::enable_shared_from_this<State> {
     using Clock = std::chrono::steady_clock;
+
     struct Pending {
         std::shared_ptr<InventoryAssetUpload> upload;
         std::weak_ptr<CapabilityRuntimeListener> listener;
         std::optional<Clock::time_point> deadline;
     };
+
     std::shared_ptr<SceneCapabilityEvents> events;
     RegionInventoryAssetBackend scene;
     mutable std::mutex mutex;
@@ -20,13 +23,16 @@ struct RegionInventoryAssetRuntime::State : std::enable_shared_from_this<State> 
     std::map<std::string, Pending> pending;
     bool stopped = false, subscribed = false;
     std::thread timer_thread;
+
     SceneDelegateIdentity identity() const {
         return {this, "BunchOfCaps.UpdateInventoryAsset.RegisterCaps"};
     }
+
     bool accepting() const {
         std::lock_guard lock(mutex);
         return !stopped;
     }
+
     void arm(const std::string &path, int milliseconds, std::weak_ptr<CapabilityRuntimeListener> listener) {
         std::lock_guard lock(mutex);
         if (stopped)
@@ -42,6 +48,7 @@ struct RegionInventoryAssetRuntime::State : std::enable_shared_from_this<State> 
         }
         changed.notify_all();
     }
+
     void remove(const std::string &path) {
         std::shared_ptr<CapabilityRuntimeListener> listener;
         std::shared_ptr<InventoryAssetUpload> retained;
@@ -58,8 +65,8 @@ struct RegionInventoryAssetRuntime::State : std::enable_shared_from_this<State> 
         if (listener)
             listener->remove_simple(path);
     }
-    void add(std::shared_ptr<InventoryAssetUpload> upload,
-             std::weak_ptr<CapabilityRuntimeListener> listener) {
+
+    void add(std::shared_ptr<InventoryAssetUpload> upload, std::weak_ptr<CapabilityRuntimeListener> listener) {
         if (!upload || !upload->path())
             throw std::invalid_argument("Null inventory upload route");
         auto path = *upload->path();
@@ -81,6 +88,7 @@ struct RegionInventoryAssetRuntime::State : std::enable_shared_from_this<State> 
         if (expired)
             upload->expire();
     }
+
     void register_caps(framework::Uuid agent, const std::shared_ptr<Caps> &caps) {
         if (!accepting())
             return;
@@ -123,13 +131,12 @@ struct RegionInventoryAssetRuntime::State : std::enable_shared_from_this<State> 
                 if (state->scene.log)
                     state->scene.log(text);
         };
-        auto origin = std::string(caps->ssl_caps() ? "https://" : "http://") +
-                      caps->host_name().value_or("") + ":" + std::to_string(caps->port());
+        auto origin = std::string(caps->ssl_caps() ? "https://" : "http://") + caps->host_name().value_or("") + ":" +
+                      std::to_string(caps->port());
         auto add = [&](std::optional<std::uint8_t> type, const std::vector<std::string> &names) {
-            auto core =
-                std::make_shared<UpdateInventoryAssetCore>(agent, origin, type, backend, scene.region_name);
-            auto route = std::make_shared<UpdateInventoryAssetRoute>("/" + framework::Uuid::random().str(),
-                                                                     std::move(core));
+            auto core = std::make_shared<UpdateInventoryAssetCore>(agent, origin, type, backend, scene.region_name);
+            auto route =
+                std::make_shared<UpdateInventoryAssetRoute>("/" + framework::Uuid::random().str(), std::move(core));
             for (std::size_t n = 0; n < names.size(); ++n)
                 caps->register_simple(names[n], route, n == 0);
         };
@@ -140,6 +147,7 @@ struct RegionInventoryAssetRuntime::State : std::enable_shared_from_this<State> 
         add(57, {"UpdateMaterialAgentInventory", "UpdateMaterialTaskInventory"});
         add(21, {"UpdateGestureAgentInventory", "UpdateGestureTaskInventory"});
     }
+
     void timer_loop() {
         std::unique_lock lock(mutex);
         while (!stopped) {
@@ -171,6 +179,7 @@ struct RegionInventoryAssetRuntime::State : std::enable_shared_from_this<State> 
             lock.lock();
         }
     }
+
     void stop() {
         std::vector<std::shared_ptr<InventoryAssetUpload>> uploads;
         {
@@ -195,6 +204,7 @@ struct RegionInventoryAssetRuntime::State : std::enable_shared_from_this<State> 
         pending.clear();
     }
 };
+
 RegionInventoryAssetRuntime::RegionInventoryAssetRuntime(std::shared_ptr<SceneCapabilityEvents> events,
                                                          RegionInventoryAssetBackend backend)
     : state_(std::make_shared<State>()) {
@@ -217,15 +227,18 @@ RegionInventoryAssetRuntime::RegionInventoryAssetRuntime(std::shared_ptr<SceneCa
         throw;
     }
 }
+
 RegionInventoryAssetRuntime::~RegionInventoryAssetRuntime() {
     try {
         stop();
     } catch (...) {
     }
 }
+
 void RegionInventoryAssetRuntime::stop() {
     state_->stop();
 }
+
 std::size_t RegionInventoryAssetRuntime::pending_uploads() const {
     std::lock_guard lock(state_->mutex);
     std::size_t count = 0;
@@ -234,4 +247,4 @@ std::size_t RegionInventoryAssetRuntime::pending_uploads() const {
             ++count;
     return count;
 }
-}
+} // namespace opensim::services

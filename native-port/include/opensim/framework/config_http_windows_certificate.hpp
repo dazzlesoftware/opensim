@@ -5,6 +5,7 @@
 #include <span>
 #include <string_view>
 #include <vector>
+
 namespace opensim::framework {
 #ifdef _WIN32
 struct ConfigHttpWindowsCertificatePolicy {
@@ -16,11 +17,12 @@ struct ConfigHttpWindowsCertificatePolicy {
     // in-memory custom root store; no machine or user stores are modified.
     std::optional<std::vector<std::vector<std::uint8_t>>> custom_roots;
 };
+
 // Returns SslPolicyErrors flags: missing certificate=1, name=2, chain=4.
 // Intermediate DERs are the peer's ExtraStore certificates, not trusted roots.
 std::int32_t config_http_windows_certificate_errors(std::span<const std::uint8_t> leaf,
-                                                    const std::vector<std::vector<std::uint8_t>>& intermediates,
+                                                    const std::vector<std::vector<std::uint8_t>> &intermediates,
                                                     std::u16string_view normalized_host,
-                                                    const ConfigHttpWindowsCertificatePolicy& = {});
+                                                    const ConfigHttpWindowsCertificatePolicy & = {});
 #endif
-}
+} // namespace opensim::framework

@@ -7,27 +7,29 @@
 #include <sstream>
 using namespace opensim;
 using namespace services;
+
 framework::Uuid id(int n) {
     std::ostringstream out;
     out << "00000000-0000-0000-0000-" << std::hex << std::setw(12) << std::setfill('0') << n;
     return framework::Uuid(out.str());
 }
+
 std::string bits(framework::Vector3 v) {
     std::ostringstream out;
-    out << std::hex << std::setfill('0') << std::setw(8) << std::bit_cast<std::uint32_t>(v.x) << ','
-        << std::setw(8) << std::bit_cast<std::uint32_t>(v.y) << ',' << std::setw(8)
-        << std::bit_cast<std::uint32_t>(v.z);
+    out << std::hex << std::setfill('0') << std::setw(8) << std::bit_cast<std::uint32_t>(v.x) << ',' << std::setw(8)
+        << std::bit_cast<std::uint32_t>(v.y) << ',' << std::setw(8) << std::bit_cast<std::uint32_t>(v.z);
     return out.str();
 }
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     try {
         const int seed = std::stoi(argv[1]);
         server::IniConfig config;
         NullRegionStore store;
         GridService grid(
             store, config, [] { return 1700000000; }, {},
-            [](const std::string& uri) { return uri.find("local.example") != std::string::npos ? 1 : 0; },
-            [](const std::string& host) -> std::optional<std::string> {
+            [](const std::string &uri) { return uri.find("local.example") != std::string::npos ? 1 : 0; },
+            [](const std::string &host) -> std::optional<std::string> {
                 return host == "bad.invalid" ? std::nullopt : std::optional<std::string>{"203.0.113.7"};
             });
         for (int i = 1; i <= 3; ++i) {
@@ -41,10 +43,10 @@ int main(int argc, char** argv) {
             region.internal_endpoint = RegionEndpoint{"0.0.0.0", 9000};
             region.external_host = "127.0.0.1";
             auto row = std::make_shared<RegionData>(region_data(region));
-            row->data["flags"] = std::to_string(i == 1   ? 4
-                                                : i == 2 ? ((seed & 1) ? 5 : 0)
-                                                         : ((seed & 2) ? 2 : 0) | ((seed & 4) ? 4 : 0) |
-                                                               ((seed & 8) ? 512 : 0));
+            row->data["flags"] =
+                std::to_string(i == 1   ? 4
+                               : i == 2 ? ((seed & 1) ? 5 : 0)
+                                        : ((seed & 2) ? 2 : 0) | ((seed & 4) ? 4 : 0) | ((seed & 8) ? 512 : 0));
             store.store(row);
         }
         LoginDestinationSelector selector(&grid, (seed & 16) == 0);
@@ -59,15 +61,13 @@ int main(int argc, char** argv) {
                              : seed % 4 == 2 ? framework::Vector3{infinity, -infinity, 70}
                                              : framework::Vector3{128.25f, .25f, -0.f};
         const auto home = grid.by_id({}, id(1));
-        const auto observe = [&](LoginDestinationSelector& target, const std::optional<std::string>& start,
-                                 const std::optional<GridUserInfo>& user,
-                                 const std::optional<GridRegion>& homeRegion) {
+        const auto observe = [&](LoginDestinationSelector &target, const std::optional<std::string> &start,
+                                 const std::optional<GridUserInfo> &user, const std::optional<GridRegion> &homeRegion) {
             try {
                 const auto result = target.find({}, user, start, homeRegion);
                 std::cout << (result.region ? result.region->id.str() : "-") << '|'
-                          << (result.gatekeeper ? result.gatekeeper->id.str() : "-") << '|' << result.where
-                          << '|' << bits(result.position) << '|' << bits(result.look_at) << '|'
-                          << result.flags << '\n';
+                          << (result.gatekeeper ? result.gatekeeper->id.str() : "-") << '|' << result.where << '|'
+                          << bits(result.position) << '|' << bits(result.look_at) << '|' << result.flags << '\n';
             } catch (...) {
                 std::cout << "EX\n";
             }
@@ -91,18 +91,17 @@ int main(int argc, char** argv) {
         info.last_region = id(99);
         observe(selector, "last", info, std::nullopt);
         observe(selector, "last", std::nullopt, std::nullopt);
-        for (const auto& start : std::vector<std::optional<std::string>>{
+        for (const auto &start : std::vector<std::optional<std::string>>{
                  "uri:Alpha&1.25&2.&300", "uri:Missing&90&91&92", "uri:Alpha@remote.example&1&2&3",
                  "uri:http://local.example/Alpha&1&2&3", "", "home ", "uri:Alpha&-1&2&3", "uri:Alpha&1&2&-3",
                  "uri:Alpha&1e2&2&3", "uri:Alpha&" + std::string(90, '9') + "&2&3",
-                 "uri:Alpha&0." + std::string(400, '0') + "1&2&3", "uri:Alpha&1&2&3\n", "Alpha&1&2&3",
-                 std::nullopt, "uri:&1&2&3", "uri:Alpha&\xD9\xA1&2&3",
-                 "uri:http://remote.example/Alpha&1&2&3"})
+                 "uri:Alpha&0." + std::string(400, '0') + "1&2&3", "uri:Alpha&1&2&3\n", "Alpha&1&2&3", std::nullopt,
+                 "uri:&1&2&3", "uri:Alpha&\xD9\xA1&2&3", "uri:http://remote.example/Alpha&1&2&3"})
             observe(selector, start, info, std::nullopt);
         LoginDestinationSelector unavailable(nullptr);
         observe(unavailable, std::nullopt, info, home);
         return 0;
-    } catch (const std::exception& error) {
+    } catch (const std::exception &error) {
         std::cerr << error.what() << '\n';
         return 1;
     }

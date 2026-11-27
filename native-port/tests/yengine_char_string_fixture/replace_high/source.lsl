@@ -1,0 +1,1 @@
+YOption chars;string text;integer length;default{state_entry(){text=llDeleteSubString("😀",1,1);length=llStringLength(text);}}

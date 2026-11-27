@@ -1,0 +1,152 @@
+[
+  {
+    "name": "boxed_scalars",
+    "accepted": true,
+    "suspended": true,
+    "migrated": true,
+    "exceptions": {},
+    "initial_queue_aliases": [],
+    "restored_queue_aliases": []
+  },
+  {
+    "name": "vector_rotation",
+    "accepted": true,
+    "suspended": true,
+    "migrated": true,
+    "exceptions": {},
+    "initial_queue_aliases": [],
+    "restored_queue_aliases": []
+  },
+  {
+    "name": "nested_alias",
+    "accepted": true,
+    "suspended": true,
+    "migrated": true,
+    "exceptions": {},
+    "initial_queue_aliases": [
+      {
+        "left": "event0/0",
+        "right": "event0/1",
+        "same_list": true,
+        "same_data": true
+      }
+    ],
+    "restored_queue_aliases": [
+      {
+        "left": "event0/0",
+        "right": "event0/1",
+        "same_list": false,
+        "same_data": false
+      }
+    ]
+  },
+  {
+    "name": "null_string",
+    "accepted": true,
+    "suspended": true,
+    "migrated": true,
+    "exceptions": {},
+    "initial_queue_aliases": [],
+    "restored_queue_aliases": []
+  },
+  {
+    "name": "null_list",
+    "accepted": true,
+    "suspended": true,
+    "migrated": false,
+    "exceptions": {
+      "queue_xml_write_exception": {
+        "type": "System.NullReferenceException",
+        "message": "Object reference not set to an instance of an object.",
+        "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstance.GetXMLObject(XmlDocument doc, Object o, String tag) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstCapture.cs:line 334\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstance.AppendXMLObjectArray(XmlDocument doc, XmlNode parent, Object[] array, String tag) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstCapture.cs:line 310\r\n   at InvokeStub_XMRInstance.AppendXMLObjectArray(Object, Span`1)\r\n   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)"
+      },
+      "live_resume_exception": {
+        "type": "System.Exception",
+        "message": "null entry in List.Size",
+        "stack": "   at OpenSim.Region.ScriptEngine.Shared.LSL_Types.list.get_Size() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\Shared\\LSL_Types.cs:line 829\r\n   at OpenSim.Region.ScriptEngine.Yengine.HeapTrackerObject.Size(Object obj) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRHeapTracker.cs:line 209\r\n   at default state_entry(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 558\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstance.ResumeEx() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRScriptUThread.cs:line 85"
+      }
+    },
+    "initial_queue_aliases": [],
+    "restored_queue_aliases": null
+  },
+  {
+    "name": "utf16_high",
+    "accepted": true,
+    "suspended": true,
+    "migrated": false,
+    "exceptions": {
+      "queue_xml_write_exception": {
+        "type": "System.ArgumentException",
+        "message": "The surrogate pair (0xD800, 0xD800) is invalid. A high surrogate character (0xD800 - 0xDBFF) must always be paired with a low surrogate character (0xDC00 - 0xDFFF).",
+        "stack": "   at System.Xml.XmlTextEncoder.Write(ReadOnlySpan`1 text)\r\n   at System.Xml.XmlTextWriter.WriteString(String text)\r\n   at System.Xml.XmlElement.WriteElementTo(XmlWriter writer, XmlElement el)\r\n   at System.Xml.XmlDocument.WriteContentTo(XmlWriter xw)\r\n   at System.Xml.XmlNode.get_OuterXml()\r\n   at EventQueueArgumentsReference.<Run>g__QueueXml|17_4(XMRInstance i) in G:\\GitHub\\SecondLife\\opensim\\native-port\\tests\\yengine_event_queue_arguments_reference.cs:line 501\r\n   at EventQueueArgumentsReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\tests\\yengine_event_queue_arguments_reference.cs:line 582"
+      }
+    },
+    "initial_queue_aliases": [],
+    "restored_queue_aliases": null
+  },
+  {
+    "name": "utf16_pair",
+    "accepted": true,
+    "suspended": true,
+    "migrated": true,
+    "exceptions": {},
+    "initial_queue_aliases": [],
+    "restored_queue_aliases": []
+  },
+  {
+    "name": "embedded_nul",
+    "accepted": true,
+    "suspended": true,
+    "migrated": true,
+    "exceptions": {},
+    "initial_queue_aliases": [],
+    "restored_queue_aliases": []
+  },
+  {
+    "name": "escaped_zero_literal",
+    "accepted": true,
+    "suspended": true,
+    "migrated": true,
+    "exceptions": {},
+    "initial_queue_aliases": [],
+    "restored_queue_aliases": []
+  },
+  {
+    "name": "character",
+    "accepted": true,
+    "suspended": true,
+    "migrated": true,
+    "exceptions": {
+      "live_resume_exception": {
+        "type": "System.Exception",
+        "message": "Unknown type in List.Size: System.Char",
+        "stack": "   at OpenSim.Region.ScriptEngine.Shared.LSL_Types.list.get_Size() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\Shared\\LSL_Types.cs:line 855\r\n   at OpenSim.Region.ScriptEngine.Yengine.HeapTrackerObject.Size(Object obj) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRHeapTracker.cs:line 209\r\n   at default state_entry(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 558\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstance.ResumeEx() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRScriptUThread.cs:line 85"
+      },
+      "resume_exception": {
+        "type": "System.Exception",
+        "message": "Unknown type in List.Size: System.Char",
+        "stack": "   at OpenSim.Region.ScriptEngine.Shared.LSL_Types.list.get_Size() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\Shared\\LSL_Types.cs:line 855\r\n   at OpenSim.Region.ScriptEngine.Yengine.HeapTrackerObject.Size(Object obj) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRHeapTracker.cs:line 209\r\n   at default state_entry(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 558\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstance.ResumeEx() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRScriptUThread.cs:line 85"
+      }
+    },
+    "initial_queue_aliases": [],
+    "restored_queue_aliases": []
+  },
+  {
+    "name": "nonfinite",
+    "accepted": true,
+    "suspended": true,
+    "migrated": true,
+    "exceptions": {},
+    "initial_queue_aliases": [],
+    "restored_queue_aliases": []
+  },
+  {
+    "name": "raw_backend_control",
+    "accepted": true,
+    "suspended": true,
+    "migrated": true,
+    "exceptions": {},
+    "initial_queue_aliases": [],
+    "restored_queue_aliases": []
+  }
+]

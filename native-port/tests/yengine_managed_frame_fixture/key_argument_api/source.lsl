@@ -1,0 +1,1 @@
+key result;integer count;key inner(key seed){count++;return llGenerateKey();}default{state_entry(){result=inner((key)"11111111-2222-3333-4444-555555555555");}}

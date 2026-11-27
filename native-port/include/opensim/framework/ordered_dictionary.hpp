@@ -8,17 +8,20 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+
 namespace opensim::framework {
 // .NET Dictionary enumeration walks entry slots; removed slots are reused LIFO.
 // Keep that observable order for legacy service-url and seed arrays.
 template <class K, class V, class Hash = std::hash<K>> class OrderedDictionary {
   public:
     using value_type = std::pair<const K, V>;
+
     template <bool Const> class Iterator {
         using Owner = std::conditional_t<Const, const OrderedDictionary, OrderedDictionary>;
-        Owner* owner_;
+        Owner *owner_;
         std::size_t index_;
         std::uint32_t generation_;
+
         void skip() {
             if (index_ > owner_->slots_.size())
                 index_ = owner_->slots_.size();
@@ -27,24 +30,27 @@ template <class K, class V, class Hash = std::hash<K>> class OrderedDictionary {
         }
 
       public:
-        Iterator(Owner* owner, std::size_t index)
-            : owner_(owner), index_(index), generation_(owner->generation_) {
+        Iterator(Owner *owner, std::size_t index) : owner_(owner), index_(index), generation_(owner->generation_) {
             skip();
         }
-        auto& operator*() const {
+
+        auto &operator*() const {
             return owner_->slots_.at(index_).value();
         }
-        auto* operator->() const {
+
+        auto *operator->() const {
             return &**this;
         }
-        Iterator& operator++() {
+
+        Iterator &operator++() {
             if (generation_ != owner_->generation_)
                 throw std::runtime_error("Dictionary changed during enumeration");
             ++index_;
             skip();
             return *this;
         }
-        bool operator==(const Iterator& other) const {
+
+        bool operator==(const Iterator &other) const {
             if (owner_ != other.owner_ || generation_ != other.generation_)
                 return false;
             // A foreach end is cached before callbacks run. .NET permits
@@ -53,36 +59,46 @@ template <class K, class V, class Hash = std::hash<K>> class OrderedDictionary {
             return (index_ >= size ? size : index_) == (other.index_ >= size ? size : other.index_);
         }
     };
+
     auto begin() {
         return Iterator<false>(this, 0);
     }
+
     auto end() {
         return Iterator<false>(this, slots_.size());
     }
+
     auto begin() const {
         return Iterator<true>(this, 0);
     }
+
     auto end() const {
         return Iterator<true>(this, slots_.size());
     }
-    auto find(const K& key) {
+
+    auto find(const K &key) {
         auto i = index_.find(key);
         return i == index_.end() ? end() : Iterator<false>(this, i->second);
     }
-    auto find(const K& key) const {
+
+    auto find(const K &key) const {
         auto i = index_.find(key);
         return i == index_.end() ? end() : Iterator<true>(this, i->second);
     }
-    bool contains(const K& key) const {
+
+    bool contains(const K &key) const {
         return index_.contains(key);
     }
+
     std::size_t size() const {
         return index_.size();
     }
+
     bool empty() const {
         return size() == 0;
     }
-    V& operator[](const K& key) {
+
+    V &operator[](const K &key) {
         auto i = find(key);
         if (i != end())
             return i->second;
@@ -102,19 +118,22 @@ template <class K, class V, class Hash = std::hash<K>> class OrderedDictionary {
         ++generation_;
         return slots_[slot]->second;
     }
-    V& at(const K& key) {
+
+    V &at(const K &key) {
         auto i = find(key);
         if (i == end())
             throw std::out_of_range("Dictionary key");
         return i->second;
     }
-    const V& at(const K& key) const {
+
+    const V &at(const K &key) const {
         auto i = find(key);
         if (i == end())
             throw std::out_of_range("Dictionary key");
         return i->second;
     }
-    bool erase(const K& key) {
+
+    bool erase(const K &key) {
         auto i = index_.find(key);
         if (i == index_.end())
             return false;
@@ -123,6 +142,7 @@ template <class K, class V, class Hash = std::hash<K>> class OrderedDictionary {
         index_.erase(i);
         return true;
     }
+
     void clear() {
         slots_.clear();
         free_.clear();
@@ -135,4 +155,4 @@ template <class K, class V, class Hash = std::hash<K>> class OrderedDictionary {
     std::unordered_map<K, std::size_t, Hash> index_;
     std::uint32_t generation_ = 0;
 };
-}
+} // namespace opensim::framework

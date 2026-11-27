@@ -4,24 +4,28 @@
 #include <iostream>
 #include <stdexcept>
 using namespace opensim;
-void check(bool value, const char* message) {
+
+void check(bool value, const char *message) {
     if (!value)
         throw std::runtime_error(message);
 }
+
 struct Admission final : services::ISimulationLogin {
-    framework::AgentCircuitManager& manager;
+    framework::AgentCircuitManager &manager;
     int queries = 0, creates = 0;
-    explicit Admission(framework::AgentCircuitManager& m) : manager(m) {
-    }
-    bool query_access(services::GridRegion&, const framework::Uuid&, const std::optional<std::string>&, bool,
-                      const framework::Vector3&, std::vector<framework::Uuid>&,
-                      services::LoginTransferContext&, std::string&) override {
+
+    explicit Admission(framework::AgentCircuitManager &m) : manager(m) {}
+
+    bool query_access(services::GridRegion &, const framework::Uuid &, const std::optional<std::string> &, bool,
+                      const framework::Vector3 &, std::vector<framework::Uuid> &, services::LoginTransferContext &,
+                      std::string &) override {
         ++queries;
         return true;
     }
-    bool create_agent(const services::GridRegion*, services::GridRegion&,
-                      const std::shared_ptr<framework::AgentCircuitData>& circuit, std::uint32_t,
-                      services::LoginTransferContext& context, std::string&) override {
+
+    bool create_agent(const services::GridRegion *, services::GridRegion &,
+                      const std::shared_ptr<framework::AgentCircuitData> &circuit, std::uint32_t,
+                      services::LoginTransferContext &context, std::string &) override {
         ++creates;
         auto decoded = std::make_shared<framework::AgentCircuitData>();
         decoded->unpack(network::parse_llsd_xml(network::llsd_xml(circuit->pack(&context))));
@@ -29,6 +33,7 @@ struct Admission final : services::ISimulationLogin {
         return true;
     }
 };
+
 int main() {
     try {
         services::UserAccount account;
@@ -38,7 +43,7 @@ int main() {
         account.service_urls = std::make_shared<framework::AgentCircuitData::ServiceUrls>();
         int stores = 0;
         services::LoginAgentFactory factory({{"SRV_InventoryServerURI", "https://inventory"}}, std::nullopt,
-                                            [&](auto&) {
+                                            [&](auto &) {
                                                 ++stores;
                                                 return false;
                                             });
@@ -60,8 +65,7 @@ int main() {
         check((caps.bytes()[6] >> 4) == 4 && (caps.bytes()[8] & 192) == 128, "Caps path is a random UUID");
         check(!first->child && first->children_cap_seeds && first->children_cap_seeds->empty(),
               "Root login circuit and fresh child seeds");
-        check(first->appearance.get() != &avatar && first->appearance->serial == 17,
-              "Source appearance cloned");
+        check(first->appearance.get() != &avatar && first->appearance->serial == 17, "Source appearance cloned");
         check(second->appearance && second->appearance->serial == 0, "Missing appearance receives defaults");
         check(stores == 1, "Failed store return is ignored; unchanged URLs are not stored again");
         framework::AgentCircuitManager manager;
@@ -71,7 +75,7 @@ int main() {
         request.destination = std::make_shared<services::GridRegion>();
         request.where = "last";
         request.flags = 128;
-        request.make_agent = [&](const auto&, std::uint32_t code) {
+        request.make_agent = [&](const auto &, std::uint32_t code) {
             details.circuit = code;
             return factory.make_agent(account, &avatar, details);
         };
@@ -80,8 +84,8 @@ int main() {
               "Factory connected to native launch admission");
         bool admitted = false;
         network::CircuitTransport transport(
-            manager, [](const auto&, auto) { return true; },
-            [&](const auto& circuit, const auto&, const auto&) {
+            manager, [](const auto &, auto) { return true; },
+            [&](const auto &circuit, const auto &, const auto &) {
                 check(circuit->appearance->texture->get_face(44)->texture_id() == baked,
                       "Baked appearance reaches transport after XML");
                 check(std::any_cast<std::string>(circuit->service_urls->at("InventoryServerURI")) ==
@@ -99,7 +103,7 @@ int main() {
         check(admitted, "Factory to launch to XML to credential-gated transport");
         std::cout << "PASS: login agent factory defaults and native launch/transport handoff\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

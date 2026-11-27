@@ -4,6 +4,7 @@
 #pragma once
 #include "opensim/framework/nini_xml_reader.hpp"
 #include <unordered_map>
+
 namespace opensim::framework {
 // Required remaining System.Xml file/writer closures. These callbacks are
 // operations, not permissive parser or no-op Save substitutes. open_path must
@@ -11,12 +12,12 @@ namespace opensim::framework {
 // encoding, DTD, ownership and constructor-failure policies.
 struct NiniXmlNativeDocumentIo {
     std::function<std::shared_ptr<NativeNiniXmlReader>(NiniWriterText)> open_path;
-    std::function<void(NiniXmlDom&, NiniWriterText)> save_path;
-    std::function<void(NiniXmlDom&, std::shared_ptr<NiniTextWriter>)> save_writer;
-    std::function<void(NiniXmlDom&, std::shared_ptr<NiniWriterStream>)> save_stream;
+    std::function<void(NiniXmlDom &, NiniWriterText)> save_path;
+    std::function<void(NiniXmlDom &, std::shared_ptr<NiniTextWriter>)> save_writer;
+    std::function<void(NiniXmlDom &, std::shared_ptr<NiniWriterStream>)> save_stream;
 };
-class NativeNiniXmlDocument final : public NiniXmlDocument,
-                                    public std::enable_shared_from_this<NativeNiniXmlDocument> {
+
+class NativeNiniXmlDocument final : public NiniXmlDocument, public std::enable_shared_from_this<NativeNiniXmlDocument> {
     friend class NativeNiniXmlDocumentNode;
     friend class NativeNiniXmlDocumentEnumerator;
     std::shared_ptr<NiniXmlNativeDocumentIo> io_;
@@ -24,10 +25,10 @@ class NativeNiniXmlDocument final : public NiniXmlDocument,
     std::unordered_map<std::size_t, std::weak_ptr<NiniXmlNode>> node_handles_;
     std::shared_ptr<NiniXmlNode> wrap(std::shared_ptr<NiniXmlDomNode>);
     explicit NativeNiniXmlDocument(std::shared_ptr<NiniXmlNativeDocumentIo>);
-    void load_owned(const std::shared_ptr<NativeNiniXmlReader>&);
+    void load_owned(const std::shared_ptr<NativeNiniXmlReader> &);
 
-public:
-    static std::shared_ptr<NativeNiniXmlDocument> create(const std::shared_ptr<NiniXmlNativeDocumentIo>&);
+  public:
+    static std::shared_ptr<NativeNiniXmlDocument> create(const std::shared_ptr<NiniXmlNativeDocumentIo> &);
     std::shared_ptr<NiniXmlNode> document_element() override;
     void load_xml(NiniWriterText) override;
     void load_path(NiniWriterText) override;
@@ -37,13 +38,15 @@ public:
     void save_stream(std::shared_ptr<NiniWriterStream>) override;
     std::shared_ptr<NiniXmlNode> create_element(NiniWriterText) override;
     std::shared_ptr<NiniXmlNode> create_attribute(NiniWriterText) override;
-    NiniXmlDom& native_dom() noexcept {
+
+    NiniXmlDom &native_dom() noexcept {
         return dom_;
     }
-    const NiniXmlDom& native_dom() const noexcept {
+
+    const NiniXmlDom &native_dom() const noexcept {
         return dom_;
     }
 };
-std::shared_ptr<NiniXmlConfigBackend>
-native_nini_xml_config_backend(const std::shared_ptr<NiniXmlNativeDocumentIo>&);
-}
+
+std::shared_ptr<NiniXmlConfigBackend> native_nini_xml_config_backend(const std::shared_ptr<NiniXmlNativeDocumentIo> &);
+} // namespace opensim::framework

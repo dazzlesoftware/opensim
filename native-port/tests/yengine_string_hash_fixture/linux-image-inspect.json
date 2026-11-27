@@ -1,0 +1,56 @@
+[
+    {
+        "Id": "sha256:cbf15413c836e13ef6678f93d68dddd09ae6edf037449f9a1dd3507138c7450d",
+        "RepoTags": [
+            "opensim-native-original-grid:ubuntu24.04"
+        ],
+        "RepoDigests": [
+            "opensim-native-original-grid@sha256:cbf15413c836e13ef6678f93d68dddd09ae6edf037449f9a1dd3507138c7450d"
+        ],
+        "Comment": "buildkit.dockerfile.v0",
+        "Created": "2026-11-25T07:14:45.803301047Z",
+        "Config": {
+            "Env": [
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "DEBIAN_FRONTEND=noninteractive"
+            ],
+            "Cmd": [
+                "bash",
+                "/src/native-port/tools/linux-preview/check.sh"
+            ],
+            "WorkingDir": "/src",
+            "Labels": {
+                "org.opencontainers.image.version": "24.04"
+            },
+            "ArgsEscaped": true
+        },
+        "Architecture": "amd64",
+        "Os": "linux",
+        "Size": 1078930424,
+        "RootFS": {
+            "Type": "layers",
+            "Layers": [
+                "sha256:369ede38a92da8cd72a76f15f37e496def401830f3c8b7d39c0c7695682a51ce",
+                "sha256:33bc9c134ec3c57df6666e977a528ebad9118c59c0d4d4531bed09a00ed2915c",
+                "sha256:436578626478bd056036ab4c3529744ab1fd8365a0d926921a6b0e33929a6679",
+                "sha256:6ce021ceaa93c38af78b029a59829a35853092395873ebd872cb68c888f62eba"
+            ]
+        },
+        "Metadata": {
+            "LastTagTime": "2026-11-25T07:14:49.099112108Z"
+        },
+        "Descriptor": {
+            "mediaType": "application/vnd.oci.image.index.v1+json",
+            "digest": "sha256:cbf15413c836e13ef6678f93d68dddd09ae6edf037449f9a1dd3507138c7450d",
+            "size": 856
+        },
+        "Identity": {
+            "Build": [
+                {
+                    "Ref": "plw313nspi70q9jdmm4tmgc5j",
+                    "CreatedAt": "2026-11-25T07:14:49.701522848Z"
+                }
+            ]
+        }
+    }
+]

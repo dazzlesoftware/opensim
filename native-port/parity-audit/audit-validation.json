@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "legacyFilesClassifiedExactlyOnce": 1556,
+  "unmappedFilesClassified": 1346,
+  "uniqueMappedSources": 210,
+  "nativeMappingsPreserved": true,
+  "allMappedNativeFilesExist": true,
+  "historicalRequirementsPreserved": true,
+  "previewFlowsWithAvailableEvidence": 7,
+  "sourceHashesMatch": true,
+  "fullParityVerified": false,
+  "note": "Historical first classification validation used 210 mapped/1346 unmapped files. Method follow-up adds 3 scoped mappings; current count is 213/1343."
+}

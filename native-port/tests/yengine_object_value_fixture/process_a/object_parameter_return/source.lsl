@@ -1,0 +1,1 @@
+YOption arrays;object input;integer result;string typename;object echo(object value){return value;}default{state_entry(){input=echo(7);result=(integer)input;typename=xmrTypeName(input);}}

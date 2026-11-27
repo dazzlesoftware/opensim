@@ -7,18 +7,22 @@
 #include "opensim/framework/vector_text.hpp"
 #include "opensim/services/avatar_data.hpp"
 #include <algorithm>
+
 namespace opensim::server {
 using namespace network;
+
 namespace {
 std::string number(float n) {
     return services::avatar_float_string(n);
 }
+
 Value real(float n) {
     Value value;
     value.kind = Value::Kind::Real;
     value.real = n;
     return value;
 }
+
 framework::Uuid uuid(std::string_view text) {
     while (text.starts_with(' '))
         text.remove_prefix(1);
@@ -26,8 +30,9 @@ framework::Uuid uuid(std::string_view text) {
         throw std::invalid_argument("Invalid UUID feature");
     return framework::Uuid(text.substr(0, text[8] == '-' ? 36 : 32));
 }
-}
-bool agent_path_parameters(std::string_view path, AgentPathParameters& result) {
+} // namespace
+
+bool agent_path_parameters(std::string_view path, AgentPathParameters &result) {
     result = {};
     while (path.starts_with('/'))
         path.remove_prefix(1);
@@ -50,7 +55,8 @@ bool agent_path_parameters(std::string_view path, AgentPathParameters& result) {
         result.action = parts[3];
     return true;
 }
-void AgentAccessHandler::process_admission(const HttpRequest& request, HttpResponse& response) {
+
+void AgentAccessHandler::process_admission(const HttpRequest &request, HttpResponse &response) {
     response.keep_alive = false;
     response.content_type = "application/json";
     if (!service_ && !((create_agent_ || home_agent_) && request.method == "POST")) {
@@ -58,18 +64,19 @@ void AgentAccessHandler::process_admission(const HttpRequest& request, HttpRespo
         response.body = "false";
         return;
     }
-    if (request.method != "PUT")
-        for (const auto& [name, value] : request.headers) {
-            auto lower = name;
-            for (auto& c : lower)
-                if (c >= 'A' && c <= 'Z')
-                    c += 32;
-            if (lower == "x-secondlife-shard") {
-                response.status = 406;
-                response.body = "false";
-                return;
-            }
+    // Method dispatch normally replaces this provisional response. If a handler
+    // throws first, the response still carries the shard rejection.
+    for (const auto &[name, value] : request.headers) {
+        auto lower = name;
+        for (auto &c : lower)
+            if (c >= 'A' && c <= 'Z')
+                c += 32;
+        if (lower == "x-secondlife-shard") {
+            response.status = 406;
+            response.body = "false";
+            break;
         }
+    }
     AgentPathParameters parameters;
     if (!agent_path_parameters(request.path, parameters)) {
         response.status = 404;
@@ -117,8 +124,7 @@ void AgentAccessHandler::process_admission(const HttpRequest& request, HttpRespo
                 response.body = "false";
                 return;
             }
-            if (!parameters.region.is_zero() &&
-                osd_uuid(args->get("destination_uuid")) != parameters.region) {
+            if (!parameters.region.is_zero() && osd_uuid(args->get("destination_uuid")) != parameters.region) {
                 response.status = 404;
                 response.body = "false";
                 return;
@@ -130,9 +136,9 @@ void AgentAccessHandler::process_admission(const HttpRequest& request, HttpRespo
     response.status = 405;
     response.body = "false";
 }
-void AgentAccessHandler::post_agent(const Value& args, HttpResponse& response,
-                                    const framework::Uuid& path_agent,
-                                    const std::optional<std::string>& caller_address) {
+
+void AgentAccessHandler::post_agent(const Value &args, HttpResponse &response, const framework::Uuid &path_agent,
+                                    const std::optional<std::string> &caller_address) {
     if (args.view().kind != Value::Kind::Map)
         throw std::invalid_argument("Agent post requires an OSD map");
     framework::EntityTransferContext context;
@@ -152,14 +158,13 @@ void AgentAccessHandler::post_agent(const Value& args, HttpResponse& response,
     auto circuit = std::make_shared<framework::AgentCircuitData>();
     try {
         circuit->unpack(args.view());
-    } catch (const std::exception&) {
+    } catch (const std::exception &) {
         response.status = 400;
         response.body = "false";
         return;
     }
-    if ((create_agent_ || home_agent_) &&
-        (circuit->agent_id != path_agent || circuit->session_id.is_zero() ||
-         circuit->secure_session_id.is_zero() || circuit->circuit_code == 0)) {
+    if ((create_agent_ || home_agent_) && (circuit->agent_id != path_agent || circuit->session_id.is_zero() ||
+                                           circuit->secure_session_id.is_zero() || circuit->circuit_code == 0)) {
         response.status = 400;
         response.body = "false";
         return;
@@ -178,7 +183,7 @@ void AgentAccessHandler::post_agent(const Value& args, HttpResponse& response,
     if (!service_ && !create_agent_ && !home_agent_)
         throw std::invalid_argument("Null simulation service");
     std::string reason;
-    const auto* origin = source ? &*source : nullptr;
+    const auto *origin = source ? &*source : nullptr;
     bool accepted;
     if (home_agent_) {
         services::GridRegion gatekeeper;
@@ -192,12 +197,10 @@ void AgentAccessHandler::post_agent(const Value& args, HttpResponse& response,
         const auto destination_uri = osd_string(args.get("destination_serveruri"));
         if (!destination_uri.empty())
             destination.set_server_uri(destination_uri);
-        accepted = home_agent_(origin, gatekeeper, destination, circuit, caller_address.value_or(""), context,
-                               reason);
+        accepted = home_agent_(origin, gatekeeper, destination, circuit, caller_address.value_or(""), context, reason);
     } else
-        accepted = create_agent_
-                       ? create_agent_(origin, destination, circuit, flags, context, reason)
-                       : service_->create_agent(origin, destination, circuit, flags, context, reason);
+        accepted = create_agent_ ? create_agent_(origin, destination, circuit, flags, context, reason)
+                                 : service_->create_agent(origin, destination, circuit, flags, context, reason);
     Value result = Value::object({});
     result.set("reason", reason);
     result.set("success", Value(accepted));
@@ -208,8 +211,9 @@ void AgentAccessHandler::post_agent(const Value& args, HttpResponse& response,
     response.body = osd_json(result);
     response.keep_alive = (flags & (128u | 1073741824u)) != 128u;
 }
-void AgentAccessHandler::query_access(const Value& args, HttpResponse& response, const framework::Uuid& agent,
-                                      const framework::Uuid& region) {
+
+void AgentAccessHandler::query_access(const Value &args, HttpResponse &response, const framework::Uuid &agent,
+                                      const framework::Uuid &region) {
     if (args.view().kind != Value::Kind::Map)
         throw std::invalid_argument("Access request requires an OSD map");
     bool teleport = true;
@@ -235,9 +239,7 @@ void AgentAccessHandler::query_access(const Value& args, HttpResponse& response,
     framework::EntityTransferContext context;
     if (args.contains("context") && args.get("context").view().kind == Value::Kind::Map)
         context.unpack(args.get("context").view());
-    auto read = [&](const char* key) {
-        return args.contains(key) ? static_cast<float>(osd_real(args.get(key))) : 0.f;
-    };
+    auto read = [&](const char *key) { return args.contains(key) ? static_cast<float>(osd_real(args.get(key))) : 0.f; };
     float provided_min = read("simulation_service_supported_min"),
           provided_max = read("simulation_service_supported_max"),
           required_min = read("simulation_service_accepted_min"),
@@ -263,13 +265,13 @@ void AgentAccessHandler::query_access(const Value& args, HttpResponse& response,
         }
     } else {
         if (provided_min > 0.8f || provided_max < 0.3f) {
-            fail("Your region provide protocol versions " + number(provided_min) + " - " +
-                 number(provided_max) + " and we accept only 0.3 - 0.8. No version overlap.");
+            fail("Your region provide protocol versions " + number(provided_min) + " - " + number(provided_max) +
+                 " and we accept only 0.3 - 0.8. No version overlap.");
             return;
         }
         if (required_min > 0.8f || required_max < 0.3f) {
-            fail("You require region protocol versions " + number(required_min) + " - " +
-                 number(required_max) + " and we provide only 0.3 - 0.8. No version overlap.");
+            fail("You require region protocol versions " + number(required_min) + " - " + number(required_max) +
+                 " and we provide only 0.3 - 0.8. No version overlap.");
             return;
         }
         outbound = std::min(provided_max, 0.8f);
@@ -277,7 +279,7 @@ void AgentAccessHandler::query_access(const Value& args, HttpResponse& response,
     }
     std::vector<framework::Uuid> features;
     if (args.contains("features") && args.get("features").view().kind == Value::Kind::Array)
-        for (const auto& value : args.get("features").view().array)
+        for (const auto &value : args.get("features").view().array)
             features.push_back(uuid(osd_string(value)));
     services::GridRegion destination;
     destination.id = region;
@@ -286,8 +288,7 @@ void AgentAccessHandler::query_access(const Value& args, HttpResponse& response,
     if (!service_)
         throw std::invalid_argument("Null simulation service");
     std::string reason;
-    bool accepted =
-        service_->query_access(destination, agent, home, teleport, position, features, context, reason);
+    bool accepted = service_->query_access(destination, agent, home, teleport, position, features, context, reason);
     result.set("success", Value(accepted));
     result.set("reason", reason);
     result.set("version", "SIMULATION/" + number(version));
@@ -295,10 +296,10 @@ void AgentAccessHandler::query_access(const Value& args, HttpResponse& response,
     result.set("negotiated_outbound_version", real(outbound));
     Value wanted;
     wanted.kind = Value::Kind::Array;
-    for (const auto& feature : features)
+    for (const auto &feature : features)
         wanted.array.emplace_back(feature.str());
     result.set("features", std::move(wanted));
     response.keep_alive = accepted;
     response.body = osd_json(result, true);
 }
-}
+} // namespace opensim::server

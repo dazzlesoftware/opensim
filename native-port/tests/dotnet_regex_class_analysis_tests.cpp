@@ -6,7 +6,8 @@
 #include <iostream>
 #include <sstream>
 using namespace opensim::framework;
-std::optional<std::u16string> dec(const std::string& s) {
+
+std::optional<std::u16string> dec(const std::string &s) {
     if (s == "-")
         return {};
     std::u16string text;
@@ -15,6 +16,7 @@ std::optional<std::u16string> dec(const std::string& s) {
             text.push_back(static_cast<char16_t>(std::stoul(s.substr(i, 4), nullptr, 16)));
     return text;
 }
+
 std::string hex(std::u16string_view s) {
     if (s.empty())
         return ".";
@@ -23,18 +25,21 @@ std::string hex(std::u16string_view s) {
         out << std::hex << std::setfill('0') << std::setw(4) << unsigned(c);
     return out.str();
 }
+
 std::string bit(bool b) {
     return b ? "1" : "0";
 }
-std::string capture(const std::function<std::string()>& f) {
+
+std::string capture(const std::function<std::string()> &f) {
     try {
         return f();
-    } catch (const DotnetRegexClassError& e) {
+    } catch (const DotnetRegexClassError &e) {
         std::ostringstream out;
         out << "E:" << e.source_type << ':' << std::hex << e.hresult << ':' << hex(utf16(e.what()));
         return out.str();
     }
 }
+
 int main() {
     for (std::string row; std::getline(std::cin, row);) {
         std::istringstream in(row);
@@ -49,19 +54,17 @@ int main() {
         DotnetRegexClassText set = storage ? DotnetRegexClassText(*storage) : std::nullopt;
         auto span = storage ? std::span<const char16_t>(*storage) : std::span<const char16_t>{};
         if (mode == "A") {
-            for (auto f : {dotnet_regex_class_mergeable, dotnet_regex_class_empty,
-                           dotnet_regex_class_singleton, dotnet_regex_class_singleton_inverse})
+            for (auto f : {dotnet_regex_class_mergeable, dotnet_regex_class_empty, dotnet_regex_class_singleton,
+                           dotnet_regex_class_singleton_inverse})
                 output.push_back(capture([&]() { return bit(f(set)); }));
             output.push_back(capture([&]() { return bit(dotnet_regex_class_negated(set)); }));
             output.push_back(capture([&]() { return bit(dotnet_regex_class_subtraction(set)); }));
-            output.push_back(
-                capture([&]() { return std::to_string(unsigned(dotnet_regex_singleton_char(set))); }));
+            output.push_back(capture([&]() { return std::to_string(unsigned(dotnet_regex_singleton_char(set))); }));
             output.push_back(capture([&]() {
                 auto r = dotnet_regex_analyze_class(set);
-                return bit(r.only_ranges) + "," + bit(r.contains_only_ascii) + "," +
-                       bit(r.contains_no_ascii) + "," + bit(r.all_ascii_contained) + "," +
-                       bit(r.all_non_ascii_contained) + "," + std::to_string(r.lower_bound) + "," +
-                       std::to_string(r.upper_bound);
+                return bit(r.only_ranges) + "," + bit(r.contains_only_ascii) + "," + bit(r.contains_no_ascii) + "," +
+                       bit(r.all_ascii_contained) + "," + bit(r.all_non_ascii_contained) + "," +
+                       std::to_string(r.lower_bound) + "," + std::to_string(r.upper_bound);
             }));
             char16_t lo = 0xaaaa, hi = 0xbbbb;
             auto first = capture([&]() { return bit(dotnet_regex_single_range(set, lo, hi)); });
@@ -69,16 +72,15 @@ int main() {
             DotnetRegexRange r0{0x1111, 0x2222}, r1{0x3333, 0x4444};
             first = capture([&]() { return bit(dotnet_regex_double_range(set, r0, r1)); });
             output.push_back(first + ":" + std::to_string(unsigned(r0.first)) + "," +
-                             std::to_string(unsigned(r0.last)) + "," + std::to_string(unsigned(r1.first)) +
-                             "," + std::to_string(unsigned(r1.last)));
+                             std::to_string(unsigned(r0.last)) + "," + std::to_string(unsigned(r1.first)) + "," +
+                             std::to_string(unsigned(r1.last)));
         } else if (mode == "K") {
             int capacity;
             in >> capacity;
             std::vector<std::int32_t> buffer(capacity, 0x76543210);
             int count = -7;
             bool negative = true;
-            auto value =
-                capture([&]() { return bit(dotnet_regex_only_categories(set, buffer, count, negative)); });
+            auto value = capture([&]() { return bit(dotnet_regex_only_categories(set, buffer, count, negative)); });
             value += ":" + std::to_string(count) + ":" + bit(negative) + ":";
             for (std::size_t i = 0; i < buffer.size(); ++i) {
                 if (i)
@@ -114,8 +116,7 @@ int main() {
                 first = dotnet_regex_chars_to_string_class(span);
                 second = dotnet_regex_chars_to_string_class(span);
                 return hex(*first) + ":" + bit(first == second) + ":" +
-                       bit(dotnet_regex_participates_in_case_conversion(span)) + ":" +
-                       bit(dotnet_regex_is_ascii(span));
+                       bit(dotnet_regex_participates_in_case_conversion(span)) + ":" + bit(dotnet_regex_is_ascii(span));
             }));
             if (span.size() == 1)
                 output.push_back(bit(first == dotnet_regex_one_to_string_class(span[0])));
@@ -147,8 +148,7 @@ int main() {
             unsigned a, b;
             in >> a >> b;
             int mask = -1;
-            bool result =
-                dotnet_regex_differ_by_one_bit(static_cast<char16_t>(a), static_cast<char16_t>(b), mask);
+            bool result = dotnet_regex_differ_by_one_bit(static_cast<char16_t>(a), static_cast<char16_t>(b), mask);
             output.push_back(bit(result) + ":" + std::to_string(mask));
         } else if (mode == "W") {
             std::string value;

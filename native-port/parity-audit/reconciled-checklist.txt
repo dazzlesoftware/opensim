@@ -1,0 +1,955 @@
+RECONCILED WINDOWS / LINUX PARITY CHECKLIST
+Date: 2026-11-24
+
+This is a source/evidence reconciliation, not a rerun of every feature. Full parity remains unverified.
+VERIFIED is restricted to the explicit preview flow. PARTIAL identifies implemented features with open behavior. AUDIT CANDIDATE and DISCOVERY retain uncertainty rather than inventing a missing feature.
+
+CORRECTIONS APPLIED
+- Simulator umbrella corrected from not_started to partial.
+- ExpiringCacheOS duplicate mappings merged without dropping scope or native files.
+- Baseline regenerated successfully: 1556 original files; 210 unique mapped files; 1346 unmapped.
+- Original required strings retained, but bounded preview supersessions indexed in requirement-reconciliation.json.
+- Full source target remains unchanged. This audit forecast excludes macOS.
+- Automatic clothes on both platforms are explicitly verified in preview-acceptance.json; earlier chat wording was incomplete.
+- previewAccepted remains false as an acceptance/signoff flag. Recorded individual passing results are preserved.
+- The November 24 follow-up distinguishes historical endpoint-switch diagnostics from ordinary fresh-login behavior.
+
+VERIFIED BOUNDED FLOWS
+
+fresh-account-entry
+Acceptance: Create new accounts through normal entry points; login without database repairs; required folders and CreateInventoryCategory work
+Windows: Isolated protocol checks pass. Both Preview First and Preview Second logged in through Firestorm 7.2.5.81788 on the isolated Windows preview
+Linux: Ubuntu 24.04 native preview passes fresh CLI account, inventory-folder, XML-RPC and UDP entry checks. Both Preview accounts also log in simultaneously through real Windows Firestorm connected to Linux Docker after fixing wildcard grid-discovery advertisement
+
+automatic-appearance
+Acceptance: Default clothes, appearance and baked textures are visible immediately after login without Edit Outfit
+Windows: Default clothes rendered automatically on both avatars, visible from both Firestorm sessions without Edit Outfit. Protocol checks verify own wearable IDs, outfit links and all six wearable assets. Separate protocol checks now pass baked texture upload and exact retrieval by the other account
+Linux: Both distinct avatars render default clothes automatically in both Windows Firestorm sessions against Linux, without Edit Outfit. Linux protocol checks also pass own wearable IDs, all six wearable assets and cross-account baked-texture upload/retrieval
+
+two-avatars
+Acceptance: Two distinct accounts stay connected, see each other, and have isolated account and inventory state
+Windows: Both distinct Firestorm accounts are simultaneously connected and each renders both named, clothed avatars. Second Only Preview Folder was created through Preview Second's inventory UI and is absent from Preview First's inventory search; protocol parent-folder isolation also passes
+Linux: Both Windows Firestorm sessions against Linux display both distinct named clothed avatars before and after restart. The copied object is visible only in its Second owner inventory and absent from First inventory search. Linux protocol checks also verify distinct account IDs and parent-folder isolation
+
+movement
+Acceptance: Both Firestorm avatars move normally and observe each other's movement
+Windows: Both avatars moved through Firestorm arrow-key controls with position changes and remote avatar movement observed in the other viewer using ubODE
+Linux: Verified with Windows Firestorm against Linux ubODE: user-held forward movement takes Second from about (128,128) to (133,129), and backward movement takes First from about (127,128) to (117,128). First renders Second at its displaced position; Second faces the nearest avatar and renders First at its new distant position. Human-assisted held inputs; rounded viewer coordinates
+
+building
+Acceptance: Create, rez, select, move, rotate, resize and edit basic objects through Firestorm
+Windows: Firestorm creates and selects a cube, renames it Preview Second Persistence Cube, sets width 1.25 m, Z position 22.5 m and Z rotation 45 degrees, and takes an inventory copy through Build > Object > Take Copy. User-assisted inventory drag rezzes a distinct new object, verified in the viewer and persisted scene. Isolated protocol take-copy test passes with Flotsam memory caching
+Linux: Verified through Windows Firestorm against Linux: create/select/name cube, width 1.25 m, position Z 22.5 m, Z rotation 45 degrees, Take Copy, and human-assisted normal inventory drag-to-world. Linux persistence confirms a distinct rezzed UUID, retained original and inventory item, correct Second owner, and identical scale/quaternion. Both viewers render both objects
+
+clean-restart
+Acceptance: Clean stop/start restores region objects, inventory and avatar state without repair
+Windows: Both Firestorm clients log out, server exits with STOPPED, and both log back in after restart. Three viewer-created objects retain UUIDs, names, owners and positions; the copied inventory item and Second Only Preview Folder reappear in the inventory UI; both avatars render clothed automatically. Isolated protocol check additionally verifies flushing an appearance update before its delayed save
+Linux: Both real Firestorm clients log out; Linux Docker server exits with STOPPED and code 0. Same volume restarts, both accounts relogin clothed and mutually visible, and both render the restored edited cube. Exact UUID/name/owner/position/scale/quaternion, inventory copy, appearance records and region cache ID survive. Second inventory displays its saved item; First search returns no item. Last avatar positions remain saved. No startup map warning Final follow-up clean restart preserves both exact cube transforms, inventory and appearance; two-account protocol check receives both restored objects and mutual avatar updates. No additional GUI Firestorm run for that final follow-up.
+
+login-reliability
+Acceptance: Repeated normal logins complete reliably without missing RegionHandshake
+Windows: Current build passes six base connected-region runs and six --raw-fps connected-region runs, plus five logout/fresh-session/UDP-handshake cycles per account in preview_entry_network. Historical timeout is not reproduced; root cause remains unconfirmed Installed runtime additionally passes 25 fresh-session UDP handshake cycles per account. Historical root cause remains unconfirmed.
+Linux: Current build passes --raw-fps connected-region check plus five logout/fresh-session/UDP-handshake cycles per account after clean restart. Both real Firestorm sessions also connect successfully Installed runtime additionally passes 25 fresh-session UDP handshake cycles per account. Historical root cause remains unconfirmed.
+
+REMAINING WORK PACKAGES
+
+WP-01 Admission and lifecycle [CONFIRMED PARTIAL]
+Native admission in_transit returns false; protected child lifecycle and exception/concurrent teardown need source-backed implementation/verification. Historical fixture endpoint switch remains unexplained, but ordinary fresh login/recovery passes on Windows and Linux.
+Evidence / discovery entry point: src/region_runtime.cpp; handshake-investigation.json; tests/admission_restart_tests.cpp
+
+WP-02 Scripting dispatch coverage [CONFIRMED AUDIT CANDIDATES]
+31 declared ll/os APIs have no literal dispatch reference in native src/include. Inspect each before claiming absence; full list in script-api-classification.json. Vehicle setters, ray casting, keyframed motion, dynamic textures and primitive setters are high-priority candidates.
+Evidence / discovery entry point: src/lsl_runtime.cpp; OpenSim/Region/ScriptEngine/Shared/Api/Interface
+
+WP-03 YEngine and script persistence [PARTIAL]
+Complete language/typing/diagnostics, event ordering, state transitions, API permissions/delays, task inventory mutation, restore/reset/restart and concurrent scheduling. Dispatch presence alone does not verify any of those.
+Evidence / discovery entry point: remaining-work.json: Connected native world and first script execution
+
+WP-04 Scene and geometry [PARTIAL]
+Complete entity lifecycle, linked parts, all primitive setters/getters, unquantized shape retention, attachment/seated transforms, permissions, deletion and lifetime.
+Evidence / discovery entry point: src/primitive_parameter_*.cpp; src/region_runtime.cpp
+
+WP-05 Physics [PARTIAL]
+Complete avatar/prim/mesh contacts, raycasts, vehicles, hover/buoyancy and source settings on supported physics backends. Preview proves a bounded ubODE path.
+Evidence / discovery entry point: remaining-work.json: Connected native world and first script execution
+
+WP-06 Land, estates and terrain [PARTIAL]
+Complete parcel/estate operations, permissions/groups, environment, terrain brushes, region settings and persistence beyond tested preview paths.
+Evidence / discovery entry point: src/region_runtime.cpp; legacy CoreModules/World and PhysicsModules files
+
+WP-07 Appearance and attachments [PARTIAL]
+Complete wearable/cache/animation/attachment/culling/provider and failure behavior. Automatic default clothes and basic persistence are already verified preview subsets on both servers.
+Evidence / discovery entry point: preview-acceptance.json; remaining-work.json: Avatar appearance and structured-data compatibility
+
+WP-08 Inventory and offers [PARTIAL]
+Remaining task/user/library/legacy transfers and permissions, actual viewer accept/decline, cross-grid offers, migrations and alternate providers. Fresh-folder and basic copy/rez flows are already verified.
+Evidence / discovery entry point: remaining-work.json: Inventory services and Offline instant messaging
+
+WP-09 Asset service and cache [PARTIAL]
+Complete remote/Hypergrid backends, codecs, alternate store migrations, production cache lifecycle/cleanup and corruption/concurrency cases. File-cache hosting is implemented in scoped form; do not retain blanket not-implemented claims.
+Evidence / discovery entry point: remaining-work.json: Native asset persistence; Baked texture uploads and asset cache
+
+WP-10 Profiles, groups, friends, messaging and economy [PARTIAL / DISCOVERY REQUIRED]
+Finish advanced profiles and scene adapters, groups and money integration, all legacy/Hypergrid/remote flows and viewer interoperation. Unmapped module classes require responsibility-level audit.
+Evidence / discovery entry point: remaining-work.json profile scopes; OpenSim/Addons/Groups; OptionalModules
+
+WP-11 Crossings and federation [PARTIAL]
+Complete agent/object crossings, multi-region lifecycle, all HomeAgent operations, native/managed Robust and other-grid interoperability. Native-grid round trips are verified subsets.
+Evidence / discovery entry point: remaining-work.json: Native Hypergrid travel; Inbound simulator agent handlers
+
+WP-12 Storage providers [PARTIAL]
+Complete required SQLite/MySQL/PostgreSQL schemas, migrations, connection options, provider lifetimes and all service implementations. Existing provider-specific live tests cover subsets.
+Evidence / discovery entry point: legacy OpenSim/Data; remaining-work.json provider scopes
+
+WP-13 HTTP, TLS and proxies [PARTIAL]
+Complete global sender installation, platform trust/revocation and error behavior, proxies/authentication, cancellation/stream/connection lifecycle and unsupported protocol paths. Component reports must be reconciled with current production bindings.
+Evidence / discovery entry point: remaining-work.json: Native outgoing HTTP shared handlers; latest certificate checkpoint fields
+
+WP-14 Configuration and deployment [PARTIAL]
+Full program-specific service/root/module wiring, configuration layering and native extension strategy. Legacy build/assembly metadata needs native equivalent or explicit rationale, not a C# line-for-line rewrite.
+Evidence / discovery entry point: prebuild.xml; native-port/CMakeLists.txt; remaining-work.json constructor/provider scopes
+
+WP-15 Archives, backups and tools [DISCOVERY / ACCEPTANCE REQUIRED]
+Inventory and verify OAR/IAR/region backups, console/admin/tool coverage and all persistence formats. A clean SQLite preview restart does not establish archive compatibility.
+Evidence / discovery entry point: legacy OptionalModules/Archivers and framework serialization; file-classification.json
+
+WP-16 Optional modules and external dependencies [DISCOVERY REQUIRED]
+Classify all optional modules and ignored addon/external dependencies and determine native replacements. Retain full feature scope unless the user explicitly excludes it.
+Evidence / discovery entry point: source-baseline.json limitations; file-classification.json
+
+WP-17 Windows/Linux acceptance matrix [PARTIAL]
+Attach revision, entry point, report and per-platform outcome to every implemented work item. Linux server acceptance currently uses Windows Firestorm clients. Keep snapshot evidence separate from later unpromoted changes.
+Evidence / discovery entry point: preview-acceptance.json; postPreviewFollowup; build-preview-release/20261124-preview1/evidence
+
+ALL 49 SCOPE DISPOSITIONS
+
+Offline instant messaging [PARTIAL / FULL PARITY UNVERIFIED]
+  01-01 [open_requires_scope_reconciliation]
+  Verify macOS runtime and SQL client discovery
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  01-02 [open_requires_scope_reconciliation]
+  Verify legacy provider migrations and connection-string options
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  01-03 [open_requires_scope_reconciliation]
+  Verify task inventory offer creation, cross-grid forwarding, and acceptance or decline in a real viewer
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+Successful viewer login [PARTIAL / FULL PARITY UNVERIFIED]
+Historical requirements for basic login/movement/automatic clothing/inventory/building/restart are superseded only for the bounded preview flows documented in preview-acceptance.json. Whole-subsystem and failure/concurrency/provider parity remains partial.
+  02-01 [preview_subset_superseded_full_scope_open]
+  Inventory root/skeleton/library and gestures
+  Disposition: Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json.
+  02-02 [open_requires_scope_reconciliation]
+  Grid-user and presence state with rollback
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  02-03 [open_requires_scope_reconciliation]
+  Destination-selector integration into admission, home-info synthesis and launch retry lifecycle
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  02-04 [open_requires_scope_reconciliation]
+  Agent circuit creation and simulator admission
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  02-05 [excluded_macos_only]
+  macOS timezone execution, remaining TimeZoneInfo/calendar edge cases and DNS/IDNA/socket compatibility; production response/capability integration and complete managed-model compatibility
+  Disposition: macOS excluded by user
+  02-06 [open_requires_scope_reconciliation]
+  Duplicate-presence recovery and region launch failure cleanup
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  02-07 [open_requires_scope_reconciliation]
+  Hypergrid/gatekeeper/user-agent routing
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  02-08 [preview_subset_superseded_full_scope_open]
+  MakeAgent appearance cloning/defaults, capability path and account service-URL persistence
+  Disposition: Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json.
+
+Viewer networking [PARTIAL / FULL PARITY UNVERIFIED]
+Historical requirements for basic login/movement/automatic clothing/inventory/building/restart are superseded only for the bounded preview flows documented in preview-acceptance.json. Whole-subsystem and failure/concurrency/provider parity remains partial.
+  03-01 [preview_subset_superseded_full_scope_open]
+  Scene and viewer handler integration
+  Disposition: Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json.
+  03-02 [preview_subset_superseded_full_scope_open]
+  Complete agent circuit serialization and appearance
+  Disposition: Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json.
+  03-03 [preview_subset_superseded_full_scope_open]
+  Agent movement, appearance, object and terrain updates
+  Disposition: Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json.
+  03-04 [preview_subset_superseded_full_scope_open]
+  Capabilities seed, event queues and asset/inventory transfer
+  Disposition: Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json.
+  03-05 [preview_subset_superseded_full_scope_open]
+  Cross-platform execution evidence for UDP and viewer sessions
+  Disposition: Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json.
+
+HTTP server parity [PARTIAL / FULL PARITY UNVERIFIED]
+  04-01 [open_requires_scope_reconciliation]
+  Original full handler registration and matching behavior
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  04-02 [open_requires_scope_reconciliation]
+  Trusted proxy/CIDR/XFF configuration
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  04-03 [open_requires_scope_reconciliation]
+  X-Content-Encoding alias
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  04-04 [open_requires_scope_reconciliation]
+  JSON-RPC and all LLSD representations
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  04-05 [open_requires_scope_reconciliation]
+  HTTP streaming/range/long-poll handlers and keep-alive parity
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  04-06 [open_requires_scope_reconciliation]
+  WebSockets
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  04-07 [open_requires_scope_reconciliation]
+  Grid statistics
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  04-08 [open_requires_scope_reconciliation]
+  TLS/gzip verification on all three platforms
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  04-09 [open_requires_scope_reconciliation]
+  JSON-RPC/SDK reader arbitrary depth, culture, options, managed interfaces/exception categories and general stream/header/disposal/concurrent delegate/host semantics; default native lexer/reader diagnostics now have direct source coverage. Outgoing JsonRpcRequestManager core and eight DTO bindings now have source/socket coverage; generic member/reflection/cache model, production module integration and full WebUtil transport semantics remain required.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+Account and authentication parity [PARTIAL / FULL PARITY UNVERIFIED]
+  05-01 [open_requires_scope_reconciliation]
+  Password impersonation
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  05-02 [open_requires_scope_reconciliation]
+  Generic GetAuthInfo/SetAuthInfo and remaining authentication administration
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  05-03 [open_requires_scope_reconciliation]
+  Remaining account lookup/search/update APIs and complete service/console lifecycle
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  05-04 [open_requires_scope_reconciliation]
+  Original authentication migrations and remaining provider schema versions
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  05-05 [open_requires_scope_reconciliation]
+  MySQL/PostgreSQL/null and remote providers
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  05-06 [open_requires_scope_reconciliation]
+  Full .NET regex and Unicode behavior
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  05-07 [open_requires_scope_reconciliation]
+  Original plugin/config loading
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  05-08 [open_requires_scope_reconciliation]
+  Remaining avatar providers, original plugin/migration lifecycle and optional CreateUser services
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+Remaining simulator and grid services [PARTIAL / FULL PARITY UNVERIFIED]
+The previous not_started label was stale. Preview acceptance proves bounded scene, physics, assets, inventory, appearance and persistence flows on Windows and Linux; broad module/API parity remains incomplete.
+  06-01 [open_requires_scope_reconciliation]
+  Scene graph and lifecycle
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  06-02 [open_requires_scope_reconciliation]
+  Physics and terrain simulation
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  06-03 [open_requires_scope_reconciliation]
+  Assets, inventory, estates and land
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  06-04 [open_requires_scope_reconciliation]
+  LSL/OSSL compilation/runtime and persistence
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  06-05 [open_requires_scope_reconciliation]
+  Avatar animation, attachments, physics and appearance
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  06-06 [open_requires_scope_reconciliation]
+  Messaging, friends, groups, profiles and economy integrations
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  06-07 [open_requires_scope_reconciliation]
+  Teleport/crossing and multi-region operation
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  06-08 [open_requires_scope_reconciliation]
+  Region backups, archives, save/load and settings
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  06-09 [open_requires_scope_reconciliation]
+  Hypergrid federation including remaining HomeAgent operations, interoperability and platform verification
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  06-10 [open_requires_scope_reconciliation]
+  Native/module and existing managed plugin compatibility
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  06-11 [open_requires_scope_reconciliation]
+  All optional modules, tools and tests from the baseline
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+Native Hypergrid travel [PARTIAL / FULL PARITY UNVERIFIED]
+No explicit required list exists. Add method/service/interoperability acceptance tasks; absence of an open list does not establish completion.
+
+Inventory services [PARTIAL / FULL PARITY UNVERIFIED]
+Historical requirements for basic login/movement/automatic clothing/inventory/building/restart are superseded only for the bounded preview flows documented in preview-acceptance.json. Whole-subsystem and failure/concurrency/provider parity remains partial.
+  08-01 [preview_subset_superseded_full_scope_open]
+  Remaining native inventory transfer/update/upload/task/legacy UDP handlers and service endpoints
+  Disposition: Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json.
+  08-02 [open_requires_scope_reconciliation]
+  Original migration/import execution and alternate providers
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  08-03 [open_requires_scope_reconciliation]
+  Remaining item/model interfaces, parser notation/binary/encoding/culture coverage, nullable collection members and provider failure/lifecycle paths
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  08-04 [preview_subset_superseded_full_scope_open]
+  Full inventory login/scene integration, permissions/assets/script/persistence lifecycle beyond scoped fetch paths
+  Disposition: Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json.
+  08-05 [open_requires_scope_reconciliation]
+  Complete shared Nini configuration behavior
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+Presence services [PARTIAL / FULL PARITY UNVERIFIED]
+  09-01 [open_requires_scope_reconciliation]
+  Linux/macOS runtime verification and broader legacy SQL schema and realm compatibility
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  09-02 [open_requires_scope_reconciliation]
+  Complete service/module registration and additional managed-grid deployment configurations
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  09-03 [open_requires_scope_reconciliation]
+  Full presence model wire serialization and provider/config loading
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  09-04 [open_requires_scope_reconciliation]
+  Login rollback and simulator admission integration
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+Grid-user services [PARTIAL / FULL PARITY UNVERIFIED]
+  10-01 [open_requires_scope_reconciliation]
+  Oracle MySQL, Linux/macOS and broader legacy schema verification
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  10-02 [open_requires_scope_reconciliation]
+  Complete service registration and full DateTime model representation
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  10-03 [open_requires_scope_reconciliation]
+  Console/configuration registration and remaining scene integration, including end-to-end viewer-to-physics water-relative hover coverage, broader variable-region coverage and cross-platform verification
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+Grid registry and region model [PARTIAL / FULL PARITY UNVERIFIED]
+  11-01 [open_requires_scope_reconciliation]
+  Full System.Uri and Unicode/culture host semantics, DNS cache/host-name classification edge cases and actual outbound Hypergrid linking
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  11-02 [open_requires_scope_reconciliation]
+  Complete original grid routing/stream handling, remote connectors and login/scene integration
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  11-03 [open_requires_scope_reconciliation]
+  Original service/module/console/configuration loading, shared root semantics and complete Unicode host/culture normalization
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  11-04 [open_requires_scope_reconciliation]
+  Original MySQL/PostgreSQL region providers and GridStore migrations; full provider-specific types/failures and collation
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  11-05 [open_requires_scope_reconciliation]
+  Full .NET Unicode/culture name comparison and equal-distance sort ordering for large result sets
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  11-06 [open_requires_scope_reconciliation]
+  Full model constructors, endpoint resolution and generic object-valued provider compatibility
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  11-07 [open_requires_scope_reconciliation]
+  Concurrency and cross-platform execution verification
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+Avatar appearance and structured-data compatibility [PARTIAL / FULL PARITY UNVERIFIED]
+Historical requirements for basic login/movement/automatic clothing/inventory/building/restart are superseded only for the bounded preview flows documented in preview-acceptance.json. Whole-subsystem and failure/concurrency/provider parity remains partial.
+  12-01 [preview_subset_superseded_full_scope_open]
+  Complete AvatarAppearance, texture entries, visual parameters, wearable cache and baked texture behavior
+  Disposition: Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json.
+  12-02 [open_requires_scope_reconciliation]
+  Avatar persistence/providers and MakeAgent clone/default construction
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  12-03 [open_requires_scope_reconciliation]
+  Generic structured-data JSON/LLSD/date parsing and complete SDK conversions
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  12-04 [open_requires_scope_reconciliation]
+  Resolve/document source unsafe short-binary integer-read compatibility
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  12-05 [open_requires_scope_reconciliation]
+  Windows/Linux/macOS execution, including architecture-specific numeric boundaries
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  12-06 [open_requires_scope_reconciliation]
+  Asset NRBF decode, asset XML serialization and complete SLUtil notecard/attachment-name helpers
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  12-07 [open_requires_scope_reconciliation]
+  Native asset-cache backend/providers, asset persistence/services/loaders
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+Friends services [PARTIAL / FULL PARITY UNVERIFIED]
+  13-01 [open_requires_scope_reconciliation]
+  FriendsServiceBase and server connector plugin/configuration lifecycle
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  13-02 [open_requires_scope_reconciliation]
+  Remaining HGFriendsService behavior, including cache lifecycle, live managed offer and status delivery, and session-bound creation originating from a managed simulator
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  13-03 [open_requires_scope_reconciliation]
+  General managed DTO/object/runtime semantics and generic storage API parity
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  13-04 [excluded_macos_only]
+  macOS execution and interactive viewer verification
+  Disposition: macOS excluded by user
+  13-05 [open_requires_scope_reconciliation]
+  Full remote transport redirect/compression/timeout/platform semantics and general XMLReader/form-helper edge compatibility
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+Inbound simulator agent handlers [PARTIAL / FULL PARITY UNVERIFIED]
+  14-01 [open_requires_scope_reconciliation]
+  Full AgentSimpleHandler ProcessRequest differential, remaining routing, host/auth/header/error semantics and stream disposal
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  14-02 [open_requires_scope_reconciliation]
+  Full ProcessRequest/HTTP/URI host semantics, full Util dispatch policy/metrics, old AgentPostHandler and HG variations
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  14-03 [open_requires_scope_reconciliation]
+  Native scene-backed QueryAccess and CreateAgent service binding
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  14-04 [open_requires_scope_reconciliation]
+  Agent updates, crossings, removal and actual viewer sessions
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  14-05 [open_requires_scope_reconciliation]
+  Full platform/runtime/culture/model coverage and Linux/macOS execution
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  14-06 [open_requires_scope_reconciliation]
+  Concrete object serializer/script restore/physics admission and actual inter-region object crossing; complete outgoing transport deadline/TLS/runtime/platform semantics
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  14-07 [open_requires_scope_reconciliation]
+  Concrete Caps integration with production listener/poll scheduler, GC finalization/concurrent disposal semantics, seed capability endpoint and all capability registrations; integrate with real scene/event/module/console lifecycles
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+Native asset persistence, migrations and connection compatibility [PARTIAL / FULL PARITY UNVERIFIED]
+  15-01 [open_requires_scope_reconciliation]
+  Remaining legacy asset codecs and hypergrid/remote asset providers; complete world/scene/service wiring
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  15-02 [open_requires_scope_reconciliation]
+  Additional Hypergrid asset backends and object XML edge-case comparison
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  15-03 [open_requires_scope_reconciliation]
+  Verify native and original Robust filesystem service interoperability on Linux and macOS
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  15-04 [open_requires_scope_reconciliation]
+  Other store resource migrations and original generic provider/static connection lifecycle
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  15-05 [open_requires_scope_reconciliation]
+  General ADO/custom provider lifecycle, resource IO, regex dialect/culture, arbitrary concurrency, GC and invalid UTF16 semantics
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  15-06 [open_requires_scope_reconciliation]
+  FullUri/open flags, pooling, remaining connection options, optional parser/environment settings and native plugin ABI/assembly compatibility
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  15-07 [open_requires_scope_reconciliation]
+  General HTTPS login network verification currently fails with observed AVG replacement certificate; preserve certificate verification
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  15-08 [open_requires_scope_reconciliation]
+  Actual Linux/macOS execution and complete application feature parity
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+Generic SQLite table APIs and avatar startup [PARTIAL / FULL PARITY UNVERIFIED]
+  16-01 [open_requires_scope_reconciliation]
+  Remaining providers integrated with shared generic handler and their source-compatible lifecycle
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  16-02 [open_requires_scope_reconciliation]
+  Arbitrary DTO/reflection and initialization/runtime exception behavior, declared DateTime/Decimal/GUID values, custom type/connection mappings and flags
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  16-03 [open_requires_scope_reconciliation]
+  Managed reader/GC/finalization and exact concurrent connection/command lock boundaries
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  16-04 [open_requires_scope_reconciliation]
+  Complete native assembly/plugin/configuration lifecycle and actual Linux/macOS execution
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+Grid-user provider startup and reference data model [PARTIAL / FULL PARITY UNVERIFIED]
+  17-01 [open_requires_scope_reconciliation]
+  Remaining service constructors/configuration, console and assembly/plugin lifecycle and alternate providers
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  17-02 [open_requires_scope_reconciliation]
+  Full GridUserInfo nullable/date/runtime projection and general managed DTO/concurrency/GC behavior
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  17-03 [open_requires_scope_reconciliation]
+  Other declared generic provider types and connection flags/options, full ADO reader lifetime/locking/concurrency
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  17-04 [open_requires_scope_reconciliation]
+  Actual Linux/macOS execution and complete simulator/world integration
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+User-account provider and executable bootstrap [PARTIAL / FULL PARITY UNVERIFIED]
+  18-01 [open_requires_scope_reconciliation]
+  Complete original user-account service constructor/root/configuration/module/console lifecycle and native/managed plugin compatibility
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  18-02 [open_requires_scope_reconciliation]
+  Complete independent provider/static connection lifecycle; current executable account/auth bootstrap shares a scoped connection facade
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  18-03 [open_requires_scope_reconciliation]
+  Remaining database providers and full CLR/ADO reflection/value/locking/reader/GC/concurrency/provider-option behavior
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  18-04 [open_requires_scope_reconciliation]
+  Actual Linux/macOS execution and full world/simulator integration
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+SQLite authentication provider and executable integration [PARTIAL / FULL PARITY UNVERIFIED]
+  19-01 [open_requires_scope_reconciliation]
+  Complete service constructor/root/configuration/assembly/plugin/console lifecycle
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  19-02 [open_requires_scope_reconciliation]
+  General CLR object/ADO date/GUID/decimal, exact diagnostic/exception text, reflection, reader/GC scheduling and concurrency parity
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  19-03 [open_requires_scope_reconciliation]
+  Alternate database providers, remaining authentication service variants and runtime integration
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  19-04 [open_requires_scope_reconciliation]
+  Actual Linux/macOS execution and full simulator/world integration
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+Authentication service administration and HTTP handlers [PARTIAL / FULL PARITY UNVERIFIED]
+  20-01 [open_requires_scope_reconciliation]
+  Complete dynamic connector/service/root/configuration/plugin lifecycle and generic substitutable service surface
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  20-02 [open_requires_scope_reconciliation]
+  Complete remote connector/runtime lifecycle, OpenID, authorization and remaining service variants/providers
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  20-03 [open_requires_scope_reconciliation]
+  Exact logging/counters/full stream/HTTP dispatch/runtime/concurrency behavior and actual Linux/macOS execution
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  20-04 [open_requires_scope_reconciliation]
+  Complete simulator/world integration and whole-application feature parity
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+Remote authentication connector and executable service selection [PARTIAL / FULL PARITY UNVERIFIED]
+  21-01 [open_requires_scope_reconciliation]
+  Complete original connector/service/plugin/root/configuration lifecycle and generic native polymorphic service interface
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  21-02 [open_requires_scope_reconciliation]
+  Full managed/global HTTP client configuration, adaptive timeout/cancellation, auth/logger/URI/stream/concurrency and error-text semantics
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  21-03 [open_requires_scope_reconciliation]
+  Remaining authentication variants, OpenID/authorization, other providers and full simulator/world integration
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  21-04 [open_requires_scope_reconciliation]
+  Actual Linux/macOS execution and whole application feature/behavior parity
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+REST form response headers and body lifetime [PARTIAL / FULL PARITY UNVERIFIED]
+  22-01 [open_requires_scope_reconciliation]
+  Complete original global factory lifecycle, connect/header/body timeout separation, proxy/TLS/pool behavior and remaining settings
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  22-02 [open_requires_scope_reconciliation]
+  Original adaptive receive timeout/cancellation and streaming after ResponseHeadersRead rather than current fixed total deadline
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  22-03 [open_requires_scope_reconciliation]
+  Remaining requester verbs/overloads, exact logging/error text, full header/parser/runtime/concurrency semantics and actual Unix execution
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  22-04 [open_requires_scope_reconciliation]
+  Whole simulator/world/module feature parity
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  22-05 [open_requires_scope_reconciliation]
+  Audit manual send(Request) callers such as OSD/simulation for deadline origin and header/body timeout separation
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+Form requester compression and redirect defaults [PARTIAL / FULL PARITY UNVERIFIED]
+  23-01 [open_requires_scope_reconciliation]
+  Complete global factory/client/pool/proxy/TLS lifecycle and settings, adaptive cancellation and remaining timeout/header/URI/parser/error semantics
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  23-02 [open_requires_scope_reconciliation]
+  Complete requester verbs/overloads and other transport users, general concurrency/runtime and actual Linux/macOS execution
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  23-03 [open_requires_scope_reconciliation]
+  Full simulator/world/module/provider feature and behavior parity
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+Connected native world and first script execution [PARTIAL / FULL PARITY UNVERIFIED]
+Historical requirements for basic login/movement/automatic clothing/inventory/building/restart are superseded only for the bounded preview flows documented in preview-acceptance.json. Whole-subsystem and failure/concurrency/provider parity remains partial.
+  24-01 [preview_subset_superseded_full_scope_open]
+  Resolve the intermittent Windows connected-region startup failure where login and UseCircuitCode receipt acknowledgment succeed but the first RegionHandshake is missing. Earlier circuit traces show a handshake sent without a send error to one viewer endpoint, followed by the same agent from a second endpoint. Windows UDP ownership identified two viewer_session_probe.exe processes with the same fixture parent; the extra launch remains unexplained. The first regression after implementing source-compatible replacement still fails in 47.08 seconds (failure-server-32276-threads.txt), so the replacement change is not a demonstrated fix. Verify the complete original scene/circuit/capability/presence lifecycle, including failed replacement and protected child agents, rather than accepting a second endpoint by bypassing teardown. Continue using preserved image/map and thread captures. Process tracing can be controlled independently: OPENSIM_TRACE_PROCESS_LAUNCHES=1 enables it without circuit tracing, and =0 disables it even when OPENSIM_TRACE_CIRCUITS=1. Windows repetition passes do not establish resolution; Linux/macOS runtime and actual viewer verification remain required.
+  Disposition: Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json.
+  24-02 [preview_subset_superseded_full_scope_open]
+  Real viewer rendering/interaction verification and actual Windows/Linux/macOS platform execution; full authoritative physics including avatar/prim/mesh contacts, rays, hover/buoyancy and source scheduler/settings.
+  Disposition: Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json.
+  24-03 [open_requires_scope_reconciliation]
+  Complete scene/entity/linked-part/object properties, selection, packet handlers, geometry raycasts, permission/estate/parcel/group/preference modules, persistence and region lifecycle.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  24-04 [preview_subset_superseded_full_scope_open]
+  Complete all primitive-parameter setters and fully verify the bound getter APIs. Verify attachment, mouselook and seated-avatar transforms against original source, complete module/permission and concurrent scene/object lifetime behavior, full boxed-key/culture/UTF16 conversion fidelity and actual viewer execution on all three platforms. Preserve unquantized shape fields from script edits and archive XML rather than reconstructing every value only from quantized extra-parameter wire bytes; verify missing-wearer attachment group-position fallback and retained deleted-object state.
+  Disposition: Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json.
+  24-05 [open_requires_scope_reconciliation]
+  Preserve key versus string and other boxed CLR list-value distinctions required by source list conversions, with culture, invalid UTF16 and concurrent mutation verification.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  24-06 [preview_subset_superseded_full_scope_open]
+  Complete task/user/library inventory, xfer/script uploads/editing/permissions, source-compatible YEngine lexer/parser/typed semantics/backend, all LSL APIs/events/detection/scheduler/state save/restart. Source-backed inventory item/folder cores are partial; runtime integration and full viewer browsing remain pending.
+  Disposition: Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json.
+  24-07 [preview_subset_superseded_full_scope_open]
+  AvatarFactory baking/cache/save, full animation sets/overrides/events, wearables/appearance input handling, attachments/culling and complete client state.
+  Disposition: Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json.
+  24-08 [preview_subset_superseded_full_scope_open]
+  Crossings/teleports/HG, optional modules/providers and complete migration parity; retain full original inventory until proven complete.
+  Disposition: Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json.
+  24-09 [preview_subset_superseded_full_scope_open]
+  Full YEngine language/runtime and exact compiler diagnostics; source-backed start/stop/reset core still needs native engine/protocol binding. Complete task inventory mutation/types/permissions/persistence and property queue batching remain pending.
+  Disposition: Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json.
+  24-10 [preview_subset_superseded_full_scope_open]
+  Complete root/linkset script-event physics aggregation, pass-touch/surface data, the email module and LSL events, full script-state transitions and concurrent CLR-equivalent scheduling. Verify target event ordering across scripts and linksets, target cleanup on live reset and linkset changes, and macOS runtime behavior.
+  Disposition: Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json.
+  24-11 [preview_subset_superseded_full_scope_open]
+  Finish admission lifecycle verification. Production RegionRuntime now configures a background admission lane by default; Startup async_call_method None/RegressionTest retains inline execution. Queue FIFO/error recovery, queued-work cancellation, active-work shutdown, worker self-close/destruction, viewer ownership release and continued packet ACK reception during blocked admission pass focused Windows tests. Runtime stop/restart generation checks are implemented but need dedicated verification. The large connected fixture still intermittently loses its first handshake; the isolated fresh preview fixture passes raw and native viewer handshakes. Moving an existing session to another UDP endpoint reproduces teardown removing its circuit before re-admission; keep this diagnostic distinct from ordinary fresh login. Prioritize preview-acceptance.json. Full source scheduling policies, protected child-agent close refusal, capability/presence cleanup races, exhaustive exception/concurrency/clock behavior, real viewers and Windows/Linux/macOS runtime parity remain incomplete.
+  Disposition: Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json.
+
+Baked texture uploads and asset cache [PARTIAL / FULL PARITY UNVERIFIED]
+Historical requirements for basic login/movement/automatic clothing/inventory/building/restart are superseded only for the bounded preview flows documented in preview-acceptance.json. Whole-subsystem and failure/concurrency/provider parity remains partial.
+  25-01 [preview_subset_superseded_full_scope_open]
+  Complete cache initializer/configuration/console, full protected-scene asset graph gathering, production heap provider and timed cleanup integration/default-asset commands, file-backed production hosting and all module-manager/provider/platform behavior
+  Disposition: Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json.
+  25-02 [open_requires_scope_reconciliation]
+  Original shared upload module configuration, registration/removal and cache lifetime
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  25-03 [preview_subset_superseded_full_scope_open]
+  Bind actual production HTTP uploads and asset retrieval without inventory/service persistence of local temporary bakes
+  Disposition: Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json.
+  25-04 [preview_subset_superseded_full_scope_open]
+  Real30-second expiry, shutdown ownership, retained handlers, concurrent requests and all three platforms
+  Disposition: Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json.
+  25-05 [preview_subset_superseded_full_scope_open]
+  Complete UuidGatherer live scene traversal and remaining corrupt/unsafe serialized-object behavior; integrate fully protected gathering into file-cache cleanup; HG gatherer and all platform/runtime behavior
+  Disposition: Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json.
+  25-06 [preview_subset_superseded_full_scope_open]
+  Bind live asset-gather scene/part/geometry/environment/enumerator providers and status-file I/O to complete production world hosting; implement touch/count/config/console/heap cleanup integration and HG gathering on all platforms
+  Disposition: Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json.
+  25-07 [preview_subset_superseded_full_scope_open]
+  Compose maintenance/status/touch/count with production scene providers, initializer and console, shared file-cache lifecycle and native heap cleanup integration on all three platforms
+  Disposition: Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json.
+
+Console parsing and command manager [PARTIAL / FULL PARITY UNVERIFIED]
+  26-01 [open_requires_scope_reconciliation]
+  Full console registration, resolution, help, completion and Local/Remote/Mock console behavior
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  26-02 [open_requires_scope_reconciliation]
+  General input encoding and Windows/Linux/macOS execution
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  26-03 [open_requires_scope_reconciliation]
+  Remote composite-format Output overloads, complete logging integration, native console client, and observed macOS execution
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  26-04 [open_requires_scope_reconciliation]
+  Complete log4net layout/filter/threshold/ANSI lifecycle, exception stack rendering and category-only inventory log message formatting
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+Native runtime utility and configuration compatibility [PARTIAL / FULL PARITY UNVERIFIED]
+  27-01 [open_requires_scope_reconciliation]
+  Remaining Nini document/includes/expansion/merge/events and other caller cultures
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  27-02 [open_requires_scope_reconciliation]
+  Complete native container/registration/date/culture/provider binding for Flotsam production hosting
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  27-03 [open_requires_scope_reconciliation]
+  Execute corrected Unix path/getcwd and file API code on actual Linux/macOS; preserve unverified localized/HRESULT/inner-error cases
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+Configuration stream encoding and Unicode diagnostics [PARTIAL / FULL PARITY UNVERIFIED]
+  28-01 [open_requires_scope_reconciliation]
+  Complete default native file/byte-stream text adapters, including buffering/encoding/locks/errors
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  28-02 [open_requires_scope_reconciliation]
+  Complete Nini configuration includes/expansion/merge/events and original host lifecycle
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  28-03 [open_requires_scope_reconciliation]
+  Execute reader/document/file I/O on actual Linux/macOS and preserve remaining OS/error differences
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+User profiles JSON-RPC service [PARTIAL / FULL PARITY UNVERIFIED]
+  29-01 [open_requires_scope_reconciliation]
+  Complete managed reflection/identity/null/diagnostic behavior and macOS execution
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  29-02 [open_requires_scope_reconciliation]
+  HTTP listener persistence/timeout/header behavior remains partial: observed backend100-request closure differs from original20-request context policy; profile fixture intentionally reconnects every50 requests, and does not verify this limit
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  29-03 [open_requires_scope_reconciliation]
+  Port MySQL/PGSQL profile providers and complete generic native plugin registry/resolution
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  29-04 [open_requires_scope_reconciliation]
+  Port source avatar profile modules, cache, client/viewer requests and remote paths; source local-region service connector and native SQLite HTTP binding are now implemented
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  29-05 [open_requires_scope_reconciliation]
+  Complete ADO field casts/error/connection/culture/concurrency and GC/lifetime/logging behavior; native host reader collection ticks do not reproduce arbitrary CLR collection timing
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  29-06 [open_requires_scope_reconciliation]
+  Verify profile behavior on macOS and complete simulator feature parity
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  29-07 [open_requires_scope_reconciliation]
+  Complete advanced UserProfileModule, UserProfileCacheEntry, groups, HG/local queues, profile edits/interests/picks/classified viewer flows; basic fallback request/reply path is now implemented
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+Advanced profile viewer packet projection [PARTIAL / FULL PARITY UNVERIFIED]
+  30-01 [open_requires_scope_reconciliation]
+  Wire advanced UserProfileModule handlers, caches, asynchronous local/HG requests and all update/read workflows to admitted clients and actual profile service.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  30-02 [open_requires_scope_reconciliation]
+  Bind advanced profile callbacks to scene/client, routing, caches, remote/local/HG services and EventQueue.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  30-03 [open_requires_scope_reconciliation]
+  Run macOS and full viewer feature parity.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+Advanced profile module lifecycle [PARTIAL / FULL PARITY UNVERIFIED]
+  31-01 [open_requires_scope_reconciliation]
+  Implement concrete advanced client handler subscriptions, profile caches, local/HG queues, owner routing and all profile read/update operations.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  31-02 [open_requires_scope_reconciliation]
+  Install full controller in actual scene/runtime admission/teardown and wire real storage/HTTP/UDP/EventQueue workflows.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  31-03 [open_requires_scope_reconciliation]
+  Verify macOS/full simulator parity.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+Advanced notes/preferences controller [PARTIAL / FULL PARITY UNVERIFIED]
+  32-01 [open_requires_scope_reconciliation]
+  Wire controller to actual admitted viewer generic/notes/preferences callbacks through the complete advanced module.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  32-02 [open_requires_scope_reconciliation]
+  Complete all remaining advanced profile caches, asynchronous queues, properties, interests, picks and classifieds operations and module lifecycles.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  32-03 [open_requires_scope_reconciliation]
+  Verify full viewer/application/macOS parity.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+ExpiringCacheOS [PARTIAL / FULL PARITY UNVERIFIED]
+  33-01 [open_requires_scope_reconciliation]
+  Bind full UserProfileCacheEntry and canonical group model into actual advanced module.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  33-02 [open_requires_scope_reconciliation]
+  Verify arbitrary custom key/comparer callbacks, adversarial concurrent disposal/scheduling and managed lifetime boundaries.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  33-03 [open_requires_scope_reconciliation]
+  Execute macOS parity.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+Cached profile picks workflows [PARTIAL / FULL PARITY UNVERIFIED]
+  34-01 [open_requires_scope_reconciliation]
+  Complete remaining profile classifieds/pick detail/update/delete, interests/properties, groups and asynchronous local/HG operations.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  34-02 [open_requires_scope_reconciliation]
+  Wire all source client events/generic handlers and real scene services through complete advanced module to admitted sessions.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  34-03 [open_requires_scope_reconciliation]
+  Verify custom managed equality/GC/race boundaries and macOS/full application parity.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+Cached profile classified lists [PARTIAL / FULL PARITY UNVERIFIED]
+  35-01 [open_requires_scope_reconciliation]
+  Implement ClassifiedInfoRequest interest consumption, detail/foreign asset handling, classified updates/deletes and remaining profile operations.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  35-02 [open_requires_scope_reconciliation]
+  Complete source waiting-client HashSet ordering, full advanced module subscriptions/scene services and admitted viewer dispatch.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  35-03 [open_requires_scope_reconciliation]
+  Verify whole application/macOS parity.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+Classified details and deletion controller [PARTIAL / FULL PARITY UNVERIFIED]
+  36-01 [open_requires_scope_reconciliation]
+  ClassifiedInfoUpdate including scene/parcel/money behavior; full advanced scene/client runtime binding and all remaining profile operations.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  36-02 [open_requires_scope_reconciliation]
+  Execute and verify on macOS; demonstrate full application parity.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+Classified update controller [PARTIAL / FULL PARITY UNVERIFIED]
+  37-01 [open_requires_scope_reconciliation]
+  Wire scene/land/money/client adapters into the complete advanced module runtime; complete other advanced profile handlers, queues, groups, permissions and world integration.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  37-02 [open_requires_scope_reconciliation]
+  Execute on macOS and verify the complete simulator.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+Pick deletion controller [PARTIAL / FULL PARITY UNVERIFIED]
+  38-01 [open_requires_scope_reconciliation]
+  Wire the implemented pick detail/update/delete controllers into complete advanced scene/client/event handling.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  38-02 [open_requires_scope_reconciliation]
+  Full advanced profile module subscriptions and scene/client callbacks; full application/macOS verification.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+Pick detail vector and parcel prerequisites [PARTIAL / FULL PARITY UNVERIFIED]
+  39-01 [open_requires_scope_reconciliation]
+  Wire implemented pick proxy/grid/scene and client callbacks into the complete advanced region module.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  39-02 [open_requires_scope_reconciliation]
+  Complete advanced scene/grid/client callbacks and full simulator/macOS verification.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+Pick detail controller and Hypergrid proxy mapping [PARTIAL / FULL PARITY UNVERIFIED]
+  40-01 [open_requires_scope_reconciliation]
+  full concrete advanced module scene/grid/client adapters, events, properties, groups, async queues and cache waiting-client semantics.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  40-02 [open_requires_scope_reconciliation]
+  Full simulator and macOS execution/verification.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+Pick creation and editing controller [PARTIAL / FULL PARITY UNVERIFIED]
+  41-01 [open_requires_scope_reconciliation]
+  Avatar properties/interests/account/profile/group/friend helpers and async request processing.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  41-02 [open_requires_scope_reconciliation]
+  Integrate the source-verified waiting-client reference set into async broadcasting and full advanced scene/client/event adapters.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  41-03 [open_requires_scope_reconciliation]
+  Full simulator and macOS execution/verification.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+Waiting profile client collection [PARTIAL / FULL PARITY UNVERIFIED]
+  42-01 [open_requires_scope_reconciliation]
+  Use the collection in completed asynchronous profile request queues/broadcasts; full advanced module runtime.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  42-02 [open_requires_scope_reconciliation]
+  Arbitrary managed equality/comparers, GC timing, unused HashSet APIs and complete simulator/macOS remain unverified.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+Advanced profile asynchronous requests and updates [PARTIAL / FULL PARITY UNVERIFIED]
+  43-01 [open_requires_scope_reconciliation]
+  Actual user-agent and legacy OpenProfile transports.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  43-02 [open_requires_scope_reconciliation]
+  Bind concrete advanced scene/client/account/friends/groups adapters, lifecycle and events into production host.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  43-03 [open_requires_scope_reconciliation]
+  Complete simulator feature parity and native macOS execution.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+Legacy OpenProfile client [PARTIAL / FULL PARITY UNVERIFIED]
+  44-01 [open_requires_scope_reconciliation]
+  Port XMLRPCRequester and bundled Nwc.XmlRpc serialization/parser/HTTP semantics with source and wire comparisons.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  44-02 [open_requires_scope_reconciliation]
+  Bind real legacy fallback and user-agent transport into advanced profile host adapters.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  44-03 [open_requires_scope_reconciliation]
+  Complete native macOS execution and full simulator feature parity.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+Bundled Nwc XML-RPC response codec [PARTIAL / FULL PARITY UNVERIFIED]
+  45-01 [open_requires_scope_reconciliation]
+  Exact Nwc request and response serializers and XMLRPCRequester HTTP/log/timing behavior.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  45-02 [open_requires_scope_reconciliation]
+  Bind remote legacy/user-agent and full advanced host service/client adapters.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  45-03 [open_requires_scope_reconciliation]
+  Full simulator Windows/Linux/macOS parity remains unverified.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+Bundled Nwc XML-RPC wire serialization [PARTIAL / FULL PARITY UNVERIFIED]
+  46-01 [open_requires_scope_reconciliation]
+  Real Nwc Request.Send and XMLRPCRequester HTTP/log/timing, then user-agent and full advanced host wiring.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  46-02 [open_requires_scope_reconciliation]
+  Remaining general object/collection/culture/Hashtable behavior and Windows/Linux/macOS simulator feature parity.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+Live XML-RPC text response bridge [PARTIAL / FULL PARITY UNVERIFIED]
+  47-01 [open_requires_scope_reconciliation]
+  Actual Nwc HTTP POST/response-stream client, XMLRPCRequester global handler/logging/timing and full legacy/user-agent/native advanced-module wiring.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  47-02 [open_requires_scope_reconciliation]
+  Full simulator parity across Windows/Linux/macOS remains unproved.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+Native Nwc HTTP POST and legacy network flow [PARTIAL / FULL PARITY UNVERIFIED]
+  48-01 [open_requires_scope_reconciliation]
+  Complete global WebUtil/XMLRPCRequester client pooling, TLS/proxy/credentials, logging/timing/counter/disposal behavior and production advanced binding.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  48-02 [open_requires_scope_reconciliation]
+  Full simulator Windows/Linux/macOS feature parity remains unverified.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+Native outgoing HTTP shared handlers [PARTIAL / FULL PARITY UNVERIFIED]
+  49-01 [open_requires_scope_reconciliation]
+  Complete source global SetupHTTPClients/GetNewGlobalHttpClient/GetGlobalNoRedirHttpClient ownership, replacement and separate noRedirect handler lifecycle
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  49-02 [open_requires_scope_reconciliation]
+  TLS protocol, certificate-chain and hostname policies with native platform trust; Windows/Linux/macOS execution
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  49-03 [open_requires_scope_reconciliation]
+  Proxy/credentials pooling, connection keys, CONNECT/SOCKS/TLS/authorization transports and source provider lifecycle
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  49-04 [open_requires_scope_reconciliation]
+  Complete connect/write/headers/queue/total-request cancellation and cross-platform exception translation
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  49-05 [open_requires_scope_reconciliation]
+  General concurrent stream disposal/drain boundaries and full BCL property/argument semantics
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  49-06 [open_requires_scope_reconciliation]
+  Replace legacy default OSD sender only after production policy/factory behavior is verified
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  49-07 [open_requires_scope_reconciliation]
+  Full simulator/service/module installation and macOS end-to-end parity
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  49-08 [open_requires_scope_reconciliation]
+  Install the shared factory in actual host startup with original program-specific defaults, bind all callers and replace the legacy default OSD sender only after production trust/proxy/error policies are verified
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  49-09 [open_requires_scope_reconciliation]
+  Verify controlled Windows TLS in an environment preserving the fixture certificate; AVG replacement makes this matrix unavailable here
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  49-10 [open_requires_scope_reconciliation]
+  TLS1.0/1.1 negotiation, platform default trust/revocation/inner error semantics and TLS Host/SNI overrides
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  49-11 [open_requires_scope_reconciliation]
+  TLS and proxy connection reuse/limits/expiration, TLS pending application/control records, credentials and session lifecycle
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  49-12 [open_requires_scope_reconciliation]
+  Cancel connect, write and TLS handshakes; complete generic buffered/content/header and client mutation APIs
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  49-13 [open_requires_scope_reconciliation]
+  Complete proxy/credential pooling, TLS Host/SNI and nonstandard control/renegotiation/client-certificate behavior; native platform trust and host/global default sender installation; controlled Windows TLS and macOS execution remain unverified.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  49-14 [open_requires_scope_reconciliation]
+  Complete intermediate CONNECT response body drain/cookies and nested ProxyConnect socket reuse, challenge authentication/default identities, TLS proxies/SOCKS, TLS Host/SNI override and native trust/error/general cancellation semantics. Actual default OSD sender/main factory installation and full macOS/simulator parity remain required.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  49-15 [open_requires_scope_reconciliation]
+  Complete native platform chain/revocation/inner-error policy and actual Windows/macOS TLS verification; Host/SNI core and Windows name policy are now source-backed, but cipher/session/renegotiation/cancellation/client-cert and general HTTP/header lifecycle remain incomplete. Install verified shared factory into main and replace legacy default OSD sender; complete nested CONNECT/auth/SOCKS/TLS-proxy and simulator integration.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  49-16 [open_requires_scope_reconciliation]
+  Finish Linux/macOS native default chain stores/AIA/application policy and runtime error details, actual main/global factory/OSD sender installation, Windows controlled live trust and revocation/session/cancellation/client-certificate behavior; the Windows offline NoCheck/chain/name core is now source-backed.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  49-17 [open_requires_scope_reconciliation]
+  Bind the new native CertificatePolicyChain into the Linux native chain processor after actual path construction, with peer/PAL extension extraction and source-compatible system/user roots, intermediates, caches/AIA and error/inner-error policy; it is not yet installed in TLS.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  49-18 [open_requires_scope_reconciliation]
+  Bind the new NoCheck Linux chain evaluator to actual source-compatible root/CA/My store loading/classification/caching and AIA download orchestration, status/inner-error messages and native TLS provider, then real main/global factory/default OSD sender installation; currently it consumes explicit snapshots only.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+  49-19 [open_requires_scope_reconciliation]
+  Install and verify the native Linux NoCheck chain path in default live TLS and shared sender; preserve WebUtil flag masking, error/callback ordering and independent AIA proxy/client settings. Implement source revocation modes wherever consumed, and preserve AUX through any remaining store boundaries.
+  Disposition: Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level.
+
+CLASSIFICATION OF ALL 1346 PREVIOUSLY UNMAPPED FILES
+no_direct_native_evidence_found: 851
+validation_or_replacement_obligation: 283
+native_symbol_candidate_requires_method_audit: 183
+original_source_referenced_by_native_tests: 29
+Every file has source hash, declared types, domain, evidence/candidates and next action in file-classification.json.
+Text citations/symbol matches are discovery evidence. Alternative names/shared implementations may evade the search. None is a completion claim.
+
+SCRIPT API DISPATCH CANDIDATES
+llCastRay | OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs
+llGodLikeRezObject | OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs
+llRemoveVehicleFlags | OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs
+llRezObjectWithParams | OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs
+llSetKeyframedMotion | OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs
+llSetLinkPrimitiveParams | OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs
+llSetLinkPrimitiveParamsFast | OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs
+llSetPrimitiveParams | OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs
+llSetVehicleFlags | OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs
+llSetVehicleFloatParam | OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs
+llSetVehicleRotationParam | OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs
+llSetVehicleType | OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs
+llSetVehicleVectorParam | OpenSim/Region/ScriptEngine/Shared/Api/Interface/ILSL_Api.cs
+osAESDecrypt | OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs
+osAESDecryptFrom | OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs
+osAESEncrypt | OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs
+osAESEncryptTo | OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs
+osConsoleCommand | OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs
+osEjectFromGroup | OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs
+osFormatString | OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs
+osGetDrawStringSize | OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs
+osInviteToGroup | OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs
+osSetDynamicTextureData | OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs
+osSetDynamicTextureDataBlend | OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs
+osSetDynamicTextureDataBlendFace | OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs
+osSetDynamicTextureDataFace | OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs
+osSetDynamicTextureURL | OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs
+osSetDynamicTextureURLBlend | OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs
+osSetDynamicTextureURLBlendFace | OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs
+osSetPrimitiveParams | OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs
+osTeleportObject | OpenSim/Region/ScriptEngine/Shared/Api/Interface/IOSSL_Api.cs
+
+ETA
+Full-parity ETA is not estimable with defensible confidence yet. The prior 2-4 month range is not validated by this audit.
+The preview is available now. Full parity requires feature/method review for 903 unmapped production files, 142 unmapped interfaces and 18 bundled-dependency files, plus replacement/validation decisions for 283 legacy test/tool/metadata files. These are classification counts, not implementation tasks or completion percentages.
+First estimate each WP as implementation, integration, platform validation and unknown discovery separately. Measure actual closure rate. Add a calendar forecast only after discovery tasks become bounded acceptance tasks.
+Do not assign weeks from C# file counts. One API may consume several original files, while one original API implementation file can contain hundreds of functions.
+
+VALIDATION
+All tracked original C# files classified exactly once; explicit map native files checked for existence; baseline regeneration passes after duplicate repair; original required text preserved. Source inspection confirms admission in_transit stub. Existing preview/package evidence files checked for availability. No simulator behavior or TestBuild databases changed by this audit.
+
+METHOD REVIEW FOLLOW-UP
+See method-review.txt for tested compiler results and original method dependencies. All 770 declared script overloads were tested on Windows and Linux; 737 accepted, 33 rejected. These replace the earlier 31-name discovery candidates with actual compiler evidence. Three partial consolidated mappings were added; current baseline is 213 mapped and 1343 unmapped. Two lifecycle stubs and four production hooks are recorded in confirmed-method-gaps.json. No full-project semantic completion claim is made.

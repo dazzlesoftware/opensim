@@ -4,6 +4,7 @@
 #include "opensim/network/lludp.hpp"
 #include "opensim/framework/quaternion_text.hpp"
 #include <array>
+
 namespace opensim::scene {
 struct AvatarUpdate {
     framework::Uuid id;
@@ -16,8 +17,9 @@ struct AvatarUpdate {
     std::string first_name, last_name, group_title;
     bool flying = false, sitting = false, hide_title = false;
 };
+
 // Active LLClientView CreateAvatarUpdateBlock(LLUDPZeroEncoder) projection.
 // Position is the source OffsetPosition; parent_id is the parent GROUP local ID.
-network::lludp::Packet avatar_object_update(const AvatarUpdate& avatar, std::uint64_t region_handle,
+network::lludp::Packet avatar_object_update(const AvatarUpdate &avatar, std::uint64_t region_handle,
                                             float time_dilation);
-}
+} // namespace opensim::scene

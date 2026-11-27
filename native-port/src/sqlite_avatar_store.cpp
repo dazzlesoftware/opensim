@@ -6,14 +6,15 @@
 #include <filesystem>
 #include <mutex>
 #include <algorithm>
+
 namespace opensim::services {
 namespace {
 class Statement {
-    sqlite3* db_;
-    sqlite3_stmt* value_ = nullptr;
+    sqlite3 *db_;
+    sqlite3_stmt *value_ = nullptr;
 
   public:
-    Statement(sqlite3* db, const std::string& sql) : db_(db) {
+    Statement(sqlite3 *db, const std::string &sql) : db_(db) {
         if (sqlite3_prepare_v2(db, sql.c_str(), -1, &value_, nullptr) != SQLITE_OK) {
             auto error = std::string(sqlite3_errmsg(db));
             if (value_)
@@ -21,16 +22,19 @@ class Statement {
             throw std::runtime_error(error);
         }
     }
+
     ~Statement() {
         sqlite3_finalize(value_);
     }
-    void bind(int index, const std::optional<std::string>& text) {
-        auto result = text ? sqlite3_bind_text(value_, index, text->data(), static_cast<int>(text->size()),
-                                               SQLITE_TRANSIENT)
-                           : sqlite3_bind_null(value_, index);
+
+    void bind(int index, const std::optional<std::string> &text) {
+        auto result =
+            text ? sqlite3_bind_text(value_, index, text->data(), static_cast<int>(text->size()), SQLITE_TRANSIENT)
+                 : sqlite3_bind_null(value_, index);
         if (result != SQLITE_OK)
             throw std::runtime_error(sqlite3_errmsg(db_));
     }
+
     bool row() {
         auto result = sqlite3_step(value_);
         if (result == SQLITE_ROW)
@@ -39,29 +43,35 @@ class Statement {
             return false;
         throw std::runtime_error(sqlite3_errmsg(db_));
     }
+
     std::string text(int col) const {
         auto value = sqlite3_column_text(value_, col);
-        return value ? std::string(reinterpret_cast<const char*>(value), sqlite3_column_bytes(value_, col))
+        return value ? std::string(reinterpret_cast<const char *>(value), sqlite3_column_bytes(value_, col))
                      : std::string{};
     }
+
     int columns() const {
         return sqlite3_column_count(value_);
     }
+
     std::string name(int col) const {
         return sqlite3_column_name(value_, col);
     }
 };
-}
+} // namespace
+
 struct SqliteAvatarStore::State {
-    sqlite3* db = nullptr;
+    sqlite3 *db = nullptr;
     std::string realm;
     std::recursive_mutex mutex;
+
     ~State() {
         if (db)
             sqlite3_close(db);
     }
 };
-SqliteAvatarStore::SqliteAvatarStore(const std::string& path, bool initialize, const std::string& realm)
+
+SqliteAvatarStore::SqliteAvatarStore(const std::string &path, bool initialize, const std::string &realm)
     : state_(std::make_unique<State>()) {
     if (path.empty() || realm.empty())
         throw std::invalid_argument("Empty avatar database path or realm");
@@ -75,17 +85,18 @@ SqliteAvatarStore::SqliteAvatarStore(const std::string& path, bool initialize, c
         throw std::runtime_error(state_->db ? sqlite3_errmsg(state_->db) : "SQLite allocation failed");
     sqlite3_busy_timeout(state_->db, 5000);
     if (initialize) {
-        Statement create(
-            state_->db,
-            "CREATE TABLE " + realm +
-                " (PrincipalID CHAR(36) NOT NULL, Name VARCHAR(32) NOT NULL, Value VARCHAR(255) NOT NULL DEFAULT '', PRIMARY KEY(PrincipalID,Name))");
+        Statement create(state_->db, "CREATE TABLE " + realm +
+                                         " (PrincipalID CHAR(36) NOT NULL, Name VARCHAR(32) NOT NULL, Value "
+                                         "VARCHAR(255) NOT NULL DEFAULT '', PRIMARY KEY(PrincipalID,Name))");
         create.row();
     }
     Statement check(state_->db, "SELECT PrincipalID,Name,Value FROM " + realm + " LIMIT 0");
     check.row();
 }
+
 SqliteAvatarStore::~SqliteAvatarStore() = default;
-bool SqliteAvatarStore::write_appearance(const std::function<bool()>& write) {
+
+bool SqliteAvatarStore::write_appearance(const std::function<bool()> &write) {
     std::lock_guard lock(state_->mutex);
     Statement(state_->db, "BEGIN IMMEDIATE").row();
     try {
@@ -97,6 +108,7 @@ bool SqliteAvatarStore::write_appearance(const std::function<bool()>& write) {
         throw;
     }
 }
+
 std::vector<std::shared_ptr<AvatarBaseData>> SqliteAvatarStore::get(framework::Uuid principal) {
     std::lock_guard lock(state_->mutex);
     Statement query(state_->db, "SELECT * FROM " + state_->realm + " WHERE PrincipalID=?");
@@ -116,6 +128,7 @@ std::vector<std::shared_ptr<AvatarBaseData>> SqliteAvatarStore::get(framework::U
     }
     return result;
 }
+
 bool SqliteAvatarStore::store(std::shared_ptr<AvatarBaseData> row) {
     if (!row || !row->data)
         throw std::invalid_argument("Null avatar row");
@@ -136,6 +149,7 @@ bool SqliteAvatarStore::store(std::shared_ptr<AvatarBaseData> row) {
     command.row();
     return sqlite3_changes(state_->db) > 0;
 }
+
 bool SqliteAvatarStore::erase_all(framework::Uuid principal) {
     std::lock_guard lock(state_->mutex);
     Statement command(state_->db, "DELETE FROM " + state_->realm + " WHERE PrincipalID=?");
@@ -143,7 +157,8 @@ bool SqliteAvatarStore::erase_all(framework::Uuid principal) {
     command.row();
     return sqlite3_changes(state_->db) > 0;
 }
-bool SqliteAvatarStore::erase(framework::Uuid principal, const std::optional<std::string>& name) {
+
+bool SqliteAvatarStore::erase(framework::Uuid principal, const std::optional<std::string> &name) {
     std::lock_guard lock(state_->mutex);
     Statement command(state_->db, "DELETE FROM " + state_->realm + " WHERE PrincipalID=? AND Name=?");
     command.bind(1, principal.str());
@@ -151,4 +166,4 @@ bool SqliteAvatarStore::erase(framework::Uuid principal, const std::optional<std
     command.row();
     return sqlite3_changes(state_->db) > 0;
 }
-}
+} // namespace opensim::services

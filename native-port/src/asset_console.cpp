@@ -19,7 +19,7 @@ std::string asset_console_flags(std::int32_t flags) {
     if (flags == 0)
         return "Normal";
     std::string text;
-    for (const auto& [flag, name] :
+    for (const auto &[flag, name] :
          {std::pair{framework::Maptile, "Maptile"}, std::pair{framework::Rewritable, "Rewritable"},
           std::pair{framework::Collectable, "Collectable"}}) {
         if (!(flags & flag))
@@ -31,13 +31,10 @@ std::string asset_console_flags(std::int32_t flags) {
     return text;
 }
 
-void asset_console_hex(std::span<const std::uint8_t> data,
-                       const std::function<void(const std::string&)>& output) {
+void asset_console_hex(std::span<const std::uint8_t> data, const std::function<void(const std::string &)> &output) {
     constexpr std::size_t bytes_per_row = 16;
     constexpr std::size_t row_limit = 5;
-    for (std::size_t offset = 0;
-         offset < std::min(data.size(), row_limit * bytes_per_row);
-         offset += bytes_per_row) {
+    for (std::size_t offset = 0; offset < std::min(data.size(), row_limit * bytes_per_row); offset += bytes_per_row) {
         std::ostringstream line;
         line << std::hex << std::setfill('0') << std::setw(4) << offset << ": " << std::uppercase;
         const auto end = std::min(offset + bytes_per_row, data.size());
@@ -52,11 +49,10 @@ void asset_console_hex(std::span<const std::uint8_t> data,
 
 namespace {
 using services::AssetService;
-using Output = std::function<void(const std::string&)>;
+using Output = std::function<void(const std::string &)>;
 using Arguments = std::vector<std::string>;
 
-
-void show_asset(AssetService& service, const Arguments& args, const Output& output) {
+void show_asset(AssetService &service, const Arguments &args, const Output &output) {
     if (args.size() < 3) {
         output("Syntax: show asset <ID>");
         return;
@@ -71,8 +67,8 @@ void show_asset(AssetService& service, const Arguments& args, const Output& outp
     const auto type_name = framework::asset_type_enum_name(asset->type());
     output("Name: " + asset->name().value_or(""));
     output("Description: " + asset->description().value_or(""));
-    output("Type: " + (type_name.empty() ? type_number : std::string(type_name)) +
-           " (type number = " + type_number + ")");
+    output("Type: " + (type_name.empty() ? type_number : std::string(type_name)) + " (type number = " + type_number +
+           ")");
     output("Content-type: " + asset->metadata()->content_type());
     output("Size: " + std::to_string(asset->data->size()) + " bytes");
     output(asset->temporary() ? "Temporary: yes" : "Temporary: no");
@@ -81,7 +77,7 @@ void show_asset(AssetService& service, const Arguments& args, const Output& outp
     asset_console_hex(*asset->data, output);
 }
 
-void delete_asset(AssetService& service, const Arguments& args, const Output& output) {
+void delete_asset(AssetService &service, const Arguments &args, const Output &output) {
     if (args.size() < 3) {
         output("Syntax: delete asset <ID>");
         return;
@@ -95,12 +91,12 @@ void delete_asset(AssetService& service, const Arguments& args, const Output& ou
     output(message + asset->id() + " " + asset->name().value_or(""));
 }
 
-void dump_asset(AssetService& service, const Arguments& args, const Output& output) {
+void dump_asset(AssetService &service, const Arguments &args, const Output &output) {
     if (args.size() < 3) {
         output("Usage is dump asset <ID>");
         return;
     }
-    const auto& filename = args[2];
+    const auto &filename = args[2];
     framework::Uuid id;
     if (!framework::try_parse_sdk_uuid(filename, id)) {
         output("ERROR: " + filename + " is not a valid ID format");
@@ -114,10 +110,10 @@ void dump_asset(AssetService& service, const Arguments& args, const Output& outp
 
     const auto path = framework::utf8_path(filename);
 #ifdef _WIN32
-    std::FILE* file = nullptr;
+    std::FILE *file = nullptr;
     const int error = ::_wfopen_s(&file, path.c_str(), L"wbx");
 #else
-    auto* file = std::fopen(path.c_str(), "wbx");
+    auto *file = std::fopen(path.c_str(), "wbx");
     const int error = file ? 0 : errno;
 #endif
     if (!file) {
@@ -131,29 +127,26 @@ void dump_asset(AssetService& service, const Arguments& args, const Output& outp
         std::fclose(file);
         throw std::runtime_error("Asset data is missing");
     }
-    const auto& bytes = *asset->data;
+    const auto &bytes = *asset->data;
     const bool written = bytes.empty() || std::fwrite(bytes.data(), 1, bytes.size(), file) == bytes.size();
     const bool closed = std::fclose(file) == 0;
     if (!written || !closed)
         throw std::runtime_error("Could not write " + filename);
     output("Asset dumped to file " + filename);
 }
-}
+} // namespace
 
-void AssetEndpoint::register_console_commands(framework::ConsoleCommandResolver& commands,
-                                              const Output& output) const {
+void AssetEndpoint::register_console_commands(framework::ConsoleCommandResolver &commands, const Output &output) const {
     const auto bind = [&](auto handler) {
         using Callback = framework::ConsoleCommandResolver::Callback::element_type;
-        return std::make_shared<Callback>([service = service_, output, handler](const auto&, auto& args) {
-            handler(*service, args, output);
-        });
+        return std::make_shared<Callback>(
+            [service = service_, output, handler](const auto &, auto &args) { handler(*service, args, output); });
     };
-    commands.add({"Assets", "show asset", "show asset <ID>", "Show asset information", "", false},
-                 bind(show_asset));
+    commands.add({"Assets", "show asset", "show asset <ID>", "Show asset information", "", false}, bind(show_asset));
     commands.add({"Assets", "delete asset", "delete asset <ID>", "Delete asset from database", "", false},
                  bind(delete_asset));
     commands.add({"Assets", "dump asset", "dump asset <ID>", "Dump asset to a file",
                   "The filename is the same as the ID given.", false},
                  bind(dump_asset));
 }
-}
+} // namespace opensim::server

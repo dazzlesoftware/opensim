@@ -1,0 +1,1 @@
+YOption arrays;YOption chars;object input=(object)[1,"x"];rotation result;integer after;default{state_entry(){result=(rotation)input;after=1;}}

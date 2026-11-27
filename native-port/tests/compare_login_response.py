@@ -21,23 +21,6 @@ def main():
     project = ET.parse(base)
     ET.SubElement(project.getroot().find('PropertyGroup'), 'StartupObject').text = 'ResponseProgram'
     group = project.getroot().find('ItemGroup')
-    # Extend only this generated fixture's logger with the complete response class's calls.
-    for item in group:
-        if (
-            item.tag == 'Compile'
-            and Path(item.get('Include')).name == 'appearance_provisioner_reference.cs'
-        ):
-            text = Path(item.get('Include')).read_text(encoding='utf-8')
-            text = text.replace(
-                'void Debug(object o);',
-                'void Debug(object o);void DebugFormat(string f,params object[] a);void WarnFormat(string f,params object[] a);',
-            ).replace(
-                'public void Debug(object o){}',
-                'public void Debug(object o){}public void DebugFormat(string f,params object[] a){}public void WarnFormat(string f,params object[] a){}',
-            )
-            stub = w / 'Provisioner.cs'
-            stub.write_text(text, encoding='utf-8')
-            item.set('Include', str(stub))
     util = w / 'base/Util.cs'
     source = (ROOT / 'OpenSim/Framework/Util.cs').read_text(encoding='utf-8-sig')
     uui = extract(

@@ -3,12 +3,12 @@
 #include "opensim/framework/config_file_uri_path.hpp"
 #include "opensim/framework/config_uri_escape.hpp"
 #include "opensim/framework/config_uri_unescape.hpp"
+
 namespace opensim::framework {
-std::u16string config_uri_canonical_path(ConfigUriState& s, std::u16string dest, std::int32_t format,
-                                         bool windows) {
+std::u16string config_uri_canonical_path(ConfigUriState &s, std::u16string dest, std::int32_t format, bool windows) {
     config_uri_parse_remaining(s);
     auto flags = s.flags;
-    auto& text = s.parse_string;
+    auto &text = s.parse_string;
     auto o = s.offsets;
     auto has = [&](ConfigUriSyntaxFlags f) { return (s.syntax->flags & static_cast<std::uint64_t>(f)) != 0; };
     bool implicit = (flags & 0x20000000) != 0, convert = has(ConfigUriSyntaxFlags::ConvertPathSlashes),
@@ -36,8 +36,8 @@ std::u16string config_uri_canonical_path(ConfigUriState& s, std::u16string dest,
             std::u16string changed(text);
             if (secured && changed[secured + o.path - 1] == u'|')
                 changed[secured + o.path - 1] = u':';
-            dest += config_uri_escape(std::u16string_view(changed).substr(o.path, o.query - o.path),
-                                      !implicit, ConfigUriEscapeSet::ExceptQuestionMarkHash);
+            dest += config_uri_escape(std::u16string_view(changed).substr(o.path, o.query - o.path), !implicit,
+                                      ConfigUriEscapeSet::ExceptQuestionMarkHash);
         } else
             dest += raw;
         if (!windows && (flags & 0x8000) && !convert && has(ConfigUriSyntaxFlags::FileLikeUri) && !implicit) {
@@ -56,8 +56,8 @@ std::u16string config_uri_canonical_path(ConfigUriState& s, std::u16string dest,
     if (secured && dest[num - 1] == u'|')
         dest[num - 1] = u':';
     if (compress && dest.size() > num) {
-        auto compressed = config_file_uri_compress(dest.substr(num), convert,
-                                                   has(ConfigUriSyntaxFlags::CanonicalizeAsFilePath));
+        auto compressed =
+            config_file_uri_compress(dest.substr(num), convert, has(ConfigUriSyntaxFlags::CanonicalizeAsFilePath));
         dest.resize(num);
         dest += compressed;
         if (length < dest.size() && dest[length] == u'\\')
@@ -92,4 +92,4 @@ std::u16string config_uri_canonical_path(ConfigUriState& s, std::u16string dest,
     }
     return dest;
 }
-}
+} // namespace opensim::framework

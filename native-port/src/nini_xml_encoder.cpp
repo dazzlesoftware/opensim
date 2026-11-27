@@ -1,11 +1,21 @@
 // Source-derived System.Xml.XmlTextEncoder; see header for MIT notice.
 #include "opensim/framework/nini_xml_encoder.hpp"
 #include "opensim/framework/nini_xml_character.hpp"
+
 namespace opensim::framework {
 namespace {
-bool high(char16_t c) { return c >= 0xd800 && c <= 0xdbff; }
-bool low(char16_t c) { return c >= 0xdc00 && c <= 0xdfff; }
-bool attribute_char(char16_t c) { return (nini_xml_character_properties(c) & 0x80) != 0; }
+bool high(char16_t c) {
+    return c >= 0xd800 && c <= 0xdbff;
+}
+
+bool low(char16_t c) {
+    return c >= 0xdc00 && c <= 0xdfff;
+}
+
+bool attribute_char(char16_t c) {
+    return (nini_xml_character_properties(c) & 0x80) != 0;
+}
+
 std::u16string upper_hex(unsigned n) {
     char16_t b[8];
     unsigned i = 8;
@@ -15,11 +25,13 @@ std::u16string upper_hex(unsigned n) {
     } while (n);
     return {b + i, b + 8};
 }
+
 std::u16string error_message(XmlEncoderError::Kind kind, char16_t h, char16_t l) {
     switch (kind) {
     case XmlEncoderError::Kind::InvalidPair:
         return u"The surrogate pair (0x" + upper_hex(h) + u", 0x" + upper_hex(l) +
-               u") is invalid. A high surrogate character (0xD800 - 0xDBFF) must always be paired with a low surrogate character (0xDC00 - 0xDFFF).";
+               u") is invalid. A high surrogate character (0xD800 - 0xDBFF) must always be paired with a low surrogate "
+               u"character (0xDC00 - 0xDFFF).";
     case XmlEncoderError::Kind::InvalidHigh:
         return u"Invalid high surrogate character (0x" + upper_hex(h) +
                u"). A high surrogate character must have a value from range (0xD800 - 0xDBFF).";
@@ -29,45 +41,56 @@ std::u16string error_message(XmlEncoderError::Kind kind, char16_t h, char16_t l)
         return u"The second character surrogate pair is not in the input buffer to be written.";
     }
 }
-}
+} // namespace
+
 XmlEncoderError::XmlEncoderError(Kind k, char16_t h, char16_t l)
-    : std::runtime_error("XML encoder argument error"), kind(k), high(h), low(l),
-      message(error_message(k, h, l)) {}
-std::u16string NativeXmlTextEncoder::hex(unsigned n) { return upper_hex(n); }
+    : std::runtime_error("XML encoder argument error"), kind(k), high(h), low(l), message(error_message(k, h, l)) {}
+
+std::u16string NativeXmlTextEncoder::hex(unsigned n) {
+    return upper_hex(n);
+}
+
 void NativeXmlTextEncoder::character(char16_t c) {
     sink_(XmlEncoderWriteKind::Character, std::u16string_view(&c, 1));
 }
+
 void NativeXmlTextEncoder::text(std::optional<std::u16string_view> s) {
     sink_(XmlEncoderWriteKind::String, s);
 }
+
 void NativeXmlTextEncoder::entity(std::optional<std::u16string_view> s) {
     character(u'&');
     text(s);
     character(u';');
 }
+
 void NativeXmlTextEncoder::numeric(std::u16string_view s) {
     text(u"&#x");
     text(s);
     character(u';');
 }
+
 void NativeXmlTextEncoder::start_attribute(bool cache) {
     in_attribute_ = true;
     cache_ = cache;
     if (cache)
         attribute_.clear();
 }
+
 void NativeXmlTextEncoder::end_attribute() {
     if (cache_)
         attribute_.clear();
     in_attribute_ = false;
     cache_ = false;
 }
+
 void NativeXmlTextEncoder::write_surrogate_char(char16_t l, char16_t h) {
     if (!low(l) || !high(h))
         throw XmlEncoderError(XmlEncoderError::Kind::InvalidPair, h, l);
     character(h);
     character(l);
 }
+
 void NativeXmlTextEncoder::write_surrogate_entity(char16_t l, char16_t h) {
     if (!low(l) || !high(h))
         throw XmlEncoderError(XmlEncoderError::Kind::InvalidPair, h, l);
@@ -77,6 +100,7 @@ void NativeXmlTextEncoder::write_surrogate_entity(char16_t l, char16_t h) {
     }
     numeric(hex(0x10000 + ((h - 0xd800) << 10) + (l - 0xdc00)));
 }
+
 void NativeXmlTextEncoder::write_char_entity(char16_t c) {
     if (high(c) || low(c))
         throw XmlEncoderError(XmlEncoderError::Kind::MissingLow);
@@ -88,6 +112,7 @@ void NativeXmlTextEncoder::write_char_entity(char16_t c) {
     }
     numeric(n);
 }
+
 void NativeXmlTextEncoder::write_entity_ref(std::optional<std::u16string_view> s) {
     if (cache_) {
         attribute_ += u'&';
@@ -97,6 +122,7 @@ void NativeXmlTextEncoder::write_entity_ref(std::optional<std::u16string_view> s
     }
     entity(s);
 }
+
 void NativeXmlTextEncoder::write(std::u16string_view s) {
     if (s.empty())
         return;
@@ -174,6 +200,7 @@ void NativeXmlTextEncoder::write(std::u16string_view s) {
         }
     }
 }
+
 void NativeXmlTextEncoder::write_raw_checked(std::optional<std::u16string_view> s) {
     if (!s)
         return;
@@ -199,13 +226,15 @@ void NativeXmlTextEncoder::write_raw_checked(std::optional<std::u16string_view> 
     }
     text(s);
 }
+
 void NativeXmlTextEncoder::write_raw_array_slice(std::u16string_view s) {
     if (cache_)
         attribute_ += s;
     sink_(XmlEncoderWriteKind::Array, s);
 }
-void NativeXmlTextEncoder::write_array(std::optional<std::u16string_view> s, std::int32_t offset,
-                                       std::int32_t count, bool raw) {
+
+void NativeXmlTextEncoder::write_array(std::optional<std::u16string_view> s, std::int32_t offset, std::int32_t count,
+                                       bool raw) {
     if (!s)
         throw XmlEncoderArrayError("System.ArgumentNullException", 0x80004003,
                                    u"Value cannot be null. (Parameter 'array')", u"array");
@@ -223,8 +252,8 @@ void NativeXmlTextEncoder::write_array(std::optional<std::u16string_view> s, std
             auto v = decimal(value);
             auto p = std::u16string(parameter);
             throw XmlEncoderArrayError("System.ArgumentOutOfRangeException", 0x80131502,
-                                       p + u" ('" + v + u"') must be a non-negative value. (Parameter '" + p +
-                                           u"')" + newline + u"Actual value was " + v + u".",
+                                       p + u" ('" + v + u"') must be a non-negative value. (Parameter '" + p + u"')" +
+                                           newline + u"Actual value was " + v + u".",
                                        p, value);
         }
     };
@@ -239,9 +268,8 @@ void NativeXmlTextEncoder::write_array(std::optional<std::u16string_view> s, std
     if (count > available) {
         auto v = decimal(count);
         throw XmlEncoderArrayError("System.ArgumentOutOfRangeException", 0x80131502,
-                                   u"count ('" + v + u"') must be less than or equal to '" +
-                                       decimal(available) + u"'. (Parameter 'count')" + newline +
-                                       u"Actual value was " + v + u".",
+                                   u"count ('" + v + u"') must be less than or equal to '" + decimal(available) +
+                                       u"'. (Parameter 'count')" + newline + u"Actual value was " + v + u".",
                                    u"count", count);
     }
     auto slice = s->substr(static_cast<std::size_t>(offset), static_cast<std::size_t>(count));
@@ -250,6 +278,7 @@ void NativeXmlTextEncoder::write_array(std::optional<std::u16string_view> s, std
     else
         write_array_slice(slice);
 }
+
 void NativeXmlTextEncoder::write_array_slice(std::u16string_view s) {
     if (cache_)
         attribute_ += s;
@@ -308,4 +337,4 @@ void NativeXmlTextEncoder::write_array_slice(std::u16string_view s) {
         ++i;
     }
 }
-}
+} // namespace opensim::framework

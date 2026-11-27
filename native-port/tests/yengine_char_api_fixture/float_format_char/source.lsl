@@ -1,0 +1,1 @@
+YOption chars;YOption arrays;string result;integer after;default{state_entry(){result=xmrFloat2String('A',"F1");after=1;}}

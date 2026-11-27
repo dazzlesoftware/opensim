@@ -1,0 +1,1 @@
+rotation item=<0,0,0,1>;key result;default{state_entry(){result=(key)item;}}

@@ -1,0 +1,1 @@
+float result;integer after;default{state_entry(){result=llList2Float(7,0);after=1;}}

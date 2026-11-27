@@ -4,39 +4,45 @@
 #include <iostream>
 #include <sstream>
 using namespace opensim;
-std::string hex(const std::string& s) {
+
+std::string hex(const std::string &s) {
     std::string out;
-    const char* h = "0123456789abcdef";
+    const char *h = "0123456789abcdef";
     for (unsigned char c : s) {
         out += h[c >> 4];
         out += h[c & 15];
     }
     return out;
 }
-std::string decode(const std::string& s) {
+
+std::string decode(const std::string &s) {
     std::string out;
     for (std::size_t i = 0; i < s.size(); i += 2)
         out += static_cast<char>(std::stoi(s.substr(i, 2), nullptr, 16));
     return out;
 }
-std::string nullable(const std::optional<std::string>& s) {
+
+std::string nullable(const std::optional<std::string> &s) {
     return s ? hex(*s) : "-";
 }
+
 struct Service : services::ISimulationLogin {
     int profile;
     std::string trace;
-    explicit Service(int p) : profile(p) {
-    }
-    bool query_access(services::GridRegion&, const framework::Uuid&, const std::optional<std::string>&, bool,
-                      const framework::Vector3&, std::vector<framework::Uuid>&,
-                      framework::EntityTransferContext&, std::string&) override {
+
+    explicit Service(int p) : profile(p) {}
+
+    bool query_access(services::GridRegion &, const framework::Uuid &, const std::optional<std::string> &, bool,
+                      const framework::Vector3 &, std::vector<framework::Uuid> &, framework::EntityTransferContext &,
+                      std::string &) override {
         throw std::runtime_error("unused");
     }
-    bool create_agent(const services::GridRegion* source, services::GridRegion& destination,
-                      const std::shared_ptr<framework::AgentCircuitData>& circuit, std::uint32_t flags,
-                      framework::EntityTransferContext& context, std::string& reason) override {
+
+    bool create_agent(const services::GridRegion *source, services::GridRegion &destination,
+                      const std::shared_ptr<framework::AgentCircuitData> &circuit, std::uint32_t flags,
+                      framework::EntityTransferContext &context, std::string &reason) override {
         network::Value value = network::Value::object({});
-        auto region = [](const services::GridRegion& r, bool raw) {
+        auto region = [](const services::GridRegion &r, bool raw) {
             auto value = network::Value::object({});
             value.set("id", r.id.str());
             value.set("x", network::Value(r.x));
@@ -62,6 +68,7 @@ struct Service : services::ISimulationLogin {
         return !(profile & 1);
     }
 };
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -76,16 +83,15 @@ int main() {
         response.keep_alive = true;
         response.body = "before";
         std::optional<std::string> caller =
-            profile & 16 ? std::nullopt
-                         : std::optional<std::string>(profile & 32 ? "2001:db8::5" : "192.0.2.5");
+            profile & 16 ? std::nullopt : std::optional<std::string>(profile & 32 ? "2001:db8::5" : "192.0.2.5");
         bool failed = false;
         try {
             handler.post_agent(network::parse_osd_json(decode(data)), response,
                                framework::Uuid("00000000-0000-0000-0000-000000000099"), caller);
-        } catch (const std::exception&) {
+        } catch (const std::exception &) {
             failed = true;
         }
-        std::cout << failed << "|" << response.status << "|" << response.keep_alive << "|"
-                  << hex(response.body) << "|" << hex(service.trace) << "\n";
+        std::cout << failed << "|" << response.status << "|" << response.keep_alive << "|" << hex(response.body) << "|"
+                  << hex(service.trace) << "\n";
     }
 }

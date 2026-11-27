@@ -10,6 +10,7 @@
 using namespace opensim;
 using namespace framework;
 using server::NiniConfigView;
+
 namespace {
 std::string hex(std::string_view text) {
     std::string out;
@@ -19,6 +20,7 @@ std::string hex(std::string_view text) {
     }
     return out.empty() ? "-" : out;
 }
+
 std::string unhex(std::string_view text) {
     if (text == "-")
         return {};
@@ -27,6 +29,7 @@ std::string unhex(std::string_view text) {
         out += static_cast<char>(std::stoi(std::string(text.substr(i, 2)), nullptr, 16));
     return out;
 }
+
 std::u16string raw(std::string_view text) {
     std::u16string out;
     if (text != "-")
@@ -34,6 +37,7 @@ std::u16string raw(std::string_view text) {
             out += static_cast<char16_t>(std::stoi(std::string(text.substr(i, 4)), nullptr, 16));
     return out;
 }
+
 std::string rawhex(std::u16string_view text) {
     std::string out;
     for (auto c : text)
@@ -41,25 +45,28 @@ std::string rawhex(std::u16string_view text) {
             out += "0123456789abcdef"[(c >> n) & 15];
     return out.empty() ? "-" : out;
 }
-NiniWriterText t(const std::string& s) {
+
+NiniWriterText t(const std::string &s) {
     return nini_writer_text(utf16_replacing(s));
 }
-std::string error(const std::exception& e) {
-    auto show = [](const std::string& type, std::uint32_t code, const std::optional<std::u16string>& p,
-                   const std::u16string& m) {
+
+std::string error(const std::exception &e) {
+    auto show = [](const std::string &type, std::uint32_t code, const std::optional<std::u16string> &p,
+                   const std::u16string &m) {
         return "E:" + type + ":" + std::to_string(code) + ":" + (p ? rawhex(*p) : "~") + ":" + rawhex(m);
     };
-    if (auto p = dynamic_cast<const NiniConfigError*>(&e))
+    if (auto p = dynamic_cast<const NiniConfigError *>(&e))
         return show(p->source_type(), p->hresult(), p->parameter, p->message);
-    if (auto p = dynamic_cast<const NiniDocumentError*>(&e))
+    if (auto p = dynamic_cast<const NiniDocumentError *>(&e))
         return show(p->source_type(), p->hresult(), p->parameter, p->message);
-    if (auto p = dynamic_cast<const NiniReaderError*>(&e))
+    if (auto p = dynamic_cast<const NiniReaderError *>(&e))
         return show(p->source_type(), p->hresult(), {}, p->message_utf16());
-    if (auto p = dynamic_cast<const NiniStreamError*>(&e))
+    if (auto p = dynamic_cast<const NiniStreamError *>(&e))
         return show(p->source_type, p->hresult, p->parameter, p->message);
     return "X:" + hex(e.what());
 }
-std::string execute(const std::string& line) {
+
+std::string execute(const std::string &line) {
     std::array<std::optional<NiniConfigView>, 4> views;
     std::string output;
     std::istringstream sequence(line);
@@ -76,10 +83,9 @@ std::string execute(const std::string& line) {
                 row >> s;
                 return unhex(s);
             };
-            auto& v = views.at(i);
+            auto &v = views.at(i);
             std::string result = "OK";
-            if (!v && op != "NEW" && op != "ARG" && op != "TEXT" && op != "LOAD" && op != "COPY" &&
-                op != "DROP")
+            if (!v && op != "NEW" && op != "ARG" && op != "TEXT" && op != "LOAD" && op != "COPY" && op != "DROP")
                 throw NiniConfigError(NiniConfigError::Kind::NullReference,
                                       u"Object reference not set to an instance of an object.");
             if (op == "NEW")
@@ -122,7 +128,7 @@ std::string execute(const std::string& line) {
             } else if (op == "ORDER") {
                 auto pairs = v->ordered_section(text());
                 result = "O:" + std::to_string(pairs.size());
-                for (const auto& [k, value] : pairs)
+                for (const auto &[k, value] : pairs)
                     result += ":" + hex(k) + "=" + hex(value);
             } else if (op == "ALIAS") {
                 auto name = text();
@@ -152,23 +158,24 @@ std::string execute(const std::string& line) {
                 int other;
                 row >> other;
                 auto config = v->native_section(section);
-                result = "B:" + std::to_string(config &&
-                                               config->config_source() == views.at(other)->native_source());
+                result = "B:" + std::to_string(config && config->config_source() == views.at(other)->native_source());
             } else if (op == "SAVE")
                 std::dynamic_pointer_cast<NiniIniConfigSource>(v->native_source())->save(t(text()));
             else
                 throw std::runtime_error("Unknown fixture command");
             output += result;
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
             output += error(e);
         }
     }
     return output;
 }
-void require(bool value, const char* message) {
+
+void require(bool value, const char *message) {
     if (!value)
         throw std::runtime_error(message);
 }
+
 void unit() {
     std::shared_ptr<NiniConfig> retained;
     std::weak_ptr<NiniConfigSourceBase> owner;
@@ -180,25 +187,24 @@ void unit() {
         copy.set("s", "z", "new");
         require(original.get("s", "z") == "new", "Copies must share source graph");
         auto ordered = original.ordered_section("s");
-        require(ordered.size() == 2 && ordered[0].first == "z" && ordered[0].second == "new" &&
-                    ordered[1].first == "a",
+        require(ordered.size() == 2 && ordered[0].first == "z" && ordered[0].second == "new" && ordered[1].first == "a",
                 "GetKeys order and current Get values");
         require(original.section("s").at("z") == "new", "Map projection must use live values");
         retained = original.native_section("s");
         owner = original.native_source();
     }
-    require(!owner.expired() && *retained->get(t("z")) == u"new",
-            "Native section retains arena after views retire");
+    require(!owner.expired() && *retained->get(t("z")) == u"new", "Native section retains arena after views retire");
     retained.reset();
     require(owner.expired(), "Arena must retire after last retained native handle");
     try {
         NiniConfigView bad(nullptr);
         throw std::runtime_error("Null source accepted");
-    } catch (const std::invalid_argument&) {
+    } catch (const std::invalid_argument &) {
     }
 }
-}
-int main(int argc, char** argv) {
+} // namespace
+
+int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string(argv[1]) == "--probe") {
             for (std::string line; std::getline(std::cin, line);)
@@ -208,7 +214,7 @@ int main(int argc, char** argv) {
         unit();
         std::cout << "PASS: retained Nini view source ownership, shared copies and live ordered values\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

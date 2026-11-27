@@ -2,8 +2,10 @@
 #pragma once
 #include "opensim/framework/config_uri_object.hpp"
 #include <vector>
+
 namespace opensim::framework {
 ConfigUriText config_http_location_decode_utf8(ConfigUriText);
+
 class ConfigHttpLocationAdapter {
     ConfigUriObjectBackend backend_;
 
@@ -15,6 +17,6 @@ class ConfigHttpLocationAdapter {
     // Exact consumed single Location getter and redirect selection. This does not
     // send a request, enforce the redirect count, or imply a supported transport.
     ConfigUriObjectPtr redirect(ConfigUriObjectPtr request_uri, std::int32_t status,
-                                const std::vector<ConfigUriText>& raw_locations) const;
+                                const std::vector<ConfigUriText> &raw_locations) const;
 };
-}
+} // namespace opensim::framework

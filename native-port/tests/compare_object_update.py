@@ -10,6 +10,7 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument('--native', required=True)
     p.add_argument('--dotnet', required=True)
+    p.add_argument('--reference', type=Path, help='Reuse an already built original-source oracle')
     p.add_argument('--work', type=Path, required=True)
     a = p.parse_args()
     w = a.work.resolve()
@@ -44,19 +45,22 @@ def main():
         ET.SubElement(ref, 'HintPath').text = str(ROOT / 'bin' / f'{name}.dll')
     cs = w / 'ObjectUpdateReference.csproj'
     ET.ElementTree(project).write(cs, encoding='utf-8', xml_declaration=True)
-    r = subprocess.run(
-        [a.dotnet, 'build', str(cs), '-o', str(w / 'app'), '--nologo', '-v', 'quiet'],
-        capture_output=True,
-        text=True,
-    )
-    assert r.returncode == 0, r.stdout + r.stderr
+    reference = a.reference.resolve() if a.reference else w / 'app/ObjectUpdateReference.dll'
+    if not a.reference:
+        r = subprocess.run(
+            [a.dotnet, 'build', str(cs), '-o', str(w / 'app'), '--nologo', '-v', 'quiet'],
+            capture_output=True,
+            text=True,
+        )
+        assert r.returncode == 0, r.stdout + r.stderr
+    assert reference.is_file(), reference
     commands = [
         f'{seed} {mode}'
         for seed in [-9, 0, 1, 3, 9, 17, 31, 32, 40, 100, 999]
         for mode in range(512)
     ]
     rows = []
-    for cmd in [[a.dotnet, str(w / 'app/ObjectUpdateReference.dll')], [a.native, '--probe']]:
+    for cmd in [[a.dotnet, str(reference)], [a.native, '--probe']]:
         r = subprocess.run(
             cmd, input='\n'.join(commands) + '\n', capture_output=True, text=True, timeout=30
         )

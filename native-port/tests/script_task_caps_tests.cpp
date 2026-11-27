@@ -8,11 +8,12 @@
 #include <latch>
 using namespace opensim;
 using namespace services;
+
 namespace {
 framework::Uuid id(int n) {
-    return framework::Uuid(n == 1 ? "11223344-5566-7788-99aa-000000000001"
-                                  : "11223344-5566-7788-99aa-000000000002");
+    return framework::Uuid(n == 1 ? "11223344-5566-7788-99aa-000000000001" : "11223344-5566-7788-99aa-000000000002");
 }
+
 std::string hex(std::string_view s) {
     std::string o;
     for (unsigned char c : s) {
@@ -21,6 +22,7 @@ std::string hex(std::string_view s) {
     }
     return o;
 }
+
 std::string probe(int kind, int mode, int phase) {
     std::string trace;
     auto add = [&](std::string s) { trace += "|" + s; };
@@ -96,14 +98,17 @@ std::string probe(int kind, int mode, int phase) {
     }
     return std::to_string(r.status) + "|" + hex(r.body) + trace;
 }
+
 int checks = 0;
-void check(bool v, const char* s) {
+
+void check(bool v, const char *s) {
     ++checks;
     if (!v)
         throw std::runtime_error(s);
 }
-}
-int main(int argc, char** argv) {
+} // namespace
+
+int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string_view(argv[1]) == "--probe") {
             int k, m, p;
@@ -175,10 +180,9 @@ int main(int argc, char** argv) {
         req.body = "<llsd><map>";
         check(route.handle(req).status == 400, "initial invalid XML");
         req.body = "{}";
-        check(route.handle(req).body.find("failed to recode request") != std::string::npos,
-              "initial missing IDs");
-        req.body = "{\"item_id\":\"" + id(1).str() + "\",\"task_id\":\"" + id(2).str() +
-                   "\",\"is_script_running\":true}";
+        check(route.handle(req).body.find("failed to recode request") != std::string::npos, "initial missing IDs");
+        req.body =
+            "{\"item_id\":\"" + id(1).str() + "\",\"task_id\":\"" + id(2).str() + "\",\"is_script_running\":true}";
         check(route.handle(req).body.find("https://host:9001/next") != std::string::npos && registered,
               "JSON initial request");
         registered->expire();
@@ -188,7 +192,7 @@ int main(int argc, char** argv) {
         registered->expire();
         std::cout << "PASS: " << checks << " script task capability checks\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

@@ -1,0 +1,1 @@
+rotation r=<0,1,0,1>;rotation copied;integer before;integer after;default{state_entry(){r.x=xmrString2Float("-0");r.z=xmrString2Float("-0");r.s=xmrString2Float("-0");copied=r;before=xmrRotationToBool(r);llSleep(1.0);after=xmrRotationToBool(r);copied=r;}}

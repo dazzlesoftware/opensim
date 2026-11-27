@@ -1,0 +1,884 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "fullParityVerified": false,
+  "nativeParityVerified": false,
+  "scope": "Unchanged original xmrArrayCopy source execution over generated C/F/I wrappers and public mutated C/F/I/O backings, with actual production migration capture",
+  "generatorSha256": "ff734c7fbb0ed399587c02b1447c6e39a752c8925a591bc0376220a1166fbd07",
+  "generatorAssemblySha256": "f8250b91c1727636fcf998ac3c4725f4a13bdbf4794bef71e1dac3f5e0ad0dd2",
+  "decoderSha256": "c5326689d4cc2a48300a6dfcb99f8ffa37909bf3527481819b1943a62355db21",
+  "wireSupportSha256": "3036ce87101164703c55870fd1c998d1ff05d53c2957ae3019f4eae0b641ca33",
+  "platforms": {
+    "windows": {
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "processId": 69092,
+      "metadataSha256": "9a9b0721c9dfab7b58cdf0e3ad9ebc95696d931f9ed672c73578743518ea919e",
+      "cases": [
+        {
+          "name": "copy_integer",
+          "sourceSha256": "a4d808b2c5691b5fdc7879793743595db6ff77f8c662d8e31da7f214f477b536",
+          "metadataSha256": "e81bdbbfdd836189704b5133238509740d4014f8a2e257b8cc428267ed1e825e",
+          "snapshotSha256": "4bc286374cff0065ba06945cfb379a20fb50e6e33f3ecafd9758e4a87a9932ce",
+          "snapshotBytes": 343,
+          "originalObjectSha256": "036be90a236bb3bffa2036a2ed59adad9f2ca87f4fa34539adbbfc1179c9db28",
+          "afterLoadSha256": "803c735001581b9c1fd2b9b1228fbbba2944eb28920a303468f201e0ea446aeb",
+          "finalSha256": "926469b168bff0669138d221947c910d76e34656e0d94af4a70da356920669b9",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": null
+        },
+        {
+          "name": "copy_float",
+          "sourceSha256": "208993ddfe400476ebadcdbcf1b8045824280a4970ebeb09e56d1b1a65fb9b58",
+          "metadataSha256": "5f2b762bbf96fc8c26ec7f722d566f10bc959a811deab29dd16d251f32e6e9e3",
+          "snapshotSha256": "4473e3e22a2bbec0d003e799b90843c392274ac639c9c87e485b5e2ef676f9bc",
+          "snapshotBytes": 367,
+          "originalObjectSha256": "c030eb90dc363eaa0ac2da34f8f801b34d5891ed0afd3912bdb9f67deee93bd7",
+          "afterLoadSha256": "83903b70aedfce2b588b3b473590132055d8748e269298be4f6fad3ed6eb2c49",
+          "finalSha256": "35740c98712c433d107c790e6b5ec11ce9ed1c1d6871a7821dbf6e2736519b47",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": null
+        },
+        {
+          "name": "copy_char",
+          "sourceSha256": "60f979ccc11b22990cc2297381ab15fd63653e88722e9b45a10720e7b87061eb",
+          "metadataSha256": "dd2d011620b9c360487f2e269460ea4cbaf21e31173532881383be5cd7dc268b",
+          "snapshotSha256": "7bde6427b68f02d8dca048d7f0dbf7c86c2fb2e889c68f779ce111999aa99c48",
+          "snapshotBytes": 325,
+          "originalObjectSha256": "c25c9833ef776040891ddf266257c165aed8e7c791319e6fac453be0568f34af",
+          "afterLoadSha256": "5a737cabcd10f8bd668ccb910c2d86881fa5fc8a5f36411c1908f297810b59e6",
+          "finalSha256": "d4fa693a06be1a1724affd1fe2d3950b4e50cc80a612977e5b63f5d68f2e251c",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": null
+        },
+        {
+          "name": "copy_overlap_forward",
+          "sourceSha256": "84e8086de213ef41a42e6352cb351ef052013848c26197a1a335d7ff1e31df5d",
+          "metadataSha256": "da6ac06b8c7b6d1eee50387fc26d440d8d3f5c335f5ae1d59fc3c7f7f0009d44",
+          "snapshotSha256": "3325944e650354cd4e3100714f0522b41a3af59bdc2a682d64e223adc7f96d83",
+          "snapshotBytes": 258,
+          "originalObjectSha256": "52c21d3f9f75bb19ff549e514b38daf2865cb64f0088b9dad27a764100b00003",
+          "afterLoadSha256": "367a918c22be7888832f272eaa79d0837017f95f0e4f046c5a7ced09470a6030",
+          "finalSha256": "7036f51ed795c042d036a4549104122edc553fba8c06c995a7fe5810f13067e5",
+          "independentClassDefinitions": 1,
+          "independentObservedReferences": 2,
+          "resumeFault": null
+        },
+        {
+          "name": "copy_overlap_backward",
+          "sourceSha256": "510fe28654052854c7f106f8c199a947c7e32a15e0388efa3dc150b7987baf6f",
+          "metadataSha256": "9bd4bc4bbceadfa195a39166dfafd7086beaea663dc68e3271eb405399c0e5c6",
+          "snapshotSha256": "3325944e650354cd4e3100714f0522b41a3af59bdc2a682d64e223adc7f96d83",
+          "snapshotBytes": 258,
+          "originalObjectSha256": "69e91262f6123a611bddf10096282a2e5883f72b97d96057782d2700fbbce771",
+          "afterLoadSha256": "367a918c22be7888832f272eaa79d0837017f95f0e4f046c5a7ced09470a6030",
+          "finalSha256": "a11d9e791e9d34693a8b6027799393c0492d801acb78c4eb139b330d7d8f2b0f",
+          "independentClassDefinitions": 1,
+          "independentObservedReferences": 2,
+          "resumeFault": null
+        },
+        {
+          "name": "copy_cross_metadata",
+          "sourceSha256": "854ada84100a6e8709a258ce3820f0fbfc25b8740092edc5fae4bef3f56ca50a",
+          "metadataSha256": "200d988f121dd822f51c6571e0f6a28b39766f71e07047e4344231153e116e8b",
+          "snapshotSha256": "8c15a3d54a5e7b82a877bf2d76ec2ab74ca7bf5ee59c00527d8551c78f79ceb0",
+          "snapshotBytes": 341,
+          "originalObjectSha256": "cdf58e9dc39e489ff16fc1d225f3b57f41f272b054da7cd351cfd7eade681325",
+          "afterLoadSha256": "46b3318d2a6f656c85719df0f2bd6503d2865766713a0da442d9b74d7158ae24",
+          "finalSha256": "4594b0ced317f4f5ec485119ae6c7a6d8d958f29b027fe3dd878278aba0d92e3",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": {
+            "type": "System.ArrayTypeMismatchException",
+            "message": "float[] vs integer[]"
+          }
+        },
+        {
+          "name": "copy_rectangular_rank",
+          "sourceSha256": "608e19a1ed70160ffe1f2f928f804244fcfd719dd819e4a66f50ab0e3eac4b52",
+          "metadataSha256": "9a1f7e602015816a274538aaef9fedb6b1ef0d50e34da39176a8a52b39b1915f",
+          "snapshotSha256": "2ac69e8a9bc1c33e398b173de152873440fe4c0d04893cb7d4f4cf83081a5237",
+          "snapshotBytes": 338,
+          "originalObjectSha256": "788c4d939931955343b13844555957ee4bc2388e722f12ed71f135b0ca825511",
+          "afterLoadSha256": "9e85c47e802d8eb9e1c0d9d84b4624d63d0fad1ae274ccf9a8b2604c338195bf",
+          "finalSha256": "1cbf0fc6e3de780e9f3358f58b9866278659fefb1f0790fd4db8bb3cb06d8118",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": null
+        },
+        {
+          "name": "copy_jagged_depth_mismatch",
+          "sourceSha256": "7ac852cbb12648f8bbd3973cc0826bfcbcc8f1eb4edb34420acfe8dc0aba125a",
+          "metadataSha256": "32512ecaf2244f7f853feddb43dbb3c9a7ae7fce9ffd7208e7097c4261dfd88c",
+          "snapshotSha256": "a3628669c80af01168aa3a4ff0b74e6c5fa38faef85b39a2dd63d255ca1482d0",
+          "snapshotBytes": 319,
+          "originalObjectSha256": "3f5b67ddba25089aa73e5c5124baefd0e52473b0a50371c395ae83927d710087",
+          "afterLoadSha256": "57701d1228a511b709d3570b171eb4844f1fa205e66d454f27d1aca71e6e2610",
+          "finalSha256": "4cb8c1efe94fb765e0466352d9e744bb72c417fc1753f6ebbee5463809e9ca31",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": {
+            "type": "System.ArrayTypeMismatchException",
+            "message": "integer[] vs integer[][]"
+          }
+        },
+        {
+          "name": "copy_negative_source",
+          "sourceSha256": "24ae999d86394c2e31a71a8a3d30cffd590d0eb6a8769126e797804f435b33e5",
+          "metadataSha256": "d362db28470f8ef3e4cd037271eeeaaab0515c01c46d42b28801ddcb4ddfa38e",
+          "snapshotSha256": "51d166b2c75fda684a88d736d0aba9a0c17b077cfcd78ddcc422208a7bae8ebf",
+          "snapshotBytes": 333,
+          "originalObjectSha256": "c880d5f6e12695f04ebb0117ee3514f78a70d9e88925b44b35c25d395e30e5e5",
+          "afterLoadSha256": "3c334575d0b5abfb96bfe2a0bbe01cb95de7a2a89d4fffe1022bb7e2f66350d9",
+          "finalSha256": "a452794a55edddd8788fbfc02a17408bb749f3a1958e518d3acb8658e2b3d56c",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": {
+            "type": "System.ArgumentOutOfRangeException",
+            "message": "sourceIndex ('-1') must be greater than or equal to '0'. (Parameter 'sourceIndex')\r\nActual value was -1."
+          }
+        },
+        {
+          "name": "copy_negative_destination",
+          "sourceSha256": "e72a87de68bf312ab1893959408d84559fd5820e683333c44dccd0bb505e0a93",
+          "metadataSha256": "14cb4f3a5963f83ef5110d91535e62d41afa99fe928a16d57a4326a0c9ce6909",
+          "snapshotSha256": "51d166b2c75fda684a88d736d0aba9a0c17b077cfcd78ddcc422208a7bae8ebf",
+          "snapshotBytes": 333,
+          "originalObjectSha256": "562e2a693493de6f64cfcceac5f0d486cfa19f034ed01234a0c7596230eef742",
+          "afterLoadSha256": "3c334575d0b5abfb96bfe2a0bbe01cb95de7a2a89d4fffe1022bb7e2f66350d9",
+          "finalSha256": "a452794a55edddd8788fbfc02a17408bb749f3a1958e518d3acb8658e2b3d56c",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": {
+            "type": "System.ArgumentOutOfRangeException",
+            "message": "destinationIndex ('-1') must be greater than or equal to '0'. (Parameter 'destinationIndex')\r\nActual value was -1."
+          }
+        },
+        {
+          "name": "copy_source_overrun",
+          "sourceSha256": "d9bf6f34220bebe2a724c7c8d41cb8ec8013d8bc0e95942fef7102f7984b7e37",
+          "metadataSha256": "5d2950d5a6a77feaa3f4f3168e38e274b35f27256285ba23d0939839894346cf",
+          "snapshotSha256": "51d166b2c75fda684a88d736d0aba9a0c17b077cfcd78ddcc422208a7bae8ebf",
+          "snapshotBytes": 333,
+          "originalObjectSha256": "4c0755ea85f4f8de9178228d2145d6c5f6f9767398c3d4a041f463fc68d9db05",
+          "afterLoadSha256": "3c334575d0b5abfb96bfe2a0bbe01cb95de7a2a89d4fffe1022bb7e2f66350d9",
+          "finalSha256": "a452794a55edddd8788fbfc02a17408bb749f3a1958e518d3acb8658e2b3d56c",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": {
+            "type": "System.ArgumentException",
+            "message": "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"
+          }
+        },
+        {
+          "name": "copy_negative_count",
+          "sourceSha256": "549e48514f3113d8704c4b43a3449741b3e06905f0daf4ee4331d5927d6b70dd",
+          "metadataSha256": "9b552506e0a03deb00b0300f45647c664963b71db58475dca8c4723179438478",
+          "snapshotSha256": "51d166b2c75fda684a88d736d0aba9a0c17b077cfcd78ddcc422208a7bae8ebf",
+          "snapshotBytes": 333,
+          "originalObjectSha256": "48b89656671c227b5bb8fb2343c9442b44f7d40462a5685114709e8c3ea9c464",
+          "afterLoadSha256": "3c334575d0b5abfb96bfe2a0bbe01cb95de7a2a89d4fffe1022bb7e2f66350d9",
+          "finalSha256": "a452794a55edddd8788fbfc02a17408bb749f3a1958e518d3acb8658e2b3d56c",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": {
+            "type": "System.ArgumentOutOfRangeException",
+            "message": "length ('-1') must be a non-negative value. (Parameter 'length')\r\nActual value was -1."
+          }
+        },
+        {
+          "name": "copy_zero_at_end",
+          "sourceSha256": "15883124ea6589ca780098f93bec4b4e51a3a074ee7b72a6895e041ed7b1fbec",
+          "metadataSha256": "254645cf07e25eb71963499b3807c2ccb4224fb3a5b88208e560ae568bf82f46",
+          "snapshotSha256": "51d166b2c75fda684a88d736d0aba9a0c17b077cfcd78ddcc422208a7bae8ebf",
+          "snapshotBytes": 333,
+          "originalObjectSha256": "69b7c64284be9c483b3289cecea11a7a7960c44e15989faaa923d71b05f4c514",
+          "afterLoadSha256": "3c334575d0b5abfb96bfe2a0bbe01cb95de7a2a89d4fffe1022bb7e2f66350d9",
+          "finalSha256": "f2b50736849d7a848b4da174843b1c5ed509209a25589bb3a99e32804108b4ea",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": null
+        },
+        {
+          "name": "copy_null_wrapper",
+          "sourceSha256": "10d0b0346c6102ba4ecd166bbac343ddda6342487c60f8a0a18524f8d1874deb",
+          "metadataSha256": "979105dbe3178cd5d9c59d76cc21fb59458d4100048eab0c6d55cea35f28d24d",
+          "snapshotSha256": "b21ba4593ffd58e042a4517c8a81b8d39fda67da6dfed03207a7bc7abf715775",
+          "snapshotBytes": 242,
+          "originalObjectSha256": "56f339e967d55032cef44e0e84f661a4185895902c44b6cc5b00aed47cf7f65a",
+          "afterLoadSha256": "13b1262998e446874b6af1da5ec4fe77d69c5bc1c02b949de0c31d5697adfb43",
+          "finalSha256": "f0473b56526576c015b44535cd14059d8f24ac963d45f75154204ab2624871b9",
+          "independentClassDefinitions": 1,
+          "independentObservedReferences": 2,
+          "resumeFault": {
+            "type": "System.NullReferenceException",
+            "message": "Object reference not set to an instance of an object."
+          }
+        },
+        {
+          "name": "copy_wrong_backing",
+          "sourceSha256": "ee745909849448d4841612c9cade982950fb63002e6c97360dd9d21207817a2d",
+          "metadataSha256": "a5566a851ac142f8ba58a1b8639207e117cad4d5f460194e4b49266440f7e545",
+          "snapshotSha256": "2af86a436a8956540017792968ef416cc51bd42eb43e89540d7c8fb1795418f0",
+          "snapshotBytes": 317,
+          "originalObjectSha256": "c90e25ce33aaf251a6da966bd1166d439ac3d3b66f798d5995c5e5f1a9125cee",
+          "afterLoadSha256": "7f2c6b6d593008f7ee29761f36008a78502bcef1d70bdb8bc9eb95e129d0059d",
+          "finalSha256": "713c488af3e5e41c4b08433216f4c3521b26ea2622484197aa5e0ad332136855",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 3,
+          "resumeFault": {
+            "type": "System.InvalidCastException",
+            "message": "Unable to cast object of type 'System.String' to type 'System.Array'."
+          }
+        },
+        {
+          "name": "copy_widen_integer_double",
+          "sourceSha256": "75b97c6cea6d5f37f8a2aec5b08b1bb538fd79dfe3e2ca879fd4ab7a6c2a5261",
+          "metadataSha256": "f080d3e63e13dd29f939abe1f9f75637fc337d99e7a0a85a850aa5a3d9c64d5e",
+          "snapshotSha256": "d0e33db6e18640cf2210c73fc22a87bd6e557690334873f4f00d54c8050784ba",
+          "snapshotBytes": 355,
+          "originalObjectSha256": "d9c97ffce898dcc21fbbb0328bc939c3b9e2428e4689a3f7c42d02b9cb52e76a",
+          "afterLoadSha256": "8b1739859ad3d968872d83fa7662ce40b78b0ede301c60b9429cc6132fa3428f",
+          "finalSha256": "33f66ff0a885ca1d666a27d5f75a1c75fffc063a5d54a91b4e516565fe28b49f",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": null
+        },
+        {
+          "name": "copy_box_integer_object",
+          "sourceSha256": "72298fe80d81e9d30dd24c174644f1e2e5e7a0738e4d31e4b171239393c32a9d",
+          "metadataSha256": "99df383ecea8a8609b28089ec68f876ee5c88dfb34049ec923784106316a96b4",
+          "snapshotSha256": "f72444e3c979a2406556307828dd2c6ddd6e1072fb268b28a97c9140d130898c",
+          "snapshotBytes": 331,
+          "originalObjectSha256": "ef96eb94cd14f6525b563dd2f3989dcacd8f601663780e24c91a5431ef5af075",
+          "afterLoadSha256": "eda25b80ac8253a1640585e321ba6193fc3d4891c7f34606f97e623f13476288",
+          "finalSha256": "cf1ec51d63607a8b7a28bbdfa6b028837912089afc085ad9a7edec62ed8545f3",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": null
+        },
+        {
+          "name": "copy_unbox_object_integer",
+          "sourceSha256": "3a916f1546a4855523edad5182b5334d8dca2a0097fe0c671b5907fb236835bb",
+          "metadataSha256": "6b32677de65b5271b324d915a10d248c162d6093e48a01bc0fc78fe635b0cca0",
+          "snapshotSha256": "cefe1a3786e23c2ef83618ecc64ee5e512d9e53bd383fd0a53ef962af0122cf8",
+          "snapshotBytes": 343,
+          "originalObjectSha256": "a1df785069fe478e62fd01e64c4a17b12ac954a0195ee1cb6194be0762e10c0a",
+          "afterLoadSha256": "8e06b77218a421f3dbf63209699a09bd77383854779fec3386f5e0e45db29ed9",
+          "finalSha256": "c48c201fb6446491033e1b264f31adcc67b19558dd54d5257bd56b1e43a3bc2c",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": null
+        },
+        {
+          "name": "copy_partial_unbox_bad",
+          "sourceSha256": "a4f95c618b297f76102eb2e4360f45cc1a41c74ae34d57a4e4b336607152b1aa",
+          "metadataSha256": "c9578dace6429a643312a08976afe7d438862773681dbc6de60b160228372711",
+          "snapshotSha256": "558578026cce05642164ee38f8dbe8c5d61880f65d27efb550b3fceb15cc4225",
+          "snapshotBytes": 345,
+          "originalObjectSha256": "af54102bd807141946fc12adf3094211237a8cf18a717605f4af14f1752f7297",
+          "afterLoadSha256": "29fc0fedae47035d82922e99736ef5bea8a515077da5b4d9dbdfe89f735cc603",
+          "finalSha256": "7ae47c79c8b7870ed9f782eaeef6641b1ce5785c1ee8ff33f89de71ee20974a5",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": {
+            "type": "System.InvalidCastException",
+            "message": "At least one element in the source array could not be cast down to the destination array type."
+          }
+        },
+        {
+          "name": "copy_narrow_double_integer",
+          "sourceSha256": "8eeb262f7557344996bb06b109bbec8b5accb83e88d7dfe02af551120875b59e",
+          "metadataSha256": "eb499d476edd16a8cb19b86be1dd725c61245cf1ea58e5c72ae7253b344e8803",
+          "snapshotSha256": "69fa24b8481f98f6b7720e91517001976e938c6d56eb5be4d05647fedd19ec41",
+          "snapshotBytes": 341,
+          "originalObjectSha256": "0d524f67a6d4a047f15579fb558c77d0f8d96d199c423ed9d0f1301911c935ea",
+          "afterLoadSha256": "295e51823580238acaff516ed36d18905557e5c48bfb25ba2b42cb31ae79bc86",
+          "finalSha256": "a646c5fdaba40e40fbc05ce0464b3582404407d981c119efb379882ee44324f2",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": {
+            "type": "System.ArrayTypeMismatchException",
+            "message": "Source array type cannot be assigned to destination array type."
+          }
+        },
+        {
+          "name": "copy_widen_character_integer",
+          "sourceSha256": "05bc65ec435a04bff3b019c525be1b0c258f72cd227d35ad62f3b1b6a4f077d5",
+          "metadataSha256": "a98a97af95d497eba1466c272b928d10db63304c6fd645cc8c080ae3007eaf39",
+          "snapshotSha256": "ce9451752abb4def197293a44674b17db1fda47884caff46b01fa9fd03b2876c",
+          "snapshotBytes": 327,
+          "originalObjectSha256": "25de455f34a2a285a6747d73ea8064f78b8895d14aa7f960d5daa05df1726804",
+          "afterLoadSha256": "9dd4a0617db00a9740224176de10c82f794ff2bf013cdf2f002a1a4bfa7cbcd4",
+          "finalSha256": "7147ae6d3269f4d3ace9110c6f0faf1691f2a5698b4d5505cd6e754c00a32310",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": null
+        },
+        {
+          "name": "copy_narrow_integer_character",
+          "sourceSha256": "67f7b3778c461e588473e263c5a46914bc2d6bdec389015cd5c78287c8568926",
+          "metadataSha256": "cc8576ec0c3b1e4e4fdbc6e1c1c4157609bf3e915b3b5be8bbe7d7526112a29d",
+          "snapshotSha256": "9de3f7f6fff1928decc2d91cffc562d0ee0ce54b5a390abdde4e4bcb569fe802",
+          "snapshotBytes": 327,
+          "originalObjectSha256": "d466bb02b9b0899f0a59f08823d5efa6b6ec3d55586162fc502b16a4e6e9176a",
+          "afterLoadSha256": "9a0ffb585ff0834c554fbcb2337f4c5ac085d22101ec2b084d1273a62281800c",
+          "finalSha256": "3ad6f5823fa6264c73f25700f788d2f98c398e4a5887690d3ace837ba213a72c",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": {
+            "type": "System.ArrayTypeMismatchException",
+            "message": "Source array type cannot be assigned to destination array type."
+          }
+        },
+        {
+          "name": "copy_null_object_integer",
+          "sourceSha256": "4391721575369253f6fb09de13f05c4fa0e924eb2ebc7a80fb64a9b4a6b7a99e",
+          "metadataSha256": "ab670bd3c4d3f2c9ed5b5217139197a9be90770b4816b7c088503020b3c7b286",
+          "snapshotSha256": "670ee28d296535f0b17a92c34e16943564959f1787f3d7f02ddbe3d2c2e05865",
+          "snapshotBytes": 319,
+          "originalObjectSha256": "0f090a693aeac1697d1fa32c23a77398c34f90e9cf6f6c402319921d58ab56ea",
+          "afterLoadSha256": "a0b34b150cd20542a4613e12d003b332f481bf8699fa69d03f9e763445cf120c",
+          "finalSha256": "be8c2d9da4d3445cdb188fc3af8b63c19ba5e8df78729f4aa88f78f83a8c37dc",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": {
+            "type": "System.InvalidCastException",
+            "message": "At least one element in the source array could not be cast down to the destination array type."
+          }
+        },
+        {
+          "name": "copy_sdk_integer_object_to_integer",
+          "sourceSha256": "dbe2328d38b37b08ea38bd985f310a8b2718d227de35c45cc67ce795e9ddf65a",
+          "metadataSha256": "b8659feab7f3adbde5d70a2e8f5a9b39d6611e45f49683af4803b34bddaffe06",
+          "snapshotSha256": "9254ff943958b151ffcff5c3f9603525975ad0e5e93f095dc3515e6f3d3a39b7",
+          "snapshotBytes": 323,
+          "originalObjectSha256": "109108e94b62f6629b0761ad995110c320ebdffd7abc0e42a2a55cd40d69fd68",
+          "afterLoadSha256": "f020950c6c98165a171d422cd95553473bcfc6ef48c32fb192c0dcd5fe3520d7",
+          "finalSha256": "7e0a89c532e9e801aa090f8017a9f42dd4bf4c757feb0664e1da02c4fb4b08d6",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": null
+        },
+        {
+          "name": "copy_boxed_integer_to_double",
+          "sourceSha256": "0a173f71f4f3117d9be38e2da0150c056c1c4e4303073443e93e01c68407b0ad",
+          "metadataSha256": "c5eeb9dda37803312a7c760ca15f54c9e23acab378470914e0147a30a9bfc629",
+          "snapshotSha256": "f318d2d96ede6c498138b59ce40066137e64eb160af8df064423f0ceafa0a005",
+          "snapshotBytes": 341,
+          "originalObjectSha256": "cfe1084c8de2eb6e3e6b0f179aaa65c42efc2b8d632c853ea5df64b595edb03f",
+          "afterLoadSha256": "c30f91de7884f89833a51a07255596147aa1efc8bce88760c0fbbc78a0a9656b",
+          "finalSha256": "ab006b8bc86e55950ad4fc8f4982f056e7068df8d6e3d52bdb940dcb2d7a75f0",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": {
+            "type": "System.InvalidCastException",
+            "message": "At least one element in the source array could not be cast down to the destination array type."
+          }
+        },
+        {
+          "name": "copy_unbox_double_object_to_double",
+          "sourceSha256": "4d48e3d13eb823a2c7b64c213f3a1c52c9fbecac68a2bc203abe7d0df12e27be",
+          "metadataSha256": "3b720be75f9a13665be41f2b07efbb13b046c9c29550e579c6f9daadc40de71b",
+          "snapshotSha256": "8d9641e7437b63975bde7b6604af72069dc824f5b24eac605899ae55d8650194",
+          "snapshotBytes": 349,
+          "originalObjectSha256": "0b10b9388e065bf595237e5c566b411f0c6423909ecaa5e2d6ca8db0afe8cbe3",
+          "afterLoadSha256": "2afecbe129660ab6c5da715d0499f6444417249ab8bb3cfa66a26a0429c99629",
+          "finalSha256": "9b8ed46295c0775e9b4f99e09ae9a7e7c3d8c9a3738fb91148245288ccbba6da",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": null
+        },
+        {
+          "name": "copy_argument_count_yield_rebind",
+          "sourceSha256": "1bc4ebe2dcd2f086469643c43a6254535513003b191a626f3a21a4756487211e",
+          "metadataSha256": "d6db6c9a13da7119480216a46cb118f03d4957a26ad4d94f9595aff345d5542d",
+          "snapshotSha256": "c05e11617698c62dc0db085f601eb2972a987b409117f880171828fc479ae5e7",
+          "snapshotBytes": 568,
+          "originalObjectSha256": "82fa1d6d6c77abe24989356eda77d7456e4e814e76c35a818ebf7867982a7f7b",
+          "afterLoadSha256": "bca128242edfc479c31eabdc660a1f7e8d4a0ff23c1bb9593e7d443b23e93356",
+          "finalSha256": "85e0caf70bcf41f863940450fcb75c31d0f89a52134938c59b590dd273c13841",
+          "independentClassDefinitions": 4,
+          "independentObservedReferences": 8,
+          "resumeFault": null
+        }
+      ],
+      "originalBackendSha256": {
+        "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+        "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+        "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+        "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+        "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+        "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+        "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+        "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+        "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+        "original_source_XMRInstCapture.cs": "775f1d83bd4610f788891269ea9ea08b1f79cf4bf3b44300d926f49c8a277cbd",
+        "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+        "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+        "original_source_Helpers.cs": "96b7c3090cdded9c12e986bc538705272eae4c0fc12f01deab8f0f1bb94c7bcf",
+        "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+        "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+        "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+        "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+        "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+        "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+        "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+      }
+    },
+    "linux": {
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "processId": 1,
+      "metadataSha256": "349b5c8995b7068c060d9dcea1b2e083c59bae17781ff33510e5f7dfff2cb479",
+      "cases": [
+        {
+          "name": "copy_integer",
+          "sourceSha256": "a4d808b2c5691b5fdc7879793743595db6ff77f8c662d8e31da7f214f477b536",
+          "metadataSha256": "337b362801c46697ebd4e8ce09d1717144f23079c254c416357ee7ff6d28b1c4",
+          "snapshotSha256": "4bc286374cff0065ba06945cfb379a20fb50e6e33f3ecafd9758e4a87a9932ce",
+          "snapshotBytes": 343,
+          "originalObjectSha256": "036be90a236bb3bffa2036a2ed59adad9f2ca87f4fa34539adbbfc1179c9db28",
+          "afterLoadSha256": "b3c4866fefbdf6ef3fea7a6f48ce063033cd0fbc8391de9e51dc72c9ac1dc8a8",
+          "finalSha256": "90b50b93dbbd7d843707e612b946d6ed26f7701adf05a030ef590cd7e6ebcf9f",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": null
+        },
+        {
+          "name": "copy_float",
+          "sourceSha256": "208993ddfe400476ebadcdbcf1b8045824280a4970ebeb09e56d1b1a65fb9b58",
+          "metadataSha256": "798e644a7800e23eba6ab5c96a13fa43fb39ebb1ebb0f829d9370d634fc1ec29",
+          "snapshotSha256": "4473e3e22a2bbec0d003e799b90843c392274ac639c9c87e485b5e2ef676f9bc",
+          "snapshotBytes": 367,
+          "originalObjectSha256": "c030eb90dc363eaa0ac2da34f8f801b34d5891ed0afd3912bdb9f67deee93bd7",
+          "afterLoadSha256": "cb26ffd062f16c59d1615ce5539139e862944cf12811f1edcf22e44e48fc07eb",
+          "finalSha256": "546ec2cad6780e8c9a8868e0eaf59fe2117a327f954b90bd44d2d9675a9a7871",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": null
+        },
+        {
+          "name": "copy_char",
+          "sourceSha256": "60f979ccc11b22990cc2297381ab15fd63653e88722e9b45a10720e7b87061eb",
+          "metadataSha256": "ed112e5d992aaec3c10a74754d32feda973b10145052da681f0ea68de78937a7",
+          "snapshotSha256": "7bde6427b68f02d8dca048d7f0dbf7c86c2fb2e889c68f779ce111999aa99c48",
+          "snapshotBytes": 325,
+          "originalObjectSha256": "c25c9833ef776040891ddf266257c165aed8e7c791319e6fac453be0568f34af",
+          "afterLoadSha256": "279ecc8bdf66c4844f68b39db8dbe28e2019194dc0fa3b29538ae65f926e8a1e",
+          "finalSha256": "4bf492cc0861f84819d230735f820c3dc674ae479017b0a20ffe66d445ef7c24",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": null
+        },
+        {
+          "name": "copy_overlap_forward",
+          "sourceSha256": "84e8086de213ef41a42e6352cb351ef052013848c26197a1a335d7ff1e31df5d",
+          "metadataSha256": "0bfecc3d81252534d6ed7c099eea1d26fe8bc0d850ade52fc0692c0e66e39665",
+          "snapshotSha256": "3325944e650354cd4e3100714f0522b41a3af59bdc2a682d64e223adc7f96d83",
+          "snapshotBytes": 258,
+          "originalObjectSha256": "52c21d3f9f75bb19ff549e514b38daf2865cb64f0088b9dad27a764100b00003",
+          "afterLoadSha256": "f530d2d4d527c9815ded4f7b33815d6591d41608e638dec47c10cbdd51ca77b3",
+          "finalSha256": "7a9b79695b2d961ddfd49bbbf8c933c3cbe9f29fcae61a2563665cf9869d35d7",
+          "independentClassDefinitions": 1,
+          "independentObservedReferences": 2,
+          "resumeFault": null
+        },
+        {
+          "name": "copy_overlap_backward",
+          "sourceSha256": "510fe28654052854c7f106f8c199a947c7e32a15e0388efa3dc150b7987baf6f",
+          "metadataSha256": "8d6d838a215f6d46b1f9100efe66c7860873da08512de5ad0d147b335f4387e4",
+          "snapshotSha256": "3325944e650354cd4e3100714f0522b41a3af59bdc2a682d64e223adc7f96d83",
+          "snapshotBytes": 258,
+          "originalObjectSha256": "69e91262f6123a611bddf10096282a2e5883f72b97d96057782d2700fbbce771",
+          "afterLoadSha256": "f530d2d4d527c9815ded4f7b33815d6591d41608e638dec47c10cbdd51ca77b3",
+          "finalSha256": "16c9dc2dee21995f5184ef5c0a0d779181040e5e8f66e7aceb14c68258b88915",
+          "independentClassDefinitions": 1,
+          "independentObservedReferences": 2,
+          "resumeFault": null
+        },
+        {
+          "name": "copy_cross_metadata",
+          "sourceSha256": "854ada84100a6e8709a258ce3820f0fbfc25b8740092edc5fae4bef3f56ca50a",
+          "metadataSha256": "ea24301ffc466b889c6ce34785908c3925b9fdf99be5e14e339488decd6fac90",
+          "snapshotSha256": "8c15a3d54a5e7b82a877bf2d76ec2ab74ca7bf5ee59c00527d8551c78f79ceb0",
+          "snapshotBytes": 341,
+          "originalObjectSha256": "cdf58e9dc39e489ff16fc1d225f3b57f41f272b054da7cd351cfd7eade681325",
+          "afterLoadSha256": "7a1cce557130600d67074e4621f484fdd6c174c00433e939e3faf3e851be5721",
+          "finalSha256": "b714917c28f56c42edd830b81ab67c4a1c7df7d9029c7ab018b8c22246f3fead",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": {
+            "type": "System.ArrayTypeMismatchException",
+            "message": "float[] vs integer[]"
+          }
+        },
+        {
+          "name": "copy_rectangular_rank",
+          "sourceSha256": "608e19a1ed70160ffe1f2f928f804244fcfd719dd819e4a66f50ab0e3eac4b52",
+          "metadataSha256": "a0b51ffbf09e2dc47270c026271c0eca630846afcd06d5b7e96af839972e27cf",
+          "snapshotSha256": "2ac69e8a9bc1c33e398b173de152873440fe4c0d04893cb7d4f4cf83081a5237",
+          "snapshotBytes": 338,
+          "originalObjectSha256": "788c4d939931955343b13844555957ee4bc2388e722f12ed71f135b0ca825511",
+          "afterLoadSha256": "0d629cb5b3b06cd678891e1546f37caaba4b8a6dc3343b122a7e9a6a7aeadfbf",
+          "finalSha256": "689aab558967b0a082f564c61916c7871d8158497cb219db72e9f5df6a1d4b80",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": null
+        },
+        {
+          "name": "copy_jagged_depth_mismatch",
+          "sourceSha256": "7ac852cbb12648f8bbd3973cc0826bfcbcc8f1eb4edb34420acfe8dc0aba125a",
+          "metadataSha256": "df68919cb11c0cb0b80f4b593d95998a49c63b28ea2d78dfeb1e65311d313d1c",
+          "snapshotSha256": "a3628669c80af01168aa3a4ff0b74e6c5fa38faef85b39a2dd63d255ca1482d0",
+          "snapshotBytes": 319,
+          "originalObjectSha256": "3f5b67ddba25089aa73e5c5124baefd0e52473b0a50371c395ae83927d710087",
+          "afterLoadSha256": "7a32c18f849427cba7b2168a1e0e705901bf9b24c564af3dcb28277edad507a8",
+          "finalSha256": "94055ddb68f078c1d541c2d5c981d82a0fd9ff811ca67c412a189ec12625c84c",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": {
+            "type": "System.ArrayTypeMismatchException",
+            "message": "integer[] vs integer[][]"
+          }
+        },
+        {
+          "name": "copy_negative_source",
+          "sourceSha256": "24ae999d86394c2e31a71a8a3d30cffd590d0eb6a8769126e797804f435b33e5",
+          "metadataSha256": "c2a8f9845ea6c2b2ee3d89fb0a87ecb9a0381f6760afafc4f65c9f7d8e55ef3a",
+          "snapshotSha256": "51d166b2c75fda684a88d736d0aba9a0c17b077cfcd78ddcc422208a7bae8ebf",
+          "snapshotBytes": 333,
+          "originalObjectSha256": "c880d5f6e12695f04ebb0117ee3514f78a70d9e88925b44b35c25d395e30e5e5",
+          "afterLoadSha256": "8937bc50b666281e2ebd27c0b7a5ae9703b361ed5239bef01b6af811333036ea",
+          "finalSha256": "fc2f284a9b9788bc2bb54da5d338a68de45d1727d019dfd7b4edeb365d9ad14c",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": {
+            "type": "System.ArgumentOutOfRangeException",
+            "message": "sourceIndex ('-1') must be greater than or equal to '0'. (Parameter 'sourceIndex')\nActual value was -1."
+          }
+        },
+        {
+          "name": "copy_negative_destination",
+          "sourceSha256": "e72a87de68bf312ab1893959408d84559fd5820e683333c44dccd0bb505e0a93",
+          "metadataSha256": "00dc1c7d827a9fff7f1d872c36a4710e94600232b94494f19c712d77c12e43af",
+          "snapshotSha256": "51d166b2c75fda684a88d736d0aba9a0c17b077cfcd78ddcc422208a7bae8ebf",
+          "snapshotBytes": 333,
+          "originalObjectSha256": "562e2a693493de6f64cfcceac5f0d486cfa19f034ed01234a0c7596230eef742",
+          "afterLoadSha256": "8937bc50b666281e2ebd27c0b7a5ae9703b361ed5239bef01b6af811333036ea",
+          "finalSha256": "fc2f284a9b9788bc2bb54da5d338a68de45d1727d019dfd7b4edeb365d9ad14c",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": {
+            "type": "System.ArgumentOutOfRangeException",
+            "message": "destinationIndex ('-1') must be greater than or equal to '0'. (Parameter 'destinationIndex')\nActual value was -1."
+          }
+        },
+        {
+          "name": "copy_source_overrun",
+          "sourceSha256": "d9bf6f34220bebe2a724c7c8d41cb8ec8013d8bc0e95942fef7102f7984b7e37",
+          "metadataSha256": "69d276e95e33eb4178280882b44f9a4810d9338681e097763d265dcad447c895",
+          "snapshotSha256": "51d166b2c75fda684a88d736d0aba9a0c17b077cfcd78ddcc422208a7bae8ebf",
+          "snapshotBytes": 333,
+          "originalObjectSha256": "4c0755ea85f4f8de9178228d2145d6c5f6f9767398c3d4a041f463fc68d9db05",
+          "afterLoadSha256": "8937bc50b666281e2ebd27c0b7a5ae9703b361ed5239bef01b6af811333036ea",
+          "finalSha256": "fc2f284a9b9788bc2bb54da5d338a68de45d1727d019dfd7b4edeb365d9ad14c",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": {
+            "type": "System.ArgumentException",
+            "message": "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"
+          }
+        },
+        {
+          "name": "copy_negative_count",
+          "sourceSha256": "549e48514f3113d8704c4b43a3449741b3e06905f0daf4ee4331d5927d6b70dd",
+          "metadataSha256": "fd429e64243a54ff06ad78487241184902ec49208bc27f18608ca5fe57733d62",
+          "snapshotSha256": "51d166b2c75fda684a88d736d0aba9a0c17b077cfcd78ddcc422208a7bae8ebf",
+          "snapshotBytes": 333,
+          "originalObjectSha256": "48b89656671c227b5bb8fb2343c9442b44f7d40462a5685114709e8c3ea9c464",
+          "afterLoadSha256": "8937bc50b666281e2ebd27c0b7a5ae9703b361ed5239bef01b6af811333036ea",
+          "finalSha256": "fc2f284a9b9788bc2bb54da5d338a68de45d1727d019dfd7b4edeb365d9ad14c",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": {
+            "type": "System.ArgumentOutOfRangeException",
+            "message": "length ('-1') must be a non-negative value. (Parameter 'length')\nActual value was -1."
+          }
+        },
+        {
+          "name": "copy_zero_at_end",
+          "sourceSha256": "15883124ea6589ca780098f93bec4b4e51a3a074ee7b72a6895e041ed7b1fbec",
+          "metadataSha256": "1d52d4083b9134a9c89ff4a195cbf2f1637dfc1a8cfc076195404defa691bee5",
+          "snapshotSha256": "51d166b2c75fda684a88d736d0aba9a0c17b077cfcd78ddcc422208a7bae8ebf",
+          "snapshotBytes": 333,
+          "originalObjectSha256": "69b7c64284be9c483b3289cecea11a7a7960c44e15989faaa923d71b05f4c514",
+          "afterLoadSha256": "8937bc50b666281e2ebd27c0b7a5ae9703b361ed5239bef01b6af811333036ea",
+          "finalSha256": "3df454a98fa51246a515dd47500f4d983de2a0420c48f47ddd673e8d74c4474a",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": null
+        },
+        {
+          "name": "copy_null_wrapper",
+          "sourceSha256": "10d0b0346c6102ba4ecd166bbac343ddda6342487c60f8a0a18524f8d1874deb",
+          "metadataSha256": "09f41a4a2ef0eaa356c542fec52ffde98d97fb26247348a43be8365e303e2cc5",
+          "snapshotSha256": "b21ba4593ffd58e042a4517c8a81b8d39fda67da6dfed03207a7bc7abf715775",
+          "snapshotBytes": 242,
+          "originalObjectSha256": "56f339e967d55032cef44e0e84f661a4185895902c44b6cc5b00aed47cf7f65a",
+          "afterLoadSha256": "973de102db805b6566f00d7a899c20b4cfca8ba637ea632e2592dc516f1112ee",
+          "finalSha256": "d3bd584d0b5fc929b5fa0ee0c5285a0148311c627ec10f9d251ed03e10e6a7ae",
+          "independentClassDefinitions": 1,
+          "independentObservedReferences": 2,
+          "resumeFault": {
+            "type": "System.NullReferenceException",
+            "message": "Object reference not set to an instance of an object."
+          }
+        },
+        {
+          "name": "copy_wrong_backing",
+          "sourceSha256": "ee745909849448d4841612c9cade982950fb63002e6c97360dd9d21207817a2d",
+          "metadataSha256": "19d65367239e60e049f15d9c07ecf70da4f51f1c1d0bc935d516e85d8f399728",
+          "snapshotSha256": "2af86a436a8956540017792968ef416cc51bd42eb43e89540d7c8fb1795418f0",
+          "snapshotBytes": 317,
+          "originalObjectSha256": "c90e25ce33aaf251a6da966bd1166d439ac3d3b66f798d5995c5e5f1a9125cee",
+          "afterLoadSha256": "ce1204eb7eb788e028557d00d5b1733379fd301de4c381f4e297fd4a75dc3986",
+          "finalSha256": "2c74c3d69d2712257c7fbe393a5dd9a6b0b6f2e6421e39342ab29ab54730c55b",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 3,
+          "resumeFault": {
+            "type": "System.InvalidCastException",
+            "message": "Unable to cast object of type 'System.String' to type 'System.Array'."
+          }
+        },
+        {
+          "name": "copy_widen_integer_double",
+          "sourceSha256": "75b97c6cea6d5f37f8a2aec5b08b1bb538fd79dfe3e2ca879fd4ab7a6c2a5261",
+          "metadataSha256": "ae8650778a7a556c163144e9854131fa15816428be529d12ad2e84e1ac132229",
+          "snapshotSha256": "d0e33db6e18640cf2210c73fc22a87bd6e557690334873f4f00d54c8050784ba",
+          "snapshotBytes": 355,
+          "originalObjectSha256": "d9c97ffce898dcc21fbbb0328bc939c3b9e2428e4689a3f7c42d02b9cb52e76a",
+          "afterLoadSha256": "cb1b45af5e182def3fb1125d2ccc3f7938c78ed259d70fab4bd5e550c365a4ec",
+          "finalSha256": "3a7ac30883cf5382046f5a59e421614520be1e2e3fa97729c6a58448cab267a8",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": null
+        },
+        {
+          "name": "copy_box_integer_object",
+          "sourceSha256": "72298fe80d81e9d30dd24c174644f1e2e5e7a0738e4d31e4b171239393c32a9d",
+          "metadataSha256": "a0d7b405393fb368d6ab1f24a5ba0b765a684e0bf2f0d1e8729eb873950d6126",
+          "snapshotSha256": "f72444e3c979a2406556307828dd2c6ddd6e1072fb268b28a97c9140d130898c",
+          "snapshotBytes": 331,
+          "originalObjectSha256": "ef96eb94cd14f6525b563dd2f3989dcacd8f601663780e24c91a5431ef5af075",
+          "afterLoadSha256": "72d427b668b9afa5565b52eaa56262df6a4c7b72e254e6083c5ac4d705d89583",
+          "finalSha256": "e8d3c45430ed0e639f4a38ec4f2c514bc0afa57985a86929c58738f86395f9d6",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": null
+        },
+        {
+          "name": "copy_unbox_object_integer",
+          "sourceSha256": "3a916f1546a4855523edad5182b5334d8dca2a0097fe0c671b5907fb236835bb",
+          "metadataSha256": "a96d418f5311edb14930164186aaccdddc43ac7c7fdce41453fab3fcb8c1c380",
+          "snapshotSha256": "cefe1a3786e23c2ef83618ecc64ee5e512d9e53bd383fd0a53ef962af0122cf8",
+          "snapshotBytes": 343,
+          "originalObjectSha256": "a1df785069fe478e62fd01e64c4a17b12ac954a0195ee1cb6194be0762e10c0a",
+          "afterLoadSha256": "80b7da653706bced2cd46b3f5816e72212a25fbd669400c2cf98b251f24498f6",
+          "finalSha256": "fd65f45808df8be3f094413cf08a5a897e9a9eac3c5488530656f07fdbd6e419",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": null
+        },
+        {
+          "name": "copy_partial_unbox_bad",
+          "sourceSha256": "a4f95c618b297f76102eb2e4360f45cc1a41c74ae34d57a4e4b336607152b1aa",
+          "metadataSha256": "06bd130e41911a27cea7d9857b135f1ec256b2b45326391d77cbcfd1cb884e93",
+          "snapshotSha256": "558578026cce05642164ee38f8dbe8c5d61880f65d27efb550b3fceb15cc4225",
+          "snapshotBytes": 345,
+          "originalObjectSha256": "af54102bd807141946fc12adf3094211237a8cf18a717605f4af14f1752f7297",
+          "afterLoadSha256": "171e2bd6d8ff961880981fa7385c4f73b1305fc5fc762f21598aded71ed1b903",
+          "finalSha256": "5fde1319260f7cc1ded040f2f41d2bde5ad79957a6bc888ba099ce4242c5e9ed",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": {
+            "type": "System.InvalidCastException",
+            "message": "At least one element in the source array could not be cast down to the destination array type."
+          }
+        },
+        {
+          "name": "copy_narrow_double_integer",
+          "sourceSha256": "8eeb262f7557344996bb06b109bbec8b5accb83e88d7dfe02af551120875b59e",
+          "metadataSha256": "b39df076c41d584e389e7d68ce3e48f6d5a297057ef0749c8592b746a4860f1a",
+          "snapshotSha256": "69fa24b8481f98f6b7720e91517001976e938c6d56eb5be4d05647fedd19ec41",
+          "snapshotBytes": 341,
+          "originalObjectSha256": "0d524f67a6d4a047f15579fb558c77d0f8d96d199c423ed9d0f1301911c935ea",
+          "afterLoadSha256": "761f2fd8687afe773bf7e88f18251568f16c95de58fd58b335fb98086ae24b85",
+          "finalSha256": "9852566a9e62fccb3557c0dfca991c20fd09c3d01d9347022762d1d62ae8e035",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": {
+            "type": "System.ArrayTypeMismatchException",
+            "message": "Source array type cannot be assigned to destination array type."
+          }
+        },
+        {
+          "name": "copy_widen_character_integer",
+          "sourceSha256": "05bc65ec435a04bff3b019c525be1b0c258f72cd227d35ad62f3b1b6a4f077d5",
+          "metadataSha256": "41e32087ba4d329fb5d0edc8f98e7514de3b2705d12b892ea93d5c45b18b52e5",
+          "snapshotSha256": "ce9451752abb4def197293a44674b17db1fda47884caff46b01fa9fd03b2876c",
+          "snapshotBytes": 327,
+          "originalObjectSha256": "25de455f34a2a285a6747d73ea8064f78b8895d14aa7f960d5daa05df1726804",
+          "afterLoadSha256": "28d4859ddeda668d317487c342ab410ac6205a747120493f0cf6f805ebff2ab7",
+          "finalSha256": "580ea7f8ab2e57e9f713b96cb18d4d2fbe28e46e58730419333d74f48f5cac50",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": null
+        },
+        {
+          "name": "copy_narrow_integer_character",
+          "sourceSha256": "67f7b3778c461e588473e263c5a46914bc2d6bdec389015cd5c78287c8568926",
+          "metadataSha256": "1643ac2acc615b3a413f87087058389a28a00b7182d6f7e2a4ebfdd10d698be6",
+          "snapshotSha256": "9de3f7f6fff1928decc2d91cffc562d0ee0ce54b5a390abdde4e4bcb569fe802",
+          "snapshotBytes": 327,
+          "originalObjectSha256": "d466bb02b9b0899f0a59f08823d5efa6b6ec3d55586162fc502b16a4e6e9176a",
+          "afterLoadSha256": "2ca206035974d3c873190ad65098e8903d670322e4402b2711ce81cb581ab22c",
+          "finalSha256": "40fc6a7c4913ebed3b1234304564ac6830661114a9cee2b4e09e37303785275a",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": {
+            "type": "System.ArrayTypeMismatchException",
+            "message": "Source array type cannot be assigned to destination array type."
+          }
+        },
+        {
+          "name": "copy_null_object_integer",
+          "sourceSha256": "4391721575369253f6fb09de13f05c4fa0e924eb2ebc7a80fb64a9b4a6b7a99e",
+          "metadataSha256": "8f2147d60eca596afebe1b0f9689fb69557c54680f946708b6f09c01cce0a093",
+          "snapshotSha256": "670ee28d296535f0b17a92c34e16943564959f1787f3d7f02ddbe3d2c2e05865",
+          "snapshotBytes": 319,
+          "originalObjectSha256": "0f090a693aeac1697d1fa32c23a77398c34f90e9cf6f6c402319921d58ab56ea",
+          "afterLoadSha256": "59228dc97cb2f3a3813c7e493b4151dbd4a6df5042f9197d762781228314c235",
+          "finalSha256": "eca27aa355a9123ea7c85832ffe219f3a2b785e98633eb8677a4c91160041367",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": {
+            "type": "System.InvalidCastException",
+            "message": "At least one element in the source array could not be cast down to the destination array type."
+          }
+        },
+        {
+          "name": "copy_sdk_integer_object_to_integer",
+          "sourceSha256": "dbe2328d38b37b08ea38bd985f310a8b2718d227de35c45cc67ce795e9ddf65a",
+          "metadataSha256": "2534b43dfb37b5e1693168cfcb238b02026abf8ec57efed24cfb336e7adc0ba9",
+          "snapshotSha256": "9254ff943958b151ffcff5c3f9603525975ad0e5e93f095dc3515e6f3d3a39b7",
+          "snapshotBytes": 323,
+          "originalObjectSha256": "109108e94b62f6629b0761ad995110c320ebdffd7abc0e42a2a55cd40d69fd68",
+          "afterLoadSha256": "d428b492401928ad696c40d51b37764597754bf538bfdb16c7e6911d41737f03",
+          "finalSha256": "4653750dff52ccb3cda812d541f40f8608f4a8a9477d2bf0e0cd19916f1ca9c3",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": null
+        },
+        {
+          "name": "copy_boxed_integer_to_double",
+          "sourceSha256": "0a173f71f4f3117d9be38e2da0150c056c1c4e4303073443e93e01c68407b0ad",
+          "metadataSha256": "5c7e949abadcb932051c2e44838dcdafeb52b089860e658e32226b1fb0951e29",
+          "snapshotSha256": "f318d2d96ede6c498138b59ce40066137e64eb160af8df064423f0ceafa0a005",
+          "snapshotBytes": 341,
+          "originalObjectSha256": "cfe1084c8de2eb6e3e6b0f179aaa65c42efc2b8d632c853ea5df64b595edb03f",
+          "afterLoadSha256": "9b7adadec5585b52a727c6ae1d0dd3a31584d014adc2f9f8771fa2504fa0039b",
+          "finalSha256": "ebc8b13ade041b7ad95c40b0ea6fbd32c3dad79d9d5f59ed5bf595927f3637cf",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": {
+            "type": "System.InvalidCastException",
+            "message": "At least one element in the source array could not be cast down to the destination array type."
+          }
+        },
+        {
+          "name": "copy_unbox_double_object_to_double",
+          "sourceSha256": "4d48e3d13eb823a2c7b64c213f3a1c52c9fbecac68a2bc203abe7d0df12e27be",
+          "metadataSha256": "68fd6d34b7b6b6a01aef409a0b4c14311c6e771750a47233e569e0ba3301e69f",
+          "snapshotSha256": "8d9641e7437b63975bde7b6604af72069dc824f5b24eac605899ae55d8650194",
+          "snapshotBytes": 349,
+          "originalObjectSha256": "0b10b9388e065bf595237e5c566b411f0c6423909ecaa5e2d6ca8db0afe8cbe3",
+          "afterLoadSha256": "d88207461531a02a3898fea4a960d96189ac928daaf6b1990277498023c9990a",
+          "finalSha256": "90181f6f29b0da89c0de3a1efc397f535f6ec1616fd1b292015820c3831e9884",
+          "independentClassDefinitions": 2,
+          "independentObservedReferences": 4,
+          "resumeFault": null
+        },
+        {
+          "name": "copy_argument_count_yield_rebind",
+          "sourceSha256": "1bc4ebe2dcd2f086469643c43a6254535513003b191a626f3a21a4756487211e",
+          "metadataSha256": "4b5228b82f4008b3f3c537bd80a837958263b5ff2d30610641b3bab634986965",
+          "snapshotSha256": "c05e11617698c62dc0db085f601eb2972a987b409117f880171828fc479ae5e7",
+          "snapshotBytes": 568,
+          "originalObjectSha256": "82fa1d6d6c77abe24989356eda77d7456e4e814e76c35a818ebf7867982a7f7b",
+          "afterLoadSha256": "9ed6f9f0e913949b3856d87e776d89611ecc707daba99b57a71c84624d7709b5",
+          "finalSha256": "d53bdfd35e1f3379df04952748272c3ca48295c4662889a3060a8792ef3a7a90",
+          "independentClassDefinitions": 4,
+          "independentObservedReferences": 8,
+          "resumeFault": null
+        }
+      ],
+      "originalBackendSha256": {
+        "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+        "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+        "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+        "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+        "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+        "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+        "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+        "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+        "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+        "original_source_XMRInstCapture.cs": "775f1d83bd4610f788891269ea9ea08b1f79cf4bf3b44300d926f49c8a277cbd",
+        "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+        "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+        "original_source_Helpers.cs": "96b7c3090cdded9c12e986bc538705272eae4c0fc12f01deab8f0f1bb94c7bcf",
+        "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+        "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+        "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+        "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+        "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+        "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+        "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+      }
+    }
+  },
+  "freshProcessImports": {
+    "Windows": {
+      "cases": 27,
+      "processId": 55076,
+      "metadataSha256": "8dad15e1b9d5dcad1bd6b23e498e7c7e10147dee8f280ec692c7590072f1df66"
+    },
+    "Linux": {
+      "cases": 27,
+      "processId": 1,
+      "metadataSha256": "9c196812d623df160878dcc56d1532d90bc7d1d2c39c1a5cce7e19a0a6a97e0a"
+    }
+  },
+  "measuredBehavior": {
+    "families": "Actual raw C/F/I/O families retained; actual backing CLR arrays control conversions after generated-class basename/jagged-depth gate.",
+    "overlap": "Same-array copies preserve memmove ordering both ways.",
+    "typeGate": "float[] vs integer[] and integer[] vs integer[][] fail; different rectangular ranks with same base and jagged depth copy.",
+    "conversion": "Int32[] toDouble[] andChar[] toInt32[] widen; Int32[] toObject[] boxes; Object rawInt32 toInt32[] andObject rawDouble toDouble[] unbox. Double[] toInt32[] andInt32[] toChar[] reject; Object rawInt32 toDouble[] cannot widen after unboxing.",
+    "partialWrites": "Object[11,wrong,33] toInt32[101,102,103] writes11 then faults, leaving[11,102,103]. Null Object cannot unbox toInt32 and leavesold5.",
+    "arguments": "Args once left-to-right order12345. Count Sleep retains earlier wrappers despite global rebinding99/100; old destination alias receives11.",
+    "ledgers": "Mutable Object backing leaves class own ledger stale live; external restore recomputes cells, e.g4 to22 for bad Object source.",
+    "ranges": "Negative index/count, source overrun, zero count at end, null wrapper, wrong String backing recorded with exact platform fault text."
+  },
+  "crossPlatformSnapshotsIdentical": true,
+  "crossPlatformOriginalObjectsIdentical": true,
+  "boundaries": [
+    "27 bounded source cases per original OS and27 fresh-process imports per OS; no native acceptance/parity claim.",
+    "Case label copy_sdk_integer_object_to_integer is historical wording: actual List indexing producesSystem.Int32 before Object storage; no SDK-LSLInteger Array.Copy acceptance claim.",
+    "ArgumentOutOfRange messages retainWindowsCRLF/LinuxLF; cross-platform comparisons normalize only newline differences.",
+    "No full CLR conversion matrix, new raw families, arbitrary generic bases, forced GC or GC-cause claim."
+  ],
+  "verifierSha256": "53aba469b0eaa6dc16208dc2e4d13f726064549c96f3d035b6e5b52f246233dc"
+}

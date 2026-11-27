@@ -1,0 +1,226 @@
+  state[0] = default
+  numGblArrays       0
+  numGblChars        0
+  numGblFloats       0
+  numGblIntegers     3
+  numGblLists        1
+  numGblObjects      0
+  numGblRotations    2
+  numGblStrings      0
+  numGblVectors      0
+  numGblSDTClObjs    0
+  numGblSDTIntfObjs  0
+  r = iarRotations[0]
+  copied = iarRotations[1]
+  truth = iarIntegers[0]
+  negated = iarIntegers[1]
+  casted = iarIntegers[2]
+  boxed = iarLists[0]
+  delegate void $anondel$void()();
+
+Void $globalvarinit() (EventHelpersInstance)
+{
+          lsllist     tmp$1$0
+  0000    ldarg.0     
+  0001    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0006    ldfld       XMRInstArrays:iarRotations -> Quaternion[]   (field)
+  000B    ldc.i4.0    
+  000C    ldc.i4.0    
+  000D    conv.r8     
+  000E    ldc.i4.0    
+  000F    conv.r8     
+  0010    ldc.i4.0    
+  0011    conv.r8     
+  0012    ldc.i4.1    
+  0013    conv.r8     
+  0014    newobj      Quaternion:(Double,Double,Double,Double)
+  0019    stelem      Quaternion   (type)
+  001E    ldarg.0     
+  001F    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0024    ldfld       XMRInstArrays:iarRotations -> Quaternion[]   (field)
+  0029    ldc.i4.1    
+  002A    ldc.r8      0   (double)
+  0033    ldc.r8      0   (double)
+  003C    ldc.r8      0   (double)
+  0045    ldc.r8      1   (double)
+  004E    newobj      Quaternion:(Double,Double,Double,Double)
+  0053    stelem      Quaternion   (type)
+  0058    ldarg.0     
+  0059    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  005E    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  0063    ldc.i4.0    
+  0064    ldc.i4.0    
+  0065    stelem.i4   
+  0066    ldarg.0     
+  0067    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  006C    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  0071    ldc.i4.1    
+  0072    ldc.i4.0    
+  0073    stelem.i4   
+  0074    ldarg.0     
+  0075    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  007A    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  007F    ldc.i4.2    
+  0080    ldc.i4.0    
+  0081    stelem.i4   
+  0082    ldc.i4.0    
+  0083    newarr      Object   (type)
+  0088    newobj      list:(Object[])
+  008D    stloc       tmp$1$0   (local)
+  008E    ldarg.0     
+  008F    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0094    ldc.i4.0    
+  0095    ldloc       tmp$1$0   (local)
+  0096    call        XMRInstArrays:PopList(Int32,list) -> Void
+  009B    leave       __retlbl$0   (label)
+  00A0  __retlbl$0:
+  00A0    ret         
+}
+
+Void default state_entry (XMRInstAbstract)
+{
+          xmrsuper    __xmrinst$0
+  0000    ldarg.0     
+  0001    castclass   EventHelpersInstance   (type)
+  0006    stloc       __xmrinst$0   (local)
+  0007    ldloc       __xmrinst$0   (local)
+  0008    ldfld       XMRInstAbstract:m_localsHeapUsed -> Int32   (field)
+          int         __curHeap$1
+  000D    stloc       __curHeap$1   (local)
+          lslrot      tmp$2$2
+          bool        tmp$3$3
+          lslrot      tmp$4$4
+          int         tmp$5$5
+          lslrot      tmp$7$7
+          int         tmp$8$8
+          bool        tmp$9$9
+          lslrot      tmp$10$10
+          lsllist     tmp$11$11
+  000E    ldloc       __xmrinst$0   (local)
+  000F    ldfld       XMRInstAbstract:doGblInit -> Boolean   (field)
+  0014    brfalse     __skipGblInit$1   (label)
+  0019    ldloc       __xmrinst$0   (local)
+  001A    call        $globalvarinit()(EventHelpersInstance) -> Void
+  001F    ldloc       __xmrinst$0   (local)
+  0020    ldc.i4.0    
+  0021    stfld       XMRInstAbstract:doGblInit -> Boolean   (field)
+  0026  __skipGblInit$1:
+  0026    ldloc       __xmrinst$0   (local)
+  0027    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  002C    ldfld       XMRInstArrays:iarRotations -> Quaternion[]   (field)
+  0031    ldc.i4.0    
+  0032    ldelema     Quaternion   (type)
+  0037    ldc.i4.0    
+  0038    conv.r8     
+  0039    stfld       Quaternion:s -> Double   (field)
+  003E    ldloc       __xmrinst$0   (local)
+  003F    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0044    ldfld       XMRInstArrays:iarRotations -> Quaternion[]   (field)
+  0049    ldc.i4.0    
+  004A    ldelem      Quaternion   (type)
+  004F    ldc.i4.0    
+  0050    conv.r8     
+  0051    ldc.i4.0    
+  0052    conv.r8     
+  0053    ldc.i4.0    
+  0054    conv.r8     
+  0055    ldc.i4.1    
+  0056    conv.r8     
+  0057    newobj      Quaternion:(Double,Double,Double,Double)
+  005C    call        BinOpStr:MethRotMulRot(Quaternion,Quaternion) -> Quaternion
+  0061    stloc       tmp$2$2   (local)
+  0062    ldloc       __xmrinst$0   (local)
+  0063    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0068    ldfld       XMRInstArrays:iarRotations -> Quaternion[]   (field)
+  006D    ldc.i4.1    
+  006E    ldloc       tmp$2$2   (local)
+  006F    stelem      Quaternion   (type)
+  0074    ldloc       __xmrinst$0   (local)
+  0075    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  007A    ldfld       XMRInstArrays:iarRotations -> Quaternion[]   (field)
+  007F    ldc.i4.0    
+  0080    ldelem      Quaternion   (type)
+  0085    stloc       tmp$4$4   (local)
+  0087    ldloc       __xmrinst$0   (local)
+  0088    ldloc       tmp$4$4   (local)
+  008A    call        XMRInstAbstract:xmrRotationToBool(Quaternion) -> Boolean
+  008F    stloc       tmp$3$3   (local)
+  0090    ldloc       __xmrinst$0   (local)
+  0091    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0096    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  009B    ldc.i4.0    
+  009C    ldloc       tmp$3$3   (local)
+  009D    stelem.i4   
+  009E    ldloc       __xmrinst$0   (local)
+  009F    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  00A4    ldfld       XMRInstArrays:iarRotations -> Quaternion[]   (field)
+  00A9    ldc.i4.0    
+  00AA    ldelem      Quaternion   (type)
+  00AF    call        TypeCast:RotationToBool(Quaternion) -> Boolean
+  00B4    ldc.i4.1    
+  00B5    xor         
+  00B6    stloc       tmp$5$5   (local)
+  00B8    ldloc       __xmrinst$0   (local)
+  00B9    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  00BE    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  00C3    ldc.i4.1    
+  00C4    ldloc       tmp$5$5   (local)
+  00C6    stelem.i4   
+  00C7    ldloc       __xmrinst$0   (local)
+  00C8    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  00CD    ldfld       XMRInstArrays:iarRotations -> Quaternion[]   (field)
+  00D2    ldc.i4.0    
+  00D3    ldelem      Quaternion   (type)
+  00D8    stloc       tmp$7$7   (local)
+  00DA    ldloc       __xmrinst$0   (local)
+  00DB    ldloc       tmp$7$7   (local)
+  00DD    call        XMRInstAbstract:xmrRotationToBool(Quaternion) -> Boolean
+  00E2    stloc       tmp$8$8   (local)
+  00E4    ldloc       __xmrinst$0   (local)
+  00E5    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  00EA    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  00EF    ldc.i4.2    
+  00F0    ldloc       tmp$8$8   (local)
+  00F2    stelem.i4   
+  00F3    ldloc       __xmrinst$0   (local)
+  00F4    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  00F9    ldfld       XMRInstArrays:iarRotations -> Quaternion[]   (field)
+  00FE    ldc.i4.0    
+  00FF    ldelem      Quaternion   (type)
+  0104    stloc       tmp$10$10   (local)
+  0106    ldloc       __xmrinst$0   (local)
+  0107    ldloc       tmp$10$10   (local)
+  0109    call        XMRInstAbstract:xmrRotationToBool(Quaternion) -> Boolean
+  010E    stloc       tmp$9$9   (local)
+  0110    ldc.i4.2    
+  0111    newarr      Object   (type)
+  0116    dup         
+  0117    ldc.i4.0    
+  0118    ldloc       __xmrinst$0   (local)
+  0119    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  011E    ldfld       XMRInstArrays:iarRotations -> Quaternion[]   (field)
+  0123    ldc.i4.0    
+  0124    ldelem      Quaternion   (type)
+  0129    box         Quaternion   (type)
+  012E    stelem      Object   (type)
+  0133    dup         
+  0134    ldc.i4.1    
+  0135    ldloc       tmp$9$9   (local)
+  0137    newobj      LSLInteger:(Int32)
+  013C    box         LSLInteger   (type)
+  0141    stelem      Object   (type)
+  0146    newobj      list:(Object[])
+  014B    stloc       tmp$11$11   (local)
+  014D    ldloc       __xmrinst$0   (local)
+  014E    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0153    ldc.i4.0    
+  0154    ldloc       tmp$11$11   (local)
+  0156    call        XMRInstArrays:PopList(Int32,list) -> Void
+  015B    leave       __retlbl$0   (label)
+  0160  __retlbl$0:
+  0160    ldloc       __xmrinst$0   (local)
+  0161    ldloc       __curHeap$1   (local)
+  0162    stfld       XMRInstAbstract:m_localsHeapUsed -> Int32   (field)
+  0167    ret         
+}
+TheEnd.

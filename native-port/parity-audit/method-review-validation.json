@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "originalScriptOverloadsProbed": 770,
+  "windowsAccepted": 737,
+  "linuxAccepted": 737,
+  "windowsRejected": 33,
+  "linuxRejected": 33,
+  "platformDisagreements": 0,
+  "everyRejectedApiHasOriginalBodyAndConcreteWorkPackage": true,
+  "linuxLslSourceMatchesCurrentSource": true,
+  "runtimeBehaviorOfAcceptedCallsVerifiedByThisAudit": false,
+  "fullSemanticReviewComplete": false,
+  "parserLimitations": "16 original and 59 native files have tree-sitter parse errors; member index may be incomplete in those files.",
+  "currentUniqueMappedSources": 213,
+  "currentUnmappedSources": 1343,
+  "sourceHashesStillMatch": true
+}

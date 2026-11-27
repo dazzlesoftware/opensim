@@ -9,54 +9,61 @@
 #include <cmath>
 #include <iomanip>
 #include <sstream>
+
 namespace opensim::network {
 namespace {
 using Text = std::optional<std::u16string>;
 using Writer = framework::NativeXmlTextWriter;
 using Kind = Value::Kind;
+
 [[noreturn]] void null_reference() {
-    throw NwcXmlRpcError("System.NullReferenceException",
-                         u"Object reference not set to an instance of an object.");
+    throw NwcXmlRpcError("System.NullReferenceException", u"Object reference not set to an instance of an object.");
 }
-std::shared_ptr<Value> boxed_text(const Text& text) {
+
+std::shared_ptr<Value> boxed_text(const Text &text) {
     if (!text)
         return {};
     auto v = std::make_shared<Value>(framework::utf8(*text));
     v->sdk_string = std::make_shared<const std::u16string>(*text);
     return v;
 }
-Text string_value(const Value& value) {
+
+Text string_value(const Value &value) {
     return value.sdk_string ? Text(*value.sdk_string) : Text(framework::utf16_replacing(value.text));
 }
-void start(Writer& w, const char16_t* name) {
+
+void start(Writer &w, const char16_t *name) {
     w.write_start_element({}, Text(name), {});
 }
-void element(Writer& w, const char16_t* name, const Text& text) {
+
+void element(Writer &w, const char16_t *name, const Text &text) {
     start(w, name);
     w.write_string(text);
     w.write_end_element();
 }
-std::shared_ptr<Value> child(const Value& value) {
+
+std::shared_ptr<Value> child(const Value &value) {
     if (value.kind == Kind::NullReference)
         return {};
     return value.reference ? value.reference : std::make_shared<Value>(value);
 }
-std::u16string date_text(const Value& v) {
+
+std::u16string date_text(const Value &v) {
     if (!v.sdk_date)
         throw std::invalid_argument("Nwc DateTime box requires ticks");
     constexpr std::int64_t day_ticks = 864000000000ll;
     auto ticks = v.sdk_date->ticks();
-    auto date =
-        std::chrono::year_month_day(std::chrono::sys_days(std::chrono::days(ticks / day_ticks - 719162)));
+    auto date = std::chrono::year_month_day(std::chrono::sys_days(std::chrono::days(ticks / day_ticks - 719162)));
     auto time = ticks % day_ticks;
     std::ostringstream out;
     out.imbue(std::locale::classic());
     out << std::setfill('0') << std::setw(4) << int(date.year()) << std::setw(2) << unsigned(date.month())
-        << std::setw(2) << unsigned(date.day()) << 'T' << std::setw(2) << time / 36000000000ll << ':'
-        << std::setw(2) << time / 600000000ll % 60 << ':' << std::setw(2) << time / 10000000ll % 60;
+        << std::setw(2) << unsigned(date.day()) << 'T' << std::setw(2) << time / 36000000000ll << ':' << std::setw(2)
+        << time / 600000000ll % 60 << ':' << std::setw(2) << time / 10000000ll % 60;
     return framework::utf16(out.str());
 }
-std::u16string real_text(const Value& v) {
+
+std::u16string real_text(const Value &v) {
     if (std::isinf(v.real))
         return std::signbit(v.real) ? u"-Infinity" : u"Infinity";
     auto text = osd_string(v);
@@ -64,34 +71,43 @@ std::u16string real_text(const Value& v) {
         text[e] = 'E';
     return framework::utf16_replacing(text);
 }
+
 class Buffer final : public framework::NiniByteStream {
   public:
     std::string bytes;
     bool closed = false;
+
     bool can_read() override {
         return true;
     }
+
     bool can_write() override {
         return !closed;
     }
+
     bool can_seek() override {
         return true;
     }
+
     std::int64_t position() override {
         return static_cast<std::int64_t>(bytes.size());
     }
+
     std::size_t read(std::span<std::uint8_t>, std::size_t, std::size_t) override {
         throw std::logic_error("Nwc serializer buffer read is unused");
     }
+
     void write(std::span<const std::uint8_t> b) override {
-        bytes.append(reinterpret_cast<const char*>(b.data()), b.size());
+        bytes.append(reinterpret_cast<const char *>(b.data()), b.size());
     }
-    void flush() override {
-    }
+
+    void flush() override {}
+
     void close() override {
         closed = true;
     }
 };
+
 std::shared_ptr<framework::XmlStreamEncoding> encoding() {
     static auto e = [] {
         auto value = std::make_shared<framework::XmlStreamEncoding>(
@@ -101,7 +117,8 @@ std::shared_ptr<framework::XmlStreamEncoding> encoding() {
     }();
     return e;
 }
-template <class T, class F> std::string bytes(const std::shared_ptr<T>& value, bool indented, F write) {
+
+template <class T, class F> std::string bytes(const std::shared_ptr<T> &value, bool indented, F write) {
     auto buffer = std::make_shared<Buffer>();
     auto io = framework::native_xml_stream_io(buffer, encoding());
     Writer writer(std::move(io));
@@ -121,8 +138,9 @@ template <class T, class F> std::string bytes(const std::shared_ptr<T>& value, b
         std::rethrow_exception(error);
     }
 }
-}
-void NwcXmlRpcResponse::set_fault(std::int32_t code, const Text& text) {
+} // namespace
+
+void NwcXmlRpcResponse::set_fault(std::int32_t code, const Text &text) {
     auto v = std::make_shared<Value>();
     v->kind = Kind::Map;
     v->set("faultCode", Value(code));
@@ -131,6 +149,7 @@ void NwcXmlRpcResponse::set_fault(std::int32_t code, const Text& text) {
     set_value(std::move(v));
     is_fault = true;
 }
+
 Text NwcXmlRpcRequest::method_name_object() const {
     if (!method_name) {
         null_reference();
@@ -138,6 +157,7 @@ Text NwcXmlRpcRequest::method_name_object() const {
     auto dot = method_name->find(u'.');
     return dot == std::u16string::npos ? method_name : Text(method_name->substr(0, dot));
 }
+
 Text NwcXmlRpcRequest::method_name_method() const {
     if (!method_name) {
         null_reference();
@@ -145,11 +165,12 @@ Text NwcXmlRpcRequest::method_name_method() const {
     auto dot = method_name->find(u'.');
     return dot == std::u16string::npos ? method_name : Text(method_name->substr(dot + 1));
 }
-void serialize_nwc_xml_rpc_object(Writer& writer, const std::shared_ptr<Value>& input) {
+
+void serialize_nwc_xml_rpc_object(Writer &writer, const std::shared_ptr<Value> &input) {
     if (!input || input->kind == Kind::NullReference) {
         return;
     }
-    const auto& v = input->view();
+    const auto &v = input->view();
     switch (v.kind) {
     case Kind::Binary: {
         start(writer, u"base64");
@@ -176,7 +197,7 @@ void serialize_nwc_xml_rpc_object(Writer& writer, const std::shared_ptr<Value>& 
     case Kind::Array:
         start(writer, u"array");
         start(writer, u"data");
-        for (const auto& x : v.array) {
+        for (const auto &x : v.array) {
             start(writer, u"value");
             serialize_nwc_xml_rpc_object(writer, child(x));
             writer.write_end_element();
@@ -186,7 +207,7 @@ void serialize_nwc_xml_rpc_object(Writer& writer, const std::shared_ptr<Value>& 
         break;
     case Kind::Map:
         start(writer, u"struct");
-        for (const auto& key : v.ordered_keys()) {
+        for (const auto &key : v.ordered_keys()) {
             start(writer, u"member");
             element(writer, u"name", framework::utf16_replacing(key));
             start(writer, u"value");
@@ -200,7 +221,8 @@ void serialize_nwc_xml_rpc_object(Writer& writer, const std::shared_ptr<Value>& 
         break;
     }
 }
-void serialize_nwc_xml_rpc_request(Writer& w, const std::shared_ptr<NwcXmlRpcRequest>& request) {
+
+void serialize_nwc_xml_rpc_request(Writer &w, const std::shared_ptr<NwcXmlRpcRequest> &request) {
     w.write_start_document();
     start(w, u"methodCall");
     if (!request)
@@ -210,7 +232,7 @@ void serialize_nwc_xml_rpc_request(Writer& w, const std::shared_ptr<NwcXmlRpcReq
     auto args = request->parameters;
     if (!args)
         null_reference();
-    for (const auto& value : *args) {
+    for (const auto &value : *args) {
         start(w, u"param");
         start(w, u"value");
         serialize_nwc_xml_rpc_object(w, value);
@@ -220,7 +242,8 @@ void serialize_nwc_xml_rpc_request(Writer& w, const std::shared_ptr<NwcXmlRpcReq
     w.write_end_element();
     w.write_end_element();
 }
-void serialize_nwc_xml_rpc_response(Writer& w, const std::shared_ptr<NwcXmlRpcResponse>& response) {
+
+void serialize_nwc_xml_rpc_response(Writer &w, const std::shared_ptr<NwcXmlRpcResponse> &response) {
     w.write_start_document();
     start(w, u"methodResponse");
     if (!response)
@@ -239,10 +262,12 @@ void serialize_nwc_xml_rpc_response(Writer& w, const std::shared_ptr<NwcXmlRpcRe
         w.write_end_element();
     w.write_end_element();
 }
-std::string nwc_xml_rpc_request_bytes(const std::shared_ptr<NwcXmlRpcRequest>& r, bool indented) {
+
+std::string nwc_xml_rpc_request_bytes(const std::shared_ptr<NwcXmlRpcRequest> &r, bool indented) {
     return bytes(r, indented, serialize_nwc_xml_rpc_request);
 }
-std::string nwc_xml_rpc_response_bytes(const std::shared_ptr<NwcXmlRpcResponse>& r, bool indented) {
+
+std::string nwc_xml_rpc_response_bytes(const std::shared_ptr<NwcXmlRpcResponse> &r, bool indented) {
     return bytes(r, indented, serialize_nwc_xml_rpc_response);
 }
-}
+} // namespace opensim::network

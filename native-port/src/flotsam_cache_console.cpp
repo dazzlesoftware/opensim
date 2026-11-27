@@ -3,25 +3,30 @@
 #include "opensim/services/flotsam_cache_console.hpp"
 #include "opensim/framework/text.hpp"
 #include <stdexcept>
+
 namespace opensim::services {
 namespace {
 using Output = std::shared_ptr<FlotsamConsoleOutput>;
+
 [[noreturn]] void null_reference() {
     throw FlotsamConsoleError(FlotsamConsoleError::Kind::NullReference,
                               "Object reference not set to an instance of an object.");
 }
-void write(const Output& output, const std::string& text) {
+
+void write(const Output &output, const std::string &text) {
     if (!output)
         null_reference();
     output->output(text);
 }
-std::shared_ptr<FlotsamCleanupTimer> timer(const std::shared_ptr<FlotsamCacheLifecycle>& life) {
+
+std::shared_ptr<FlotsamCleanupTimer> timer(const std::shared_ptr<FlotsamCacheLifecycle> &life) {
     auto receiver = life->timer;
     if (!receiver)
         null_reference();
     return receiver;
 }
-bool stop_timer(const std::shared_ptr<FlotsamCacheLifecycle>& life) {
+
+bool stop_timer(const std::shared_ptr<FlotsamCacheLifecycle> &life) {
     std::lock_guard lock(life->timer_mutex);
     if (!life->timer_running)
         return false;
@@ -29,7 +34,8 @@ bool stop_timer(const std::shared_ptr<FlotsamCacheLifecycle>& life) {
     life->timer_running = false;
     return true;
 }
-void finish(const std::shared_ptr<FlotsamCacheLifecycle>& life, bool was_running) {
+
+void finish(const std::shared_ptr<FlotsamCacheLifecycle> &life, bool was_running) {
     std::lock_guard lock(life->timer_mutex);
     if (was_running) {
         timer(life)->start();
@@ -37,23 +43,24 @@ void finish(const std::shared_ptr<FlotsamCacheLifecycle>& life, bool was_running
     }
     life->cleanup_running = false;
 }
-}
+} // namespace
+
 FlotsamCacheConsole::FlotsamCacheConsole(std::shared_ptr<FlotsamInstanceConfig> config,
                                          std::shared_ptr<FlotsamCacheLifecycle> life,
                                          std::shared_ptr<FlotsamConsoleBackend> backend)
     : config_(std::move(config)), life_(std::move(life)), backend_(std::move(backend)) {
-    auto& b = backend_;
+    auto &b = backend_;
     if (!config_ || !life_ || !b || !b->console || !b->post || !b->memory_count || !b->negative_count ||
-        !b->clear_memory || !b->clear_negative || !b->clear_files || !b->load_defaults ||
-        !b->delete_defaults || !b->file_count || !b->hit_report || !b->status_files || !b->last_write ||
-        !b->format_date || !b->sleep || !b->touch || !b->clean || !b->now || !b->try_parse || !b->lower ||
-        !b->equals_now)
+        !b->clear_memory || !b->clear_negative || !b->clear_files || !b->load_defaults || !b->delete_defaults ||
+        !b->file_count || !b->hit_report || !b->status_files || !b->last_write || !b->format_date || !b->sleep ||
+        !b->touch || !b->clean || !b->now || !b->try_parse || !b->lower || !b->equals_now)
         throw std::invalid_argument("Incomplete Flotsam console dependencies");
 }
-void FlotsamCacheConsole::expire(const std::shared_ptr<Arguments>& args,
-                                 const std::shared_ptr<FlotsamInstanceConfig>& config,
-                                 const std::shared_ptr<FlotsamCacheLifecycle>& life,
-                                 const std::shared_ptr<FlotsamConsoleBackend>& b, const Output& output) {
+
+void FlotsamCacheConsole::expire(const std::shared_ptr<Arguments> &args,
+                                 const std::shared_ptr<FlotsamInstanceConfig> &config,
+                                 const std::shared_ptr<FlotsamCacheLifecycle> &life,
+                                 const std::shared_ptr<FlotsamConsoleBackend> &b, const Output &output) {
     if (!args)
         null_reference();
     if (!config || !life || !b || !b->now || !b->try_parse || !b->equals_now)
@@ -116,17 +123,17 @@ void FlotsamCacheConsole::expire(const std::shared_ptr<Arguments>& args,
         write(output, "File cache not active, not clearing.");
     return;
 }
-void FlotsamCacheConsole::status(const std::shared_ptr<FlotsamInstanceConfig>& config,
-                                const std::shared_ptr<FlotsamCacheLifecycle>& life,
-                                const std::shared_ptr<FlotsamConsoleBackend>& b, const Output& output) {
+
+void FlotsamCacheConsole::status(const std::shared_ptr<FlotsamInstanceConfig> &config,
+                                 const std::shared_ptr<FlotsamCacheLifecycle> &life,
+                                 const std::shared_ptr<FlotsamConsoleBackend> &b, const Output &output) {
     if (!config || !life || !b || !b->post || !b->memory_count || !b->hit_report ||
         (config->file && (!b->file_count || !b->status_files || !b->last_write || !b->format_date)))
         throw std::invalid_argument("Incomplete Flotsam status dependencies");
     b->post(
         [b, config, life, output] {
             if (config->memory)
-                write(output, "[FLOTSAM ASSET CACHE] Memory Cache: " +
-                                  std::to_string(b->memory_count()) + " assets");
+                write(output, "[FLOTSAM ASSET CACHE] Memory Cache: " + std::to_string(b->memory_count()) + " assets");
             else
                 write(output, "[FLOTSAM ASSET CACHE] Memory cache disabled");
             if (config->file) {
@@ -136,46 +143,39 @@ void FlotsamCacheConsole::status(const std::shared_ptr<FlotsamInstanceConfig>& c
                     scanning = life->cleanup_running;
                 }
                 if (scanning)
-                    write(
-                        output,
-                        "[FLOTSAM ASSET CACHE] a deep scan is in progress, skipping file cache assets count");
+                    write(output, "[FLOTSAM ASSET CACHE] a deep scan is in progress, skipping file cache assets count");
                 else {
                     write(output, "[FLOTSAM ASSET CACHE] counting file cache assets");
                     auto count = b->file_count(config->directory);
-                    write(output,
-                          "[FLOTSAM ASSET CACHE]   File Cache: " + std::to_string(count) + " assets");
+                    write(output, "[FLOTSAM ASSET CACHE]   File Cache: " + std::to_string(count) + " assets");
                 }
             } else
                 write(output, "[FLOTSAM ASSET CACHE] File cache disabled");
-            for (const auto& line : b->hit_report())
+            for (const auto &line : b->hit_report())
                 write(output, line);
             if (config->file) {
-                write(
-                    output,
-                    "[FLOTSAM ASSET CACHE] Deep scans have previously been performed on the following regions:");
-                for (const auto& entry : b->status_files(config->directory, "*.fac")) {
+                write(output,
+                      "[FLOTSAM ASSET CACHE] Deep scans have previously been performed on the following regions:");
+                for (const auto &entry : b->status_files(config->directory, "*.fac")) {
                     if (!entry)
                         null_reference();
                     auto path = framework::utf16_replacing(*entry);
                     auto start = path.find(u'_'), end = path.find(u'.');
                     if (start != path.npos && end != path.npos && start > 0 && end > 0) {
                         if (end < start) {
-                            auto length =
-                                static_cast<std::int64_t>(end) - static_cast<std::int64_t>(start);
+                            auto length = static_cast<std::int64_t>(end) - static_cast<std::int64_t>(start);
 #ifdef _WIN32
-                            const char* newline = "\r\n";
+                            const char *newline = "\r\n";
 #else
-                            const char* newline = "\n";
+                            const char *newline = "\n";
 #endif
-                            throw FlotsamConsoleError(
-                                FlotsamConsoleError::Kind::ArgumentOutOfRange,
-                                "length ('" + std::to_string(length) +
-                                    "') must be a non-negative value. (Parameter 'length')" +
-                                    newline + "Actual value was " + std::to_string(length) + ".",
-                                "length", length);
+                            throw FlotsamConsoleError(FlotsamConsoleError::Kind::ArgumentOutOfRange,
+                                                      "length ('" + std::to_string(length) +
+                                                          "') must be a non-negative value. (Parameter 'length')" +
+                                                          newline + "Actual value was " + std::to_string(length) + ".",
+                                                      "length", length);
                         }
-                        auto region =
-                            framework::utf8(std::u16string_view(path).substr(start + 1, end - start));
+                        auto region = framework::utf8(std::u16string_view(path).substr(start + 1, end - start));
                         auto stamp = b->last_write(entry);
                         write(output, "[FLOTSAM ASSET CACHE] Region: " + region + ", " +
                                           b->format_date(stamp, "MM/dd/yyyy hh:mm:ss"));
@@ -185,8 +185,9 @@ void FlotsamCacheConsole::status(const std::shared_ptr<FlotsamInstanceConfig>& c
         },
         "CacheStatus");
 }
-void FlotsamCacheConsole::touch_assets(const std::shared_ptr<FlotsamCacheLifecycle>& life,
-                                      const std::shared_ptr<FlotsamConsoleBackend>& b, const Output& output) {
+
+void FlotsamCacheConsole::touch_assets(const std::shared_ptr<FlotsamCacheLifecycle> &life,
+                                       const std::shared_ptr<FlotsamConsoleBackend> &b, const Output &output) {
     if (!life || !b || !b->post || !b->sleep || !b->touch)
         throw std::invalid_argument("Incomplete Flotsam scene cache dependencies");
     {
@@ -209,7 +210,8 @@ void FlotsamCacheConsole::touch_assets(const std::shared_ptr<FlotsamCacheLifecyc
         },
         "TouchAllSceneAssets");
 }
-void FlotsamCacheConsole::handle(const std::shared_ptr<Arguments>& args) {
+
+void FlotsamCacheConsole::handle(const std::shared_ptr<Arguments> &args) {
     auto b = backend_;
     auto config = config_;
     auto life = life_;
@@ -284,12 +286,11 @@ void FlotsamCacheConsole::handle(const std::shared_ptr<Arguments>& args) {
         write(output, "fcache expire <datetime> - Purge assets older than the specified date & time");
         write(output, "fcache clear [file] [memory] - Remove cached assets");
         write(output, "fcache status - Display cache status");
-        write(
-            output,
-            "fcache cachedefaultassets - loads default assets to cache replacing existent ones, this may override grid assets. Use with care");
+        write(output, "fcache cachedefaultassets - loads default assets to cache replacing existent ones, this may "
+                      "override grid assets. Use with care");
         write(
             output,
             "fcache deletedefaultassets - deletes default local assets from cache so they can be refreshed from grid");
     }
 }
-}
+} // namespace opensim::services

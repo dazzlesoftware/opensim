@@ -5,14 +5,17 @@
 #include <thread>
 #include <map>
 #include <chrono>
+
 namespace opensim::services {
 struct RegionScriptTaskRuntime::State : std::enable_shared_from_this<State> {
     using Clock = std::chrono::steady_clock;
+
     struct Pending {
         std::shared_ptr<TaskScriptUpload> upload;
         std::weak_ptr<CapabilityRuntimeListener> listener;
         std::optional<Clock::time_point> deadline;
     };
+
     std::shared_ptr<SceneCapabilityEvents> events;
     RegionScriptTaskBackend scene;
     mutable std::mutex mutex;
@@ -20,14 +23,17 @@ struct RegionScriptTaskRuntime::State : std::enable_shared_from_this<State> {
     std::map<std::string, Pending> pending;
     bool stopped = false, subscribed = false;
     std::thread timer_thread;
+
     SceneDelegateIdentity identity() const {
         return {this, "BunchOfCaps.UpdateScriptTask.RegisterCaps"};
     }
+
     bool accepting() const {
         std::lock_guard lock(mutex);
         return !stopped;
     }
-    void arm(const std::string& path, int milliseconds, std::weak_ptr<CapabilityRuntimeListener> listener) {
+
+    void arm(const std::string &path, int milliseconds, std::weak_ptr<CapabilityRuntimeListener> listener) {
         std::lock_guard lock(mutex);
         if (stopped)
             return;
@@ -36,13 +42,14 @@ struct RegionScriptTaskRuntime::State : std::enable_shared_from_this<State> {
             if (it != pending.end())
                 it->second.deadline.reset();
         } else {
-            auto& entry = pending[path];
+            auto &entry = pending[path];
             entry.listener = std::move(listener);
             entry.deadline = Clock::now() + std::chrono::milliseconds(milliseconds);
         }
         changed.notify_all();
     }
-    void remove(const std::string& path) {
+
+    void remove(const std::string &path) {
         std::shared_ptr<CapabilityRuntimeListener> listener;
         std::shared_ptr<TaskScriptUpload> retained;
         {
@@ -58,6 +65,7 @@ struct RegionScriptTaskRuntime::State : std::enable_shared_from_this<State> {
         if (listener)
             listener->remove_simple(path);
     }
+
     void add(std::shared_ptr<TaskScriptUpload> upload, std::weak_ptr<CapabilityRuntimeListener> listener) {
         if (!upload || !upload->path())
             throw std::invalid_argument("Null task upload route");
@@ -70,7 +78,7 @@ struct RegionScriptTaskRuntime::State : std::enable_shared_from_this<State> {
             std::lock_guard lock(mutex);
             if (stopped)
                 throw std::runtime_error("Script task runtime stopped");
-            auto& entry = pending[path];
+            auto &entry = pending[path];
             entry.listener = listener;
             entry.upload = upload;
             expired = entry.deadline && *entry.deadline <= Clock::now();
@@ -80,7 +88,8 @@ struct RegionScriptTaskRuntime::State : std::enable_shared_from_this<State> {
         if (expired)
             upload->expire();
     }
-    void register_caps(framework::Uuid agent, const std::shared_ptr<Caps>& caps) {
+
+    void register_caps(framework::Uuid agent, const std::shared_ptr<Caps> &caps) {
         if (!accepting())
             return;
         if (!caps)
@@ -113,32 +122,32 @@ struct RegionScriptTaskRuntime::State : std::enable_shared_from_this<State> {
                 throw std::runtime_error("Script task runtime expired");
             state->add(std::move(upload), listener);
         };
-        backend.remove_upload = [weak](const auto& path) {
+        backend.remove_upload = [weak](const auto &path) {
             if (auto state = weak.lock())
                 state->remove(path);
         };
-        backend.timer = [weak, listener](const auto& path, int delay) {
+        backend.timer = [weak, listener](const auto &path, int delay) {
             if (auto state = weak.lock())
                 state->arm(path, delay, listener);
         };
-        backend.log = [weak](const auto& text) {
+        backend.log = [weak](const auto &text) {
             if (auto state = weak.lock())
                 if (state->scene.log)
                     state->scene.log(text);
         };
-        auto origin = std::string(caps->ssl_caps() ? "https://" : "http://") +
-                      caps->host_name().value_or("") + ":" + std::to_string(caps->port());
+        auto origin = std::string(caps->ssl_caps() ? "https://" : "http://") + caps->host_name().value_or("") + ":" +
+                      std::to_string(caps->port());
         auto core = std::make_shared<UpdateScriptTaskCore>(agent, std::move(origin), std::move(backend));
-        auto route =
-            std::make_shared<UpdateScriptTaskRoute>("/" + framework::Uuid::random().str(), std::move(core));
+        auto route = std::make_shared<UpdateScriptTaskRoute>("/" + framework::Uuid::random().str(), std::move(core));
         caps->register_simple("UpdateScriptTask", route, true);
         caps->register_simple("UpdateScriptTaskInventory", route, true);
     }
+
     void timer_loop() {
         std::unique_lock lock(mutex);
         while (!stopped) {
             std::optional<Clock::time_point> next;
-            for (const auto& [path, entry] : pending)
+            for (const auto &[path, entry] : pending)
                 if (entry.upload && entry.deadline && (!next || *entry.deadline < *next))
                     next = entry.deadline;
             if (!next) {
@@ -151,13 +160,13 @@ struct RegionScriptTaskRuntime::State : std::enable_shared_from_this<State> {
             }
             std::vector<std::shared_ptr<TaskScriptUpload>> expired;
             auto now = Clock::now();
-            for (auto& [path, entry] : pending)
+            for (auto &[path, entry] : pending)
                 if (entry.upload && entry.deadline && *entry.deadline <= now) {
                     entry.deadline.reset();
                     expired.push_back(entry.upload);
                 }
             lock.unlock();
-            for (const auto& upload : expired)
+            for (const auto &upload : expired)
                 try {
                     upload->expire();
                 } catch (...) {
@@ -165,6 +174,7 @@ struct RegionScriptTaskRuntime::State : std::enable_shared_from_this<State> {
             lock.lock();
         }
     }
+
     void stop() {
         std::vector<std::shared_ptr<TaskScriptUpload>> uploads;
         {
@@ -172,7 +182,7 @@ struct RegionScriptTaskRuntime::State : std::enable_shared_from_this<State> {
             if (stopped)
                 return;
             stopped = true;
-            for (const auto& [path, entry] : pending)
+            for (const auto &[path, entry] : pending)
                 if (entry.upload)
                     uploads.push_back(entry.upload);
             changed.notify_all();
@@ -183,17 +193,17 @@ struct RegionScriptTaskRuntime::State : std::enable_shared_from_this<State> {
         }
         if (timer_thread.joinable())
             timer_thread.join();
-        for (const auto& upload : uploads)
+        for (const auto &upload : uploads)
             upload->expire();
         std::lock_guard lock(mutex);
         pending.clear();
     }
 };
+
 RegionScriptTaskRuntime::RegionScriptTaskRuntime(std::shared_ptr<SceneCapabilityEvents> events,
                                                  RegionScriptTaskBackend backend)
     : state_(std::make_shared<State>()) {
-    if (!events || !backend.object_exists || !backend.can_edit_inventory || !backend.can_edit_script ||
-        !backend.update)
+    if (!events || !backend.object_exists || !backend.can_edit_inventory || !backend.can_edit_script || !backend.update)
         throw std::invalid_argument("Incomplete script task scene backend");
     state_->events = std::move(events);
     state_->scene = std::move(backend);
@@ -212,21 +222,24 @@ RegionScriptTaskRuntime::RegionScriptTaskRuntime(std::shared_ptr<SceneCapability
         throw;
     }
 }
+
 RegionScriptTaskRuntime::~RegionScriptTaskRuntime() {
     try {
         stop();
     } catch (...) {
     }
 }
+
 void RegionScriptTaskRuntime::stop() {
     state_->stop();
 }
+
 std::size_t RegionScriptTaskRuntime::pending_uploads() const {
     std::lock_guard lock(state_->mutex);
     std::size_t count = 0;
-    for (const auto& [path, entry] : state_->pending)
+    for (const auto &[path, entry] : state_->pending)
         if (entry.upload)
             ++count;
     return count;
 }
-}
+} // namespace opensim::services

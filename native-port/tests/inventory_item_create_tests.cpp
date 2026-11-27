@@ -5,11 +5,13 @@
 #include <bit>
 using namespace opensim;
 using namespace scene;
+
 namespace {
 framework::Uuid id(int n) {
     auto s = std::to_string(n);
     return framework::Uuid("11223344-5566-7788-99aa-" + std::string(12 - s.size(), '0') + s);
 }
+
 std::string hex(std::span<const std::uint8_t> v) {
     std::string s;
     for (auto b : v) {
@@ -18,6 +20,7 @@ std::string hex(std::span<const std::uint8_t> v) {
     }
     return s;
 }
+
 std::string text(int m) {
     switch (m & 7) {
     case 0:
@@ -50,6 +53,7 @@ std::string text(int m) {
         return " \t\n　";
     }
 }
+
 std::string probe(int seed, int m) {
     services::InventoryItem i;
     i.id = id(2);
@@ -74,11 +78,11 @@ std::string probe(int seed, int m) {
     i.sale_price = seed;
     i.sale_type = seed;
     i.creation_date = seed;
-    auto p = inventory_item_create(id(1), i, (m & 128) ? id(8) : framework::Uuid{},
-                                   static_cast<std::uint32_t>(seed));
+    auto p = inventory_item_create(id(1), i, (m & 128) ? id(8) : framework::Uuid{}, static_cast<std::uint32_t>(seed));
     return hex(network::lludp::encode_packet(p)) + "|" + hex(network::lludp::encode_datagram(p));
 }
-}
+} // namespace
+
 int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string_view(argv[1]) == "--probe") {

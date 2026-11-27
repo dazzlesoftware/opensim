@@ -1,0 +1,435 @@
+{
+  "migration_version": 12,
+  "reserved": 16,
+  "event_arguments": {
+    "kind": 9,
+    "id": 0,
+    "element_type": "ob",
+    "children": [
+      {
+        "kind": 3,
+        "value": 2
+      }
+    ]
+  },
+  "initialize_globals": true,
+  "state_index": 0,
+  "event_code": 21,
+  "globals": [
+    {
+      "kind": 9,
+      "id": 1,
+      "element_type": "xa",
+      "children": []
+    },
+    {
+      "kind": 9,
+      "id": 2,
+      "element_type": "ch",
+      "children": []
+    },
+    {
+      "kind": 9,
+      "id": 3,
+      "element_type": "do",
+      "children": []
+    },
+    {
+      "kind": 9,
+      "id": 4,
+      "element_type": "in",
+      "children": []
+    },
+    {
+      "kind": 9,
+      "id": 5,
+      "element_type": "li",
+      "children": [
+        {
+          "kind": 5,
+          "id": 6,
+          "children": [
+            {
+              "kind": 9,
+              "id": 7,
+              "element_type": "ob",
+              "children": [
+                {
+                  "kind": 12,
+                  "value": 42
+                },
+                {
+                  "kind": 0
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": 9,
+      "id": 8,
+      "element_type": "ob",
+      "children": [
+        {
+          "kind": 15,
+          "reference": 7
+        }
+      ]
+    },
+    {
+      "kind": 9,
+      "id": 9,
+      "element_type": "ro",
+      "children": []
+    },
+    {
+      "kind": 9,
+      "id": 10,
+      "element_type": "st",
+      "children": []
+    },
+    {
+      "kind": 9,
+      "id": 11,
+      "element_type": "ve",
+      "children": []
+    },
+    {
+      "kind": 9,
+      "id": 12,
+      "element_type": "sc",
+      "children": []
+    },
+    {
+      "kind": 9,
+      "id": 13,
+      "element_type": "de[]",
+      "children": []
+    }
+  ],
+  "frames": [
+    {
+      "function": "original-writer-codec-types",
+      "call_no": 7,
+      "slots": {
+        "kind": 9,
+        "id": 14,
+        "element_type": "ob",
+        "children": [
+          {
+            "kind": 16,
+            "value": true
+          },
+          {
+            "kind": 20,
+            "value": 955
+          },
+          {
+            "kind": 1,
+            "value": 21
+          },
+          {
+            "kind": 0
+          },
+          {
+            "kind": 15,
+            "reference": 7
+          },
+          {
+            "kind": 15,
+            "reference": 7
+          },
+          {
+            "kind": 15,
+            "reference": 6
+          }
+        ]
+      }
+    }
+  ],
+  "source_hash": "97B197DCF4D19AF9A9D1EF017E8E4CC1",
+  "compiled_version": -11,
+  "captured_check": 0,
+  "supplemental_original_writer_graph": true,
+  "observed_frame_slot_types": [
+    {
+      "function": "original-writer-codec-types",
+      "call_no": 7,
+      "slot_types": [
+        "System.Boolean",
+        "System.Char",
+        "OpenSim.Region.ScriptEngine.Yengine.ScriptEventCode",
+        null,
+        "System.Object[]",
+        "System.Object[]",
+        "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist"
+      ]
+    }
+  ],
+  "methods": [
+    {
+      "name": "$globalvarinit()",
+      "return_type": "void",
+      "return_clr_type": "System.Void",
+      "parameters": [
+        {
+          "name": "$xmrthis",
+          "type": "xmrsuper",
+          "clr_type": "FunctionExecutionReferenceInstance"
+        }
+      ],
+      "locals": [],
+      "labels": [],
+      "records": []
+    },
+    {
+      "name": "default state_entry",
+      "return_type": "void",
+      "return_clr_type": "System.Void",
+      "parameters": [
+        {
+          "name": "$xmrthis",
+          "type": "xmrinst",
+          "clr_type": "OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract"
+        }
+      ],
+      "locals": [
+        {
+          "number": 0,
+          "name": "__xmrinst",
+          "type": "xmrsuper",
+          "clr_type": "FunctionExecutionReferenceInstance"
+        },
+        {
+          "number": 1,
+          "name": "__curHeap",
+          "type": "int",
+          "clr_type": "System.Int32"
+        }
+      ],
+      "labels": [
+        {
+          "number": 0,
+          "name": "__retlbl",
+          "offset": 19
+        }
+      ],
+      "records": [
+        {
+          "offset": 0,
+          "opcode": "ldarg.0",
+          "opcode_value": 2,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 8
+          }
+        },
+        {
+          "offset": 1,
+          "opcode": "castclass",
+          "opcode_value": 116,
+          "operand_kind": "type",
+          "operand": "FunctionExecutionReferenceInstance",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 8
+          }
+        },
+        {
+          "offset": 6,
+          "opcode": "stloc",
+          "opcode_value": -498,
+          "operand_kind": "local",
+          "operand": 0,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 8
+          }
+        },
+        {
+          "offset": 7,
+          "opcode": "ldloc",
+          "opcode_value": -500,
+          "operand_kind": "local",
+          "operand": 0,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 8
+          }
+        },
+        {
+          "offset": 8,
+          "opcode": "ldfld",
+          "opcode_value": 123,
+          "operand_kind": "field",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract:m_localsHeapUsed",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 8
+          }
+        },
+        {
+          "offset": 13,
+          "opcode": "stloc",
+          "opcode_value": -498,
+          "operand_kind": "local",
+          "operand": 1,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 8
+          }
+        },
+        {
+          "offset": 14,
+          "opcode": "leave",
+          "opcode_value": 221,
+          "operand_kind": "label",
+          "operand": 0,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 8
+          }
+        },
+        {
+          "offset": 19,
+          "opcode": "ldloc",
+          "opcode_value": -500,
+          "operand_kind": "local",
+          "operand": 0,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 8
+          }
+        },
+        {
+          "offset": 20,
+          "opcode": "ldloc",
+          "opcode_value": -500,
+          "operand_kind": "local",
+          "operand": 1,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 8
+          }
+        },
+        {
+          "offset": 21,
+          "opcode": "stfld",
+          "opcode_value": 125,
+          "operand_kind": "field",
+          "operand": "OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract:m_localsHeapUsed",
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 8
+          }
+        },
+        {
+          "offset": 26,
+          "opcode": "ret",
+          "opcode_value": 42,
+          "operand_kind": "none",
+          "operand": null,
+          "source": {
+            "file": "managed-frame-reference",
+            "line": 0,
+            "column": 8
+          }
+        }
+      ],
+      "source_locations": [
+        {
+          "offset": 0,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 8
+        },
+        {
+          "offset": 1,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 8
+        },
+        {
+          "offset": 6,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 8
+        },
+        {
+          "offset": 7,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 8
+        },
+        {
+          "offset": 8,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 8
+        },
+        {
+          "offset": 13,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 8
+        },
+        {
+          "offset": 14,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 8
+        },
+        {
+          "offset": 19,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 8
+        },
+        {
+          "offset": 20,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 8
+        },
+        {
+          "offset": 21,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 8
+        },
+        {
+          "offset": 26,
+          "file": "managed-frame-reference",
+          "line": 0,
+          "column": 8
+        }
+      ],
+      "call_labels": [],
+      "saved_slots": []
+    }
+  ],
+  "sha256": {
+    "source.lsl": "7a24e7f3338e8dfba8f1cae2925ee768bc26864aaa6f9fdbefea916d5ad8a239",
+    "snapshot.bin": "679365d582dbd5aabe79df076986639748585348648683a80dd2667bb58f6772",
+    "original.yobj": "0242153df89ecfbcbbb38a958387940c1ed7d29a3e1f350b228c8089522f1c49",
+    "original.il.txt": "270b3f4b9609b0ac6d34f6b1e6f1dc457cab7fd7fe71b157418d161439fa39fe",
+    "object_metadata.json": "597c523b715672ec856ffd688d45878468a97d7872c740b351cfb522ee67ee25",
+    "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+    "generator_assembly": "b063d3f7603df964611c7a3ced7a639573f864ebb9cf5bd6c30e810ecf828a23",
+    "generator_source": "a6aadaee1ac5c328e4f36414b320db43a0476688d1256e7c5cf54ee509b9bdfa"
+  }
+}

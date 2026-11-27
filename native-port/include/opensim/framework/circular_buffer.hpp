@@ -36,23 +36,29 @@ namespace opensim::framework {
 template <class T> class BufferArray {
   public:
     explicit BufferArray(std::size_t size) : values_(new T[size]{}), size_(size) {}
-    T& at(std::size_t index) const {
+
+    T &at(std::size_t index) const {
         if (index >= size_)
             throw std::out_of_range("Buffer array index");
         return values_[index];
     }
-    T& operator[](std::size_t index) const {
+
+    T &operator[](std::size_t index) const {
         return at(index);
     }
+
     [[nodiscard]] std::size_t size() const noexcept {
         return size_;
     }
-    T* begin() const noexcept {
+
+    T *begin() const noexcept {
         return values_.get();
     }
-    T* end() const noexcept {
+
+    T *end() const noexcept {
         return values_.get() + size_;
     }
+
     std::span<T> span() const noexcept {
         return {values_.get(), size_};
     }
@@ -61,6 +67,7 @@ template <class T> class BufferArray {
     std::shared_ptr<T[]> values_;
     std::size_t size_;
 };
+
 // Preserves the source's distinct single/bulk overflow, Skip, resize and CopyTo
 // semantics. This is intentionally not a replacement with conventional FIFO
 // semantics. Like the original, operations require external synchronization.
@@ -68,10 +75,13 @@ template <class T> class CircularBuffer {
   public:
     explicit CircularBuffer(std::int32_t capacity, bool overflow = false)
         : allow_overflow(overflow), capacity_(capacity), buffer_(checked_size(capacity)) {}
+
     bool allow_overflow;
+
     [[nodiscard]] std::int32_t capacity() const noexcept {
         return capacity_;
     }
+
     void capacity(std::int32_t value) {
         if (value == capacity_)
             return;
@@ -83,27 +93,33 @@ template <class T> class CircularBuffer {
         buffer_ = std::move(replacement);
         capacity_ = value; // Source intentionally leaves head and tail untouched.
     }
+
     [[nodiscard]] std::int32_t size() const noexcept {
         return size_;
     }
+
     [[nodiscard]] std::int32_t count() const noexcept {
         return size_;
     }
+
     [[nodiscard]] bool is_read_only() const noexcept {
         return false;
     }
+
     [[nodiscard]] bool is_synchronized() const noexcept {
         return false;
     }
-    std::mutex& sync_root() noexcept {
+
+    std::mutex &sync_root() noexcept {
         return sync_root_;
     }
-    [[nodiscard]] bool contains(const T& item) const {
+
+    [[nodiscard]] bool contains(const T &item) const {
         auto index = head_;
         for (std::int32_t i = 0; i < size_; i = add(i, 1), index = add(index, 1)) {
             if (index == capacity_)
                 index = 0;
-            const auto& stored = buffer_.at(static_cast<std::size_t>(index));
+            const auto &stored = buffer_.at(static_cast<std::size_t>(index));
             if constexpr (std::is_floating_point_v<T>) {
                 // EqualityComparer<float/double>.Default uses Equals, which
                 // considers two NaNs equal even though operator== does not.
@@ -115,12 +131,15 @@ template <class T> class CircularBuffer {
         }
         return false;
     }
+
     void clear() noexcept {
         size_ = head_ = tail_ = 0;
     }
+
     std::int32_t put(std::span<const T> source) {
         return put(source, 0, length(source.size()));
     }
+
     std::int32_t put(std::span<const T> source, std::int32_t offset, std::int32_t count) {
         if (!allow_overflow && count > subtract(capacity_, size_))
             throw std::overflow_error("Buffer Overflow");
@@ -138,7 +157,8 @@ template <class T> class CircularBuffer {
         size_ = std::min(add(size_, count), capacity_);
         return count;
     }
-    void put(const T& item) {
+
+    void put(const T &item) {
         if (!allow_overflow && size_ == capacity_)
             throw std::overflow_error("Buffer Overflow");
         buffer_.at(static_cast<std::size_t>(tail_)) = item;
@@ -147,29 +167,35 @@ template <class T> class CircularBuffer {
             tail_ = 0;
         size_ = add(size_, 1);
     }
-    void add_item(const T& item) {
+
+    void add_item(const T &item) {
         put(item);
     }
+
     // ICollection.Remove in the source ignores item and removes the head.
-    bool remove(const T& /*item*/) {
+    bool remove(const T & /*item*/) {
         if (size_ == 0)
             return false;
         get();
         return true;
     }
+
     void skip(std::int32_t count) noexcept {
         head_ = add(head_, count);
         if (head_ >= capacity_)
             head_ = subtract(head_, capacity_);
     }
+
     std::vector<T> get(std::int32_t count) {
         BufferArray<T> result(checked_size(count));
         get(result.span());
         return std::vector<T>(result.begin(), result.end());
     }
+
     std::int32_t get(std::span<T> destination) {
         return get(destination, 0, length(destination.size()));
     }
+
     std::int32_t get(std::span<T> destination, std::int32_t offset, std::int32_t count) {
         const auto real_count = std::min(count, size_);
         auto destination_index = offset;
@@ -178,14 +204,14 @@ template <class T> class CircularBuffer {
                 head_ = 0;
             if (destination_index < 0 || static_cast<std::size_t>(destination_index) >= destination.size())
                 throw std::out_of_range("Destination array index");
-            destination[static_cast<std::size_t>(destination_index)] =
-                buffer_.at(static_cast<std::size_t>(head_));
+            destination[static_cast<std::size_t>(destination_index)] = buffer_.at(static_cast<std::size_t>(head_));
             head_ = add(head_, 1);
             destination_index = add(destination_index, 1);
         }
         size_ = subtract(size_, real_count);
         return real_count;
     }
+
     T get() {
         if (size_ == 0)
             throw std::underflow_error("Buffer Empty");
@@ -196,11 +222,12 @@ template <class T> class CircularBuffer {
         size_ = add(size_, -1);
         return item;
     }
+
     void copy_to(std::span<T> destination, std::int32_t array_index = 0) const {
         copy_to(0, destination, array_index, size_);
     }
-    void copy_to(std::int32_t /*index*/, std::span<T> destination, std::int32_t array_index,
-                 std::int32_t count) const {
+
+    void copy_to(std::int32_t /*index*/, std::span<T> destination, std::int32_t array_index, std::int32_t count) const {
         if (count > size_)
             throw std::out_of_range("Count Too Large");
         auto buffer_index = head_;
@@ -209,47 +236,54 @@ template <class T> class CircularBuffer {
                 buffer_index = 0;
             if (array_index < 0 || static_cast<std::size_t>(array_index) >= destination.size())
                 throw std::out_of_range("Destination array index");
-            destination[static_cast<std::size_t>(array_index)] =
-                buffer_.at(static_cast<std::size_t>(buffer_index));
+            destination[static_cast<std::size_t>(array_index)] = buffer_.at(static_cast<std::size_t>(buffer_index));
             buffer_index = add(buffer_index, 1);
             array_index = add(array_index, 1);
         }
     }
+
     [[nodiscard]] std::vector<T> to_array() const {
         BufferArray<T> result(checked_size(size_));
         copy_to(result.span());
         return std::vector<T>(result.begin(), result.end());
     }
+
     BufferArray<T> get_buffer() const noexcept {
         return buffer_;
     }
+
     // Enumeration has the same logical order as ToArray. It exposes references,
     // including changes to the underlying buffer made during enumeration.
     class Iterator {
       public:
-        Iterator(const CircularBuffer* owner, std::int32_t position, std::int32_t index)
+        Iterator(const CircularBuffer *owner, std::int32_t position, std::int32_t index)
             : owner_(owner), position_(position), index_(index) {}
-        const T& operator*() const {
+
+        const T &operator*() const {
             return owner_->buffer_.at(static_cast<std::size_t>(index_ == owner_->capacity_ ? 0 : index_));
         }
-        Iterator& operator++() {
+
+        Iterator &operator++() {
             if (index_ == owner_->capacity_)
                 index_ = 0;
             index_ = add(index_, 1);
             position_ = add(position_, 1);
             return *this;
         }
-        bool operator!=(const Iterator& /*end*/) const {
+
+        bool operator!=(const Iterator & /*end*/) const {
             return position_ < owner_->size_;
         }
 
       private:
-        const CircularBuffer* owner_;
+        const CircularBuffer *owner_;
         std::int32_t position_, index_;
     };
+
     Iterator begin() const {
         return {this, 0, head_};
     }
+
     Iterator end() const {
         return {this, size_, head_};
     }
@@ -258,21 +292,25 @@ template <class T> class CircularBuffer {
     static std::int32_t add(std::int32_t a, std::int32_t b) noexcept {
         return std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(a) + static_cast<std::uint32_t>(b));
     }
+
     static std::int32_t subtract(std::int32_t a, std::int32_t b) noexcept {
         return std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(a) - static_cast<std::uint32_t>(b));
     }
+
     static std::size_t checked_size(std::int32_t value) {
         if (value < 0)
             throw std::invalid_argument("Negative array length");
         return static_cast<std::size_t>(value);
     }
+
     static std::int32_t length(std::size_t value) {
         if (value > 2147483647u)
             throw std::length_error("Array length exceeds Int32");
         return static_cast<std::int32_t>(value);
     }
+
     std::int32_t capacity_, size_ = 0, head_ = 0, tail_ = 0;
     BufferArray<T> buffer_;
     std::mutex sync_root_;
 };
-}
+} // namespace opensim::framework

@@ -2,9 +2,10 @@
 #include "osd_fixture_value.hpp"
 #include <iostream>
 using namespace opensim;
-using services::LoginAgentFactory;
 using framework::AgentCircuitData;
-std::string hx(const std::string& value) {
+using services::LoginAgentFactory;
+
+std::string hx(const std::string &value) {
     constexpr char digits[] = "0123456789abcdef";
     std::string text;
     for (unsigned char c : value) {
@@ -13,11 +14,12 @@ std::string hx(const std::string& value) {
     }
     return text;
 }
-std::string urls(const std::shared_ptr<AgentCircuitData::ServiceUrls>& entries) {
+
+std::string urls(const std::shared_ptr<AgentCircuitData::ServiceUrls> &entries) {
     if (!entries)
         return "null";
     std::string text;
-    for (auto& [key, value] : *entries) {
+    for (auto &[key, value] : *entries) {
         text += hx(key) + "=";
         if (auto s = std::any_cast<std::string>(&value))
             text += "s" + hx(*s);
@@ -29,7 +31,8 @@ std::string urls(const std::shared_ptr<AgentCircuitData::ServiceUrls>& entries) 
     }
     return text;
 }
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     if (argc > 1 && std::string(argv[1]) == "suffixes") {
         int start = -1, last = -1;
         for (int n = 0; n <= 0x10ffff; ++n) {
@@ -127,21 +130,21 @@ int main(int argc, char** argv) {
                 if (seed % 19 == 0)
                     throw std::runtime_error("keys");
                 std::vector<std::string> result;
-                for (auto& [k, v] : config)
+                for (auto &[k, v] : config)
                     result.push_back(k);
                 return result;
             },
-            [&](const auto& key, const auto& fallback) {
+            [&](const auto &key, const auto &fallback) {
                 ++reads;
                 if (seed % 17 == 0)
                     throw std::runtime_error("read");
-                for (auto& [k, v] : config)
+                for (auto &[k, v] : config)
                     if (k == key)
                         return v;
                 return fallback;
             },
             gate,
-            [&](auto&) {
+            [&](auto &) {
                 ++stored;
                 if (seed % 23 == 0)
                     throw std::runtime_error("store");
@@ -173,7 +176,7 @@ int main(int argc, char** argv) {
                 auto c = factory.make_agent(account, (seed / 216 % 2) ? &appearance : nullptr, details);
                 framework::EntityTransferContext context;
                 result = fixture::base64(network::llsd_xml(c->pack(&context)));
-            } catch (const std::exception&) {
+            } catch (const std::exception &) {
             }
             std::cout << result << '|' << stored << ',' << caps << ',' << keys << ',' << reads << '|'
                       << urls(account.service_urls);

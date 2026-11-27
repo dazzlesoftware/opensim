@@ -8,11 +8,12 @@
 #include <latch>
 using namespace opensim;
 using namespace services;
+
 namespace {
 framework::Uuid id(int n) {
-    return framework::Uuid(n == 1 ? "11223344-5566-7788-99aa-000000000001"
-                                  : "11223344-5566-7788-99aa-000000000002");
+    return framework::Uuid(n == 1 ? "11223344-5566-7788-99aa-000000000001" : "11223344-5566-7788-99aa-000000000002");
 }
+
 std::string hex(std::string_view s) {
     std::string o;
     for (unsigned char c : s) {
@@ -21,6 +22,7 @@ std::string hex(std::string_view s) {
     }
     return o;
 }
+
 std::string probe(int kind, int mode, int phase) {
     std::string trace;
     auto add = [&](std::string s) { trace += "|" + s; };
@@ -67,9 +69,8 @@ std::string probe(int kind, int mode, int phase) {
     req.body = "default{}";
     network::HttpResponse r;
     if (kind == 0 || kind == 2) {
-        UpdateInventoryAssetCore core(
-            id(1), "http://host:9000",
-            kind == 2 ? std::optional<std::uint8_t>{} : std::optional<std::uint8_t>(7), b);
+        UpdateInventoryAssetCore core(id(1), "http://host:9000",
+                                      kind == 2 ? std::optional<std::uint8_t>{} : std::optional<std::uint8_t>(7), b);
         auto map = network::Value::object({{"item_id", network::Value(phase == 6 ? "invalid" : id(1).str())},
                                            {"task_id", network::Value(phase == 7 ? "invalid" : id(2).str())},
                                            {"is_script_running", network::Value(true)}});
@@ -81,8 +82,7 @@ std::string probe(int kind, int mode, int phase) {
             r.status = 500;
         }
     } else {
-        InventoryAssetUpload upload(id(1), id(1), id(2), static_cast<std::uint8_t>(mode), "/upload",
-                                    req.remote_ip, b);
+        InventoryAssetUpload upload(id(1), id(1), id(2), static_cast<std::uint8_t>(mode), "/upload", req.remote_ip, b);
         if (phase == 1)
             req.remote_ip = "127.0.0.2";
         if (phase == 2)
@@ -105,13 +105,16 @@ std::string probe(int kind, int mode, int phase) {
     }
     return std::to_string(r.status) + "|" + hex(r.body) + trace;
 }
+
 int checks = 0;
+
 void check(bool v, const char *s) {
     ++checks;
     if (!v)
         throw std::runtime_error(s);
 }
-}
+} // namespace
+
 int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string_view(argv[1]) == "--probe") {

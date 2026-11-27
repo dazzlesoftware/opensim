@@ -3,12 +3,13 @@
 #include "opensim/framework/config_file_uri_path.hpp"
 #include "opensim/framework/config_uri_escape.hpp"
 #include "opensim/framework/config_uri_unescape.hpp"
+
 namespace opensim::framework {
-std::u16string config_file_uri_canonical_path(ConfigFileUriState& s, std::u16string dest, std::int32_t format,
+std::u16string config_file_uri_canonical_path(ConfigFileUriState &s, std::u16string dest, std::int32_t format,
                                               bool windows) {
     config_file_uri_parse_remaining(s);
     auto flags = s.flags;
-    auto& text = s.parse_string;
+    auto &text = s.parse_string;
     auto o = s.offsets;
     bool implicit = (flags & 0x20000000) != 0, convert = !s.unix_file_syntax, user = (flags & 0x80000) != 0,
          compress = (flags & 0x2000) != 0, pathbad = (flags & 16) != 0, escapedbad = (flags & 1024) != 0;
@@ -34,8 +35,8 @@ std::u16string config_file_uri_canonical_path(ConfigFileUriState& s, std::u16str
             std::u16string changed(text);
             if (secured && changed[secured + o.path - 1] == u'|')
                 changed[secured + o.path - 1] = u':';
-            dest += config_uri_escape(std::u16string_view(changed).substr(o.path, o.query - o.path),
-                                      !implicit, ConfigUriEscapeSet::ExceptQuestionMarkHash);
+            dest += config_uri_escape(std::u16string_view(changed).substr(o.path, o.query - o.path), !implicit,
+                                      ConfigUriEscapeSet::ExceptQuestionMarkHash);
         } else
             dest += raw;
         if (!windows && (flags & 0x8000) && !convert && !implicit) {
@@ -82,11 +83,11 @@ std::u16string config_file_uri_canonical_path(ConfigFileUriState& s, std::u16str
             mode &= ~2;
     }
     if (mode) {
-        auto tail = config_uri_unescape(std::u16string_view(dest).substr(length), u'?', u'#', 0xffff, mode,
-                                        true, false);
+        auto tail =
+            config_uri_unescape(std::u16string_view(dest).substr(length), u'?', u'#', 0xffff, mode, true, false);
         dest.resize(length);
         dest += tail;
     }
     return dest;
 }
-}
+} // namespace opensim::framework

@@ -4,6 +4,7 @@
 #include "opensim/framework/uuid.hpp"
 #include <functional>
 #include <optional>
+
 namespace opensim::framework {
 // Complete OpenSim.Framework.TaskInventoryItem public data model. Optional
 // strings retain CLR null vs empty. CreatorIdentification is the DB property;
@@ -19,9 +20,8 @@ struct TaskInventoryItem {
     Uuid item_id, old_item_id, loaded_item_id, rezzer_id;
     std::optional<std::string> name, description;
     Uuid owner_id, last_owner_id, group_id, parent_id, parent_part_id;
-    std::uint32_t base_permissions = 0x7fffffffu, current_permissions = 0x7fffffffu,
-                  everyone_permissions = 0x7fffffffu, group_permissions = 0x7fffffffu,
-                  next_permissions = 0x7fffffffu;
+    std::uint32_t base_permissions = 0x7fffffffu, current_permissions = 0x7fffffffu, everyone_permissions = 0x7fffffffu,
+                  group_permissions = 0x7fffffffu, next_permissions = 0x7fffffffu;
     Uuid permissions_granter;
     std::int32_t permissions_mask = 0;
     bool owner_changed = false, script_running = true;
@@ -32,4 +32,4 @@ struct TaskInventoryItem {
     TaskInventoryItem clone() const;
     void reset_ids(Uuid part, std::function<Uuid()> random_uuid = Uuid::random);
 };
-}
+} // namespace opensim::framework

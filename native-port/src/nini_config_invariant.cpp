@@ -3,21 +3,22 @@
 #include "opensim/framework/nini_config_invariant.hpp"
 #include "opensim/framework/invariant_config_culture.hpp"
 #include "opensim/framework/invariant_number_parse.hpp"
+
 namespace opensim::framework {
 namespace {
-template <class T, class F> std::function<T(const NiniWriterText&)> number(F conversion) {
-    return [conversion](const NiniWriterText& value) {
+template <class T, class F> std::function<T(const NiniWriterText &)> number(F conversion) {
+    return [conversion](const NiniWriterText &value) {
         try {
             return conversion(value ? std::optional<std::u16string>(*value) : std::nullopt);
-        } catch (const InvariantNumberError& e) {
-            throw NiniConfigError(e.kind == InvariantNumberError::Kind::Format
-                                      ? NiniConfigError::Kind::Format
-                                      : NiniConfigError::Kind::Overflow,
+        } catch (const InvariantNumberError &e) {
+            throw NiniConfigError(e.kind == InvariantNumberError::Kind::Format ? NiniConfigError::Kind::Format
+                                                                               : NiniConfigError::Kind::Overflow,
                                   e.message);
         }
     };
 }
-[[noreturn]] void culture_error(const InvariantConfigCultureError& e) {
+
+[[noreturn]] void culture_error(const InvariantConfigCultureError &e) {
     auto kind = NiniConfigError::Kind::Exception;
     if (e.source_type == "System.ArgumentNullException")
         kind = NiniConfigError::Kind::ArgumentNull;
@@ -31,7 +32,8 @@ template <class T, class F> std::function<T(const NiniWriterText&)> number(F con
         throw e;
     throw NiniConfigError(kind, e.message, e.parameter);
 }
-}
+} // namespace
+
 std::shared_ptr<NiniConfigBackend> native_nini_invariant_config_backend(NiniFileStreamProvider file_stream) {
     if (!file_stream)
         file_stream = native_nini_file_stream_provider();
@@ -44,26 +46,26 @@ std::shared_ptr<NiniConfigBackend> native_nini_invariant_config_backend(NiniFile
     backend->capture_number_format = [format] { return format; };
     backend->insensitive_table = [] {
         auto table = std::make_shared<NiniInsensitiveTable>();
-        table->equal = [](const auto& first, const auto& second) {
+        table->equal = [](const auto &first, const auto &second) {
             try {
                 return invariant_config_equal(first, second);
-            } catch (const InvariantConfigCultureError& e) {
+            } catch (const InvariantConfigCultureError &e) {
                 culture_error(e);
             }
         };
         return table;
     };
-    backend->lower_current = [](const auto& value) {
+    backend->lower_current = [](const auto &value) {
         try {
             return invariant_config_lower(value);
-        } catch (const InvariantConfigCultureError& e) {
+        } catch (const InvariantConfigCultureError &e) {
             culture_error(e);
         }
     };
-    backend->index_of_current = [](const auto& text, const auto& value, std::int32_t start) {
+    backend->index_of_current = [](const auto &text, const auto &value, std::int32_t start) {
         try {
             return invariant_config_index_of(text, value, start);
-        } catch (const InvariantConfigCultureError& e) {
+        } catch (const InvariantConfigCultureError &e) {
             culture_error(e);
         }
     };
@@ -72,4 +74,4 @@ std::shared_ptr<NiniConfigBackend> native_nini_invariant_config_backend(NiniFile
     backend->stream_reader = backend->document.stream_reader;
     return backend;
 }
-}
+} // namespace opensim::framework

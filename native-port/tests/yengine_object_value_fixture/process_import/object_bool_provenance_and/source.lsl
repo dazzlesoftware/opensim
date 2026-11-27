@@ -1,0 +1,1 @@
+YOption arrays;YOption chars;integer source=1;integer other=0;float real=1.0;string text="x";list items=[];vector vec=ZERO_VECTOR;rotation rot=ZERO_ROTATION;char ch='A';object input=7;object alias=input;string typename;integer result;integer after;default{state_entry(){typename=xmrTypeName((object)(source&&other));result=xmrHashCode((object)(source&&other));after=1;}}

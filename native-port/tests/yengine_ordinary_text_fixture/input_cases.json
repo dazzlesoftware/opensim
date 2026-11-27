@@ -1,0 +1,576 @@
+[
+  {
+    "name": "float_0",
+    "kind": "Source",
+    "source": "float item=xmrString2Float(\"0\");string result;default{state_entry(){result=(string)item;}}"
+  },
+  {
+    "name": "float_1",
+    "kind": "Source",
+    "source": "float item=xmrString2Float(\"-0\");string result;default{state_entry(){result=(string)item;}}"
+  },
+  {
+    "name": "float_2",
+    "kind": "Source",
+    "source": "float item=xmrString2Float(\"NaN\");string result;default{state_entry(){result=(string)item;}}"
+  },
+  {
+    "name": "float_3",
+    "kind": "Source",
+    "source": "float item=xmrString2Float(\"Infinity\");string result;default{state_entry(){result=(string)item;}}"
+  },
+  {
+    "name": "float_4",
+    "kind": "Source",
+    "source": "float item=xmrString2Float(\"-Infinity\");string result;default{state_entry(){result=(string)item;}}"
+  },
+  {
+    "name": "float_5",
+    "kind": "Source",
+    "source": "float item=xmrString2Float(\"0.0000005\");string result;default{state_entry(){result=(string)item;}}"
+  },
+  {
+    "name": "float_6",
+    "kind": "Source",
+    "source": "float item=xmrString2Float(\"-0.0000005\");string result;default{state_entry(){result=(string)item;}}"
+  },
+  {
+    "name": "float_7",
+    "kind": "Source",
+    "source": "float item=xmrString2Float(\"1.2345678901234567\");string result;default{state_entry(){result=(string)item;}}"
+  },
+  {
+    "name": "float_8",
+    "kind": "Source",
+    "source": "float item=xmrString2Float(\"999999999999999.5\");string result;default{state_entry(){result=(string)item;}}"
+  },
+  {
+    "name": "float_9",
+    "kind": "Source",
+    "source": "float item=xmrString2Float(\"1e20\");string result;default{state_entry(){result=(string)item;}}"
+  },
+  {
+    "name": "vector_0",
+    "kind": "Source",
+    "source": "vector item=<xmrString2Float(\"-0\"),xmrString2Float(\"0.0000005\"),xmrString2Float(\"-0.0000005\")>;string result;default{state_entry(){result=(string)item;}}"
+  },
+  {
+    "name": "vector_1",
+    "kind": "Source",
+    "source": "vector item=<xmrString2Float(\"NaN\"),xmrString2Float(\"Infinity\"),xmrString2Float(\"-Infinity\")>;string result;default{state_entry(){result=(string)item;}}"
+  },
+  {
+    "name": "vector_2",
+    "kind": "Source",
+    "source": "vector item=<xmrString2Float(\"1.2345678901234567\"),xmrString2Float(\"999999999999999.5\"),xmrString2Float(\"1e20\")>;string result;default{state_entry(){result=(string)item;}}"
+  },
+  {
+    "name": "rotation_0",
+    "kind": "Source",
+    "source": "rotation item=<xmrString2Float(\"-0\"),xmrString2Float(\"0.0000005\"),xmrString2Float(\"-0.0000005\"),xmrString2Float(\"1\")>;string result;default{state_entry(){result=(string)item;}}"
+  },
+  {
+    "name": "rotation_1",
+    "kind": "Source",
+    "source": "rotation item=<xmrString2Float(\"NaN\"),xmrString2Float(\"Infinity\"),xmrString2Float(\"-Infinity\"),xmrString2Float(\"1\")>;string result;default{state_entry(){result=(string)item;}}"
+  },
+  {
+    "name": "rotation_2",
+    "kind": "Source",
+    "source": "rotation item=<xmrString2Float(\"1.2345678901234567\"),xmrString2Float(\"999999999999999.5\"),xmrString2Float(\"1e20\"),xmrString2Float(\"-0\")>;string result;default{state_entry(){result=(string)item;}}"
+  },
+  {
+    "name": "list_0",
+    "kind": "Source",
+    "source": "list item=[];string result;string dumped;string csv;string first;default{state_entry(){result=(string)item;dumped=llDumpList2String(item,\"|\");csv=llList2CSV(item);first=llList2String(item,0);}}"
+  },
+  {
+    "name": "list_1",
+    "kind": "Source",
+    "source": "list item=[\"a\",1,\"b\"];string result;string dumped;string csv;string first;default{state_entry(){result=(string)item;dumped=llDumpList2String(item,\"|\");csv=llList2CSV(item);first=llList2String(item,0);}}"
+  },
+  {
+    "name": "list_2",
+    "kind": "Source",
+    "source": "list item=[1.25,xmrString2Float(\"-0\"),xmrString2Float(\"NaN\")];string result;string dumped;string csv;string first;default{state_entry(){result=(string)item;dumped=llDumpList2String(item,\"|\");csv=llList2CSV(item);first=llList2String(item,0);}}"
+  },
+  {
+    "name": "list_3",
+    "kind": "Source",
+    "source": "list item=[1,1.25,<1,2,3>,<0,0,0,1>,\"a\",(key)\"bad\",[1.25]];string result;string dumped;string csv;string first;default{state_entry(){result=(string)item;dumped=llDumpList2String(item,\"|\");csv=llList2CSV(item);first=llList2String(item,0);}}"
+  },
+  {
+    "name": "list_4",
+    "kind": "Source",
+    "source": "list item=[1,[2,[3]],\"x\"];string result;string dumped;string csv;string first;default{state_entry(){result=(string)item;dumped=llDumpList2String(item,\"|\");csv=llList2CSV(item);first=llList2String(item,0);}}"
+  },
+  {
+    "name": "list_5",
+    "kind": "Source",
+    "source": "list item=[[],[[]]];string result;string dumped;string csv;string first;default{state_entry(){result=(string)item;dumped=llDumpList2String(item,\"|\");csv=llList2CSV(item);first=llList2String(item,0);}}"
+  },
+  {
+    "name": "cast_list_to_integer",
+    "kind": "Source",
+    "source": "integer result;default{state_entry(){result=(integer)[1,2];}}",
+    "compile_control": true
+  },
+  {
+    "name": "cast_list_to_float",
+    "kind": "Source",
+    "source": "float result;default{state_entry(){result=(float)[1,2];}}",
+    "compile_control": true
+  },
+  {
+    "name": "cast_list_to_key",
+    "kind": "Source",
+    "source": "key result;default{state_entry(){result=(key)[1,2];}}",
+    "compile_control": true
+  },
+  {
+    "name": "cast_list_to_vector",
+    "kind": "Source",
+    "source": "vector result;default{state_entry(){result=(vector)[1,2];}}",
+    "compile_control": true
+  },
+  {
+    "name": "cast_list_to_rotation",
+    "kind": "Source",
+    "source": "rotation result;default{state_entry(){result=(rotation)[1,2];}}",
+    "compile_control": true
+  },
+  {
+    "name": "cast_scalar_to_list_0",
+    "kind": "Source",
+    "source": "list result;default{state_entry(){result=(list)(1);}}"
+  },
+  {
+    "name": "cast_scalar_to_list_1",
+    "kind": "Source",
+    "source": "list result;default{state_entry(){result=(list)(1.25);}}"
+  },
+  {
+    "name": "cast_scalar_to_list_2",
+    "kind": "Source",
+    "source": "list result;default{state_entry(){result=(list)(\"x\");}}"
+  },
+  {
+    "name": "cast_scalar_to_list_3",
+    "kind": "Source",
+    "source": "list result;default{state_entry(){result=(list)((key)\"bad\");}}"
+  },
+  {
+    "name": "cast_scalar_to_list_4",
+    "kind": "Source",
+    "source": "list result;default{state_entry(){result=(list)(<1,2,3>);}}"
+  },
+  {
+    "name": "cast_scalar_to_list_5",
+    "kind": "Source",
+    "source": "list result;default{state_entry(){result=(list)(<0,0,0,1>);}}"
+  },
+  {
+    "name": "parse_composition",
+    "kind": "Source",
+    "source": "string result;default{state_entry(){result=(string)llParseString2List(\"a b\",[\" \"],[]);}}"
+  },
+  {
+    "name": "raw_event_soup",
+    "kind": "Source",
+    "source": "list item;string result;string dumped;string csv;string rawFloat;string boxedFloat;default{state_entry(){item=xmrEventDequeue(0.0,2097152,0,0,0);result=(string)item;dumped=llDumpList2String(item,\"|\");csv=llList2CSV(item);rawFloat=llList2String(item,1);boxedFloat=llList2String(item,2);}touch_start(integer n){}}",
+    "raw_event": true
+  },
+  {
+    "name": "matrix_integer_to_integer",
+    "kind": "Source",
+    "cast_from": "integer",
+    "cast_to": "integer",
+    "source": "integer item=7;integer result;default{state_entry(){result=(integer)item;}}"
+  },
+  {
+    "name": "matrix_integer_to_float",
+    "kind": "Source",
+    "cast_from": "integer",
+    "cast_to": "float",
+    "source": "integer item=7;float result;default{state_entry(){result=(float)item;}}"
+  },
+  {
+    "name": "matrix_integer_to_string",
+    "kind": "Source",
+    "cast_from": "integer",
+    "cast_to": "string",
+    "source": "integer item=7;string result;default{state_entry(){result=(string)item;}}"
+  },
+  {
+    "name": "matrix_integer_to_key",
+    "kind": "Source",
+    "cast_from": "integer",
+    "cast_to": "key",
+    "source": "integer item=7;key result;default{state_entry(){result=(key)item;}}"
+  },
+  {
+    "name": "matrix_integer_to_list",
+    "kind": "Source",
+    "cast_from": "integer",
+    "cast_to": "list",
+    "source": "integer item=7;list result;default{state_entry(){result=(list)item;}}"
+  },
+  {
+    "name": "matrix_integer_to_vector",
+    "kind": "Source",
+    "cast_from": "integer",
+    "cast_to": "vector",
+    "source": "integer item=7;vector result;default{state_entry(){result=(vector)item;}}"
+  },
+  {
+    "name": "matrix_integer_to_rotation",
+    "kind": "Source",
+    "cast_from": "integer",
+    "cast_to": "rotation",
+    "source": "integer item=7;rotation result;default{state_entry(){result=(rotation)item;}}"
+  },
+  {
+    "name": "matrix_float_to_integer",
+    "kind": "Source",
+    "cast_from": "float",
+    "cast_to": "integer",
+    "source": "float item=1.25;integer result;default{state_entry(){result=(integer)item;}}"
+  },
+  {
+    "name": "matrix_float_to_float",
+    "kind": "Source",
+    "cast_from": "float",
+    "cast_to": "float",
+    "source": "float item=1.25;float result;default{state_entry(){result=(float)item;}}"
+  },
+  {
+    "name": "matrix_float_to_string",
+    "kind": "Source",
+    "cast_from": "float",
+    "cast_to": "string",
+    "source": "float item=1.25;string result;default{state_entry(){result=(string)item;}}"
+  },
+  {
+    "name": "matrix_float_to_key",
+    "kind": "Source",
+    "cast_from": "float",
+    "cast_to": "key",
+    "source": "float item=1.25;key result;default{state_entry(){result=(key)item;}}"
+  },
+  {
+    "name": "matrix_float_to_list",
+    "kind": "Source",
+    "cast_from": "float",
+    "cast_to": "list",
+    "source": "float item=1.25;list result;default{state_entry(){result=(list)item;}}"
+  },
+  {
+    "name": "matrix_float_to_vector",
+    "kind": "Source",
+    "cast_from": "float",
+    "cast_to": "vector",
+    "source": "float item=1.25;vector result;default{state_entry(){result=(vector)item;}}"
+  },
+  {
+    "name": "matrix_float_to_rotation",
+    "kind": "Source",
+    "cast_from": "float",
+    "cast_to": "rotation",
+    "source": "float item=1.25;rotation result;default{state_entry(){result=(rotation)item;}}"
+  },
+  {
+    "name": "matrix_string_to_integer",
+    "kind": "Source",
+    "cast_from": "string",
+    "cast_to": "integer",
+    "source": "string item=\"<1,2,3>\";integer result;default{state_entry(){result=(integer)item;}}"
+  },
+  {
+    "name": "matrix_string_to_float",
+    "kind": "Source",
+    "cast_from": "string",
+    "cast_to": "float",
+    "source": "string item=\"<1,2,3>\";float result;default{state_entry(){result=(float)item;}}"
+  },
+  {
+    "name": "matrix_string_to_string",
+    "kind": "Source",
+    "cast_from": "string",
+    "cast_to": "string",
+    "source": "string item=\"<1,2,3>\";string result;default{state_entry(){result=(string)item;}}"
+  },
+  {
+    "name": "matrix_string_to_key",
+    "kind": "Source",
+    "cast_from": "string",
+    "cast_to": "key",
+    "source": "string item=\"<1,2,3>\";key result;default{state_entry(){result=(key)item;}}"
+  },
+  {
+    "name": "matrix_string_to_list",
+    "kind": "Source",
+    "cast_from": "string",
+    "cast_to": "list",
+    "source": "string item=\"<1,2,3>\";list result;default{state_entry(){result=(list)item;}}"
+  },
+  {
+    "name": "matrix_string_to_vector",
+    "kind": "Source",
+    "cast_from": "string",
+    "cast_to": "vector",
+    "source": "string item=\"<1,2,3>\";vector result;default{state_entry(){result=(vector)item;}}"
+  },
+  {
+    "name": "matrix_string_to_rotation",
+    "kind": "Source",
+    "cast_from": "string",
+    "cast_to": "rotation",
+    "source": "string item=\"<1,2,3>\";rotation result;default{state_entry(){result=(rotation)item;}}"
+  },
+  {
+    "name": "matrix_key_to_integer",
+    "kind": "Source",
+    "cast_from": "key",
+    "cast_to": "integer",
+    "source": "key item=(key)\"<1,2,3>\";integer result;default{state_entry(){result=(integer)item;}}"
+  },
+  {
+    "name": "matrix_key_to_float",
+    "kind": "Source",
+    "cast_from": "key",
+    "cast_to": "float",
+    "source": "key item=(key)\"<1,2,3>\";float result;default{state_entry(){result=(float)item;}}"
+  },
+  {
+    "name": "matrix_key_to_string",
+    "kind": "Source",
+    "cast_from": "key",
+    "cast_to": "string",
+    "source": "key item=(key)\"<1,2,3>\";string result;default{state_entry(){result=(string)item;}}"
+  },
+  {
+    "name": "matrix_key_to_key",
+    "kind": "Source",
+    "cast_from": "key",
+    "cast_to": "key",
+    "source": "key item=(key)\"<1,2,3>\";key result;default{state_entry(){result=(key)item;}}"
+  },
+  {
+    "name": "matrix_key_to_list",
+    "kind": "Source",
+    "cast_from": "key",
+    "cast_to": "list",
+    "source": "key item=(key)\"<1,2,3>\";list result;default{state_entry(){result=(list)item;}}"
+  },
+  {
+    "name": "matrix_key_to_vector",
+    "kind": "Source",
+    "cast_from": "key",
+    "cast_to": "vector",
+    "source": "key item=(key)\"<1,2,3>\";vector result;default{state_entry(){result=(vector)item;}}"
+  },
+  {
+    "name": "matrix_key_to_rotation",
+    "kind": "Source",
+    "cast_from": "key",
+    "cast_to": "rotation",
+    "source": "key item=(key)\"<1,2,3>\";rotation result;default{state_entry(){result=(rotation)item;}}"
+  },
+  {
+    "name": "matrix_list_to_integer",
+    "kind": "Source",
+    "cast_from": "list",
+    "cast_to": "integer",
+    "source": "list item=[1,2];integer result;default{state_entry(){result=(integer)item;}}"
+  },
+  {
+    "name": "matrix_list_to_float",
+    "kind": "Source",
+    "cast_from": "list",
+    "cast_to": "float",
+    "source": "list item=[1,2];float result;default{state_entry(){result=(float)item;}}"
+  },
+  {
+    "name": "matrix_list_to_string",
+    "kind": "Source",
+    "cast_from": "list",
+    "cast_to": "string",
+    "source": "list item=[1,2];string result;default{state_entry(){result=(string)item;}}"
+  },
+  {
+    "name": "matrix_list_to_key",
+    "kind": "Source",
+    "cast_from": "list",
+    "cast_to": "key",
+    "source": "list item=[1,2];key result;default{state_entry(){result=(key)item;}}"
+  },
+  {
+    "name": "matrix_list_to_list",
+    "kind": "Source",
+    "cast_from": "list",
+    "cast_to": "list",
+    "source": "list item=[1,2];list result;default{state_entry(){result=(list)item;}}"
+  },
+  {
+    "name": "matrix_list_to_vector",
+    "kind": "Source",
+    "cast_from": "list",
+    "cast_to": "vector",
+    "source": "list item=[1,2];vector result;default{state_entry(){result=(vector)item;}}"
+  },
+  {
+    "name": "matrix_list_to_rotation",
+    "kind": "Source",
+    "cast_from": "list",
+    "cast_to": "rotation",
+    "source": "list item=[1,2];rotation result;default{state_entry(){result=(rotation)item;}}"
+  },
+  {
+    "name": "matrix_vector_to_integer",
+    "kind": "Source",
+    "cast_from": "vector",
+    "cast_to": "integer",
+    "source": "vector item=<1,2,3>;integer result;default{state_entry(){result=(integer)item;}}"
+  },
+  {
+    "name": "matrix_vector_to_float",
+    "kind": "Source",
+    "cast_from": "vector",
+    "cast_to": "float",
+    "source": "vector item=<1,2,3>;float result;default{state_entry(){result=(float)item;}}"
+  },
+  {
+    "name": "matrix_vector_to_string",
+    "kind": "Source",
+    "cast_from": "vector",
+    "cast_to": "string",
+    "source": "vector item=<1,2,3>;string result;default{state_entry(){result=(string)item;}}"
+  },
+  {
+    "name": "matrix_vector_to_key",
+    "kind": "Source",
+    "cast_from": "vector",
+    "cast_to": "key",
+    "source": "vector item=<1,2,3>;key result;default{state_entry(){result=(key)item;}}"
+  },
+  {
+    "name": "matrix_vector_to_list",
+    "kind": "Source",
+    "cast_from": "vector",
+    "cast_to": "list",
+    "source": "vector item=<1,2,3>;list result;default{state_entry(){result=(list)item;}}"
+  },
+  {
+    "name": "matrix_vector_to_vector",
+    "kind": "Source",
+    "cast_from": "vector",
+    "cast_to": "vector",
+    "source": "vector item=<1,2,3>;vector result;default{state_entry(){result=(vector)item;}}"
+  },
+  {
+    "name": "matrix_vector_to_rotation",
+    "kind": "Source",
+    "cast_from": "vector",
+    "cast_to": "rotation",
+    "source": "vector item=<1,2,3>;rotation result;default{state_entry(){result=(rotation)item;}}"
+  },
+  {
+    "name": "matrix_rotation_to_integer",
+    "kind": "Source",
+    "cast_from": "rotation",
+    "cast_to": "integer",
+    "source": "rotation item=<0,0,0,1>;integer result;default{state_entry(){result=(integer)item;}}"
+  },
+  {
+    "name": "matrix_rotation_to_float",
+    "kind": "Source",
+    "cast_from": "rotation",
+    "cast_to": "float",
+    "source": "rotation item=<0,0,0,1>;float result;default{state_entry(){result=(float)item;}}"
+  },
+  {
+    "name": "matrix_rotation_to_string",
+    "kind": "Source",
+    "cast_from": "rotation",
+    "cast_to": "string",
+    "source": "rotation item=<0,0,0,1>;string result;default{state_entry(){result=(string)item;}}"
+  },
+  {
+    "name": "matrix_rotation_to_key",
+    "kind": "Source",
+    "cast_from": "rotation",
+    "cast_to": "key",
+    "source": "rotation item=<0,0,0,1>;key result;default{state_entry(){result=(key)item;}}"
+  },
+  {
+    "name": "matrix_rotation_to_list",
+    "kind": "Source",
+    "cast_from": "rotation",
+    "cast_to": "list",
+    "source": "rotation item=<0,0,0,1>;list result;default{state_entry(){result=(list)item;}}"
+  },
+  {
+    "name": "matrix_rotation_to_vector",
+    "kind": "Source",
+    "cast_from": "rotation",
+    "cast_to": "vector",
+    "source": "rotation item=<0,0,0,1>;vector result;default{state_entry(){result=(vector)item;}}"
+  },
+  {
+    "name": "matrix_rotation_to_rotation",
+    "kind": "Source",
+    "cast_from": "rotation",
+    "cast_to": "rotation",
+    "source": "rotation item=<0,0,0,1>;rotation result;default{state_entry(){result=(rotation)item;}}"
+  },
+  {
+    "name": "implicit_string_integer",
+    "kind": "Source",
+    "source": "string result=7;default{state_entry(){}}"
+  },
+  {
+    "name": "implicit_string_float",
+    "kind": "Source",
+    "source": "string result=1.25;default{state_entry(){}}"
+  },
+  {
+    "name": "implicit_string_vector",
+    "kind": "Source",
+    "source": "string result=<1,2,3>;default{state_entry(){}}"
+  },
+  {
+    "name": "implicit_string_rotation",
+    "kind": "Source",
+    "source": "string result=<0,0,0,1>;default{state_entry(){}}"
+  },
+  {
+    "name": "implicit_string_list",
+    "kind": "Source",
+    "source": "string result=[1,2];default{state_entry(){}}"
+  },
+  {
+    "name": "implicit_key_list",
+    "kind": "Source",
+    "source": "key result=[1,2];default{state_entry(){}}"
+  },
+  {
+    "name": "implicit_owner_say_list",
+    "kind": "Source",
+    "source": "integer after;default{state_entry(){llOwnerSay([1,2]);after=1;}}"
+  },
+  {
+    "name": "implicit_compare_integer",
+    "kind": "Source",
+    "source": "integer result;default{state_entry(){result=xmrStringCompare(1,2);}}"
+  },
+  {
+    "name": "implicit_string_bool_integer",
+    "kind": "Source",
+    "source": "integer result;default{state_entry(){result=xmrStringToBool(0);}}"
+  },
+  {
+    "name": "implicit_key_bool_integer",
+    "kind": "Source",
+    "source": "integer result;default{state_entry(){result=xmrKeyToBool(0);}}"
+  }
+]

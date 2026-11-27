@@ -3,6 +3,7 @@
 #pragma once
 #include "opensim/framework/config_uri_object.hpp"
 #include "opensim/framework/config_uri_components.hpp"
+
 namespace opensim::framework {
 // No custom UriParser registration or foreign URI implementation is fabricated.
 ConfigUriObjectPtr config_generic_uri_create(ConfigUriText, ConfigUriObjectKind,
@@ -12,16 +13,16 @@ ConfigUriObjectPtr config_generic_uri_try_create(ConfigUriText, ConfigUriObjectK
                                                  std::shared_ptr<ConfigUriComponentsBackend>, bool windows);
 // GetComponents(Path | KeepDelimiter, format), including the original-string fast path.
 ConfigUriText config_generic_uri_path(ConfigUriObjectPtr, std::int32_t format);
-ConfigUriObjectPtr config_generic_uri_combine_string(
-    ConfigUriObjectPtr, ConfigUriText,
-    const std::function<ConfigUriObjectPtr(ConfigUriText, ConfigUriObjectKind)>&);
+ConfigUriObjectPtr
+config_generic_uri_combine_string(ConfigUriObjectPtr, ConfigUriText,
+                                  const std::function<ConfigUriObjectPtr(ConfigUriText, ConfigUriObjectKind)> &);
 bool config_generic_uri_owns(ConfigUriObjectPtr);
 ConfigUriObjectPtr
 config_generic_uri_combine_uri(ConfigUriObjectPtr, ConfigUriObjectPtr,
-                               const std::function<ConfigUriObjectPtr(ConfigUriText, ConfigUriObjectKind)>&);
-ConfigUriObjectPtr config_generic_uri_with_fragment(
-    ConfigUriObjectPtr, ConfigUriText,
-    const std::function<ConfigUriObjectPtr(ConfigUriText, ConfigUriObjectKind)>&);
+                               const std::function<ConfigUriObjectPtr(ConfigUriText, ConfigUriObjectKind)> &);
+ConfigUriObjectPtr
+config_generic_uri_with_fragment(ConfigUriObjectPtr, ConfigUriText,
+                                 const std::function<ConfigUriObjectPtr(ConfigUriText, ConfigUriObjectKind)> &);
 ConfigUriObjectPtr config_generic_uri_clone(ConfigUriObjectPtr);
 enum class ConfigGenericUriComponent { Host, IdnHost, DnsSafeHost, UserInfo, AbsolutePath, Query };
 ConfigUriText config_generic_uri_component(ConfigUriObjectPtr, ConfigGenericUriComponent);

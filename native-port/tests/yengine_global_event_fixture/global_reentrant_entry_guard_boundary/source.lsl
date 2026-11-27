@@ -1,0 +1,1 @@
+integer calls;integer value=init();integer complete;integer init(){calls++;if(calls==1){xmrEventEnqueue([30]);xmrEventEnqueue([21,9]);return llGetListLength(xmrEventDequeue(600.0,2097152,0,1073741824,0));}return 7;}default{state_entry(){complete++;}touch_start(integer n){}}

@@ -1,0 +1,1 @@
+YOption chars;list result;default{state_entry(){result=['A', (char)0];}}

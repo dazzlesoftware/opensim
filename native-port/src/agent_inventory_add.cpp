@@ -3,6 +3,7 @@
 #include "opensim/scene/agent_inventory_add.hpp"
 #include <bit>
 #include <stdexcept>
+
 namespace opensim::scene {
 namespace {
 bool folder_type(std::int8_t value) {
@@ -43,19 +44,21 @@ bool folder_type(std::int8_t value) {
         return false;
     }
 }
-}
+} // namespace
+
 services::InventoryItem inventory_storage_projection(const TaskInventoryAgentItem &value) {
     auto result = value.item;
     if (value.creator_data && !value.creator_data->empty())
         result.creator_id += ';' + *value.creator_data;
     return result;
 }
-AgentInventoryAddController::AgentInventoryAddController(AgentInventoryAddBackend b)
-    : backend_(std::move(b)) {
+
+AgentInventoryAddController::AgentInventoryAddController(AgentInventoryAddBackend b) : backend_(std::move(b)) {
     if (!backend_.add_item || !backend_.system_folder || !backend_.root_folder || !backend_.folder ||
         !backend_.is_god || !backend_.upload_complete || !backend_.client)
         throw std::invalid_argument("Incomplete agent inventory add backend");
 }
+
 bool AgentInventoryAddController::add(std::shared_ptr<TaskInventoryAgentItem> value, bool trigger) const {
     if (!value)
         throw std::invalid_argument("Null inventory item");
@@ -97,11 +100,13 @@ bool AgentInventoryAddController::add(std::shared_ptr<TaskInventoryAgentItem> va
         backend_.warn("Could not add inventory item");
     return false;
 }
+
 void AgentInventoryAddController::add(const AgentInventoryClient &client,
                                       std::shared_ptr<TaskInventoryAgentItem> value) const {
     add(value);
     client.create_update(std::move(value), 0);
 }
+
 void AgentInventoryAddController::change_placement(std::shared_ptr<TaskInventoryAgentItem> value,
                                                    const services::InventoryFolder &folder) const {
     auto client = backend_.client(value->item.owner);
@@ -115,4 +120,4 @@ void AgentInventoryAddController::change_placement(std::shared_ptr<TaskInventory
         message += " under " + parent->name;
     client->alert(message, false);
 }
-}
+} // namespace opensim::scene

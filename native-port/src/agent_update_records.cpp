@@ -4,20 +4,24 @@
 #include "opensim/framework/integer_text.hpp"
 #include <bit>
 #include <stdexcept>
+
 namespace opensim::framework {
 using network::Value;
+
 namespace {
-Value uuid(const Uuid& id) {
+Value uuid(const Uuid &id) {
     Value value(id.str());
     value.kind = Value::Kind::Uuid;
     return value;
 }
-const Value& map(const Value* data) {
+
+const Value &map(const Value *data) {
     if (!data || data->view().kind != Value::Kind::Map)
         throw std::invalid_argument("Agent update record requires an OSD map");
     return data->view();
 }
-}
+} // namespace
+
 Value AgentGroupData::pack() const {
     auto data = Value::object({});
     data.set("group_id", uuid(group_id));
@@ -25,8 +29,9 @@ Value AgentGroupData::pack() const {
     data.set("accept_notices", Value(accept_notices));
     return data;
 }
-void AgentGroupData::unpack(const Value* input) {
-    const auto& data = map(input);
+
+void AgentGroupData::unpack(const Value *input) {
+    const auto &data = map(input);
     if (data.contains("group_id"))
         group_id = network::osd_uuid(data.get("group_id"));
     if (data.contains("group_powers"))
@@ -34,6 +39,7 @@ void AgentGroupData::unpack(const Value* input) {
     if (data.contains("accept_notices"))
         accept_notices = network::osd_boolean(data.get("accept_notices"));
 }
+
 Value ControllerData::pack() const {
     auto data = Value::object({});
     data.set("object", uuid(object_id));
@@ -42,8 +48,9 @@ Value ControllerData::pack() const {
     data.set("event", Value(std::bit_cast<std::int32_t>(event_controls)));
     return data;
 }
-void ControllerData::unpack(const Value* input) {
-    const auto& data = map(input);
+
+void ControllerData::unpack(const Value *input) {
+    const auto &data = map(input);
     if (data.contains("object"))
         object_id = network::osd_uuid(data.get("object"));
     if (data.contains("item"))
@@ -53,4 +60,4 @@ void ControllerData::unpack(const Value* input) {
     if (data.contains("event"))
         event_controls = static_cast<std::uint32_t>(network::osd_integer(data.get("event")));
 }
-}
+} // namespace opensim::framework

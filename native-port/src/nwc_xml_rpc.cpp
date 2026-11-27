@@ -7,20 +7,23 @@
 #include "opensim/framework/invariant_number_parse.hpp"
 #include "opensim/framework/asset_base.hpp"
 #include <chrono>
+
 namespace opensim::network {
 using Text = std::optional<std::u16string>;
 using Kind = Value::Kind;
+
 NwcXmlRpcError::NwcXmlRpcError(std::string type, std::u16string text)
-    : runtime_error(framework::utf8(text)), source_type(std::move(type)), message(std::move(text)) {
-}
+    : runtime_error(framework::utf8(text)), source_type(std::move(type)), message(std::move(text)) {}
+
 namespace {
 [[noreturn]] void null_reference() {
-    throw NwcXmlRpcError("System.NullReferenceException",
-                         u"Object reference not set to an instance of an object.");
+    throw NwcXmlRpcError("System.NullReferenceException", u"Object reference not set to an instance of an object.");
 }
+
 [[noreturn]] void null_string() {
     throw NwcXmlRpcError("System.ArgumentNullException", u"Value cannot be null. (Parameter 's')");
 }
+
 std::shared_ptr<Value> string(Text text) {
     if (!text)
         return {};
@@ -28,10 +31,12 @@ std::shared_ptr<Value> string(Text text) {
     p->sdk_string = std::make_shared<const std::u16string>(*text);
     return p;
 }
-Text string_value(const Value& v) {
+
+Text string_value(const Value &v) {
     return v.sdk_string ? Text(*v.sdk_string) : Text(framework::utf16_replacing(v.text));
 }
-std::string type(const Value& v) {
+
+std::string type(const Value &v) {
     switch (v.kind) {
     case Kind::String:
         return "System.String";
@@ -55,18 +60,20 @@ std::string type(const Value& v) {
         return "System.Object";
     }
 }
-const Value& cast(const std::shared_ptr<Value>& value, Kind k, const char* target) {
+
+const Value &cast(const std::shared_ptr<Value> &value, Kind k, const char *target) {
     if (!value) {
         null_reference();
     }
-    auto& v = value->view();
+    auto &v = value->view();
     if (v.kind != k)
         throw NwcXmlRpcError("System.InvalidCastException", u"Unable to cast object of type '" +
                                                                 framework::utf16(type(v)) + u"' to type '" +
                                                                 framework::utf16(target) + u"'.");
     return v;
 }
-std::shared_ptr<Value> member(const Value& map, const char* name) {
+
+std::shared_ptr<Value> member(const Value &map, const char *name) {
     auto it = map.map.find(name);
     if (it == map.map.end() || it->second.kind == Kind::NullReference)
         return {};
@@ -74,34 +81,34 @@ std::shared_ptr<Value> member(const Value& map, const char* name) {
         return it->second.reference;
     return std::make_shared<Value>(it->second);
 }
-std::int32_t integer(const Text& text, bool short_value = false) {
+
+std::int32_t integer(const Text &text, bool short_value = false) {
     if (!text) {
         null_string();
     }
     std::int32_t value;
     try {
         value = framework::invariant_convert_to_int32(text);
-    } catch (const framework::InvariantNumberError& e) {
+    } catch (const framework::InvariantNumberError &e) {
         if (short_value && e.kind == framework::InvariantNumberError::Kind::Overflow)
-            throw NwcXmlRpcError("System.OverflowException",
-                                 u"Value was either too large or too small for an Int16.");
+            throw NwcXmlRpcError("System.OverflowException", u"Value was either too large or too small for an Int16.");
         throw;
     }
     if (short_value && (value < -32768 || value > 32767)) {
-        throw NwcXmlRpcError("System.OverflowException",
-                             u"Value was either too large or too small for an Int16.");
+        throw NwcXmlRpcError("System.OverflowException", u"Value was either too large or too small for an Int16.");
     }
     return value;
 }
-std::shared_ptr<Value> date(const Text& text) {
+} // namespace
+
+std::shared_ptr<Value> parse_nwc_xml_rpc_date(const Text &text) {
     if (!text) {
         null_string();
     }
     auto fail = [&]() -> void {
         throw NwcXmlRpcError("System.FormatException",
-                             text->empty()
-                                 ? u"String was not recognized as a valid DateTime."
-                                 : u"String '" + *text + u"' was not recognized as a valid DateTime.");
+                             text->empty() ? u"String was not recognized as a valid DateTime."
+                                           : u"String '" + *text + u"' was not recognized as a valid DateTime.");
     };
     if (text->size() != 17) {
         fail();
@@ -135,25 +142,27 @@ std::shared_ptr<Value> date(const Text& text) {
     p->sdk_date = std::make_shared<framework::AssetDateTime>(ticks, 0);
     return p;
 }
-}
+
 std::int32_t NwcXmlRpcResponse::fault_code() const {
     if (!is_fault)
         return 0;
-    const auto& map = cast(value, Kind::Map, "System.Collections.Hashtable");
+    const auto &map = cast(value, Kind::Map, "System.Collections.Hashtable");
     auto p = member(map, "faultCode");
     return cast(p, Kind::Integer, "System.Int32").integer;
 }
+
 Text NwcXmlRpcResponse::fault_string() const {
     if (!is_fault)
         return u"";
-    const auto& map = cast(value, Kind::Map, "System.Collections.Hashtable");
+    const auto &map = cast(value, Kind::Map, "System.Collections.Hashtable");
     auto p = member(map, "faultString");
     if (!p)
         return {};
     return string_value(cast(p, Kind::String, "System.String"));
 }
-NwcXmlRpcResponseDeserializer::NwcXmlRpcResponseDeserializer(Logger logger) : logger_(std::move(logger)) {
-}
+
+NwcXmlRpcResponseDeserializer::NwcXmlRpcResponseDeserializer(Logger logger) : logger_(std::move(logger)) {}
+
 void NwcXmlRpcResponseDeserializer::element(std::u16string_view name) {
     if (logger_)
         logger_(u"START " + std::u16string(name));
@@ -166,6 +175,7 @@ void NwcXmlRpcResponseDeserializer::element(std::u16string_view name) {
         container_->kind = name == u"struct" ? Kind::Map : Kind::Array;
     }
 }
+
 void NwcXmlRpcResponseDeserializer::end_element(std::u16string_view name) {
     if (logger_)
         logger_(u"END " + std::u16string(name));
@@ -177,10 +187,11 @@ void NwcXmlRpcResponseDeserializer::end_element(std::u16string_view name) {
             auto bytes = osd_binary(*p);
             if (bytes->empty())
                 p->binary_data = osd_binary(osd_from_binary({}));
-        } catch (const std::invalid_argument&) {
+        } catch (const std::invalid_argument &) {
             throw NwcXmlRpcError(
                 "System.FormatException",
-                u"The input is not a valid Base-64 string as it contains a non-base 64 character, more than two padding characters, or an illegal character among the padding characters.");
+                u"The input is not a valid Base-64 string as it contains a non-base 64 character, more than two "
+                u"padding characters, or an illegal character among the padding characters.");
         }
         value_ = std::move(p);
     } else if (name == u"string")
@@ -199,9 +210,8 @@ void NwcXmlRpcResponseDeserializer::end_element(std::u16string_view name) {
         }
         auto key = framework::utf8(*name_);
         if (container_->contains(key)) {
-            throw NwcXmlRpcError("System.ArgumentException",
-                                 u"Item has already been added. Key in dictionary: '" + *name_ +
-                                     u"'  Key being added: '" + *name_ + u"'");
+            throw NwcXmlRpcError("System.ArgumentException", u"Item has already been added. Key in dictionary: '" +
+                                                                 *name_ + u"'  Key being added: '" + *name_ + u"'");
         }
         container_->set(key, value_ ? Value::alias(value_) : Value::null_reference());
     } else if (name == u"value") {
@@ -224,10 +234,11 @@ void NwcXmlRpcResponseDeserializer::end_element(std::u16string_view name) {
     } else if (name == u"i4" || name == u"int")
         value_ = std::make_shared<Value>(integer(text_));
     else if (name == u"dateTime.iso8601")
-        value_ = date(text_);
+        value_ = parse_nwc_xml_rpc_date(text_);
     else if (name == u"name")
         name_ = text_;
 }
+
 namespace {
 framework::NiniXmlReaderSettings reader_settings() {
     auto s = framework::NiniXmlReaderSettings::legacy_document();
@@ -235,22 +246,23 @@ framework::NiniXmlReaderSettings reader_settings() {
     s.validating_reader_compatibility = false;
     return s;
 }
-}
-std::shared_ptr<NwcXmlRpcResponse> NwcXmlRpcResponseDeserializer::deserialize(const Text& xml) {
+} // namespace
+
+std::shared_ptr<NwcXmlRpcResponse> NwcXmlRpcResponseDeserializer::deserialize(const Text &xml) {
     if (!xml)
         throw NwcXmlRpcError("System.ArgumentNullException", u"Value cannot be null. (Parameter 's')");
-    return parse(
-        framework::NativeNiniXmlReader::from_text(framework::nini_writer_text(*xml), reader_settings()));
+    return parse(framework::NativeNiniXmlReader::from_text(framework::nini_writer_text(*xml), reader_settings()));
 }
+
 std::shared_ptr<NwcXmlRpcResponse>
 NwcXmlRpcResponseDeserializer::deserialize_reader(std::shared_ptr<framework::NativeNiniXmlTextInput> input) {
     // The legacy XmlTextReader(TextReader) null input behaves as empty input;
     // the separate Deserialize(string) overload still rejects a null string.
     if (!input)
-        return parse(
-            framework::NativeNiniXmlReader::from_text(framework::nini_writer_text(u""), reader_settings()));
+        return parse(framework::NativeNiniXmlReader::from_text(framework::nini_writer_text(u""), reader_settings()));
     return parse(framework::NativeNiniXmlReader::from_text_input(std::move(input), reader_settings()));
 }
+
 std::shared_ptr<NwcXmlRpcResponse>
 NwcXmlRpcResponseDeserializer::parse(std::shared_ptr<framework::NativeNiniXmlReader> reader) {
     auto response = std::make_shared<NwcXmlRpcResponse>();
@@ -293,4 +305,4 @@ NwcXmlRpcResponseDeserializer::parse(std::shared_ptr<framework::NativeNiniXmlRea
         std::rethrow_exception(error);
     return response;
 }
-}
+} // namespace opensim::network

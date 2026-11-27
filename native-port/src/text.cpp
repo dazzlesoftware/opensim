@@ -28,11 +28,13 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "opensim/framework/text.hpp"
 #include <stdexcept>
 #include <cstdint>
+
 namespace opensim::framework {
 std::shared_ptr<const std::u16string> runtime_empty_text() {
     static const auto value = std::make_shared<const std::u16string>();
     return value;
 }
+
 std::u16string utf16(std::string_view text) {
     std::u16string result;
     for (std::size_t i = 0; i < text.size();) {
@@ -68,6 +70,7 @@ std::u16string utf16(std::string_view text) {
     }
     return result;
 }
+
 std::string utf8(std::u16string_view text) {
     std::string result;
     for (std::size_t i = 0; i < text.size(); ++i) {
@@ -97,12 +100,14 @@ std::string utf8(std::u16string_view text) {
     }
     return result;
 }
+
 std::string truncate_utf16(std::string_view text, std::size_t units) {
     auto value = utf16(text);
     if (value.size() > units)
         value.resize(units);
     return utf8(value);
 }
+
 std::u16string utf16_replacing(std::string_view text) {
     std::u16string result;
     for (std::size_t i = 0; i < text.size();) {
@@ -138,19 +143,22 @@ std::u16string utf16_replacing(std::string_view text) {
     }
     return result;
 }
+
 bool unicode_whitespace(char16_t value) {
-    return (value >= 9 && value <= 13) || value == 0x20 || value == 0x85 || value == 0xa0 ||
-           value == 0x1680 || (value >= 0x2000 && value <= 0x200a) || value == 0x2028 || value == 0x2029 ||
-           value == 0x202f || value == 0x205f || value == 0x3000;
+    return (value >= 9 && value <= 13) || value == 0x20 || value == 0x85 || value == 0xa0 || value == 0x1680 ||
+           (value >= 0x2000 && value <= 0x200a) || value == 0x2028 || value == 0x2029 || value == 0x202f ||
+           value == 0x205f || value == 0x3000;
 }
+
 std::u16string sdk_bytes_to_string(std::span<const std::uint8_t> bytes) {
     if (bytes.empty())
         return {};
-    std::string_view text(reinterpret_cast<const char*>(bytes.data()), bytes.size());
+    std::string_view text(reinterpret_cast<const char *>(bytes.data()), bytes.size());
     if (text.back() == '\0')
         text.remove_suffix(1);
     return utf16_replacing(text);
 }
+
 std::string trim_utf8(std::string_view text) {
     const auto storage = utf16_replacing(text);
     std::u16string_view view = storage;
@@ -160,4 +168,4 @@ std::string trim_utf8(std::string_view text) {
         view.remove_suffix(1);
     return utf8(view);
 }
-}
+} // namespace opensim::framework

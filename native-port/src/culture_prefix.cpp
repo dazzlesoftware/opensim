@@ -22,29 +22,27 @@
 namespace opensim::framework {
 namespace {
 #include "../third_party/dotnet_collation/ignore_case_tables.inc"
+
 struct Icu {
     using Upper = std::int32_t (*)(std::int32_t);
     Upper upper = nullptr, lower = nullptr;
-    using Open = void* (*)(const char*, std::int32_t*);
-    using Close = void (*)(void*);
-    using Compare = std::int32_t (*)(const void*, const char16_t*, std::int32_t, const char16_t*,
-                                     std::int32_t);
-    using Search = void* (*)(const char16_t*, std::int32_t, const char16_t*, std::int32_t, const void*, void*,
-                             std::int32_t*);
-    using First = std::int32_t (*)(void*, std::int32_t*);
-    using Strength = void (*)(void*, std::int32_t);
-    using OpenElements = void* (*)(const void*, const char16_t*, std::int32_t, std::int32_t*);
-    using Previous = std::int32_t (*)(void*, std::int32_t*);
-    using GetStrength = std::int32_t (*)(const void*);
+    using Open = void *(*)(const char *, std::int32_t *);
+    using Close = void (*)(void *);
+    using Compare = std::int32_t (*)(const void *, const char16_t *, std::int32_t, const char16_t *, std::int32_t);
+    using Search = void *(*)(const char16_t *, std::int32_t, const char16_t *, std::int32_t, const void *, void *,
+                             std::int32_t *);
+    using First = std::int32_t (*)(void *, std::int32_t *);
+    using Strength = void (*)(void *, std::int32_t);
+    using OpenElements = void *(*)(const void *, const char16_t *, std::int32_t, std::int32_t *);
+    using Previous = std::int32_t (*)(void *, std::int32_t *);
+    using GetStrength = std::int32_t (*)(const void *);
     OpenElements open_elements = nullptr;
     Close close_elements = nullptr;
     Previous previous = nullptr;
     GetStrength get_strength = nullptr;
-    using Rules = const char16_t* (*)(const void*, std::int32_t*);
-    using OpenRules = void* (*)(const char16_t*, std::int32_t, std::int32_t, std::int32_t, void*,
-                                std::int32_t*);
-    using OpenBreak = void* (*)(const char16_t*, std::int32_t, const char16_t*, std::int32_t, void*,
-                                std::int32_t*);
+    using Rules = const char16_t *(*)(const void *, std::int32_t *);
+    using OpenRules = void *(*)(const char16_t *, std::int32_t, std::int32_t, std::int32_t, void *, std::int32_t *);
+    using OpenBreak = void *(*)(const char16_t *, std::int32_t, const char16_t *, std::int32_t, void *, std::int32_t *);
     OpenBreak open_break = nullptr;
     Rules rules = nullptr;
     OpenRules open_rules = nullptr;
@@ -56,12 +54,14 @@ struct Icu {
     First first = nullptr;
 #ifdef _WIN32
     HMODULE module = nullptr;
-    void* symbol(const std::string& name) {
-        return reinterpret_cast<void*>(GetProcAddress(module, name.c_str()));
+
+    void *symbol(const std::string &name) {
+        return reinterpret_cast<void *>(GetProcAddress(module, name.c_str()));
     }
 #else
-    void* module = nullptr;
-    void* symbol(const std::string& name) {
+    void *module = nullptr;
+
+    void *symbol(const std::string &name) {
         return dlsym(module, name.c_str());
     }
 #endif
@@ -102,6 +102,7 @@ struct Icu {
         rules = reinterpret_cast<Rules>(symbol("ucol_getRules" + suffix));
         open_rules = reinterpret_cast<OpenRules>(symbol("ucol_openRules" + suffix));
     }
+
     ~Icu() {
 #ifdef _WIN32
         if (module)
@@ -112,14 +113,17 @@ struct Icu {
 #endif
     }
 };
-Icu& icu() {
+
+Icu &icu() {
     static Icu value;
     return value;
 }
+
 struct Collator {
-    void* value = nullptr;
+    void *value = nullptr;
+
     Collator(bool ignore_case = false) {
-        auto& api = icu();
+        auto &api = icu();
         if (!api.open || !api.close || !api.compare || !api.search || !api.first || !api.search_close ||
             (ignore_case && (!api.rules || !api.open_rules)))
             throw std::runtime_error("ICU is required for invariant collation");
@@ -178,45 +182,51 @@ struct Collator {
             }
         }
     }
+
     ~Collator() {
         icu().close(value);
     }
 };
+
 bool printable(std::string_view value) {
     return std::all_of(value.begin(), value.end(), [](unsigned char c) { return c >= 32 && c < 127; });
 }
-}
+} // namespace
+
 int invariant_index_of(std::u16string_view source, std::u16string_view pattern) {
     return invariant_index_of_grapheme_utf16(source, pattern);
 }
 
 // Backward SimpleAffix_Iterators from dotnet/runtime v8.0.31
 // pal_collation.c (MIT; third_party/dotnet_collation/LICENSE).
-bool invariant_ends_with_utf16(std::u16string_view text, std::u16string_view suffix) {
+template <bool IgnoreCase> static bool invariant_suffix(std::u16string_view text, std::u16string_view suffix) {
     if (suffix.empty())
         return true;
     if (text.size() > static_cast<std::size_t>(std::numeric_limits<std::int32_t>::max()) ||
         suffix.size() > static_cast<std::size_t>(std::numeric_limits<std::int32_t>::max()))
         throw std::length_error("Invariant suffix exceeds Int32 length");
-    thread_local Collator collator;
-    auto& api = icu();
+    thread_local Collator collator(IgnoreCase);
+    auto &api = icu();
     if (!api.open_elements || !api.close_elements || !api.previous || !api.get_strength)
         throw std::runtime_error("ICU collation elements required for invariant suffix");
     std::int32_t error = 0;
+
     struct Elements {
-        Icu& api;
-        void* value;
+        Icu &api;
+        void *value;
+
         ~Elements() {
             if (value)
                 api.close_elements(value);
         }
     };
-    Elements pattern{api, api.open_elements(collator.value, suffix.data(),
-                                            static_cast<std::int32_t>(suffix.size()), &error)};
+
+    Elements pattern{
+        api, api.open_elements(collator.value, suffix.data(), static_cast<std::int32_t>(suffix.size()), &error)};
     if (error > 0 || !pattern.value)
         throw std::runtime_error("Cannot create suffix collation iterator");
-    Elements source{
-        api, api.open_elements(collator.value, text.data(), static_cast<std::int32_t>(text.size()), &error)};
+    Elements source{api,
+                    api.open_elements(collator.value, text.data(), static_cast<std::int32_t>(text.size()), &error)};
     if (error > 0 || !source.value)
         throw std::runtime_error("Cannot create source collation iterator");
     auto strength = api.get_strength(collator.value);
@@ -241,13 +251,22 @@ bool invariant_ends_with_utf16(std::u16string_view text, std::u16string_view suf
             return false;
     }
 }
+
+bool invariant_ends_with_utf16(std::u16string_view text, std::u16string_view suffix) {
+    return invariant_suffix<false>(text, suffix);
+}
+
+bool invariant_ends_with_ignore_case_utf16(std::u16string_view text, std::u16string_view suffix) {
+    return invariant_suffix<true>(text, suffix);
+}
+
 bool invariant_starts_with(std::string_view text, std::string_view prefix) {
     if (prefix.empty())
         return true;
     if (printable(text) && printable(prefix))
         return text.starts_with(prefix);
     thread_local Collator collator;
-    auto& api = icu();
+    auto &api = icu();
     auto source = utf16_replacing(text), pattern = utf16_replacing(prefix);
     std::int32_t error = 0;
     if (api.compare(collator.value, pattern.data(), static_cast<std::int32_t>(pattern.size()), u"", 0) == 0)
@@ -261,18 +280,22 @@ bool invariant_starts_with(std::string_view text, std::string_view prefix) {
             api.search_close(search);
         throw std::runtime_error("Cannot create ICU prefix search");
     }
+
     struct Guard {
-        Icu& api;
-        void* search;
+        Icu &api;
+        void *search;
+
         ~Guard() {
             api.search_close(search);
         }
     } guard{api, search};
+
     auto at = api.first(search, &error);
     if (error > 0)
         throw std::runtime_error("ICU prefix search failed");
     return at >= 0 && (at == 0 || api.compare(collator.value, source.data(), at, u"", 0) == 0);
 }
+
 bool invariant_equals_ignore_case(std::string_view left, std::string_view right) {
     if (printable(left) && printable(right)) {
         if (left.size() != right.size())
@@ -293,6 +316,7 @@ bool invariant_equals_ignore_case(std::string_view left, std::string_view right)
     return icu().compare(collator.value, a.data(), static_cast<int32_t>(a.size()), b.data(),
                          static_cast<int32_t>(b.size())) == 0;
 }
+
 template <bool IgnoreCase>
 static int invariant_grapheme_search(std::u16string_view source, std::u16string_view pattern) {
     if (pattern.empty())
@@ -301,16 +325,16 @@ static int invariant_grapheme_search(std::u16string_view source, std::u16string_
         pattern.size() > static_cast<std::size_t>(std::numeric_limits<std::int32_t>::max()))
         throw std::length_error("Invariant search exceeds Int32 length");
     thread_local Collator collator(IgnoreCase);
-    auto& api = icu();
+    auto &api = icu();
     if (source.empty())
-        return api.compare(collator.value, pattern.data(), static_cast<std::int32_t>(pattern.size()), u"",
-                           0) == 0
-                   ? 0
-                   : -1;
+        return api.compare(collator.value, pattern.data(), static_cast<std::int32_t>(pattern.size()), u"", 0) == 0 ? 0
+                                                                                                                   : -1;
+
     struct Breaker {
-        void* value = nullptr;
+        void *value = nullptr;
+
         Breaker() {
-            auto& api = icu();
+            auto &api = icu();
             if (!api.open_break || !api.break_close)
                 throw std::runtime_error("ICU break iteration is required for invariant search");
             std::int32_t status = 0;
@@ -375,14 +399,14 @@ $SpacingMark [^$Control $CR $LF];
 !!safe_reverse; 
 !!safe_forward; 
 )DOTNET";
-            value = api.open_break(new_rules.data(), static_cast<std::int32_t>(new_rules.size()), u"", 0,
-                                   nullptr, &status);
+            value =
+                api.open_break(new_rules.data(), static_cast<std::int32_t>(new_rules.size()), u"", 0, nullptr, &status);
             if (status > 0) {
                 if (value)
                     api.break_close(value);
                 status = 0;
-                value = api.open_break(old_rules.data(), static_cast<std::int32_t>(old_rules.size()), u"", 0,
-                                       nullptr, &status);
+                value = api.open_break(old_rules.data(), static_cast<std::int32_t>(old_rules.size()), u"", 0, nullptr,
+                                       &status);
             }
             if (status > 0) {
                 if (value)
@@ -390,11 +414,13 @@ $SpacingMark [^$Control $CR $LF];
                 value = nullptr;
             }
         }
+
         ~Breaker() {
             if (value)
                 icu().break_close(value);
         }
     };
+
     thread_local Breaker breaker;
     std::int32_t error = 0;
     auto search = api.search(pattern.data(), static_cast<std::int32_t>(pattern.size()), source.data(),
@@ -404,34 +430,41 @@ $SpacingMark [^$Control $CR $LF];
             api.search_close(search);
         return -1;
     }
+
     struct Guard {
-        Icu& api;
-        void* value;
+        Icu &api;
+        void *value;
+
         ~Guard() {
             api.search_close(value);
         }
     } guard{api, search};
+
     auto result = api.first(search, &error);
     return error > 0 ? -1 : result;
 }
+
 int invariant_index_of_grapheme_utf16(std::u16string_view source, std::u16string_view pattern) {
     return invariant_grapheme_search<false>(source, pattern);
 }
+
 int invariant_index_of_ignore_case(std::u16string_view source, std::u16string_view pattern) {
     return invariant_grapheme_search<true>(source, pattern);
 }
+
 int invariant_compare_ignore_case_utf16(std::u16string_view left, std::u16string_view right) {
     if (left.size() > static_cast<std::size_t>(std::numeric_limits<std::int32_t>::max()) ||
         right.size() > static_cast<std::size_t>(std::numeric_limits<std::int32_t>::max()))
         throw std::length_error("Invariant comparison exceeds Int32 length");
     thread_local Collator collator(true);
-    return icu().compare(collator.value, left.empty() ? u"" : left.data(),
-                         static_cast<std::int32_t>(left.size()), right.empty() ? u"" : right.data(),
-                         static_cast<std::int32_t>(right.size()));
+    return icu().compare(collator.value, left.empty() ? u"" : left.data(), static_cast<std::int32_t>(left.size()),
+                         right.empty() ? u"" : right.data(), static_cast<std::int32_t>(right.size()));
 }
+
 bool invariant_equals_ignore_case_utf16(std::u16string_view left, std::u16string_view right) {
     return invariant_compare_ignore_case_utf16(left, right) == 0;
 }
+
 std::u16string invariant_lower_utf16(std::u16string_view input) {
     // .NET ChangeCaseInvariant applies simple scalar casing, not context-sensitive
     // ICU string casing: U+0130 remains unchanged and Greek sigma stays U+03C3.
@@ -440,8 +473,7 @@ std::u16string invariant_lower_utf16(std::u16string_view input) {
     auto lower = icu().lower;
     for (std::size_t i = 0; i < input.size(); ++i) {
         std::uint32_t c = input[i];
-        if (c >= 0xd800 && c <= 0xdbff && i + 1 < input.size() && input[i + 1] >= 0xdc00 &&
-            input[i + 1] <= 0xdfff)
+        if (c >= 0xd800 && c <= 0xdbff && i + 1 < input.size() && input[i + 1] >= 0xdc00 && input[i + 1] <= 0xdfff)
             c = 0x10000 + ((c - 0xd800) << 10) + (input[++i] - 0xdc00);
         if (c >= u'A' && c <= u'Z')
             c += u'a' - u'A';
@@ -460,13 +492,13 @@ std::u16string invariant_lower_utf16(std::u16string_view input) {
     }
     return output;
 }
+
 std::u16string invariant_upper_utf16(std::u16string_view input) {
     std::u16string output;
     output.reserve(input.size());
     for (std::size_t i = 0; i < input.size(); ++i) {
         std::uint32_t c = input[i];
-        if (c >= 0xd800 && c <= 0xdbff && i + 1 < input.size() && input[i + 1] >= 0xdc00 &&
-            input[i + 1] <= 0xdfff)
+        if (c >= 0xd800 && c <= 0xdbff && i + 1 < input.size() && input[i + 1] >= 0xdc00 && input[i + 1] <= 0xdfff)
             c = 0x10000 + ((c - 0xd800) << 10) + (input[++i] - 0xdc00);
         if (c >= u'a' && c <= u'z')
             c -= u'a' - u'A';
@@ -486,6 +518,7 @@ std::u16string invariant_upper_utf16(std::u16string_view input) {
     }
     return output;
 }
+
 bool ordinal_equals_ignore_case(std::string_view left, std::string_view right) {
     auto a = utf16_replacing(left), b = utf16_replacing(right);
     if (a.size() != b.size())
@@ -500,10 +533,9 @@ bool ordinal_equals_ignore_case(std::string_view left, std::string_view right) {
             throw std::runtime_error("ICU is required for ordinal case mapping");
         return fn(c);
     };
-    auto next = [](const std::u16string& text, size_t& index) {
+    auto next = [](const std::u16string &text, size_t &index) {
         int32_t c = text[index++];
-        if (c >= 0xd800 && c <= 0xdbff && index < text.size() && text[index] >= 0xdc00 &&
-            text[index] <= 0xdfff)
+        if (c >= 0xd800 && c <= 0xdbff && index < text.size() && text[index] >= 0xdc00 && text[index] <= 0xdfff)
             c = 0x10000 + ((c - 0xd800) << 10) + (text[index++] - 0xdc00);
         return c;
     };
@@ -513,14 +545,14 @@ bool ordinal_equals_ignore_case(std::string_view left, std::string_view right) {
             return false;
     return i == a.size() && j == b.size();
 }
+
 int ordinal_compare_ignore_case(std::string_view left, std::string_view right) {
     auto fold = [](std::string_view text) {
         auto units = utf16_replacing(text);
         std::u16string result;
         for (size_t i = 0; i < units.size(); ++i) {
             int32_t c = units[i];
-            if (c >= 0xd800 && c <= 0xdbff && i + 1 < units.size() && units[i + 1] >= 0xdc00 &&
-                units[i + 1] <= 0xdfff)
+            if (c >= 0xd800 && c <= 0xdbff && i + 1 < units.size() && units[i + 1] >= 0xdc00 && units[i + 1] <= 0xdfff)
                 c = 0x10000 + ((c - 0xd800) << 10) + (units[++i] - 0xdc00);
             if (c >= 'a' && c <= 'z')
                 c -= 32;
@@ -543,12 +575,14 @@ int ordinal_compare_ignore_case(std::string_view left, std::string_view right) {
     auto a = fold(left), b = fold(right);
     return a < b ? -1 : a > b ? 1 : 0;
 }
+
 int invariant_compare(std::string_view left, std::string_view right) {
     thread_local Collator collator;
     auto a = utf16_replacing(left), b = utf16_replacing(right);
     return icu().compare(collator.value, a.data(), static_cast<int32_t>(a.size()), b.data(),
                          static_cast<int32_t>(b.size()));
 }
+
 int invariant_compare_utf16(std::u16string_view left, std::u16string_view right) {
     if (left.size() > static_cast<std::size_t>(std::numeric_limits<std::int32_t>::max()) ||
         right.size() > static_cast<std::size_t>(std::numeric_limits<std::int32_t>::max()))
@@ -557,6 +591,7 @@ int invariant_compare_utf16(std::u16string_view left, std::u16string_view right)
     return icu().compare(collator.value, left.data(), static_cast<std::int32_t>(left.size()), right.data(),
                          static_cast<std::int32_t>(right.size()));
 }
+
 bool invariant_starts_with_ignore_case(std::string_view text, std::string_view prefix) {
     if (prefix.empty())
         return true;
@@ -566,7 +601,7 @@ bool invariant_starts_with_ignore_case(std::string_view text, std::string_view p
         return invariant_equals_ignore_case(text.substr(0, prefix.size()), prefix);
     }
     thread_local Collator collator(true);
-    auto& api = icu();
+    auto &api = icu();
     auto source = utf16_replacing(text), pattern = utf16_replacing(prefix);
     int32_t error = 0;
     if (api.compare(collator.value, pattern.data(), static_cast<int32_t>(pattern.size()), u"", 0) == 0)
@@ -580,16 +615,19 @@ bool invariant_starts_with_ignore_case(std::string_view text, std::string_view p
             api.search_close(search);
         throw std::runtime_error("Cannot create ICU prefix search");
     }
+
     struct Guard {
-        Icu& api;
-        void* value;
+        Icu &api;
+        void *value;
+
         ~Guard() {
             api.search_close(value);
         }
     } guard{api, search};
+
     auto at = api.first(search, &error);
     if (error > 0)
         throw std::runtime_error("ICU prefix search failed");
     return at >= 0 && (at == 0 || api.compare(collator.value, source.data(), at, u"", 0) == 0);
 }
-}
+} // namespace opensim::framework

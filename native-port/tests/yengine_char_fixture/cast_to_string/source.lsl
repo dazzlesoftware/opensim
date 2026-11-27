@@ -1,0 +1,1 @@
+YOption chars;char value;string result;default{state_entry(){value='A';result=(string)value;}}

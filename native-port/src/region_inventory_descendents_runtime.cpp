@@ -9,20 +9,24 @@
 #include <map>
 #include <set>
 #include <thread>
+
 namespace opensim::services {
 struct RegionInventoryDescendentsRuntime::State : std::enable_shared_from_this<State> {
     using Clock = std::chrono::steady_clock;
     struct Poll;
+
     struct Job {
         std::shared_ptr<Poll> poll;
         framework::Uuid id;
         network::HttpRequest request;
     };
+
     struct Poll : CapabilityPollHandler, std::enable_shared_from_this<Poll> {
         std::shared_ptr<State> state;
         std::mutex mutex;
         std::map<framework::Uuid, server::PollTablePtr> responses;
         std::set<framework::Uuid> dropped;
+
         static std::shared_ptr<Poll> create(std::shared_ptr<State> state, framework::Uuid agent) {
             auto p = std::make_shared<Poll>();
             p->state = std::move(state);
@@ -74,6 +78,7 @@ struct RegionInventoryDescendentsRuntime::State : std::enable_shared_from_this<S
             };
             return p;
         }
+
         void process(Job &job) {
             {
                 std::lock_guard lock(state->mutex);
@@ -110,12 +115,14 @@ struct RegionInventoryDescendentsRuntime::State : std::enable_shared_from_this<S
             ++state->processed;
         }
     };
+
     struct Alarm {
         std::mutex mutex;
         std::condition_variable changed;
         std::optional<Clock::time_point> deadline;
         bool stopped = false;
     };
+
     std::shared_ptr<Alarm> alarm = std::make_shared<Alarm>();
     mutable std::mutex mutex;
     std::mutex stop_mutex;
@@ -129,9 +136,11 @@ struct RegionInventoryDescendentsRuntime::State : std::enable_shared_from_this<S
     std::function<void(std::string)> log;
     std::atomic<std::uint64_t> processed = 0;
     bool stopped = false, subscribed = false;
+
     SceneDelegateIdentity identity() const {
         return {this, "WebFetchInvDesc.RegisterCaps"};
     }
+
     void error() noexcept {
         try {
             if (log)
@@ -139,6 +148,7 @@ struct RegionInventoryDescendentsRuntime::State : std::enable_shared_from_this<S
         } catch (...) {
         }
     }
+
     void register_caps(framework::Uuid agent, std::shared_ptr<Caps> caps) {
         std::lock_guard lock(mutex);
         if (stopped)
@@ -150,6 +160,7 @@ struct RegionInventoryDescendentsRuntime::State : std::enable_shared_from_this<S
         else
             caps->register_external("FetchInventoryDescendents2", url);
     }
+
     void stop() {
         std::lock_guard serial(stop_mutex);
         std::shared_ptr<framework::ObjectJobEngine> pool;
@@ -180,6 +191,7 @@ struct RegionInventoryDescendentsRuntime::State : std::enable_shared_from_this<S
         std::lock_guard lock(mutex);
         worker.reset();
     }
+
     ~State() {
         try {
             stop();
@@ -187,9 +199,11 @@ struct RegionInventoryDescendentsRuntime::State : std::enable_shared_from_this<S
         }
     }
 };
-RegionInventoryDescendentsRuntime::RegionInventoryDescendentsRuntime(
-    const server::IniConfig &config, std::shared_ptr<SceneCapabilityEvents> events,
-    InventoryDescendentsBackend backend, std::function<bool()> shutting_down)
+
+RegionInventoryDescendentsRuntime::RegionInventoryDescendentsRuntime(const server::IniConfig &config,
+                                                                     std::shared_ptr<SceneCapabilityEvents> events,
+                                                                     InventoryDescendentsBackend backend,
+                                                                     std::function<bool()> shutting_down)
     : state_(std::make_shared<State>()) {
     if (!events)
         throw std::invalid_argument("Null inventory descendents events");
@@ -240,9 +254,8 @@ RegionInventoryDescendentsRuntime::RegionInventoryDescendentsRuntime(
                 continue;
             }
             auto deadline = *alarm->deadline;
-            if (alarm->changed.wait_until(lock, deadline, [&] {
-                    return alarm->stopped || !alarm->deadline || *alarm->deadline != deadline;
-                }))
+            if (alarm->changed.wait_until(
+                    lock, deadline, [&] { return alarm->stopped || !alarm->deadline || *alarm->deadline != deadline; }))
                 continue;
             alarm->deadline.reset();
             lock.unlock();
@@ -256,20 +269,24 @@ RegionInventoryDescendentsRuntime::RegionInventoryDescendentsRuntime(
                                           }});
     state_->subscribed = true;
 }
+
 RegionInventoryDescendentsRuntime::~RegionInventoryDescendentsRuntime() {
     try {
         stop();
     } catch (...) {
     }
 }
+
 void RegionInventoryDescendentsRuntime::stop() {
     state_->stop();
 }
+
 std::uint64_t RegionInventoryDescendentsRuntime::processed_requests() const {
     return state_->processed.load();
 }
+
 std::size_t RegionInventoryDescendentsRuntime::queued_requests() const {
     std::lock_guard lock(state_->mutex);
     return state_->worker ? state_->worker->count() : 0;
 }
-}
+} // namespace opensim::services

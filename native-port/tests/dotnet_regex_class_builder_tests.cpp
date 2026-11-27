@@ -6,7 +6,8 @@
 #include <map>
 #include <sstream>
 using namespace opensim::framework;
-std::u16string dec(const std::string& s) {
+
+std::u16string dec(const std::string &s) {
     if (s == ".")
         return {};
     std::u16string result;
@@ -14,6 +15,7 @@ std::u16string dec(const std::string& s) {
         result.push_back(static_cast<char16_t>(std::stoul(s.substr(i, 4), nullptr, 16)));
     return result;
 }
+
 std::string hex(std::u16string_view s) {
     if (s.empty())
         return ".";
@@ -22,16 +24,18 @@ std::string hex(std::u16string_view s) {
         out << std::hex << std::setfill('0') << std::setw(4) << unsigned(c);
     return out.str();
 }
+
 namespace opensim::framework {
 struct DotnetRegexClassBuilderProbe {
-    static std::string snapshot(DotnetRegexClassBuilder& v) {
+    static std::string snapshot(DotnetRegexClassBuilder &v) {
         auto text = v.to_string_class();
-        return "O:" + hex(text) + ":" + std::to_string(v.can_merge()) + ":" +
-               std::to_string(v.ranges_.has_value()) + ":" + std::to_string(v.categories_.has_value()) + ":" +
+        return "O:" + hex(text) + ":" + std::to_string(v.can_merge()) + ":" + std::to_string(v.ranges_.has_value()) +
+               ":" + std::to_string(v.categories_.has_value()) + ":" +
                std::to_string(static_cast<int>(v.case_behavior_));
     }
 };
-}
+} // namespace opensim::framework
+
 int main() {
     for (std::string row; std::getline(std::cin, row);) {
         std::map<int, std::shared_ptr<DotnetRegexClassBuilder>> objects;
@@ -113,13 +117,13 @@ int main() {
                         throw std::logic_error("Unknown builder operation");
                 }
                 std::cout << op;
-            } catch (const DotnetRegexParseException& e) {
-                std::cout << "E:" << e.source_type << ':' << std::hex << e.hresult << std::dec << ':'
-                          << hex(e.message) << ':' << e.error << ':' << e.offset;
-            } catch (const DotnetRegexClassError& e) {
+            } catch (const DotnetRegexParseException &e) {
+                std::cout << "E:" << e.source_type << ':' << std::hex << e.hresult << std::dec << ':' << hex(e.message)
+                          << ':' << e.error << ':' << e.offset;
+            } catch (const DotnetRegexClassError &e) {
                 std::cout << "E:" << e.source_type << ':' << std::hex << e.hresult << std::dec << ':'
                           << hex(utf16(e.what())) << ":-:-";
-            } catch (const std::exception& e) {
+            } catch (const std::exception &e) {
                 std::cout << "NATIVE:" << e.what();
             }
         }

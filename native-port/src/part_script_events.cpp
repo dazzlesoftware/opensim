@@ -2,6 +2,7 @@
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/scene/part_script_events.hpp"
 #include <stdexcept>
+
 namespace opensim::scene {
 PartScriptEvents::PartScriptEvents(framework::Uuid id, PartScriptEventsBackend backend)
     : part_(id), backend_(std::move(backend)) {
@@ -10,6 +11,7 @@ PartScriptEvents::PartScriptEvents(framework::Uuid id, PartScriptEventsBackend b
         !backend_.physics_events || !backend_.full_update)
         throw std::invalid_argument("Incomplete part script event backend");
 }
+
 void PartScriptEvents::set(framework::Uuid key, std::uint64_t mask) {
     {
         std::lock_guard lock(mutex_);
@@ -20,6 +22,7 @@ void PartScriptEvents::set(framework::Uuid key, std::uint64_t mask) {
     }
     aggregate();
 }
+
 void PartScriptEvents::remove(framework::Uuid key) {
     std::lock_guard lock(mutex_);
     auto it = events_.find(key);
@@ -38,13 +41,14 @@ void PartScriptEvents::remove(framework::Uuid key) {
     events_.erase(key);
     aggregate();
 }
+
 void PartScriptEvents::aggregate() {
     if (!backend_.has_group() || !backend_.has_root())
         return;
     aggregated_.store(0, std::memory_order_relaxed);
     {
         std::lock_guard lock(mutex_);
-        for (const auto& [key, mask] : events_)
+        for (const auto &[key, mask] : events_)
             aggregated_.store(aggregated_.load(std::memory_order_relaxed) | mask, std::memory_order_relaxed);
     }
     std::uint32_t flags = 0;
@@ -71,20 +75,24 @@ void PartScriptEvents::aggregate() {
         backend_.full_update();
     }
 }
+
 std::uint64_t PartScriptEvents::aggregated() const {
     return aggregated_.load(std::memory_order_relaxed);
 }
+
 std::uint32_t PartScriptEvents::local_flags() const {
     return flags_.load(std::memory_order_relaxed);
 }
+
 std::optional<std::uint64_t> PartScriptEvents::events(framework::Uuid key) const {
     std::lock_guard lock(mutex_);
     auto it = events_.find(key);
     return it == events_.end() ? std::nullopt : std::optional(it->second);
 }
+
 void PartScriptEvents::initial_state(std::uint64_t mask, std::uint32_t flags) {
     std::lock_guard lock(mutex_);
     aggregated_ = mask;
     flags_ = flags;
 }
-}
+} // namespace opensim::scene

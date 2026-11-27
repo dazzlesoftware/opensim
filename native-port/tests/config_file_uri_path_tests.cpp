@@ -1,6 +1,7 @@
 #include "opensim/framework/config_file_uri_path.hpp"
 #include <iostream>
 using namespace opensim::framework;
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -14,8 +15,8 @@ int main() {
             for (auto c : s)
                 for (int b = 12; b >= 0; b -= 4)
                     raw += "0123456789abcdef"[(c >> b) & 15];
-            std::cout << (config_file_uri_implicit_kind_is_relative(scan, s, mode - 6, true) ? "R:" : "P:")
-                      << raw << "\n";
+            std::cout << (config_file_uri_implicit_kind_is_relative(scan, s, mode - 6, true) ? "R:" : "P:") << raw
+                      << "\n";
             continue;
         }
         if (mode >= 5) {

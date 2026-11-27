@@ -1,0 +1,1 @@
+key left=(key)"bad";string right="a";default{state_entry(){left+=right;}}

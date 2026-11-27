@@ -1,0 +1,39 @@
+{
+  "passed": true,
+  "generator_sha256": "d67b3d38729e693c7ac40a142bb0ccb2804169def56af3bb4010803e1dc984c8",
+  "source_sha256": "358f45d7fb61decc7cecca0758ffe2507fc7047095392c12d133605b6dc91cd6",
+  "processes": [
+    {
+      "directory": ".",
+      "metadata_sha256": "f52285c6074d7e5e910a8f833e571921b3226a150d3be54c35739ca802a8237d",
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "stored_before_hash": 50315352,
+      "new_after_hash": 14620943,
+      "repeat_hash": 14620943,
+      "no_inequality_requirement": true
+    },
+    {
+      "directory": "process_import",
+      "metadata_sha256": "b951a0c826911460ea75c33af0b1248a1ff8e8175d1d3c60ef0890d2c44356e8",
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "stored_before_hash": 50315352,
+      "new_after_hash": 50184984,
+      "repeat_hash": 50184984,
+      "no_inequality_requirement": true
+    },
+    {
+      "directory": "linux_process",
+      "metadata_sha256": "f6893535c4bd22fe07bb98dbfb5ebaa749228e63992a108251f88ce96b54b0f1",
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "stored_before_hash": 48490504,
+      "new_after_hash": 36842478,
+      "repeat_hash": 36842478,
+      "no_inequality_requirement": true
+    }
+  ],
+  "scope": "Exact ordinary-process-driver source: realSleep3/private production binary migration on original Windows/Linux; separate original Windows import preserves storedListHash but recomputes new backing identity hash. LIVE and production identity flags intentionally differ; no portable identityhash numeric or inequality expectation.",
+  "full_parity_claim": false
+}

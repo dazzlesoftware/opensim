@@ -1,0 +1,1 @@
+float item=1.25;vector result;default{state_entry(){result=(vector)item;}}

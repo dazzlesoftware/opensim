@@ -7,12 +7,14 @@
 using namespace opensim;
 using namespace server;
 using namespace std::chrono_literals;
+
 namespace {
-void check(bool value, const char* message) {
+void check(bool value, const char *message) {
     if (!value)
         throw std::runtime_error(message);
 }
-template <class F> void eventually(F condition, const char* message) {
+
+template <class F> void eventually(F condition, const char *message) {
     const auto end = std::chrono::steady_clock::now() + 5s;
     while (!condition()) {
         if (std::chrono::steady_clock::now() > end)
@@ -20,99 +22,119 @@ template <class F> void eventually(F condition, const char* message) {
         std::this_thread::sleep_for(1ms);
     }
 }
+
 struct Channel {
     std::atomic<int> sent = 0, disposed = 0, status = 200;
     std::atomic<bool> keep = true;
     std::atomic<int64_t> length = -1;
 };
+
 struct Body : PollBody {
     std::shared_ptr<Channel> c;
-    explicit Body(std::shared_ptr<Channel> x) : c(std::move(x)) {
-    }
+
+    explicit Body(std::shared_ptr<Channel> x) : c(std::move(x)) {}
+
     bool can_read() const override {
         return true;
     }
+
     void dispose() override {
         ++c->disposed;
     }
 };
+
 struct Context : PollContext {
     std::atomic<bool> can = true, sending = false;
     std::atomic<int> sending_checks = 0;
+
     bool can_send() const override {
         return can.load();
     }
+
     bool is_sending() const override {
-        const_cast<Context*>(this)->sending_checks++;
+        const_cast<Context *>(this)->sending_checks++;
         return sending.load();
     }
 };
+
 struct Incoming : PollIncomingRequest {
     std::shared_ptr<Body> b;
     std::shared_ptr<Context> c = std::make_shared<Context>();
-    explicit Incoming(std::shared_ptr<Channel> x) : b(std::make_shared<Body>(std::move(x))) {
-    }
+
+    explicit Incoming(std::shared_ptr<Channel> x) : b(std::make_shared<Body>(std::move(x))) {}
+
     std::shared_ptr<PollBody> body() const override {
         return b;
     }
+
     std::shared_ptr<PollContext> context() const override {
         return c;
     }
 };
+
 struct Response : PollResponse {
     std::shared_ptr<Channel> c;
-    explicit Response(std::shared_ptr<Channel> x) : c(std::move(x)) {
-    }
+
+    explicit Response(std::shared_ptr<Channel> x) : c(std::move(x)) {}
+
     void status_code(int32_t x) override {
         c->status = x;
     }
+
     void content_length(int64_t x) override {
         c->length = x;
     }
-    void utf8_encoding() override {
-    }
+
+    void utf8_encoding() override {}
+
     void keep_alive(bool x) override {
         c->keep = x;
     }
-    void keep_alive_timeout(int32_t) override {
-    }
-    void protocol_version(PollName) override {
-    }
-    void status_description(PollName) override {
-    }
-    void add_header(const std::string&, PollName) override {
-    }
+
+    void keep_alive_timeout(int32_t) override {}
+
+    void protocol_version(PollName) override {}
+
+    void status_description(PollName) override {}
+
+    void add_header(const std::string &, PollName) override {}
+
     void redirect(PollName, int32_t x) override {
         c->status = x;
     }
-    void buffer_start(int32_t) override {
-    }
-    void buffer_length(int32_t) override {
-    }
-    void buffer(PollBytes) override {
-    }
+
+    void buffer_start(int32_t) override {}
+
+    void buffer_length(int32_t) override {}
+
+    void buffer(PollBytes) override {}
+
     void send() override {
         ++c->sent;
     }
 };
+
 struct RequestBackend : PollRequestBackend {
     std::atomic<int> warnings = 0;
-    PollResponsePtr make_response(const std::shared_ptr<PollIncomingRequest>& request) override {
+
+    PollResponsePtr make_response(const std::shared_ptr<PollIncomingRequest> &request) override {
         return std::make_shared<Response>(std::dynamic_pointer_cast<Incoming>(request)->b->c);
     }
-    void warn(const std::string&, const std::exception&) override {
+
+    void warn(const std::string &, const std::exception &) override {
         ++warnings;
     }
 };
+
 struct Fixture {
     std::shared_ptr<Channel> channel = std::make_shared<Channel>();
     std::shared_ptr<Incoming> incoming = std::make_shared<Incoming>(channel);
-    std::shared_ptr<services::CapabilityPollHandler> args =
-        std::make_shared<services::CapabilityPollHandler>();
+    std::shared_ptr<services::CapabilityPollHandler> args = std::make_shared<services::CapabilityPollHandler>();
     std::shared_ptr<PollServiceHttpRequest> request;
     std::atomic<int> has = 0, no = 0, drops = 0;
     std::atomic<bool> ready = false;
-    explicit Fixture(RequestBackend& backend) {
+
+    explicit Fixture(RequestBackend &backend) {
         args->timeout_ms = 60000;
         args->has_events = [this](auto, auto) {
             ++has;
@@ -133,11 +155,12 @@ struct Fixture {
         request = std::make_shared<PollServiceHttpRequest>(args, incoming, backend);
     }
 };
-}
+} // namespace
+
 int main() {
     try {
         std::atomic<int> errors = 0, watchdogs = 0;
-        PollRuntimeBackend runtime([&](const std::exception&) { ++errors; }, [&] { ++watchdogs; });
+        PollRuntimeBackend runtime([&](const std::exception &) { ++errors; }, [&] { ++watchdogs; });
         RequestBackend responses;
         // More pending requests than workers must leave workers free for ready work.
         std::vector<std::unique_ptr<Fixture>> pending;
@@ -148,11 +171,11 @@ int main() {
         {
             PollServiceRequestManager manager(false, 2, 0, runtime);
             manager.start();
-            for (auto& f : pending)
+            for (auto &f : pending)
                 manager.enqueue(f->request);
             eventually(
                 [&] {
-                    for (auto& f : pending)
+                    for (auto &f : pending)
                         if (f->has == 0)
                             return false;
                     return true;
@@ -161,11 +184,11 @@ int main() {
             manager.enqueue(immediate.request);
             eventually([&] { return int32_t(immediate.args->requests_handled) == 1; },
                        "Pending polls exhausted workers");
-            for (auto& f : pending)
+            for (auto &f : pending)
                 f->ready = true;
             eventually(
                 [&] {
-                    for (auto& f : pending)
+                    for (auto &f : pending)
                         if (int32_t(f->args->requests_handled) != 1)
                             return false;
                     return true;
@@ -173,7 +196,7 @@ int main() {
                 "Retried events were not delivered");
             manager.stop();
         }
-        for (auto& f : pending)
+        for (auto &f : pending)
             check(f->channel->sent == 1 && f->channel->disposed == 1 && f->no == 0,
                   "Retry duplicated response or body disposal");
         check(watchdogs > 0, "Retry watcher did not run");
@@ -196,8 +219,7 @@ int main() {
                 "Drop/busy/timeout processing failed");
             check(busy.channel->sent == 0, "Busy context was sent");
             busy.incoming->c->sending = false;
-            eventually([&] { return int32_t(busy.args->requests_handled) == 1; },
-                       "Busy context was not retried");
+            eventually([&] { return int32_t(busy.args->requests_handled) == 1; }, "Busy context was not retried");
             manager.stop();
         }
         check(dead.channel->sent == 0 && dead.channel->disposed == 0, "Dropped request was answered");
@@ -347,9 +369,9 @@ int main() {
         cancelled->dispose();
         cancelled->join();
         check(cancel_jobs == 1, "Cancelled job was run");
-        std::cout
-            << "PASS: native threaded polling retry, starvation, delivery, drop, timeout, shutdown and worker lifecycle\n";
-    } catch (const std::exception& e) {
+        std::cout << "PASS: native threaded polling retry, starvation, delivery, drop, timeout, shutdown and worker "
+                     "lifecycle\n";
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

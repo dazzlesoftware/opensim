@@ -28,15 +28,17 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 #include "opensim/network/service_protocol.hpp"
 #include "opensim/services/grid_user_service.hpp"
+
 namespace opensim::server {
 class GridUserEndpoint {
   public:
-    GridUserEndpoint(services::GridUserService& service, const IniConfig& config)
+    GridUserEndpoint(services::GridUserService &service, const IniConfig &config)
         : service_(service), auth_(config, "GridUserService") {}
-    network::HttpResponse handle(const network::HttpRequest& request);
+
+    network::HttpResponse handle(const network::HttpRequest &request);
 
   private:
-    services::GridUserService& service_;
+    services::GridUserService &service_;
     network::ServiceAuth auth_;
 };
-}
+} // namespace opensim::server

@@ -319,7 +319,7 @@ AssetServiceConnector=0/OpenSim.Server.Handlers.dll:AssetServiceConnector
 [AssetService]
 LocalServiceModule=OpenSim.Services.AssetService.dll:AssetService
 StorageProvider=OpenSim.Data.SQLite.dll
-ConnectionString=URI=file:{root / 'assets.db'};version=3;Pooling=false
+ConnectionString="URI=file:{root / 'assets.db'};version=3;Pooling=true"
 AuthType=BasicHttpAuthentication
 HttpAuthUsername=assets
 HttpAuthPassword=secret
@@ -385,6 +385,20 @@ HttpAuthPassword=secret
             path = f"/assets/{map_tile}{suffix}"
             status, headers, _ = request(port, "GET", path + "?probe=1")
             assert status == 302 and headers["Location"] == "http://example.test" + path[:-1]
+
+    settings = config.read_text(encoding="utf-8")
+    asset_database = root / "assets.db"
+    read_only_settings = settings.replace(
+        f"URI=file:{asset_database};version=3;Pooling=true",
+        f"FullUri={asset_database.as_uri()}?mode=ro;Pooling=true",
+    )
+    config.write_text(read_only_settings, encoding="utf-8")
+    with server(executable, config) as port:
+        assert request(port, "GET", f"/assets/{ordinary}/data")[2] == b"\x00\x01\xff"
+        status, _, body = request(port, "POST", "/assets/", asset_xml(missing, "Normal"))
+        assert status >= 400, (status, body)
+        assert request(port, "GET", f"/assets/{missing}/data")[0] == 302
+    config.write_text(settings, encoding="utf-8")
 
     with socket.socket() as reservation:
         reservation.bind(("127.0.0.1", 0))

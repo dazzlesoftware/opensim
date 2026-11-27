@@ -1,0 +1,1 @@
+integer result;integer count;integer input(){count++;return -7;}integer inner(){return llAbs(input())+count;}default{state_entry(){result=inner();}}

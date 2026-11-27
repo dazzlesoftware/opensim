@@ -4,6 +4,7 @@
 #include <sstream>
 #include <limits>
 using namespace opensim::framework;
+
 ConfigUriText decode(std::string s) {
     if (s == "null")
         return {};
@@ -14,6 +15,7 @@ ConfigUriText decode(std::string s) {
         t += char16_t(std::stoul(s.substr(i, 4), nullptr, 16));
     return nini_writer_text(std::move(t));
 }
+
 std::string hex(ConfigUriText s) {
     if (!s)
         return "null";
@@ -25,17 +27,20 @@ std::string hex(ConfigUriText s) {
             t += "0123456789abcdef"[(c >> n) & 15];
     return t;
 }
+
 struct Session : ConfigHttpWinHttpSession {
     struct Call {
         ConfigUriText uri;
         ConfigHttpWinHttpAutoOptions options;
     };
+
     std::vector<Call> calls;
     std::vector<int> errors;
     ConfigUriText proxy, bypass;
     std::size_t index = 0;
+
     ConfigHttpWinHttpProxyResult get_proxy_for_url(ConfigUriText uri,
-                                                   const ConfigHttpWinHttpAutoOptions& options) override {
+                                                   const ConfigHttpWinHttpAutoOptions &options) override {
         calls.push_back({uri, options});
         int code = errors.at(std::min(index++, errors.size() - 1));
         if (code)
@@ -43,6 +48,7 @@ struct Session : ConfigHttpWinHttpSession {
         return {true, 0, {proxy ? 3u : 1u, proxy, bypass}};
     }
 };
+
 int unit() {
     auto session = std::make_shared<Session>();
     session->errors = {12180};
@@ -69,14 +75,15 @@ int unit() {
         return 4;
     return 0;
 }
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     if (argc == 2 && std::string(argv[1]) == "--unit")
         return unit();
     if (argc == 2 && std::string(argv[1]) == "--native") {
         auto s = native_config_http_wininet_settings();
         auto session = native_config_http_winhttp_session();
-        std::cout << s.auto_detect << ":" << s.use_proxy << ":" << hex(s.auto_config_url) << ":"
-                  << hex(s.proxy) << ":" << hex(s.proxy_bypass) << ":" << bool(session) << "\n";
+        std::cout << s.auto_detect << ":" << s.use_proxy << ":" << hex(s.auto_config_url) << ":" << hex(s.proxy) << ":"
+                  << hex(s.proxy_bypass) << ":" << bool(session) << "\n";
         return 0;
     }
     if (argc == 6 && std::string(argv[1]) == "--live") {
@@ -111,18 +118,16 @@ int main(int argc, char** argv) {
             session->errors.push_back(std::stoi(code));
         session->proxy = decode(pac);
         session->bypass = decode(pac_bypass);
-        ConfigHttpWinInetSettings settings{decode(auto_url), decode(proxy), decode(bypass), bool(detect),
-                                           bool(use)};
+        ConfigHttpWinInetSettings settings{decode(auto_url), decode(proxy), decode(bypass), bool(detect), bool(use)};
         ConfigHttpWinInetProxyHelper helper(settings, [] { return std::int32_t{1000}; });
-        auto result =
-            helper.get_proxy_for_url(session, uris->create(decode(uri), ConfigUriObjectKind::Absolute));
+        auto result = helper.get_proxy_for_url(session, uris->create(decode(uri), ConfigUriObjectKind::Absolute));
         std::cout << helper.auto_settings_used() << ":" << helper.manual_settings_used() << ":"
-                  << helper.manual_settings_only() << "|" << result.success << ":" << result.info.access_type
-                  << ":" << hex(result.info.proxy) << ":" << hex(result.info.proxy_bypass) << "|"
+                  << helper.manual_settings_only() << "|" << result.success << ":" << result.info.access_type << ":"
+                  << hex(result.info.proxy) << ":" << hex(result.info.proxy_bypass) << "|"
                   << helper.recent_auto_detection_failure() << "|";
-        for (auto& call : session->calls)
-            std::cout << hex(call.uri) << "," << call.options.flags << "," << call.options.auto_detect_flags
-                      << "," << call.options.auto_login << "," << hex(call.options.auto_config_url) << ";";
+        for (auto &call : session->calls)
+            std::cout << hex(call.uri) << "," << call.options.flags << "," << call.options.auto_detect_flags << ","
+                      << call.options.auto_login << "," << hex(call.options.auto_config_url) << ";";
         std::cout << "\n";
     }
 }

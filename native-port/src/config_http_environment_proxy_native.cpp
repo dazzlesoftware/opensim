@@ -9,16 +9,20 @@
 #include "opensim/framework/nini_writer.hpp"
 #include "opensim/framework/text.hpp"
 #include <array>
+
 namespace opensim::framework {
 namespace {
 using Text = ConfigUriText;
 using Object = ConfigUriObjectPtr;
+
 Text t(std::u16string value) {
     return nini_writer_text(std::move(value));
 }
-[[noreturn]] void required(const char* value) {
+
+[[noreturn]] void required(const char *value) {
     throw ConfigHttpProxyProviderError(value);
 }
+
 class Builder : public ConfigHttpProxyUriBuilder {
     Text scheme_, host_, user_, password_;
     std::uint16_t port_;
@@ -26,14 +30,16 @@ class Builder : public ConfigHttpProxyUriBuilder {
 
   public:
     Builder(Text scheme, Text host, std::uint16_t port, ConfigUriObjectBackend uris)
-        : scheme_(std::move(scheme)), host_(std::move(host)), port_(port), uris_(std::move(uris)) {
-    }
+        : scheme_(std::move(scheme)), host_(std::move(host)), port_(port), uris_(std::move(uris)) {}
+
     void user_name(Text value) override {
         user_ = std::move(value);
     }
+
     void password(Text value) override {
         password_ = std::move(value);
     }
+
     Object uri() override {
         auto host = *host_;
         if (host.find(u':') != std::u16string::npos && (host.empty() || host.front() != u'['))
@@ -54,7 +60,8 @@ class Builder : public ConfigHttpProxyUriBuilder {
         return uris_.create(t(std::move(value)), ConfigUriObjectKind::Absolute);
     }
 };
-std::u16string comparison_url(const Object& object) {
+
+std::u16string comparison_url(const Object &object) {
     auto value = object->http_components();
     if (!value)
         required("Proxy URI equality requires the complete nonHTTP SDK provider");
@@ -63,38 +70,40 @@ std::u16string comparison_url(const Object& object) {
            config_uri_unescape(*value->query(), u'#', 0xffff, 0xffff, 3, true, true);
 }
 
-bool native_socks_uri(const Object& object) {
+bool native_socks_uri(const Object &object) {
     if (!config_generic_uri_owns(object))
         return false;
     const auto scheme = *object->scheme();
     return scheme == u"socks4" || scheme == u"socks4a" || scheme == u"socks5";
 }
 
-std::u16string generic_proxy_url(const Object& object) {
+std::u16string generic_proxy_url(const Object &object) {
     using Component = ConfigGenericUriComponent;
-    return *object->scheme() + u"://" + *config_generic_uri_component(object, Component::Host) +
-           u":" + utf16(std::to_string(config_generic_uri_port(object))) +
-           config_uri_unescape(*config_generic_uri_component(object, Component::AbsolutePath),
-                               u'?', u'#', 0xffff, 3, true, false) +
-           config_uri_unescape(*config_generic_uri_component(object, Component::Query),
-                               u'#', 0xffff, 0xffff, 3, true, true);
+    return *object->scheme() + u"://" + *config_generic_uri_component(object, Component::Host) + u":" +
+           utf16(std::to_string(config_generic_uri_port(object))) +
+           config_uri_unescape(*config_generic_uri_component(object, Component::AbsolutePath), u'?', u'#', 0xffff, 3,
+                               true, false) +
+           config_uri_unescape(*config_generic_uri_component(object, Component::Query), u'#', 0xffff, 0xffff, 3, true,
+                               true);
 }
-}
+} // namespace
+
 std::shared_ptr<ConfigXmlCredentials> config_http_default_network_credentials() {
     static auto value = std::make_shared<ConfigHttpNetworkCredential>(t(u""), t(u""), t(u""), true);
     return value;
 }
+
 bool config_http_proxy_dotnet8_is_digit(char16_t c) {
     constexpr std::array<char16_t, 37> starts = {
-        0x0030, 0x0660, 0x06f0, 0x07c0, 0x0966, 0x09e6, 0x0a66, 0x0ae6, 0x0b66, 0x0be6,
-        0x0c66, 0x0ce6, 0x0d66, 0x0de6, 0x0e50, 0x0ed0, 0x0f20, 0x1040, 0x1090, 0x17e0,
-        0x1810, 0x1946, 0x19d0, 0x1a80, 0x1a90, 0x1b50, 0x1bb0, 0x1c40, 0x1c50, 0xa620,
-        0xa8d0, 0xa900, 0xa9d0, 0xa9f0, 0xaa50, 0xabf0, 0xff10};
+        0x0030, 0x0660, 0x06f0, 0x07c0, 0x0966, 0x09e6, 0x0a66, 0x0ae6, 0x0b66, 0x0be6, 0x0c66, 0x0ce6, 0x0d66,
+        0x0de6, 0x0e50, 0x0ed0, 0x0f20, 0x1040, 0x1090, 0x17e0, 0x1810, 0x1946, 0x19d0, 0x1a80, 0x1a90, 0x1b50,
+        0x1bb0, 0x1c40, 0x1c50, 0xa620, 0xa8d0, 0xa900, 0xa9d0, 0xa9f0, 0xaa50, 0xabf0, 0xff10};
     for (auto start : starts)
         if (c >= start && c <= start + 9)
             return true;
     return false;
 }
+
 bool config_http_proxy_http_uri_equal(Object a, Object b) {
     if (!a)
         throw ConfigUriComponentsError("System.NullReferenceException",
@@ -114,6 +123,7 @@ bool config_http_proxy_http_uri_equal(Object a, Object b) {
         return false;
     return comparison_url(a) == comparison_url(b);
 }
+
 std::shared_ptr<ConfigHttpEnvironmentProxyBackend>
 native_config_http_environment_proxy_backend(ConfigHttpEnvironmentProxyNativeOptions options) {
     if (!options.uris.create)
@@ -124,8 +134,7 @@ native_config_http_environment_proxy_backend(ConfigHttpEnvironmentProxyNativeOpt
         return uris.create(std::move(text), ConfigUriObjectKind::Absolute);
     };
     b->new_builder = [uris = options.uris, other = options.other_builder](
-                         Text scheme, Text host,
-                         std::uint16_t port) -> std::shared_ptr<ConfigHttpProxyUriBuilder> {
+                         Text scheme, Text host, std::uint16_t port) -> std::shared_ptr<ConfigHttpProxyUriBuilder> {
         if (*scheme != u"http" && *scheme != u"https" && other)
             return other(scheme, host, port);
         return std::make_shared<Builder>(scheme, host, port, uris);
@@ -133,8 +142,8 @@ native_config_http_environment_proxy_backend(ConfigHttpEnvironmentProxyNativeOpt
     b->unescape_data = [](Text value) {
         if (!value)
             throw ConfigUriComponentsError("System.ArgumentNullException",
-                                           u"Value cannot be null. (Parameter 'stringToUnescape')",
-                                           0x80004003, u"stringToUnescape");
+                                           u"Value cannot be null. (Parameter 'stringToUnescape')", 0x80004003,
+                                           u"stringToUnescape");
         return t(config_uri_unescape(*value, 0xffff, 0xffff, 0xffff, 10, true, false));
     };
     b->escape_data = [](Text value) {
@@ -170,8 +179,7 @@ native_config_http_environment_proxy_backend(ConfigHttpEnvironmentProxyNativeOpt
             return config_http_proxy_http_uri_equal(a, c);
         if (native_socks_uri(a) && native_socks_uri(c))
             return generic_proxy_url(a) == generic_proxy_url(c);
-        if ((a->http_components() && native_socks_uri(c)) ||
-            (c->http_components() && native_socks_uri(a)))
+        if ((a->http_components() && native_socks_uri(c)) || (c->http_components() && native_socks_uri(a)))
             return false;
         if (!other)
             required("Proxy Uri.Equals requires the complete nonHTTP SDK provider");
@@ -186,15 +194,14 @@ native_config_http_environment_proxy_backend(ConfigHttpEnvironmentProxyNativeOpt
     };
     b->white_space = unicode_whitespace;
     b->is_digit = config_http_proxy_dotnet8_is_digit;
-    b->network_credential = options.network_credential
-                                ? options.network_credential
-                                : decltype(options.network_credential)([](Text u, Text p, Text d) {
-                                      return std::make_shared<ConfigHttpNetworkCredential>(
-                                          std::move(u), std::move(p), std::move(d));
-                                  });
-    b->default_network_credentials = options.default_network_credentials
-                                         ? options.default_network_credentials
-                                         : config_http_default_network_credentials;
+    b->network_credential =
+        options.network_credential
+            ? options.network_credential
+            : decltype(options.network_credential)([](Text u, Text p, Text d) {
+                  return std::make_shared<ConfigHttpNetworkCredential>(std::move(u), std::move(p), std::move(d));
+              });
+    b->default_network_credentials = options.default_network_credentials ? options.default_network_credentials
+                                                                         : config_http_default_network_credentials;
     return b;
 }
-}
+} // namespace opensim::framework

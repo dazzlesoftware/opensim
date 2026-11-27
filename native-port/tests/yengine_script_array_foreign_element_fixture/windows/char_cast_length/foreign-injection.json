@@ -1,0 +1,40 @@
+{
+  "methodology": "Source-created foreign wrapper injected via unchanged global PopObject before caller\u0027s captured cast; caller/owner independently compiled/loaded, production cache bypassed.",
+  "foreignClassIndex": 0,
+  "foreignType": "char[]",
+  "foreignSourceHash": "32EF007ED19D700FE318A8E1C0FA9C04",
+  "ownerDifferent": true,
+  "callerCodeDifferent": true,
+  "injectedAlias": true,
+  "foreignBackingType": "System.Char[]",
+  "foreignInitial": {
+    "type": "script_class",
+    "clr": "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj",
+    "reference_id": 3,
+    "script_type": "char[]",
+    "class_index": 0,
+    "rank": 1,
+    "element_type": "char",
+    "arrays_heap_use": 6,
+    "integers": [
+      1
+    ],
+    "objects": [
+      {
+        "type": "clr_array",
+        "clr": "System.Char[]",
+        "reference_id": 4,
+        "element_type": "System.Char",
+        "length": 1,
+        "items": [
+          {
+            "type": "char",
+            "clr": "System.Char",
+            "value": 65,
+            "utf16": 65
+          }
+        ]
+      }
+    ]
+  }
+}

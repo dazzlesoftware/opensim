@@ -3,34 +3,34 @@
 #include "opensim/scene/movement_animation.hpp"
 #include <bit>
 #include <chrono>
+
 namespace opensim::scene {
 namespace {
 std::int32_t sub(std::int32_t a, std::int32_t b) {
     return std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(a) - static_cast<std::uint32_t>(b));
 }
+
 std::int32_t add(std::int32_t a, std::int32_t b) {
     return std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(a) + static_cast<std::uint32_t>(b));
 }
+
 struct Flags {
-    static constexpr std::uint32_t AGENT_CONTROL_AT_POS = 1, AGENT_CONTROL_AT_NEG = 2,
-                                   AGENT_CONTROL_LEFT_POS = 4, AGENT_CONTROL_LEFT_NEG = 8,
-                                   AGENT_CONTROL_UP_POS = 16, AGENT_CONTROL_UP_NEG = 32;
-    static constexpr std::uint32_t AGENT_CONTROL_NUDGE_AT_POS = 1u << 19,
-                                   AGENT_CONTROL_NUDGE_AT_NEG = 1u << 20,
-                                   AGENT_CONTROL_NUDGE_LEFT_POS = 1u << 21,
-                                   AGENT_CONTROL_NUDGE_LEFT_NEG = 1u << 22,
-                                   AGENT_CONTROL_NUDGE_UP_POS = 1u << 23,
-                                   AGENT_CONTROL_NUDGE_UP_NEG = 1u << 24;
+    static constexpr std::uint32_t AGENT_CONTROL_AT_POS = 1, AGENT_CONTROL_AT_NEG = 2, AGENT_CONTROL_LEFT_POS = 4,
+                                   AGENT_CONTROL_LEFT_NEG = 8, AGENT_CONTROL_UP_POS = 16, AGENT_CONTROL_UP_NEG = 32;
+    static constexpr std::uint32_t AGENT_CONTROL_NUDGE_AT_POS = 1u << 19, AGENT_CONTROL_NUDGE_AT_NEG = 1u << 20,
+                                   AGENT_CONTROL_NUDGE_LEFT_POS = 1u << 21, AGENT_CONTROL_NUDGE_LEFT_NEG = 1u << 22,
+                                   AGENT_CONTROL_NUDGE_UP_POS = 1u << 23, AGENT_CONTROL_NUDGE_UP_NEG = 1u << 24;
     static constexpr std::uint32_t AGENT_CONTROL_TURN_LEFT = 0x2000000, AGENT_CONTROL_TURN_RIGHT = 0x4000000,
                                    AGENT_CONTROL_FINISH_ANIM = 0x8000;
 };
+
 std::int32_t ticks() {
-    return std::bit_cast<std::int32_t>(
-        static_cast<std::uint32_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
-                                       std::chrono::steady_clock::now().time_since_epoch())
-                                       .count()));
+    return std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(
+        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch())
+            .count()));
 }
-}
+} // namespace
+
 struct MovementAnimator::Impl {
     Clock clock;
     std::string CurrentMovementAnimation = "STAND";
@@ -38,13 +38,15 @@ struct MovementAnimator::Impl {
     std::int32_t m_animTickFall = 0, m_animTickLand = 0, m_animTickJump = 0;
     bool isJumping = false, Falling = false;
     float m_lastFallVelocity = 0;
-    explicit Impl(Clock value) : clock(std::move(value)) {
-    }
+
+    explicit Impl(Clock value) : clock(std::move(value)) {}
+
     std::int32_t now() const {
         return clock ? clock() : ticks();
     }
-    std::string determine(MovementAnimationContext& context, const MovementAnimationEffects& effects,
-                          MovementAnimationResult& result) {
+
+    std::string determine(MovementAnimationContext &context, const MovementAnimationEffects &effects,
+                          MovementAnimationResult &result) {
         const int FALL_DELAY = 800;
         const int PREJUMP_DELAY = 450;
         const int JUMP_PERIOD = 1050;
@@ -69,17 +71,15 @@ struct MovementAnimator::Impl {
 
         constexpr std::uint32_t ANYXYMASK =
             (Flags::AGENT_CONTROL_AT_POS | Flags::AGENT_CONTROL_NUDGE_AT_POS | Flags::AGENT_CONTROL_AT_NEG |
-             Flags::AGENT_CONTROL_NUDGE_AT_NEG | Flags::AGENT_CONTROL_LEFT_POS |
-             Flags::AGENT_CONTROL_NUDGE_LEFT_POS | Flags::AGENT_CONTROL_LEFT_NEG |
-             Flags::AGENT_CONTROL_NUDGE_LEFT_NEG);
+             Flags::AGENT_CONTROL_NUDGE_AT_NEG | Flags::AGENT_CONTROL_LEFT_POS | Flags::AGENT_CONTROL_NUDGE_LEFT_POS |
+             Flags::AGENT_CONTROL_LEFT_NEG | Flags::AGENT_CONTROL_NUDGE_LEFT_NEG);
         constexpr std::uint32_t ANYXYZMASK =
-            (ANYXYMASK | Flags::AGENT_CONTROL_UP_POS | Flags::AGENT_CONTROL_NUDGE_UP_POS |
-             Flags::AGENT_CONTROL_UP_NEG | Flags::AGENT_CONTROL_NUDGE_UP_NEG);
+            (ANYXYMASK | Flags::AGENT_CONTROL_UP_POS | Flags::AGENT_CONTROL_NUDGE_UP_POS | Flags::AGENT_CONTROL_UP_NEG |
+             Flags::AGENT_CONTROL_NUDGE_UP_NEG);
 
         // excluded nudge up so it doesn't trigger jump state
         bool heldUp = ((controlFlags & (Flags::AGENT_CONTROL_UP_POS)) != 0);
-        bool heldDown =
-            ((controlFlags & (Flags::AGENT_CONTROL_UP_NEG | Flags::AGENT_CONTROL_NUDGE_UP_NEG)) != 0);
+        bool heldDown = ((controlFlags & (Flags::AGENT_CONTROL_UP_NEG | Flags::AGENT_CONTROL_NUDGE_UP_NEG)) != 0);
         //bool flying = (controlFlags & Flags::AGENT_CONTROL_FLY) == Flags::AGENT_CONTROL_FLY;
         //bool mouselook = (controlFlags & Flags::AGENT_CONTROL_MOUSELOOK) == Flags::AGENT_CONTROL_MOUSELOOK;
 
@@ -96,7 +96,7 @@ struct MovementAnimator::Impl {
             //heldTurnRight = (controlFlags & Flags::AGENT_CONTROL_YAW_NEG) != 0;
         }
 
-        auto* actor = context.actor_present ? &context : nullptr;
+        auto *actor = context.actor_present ? &context : nullptr;
         // no physics actor case
         if (actor == nullptr) {
             isJumping = false;
@@ -302,7 +302,7 @@ struct MovementAnimator::Impl {
         return CurrentMovementAnimation;
     }
 
-    MovementAnimationResult apply(MovementAnimationContext& context, const MovementAnimationEffects& effects,
+    MovementAnimationResult apply(MovementAnimationContext &context, const MovementAnimationEffects &effects,
                                   bool force) {
         MovementAnimationResult result;
         auto name = determine(context, effects, result);
@@ -317,28 +317,34 @@ struct MovementAnimator::Impl {
         return result;
     }
 };
-MovementAnimator::MovementAnimator(Clock clock) : impl_(std::make_unique<Impl>(std::move(clock))) {
-}
+
+MovementAnimator::MovementAnimator(Clock clock) : impl_(std::make_unique<Impl>(std::move(clock))) {}
+
 MovementAnimator::~MovementAnimator() = default;
-MovementAnimationResult MovementAnimator::update(MovementAnimationContext& context,
-                                                 const MovementAnimationEffects& effects) {
+
+MovementAnimationResult MovementAnimator::update(MovementAnimationContext &context,
+                                                 const MovementAnimationEffects &effects) {
     return impl_->apply(context, effects, false);
 }
-MovementAnimationResult MovementAnimator::force_update(MovementAnimationContext& context,
-                                                       const MovementAnimationEffects& effects) {
+
+MovementAnimationResult MovementAnimator::force_update(MovementAnimationContext &context,
+                                                       const MovementAnimationEffects &effects) {
     return impl_->apply(context, effects, true);
 }
+
 MovementAnimationSnapshot MovementAnimator::snapshot() const {
-    auto& i = *impl_;
+    auto &i = *impl_;
     return {i.CurrentMovementAnimation, i.currentControlState, i.isJumping,      i.Falling,
             i.m_animTickFall,           i.m_animTickLand,      i.m_animTickJump, i.m_lastFallVelocity};
 }
+
 MotionControlState MovementAnimator::state() const {
     return impl_->currentControlState;
 }
+
 void MovementAnimator::restore_state(MotionControlState state, std::string movement_animation) {
     impl_->currentControlState = state;
     if (!movement_animation.empty())
         impl_->CurrentMovementAnimation = std::move(movement_animation);
 }
-}
+} // namespace opensim::scene

@@ -3,17 +3,20 @@
 #pragma once
 #include "opensim/scene/terrain.hpp"
 #include <span>
+
 namespace opensim::scene {
 struct TerrainPatchCoordinate {
     std::uint32_t x, y;
 };
+
 struct TerrainLayerPacket {
     std::uint8_t type;
     std::vector<std::uint8_t> data;
 };
+
 // OpenSim's land DCT/quantization and LLClientView batching. Data is the
 // LayerData variable field; the host supplies LLUDP headers/reliability.
-std::vector<TerrainLayerPacket> terrain_layer_packets(const Terrain& terrain,
+std::vector<TerrainLayerPacket> terrain_layer_packets(const Terrain &terrain,
                                                       std::span<const TerrainPatchCoordinate> patches);
 TerrainLayerPacket wind_layer_packet(std::span<const framework::Vector3, 256> wind);
-}
+} // namespace opensim::scene

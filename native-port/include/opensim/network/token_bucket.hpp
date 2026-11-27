@@ -38,76 +38,99 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace opensim::network {
 class TokenBucket {
-public:
+  public:
     using Clock = std::function<double()>; // Monotonic seconds, as in Util.GetTimeStamp.
-    TokenBucket(TokenBucket* parent, float drip_rate, float max_burst, Clock clock = {});
+    TokenBucket(TokenBucket *parent, float drip_rate, float max_burst, Clock clock = {});
     virtual ~TokenBucket();
-    TokenBucket(const TokenBucket&) = delete;
-    TokenBucket& operator=(const TokenBucket&) = delete;
-    TokenBucket(TokenBucket&&) = delete;
-    TokenBucket& operator=(TokenBucket&&) = delete;
+    TokenBucket(const TokenBucket &) = delete;
+    TokenBucket &operator=(const TokenBucket &) = delete;
+    TokenBucket(TokenBucket &&) = delete;
+    TokenBucket &operator=(TokenBucket &&) = delete;
 
-    [[nodiscard]] TokenBucket* parent() const noexcept {
+    [[nodiscard]] TokenBucket *parent() const noexcept {
         return parent_ && !parent_lifetime_.expired() ? parent_ : nullptr;
     }
+
     // Like the C# property, assigning Parent does not migrate registered requests.
-    void parent(TokenBucket* value);
+    void parent(TokenBucket *value);
     virtual float max_drip_rate() const noexcept;
     virtual void max_drip_rate(float value) noexcept;
-    [[nodiscard]] float requested_burst() const noexcept { return burst_; }
+
+    [[nodiscard]] float requested_burst() const noexcept {
+        return burst_;
+    }
+
     void requested_burst(float value) noexcept;
     [[nodiscard]] float burst() const;
     [[nodiscard]] float requested_drip_rate() const noexcept;
     void requested_drip_rate(float value);
     [[nodiscard]] float drip_rate() const;
-    [[nodiscard]] float total_drip_request() const noexcept { return total_drip_request_; }
-    void total_drip_request(float value) noexcept { total_drip_request_ = value; }
-    void register_request(TokenBucket* child, float request);
-    void unregister_request(TokenBucket* child);
+
+    [[nodiscard]] float total_drip_request() const noexcept {
+        return total_drip_request_;
+    }
+
+    void total_drip_request(float value) noexcept {
+        total_drip_request_ = value;
+    }
+
+    void register_request(TokenBucket *child, float request);
+    void unregister_request(TokenBucket *child);
     bool remove_tokens(std::int32_t amount);
     [[nodiscard]] bool check_tokens(std::int32_t amount) const noexcept;
     [[nodiscard]] std::int32_t get_cat_bytes_can_send(std::int32_t time_ms) const;
-    [[nodiscard]] float token_count() const noexcept { return token_count_; }
-protected:
+
+    [[nodiscard]] float token_count() const noexcept {
+        return token_count_;
+    }
+
+  protected:
     static constexpr float MinDripRate = 500;
     static constexpr float MaxBurst = 7500;
     [[nodiscard]] float drip_rate_modifier() const;
     void drip();
-    TokenBucket* parent_;
+    TokenBucket *parent_;
     float max_drip_rate_ = 0;
     float drip_rate_ = 0;
     float total_drip_request_ = 0;
-private:
+
+  private:
     Clock clock_;
     double last_drip_;
     float token_count_ = 0;
     float burst_ = 0;
     std::mutex children_mutex_;
+
     struct Registration {
-        TokenBucket* child;
+        TokenBucket *child;
         float request;
         std::weak_ptr<int> lifetime;
     };
+
     std::shared_ptr<int> lifetime_ = std::make_shared<int>(0);
     std::weak_ptr<int> parent_lifetime_;
     std::vector<Registration> children_;
 };
 
 class AdaptiveTokenBucket final : public TokenBucket {
-public:
-    AdaptiveTokenBucket(TokenBucket* parent, float max_drip_rate, float max_burst,
-        bool enabled, Clock clock = {});
+  public:
+    AdaptiveTokenBucket(TokenBucket *parent, float max_drip_rate, float max_burst, bool enabled, Clock clock = {});
     // Preserved as a separate, initially false property: the C# implementation
     // actually gates adaptation with its private constructor flag.
     bool adaptive_enabled = false;
     float max_drip_rate() const noexcept override;
     void max_drip_rate(float value) noexcept override;
-    [[nodiscard]] float adjusted_drip_rate() const noexcept { return drip_rate_; }
+
+    [[nodiscard]] float adjusted_drip_rate() const noexcept {
+        return drip_rate_;
+    }
+
     void adjusted_drip_rate(float value);
     void expire_packets(std::int32_t count);
     void acknowledge_packets(std::int32_t count);
-private:
+
+  private:
     static constexpr float MinimumFlow = 50000;
     bool enabled_;
 };
-}
+} // namespace opensim::network

@@ -21,19 +21,24 @@ enum TextureAttribute : std::uint32_t {
     MaterialId = 1024,
     AllTextureAttributes = 0xffffffffu
 };
+
 class TextureFace {
   public:
     explicit TextureFace(std::shared_ptr<TextureFace> parent = {});
     std::shared_ptr<TextureFace> clone() const;
+
     std::uint32_t dirty_flags() const {
         return dirty_;
     }
+
     void dirty_flags(std::uint32_t value) {
         dirty_ = value;
     }
+
     std::uint32_t attributes() const {
         return attributes_;
     }
+
     std::array<float, 4> color() const;
     void color(std::array<float, 4> value);
     float repeat_u() const;
@@ -68,11 +73,13 @@ class TextureFace {
 
   private:
     friend class TextureEntry;
-    const TextureFace& source(std::uint32_t attribute) const;
+    const TextureFace &source(std::uint32_t attribute) const;
+
     void mark(std::uint32_t attribute) {
         attributes_ |= attribute;
         dirty_ |= attribute;
     }
+
     void material_bits(std::uint8_t keep, std::uint8_t value);
     void media_bits(std::uint8_t keep, std::uint8_t value);
     std::shared_ptr<TextureFace> parent_;
@@ -83,4 +90,4 @@ class TextureFace {
     std::uint8_t glow_ = 0, material_ = 0, media_ = 0;
     std::uint32_t attributes_, dirty_ = 0;
 };
-}
+} // namespace opensim::framework

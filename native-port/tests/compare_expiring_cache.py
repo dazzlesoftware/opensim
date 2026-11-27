@@ -2,11 +2,14 @@
 
 from pathlib import Path
 import argparse, subprocess, json, hashlib, xml.etree.ElementTree as ET
+import os
 
 root = Path(__file__).resolve().parents[2]
 p = argparse.ArgumentParser()
 p.add_argument('--native', required=True)
 p.add_argument('--dotnet', required=True)
+p.add_argument('--runtime-dotnet', default=os.environ.get('OPENSIM_REFERENCE_DOTNET'),
+               help='Optional isolated runtime host; the required framework version remains pinned')
 p.add_argument('--work', type=Path, required=True)
 a = p.parse_args()
 w = a.work.resolve()
@@ -76,7 +79,7 @@ for interval in [-2147483648, 0, 499, 500, 501, 60000, 2147483647]:
                         + flow.format(ms=ms, now=now, seconds=seconds, intseconds=intseconds)
                     )
 outputs = {}
-for name, cmd in [('reference', [a.dotnet, str(w / 'app/Reference.dll')]), ('native', [a.native])]:
+for name, cmd in [('reference', [a.runtime_dotnet or a.dotnet, str(w / 'app/Reference.dll')]), ('native', [a.native])]:
     with (w / (name + '.txt')).open('w', encoding='utf-8') as out:
         r = subprocess.run(
             cmd,

@@ -4,11 +4,12 @@
 #include "opensim/framework/text.hpp"
 #include "opensim/framework/culture_prefix.hpp"
 #include <iostream>
+
 namespace opensim::framework {
 ConsoleAppender::ConsoleAppender(Write write, ExceptionText exception_text)
     : write_(std::move(write)), exception_text_(std::move(exception_text)) {
     if (!write_)
-        write_ = [](const auto& text, bool newline) {
+        write_ = [](const auto &text, bool newline) {
             std::cout << utf8(text);
             if (newline)
                 std::cout << '\n';
@@ -18,16 +19,17 @@ ConsoleAppender::ConsoleAppender(Write write, ExceptionText exception_text)
         exception_text_ = [](std::exception_ptr failure) -> std::u16string {
             try {
                 std::rethrow_exception(failure);
-            } catch (const ConsoleAppenderFailure& error) {
+            } catch (const ConsoleAppenderFailure &error) {
                 return error.source_text;
-            } catch (const std::exception& error) {
+            } catch (const std::exception &error) {
                 return utf16_replacing(error.what());
             } catch (...) {
                 return u"Unknown native exception";
             }
         };
 }
-void ConsoleAppender::append(std::optional<ConsoleLogEvent> event, const Render& render) const {
+
+void ConsoleAppender::append(std::optional<ConsoleLogEvent> event, const Render &render) const {
     // RenderLoggingEvent is outside the original Append's catch block.
     auto message = render();
     try {
@@ -47,7 +49,8 @@ void ConsoleAppender::append(std::optional<ConsoleLogEvent> event, const Render&
         write_(text, true);
     }
 }
-void ConsoleAppender::append(std::int32_t level, const std::u16string& message) const {
+
+void ConsoleAppender::append(std::int32_t level, const std::u16string &message) const {
     append(ConsoleLogEvent{level}, [&] { return message; });
 }
-}
+} // namespace opensim::framework

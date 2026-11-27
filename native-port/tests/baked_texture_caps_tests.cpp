@@ -5,6 +5,7 @@
 #include <regex>
 using namespace opensim;
 using namespace services;
+
 namespace {
 std::string hex(std::string_view v) {
     std::string r;
@@ -14,30 +15,37 @@ std::string hex(std::string_view v) {
     }
     return r;
 }
+
 struct Cache final : framework::IAssetCache {
     std::function<void(std::shared_ptr<framework::AssetBase>)> save;
-    void cache(const std::shared_ptr<framework::AssetBase>& a, bool) override {
+
+    void cache(const std::shared_ptr<framework::AssetBase> &a, bool) override {
         save(a);
     }
-    void cache_negative(const std::string&) override {
-    }
-    bool get(const std::string&, std::shared_ptr<framework::AssetBase>&) override {
+
+    void cache_negative(const std::string &) override {}
+
+    bool get(const std::string &, std::shared_ptr<framework::AssetBase> &) override {
         return true;
     }
-    std::shared_ptr<framework::AssetBase> get_cached(const std::string&) override {
+
+    std::shared_ptr<framework::AssetBase> get_cached(const std::string &) override {
         return {};
     }
-    bool get_from_memory(const std::string&, std::shared_ptr<framework::AssetBase>&) override {
+
+    bool get_from_memory(const std::string &, std::shared_ptr<framework::AssetBase> &) override {
         return true;
     }
-    bool check(const std::string&) override {
+
+    bool check(const std::string &) override {
         return false;
     }
-    void expire(const std::string&) override {
-    }
-    void clear() override {
-    }
+
+    void expire(const std::string &) override {}
+
+    void clear() override {}
 };
+
 std::string probe(int kind, int mode, int phase) {
     std::string trace;
     auto add = [&](auto s) { trace += "|" + std::string(s); };
@@ -102,12 +110,11 @@ std::string probe(int kind, int mode, int phase) {
     network::HttpResponse response;
     try {
         if (kind == 0) {
-            BakedTextureCaps caps("/cap", framework::Uuid("11223344-5566-7788-99aa-000000000001"),
-                                  "http://host:9000", b);
+            BakedTextureCaps caps("/cap", framework::Uuid("11223344-5566-7788-99aa-000000000001"), "http://host:9000",
+                                  b);
             response = caps.handle(request);
         } else {
-            BakedTextureUpload upload("/upload", framework::Uuid("11223344-5566-7788-99aa-000000000001"),
-                                      origin, b);
+            BakedTextureUpload upload("/upload", framework::Uuid("11223344-5566-7788-99aa-000000000001"), origin, b);
             if (phase == 6 || phase == 7) {
                 upload.expire();
                 response.status = 0;
@@ -132,22 +139,22 @@ std::string probe(int kind, int mode, int phase) {
     std::string asset = "none";
     if (saved) {
         auto data = saved->data;
-        asset = saved->name().value_or("") + "|" + std::to_string(saved->type()) + "|" +
-                saved->creator_id().value_or("") + "|" + (saved->local() ? "1" : "0") +
-                (saved->temporary() ? "1" : "0") + "|" + std::to_string(saved->flags()) + "|" +
-                (data->size() > 100
-                     ? "bytes:" + std::to_string(data->size())
-                     : hex(std::string_view(reinterpret_cast<const char*>(data->data()), data->size())));
+        asset =
+            saved->name().value_or("") + "|" + std::to_string(saved->type()) + "|" + saved->creator_id().value_or("") +
+            "|" + (saved->local() ? "1" : "0") + (saved->temporary() ? "1" : "0") + "|" +
+            std::to_string(saved->flags()) + "|" +
+            (data->size() > 100 ? "bytes:" + std::to_string(data->size())
+                                : hex(std::string_view(reinterpret_cast<const char *>(data->data()), data->size())));
     }
     return std::to_string(response.status) + "|" + hex(normalized) + trace + "|" + asset + "|id-match:" +
-           (saved ? (!saved->full_id().is_zero() &&
-                             response.body.find(saved->full_id().str()) != std::string::npos
-                         ? "1"
-                         : "0")
-                  : "none");
+           (saved
+                ? (!saved->full_id().is_zero() && response.body.find(saved->full_id().str()) != std::string::npos ? "1"
+                                                                                                                  : "0")
+                : "none");
 }
-}
-int main(int argc, char** argv) {
+} // namespace
+
+int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string_view(argv[1]) == "--probe") {
             int k, m, p;
@@ -166,7 +173,7 @@ int main(int argc, char** argv) {
                 throw std::runtime_error("Baked texture source status");
         std::cout << "PASS: baked texture metadata, binary, flags and failure checks\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

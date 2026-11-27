@@ -28,6 +28,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 #include "opensim/services/grid_service.hpp"
 #include "opensim/services/grid_user_service.hpp"
+
 namespace opensim::services {
 struct LoginDestination {
     std::optional<GridRegion> region, gatekeeper;
@@ -35,17 +36,19 @@ struct LoginDestination {
     framework::Vector3 position{128, 128, 0}, look_at{0, 1, 0};
     std::uint32_t flags = 128; // OpenMetaverse.TeleportFlags.ViaLogin
 };
+
 class LoginDestinationSelector {
   public:
-    explicit LoginDestinationSelector(GridService* grid, bool fallback_to_any = true)
+    explicit LoginDestinationSelector(GridService *grid, bool fallback_to_any = true)
         : grid_(grid), fallback_to_any_(fallback_to_any) {}
-    LoginDestination find(const framework::Uuid& scope, const std::optional<GridUserInfo>& info,
-                          const std::optional<std::string>& start,
-                          const std::optional<GridRegion>& home = std::nullopt);
+
+    LoginDestination find(const framework::Uuid &scope, const std::optional<GridUserInfo> &info,
+                          const std::optional<std::string> &start,
+                          const std::optional<GridRegion> &home = std::nullopt);
 
   private:
-    std::optional<GridRegion> alternative(const framework::Uuid& scope);
-    GridService* grid_;
+    std::optional<GridRegion> alternative(const framework::Uuid &scope);
+    GridService *grid_;
     bool fallback_to_any_;
 };
-}
+} // namespace opensim::services

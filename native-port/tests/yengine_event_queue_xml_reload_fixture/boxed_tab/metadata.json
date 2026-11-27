@@ -1,0 +1,38 @@
+{
+  "name": "boxed_tab",
+  "input": {
+    "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+    "value": "a\tb",
+    "utf16": [
+      97,
+      9,
+      98
+    ]
+  },
+  "append_exception": null,
+  "outer_xml_exception": null,
+  "load_xml_exception": null,
+  "restore_event_queue_exception": null,
+  "restored": {
+    "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+    "value": "a\tb",
+    "utf16": [
+      97,
+      9,
+      98
+    ]
+  },
+  "strict_xml_reader_control_exception": null,
+  "strict_xml_reader_control_restored": {
+    "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+    "value": "a\tb",
+    "utf16": [
+      97,
+      9,
+      98
+    ]
+  },
+  "sha256": {
+    "serialized.xml": "c1b39387b4c3a22a341eb36bbd033875e31cceea4bc5cf839d0cfedfd2d6ccfb"
+  }
+}

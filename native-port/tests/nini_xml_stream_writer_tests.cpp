@@ -3,7 +3,8 @@
 #include <iostream>
 #include <sstream>
 using namespace opensim::framework;
-std::vector<std::string> split(const std::string& s, char c) {
+
+std::vector<std::string> split(const std::string &s, char c) {
     std::vector<std::string> r;
     std::istringstream in(s);
     std::string x;
@@ -11,6 +12,7 @@ std::vector<std::string> split(const std::string& s, char c) {
         r.push_back(x);
     return r;
 }
+
 std::string hex(std::u16string_view s) {
     if (s.empty())
         return "-";
@@ -20,7 +22,8 @@ std::string hex(std::u16string_view s) {
             r += "0123456789abcdef"[(c >> n) & 15];
     return r;
 }
-NiniWriterText decode(const std::string& s) {
+
+NiniWriterText decode(const std::string &s) {
     if (s == "~")
         return {};
     std::u16string r;
@@ -29,18 +32,19 @@ NiniWriterText decode(const std::string& s) {
             r += static_cast<char16_t>(std::stoul(s.substr(i, 4), nullptr, 16));
     return nini_writer_text(r);
 }
+
 std::string error() {
     try {
         throw;
-    } catch (const NiniStreamError& e) {
+    } catch (const NiniStreamError &e) {
         std::ostringstream out;
         out << std::hex << static_cast<unsigned>(e.hresult);
-        auto typed = dynamic_cast<const NiniStreamWriterError*>(&e);
-        return e.source_type + ":" + out.str() + ":" + hex(e.message) + ":" +
-               (e.parameter ? hex(*e.parameter) : "~") + ":" +
-               (typed && typed->actual_value ? std::to_string(*typed->actual_value) : "~");
+        auto typed = dynamic_cast<const NiniStreamWriterError *>(&e);
+        return e.source_type + ":" + out.str() + ":" + hex(e.message) + ":" + (e.parameter ? hex(*e.parameter) : "~") +
+               ":" + (typed && typed->actual_value ? std::to_string(*typed->actual_value) : "~");
     }
 }
+
 struct Sink : NiniByteStream {
     bool writable = true, seek = true, closed = false;
     long long offset = 0;
@@ -48,32 +52,38 @@ struct Sink : NiniByteStream {
     std::function<void()> hook;
     std::vector<std::string> calls;
     std::vector<std::uint8_t> bytes;
+
     void emit(std::string s) {
         calls.push_back(s);
         if (hook)
             hook();
         if (static_cast<int>(calls.size()) == fail)
-            throw NiniStreamError("System.IO.IOException", static_cast<int>(0x80131620u),
-                                  u"injected failure");
+            throw NiniStreamError("System.IO.IOException", static_cast<int>(0x80131620u), u"injected failure");
     }
+
     bool can_read() override {
         return false;
     }
+
     bool can_write() override {
         emit("CW");
         return writable;
     }
+
     bool can_seek() override {
         emit("CS");
         return seek;
     }
+
     std::int64_t position() override {
         emit("P");
         return offset;
     }
+
     std::size_t read(std::span<std::uint8_t>, std::size_t, std::size_t) override {
         throw std::logic_error("notreadable");
     }
+
     void write(std::span<const std::uint8_t> b) override {
         std::string text = "W:";
         for (auto c : b) {
@@ -86,18 +96,20 @@ struct Sink : NiniByteStream {
         bytes.insert(bytes.end(), b.begin(), b.end());
         offset += b.size();
     }
+
     void flush() override {
         emit("F");
         if (closed)
             throw NiniStreamError("System.IO.IOException", static_cast<int>(0x80131620u), u"closed stream");
     }
+
     void close() override {
         emit("X");
         closed = true;
     }
 };
 
-int main(int argc, char**) {
+int main(int argc, char **) {
     if (argc == 1) {
         auto sink = std::make_shared<Sink>();
         NativeXmlStreamWriter writer(sink);
@@ -111,14 +123,14 @@ int main(int argc, char**) {
         try {
             writer.write_char(u'x');
             throw std::runtime_error("Missing disposed writer error");
-        } catch (const NiniStreamError& e) {
+        } catch (const NiniStreamError &e) {
             if (e.source_type != "System.ObjectDisposedException" || e.object_name != u"StreamWriter")
                 throw;
         }
         try {
             writer.write_array(std::make_shared<XmlWriterCharArray>(u"a"), -1, 0);
             throw std::runtime_error("Missing array index validation");
-        } catch (const NiniStreamWriterError& e) {
+        } catch (const NiniStreamWriterError &e) {
             if (e.actual_value != -1 || e.parameter != u"index" ||
                 e.source_type != "System.ArgumentOutOfRangeException")
                 throw;
@@ -178,8 +190,7 @@ int main(int argc, char**) {
             if (h.size() > 9 && h[9] == "1")
                 w = std::make_unique<NiniByteTextWriter>(std::stoi(h[0]) < 0 ? nullptr : sink);
             else {
-                auto encoding =
-                    h.size() > 8 && h[8] != "#" ? native_xml_intrinsic_encoding(decode(h[8])) : nullptr;
+                auto encoding = h.size() > 8 && h[8] != "#" ? native_xml_intrinsic_encoding(decode(h[8])) : nullptr;
                 w = std::make_unique<NativeXmlStreamWriter>(std::stoi(h[0]) < 0 ? nullptr : sink, encoding,
                                                             std::stoi(h[4]), std::stoi(h[5]) != 0);
             }
@@ -233,8 +244,8 @@ int main(int argc, char**) {
                 } catch (...) {
                     exception = error();
                 }
-                results.push_back(exception + "@" + (w->auto_flush() ? "1" : "0") + "@" +
-                                  hex(*w->new_line()) + "@" + value);
+                results.push_back(exception + "@" + (w->auto_flush() ? "1" : "0") + "@" + hex(*w->new_line()) + "@" +
+                                  value);
             }
         for (std::size_t i = 0; i < sink->calls.size(); ++i) {
             if (i)

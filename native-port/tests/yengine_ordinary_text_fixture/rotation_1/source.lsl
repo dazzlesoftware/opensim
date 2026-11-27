@@ -1,0 +1,1 @@
+rotation item=<xmrString2Float("NaN"),xmrString2Float("Infinity"),xmrString2Float("-Infinity"),xmrString2Float("1")>;string result;default{state_entry(){result=(string)item;}}

@@ -1,0 +1,21 @@
+{
+  "accepted": false,
+  "executed": false,
+  "globals": {},
+  "errors": [
+    "illegal to cast from string to char"
+  ],
+  "exception": null,
+  "exceptionType": null,
+  "stackSize": 1000000,
+  "stackLimit": 1024,
+  "finalStackLeft": null,
+  "stackSamples": [],
+  "name": "implicit_from_string",
+  "source": "YOption chars;char value;integer result;default{state_entry(){value=\"A\";result=(integer)value;}}",
+  "sha256": {
+    "source.lsl": "50534933ad89911d5c117df703dffad45297c841d8134645276cfac8033592c7",
+    "source_hash.txt": "4d57a49f1c6977ee0b040ac0a36392a781606fea672bd2e29f00e8cbb9a203a3",
+    "generator_source": "d86517a13d8f4094e933279614d487a0e69d44a49f2296c4af7562bf7386d651"
+  }
+}

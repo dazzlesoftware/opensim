@@ -2,9 +2,11 @@
 #include <iostream>
 #include <sstream>
 using namespace opensim::framework;
+
 namespace {
 int mask;
 std::string trace;
+
 void step(int bit, std::string name) {
     if (!trace.empty())
         trace += ',';
@@ -12,45 +14,57 @@ void step(int bit, std::string name) {
     if (mask & (1 << bit))
         throw std::runtime_error(name);
 }
+
 struct Body : ConfigXmlStream {
     std::int32_t read(std::span<std::uint8_t>) override {
         return 0;
     }
+
     std::vector<std::uint8_t> copy_to_memory() override {
         step(5, "copy");
         return {0, 255, 13, 10, 65};
     }
+
     void close() override {
         step(6, "closestream");
     }
 };
+
 struct Handler : ConfigXmlHttpHandler {
     Handler() {
         step(0, "handler");
     }
+
     void credentials(std::shared_ptr<ConfigXmlCredentials>) override {
         step(2, "credentials");
     }
+
     void proxy(std::shared_ptr<ConfigXmlProxy>) override {
         step(3, "proxy");
     }
 };
+
 struct Client : ConfigXmlHttpClient {
     Client() {
         step(1, "client");
     }
+
     std::shared_ptr<ConfigXmlStream> get_stream(std::shared_ptr<ConfigXmlUri>) override {
         step(4, "get");
         return std::make_shared<Body>();
     }
+
     void close() override {
         step(7, "closeclient");
     }
 };
+
 struct Credentials : ConfigXmlCredentials {};
+
 struct Proxy : ConfigXmlProxy {};
-}
-int main(int argc, char**) {
+} // namespace
+
+int main(int argc, char **) {
     if (argc == 1) {
         auto stream = config_xml_memory_stream({0, 255});
         std::uint8_t bytes[3];
@@ -76,7 +90,7 @@ int main(int argc, char**) {
                 output += h[b >> 4];
                 output += h[b & 15];
             }
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
             output = "System.InvalidOperationException:" + std::string(e.what());
         }
         std::cout << output << '/' << trace << '\n';

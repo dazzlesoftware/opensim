@@ -1,0 +1,664 @@
+{
+  "originalRoute": "XMRInstCtor.cs382-384 new XmlDocument().LoadXml(xml), then LoadScriptState -\u003E RestoreEventQueue; strict XmlReader is separate control",
+  "controlScope": "Actual private original serialization/restore of backend CLR inputs; no invented LSL source types",
+  "generatorSha256": "d62e9623b0d392b122ac87c852f630f0ea040176aa6a2d52c8ddcf10692457ee",
+  "assemblySha256": "e3913dd2fc402f3e180cd85e6cdd3f4a950c03dccbe41b352ae9764e389795d0",
+  "originalAssemblySha256": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+  "runtime": ".NET 8.0.34",
+  "architecture": "X64",
+  "originalCaptureSha256": "775f1d83bd4610f788891269ea9ea08b1f79cf4bf3b44300d926f49c8a277cbd",
+  "originalCtorSha256": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+  "cases": [
+    {
+      "name": "raw_nul",
+      "input": {
+        "clr": "System.String",
+        "value": "a\u0000b",
+        "utf16": [
+          97,
+          0,
+          98
+        ]
+      },
+      "append_exception": null,
+      "outer_xml_exception": null,
+      "load_xml_exception": null,
+      "restore_event_queue_exception": null,
+      "restored": {
+        "clr": "System.String",
+        "value": "a\u0000b",
+        "utf16": [
+          97,
+          0,
+          98
+        ]
+      },
+      "strict_xml_reader_control_exception": {
+        "type": "System.Xml.XmlException",
+        "message": "\u0027.\u0027, hexadecimal value 0x00, is an invalid character. Line 1, position 71.",
+        "stack": "   at System.Xml.XmlTextReaderImpl.Throw(Exception e)\r\n   at System.Xml.XmlTextReaderImpl.Throw(String res, String[] args)\r\n   at System.Xml.XmlTextReaderImpl.ParseNumericCharRefInline(Int32 startPos, Boolean expand, StringBuilder internalSubsetBuilder, Int32\u0026 charCount, EntityType\u0026 entityType)\r\n   at System.Xml.XmlTextReaderImpl.ParseCharRefInline(Int32 startPos, Int32\u0026 charCount, EntityType\u0026 entityType)\r\n   at System.Xml.XmlTextReaderImpl.ParseText(Int32\u0026 startPos, Int32\u0026 endPos, Int32\u0026 outOrChars)\r\n   at System.Xml.XmlTextReaderImpl.ParseText()\r\n   at System.Xml.XmlTextReaderImpl.ParseElementContent()\r\n   at System.Xml.XmlLoader.LoadNode(Boolean skipOverWhitespace)\r\n   at System.Xml.XmlLoader.LoadDocSequence(XmlDocument parentDoc)\r\n   at System.Xml.XmlDocument.Load(XmlReader reader)\r\n   at EventQueueXmlReloadReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\tests\\yengine_event_queue_xml_reload_reference.cs:line 121"
+      },
+      "strict_xml_reader_control_restored": null,
+      "sha256": {
+        "serialized.xml": "c3b4c462668c9d428aec70a449c4ce55a34b784a7e346423342346d7c46e64bb"
+      }
+    },
+    {
+      "name": "boxed_nul",
+      "input": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+        "value": "a\u0000b",
+        "utf16": [
+          97,
+          0,
+          98
+        ]
+      },
+      "append_exception": null,
+      "outer_xml_exception": null,
+      "load_xml_exception": null,
+      "restore_event_queue_exception": null,
+      "restored": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+        "value": "a\u0000b",
+        "utf16": [
+          97,
+          0,
+          98
+        ]
+      },
+      "strict_xml_reader_control_exception": {
+        "type": "System.Xml.XmlException",
+        "message": "\u0027.\u0027, hexadecimal value 0x00, is an invalid character. Line 1, position 112.",
+        "stack": "   at System.Xml.XmlTextReaderImpl.Throw(Exception e)\r\n   at System.Xml.XmlTextReaderImpl.Throw(String res, String[] args)\r\n   at System.Xml.XmlTextReaderImpl.ParseNumericCharRefInline(Int32 startPos, Boolean expand, StringBuilder internalSubsetBuilder, Int32\u0026 charCount, EntityType\u0026 entityType)\r\n   at System.Xml.XmlTextReaderImpl.ParseCharRefInline(Int32 startPos, Int32\u0026 charCount, EntityType\u0026 entityType)\r\n   at System.Xml.XmlTextReaderImpl.ParseText(Int32\u0026 startPos, Int32\u0026 endPos, Int32\u0026 outOrChars)\r\n   at System.Xml.XmlTextReaderImpl.ParseText()\r\n   at System.Xml.XmlTextReaderImpl.ParseElementContent()\r\n   at System.Xml.XmlLoader.LoadNode(Boolean skipOverWhitespace)\r\n   at System.Xml.XmlLoader.LoadDocSequence(XmlDocument parentDoc)\r\n   at System.Xml.XmlDocument.Load(XmlReader reader)\r\n   at EventQueueXmlReloadReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\tests\\yengine_event_queue_xml_reload_reference.cs:line 121"
+      },
+      "strict_xml_reader_control_restored": null,
+      "sha256": {
+        "serialized.xml": "69d6e3e0418cf1851c73e1e9f53b36ff4202e52d3a7894600173fd23e0734b4a"
+      }
+    },
+    {
+      "name": "raw_pair",
+      "input": {
+        "clr": "System.String",
+        "value": "\uD83D\uDE00",
+        "utf16": [
+          55357,
+          56832
+        ]
+      },
+      "append_exception": null,
+      "outer_xml_exception": null,
+      "load_xml_exception": null,
+      "restore_event_queue_exception": null,
+      "restored": {
+        "clr": "System.String",
+        "value": "\uD83D\uDE00",
+        "utf16": [
+          55357,
+          56832
+        ]
+      },
+      "strict_xml_reader_control_exception": null,
+      "strict_xml_reader_control_restored": {
+        "clr": "System.String",
+        "value": "\uD83D\uDE00",
+        "utf16": [
+          55357,
+          56832
+        ]
+      },
+      "sha256": {
+        "serialized.xml": "3db038beeb2c958ada51b02f2e24865ebb3fec6e250c33bc901f315319320b87"
+      }
+    },
+    {
+      "name": "boxed_pair",
+      "input": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+        "value": "\uD83D\uDE00",
+        "utf16": [
+          55357,
+          56832
+        ]
+      },
+      "append_exception": null,
+      "outer_xml_exception": null,
+      "load_xml_exception": null,
+      "restore_event_queue_exception": null,
+      "restored": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+        "value": "\uD83D\uDE00",
+        "utf16": [
+          55357,
+          56832
+        ]
+      },
+      "strict_xml_reader_control_exception": null,
+      "strict_xml_reader_control_restored": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+        "value": "\uD83D\uDE00",
+        "utf16": [
+          55357,
+          56832
+        ]
+      },
+      "sha256": {
+        "serialized.xml": "83a77d488d5e66a9798ac1485909eec83d58acfd22c2c6c19bf2b5c9b5f66e95"
+      }
+    },
+    {
+      "name": "raw_high",
+      "input": {
+        "clr": "System.String",
+        "value": "\uFFFD",
+        "utf16": [
+          55296
+        ]
+      },
+      "append_exception": null,
+      "outer_xml_exception": {
+        "type": "System.ArgumentException",
+        "message": "The surrogate pair (0xD800, 0xD800) is invalid. A high surrogate character (0xD800 - 0xDBFF) must always be paired with a low surrogate character (0xDC00 - 0xDFFF).",
+        "stack": "   at System.Xml.XmlTextEncoder.Write(ReadOnlySpan\u00601 text)\r\n   at System.Xml.XmlTextWriter.WriteString(String text)\r\n   at System.Xml.XmlElement.WriteElementTo(XmlWriter writer, XmlElement el)\r\n   at System.Xml.XmlDocument.WriteContentTo(XmlWriter xw)\r\n   at System.Xml.XmlNode.get_OuterXml()\r\n   at EventQueueXmlReloadReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\tests\\yengine_event_queue_xml_reload_reference.cs:line 96"
+      },
+      "load_xml_exception": null,
+      "restore_event_queue_exception": null,
+      "restored": null,
+      "strict_xml_reader_control_exception": null,
+      "strict_xml_reader_control_restored": null,
+      "sha256": {}
+    },
+    {
+      "name": "boxed_high",
+      "input": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+        "value": "\uFFFD",
+        "utf16": [
+          55296
+        ]
+      },
+      "append_exception": null,
+      "outer_xml_exception": {
+        "type": "System.ArgumentException",
+        "message": "The surrogate pair (0xD800, 0xD800) is invalid. A high surrogate character (0xD800 - 0xDBFF) must always be paired with a low surrogate character (0xDC00 - 0xDFFF).",
+        "stack": "   at System.Xml.XmlTextEncoder.Write(ReadOnlySpan\u00601 text)\r\n   at System.Xml.XmlTextWriter.WriteString(String text)\r\n   at System.Xml.XmlElement.WriteElementTo(XmlWriter writer, XmlElement el)\r\n   at System.Xml.XmlDocument.WriteContentTo(XmlWriter xw)\r\n   at System.Xml.XmlNode.get_OuterXml()\r\n   at EventQueueXmlReloadReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\tests\\yengine_event_queue_xml_reload_reference.cs:line 96"
+      },
+      "load_xml_exception": null,
+      "restore_event_queue_exception": null,
+      "restored": null,
+      "strict_xml_reader_control_exception": null,
+      "strict_xml_reader_control_restored": null,
+      "sha256": {}
+    },
+    {
+      "name": "raw_low",
+      "input": {
+        "clr": "System.String",
+        "value": "\uFFFD",
+        "utf16": [
+          56320
+        ]
+      },
+      "append_exception": null,
+      "outer_xml_exception": {
+        "type": "System.ArgumentException",
+        "message": "Invalid high surrogate character (0xDC00). A high surrogate character must have a value from range (0xD800 - 0xDBFF).",
+        "stack": "   at System.Xml.XmlTextEncoder.Write(ReadOnlySpan\u00601 text)\r\n   at System.Xml.XmlTextWriter.WriteString(String text)\r\n   at System.Xml.XmlElement.WriteElementTo(XmlWriter writer, XmlElement el)\r\n   at System.Xml.XmlDocument.WriteContentTo(XmlWriter xw)\r\n   at System.Xml.XmlNode.get_OuterXml()\r\n   at EventQueueXmlReloadReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\tests\\yengine_event_queue_xml_reload_reference.cs:line 96"
+      },
+      "load_xml_exception": null,
+      "restore_event_queue_exception": null,
+      "restored": null,
+      "strict_xml_reader_control_exception": null,
+      "strict_xml_reader_control_restored": null,
+      "sha256": {}
+    },
+    {
+      "name": "boxed_low",
+      "input": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+        "value": "\uFFFD",
+        "utf16": [
+          56320
+        ]
+      },
+      "append_exception": null,
+      "outer_xml_exception": {
+        "type": "System.ArgumentException",
+        "message": "Invalid high surrogate character (0xDC00). A high surrogate character must have a value from range (0xD800 - 0xDBFF).",
+        "stack": "   at System.Xml.XmlTextEncoder.Write(ReadOnlySpan\u00601 text)\r\n   at System.Xml.XmlTextWriter.WriteString(String text)\r\n   at System.Xml.XmlElement.WriteElementTo(XmlWriter writer, XmlElement el)\r\n   at System.Xml.XmlDocument.WriteContentTo(XmlWriter xw)\r\n   at System.Xml.XmlNode.get_OuterXml()\r\n   at EventQueueXmlReloadReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\tests\\yengine_event_queue_xml_reload_reference.cs:line 96"
+      },
+      "load_xml_exception": null,
+      "restore_event_queue_exception": null,
+      "restored": null,
+      "strict_xml_reader_control_exception": null,
+      "strict_xml_reader_control_restored": null,
+      "sha256": {}
+    },
+    {
+      "name": "raw_lf",
+      "input": {
+        "clr": "System.String",
+        "value": "a\nb",
+        "utf16": [
+          97,
+          10,
+          98
+        ]
+      },
+      "append_exception": null,
+      "outer_xml_exception": null,
+      "load_xml_exception": null,
+      "restore_event_queue_exception": null,
+      "restored": {
+        "clr": "System.String",
+        "value": "a\nb",
+        "utf16": [
+          97,
+          10,
+          98
+        ]
+      },
+      "strict_xml_reader_control_exception": null,
+      "strict_xml_reader_control_restored": {
+        "clr": "System.String",
+        "value": "a\nb",
+        "utf16": [
+          97,
+          10,
+          98
+        ]
+      },
+      "sha256": {
+        "serialized.xml": "3fc2c2bf3cb71eed9690522da56cfe7ec93531a5a09ebf55a7ab00a166002a81"
+      }
+    },
+    {
+      "name": "boxed_lf",
+      "input": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+        "value": "a\nb",
+        "utf16": [
+          97,
+          10,
+          98
+        ]
+      },
+      "append_exception": null,
+      "outer_xml_exception": null,
+      "load_xml_exception": null,
+      "restore_event_queue_exception": null,
+      "restored": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+        "value": "a\nb",
+        "utf16": [
+          97,
+          10,
+          98
+        ]
+      },
+      "strict_xml_reader_control_exception": null,
+      "strict_xml_reader_control_restored": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+        "value": "a\nb",
+        "utf16": [
+          97,
+          10,
+          98
+        ]
+      },
+      "sha256": {
+        "serialized.xml": "7f3bb45a4f05ba004f125aa161ce189f63e9cf8bcef78c55864f6898e441caff"
+      }
+    },
+    {
+      "name": "raw_cr",
+      "input": {
+        "clr": "System.String",
+        "value": "a\rb",
+        "utf16": [
+          97,
+          13,
+          98
+        ]
+      },
+      "append_exception": null,
+      "outer_xml_exception": null,
+      "load_xml_exception": null,
+      "restore_event_queue_exception": null,
+      "restored": {
+        "clr": "System.String",
+        "value": "a\rb",
+        "utf16": [
+          97,
+          13,
+          98
+        ]
+      },
+      "strict_xml_reader_control_exception": null,
+      "strict_xml_reader_control_restored": {
+        "clr": "System.String",
+        "value": "a\nb",
+        "utf16": [
+          97,
+          10,
+          98
+        ]
+      },
+      "sha256": {
+        "serialized.xml": "71c95f193da8e6eb2e61b6049708b503bb578d169269234b49a624fc68094280"
+      }
+    },
+    {
+      "name": "boxed_cr",
+      "input": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+        "value": "a\rb",
+        "utf16": [
+          97,
+          13,
+          98
+        ]
+      },
+      "append_exception": null,
+      "outer_xml_exception": null,
+      "load_xml_exception": null,
+      "restore_event_queue_exception": null,
+      "restored": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+        "value": "a\rb",
+        "utf16": [
+          97,
+          13,
+          98
+        ]
+      },
+      "strict_xml_reader_control_exception": null,
+      "strict_xml_reader_control_restored": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+        "value": "a\nb",
+        "utf16": [
+          97,
+          10,
+          98
+        ]
+      },
+      "sha256": {
+        "serialized.xml": "091d6431d894637035ae8bb05d168c86adce4c46acd94ed418e851d845b36231"
+      }
+    },
+    {
+      "name": "raw_tab",
+      "input": {
+        "clr": "System.String",
+        "value": "a\tb",
+        "utf16": [
+          97,
+          9,
+          98
+        ]
+      },
+      "append_exception": null,
+      "outer_xml_exception": null,
+      "load_xml_exception": null,
+      "restore_event_queue_exception": null,
+      "restored": {
+        "clr": "System.String",
+        "value": "a\tb",
+        "utf16": [
+          97,
+          9,
+          98
+        ]
+      },
+      "strict_xml_reader_control_exception": null,
+      "strict_xml_reader_control_restored": {
+        "clr": "System.String",
+        "value": "a\tb",
+        "utf16": [
+          97,
+          9,
+          98
+        ]
+      },
+      "sha256": {
+        "serialized.xml": "2f29d337ee8ebf2495530d9accdbd3b45f0b742fff37b5f4142acd8674b65ce2"
+      }
+    },
+    {
+      "name": "boxed_tab",
+      "input": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+        "value": "a\tb",
+        "utf16": [
+          97,
+          9,
+          98
+        ]
+      },
+      "append_exception": null,
+      "outer_xml_exception": null,
+      "load_xml_exception": null,
+      "restore_event_queue_exception": null,
+      "restored": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+        "value": "a\tb",
+        "utf16": [
+          97,
+          9,
+          98
+        ]
+      },
+      "strict_xml_reader_control_exception": null,
+      "strict_xml_reader_control_restored": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+        "value": "a\tb",
+        "utf16": [
+          97,
+          9,
+          98
+        ]
+      },
+      "sha256": {
+        "serialized.xml": "c1b39387b4c3a22a341eb36bbd033875e31cceea4bc5cf839d0cfedfd2d6ccfb"
+      }
+    },
+    {
+      "name": "raw_crlf",
+      "input": {
+        "clr": "System.String",
+        "value": "a\r\nb",
+        "utf16": [
+          97,
+          13,
+          10,
+          98
+        ]
+      },
+      "append_exception": null,
+      "outer_xml_exception": null,
+      "load_xml_exception": null,
+      "restore_event_queue_exception": null,
+      "restored": {
+        "clr": "System.String",
+        "value": "a\r\nb",
+        "utf16": [
+          97,
+          13,
+          10,
+          98
+        ]
+      },
+      "strict_xml_reader_control_exception": null,
+      "strict_xml_reader_control_restored": {
+        "clr": "System.String",
+        "value": "a\nb",
+        "utf16": [
+          97,
+          10,
+          98
+        ]
+      },
+      "sha256": {
+        "serialized.xml": "200770d90bc16416297f704ab53ad60915a5ace2f169ce95c53dea11798d934c"
+      }
+    },
+    {
+      "name": "boxed_crlf",
+      "input": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+        "value": "a\r\nb",
+        "utf16": [
+          97,
+          13,
+          10,
+          98
+        ]
+      },
+      "append_exception": null,
+      "outer_xml_exception": null,
+      "load_xml_exception": null,
+      "restore_event_queue_exception": null,
+      "restored": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+        "value": "a\r\nb",
+        "utf16": [
+          97,
+          13,
+          10,
+          98
+        ]
+      },
+      "strict_xml_reader_control_exception": null,
+      "strict_xml_reader_control_restored": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+        "value": "a\nb",
+        "utf16": [
+          97,
+          10,
+          98
+        ]
+      },
+      "sha256": {
+        "serialized.xml": "3be8800609aa0a51a49f58c3acf4db2932a60f2d87bcfb732015d64182928560"
+      }
+    },
+    {
+      "name": "raw_single",
+      "input": {
+        "clr": "System.Single",
+        "value": 1.2345679,
+        "bits": "3f9e0652"
+      },
+      "append_exception": null,
+      "outer_xml_exception": null,
+      "load_xml_exception": null,
+      "restore_event_queue_exception": null,
+      "restored": {
+        "clr": "System.Single",
+        "value": 1.2345679,
+        "bits": "3f9e0652"
+      },
+      "strict_xml_reader_control_exception": null,
+      "strict_xml_reader_control_restored": {
+        "clr": "System.Single",
+        "value": 1.2345679,
+        "bits": "3f9e0652"
+      },
+      "sha256": {
+        "serialized.xml": "27893f550db5668471cf60f5f0fd2fec7e5c766df7a8729f351bfb4a124c7c31"
+      }
+    },
+    {
+      "name": "raw_bool",
+      "input": {
+        "clr": "System.Boolean",
+        "value": "True"
+      },
+      "append_exception": null,
+      "outer_xml_exception": null,
+      "load_xml_exception": null,
+      "restore_event_queue_exception": null,
+      "restored": {
+        "clr": "System.Boolean",
+        "value": "True"
+      },
+      "strict_xml_reader_control_exception": null,
+      "strict_xml_reader_control_restored": {
+        "clr": "System.Boolean",
+        "value": "True"
+      },
+      "sha256": {
+        "serialized.xml": "2ed9e556a48b7ed677a1bc7eea73ebf943a40f32ee6a77327894b0d245fb7f11"
+      }
+    },
+    {
+      "name": "raw_uuid",
+      "input": {
+        "clr": "OpenMetaverse.UUID",
+        "value": "11111111-2222-3333-4444-555555555555"
+      },
+      "append_exception": null,
+      "outer_xml_exception": null,
+      "load_xml_exception": null,
+      "restore_event_queue_exception": null,
+      "restored": {
+        "clr": "OpenMetaverse.UUID",
+        "value": "11111111-2222-3333-4444-555555555555"
+      },
+      "strict_xml_reader_control_exception": null,
+      "strict_xml_reader_control_restored": {
+        "clr": "OpenMetaverse.UUID",
+        "value": "11111111-2222-3333-4444-555555555555"
+      },
+      "sha256": {
+        "serialized.xml": "4b3fbf971d00c9fa73b6dc765510306577bf503bb7dd2846f765219d17cae871"
+      }
+    },
+    {
+      "name": "raw_null",
+      "input": {
+        "clr": null,
+        "value": null
+      },
+      "append_exception": {
+        "type": "System.NullReferenceException",
+        "message": "Object reference not set to an instance of an object.",
+        "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstance.GetXMLObject(XmlDocument doc, Object o, String tag) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstCapture.cs:line 334\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstance.AppendXMLObjectArray(XmlDocument doc, XmlNode parent, Object[] array, String tag) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstCapture.cs:line 310\r\n   at InvokeStub_XMRInstance.AppendXMLObjectArray(Object, Span\u00601)\r\n   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)"
+      },
+      "outer_xml_exception": null,
+      "load_xml_exception": null,
+      "restore_event_queue_exception": null,
+      "restored": null,
+      "strict_xml_reader_control_exception": null,
+      "strict_xml_reader_control_restored": null,
+      "sha256": {}
+    },
+    {
+      "name": "boxed_null_string",
+      "input": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+        "value": null,
+        "utf16": null
+      },
+      "append_exception": null,
+      "outer_xml_exception": null,
+      "load_xml_exception": null,
+      "restore_event_queue_exception": null,
+      "restored": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+        "value": "",
+        "utf16": []
+      },
+      "strict_xml_reader_control_exception": null,
+      "strict_xml_reader_control_restored": {
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+        "value": "",
+        "utf16": []
+      },
+      "sha256": {
+        "serialized.xml": "5ddd22622737f84b5bb5c7952913d8ba219fd3e0293ef17b1e50c0c28046a479"
+      }
+    }
+  ]
+}

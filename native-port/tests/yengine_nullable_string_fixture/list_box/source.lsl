@@ -1,0 +1,1 @@
+string value;list items;integer after;default{state_entry(){value=llComputeHash("payload","unsupported");items=[value];after=1;}}

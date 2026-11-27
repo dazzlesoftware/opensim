@@ -1,16 +1,20 @@
 // Test adapters for the unchanged-source live traversal oracle.
 #include "opensim/scene/live_asset_gather.hpp"
 struct LiveFixture;
+
 struct LiveTexture : scene::GatherTexture {
     std::shared_ptr<framework::TextureFace> def;
     std::shared_ptr<std::vector<std::shared_ptr<framework::TextureFace>>> list;
+
     std::shared_ptr<framework::TextureFace> default_texture() override {
         return def;
     }
+
     std::shared_ptr<std::vector<std::shared_ptr<framework::TextureFace>>> faces() override {
         return list;
     }
 };
+
 struct LiveShape : scene::GatherShape {
     LiveFixture *f;
     int tag;
@@ -21,18 +25,21 @@ struct LiveShape : scene::GatherShape {
     framework::Uuid projection() override;
     std::shared_ptr<scene::GatherRenderMaterials> materials() override;
 };
+
 struct LiveInventory : scene::GatherInventory {
     LiveFixture *f;
     int tag;
     std::shared_ptr<std::vector<std::shared_ptr<framework::TaskInventoryItem>>> list;
     decltype(list) items() override;
 };
+
 struct LiveAttrs : scene::GatherDynAttrs {
     LiveFixture *f;
     int tag;
     services::FeatureData store;
     bool try_store(const std::string &, const std::string &, services::FeatureData &) override;
 };
+
 struct LivePart : scene::GatherPart {
     LiveFixture *f;
     int tag;
@@ -53,6 +60,7 @@ struct LivePart : scene::GatherPart {
     std::optional<std::string> name() override;
     framework::Uuid id() override;
 };
+
 struct LiveObject : scene::GatherObject {
     LiveFixture *f;
     std::shared_ptr<std::vector<std::shared_ptr<scene::GatherPart>>> list;
@@ -63,6 +71,7 @@ struct LiveObject : scene::GatherObject {
     std::optional<std::string> name() override;
     framework::Uuid id() override;
 };
+
 struct LiveFixture {
     int profile, sides, mutation, mutate_nth, mutate_seen = 0;
     bool disposed = false;
@@ -70,6 +79,7 @@ struct LiveFixture {
     std::function<void(int)> fault;
     std::shared_ptr<LiveObject> group;
     std::vector<std::shared_ptr<LivePart>> parts;
+
     void hit(int point, int tag) {
         log("L:" + std::to_string(point) + ":" + std::to_string(tag));
         fault(100 + point);
@@ -82,8 +92,8 @@ struct LiveFixture {
                 parts[0]->sh.reset();
         }
     }
-    LiveFixture(int p, int s, int m, int nth, std::function<void(const std::string &)> l,
-                std::function<void(int)> h)
+
+    LiveFixture(int p, int s, int m, int nth, std::function<void(const std::string &)> l, std::function<void(int)> h)
         : profile(p), sides(s), mutation(m), mutate_nth(nth), log(std::move(l)), fault(std::move(h)) {
         using F = services::SimulatorFeatureValue;
         auto value = [](int n) {
@@ -119,10 +129,9 @@ struct LiveFixture {
             part->sh->render = std::make_shared<scene::GatherRenderMaterials>();
             part->sh->render->entries = std::make_shared<std::vector<framework::Uuid>>(
                 std::initializer_list<framework::Uuid>{::id(9), ::id(-1)});
-            part->sh->render->overrides =
-                std::make_shared<std::vector<scene::GatherRenderMaterials::Override>>(
-                    std::initializer_list<scene::GatherRenderMaterials::Override>{
-                        {framework::utf16(::id(10).str() + "x")}});
+            part->sh->render->overrides = std::make_shared<std::vector<scene::GatherRenderMaterials::Override>>(
+                std::initializer_list<scene::GatherRenderMaterials::Override>{
+                    {framework::utf16(::id(10).str() + "x")}});
             part->particle = std::make_shared<std::vector<std::uint8_t>>(86);
             auto bytes = ::id(13).bytes();
             std::copy(bytes.begin(), bytes.end(), part->particle->begin() + 36);
@@ -249,95 +258,118 @@ struct LiveFixture {
         }
     }
 };
+
 inline std::shared_ptr<scene::GatherTexture> LiveShape::textures() {
     f->hit(6, tag);
     return tex;
 }
+
 inline framework::Uuid LiveShape::sculpt() {
     f->hit(8, tag);
     return ::id(-2);
 }
+
 inline framework::Uuid LiveShape::projection() {
     f->hit(9, tag);
     return ::id(-1);
 }
+
 inline std::shared_ptr<scene::GatherRenderMaterials> LiveShape::materials() {
     f->hit(10, tag);
     return render;
 }
+
 inline decltype(LiveInventory::list) LiveInventory::items() {
     f->hit(16, tag);
     return list;
 }
+
 inline bool LiveAttrs::try_store(const std::string &, const std::string &, services::FeatureData &out) {
     f->hit(19, tag);
     out = store;
     return f->profile != 19;
 }
+
 inline std::shared_ptr<scene::GatherShape> LivePart::shape() {
     f->hit(5, tag);
     return sh;
 }
+
 inline std::int32_t LivePart::sides() {
     f->hit(7, tag);
     return f->sides;
 }
+
 inline framework::Uuid LivePart::collision_sound() {
     f->hit(11, tag);
     return ::id(11);
 }
+
 inline framework::Uuid LivePart::invalid_collision_sound() {
     f->hit(12, tag);
     return ::id(99);
 }
+
 inline framework::Uuid LivePart::sound() {
     f->hit(13, tag);
     return ::id(12);
 }
+
 inline framework::AssetBytes LivePart::particles() {
     f->hit(14, tag);
     return particle;
 }
+
 inline std::shared_ptr<scene::GatherInventory> LivePart::inventory() {
     f->hit(15, tag);
     return inv;
 }
+
 inline std::shared_ptr<scene::GatherAnimations> LivePart::animations() {
     f->hit(17, tag);
     return anim;
 }
+
 inline std::shared_ptr<scene::GatherDynAttrs> LivePart::dynattrs() {
     f->hit(18, tag);
     return attrs;
 }
+
 inline std::optional<std::string> LivePart::name() {
     f->hit(20, tag);
     return f->profile == 32 ? std::nullopt : std::optional<std::string>("part");
 }
+
 inline framework::Uuid LivePart::id() {
     f->hit(21, tag);
     return ::id(40 + tag);
 }
+
 inline bool LiveObject::deleted() {
     f->hit(1, 0);
     return f->profile == 1;
 }
+
 inline decltype(LiveObject::list) LiveObject::parts() {
     f->hit(2, 0);
     return list;
 }
+
 inline bool LiveObject::temporary() {
     f->hit(3, 0);
     return f->profile == 29;
 }
+
 inline void LiveObject::dispose() {
     f->hit(4, 0);
     f->disposed = true;
 }
+
 inline std::optional<std::string> LiveObject::name() {
     f->hit(22, 0);
     return f->profile == 32 ? std::nullopt : std::optional<std::string>("object");
 }
+
 inline framework::Uuid LiveObject::id() {
     f->hit(23, 0);
     return ::id(50);

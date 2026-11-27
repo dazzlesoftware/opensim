@@ -1,0 +1,1 @@
+string result=[1,2];default{state_entry(){}}

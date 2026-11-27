@@ -1,0 +1,1 @@
+YOption objects;rotation input=ZERO_ROTATION;integer result;integer after;default{state_entry(){result=xmrHashCode((object)input);after=1;}}

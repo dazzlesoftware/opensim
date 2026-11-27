@@ -2,33 +2,34 @@
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/services/friends_service.hpp"
 #include <stdexcept>
+
 namespace opensim::services {
 namespace {
-std::optional<std::int32_t> friend_rights(IFriendsService& service, framework::Uuid principal,
-                                         framework::Uuid other, bool hypergrid) {
+std::optional<std::int32_t> friend_rights(IFriendsService &service, framework::Uuid principal, framework::Uuid other,
+                                          bool hypergrid) {
     if (principal.is_zero())
         return std::nullopt;
     const auto other_id = other.str();
-    for (const auto& entry : service.get(principal)) {
-        if (entry.friend_id &&
-            (hypergrid ? entry.friend_id->starts_with(other_id) : *entry.friend_id == other_id))
+    for (const auto &entry : service.get(principal)) {
+        if (entry.friend_id && (hypergrid ? entry.friend_id->starts_with(other_id) : *entry.friend_id == other_id))
             return entry.their_flags;
     }
     return std::nullopt;
 }
-}
-bool friend_can_modify_objects(IFriendsService& service, framework::Uuid actor, framework::Uuid owner,
-                               bool hypergrid) {
+} // namespace
+
+bool friend_can_modify_objects(IFriendsService &service, framework::Uuid actor, framework::Uuid owner, bool hypergrid) {
     constexpr std::int32_t modify_objects = 4;
     const auto rights = friend_rights(service, actor, owner, hypergrid).value_or(-1);
     return rights != -1 && (rights & modify_objects) != 0;
 }
-bool friend_is_confirmed(IFriendsService& service, framework::Uuid principal, framework::Uuid other,
-                         bool hypergrid) {
+
+bool friend_is_confirmed(IFriendsService &service, framework::Uuid principal, framework::Uuid other, bool hypergrid) {
     return friend_rights(service, principal, other, hypergrid).value_or(-1) != -1;
 }
-FriendInfo::FriendInfo(const AccountValues& values) : friend_id("") {
-    auto text = [&](const char* key) -> std::optional<std::string> {
+
+FriendInfo::FriendInfo(const AccountValues &values) : friend_id("") {
+    auto text = [&](const char *key) -> std::optional<std::string> {
         auto i = values.find(key);
         if (i == values.end() || !i->second.has_value() || i->second.type() == typeid(std::nullptr_t))
             return {};
@@ -43,6 +44,7 @@ FriendInfo::FriendInfo(const AccountValues& values) : friend_id("") {
     if (auto value = text("TheirFlags"))
         parse_account_integer(*value, their_flags);
 }
+
 AccountValues FriendInfo::to_key_value_pairs() const {
     AccountValues values;
     values["PrincipalID"] = principal.str();
@@ -51,10 +53,11 @@ AccountValues FriendInfo::to_key_value_pairs() const {
     values["TheirFlags"] = std::to_string(their_flags);
     return values;
 }
-std::vector<FriendInfo> FriendsService::get(const framework::Uuid& principal) {
+
+std::vector<FriendInfo> FriendsService::get(const framework::Uuid &principal) {
     auto rows = store_.get(principal);
     std::vector<FriendInfo> result;
-    for (const auto& row : rows) {
+    for (const auto &row : rows) {
         if (!row || !row->principal)
             throw std::invalid_argument("Null friends row or principal");
         FriendInfo info;
@@ -71,15 +74,17 @@ std::vector<FriendInfo> FriendsService::get(const framework::Uuid& principal) {
     }
     return result;
 }
-std::vector<FriendInfo> FriendsService::get(const std::optional<std::string>& principal) {
+
+std::vector<FriendInfo> FriendsService::get(const std::optional<std::string> &principal) {
     auto rows = store_.get(principal);
     // The original string overload validates the newly constructed info.Friend
     // before assigning d.Friend. Its null default fails, skipping every row.
     (void)rows;
     return {};
 }
-bool FriendsService::store(const std::optional<std::string>& principal,
-                           const std::optional<std::string>& friend_id, std::int32_t flags) {
+
+bool FriendsService::store(const std::optional<std::string> &principal, const std::optional<std::string> &friend_id,
+                           std::int32_t flags) {
     auto row = std::make_shared<FriendsData>();
     row->principal = principal;
     row->friend_id = friend_id;
@@ -87,4 +92,4 @@ bool FriendsService::store(const std::optional<std::string>& principal,
     (*row->data)["Flags"] = std::to_string(flags);
     return store_.store(row);
 }
-}
+} // namespace opensim::services

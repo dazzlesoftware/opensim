@@ -1,0 +1,21 @@
+{
+  "accepted": false,
+  "executed": false,
+  "globals": {},
+  "errors": [
+    "Object reference not set to an instance of an object."
+  ],
+  "exception": null,
+  "exceptionType": null,
+  "stackSize": 1000000,
+  "stackLimit": 1024,
+  "finalStackLeft": null,
+  "stackSamples": [],
+  "name": "equal",
+  "source": "YOption chars;YOption advflowctl;char value;integer result;default{state_entry(){result='A'=='A';}}",
+  "sha256": {
+    "source.lsl": "297e8eab5dc83e3076488c7f2692e22b2d113468a45fb012cb37294bfe531f76",
+    "source_hash.txt": "5450df52c06aa68e0fc44d966a924627448c2fde60c95976da16296e60f9ebaa",
+    "generator_source": "d86517a13d8f4094e933279614d487a0e69d44a49f2296c4af7562bf7386d651"
+  }
+}

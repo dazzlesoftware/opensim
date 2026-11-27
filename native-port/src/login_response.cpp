@@ -9,84 +9,99 @@
 #include <cmath>
 #include <mutex>
 #include <stdexcept>
+
 namespace opensim::services {
 using network::Value;
+
 namespace {
 Value array() {
     Value a;
     a.kind = Value::Kind::Array;
     return a;
 }
+
 auto array_node() {
     return std::make_shared<Value>(array());
 }
-Value raw(const LoginResponse::Text& text) {
+
+Value raw(const LoginResponse::Text &text) {
     return text ? Value(*text) : Value{};
 }
-Value string(const LoginResponse::Text& text) {
+
+Value string(const LoginResponse::Text &text) {
     return Value(text.value_or(""));
 }
-Value uuid(const framework::Uuid& id) {
+
+Value uuid(const framework::Uuid &id) {
     Value v(id.str());
     v.kind = Value::Kind::Uuid;
     return v;
 }
+
 Value wrapped(Value value) {
     auto result = array();
     result.array.push_back(std::move(value));
     return result;
 }
+
 std::int32_t signed_value(std::uint32_t n) {
     return std::bit_cast<std::int32_t>(n);
 }
+
 std::int32_t epoch(double seconds) {
     return !std::isfinite(seconds) || seconds < -2147483648. || seconds >= 2147483648.
                ? INT32_MIN
                : static_cast<std::int32_t>(seconds);
 }
+
 std::mutex texture_mutex;
-LoginResponse::Text textures[] = {"cce0f112-878f-4586-a2e2-a8f104bba271",
-                                  "dc4b9f0b-d008-45c6-96a4-01dd947ac621",
+LoginResponse::Text textures[] = {"cce0f112-878f-4586-a2e2-a8f104bba271", "dc4b9f0b-d008-45c6-96a4-01dd947ac621",
                                   "ec4b9f0b-d008-45c6-96a4-01dd947ac621"};
-constexpr const char* texture_names[] = {"sun_texture_id", "cloud_texture_id", "moon_texture_id"};
-}
+constexpr const char *texture_names[] = {"sun_texture_id", "cloud_texture_id", "moon_texture_id"};
+} // namespace
+
 Value LoginBuddyInfo::to_table() const {
-    return Value::object({{"buddy_rights_has", Value(rights_have)},
-                          {"buddy_rights_given", Value(rights_given)},
-                          {"buddy_id", raw(id)}});
+    return Value::object(
+        {{"buddy_rights_has", Value(rights_have)}, {"buddy_rights_given", Value(rights_given)}, {"buddy_id", raw(id)}});
 }
-void LoginBuddyList::add(const std::shared_ptr<LoginBuddyInfo>& buddy) {
+
+void LoginBuddyList::add(const std::shared_ptr<LoginBuddyInfo> &buddy) {
     if (std::find(buddies.begin(), buddies.end(), buddy) == buddies.end())
         buddies.push_back(buddy);
 }
+
 Value LoginBuddyList::to_array() const {
     auto result = array();
-    for (const auto& buddy : buddies) {
+    for (const auto &buddy : buddies) {
         if (!buddy)
             throw std::invalid_argument("Null buddy");
         result.array.push_back(buddy->to_table());
     }
     return result;
 }
+
 LoginResponse::Text LoginResponse::texture(std::size_t index) {
     std::lock_guard lock(texture_mutex);
     if (index >= 3)
         throw std::out_of_range("Texture index");
     return textures[index];
 }
+
 void LoginResponse::texture(std::size_t index, Text value) {
     std::lock_guard lock(texture_mutex);
     if (index >= 3)
         throw std::out_of_range("Texture index");
     textures[index] = std::move(value);
 }
+
 LoginResponse::Node LoginResponse::global_texture_hash() {
-    static auto value = std::make_shared<Value>(
-        Value::object({{"sun_texture_id", Value("cce0f112-878f-4586-a2e2-a8f104bba271")},
-                       {"cloud_texture_id", Value("dc4b9f0b-d008-45c6-96a4-01dd947ac621")},
-                       {"moon_texture_id", Value("ec4b9f0b-d008-45c6-96a4-01dd947ac621")}}));
+    static auto value =
+        std::make_shared<Value>(Value::object({{"sun_texture_id", Value("cce0f112-878f-4586-a2e2-a8f104bba271")},
+                                               {"cloud_texture_id", Value("dc4b9f0b-d008-45c6-96a4-01dd947ac621")},
+                                               {"moon_texture_id", Value("ec4b9f0b-d008-45c6-96a4-01dd947ac621")}}));
     return value;
 }
+
 LoginResponse::LoginResponse(Random random, Clock clock) : clock_(std::move(clock)) {
     if (!random)
         random = []() { return framework::Uuid::random(); };
@@ -106,7 +121,7 @@ LoginResponse::LoginResponse(Random random, Clock clock) : clock_(std::move(cloc
     inventory_library = array_node();
     inventory_library_owner = array_node();
     active_gestures = array_node();
-    const char* categories[] = {"Shopping",     "Land Rental", "Property Rental", "Special Attraction",
+    const char *categories[] = {"Shopping",     "Land Rental", "Property Rental", "Special Attraction",
                                 "New Products", "Employment",  "Wanted",          "Service",
                                 "Personal"};
     for (int i = 0; i < 9; ++i)
@@ -114,37 +129,38 @@ LoginResponse::LoginResponse(Random random, Clock clock) : clock_(std::move(cloc
     session = random();
     secure_session = random();
     agent = random();
-    initial_outfit_->array.push_back(
-        Value::object({{"folder_name", "Nightclub Female"}, {"gender", "female"}}));
+    initial_outfit_->array.push_back(Value::object({{"folder_name", "Nightclub Female"}, {"gender", "female"}}));
 }
+
 void LoginResponse::add_ui(std::string key, Text value) {
     ui_config_hash_->set(std::move(key), raw(value));
 }
+
 void LoginResponse::add_classified(std::int32_t id, Text name) {
-    classified_categories_->array.push_back(
-        Value::object({{"category_name", raw(name)}, {"category_id", Value(id)}}));
+    classified_categories_->array.push_back(Value::object({{"category_name", raw(name)}, {"category_id", Value(id)}}));
 }
-Value LoginResponse::array_list_to_osd(const Node& list) {
+
+Value LoginResponse::array_list_to_osd(const Node &list) {
     if (!list)
         throw std::invalid_argument("Null response list");
-    const auto& source = list->view();
+    const auto &source = list->view();
     if (source.kind != Value::Kind::Array)
         throw std::invalid_argument("Invalid response list");
     auto result = array();
-    for (const auto& entry : source.array) {
-        const auto& fields = entry.view();
+    for (const auto &entry : source.array) {
+        const auto &fields = entry.view();
         if (fields.kind != Value::Kind::Map)
             throw std::invalid_argument("Invalid response table");
         auto item = Value::object({});
-        for (const auto& key : fields.ordered_keys()) {
-            const auto& value = fields.get(key).view();
-            item.set(key,
-                     value.kind == Value::Kind::Map || value.kind == Value::Kind::Array ? Value{} : value);
+        for (const auto &key : fields.ordered_keys()) {
+            const auto &value = fields.get(key).view();
+            item.set(key, value.kind == Value::Kind::Map || value.kind == Value::Kind::Array ? Value{} : value);
         }
         result.array.push_back(std::move(item));
     }
     return result;
 }
+
 Value LoginResponse::to_xml_rpc() {
     try {
         auto response = Value::object({});
@@ -193,7 +209,7 @@ Value LoginResponse::to_xml_rpc() {
         response.set("region_y", Value(signed_value(region_y)));
         response.set("region_size_x", Value(region_size_x));
         response.set("region_size_y", Value(region_size_y));
-        for (const auto& pair : {std::pair{"search", search_url},
+        for (const auto &pair : {std::pair{"search", search_url},
                                  {"map-server-url", map_url},
                                  {"profile-server-url", profile_url},
                                  {"destination_guide_url", destinations_url},
@@ -212,10 +228,11 @@ Value LoginResponse::to_xml_rpc() {
             response.set("classified_fee", raw(classified_fee));
         response.set("login", "true");
         return response;
-    } catch (const std::exception&) {
+    } catch (const std::exception &) {
         return login_failure("InternalError");
     }
 }
+
 Value LoginResponse::to_llsd() const {
     try {
         auto result = Value::object({});
@@ -243,7 +260,7 @@ Value LoginResponse::to_llsd() const {
         result.set("event_categories", array_list_to_osd(event_categories_));
         result.set("classified_categories", array_list_to_osd(classified_categories_));
         result.set("ui-config", wrapped(Value::object({{"allow_first_life", string(allow_first_life)}})));
-        for (const auto& pair : {std::pair{"inventory-skeleton", inventory_skeleton},
+        for (const auto &pair : {std::pair{"inventory-skeleton", inventory_skeleton},
                                  {"inventory-skel-lib", inventory_library},
                                  {"inventory-root", inventory_root},
                                  {"inventory-lib-root", inventory_library_root},
@@ -258,7 +275,7 @@ Value LoginResponse::to_llsd() const {
         result.set("message", string(message));
         result.set("region_x", Value(signed_value(region_x)));
         result.set("region_y", Value(signed_value(region_y)));
-        for (const auto& pair : {std::pair{"map-server-url", map_url},
+        for (const auto &pair : {std::pair{"map-server-url", map_url},
                                  {"profile-server-url", profile_url},
                                  {"search", search_url},
                                  {"classified_fee", classified_fee}})
@@ -274,8 +291,8 @@ Value LoginResponse::to_llsd() const {
         }
         result.set("login", "true");
         return result;
-    } catch (const std::exception&) {
+    } catch (const std::exception &) {
         return login_failure("InternalError");
     }
 }
-}
+} // namespace opensim::services

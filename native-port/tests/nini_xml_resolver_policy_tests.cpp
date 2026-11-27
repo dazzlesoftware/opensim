@@ -4,7 +4,8 @@
 #include <string>
 #include <stdexcept>
 using namespace opensim::framework;
-int main(int argc, char**) {
+
+int main(int argc, char **) {
     int calls = 0;
     NiniXmlResolverPolicy defaults([&](std::u16string_view) -> std::optional<bool> {
         ++calls;
@@ -31,8 +32,7 @@ int main(int argc, char**) {
             else if (c == 'd' || c == 'D')
                 switches[u"TestSwitch.LocalAppContext.DisableCaching"] = c == 'D';
             else if (c == 'g')
-                std::cout << (policy.networking_enabled_by_default() ? 1 : 0) << ","
-                          << policy.cache_snapshot() << ";";
+                std::cout << (policy.networking_enabled_by_default() ? 1 : 0) << "," << policy.cache_snapshot() << ";";
         }
         std::cout << '\n';
     }

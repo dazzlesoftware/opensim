@@ -1,0 +1,993 @@
+{
+  "name": "nested_alias",
+  "accepted": true,
+  "diagnostics": [],
+  "compile_exception": null,
+  "source_hash": "27F96C8EC3880B3FC13FCF6E6FFDA397",
+  "compiled_version": -11,
+  "suspended": true,
+  "migrated": true,
+  "production_write_exception": null,
+  "queue_xml_write_exception": null,
+  "queue_xml_restore_exception": null,
+  "permissive_write_exception": null,
+  "permissive_control_resume": null,
+  "permissive_control_resume_exception": null,
+  "production_writer": "Unchanged private XMRInstance.MigrateOutEventHandler(Stream): new BinaryWriter(stream)",
+  "initial_exception": null,
+  "live_cycles": [],
+  "migrated_cycles": [],
+  "prefix_resume": null,
+  "live_resume_exception": null,
+  "live_resume": {
+    "globals": {
+      "result": {
+        "type": "list",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+        "value": [
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 21
+          },
+          {
+            "type": "list",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+            "value": [
+              {
+                "type": "float",
+                "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLFloat",
+                "value": 1.234567891,
+                "bits": "3ff3c0ca42c8964b"
+              },
+              {
+                "type": "string",
+                "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+                "value": "nested",
+                "utf16": [
+                  110,
+                  101,
+                  115,
+                  116,
+                  101,
+                  100
+                ]
+              }
+            ]
+          },
+          {
+            "type": "list",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+            "value": [
+              {
+                "type": "float",
+                "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLFloat",
+                "value": 1.234567891,
+                "bits": "3ff3c0ca42c8964b"
+              },
+              {
+                "type": "string",
+                "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+                "value": "nested",
+                "utf16": [
+                  110,
+                  101,
+                  115,
+                  116,
+                  101,
+                  100
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "shared": {
+        "type": "list",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+        "value": [
+          {
+            "type": "float",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLFloat",
+            "value": 1.234567891,
+            "bits": "3ff3c0ca42c8964b"
+          },
+          {
+            "type": "string",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+            "value": "nested",
+            "utf16": [
+              110,
+              101,
+              115,
+              116,
+              101,
+              100
+            ]
+          }
+        ]
+      }
+    },
+    "event_code": "None",
+    "call_mode": 0,
+    "sleep_until_ticks": 639313085397744369,
+    "object_description": "",
+    "event_arguments": null,
+    "state_index": 0,
+    "new_state_index": -1,
+    "initialize_globals": false,
+    "running": true,
+    "detectors": [
+      {
+        "key": "11111111-2222-3333-4444-555555555555",
+        "owner": "22222222-3333-4444-5555-666666666666",
+        "group": "33333333-4444-5555-6666-777777777777",
+        "name": "original rich detector 3",
+        "link_number": 5,
+        "type": 11,
+        "grab": [
+          3.125,
+          3.25,
+          3.5
+        ],
+        "position": [
+          13.00000003,
+          14.00000003,
+          15.00000003
+        ],
+        "rotation": [
+          {
+            "clr": "System.Double",
+            "value": 0.125,
+            "bits": "3fc0000000000000",
+            "text": "0.125"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.25,
+            "bits": "3fd0000000000000",
+            "text": "0.25"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.5,
+            "bits": "3fe0000000000000",
+            "text": "0.5"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.875,
+            "bits": "3fec000000000000",
+            "text": "0.875"
+          }
+        ],
+        "velocity": [
+          23.00000003,
+          24.00000003,
+          25.00000003
+        ],
+        "touch_st": [
+          4.00000003,
+          5.00000003,
+          6.00000003
+        ],
+        "touch_normal": [
+          7.00000003,
+          8.000000029999999,
+          9.000000029999999
+        ],
+        "touch_binormal": [
+          10.000000029999999,
+          11.000000029999999,
+          12.000000029999999
+        ],
+        "touch_pos": [
+          13.000000029999999,
+          14.000000029999999,
+          15.000000029999999
+        ],
+        "touch_uv": [
+          16.00000003,
+          17.00000003,
+          18.00000003
+        ],
+        "touch_face": 6
+      }
+    ],
+    "queue": [],
+    "queue_aliases": [],
+    "frames": []
+  },
+  "direct_reset_scheduler_boundary": false,
+  "initial": {
+    "globals": {
+      "result": {
+        "type": "list",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+        "value": []
+      },
+      "shared": {
+        "type": "list",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+        "value": [
+          {
+            "type": "float",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLFloat",
+            "value": 1.234567891,
+            "bits": "3ff3c0ca42c8964b"
+          },
+          {
+            "type": "string",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+            "value": "nested",
+            "utf16": [
+              110,
+              101,
+              115,
+              116,
+              101,
+              100
+            ]
+          }
+        ]
+      }
+    },
+    "event_code": "state_entry",
+    "call_mode": 1,
+    "sleep_until_ticks": 639313085397744369,
+    "object_description": "",
+    "event_arguments": [],
+    "state_index": 0,
+    "new_state_index": -1,
+    "initialize_globals": false,
+    "running": true,
+    "detectors": [
+      {
+        "key": "11111111-2222-3333-4444-555555555555",
+        "owner": "22222222-3333-4444-5555-666666666666",
+        "group": "33333333-4444-5555-6666-777777777777",
+        "name": "original rich detector 3",
+        "link_number": 5,
+        "type": 11,
+        "grab": [
+          3.125,
+          3.25,
+          3.5
+        ],
+        "position": [
+          13.00000003,
+          14.00000003,
+          15.00000003
+        ],
+        "rotation": [
+          {
+            "clr": "System.Double",
+            "value": 0.125,
+            "bits": "3fc0000000000000",
+            "text": "0.125"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.25,
+            "bits": "3fd0000000000000",
+            "text": "0.25"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.5,
+            "bits": "3fe0000000000000",
+            "text": "0.5"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.875,
+            "bits": "3fec000000000000",
+            "text": "0.875"
+          }
+        ],
+        "velocity": [
+          23.00000003,
+          24.00000003,
+          25.00000003
+        ],
+        "touch_st": [
+          4.00000003,
+          5.00000003,
+          6.00000003
+        ],
+        "touch_normal": [
+          7.00000003,
+          8.000000029999999,
+          9.000000029999999
+        ],
+        "touch_binormal": [
+          10.000000029999999,
+          11.000000029999999,
+          12.000000029999999
+        ],
+        "touch_pos": [
+          13.000000029999999,
+          14.000000029999999,
+          15.000000029999999
+        ],
+        "touch_uv": [
+          16.00000003,
+          17.00000003,
+          18.00000003
+        ],
+        "touch_face": 6
+      }
+    ],
+    "queue": [
+      {
+        "name": "touch_start",
+        "arguments": [
+          {
+            "type": "list",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+            "value": [
+              {
+                "type": "float",
+                "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLFloat",
+                "value": 1.234567891,
+                "bits": "3ff3c0ca42c8964b"
+              },
+              {
+                "type": "string",
+                "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+                "value": "nested",
+                "utf16": [
+                  110,
+                  101,
+                  115,
+                  116,
+                  101,
+                  100
+                ]
+              }
+            ]
+          },
+          {
+            "type": "list",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+            "value": [
+              {
+                "type": "float",
+                "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLFloat",
+                "value": 1.234567891,
+                "bits": "3ff3c0ca42c8964b"
+              },
+              {
+                "type": "string",
+                "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+                "value": "nested",
+                "utf16": [
+                  110,
+                  101,
+                  115,
+                  116,
+                  101,
+                  100
+                ]
+              }
+            ]
+          }
+        ],
+        "detectors": [
+          {
+            "key": "11111111-2222-3333-4444-555555555555",
+            "owner": "22222222-3333-4444-5555-666666666666",
+            "group": "33333333-4444-5555-6666-777777777777",
+            "name": "original rich detector 3",
+            "link_number": 5,
+            "type": 11,
+            "grab": [
+              3.125,
+              3.25,
+              3.5
+            ],
+            "position": [
+              13.00000003,
+              14.00000003,
+              15.00000003
+            ],
+            "rotation": [
+              {
+                "clr": "System.Double",
+                "value": 0.125,
+                "bits": "3fc0000000000000",
+                "text": "0.125"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.25,
+                "bits": "3fd0000000000000",
+                "text": "0.25"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.5,
+                "bits": "3fe0000000000000",
+                "text": "0.5"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.875,
+                "bits": "3fec000000000000",
+                "text": "0.875"
+              }
+            ],
+            "velocity": [
+              23.00000003,
+              24.00000003,
+              25.00000003
+            ],
+            "touch_st": [
+              4.00000003,
+              5.00000003,
+              6.00000003
+            ],
+            "touch_normal": [
+              7.00000003,
+              8.000000029999999,
+              9.000000029999999
+            ],
+            "touch_binormal": [
+              10.000000029999999,
+              11.000000029999999,
+              12.000000029999999
+            ],
+            "touch_pos": [
+              13.000000029999999,
+              14.000000029999999,
+              15.000000029999999
+            ],
+            "touch_uv": [
+              16.00000003,
+              17.00000003,
+              18.00000003
+            ],
+            "touch_face": 6
+          }
+        ]
+      }
+    ],
+    "queue_aliases": [
+      {
+        "left": "event0/0",
+        "right": "event0/1",
+        "same_list": true,
+        "same_data": true
+      }
+    ],
+    "frames": [
+      {
+        "function": "default state_entry",
+        "call_no": 1,
+        "slots": 2,
+        "slot_types": [
+          "EventHelpersInstance",
+          "System.Int32"
+        ],
+        "slot_values": [
+          {
+            "type": "unsupported",
+            "clr": "EventHelpersInstance",
+            "value": "EventHelpersInstance"
+          },
+          {
+            "type": "integer",
+            "clr": "System.Int32",
+            "value": 0
+          }
+        ],
+        "wait_deadline_utc_ticks": null
+      }
+    ]
+  },
+  "after_followup": null,
+  "after_load": {
+    "globals": {
+      "result": {
+        "type": "list",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+        "value": []
+      },
+      "shared": {
+        "type": "list",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+        "value": [
+          {
+            "type": "float",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLFloat",
+            "value": 1.234567891,
+            "bits": "3ff3c0ca42c8964b"
+          },
+          {
+            "type": "string",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+            "value": "nested",
+            "utf16": [
+              110,
+              101,
+              115,
+              116,
+              101,
+              100
+            ]
+          }
+        ]
+      }
+    },
+    "event_code": "state_entry",
+    "call_mode": 0,
+    "sleep_until_ticks": 0,
+    "object_description": "",
+    "event_arguments": [],
+    "state_index": 0,
+    "new_state_index": -1,
+    "initialize_globals": false,
+    "running": true,
+    "detectors": [
+      {
+        "key": "11111111-2222-3333-4444-555555555555",
+        "owner": "22222222-3333-4444-5555-666666666666",
+        "group": "33333333-4444-5555-6666-777777777777",
+        "name": "original rich detector 3",
+        "link_number": 5,
+        "type": 11,
+        "grab": [
+          3.125,
+          3.25,
+          3.5
+        ],
+        "position": [
+          13,
+          14,
+          15
+        ],
+        "rotation": [
+          {
+            "clr": "System.Double",
+            "value": 0.125,
+            "bits": "3fc0000000000000",
+            "text": "0.125"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.25,
+            "bits": "3fd0000000000000",
+            "text": "0.25"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.5,
+            "bits": "3fe0000000000000",
+            "text": "0.5"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.875,
+            "bits": "3fec000000000000",
+            "text": "0.875"
+          }
+        ],
+        "velocity": [
+          23,
+          24,
+          25
+        ],
+        "touch_st": [
+          -1,
+          -1,
+          0
+        ],
+        "touch_normal": [
+          0,
+          0,
+          0
+        ],
+        "touch_binormal": [
+          0,
+          0,
+          0
+        ],
+        "touch_pos": [
+          0,
+          0,
+          0
+        ],
+        "touch_uv": [
+          -1,
+          -1,
+          0
+        ],
+        "touch_face": -1
+      }
+    ],
+    "queue": [
+      {
+        "name": "touch_start",
+        "arguments": [
+          {
+            "type": "list",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+            "value": [
+              {
+                "type": "float",
+                "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLFloat",
+                "value": 1.234568,
+                "bits": "3ff3c0ca600b0293"
+              },
+              {
+                "type": "string",
+                "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+                "value": "nested",
+                "utf16": [
+                  110,
+                  101,
+                  115,
+                  116,
+                  101,
+                  100
+                ]
+              }
+            ]
+          },
+          {
+            "type": "list",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+            "value": [
+              {
+                "type": "float",
+                "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLFloat",
+                "value": 1.234568,
+                "bits": "3ff3c0ca600b0293"
+              },
+              {
+                "type": "string",
+                "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+                "value": "nested",
+                "utf16": [
+                  110,
+                  101,
+                  115,
+                  116,
+                  101,
+                  100
+                ]
+              }
+            ]
+          }
+        ],
+        "detectors": [
+          {
+            "key": "11111111-2222-3333-4444-555555555555",
+            "owner": "22222222-3333-4444-5555-666666666666",
+            "group": "33333333-4444-5555-6666-777777777777",
+            "name": "original rich detector 3",
+            "link_number": 5,
+            "type": 11,
+            "grab": [
+              3.125,
+              3.25,
+              3.5
+            ],
+            "position": [
+              13,
+              14,
+              15
+            ],
+            "rotation": [
+              {
+                "clr": "System.Double",
+                "value": 0.125,
+                "bits": "3fc0000000000000",
+                "text": "0.125"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.25,
+                "bits": "3fd0000000000000",
+                "text": "0.25"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.5,
+                "bits": "3fe0000000000000",
+                "text": "0.5"
+              },
+              {
+                "clr": "System.Double",
+                "value": 0.875,
+                "bits": "3fec000000000000",
+                "text": "0.875"
+              }
+            ],
+            "velocity": [
+              23,
+              24,
+              25
+            ],
+            "touch_st": [
+              -1,
+              -1,
+              0
+            ],
+            "touch_normal": [
+              0,
+              0,
+              0
+            ],
+            "touch_binormal": [
+              0,
+              0,
+              0
+            ],
+            "touch_pos": [
+              0,
+              0,
+              0
+            ],
+            "touch_uv": [
+              -1,
+              -1,
+              0
+            ],
+            "touch_face": -1
+          }
+        ]
+      }
+    ],
+    "queue_aliases": [
+      {
+        "left": "event0/0",
+        "right": "event0/1",
+        "same_list": false,
+        "same_data": false
+      }
+    ],
+    "frames": [
+      {
+        "function": "default state_entry",
+        "call_no": 1,
+        "slots": 2,
+        "slot_types": [
+          "EventHelpersInstance",
+          "System.Int32"
+        ],
+        "slot_values": [
+          {
+            "type": "unsupported",
+            "clr": "EventHelpersInstance",
+            "value": "EventHelpersInstance"
+          },
+          {
+            "type": "integer",
+            "clr": "System.Int32",
+            "value": 0
+          }
+        ],
+        "wait_deadline_utc_ticks": null
+      }
+    ]
+  },
+  "after_stop": null,
+  "after_restart_wait": null,
+  "resume_exception": null,
+  "final": {
+    "globals": {
+      "result": {
+        "type": "list",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+        "value": [
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 21
+          },
+          {
+            "type": "list",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+            "value": [
+              {
+                "type": "float",
+                "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLFloat",
+                "value": 1.234568,
+                "bits": "3ff3c0ca600b0293"
+              },
+              {
+                "type": "string",
+                "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+                "value": "nested",
+                "utf16": [
+                  110,
+                  101,
+                  115,
+                  116,
+                  101,
+                  100
+                ]
+              }
+            ]
+          },
+          {
+            "type": "list",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+            "value": [
+              {
+                "type": "float",
+                "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLFloat",
+                "value": 1.234568,
+                "bits": "3ff3c0ca600b0293"
+              },
+              {
+                "type": "string",
+                "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+                "value": "nested",
+                "utf16": [
+                  110,
+                  101,
+                  115,
+                  116,
+                  101,
+                  100
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "shared": {
+        "type": "list",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+        "value": [
+          {
+            "type": "float",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLFloat",
+            "value": 1.234567891,
+            "bits": "3ff3c0ca42c8964b"
+          },
+          {
+            "type": "string",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+            "value": "nested",
+            "utf16": [
+              110,
+              101,
+              115,
+              116,
+              101,
+              100
+            ]
+          }
+        ]
+      }
+    },
+    "event_code": "None",
+    "call_mode": 0,
+    "sleep_until_ticks": 0,
+    "object_description": "",
+    "event_arguments": null,
+    "state_index": 0,
+    "new_state_index": -1,
+    "initialize_globals": false,
+    "running": true,
+    "detectors": [
+      {
+        "key": "11111111-2222-3333-4444-555555555555",
+        "owner": "22222222-3333-4444-5555-666666666666",
+        "group": "33333333-4444-5555-6666-777777777777",
+        "name": "original rich detector 3",
+        "link_number": 5,
+        "type": 11,
+        "grab": [
+          3.125,
+          3.25,
+          3.5
+        ],
+        "position": [
+          13,
+          14,
+          15
+        ],
+        "rotation": [
+          {
+            "clr": "System.Double",
+            "value": 0.125,
+            "bits": "3fc0000000000000",
+            "text": "0.125"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.25,
+            "bits": "3fd0000000000000",
+            "text": "0.25"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.5,
+            "bits": "3fe0000000000000",
+            "text": "0.5"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.875,
+            "bits": "3fec000000000000",
+            "text": "0.875"
+          }
+        ],
+        "velocity": [
+          23,
+          24,
+          25
+        ],
+        "touch_st": [
+          -1,
+          -1,
+          0
+        ],
+        "touch_normal": [
+          0,
+          0,
+          0
+        ],
+        "touch_binormal": [
+          0,
+          0,
+          0
+        ],
+        "touch_pos": [
+          0,
+          0,
+          0
+        ],
+        "touch_uv": [
+          -1,
+          -1,
+          0
+        ],
+        "touch_face": -1
+      }
+    ],
+    "queue": [],
+    "queue_aliases": [],
+    "frames": []
+  },
+  "incomplete_scene_resource_boundary": false,
+  "scheduler_guard_boundary": false,
+  "stop_scheduler_context": null,
+  "methodology": "Actual unchanged CodeGen source Enqueue/real llSleep, base CheckRunWork and private production MigrateOutEventHandler plus AppendXMLObjectArray/RestoreEventQueue. raw_backend_control alone uses actual external PostEvent input. Distinct stage exceptions, CLR types, IEEE bits, UTF16 and list alias pairs are recorded; live and migrated dequeue routes are independent.",
+  "sha256": {
+    "cache_key.txt": "4ddc00c00a90692c9e71d2081aa558df3c08e09f559ef933977cf934fa6a3961",
+    "detect-array.xml": "a54ca4e5f26d31a98b63cca7e3c95a199a39e5bdc40fb23eb9c8287d8de2c615",
+    "event-queue.xml": "992564491c917f1fa1fc2be0ab2985c3521a826318fcab59bdc7cba958e111a9",
+    "original.il.txt": "693da4a2b26945c0b7fc92204031bfab478b12302b763126d8d28f3ad22f4b2c",
+    "original.yobj": "0504b3ea1b3b66ca934d5e93b3b5b8ef1e6cf2ce2cca9df0b6099e6933539f1e",
+    "permissive-control.bin": "172561e16a1c5fe89a292fabaccbc6784985d3548a62c4dab8f53084dd37c6ea",
+    "snapshot.bin": "172561e16a1c5fe89a292fabaccbc6784985d3548a62c4dab8f53084dd37c6ea",
+    "source.lsl": "2b0ecfd3ff64a7d65f74906b7f05ebff479618783e72323c5176a023f304554d",
+    "generator_source": "6665505c219c8f06f1af6d93f0423b470dccb19c980bd3b87d1fe383eab01905",
+    "generator_assembly": "0eb1b792e89d75c10232881071d05584d9fe132dcbfeeca7fbd6bd8683fa1588",
+    "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+    "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+    "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+    "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+    "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+    "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+    "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+    "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+    "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+    "original_source_XMRInstCapture.cs": "775f1d83bd4610f788891269ea9ea08b1f79cf4bf3b44300d926f49c8a277cbd",
+    "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+    "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+    "original_source_Helpers.cs": "96b7c3090cdded9c12e986bc538705272eae4c0fc12f01deab8f0f1bb94c7bcf",
+    "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+    "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+    "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+    "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+    "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+    "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+    "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+  }
+}

@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
+
 namespace opensim::scene {
 framework::Vector3 clamp_default_landing(framework::Vector3 pos, std::uint32_t width, std::uint32_t height) {
     constexpr float border = 5.f;
@@ -13,8 +14,8 @@ framework::Vector3 clamp_default_landing(framework::Vector3 pos, std::uint32_t w
 }
 
 framework::Vector3 local_teleport_position(framework::Vector3 pos, std::uint32_t width, std::uint32_t height,
-                                          std::optional<float> avatar_height,
-                                          const std::function<float(float, float)>& ground_height) {
+                                           std::optional<float> avatar_height,
+                                           const std::function<float(float, float)> &ground_height) {
     if (!ground_height)
         throw std::invalid_argument("Ground height backend required");
     if (pos.x < 0 || pos.y < 0 || pos.x >= static_cast<float>(width) || pos.y >= static_cast<float>(height))
@@ -28,8 +29,7 @@ framework::Vector3 local_teleport_position(framework::Vector3 pos, std::uint32_t
 }
 
 framework::Vector3 root_landing_position(framework::Vector3 pos, std::uint32_t width, std::uint32_t height,
-                                         float avatar_height,
-                                         const std::function<float(float, float)>& ground_height) {
+                                         float avatar_height, const std::function<float(float, float)> &ground_height) {
     if (!ground_height)
         throw std::invalid_argument("Ground height backend required");
     if (pos.x < 0 || pos.y < 0 || pos.x >= static_cast<float>(width) || pos.y >= static_cast<float>(height)) {
@@ -51,4 +51,4 @@ framework::Vector3 root_landing_position(framework::Vector3 pos, std::uint32_t w
         pos.z = ground;
     return pos;
 }
-}
+} // namespace opensim::scene

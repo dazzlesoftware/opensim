@@ -3,8 +3,9 @@
 #include "opensim/scene/default_animations.hpp"
 #include <pugixml.hpp>
 #include <fstream>
+
 namespace opensim::scene {
-DefaultAnimations::DefaultAnimations(const std::filesystem::path& file) {
+DefaultAnimations::DefaultAnimations(const std::filesystem::path &file) {
     std::ifstream input(file, std::ios::binary);
     if (!input)
         throw std::runtime_error("Cannot open default animation catalog");
@@ -29,9 +30,10 @@ DefaultAnimations::DefaultAnimations(const std::filesystem::path& file) {
             states.emplace(id, std::move(state));
     }
 }
+
 framework::Uuid DefaultAnimations::resolve(std::string key) const {
     // Scene request threads use invariant culture; bundled catalog keys are ASCII.
-    for (auto& c : key)
+    for (auto &c : key)
         if (c >= 'a' && c <= 'z')
             c = static_cast<char>(c - 'a' + 'A');
     auto found = by_name.find(key);
@@ -42,8 +44,9 @@ framework::Uuid DefaultAnimations::resolve(std::string key) const {
         return id;
     return {};
 }
+
 std::string DefaultAnimations::name(framework::Uuid id) const {
     auto found = by_id.find(id);
     return found == by_id.end() ? id.str() : found->second;
 }
-}
+} // namespace opensim::scene

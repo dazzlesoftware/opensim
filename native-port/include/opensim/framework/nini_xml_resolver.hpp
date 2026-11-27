@@ -3,10 +3,11 @@
 #pragma once
 #include "opensim/framework/nini_xml_uri_reader.hpp"
 #include "opensim/framework/config_uri_object.hpp"
+
 namespace opensim::framework {
 class NiniXmlResolverPolicy;
 ConfigUriObjectPtr native_nini_xml_resolve_uri(ConfigUriObjectPtr, NiniWriterText,
-                                               const std::shared_ptr<ConfigUriObjectBackend>&);
+                                               const std::shared_ptr<ConfigUriObjectBackend> &);
 // The common native URI operations and non-file HTTP transport are required;
 // file entities use the actual synchronous FileStream1 implementation.
 std::shared_ptr<NiniXmlUriReaderBackend> native_nini_xml_url_reader_backend(
@@ -20,4 +21,4 @@ std::shared_ptr<NiniXmlUriReaderBackend> native_nini_xml_default_uri_reader_back
     std::function<std::shared_ptr<NativeNiniXmlByteInput>(ConfigUriObjectPtr)>,
     std::optional<bool> disable_file_locking = {},
     std::function<std::shared_ptr<NiniXmlUriReaderResolver>()> explicit_reader_resolver = {});
-}
+} // namespace opensim::framework

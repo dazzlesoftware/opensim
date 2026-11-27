@@ -1,0 +1,1 @@
+YOption chars;string text;integer length;integer unit;default{state_entry(){text=llGetSubString("😀",0,0);length=llStringLength(text);unit=(integer)text[0];}}

@@ -13,24 +13,28 @@
 #include <iostream>
 #include <sstream>
 #include <algorithm>
+
 namespace opensim::framework {
 struct ConfigHttpWindowsProxyFixture {
-    static auto cache(ConfigHttpWindowsProxy& proxy) {
+    static auto cache(ConfigHttpWindowsProxy &proxy) {
         return proxy.cache_;
     }
 };
+
 struct ConfigHttpFailedProxyCacheFixture {
-    static std::vector<int> ports(ConfigHttpFailedProxyCache& cache) {
+    static std::vector<int> ports(ConfigHttpFailedProxyCache &cache) {
         std::lock_guard lock(cache.mutex_);
         std::vector<int> result;
-        for (auto& e : cache.entries_)
+        for (auto &e : cache.entries_)
             result.push_back(e.uri->http_components()->port());
         std::sort(result.begin(), result.end());
         return result;
     }
 };
-}
+} // namespace opensim::framework
+
 using namespace opensim::framework;
+
 std::string hex(std::u16string_view s) {
     std::string t;
     for (auto c : s)
@@ -38,7 +42,8 @@ std::string hex(std::u16string_view s) {
             t += "0123456789abcdef"[(c >> n) & 15];
     return t;
 }
-std::string byteshex(const std::vector<std::uint8_t>& bytes) {
+
+std::string byteshex(const std::vector<std::uint8_t> &bytes) {
     std::string out;
     for (auto c : bytes) {
         out += "0123456789abcdef"[c >> 4];
@@ -46,43 +51,48 @@ std::string byteshex(const std::vector<std::uint8_t>& bytes) {
     }
     return out;
 }
+
 std::string description(std::string type, std::uint32_t hr, int code, std::u16string_view message) {
     std::ostringstream out;
     out << type << ":" << std::hex << hr << ":" << std::dec << code << ":" << hex(message);
     return out.str();
 }
+
 std::string error(std::exception_ptr pointer);
-std::string header_error(const ConfigHttpHeaderError& e) {
+
+std::string header_error(const ConfigHttpHeaderError &e) {
     return description(e.source_type, e.hresult, e.request_error, e.message) +
            (e.inner ? "|" + header_error(*e.inner) : "");
 }
+
 std::string error(std::exception_ptr pointer) {
     try {
         std::rethrow_exception(pointer);
-    } catch (const ConfigHttpConnectionError& e) {
+    } catch (const ConfigHttpConnectionError &e) {
         return description(e.source_type, e.hresult, e.request_error, e.message) +
                (e.inner ? "|" + error(e.inner) : "");
-    } catch (const ConfigHttpReadError& e) {
+    } catch (const ConfigHttpReadError &e) {
         return description(e.source_type, e.hresult, e.request_error, e.message) +
                (e.inner ? "|" + error(e.inner) : "");
-    } catch (const ConfigHttpSocketError& e) {
+    } catch (const ConfigHttpSocketError &e) {
         return description(e.source_type, e.hresult, e.socket_error, e.message);
-    } catch (const ConfigHttpHeaderError& e) {
+    } catch (const ConfigHttpHeaderError &e) {
         return header_error(e);
-    } catch (const ConfigXmlHttpError& e) {
+    } catch (const ConfigXmlHttpError &e) {
         return description(e.source_type, e.hresult, 0, e.message);
-    } catch (const ConfigUriComponentsError& e) {
+    } catch (const ConfigUriComponentsError &e) {
         return description(e.source_type, e.hresult, -1, e.message);
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         return "NATIVE:" + std::string(e.what());
     }
 }
+
 struct TracePlan : ConfigXmlHttpProxyRoutePlan {
     std::shared_ptr<ConfigXmlHttpProxyRoutePlan> inner;
-    std::vector<int>& trace;
-    TracePlan(std::shared_ptr<ConfigXmlHttpProxyRoutePlan> p, std::vector<int>& t)
-        : inner(std::move(p)), trace(t) {
-    }
+    std::vector<int> &trace;
+
+    TracePlan(std::shared_ptr<ConfigXmlHttpProxyRoutePlan> p, std::vector<int> &t) : inner(std::move(p)), trace(t) {}
+
     std::optional<ConfigXmlHttpRoute> current() override {
         auto route = inner->current();
         if (!route || route->host != "127.0.0.1")
@@ -90,26 +100,31 @@ struct TracePlan : ConfigXmlHttpProxyRoutePlan {
         trace.push_back(route ? route->port : 8123);
         return route;
     }
+
     bool advance() override {
         return inner->advance();
     }
 };
+
 struct TraceProvider : ConfigXmlHttpProxyProvider {
     std::shared_ptr<ConfigXmlHttpProxyProvider> inner;
-    std::vector<int>& trace;
-    TraceProvider(std::shared_ptr<ConfigXmlHttpProxyProvider> p, std::vector<int>& t)
-        : inner(std::move(p)), trace(t) {
-    }
+    std::vector<int> &trace;
+
+    TraceProvider(std::shared_ptr<ConfigXmlHttpProxyProvider> p, std::vector<int> &t) : inner(std::move(p)), trace(t) {}
+
     std::shared_ptr<ConfigXmlCredentials> credentials() const override {
         return inner->credentials();
     }
+
     bool default_credentials_used() const override {
         return inner->default_credentials_used();
     }
-    std::shared_ptr<ConfigXmlHttpProxyRoutePlan> routes(const std::shared_ptr<ConfigXmlUri>& uri) override {
+
+    std::shared_ptr<ConfigXmlHttpProxyRoutePlan> routes(const std::shared_ptr<ConfigXmlUri> &uri) override {
         return std::make_shared<TracePlan>(inner->routes(uri), trace);
     }
 };
+
 int unit() {
     if (config_xml_http_proxy_retryable({}) ||
         config_xml_http_proxy_retryable(std::make_exception_ptr(std::runtime_error("fatal"))))
@@ -127,12 +142,13 @@ int unit() {
     headers.retry_on_connection_failure = false;
     if (config_xml_http_proxy_retryable(std::make_exception_ptr(headers)))
         return 5;
-    if (config_xml_http_proxy_retryable(std::make_exception_ptr(
-            ConfigHttpReadError("System.Net.Http.HttpRequestException", u"read", 0, {}))))
+    if (config_xml_http_proxy_retryable(
+            std::make_exception_ptr(ConfigHttpReadError("System.Net.Http.HttpRequestException", u"read", 0, {}))))
         return 6;
     return 0;
 }
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     if (argc == 2 && std::string(argv[1]) == "--unit")
         return unit();
     if (argc != 3)
@@ -156,8 +172,8 @@ int main(int argc, char** argv) {
 #else
         auto platform = ConfigHttpEnvironmentProxyPlatform::Unix;
 #endif
-        proxy = ConfigHttpEnvironmentProxy::try_create(
-            native_config_http_environment_proxy_backend(environment), platform);
+        proxy =
+            ConfigHttpEnvironmentProxy::try_create(native_config_http_environment_proxy_backend(environment), platform);
     } else {
         auto windows = ConfigHttpWindowsProxy::try_create(options);
         cache = ConfigHttpWindowsProxyFixture::cache(*windows);
@@ -177,16 +193,16 @@ int main(int argc, char** argv) {
     s.proxy_provider = [&](auto selected, bool explicit_proxy) {
         return std::make_shared<TraceProvider>(factory(selected, explicit_proxy), trace);
     };
-    auto backend = config_xml_native_http_backend(config_xml_bind_typed_http(
-        s, objects, uris, [] { return native_invariant_config_http_cookies_backend(); }));
+    auto backend = config_xml_native_http_backend(
+        config_xml_bind_typed_http(s, objects, uris, [] { return native_invariant_config_http_cookies_backend(); }));
     auto handler = backend.new_handler();
     handler->proxy(proxy);
     auto client = backend.new_client(handler);
     for (int request = 0; request < 2; ++request) {
         try {
-            auto uri = objects.wrap(
-                uris.create(nini_writer_text(utf16(std::string("http://target.example:8123") + argv[2])),
-                            ConfigUriObjectKind::Absolute));
+            auto uri =
+                objects.wrap(uris.create(nini_writer_text(utf16(std::string("http://target.example:8123") + argv[2])),
+                                         ConfigUriObjectKind::Absolute));
             auto stream = client->get_stream(uri);
             auto bytes = stream->copy_to_memory();
             std::cout << "OK:" << byteshex(bytes) << "\n";

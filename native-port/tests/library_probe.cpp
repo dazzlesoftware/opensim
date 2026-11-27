@@ -33,9 +33,10 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sstream>
 using namespace opensim::services;
 using opensim::framework::Uuid;
-std::string json_value(const opensim::network::Value& value) {
+
+std::string json_value(const opensim::network::Value &value) {
     using V = opensim::network::Value;
-    auto quote = [](const std::string& text) {
+    auto quote = [](const std::string &text) {
         auto encoded = opensim::network::json_strings({{"", text}});
         return encoded.substr(4, encoded.size() - 5);
     };
@@ -46,7 +47,7 @@ std::string json_value(const opensim::network::Value& value) {
     std::string result;
     if (value.kind == V::Kind::Array) {
         result = "[";
-        for (const auto& item : value.array) {
+        for (const auto &item : value.array) {
             if (result.size() > 1)
                 result += ',';
             result += json_value(item);
@@ -55,7 +56,7 @@ std::string json_value(const opensim::network::Value& value) {
     }
     if (value.kind == V::Kind::Map) {
         result = "{";
-        for (const auto& [key, item] : value.map) {
+        for (const auto &[key, item] : value.map) {
             if (result.size() > 1)
                 result += ',';
             result += quote(key) + ":" + json_value(item);
@@ -64,6 +65,7 @@ std::string json_value(const opensim::network::Value& value) {
     }
     return "null";
 }
+
 int tree_test() {
     auto root = std::make_shared<InventoryFolderTree>();
     root->id = Uuid("00000000-0000-0000-0000-000000000001");
@@ -82,8 +84,7 @@ int tree_test() {
     checks.push_back(child->owner == root->owner && child->parent == root->id && child->type == -1 &&
                      child->version == 0);
     checks.push_back(!root->create_child(a, "Duplicate", 1));
-    checks.push_back(root->find_item(i) == item && root->find_asset(a) == item &&
-                     root->find_folder(b) == nested);
+    checks.push_back(root->find_item(i) == item && root->find_asset(a) == item && root->find_folder(b) == nested);
     checks.push_back(!root->find_type(6) && child->find_type(6) == nested);
     checks.push_back(root->find_folder_path("\xe2\x80\x83 A/B \xc2\xa0") == nested);
     checks.push_back(!root->find_folder_path("A//B") && !root->find_folder_path("/A"));
@@ -115,7 +116,7 @@ int tree_test() {
 #include <fcntl.h>
 #include <io.h>
 #endif
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
 #ifdef _WIN32
     _setmode(_fileno(stdout), _O_BINARY);
 #endif
@@ -126,8 +127,7 @@ int main(int argc, char** argv) {
             const auto seed = std::stoi(argv[2]);
             auto id = [](int number) {
                 std::ostringstream text;
-                text << "00000000-0000-0000-0000-" << std::hex << std::setfill('0') << std::setw(12)
-                     << number;
+                text << "00000000-0000-0000-0000-" << std::hex << std::setfill('0') << std::setw(12) << number;
                 return Uuid(text.str());
             };
             std::optional<std::vector<InventoryFolder>> folders;
@@ -154,15 +154,15 @@ int main(int argc, char** argv) {
             return 2;
         LibraryService library(argv[1], "OpenSim Library");
         std::vector<std::string> rows;
-        for (const auto& folder : library.ordered_folders()) {
+        for (const auto &folder : library.ordered_folders()) {
             std::ostringstream row;
-            row << "F|" << folder->id.str() << '|' << folder->parent.str() << '|' << folder->owner.str()
-                << '|' << folder->name << '|' << folder->type << '|' << folder->version;
+            row << "F|" << folder->id.str() << '|' << folder->parent.str() << '|' << folder->owner.str() << '|'
+                << folder->name << '|' << folder->type << '|' << folder->version;
             rows.push_back(row.str());
-            for (const auto& item : folder->items()) {
+            for (const auto &item : folder->items()) {
                 std::ostringstream value;
-                value << "I|" << item->id.str() << '|' << item->parent.str() << '|' << item->owner.str()
-                      << '|' << item->creator_id << '|' << item->asset_id.str() << '|' << item->name << '|'
+                value << "I|" << item->id.str() << '|' << item->parent.str() << '|' << item->owner.str() << '|'
+                      << item->creator_id << '|' << item->asset_id.str() << '|' << item->name << '|'
                       << item->description << '|' << item->inventory_type << '|' << item->asset_type << '|'
                       << static_cast<std::uint32_t>(item->base_permissions) << '|'
                       << static_cast<std::uint32_t>(item->current_permissions) << '|'
@@ -174,15 +174,15 @@ int main(int argc, char** argv) {
             }
         }
         std::sort(rows.begin(), rows.end());
-        for (const auto& row : rows)
+        for (const auto &row : rows)
             std::cout << row << '\n';
         std::vector<Uuid> ids;
-        for (const auto& folder : library.ordered_folders())
-            for (const auto& value : folder->items())
+        for (const auto &folder : library.ordered_folders())
+            for (const auto &value : folder->items())
                 ids.push_back(value->id);
         std::sort(ids.begin(), ids.end());
         ids.erase(std::unique(ids.begin(), ids.end()), ids.end());
-        for (const auto& id : ids) {
+        for (const auto &id : ids) {
             const auto value = library.item(id);
             std::cout << "G|" << id.str() << '|' << value->name << '|' << value->parent.str() << '\n';
         }
@@ -192,14 +192,14 @@ int main(int argc, char** argv) {
         }
         const auto folders = library.ordered_folders();
         std::cout << "O";
-        for (const auto& folder : folders)
+        for (const auto &folder : folders)
             std::cout << '|' << folder->id.str();
         std::cout << '\n';
         LibraryService second("missing-file.xml", "Ignored");
         std::cout << "S|" << (second.root() == library.root()) << '\n';
         auto values = library.multiple_items({Uuid{}});
         std::cout << "M|" << values.has_value() << '\n';
-    } catch (const std::exception& error) {
+    } catch (const std::exception &error) {
         std::cout << "ERROR:" << error.what() << '\n';
         return 1;
     }

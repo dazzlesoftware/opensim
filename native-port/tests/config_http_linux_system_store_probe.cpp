@@ -1,6 +1,7 @@
 #include "opensim/framework/config_http_linux_system_store.hpp"
 #include <iostream>
-int main(int argc, char**) {
+
+int main(int argc, char **) {
     if (argc > 1) {
         auto now = std::chrono::steady_clock::time_point{};
         opensim::framework::ConfigHttpLinuxSystemStore store([&] { return now; });
@@ -12,7 +13,7 @@ int main(int argc, char**) {
             auto snapshot = store.collection();
             std::cout << (snapshot == previous ? 'S' : 'N');
             for (int root = 1; root >= 0; --root)
-                for (const auto& der : root ? snapshot->roots : snapshot->intermediates) {
+                for (const auto &der : root ? snapshot->roots : snapshot->intermediates) {
                     std::cout << ' ' << (root ? 'r' : 'i');
                     for (auto c : der)
                         std::cout << hex[c >> 4] << hex[c & 15];
@@ -26,7 +27,7 @@ int main(int argc, char**) {
     constexpr char hex[] = "0123456789abcdef";
     auto snapshot = store.collection();
     for (int root = 1; root >= 0; --root)
-        for (const auto& der : root ? snapshot->roots : snapshot->intermediates) {
+        for (const auto &der : root ? snapshot->roots : snapshot->intermediates) {
             std::cout << (root ? 'r' : 'i') << ' ';
             for (auto c : der)
                 std::cout << hex[c >> 4] << hex[c & 15];

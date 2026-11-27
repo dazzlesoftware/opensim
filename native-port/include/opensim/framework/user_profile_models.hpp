@@ -6,23 +6,28 @@
 #include "opensim/network/sdk_llsd_xml.hpp"
 #include "opensim/framework/text.hpp"
 #include "opensim/framework/uuid.hpp"
+
 namespace opensim::framework {
 enum class JsonRpcFieldKind { Uuid, Integer, Byte, Boolean, String, Other };
+
 struct JsonRpcFieldSchema {
     std::u16string name;
     JsonRpcFieldKind kind;
 };
+
 struct JsonRpcBoundField {
     std::u16string name;
     JsonRpcFieldKind kind;
     std::function<network::Value()> get;
-    std::function<void(const network::Value&)> set;
+    std::function<void(const network::Value &)> set;
     bool ignored = false;
 };
+
 class BoundJsonRpcMembers : public server::JsonRpcMembers {
   protected:
     virtual std::vector<JsonRpcBoundField> fields() = 0;
-    static JsonRpcBoundField bind(std::u16string name, Uuid& field) {
+
+    static JsonRpcBoundField bind(std::u16string name, Uuid &field) {
         return {std::move(name), JsonRpcFieldKind::Uuid,
                 [&field] {
                     network::Value value;
@@ -30,23 +35,26 @@ class BoundJsonRpcMembers : public server::JsonRpcMembers {
                     value.text = field.str();
                     return value;
                 },
-                [&field](const auto& value) { field = network::osd_uuid(value); }};
+                [&field](const auto &value) { field = network::osd_uuid(value); }};
     }
-    static JsonRpcBoundField bind(std::u16string name, std::int32_t& field) {
+
+    static JsonRpcBoundField bind(std::u16string name, std::int32_t &field) {
         return {std::move(name), JsonRpcFieldKind::Integer, [&field] { return network::Value(field); },
-                [&field](const auto& value) { field = network::osd_integer(value); }};
+                [&field](const auto &value) { field = network::osd_integer(value); }};
     }
-    static JsonRpcBoundField bind(std::u16string name, std::uint8_t& field) {
-        return {
-            std::move(name), JsonRpcFieldKind::Byte,
-            [&field] { return network::Value(static_cast<std::int32_t>(field)); },
-            [&field](const auto& value) { field = static_cast<std::uint8_t>(network::osd_integer(value)); }};
+
+    static JsonRpcBoundField bind(std::u16string name, std::uint8_t &field) {
+        return {std::move(name), JsonRpcFieldKind::Byte,
+                [&field] { return network::Value(static_cast<std::int32_t>(field)); },
+                [&field](const auto &value) { field = static_cast<std::uint8_t>(network::osd_integer(value)); }};
     }
-    static JsonRpcBoundField bind(std::u16string name, bool& field) {
+
+    static JsonRpcBoundField bind(std::u16string name, bool &field) {
         return {std::move(name), JsonRpcFieldKind::Boolean, [&field] { return network::Value(field); },
-                [&field](const auto& value) { field = network::osd_boolean(value); }};
+                [&field](const auto &value) { field = network::osd_boolean(value); }};
     }
-    static JsonRpcBoundField bind(std::u16string name, std::optional<std::u16string>& field) {
+
+    static JsonRpcBoundField bind(std::u16string name, std::optional<std::u16string> &field) {
         return {std::move(name), JsonRpcFieldKind::String,
                 [&field] {
                     if (!field)
@@ -55,35 +63,36 @@ class BoundJsonRpcMembers : public server::JsonRpcMembers {
                     value.sdk_string = std::make_shared<const std::u16string>(*field);
                     return value;
                 },
-                [&field](const auto& value) { field = network::osd_string_utf16(value); }};
+                [&field](const auto &value) { field = network::osd_string_utf16(value); }};
     }
 
   public:
     std::vector<JsonRpcFieldSchema> schema() {
         std::vector<JsonRpcFieldSchema> result;
-        for (auto& field : fields())
+        for (auto &field : fields())
             result.push_back({field.name, field.kind});
         return result;
     }
+
     network::Value serialize_members() override {
         network::Value result;
         result.kind = network::Value::Kind::Map;
-        for (auto& field : fields())
+        for (auto &field : fields())
             if (!field.ignored) {
                 auto value = field.get();
-                if (value.view().kind != network::Value::Kind::Undefined ||
-                    field.kind == JsonRpcFieldKind::String) {
+                if (value.view().kind != network::Value::Kind::Undefined || field.kind == JsonRpcFieldKind::String) {
                     auto name = network::sdk_map_key_bytes(field.name);
                     if (result.contains(name))
-                        throw std::invalid_argument(
-                            "An item with the same key has already been added. Key: " + utf8(field.name));
+                        throw std::invalid_argument("An item with the same key has already been added. Key: " +
+                                                    utf8(field.name));
                     result.set(std::move(name), std::move(value));
                 }
             }
         return result;
     }
-    void deserialize_members(const network::Value& data) override {
-        for (auto& field : fields())
+
+    void deserialize_members(const network::Value &data) override {
+        for (auto &field : fields())
             if (!field.ignored) {
                 auto name = network::sdk_map_key_bytes(field.name);
                 if (data.contains(name))
@@ -91,6 +100,7 @@ class BoundJsonRpcMembers : public server::JsonRpcMembers {
             }
     }
 };
+
 struct UserClassifiedAdd : BoundJsonRpcMembers {
     Uuid ClassifiedId{};
     Uuid CreatorId{};
@@ -110,23 +120,15 @@ struct UserClassifiedAdd : BoundJsonRpcMembers {
 
   protected:
     std::vector<JsonRpcBoundField> fields() override {
-        return {bind(u"ClassifiedId", ClassifiedId),
-                bind(u"CreatorId", CreatorId),
-                bind(u"CreationDate", CreationDate),
-                bind(u"ExpirationDate", ExpirationDate),
-                bind(u"Category", Category),
-                bind(u"Name", Name),
-                bind(u"Description", Description),
-                bind(u"ParcelId", ParcelId),
-                bind(u"ParentEstate", ParentEstate),
-                bind(u"SnapshotId", SnapshotId),
-                bind(u"SimName", SimName),
-                bind(u"GlobalPos", GlobalPos),
-                bind(u"ParcelName", ParcelName),
-                bind(u"Flags", Flags),
-                bind(u"Price", Price)};
+        return {
+            bind(u"ClassifiedId", ClassifiedId),     bind(u"CreatorId", CreatorId), bind(u"CreationDate", CreationDate),
+            bind(u"ExpirationDate", ExpirationDate), bind(u"Category", Category),   bind(u"Name", Name),
+            bind(u"Description", Description),       bind(u"ParcelId", ParcelId),   bind(u"ParentEstate", ParentEstate),
+            bind(u"SnapshotId", SnapshotId),         bind(u"SimName", SimName),     bind(u"GlobalPos", GlobalPos),
+            bind(u"ParcelName", ParcelName),         bind(u"Flags", Flags),         bind(u"Price", Price)};
     }
 };
+
 struct UserProfileProperties : BoundJsonRpcMembers {
     Uuid UserId{};
     Uuid PartnerId{};
@@ -161,6 +163,7 @@ struct UserProfileProperties : BoundJsonRpcMembers {
                 bind(u"FirstLifeText", FirstLifeText)};
     }
 };
+
 struct UserProfilePick : BoundJsonRpcMembers {
     Uuid PickId{};
     Uuid CreatorId{};
@@ -195,6 +198,7 @@ struct UserProfilePick : BoundJsonRpcMembers {
                 bind(u"Enabled", Enabled)};
     }
 };
+
 struct UserProfileNotes : BoundJsonRpcMembers {
     Uuid UserId{};
     Uuid TargetId{};
@@ -205,6 +209,7 @@ struct UserProfileNotes : BoundJsonRpcMembers {
         return {bind(u"UserId", UserId), bind(u"TargetId", TargetId), bind(u"Notes", Notes)};
     }
 };
+
 struct UserPreferences : BoundJsonRpcMembers {
     Uuid UserId{};
     bool IMViaEmail{};
@@ -217,6 +222,7 @@ struct UserPreferences : BoundJsonRpcMembers {
                 bind(u"EMail", EMail)};
     }
 };
+
 struct UserAccountProperties : BoundJsonRpcMembers {
     std::optional<std::u16string> EmailAddress = std::u16string(u"");
     std::optional<std::u16string> Firstname = std::u16string(u"");
@@ -226,10 +232,11 @@ struct UserAccountProperties : BoundJsonRpcMembers {
 
   protected:
     std::vector<JsonRpcBoundField> fields() override {
-        return {bind(u"EmailAddress", EmailAddress), bind(u"Firstname", Firstname),
-                bind(u"LastName", LastName), bind(u"Password", Password), bind(u"UserId", UserId)};
+        return {bind(u"EmailAddress", EmailAddress), bind(u"Firstname", Firstname), bind(u"LastName", LastName),
+                bind(u"Password", Password), bind(u"UserId", UserId)};
     }
 };
+
 struct UserAccountAuth : BoundJsonRpcMembers {
     std::optional<std::u16string> UserId = std::u16string(u"00000000-0000-0000-0000-000000000000");
     std::optional<std::u16string> Password = std::u16string(u"");
@@ -239,6 +246,7 @@ struct UserAccountAuth : BoundJsonRpcMembers {
         return {bind(u"UserId", UserId), bind(u"Password", Password)};
     }
 };
+
 struct UserAppData : BoundJsonRpcMembers {
     std::optional<std::u16string> TagId = std::u16string(u"");
     std::optional<std::u16string> DataKey = std::u16string(u"");
@@ -247,8 +255,7 @@ struct UserAppData : BoundJsonRpcMembers {
 
   protected:
     std::vector<JsonRpcBoundField> fields() override {
-        return {bind(u"TagId", TagId), bind(u"DataKey", DataKey), bind(u"UserId", UserId),
-                bind(u"DataVal", DataVal)};
+        return {bind(u"TagId", TagId), bind(u"DataKey", DataKey), bind(u"UserId", UserId), bind(u"DataVal", DataVal)};
     }
 };
-}
+} // namespace opensim::framework

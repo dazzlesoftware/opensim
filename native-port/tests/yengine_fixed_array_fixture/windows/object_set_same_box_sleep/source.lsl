@@ -1,0 +1,1 @@
+YOption arrays;YOption chars;object input;object value;object first;object second;integer same;integer global_same;default{state_entry(){input=xmrFixedArrayAllocO(2);value=(object)7;xmrFixedArraySetO(input,0,value);xmrFixedArraySetO(input,1,value);llSleep(0.1);first=xmrFixedArrayGetO(input,0);second=xmrFixedArrayGetO(input,1);same=(first==second);global_same=(first==value);}}

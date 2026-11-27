@@ -18,6 +18,7 @@
 #include <iomanip>
 using namespace opensim;
 using namespace scene;
+
 namespace {
 framework::Uuid id(int n) {
     if (n == -1)
@@ -30,6 +31,7 @@ framework::Uuid id(int n) {
     s << "00000000-0000-0000-0000-" << std::hex << std::setfill('0') << std::setw(12) << n;
     return framework::Uuid(s.str());
 }
+
 int number(framework::Uuid value) {
     for (int n : {-1, -2, -3})
         if (value == id(n))
@@ -39,6 +41,7 @@ int number(framework::Uuid value) {
         throw std::runtime_error("Full UUID");
     return n;
 }
+
 std::string label(framework::Uuid value) {
     try {
         return std::to_string(number(value));
@@ -46,7 +49,8 @@ std::string label(framework::Uuid value) {
         return value.str();
     }
 }
-std::string hex(const std::string& text) {
+
+std::string hex(const std::string &text) {
     std::string out;
     for (unsigned char c : text) {
         out += "0123456789abcdef"[c >> 4];
@@ -54,7 +58,8 @@ std::string hex(const std::string& text) {
     }
     return out;
 }
-std::vector<std::uint8_t> bytes(const std::string& text) {
+
+std::vector<std::uint8_t> bytes(const std::string &text) {
     std::vector<std::uint8_t> out;
     if (text == "-" || text == ".")
         return out;
@@ -62,13 +67,16 @@ std::vector<std::uint8_t> bytes(const std::string& text) {
         out.push_back(static_cast<std::uint8_t>(std::stoi(text.substr(i, 2), nullptr, 16)));
     return out;
 }
+
 #include "live_asset_gather_fixture.hpp"
 #include "scene_asset_gather_fixture.hpp"
+
 struct Edge {
     int child;
     std::int8_t type;
     int mode;
 };
+
 struct Profile {
     int mode = 0;
     std::int8_t type = 0;
@@ -76,6 +84,7 @@ struct Profile {
     std::vector<Edge> edges;
     framework::AssetBytes raw;
 };
+
 struct Probe {
     std::map<int, Profile> assets;
     std::shared_ptr<UuidGathererState> state;
@@ -86,14 +95,17 @@ struct Probe {
     std::shared_ptr<LiveFixture> live;
     std::shared_ptr<UuidGathererBackend> backend;
     std::shared_ptr<SceneFixture> scene;
-    void log(const std::string& s) {
+
+    void log(const std::string &s) {
         trace.push_back(s);
     }
+
     void hook(int p) {
         if (point == p && ++seen == nth)
             throw std::runtime_error("fault");
     }
-    void inspect(UuidGatherer& g, const std::shared_ptr<framework::AssetBase>& a, const std::string& name) {
+
+    void inspect(UuidGatherer &g, const std::shared_ptr<framework::AssetBase> &a, const std::string &name) {
         if (formats) {
             if (name == "embedded")
                 g.inspect_embedded(*a->data);
@@ -133,6 +145,7 @@ struct Probe {
             }
         }
     }
+
     void init() {
         scene.reset();
         live.reset();
@@ -162,44 +175,44 @@ struct Probe {
             auto it = assets.find(n);
             if (it == assets.end() || it->second.mode == 0)
                 return UuidGathererBackend::Asset{};
-            auto& p = it->second;
+            auto &p = it->second;
             if (p.mode == 1)
                 throw std::runtime_error("fault");
             auto a = std::make_shared<framework::AssetBase>(key, "asset", p.type, "");
             if (p.mode != 2)
                 a->data =
-                    p.raw ? p.raw
-                          : std::make_shared<std::vector<std::uint8_t>>(static_cast<std::size_t>(p.length));
+                    p.raw ? p.raw : std::make_shared<std::vector<std::uint8_t>>(static_cast<std::size_t>(p.length));
             return a;
         };
-        b->error = [this](auto& s) {
+        b->error = [this](auto &s) {
             log("E:" + s);
             if (live)
                 live->hit(25, 0);
             hook(3);
         };
-        b->debug = [this](auto& s) {
+        b->debug = [this](auto &s) {
             log("D:" + s);
             hook(4);
         };
-        b->wearable = [this](auto& g, auto& a) { inspect(g, a, "wearable"); };
-        b->gesture = [this](auto& g, auto& a) { inspect(g, a, "gesture"); };
-        b->notecard = [this](auto& g, auto& a) { inspect(g, a, "notecard"); };
-        b->embedded = [this](auto& g, auto& a) { inspect(g, a, "embedded"); };
-        b->material = [this](auto& g, auto& a) { inspect(g, a, "material"); };
-        b->object = [this](auto& g, auto& a) { inspect(g, a, "object"); };
+        b->wearable = [this](auto &g, auto &a) { inspect(g, a, "wearable"); };
+        b->gesture = [this](auto &g, auto &a) { inspect(g, a, "gesture"); };
+        b->notecard = [this](auto &g, auto &a) { inspect(g, a, "notecard"); };
+        b->embedded = [this](auto &g, auto &a) { inspect(g, a, "embedded"); };
+        b->material = [this](auto &g, auto &a) { inspect(g, a, "material"); };
+        b->object = [this](auto &g, auto &a) { inspect(g, a, "object"); };
         backend = b;
-        for (auto& g : gatherers)
+        for (auto &g : gatherers)
             g = std::make_unique<UuidGatherer>(b, state);
     }
-    std::string execute(const std::string& line) {
+
+    std::string execute(const std::string &line) {
         std::istringstream in(line);
         std::string op, word;
         in >> op;
         int n = 0;
         if (op != "scan" && op != "chars" && op != "skip" && op != "index")
             in >> n;
-        auto& g = *gatherers[selected];
+        auto &g = *gatherers[selected];
         if (op == "init") {
             init();
             return "init";
@@ -226,7 +239,7 @@ struct Probe {
         }
         if (op == "raw") {
             in >> word;
-            auto& p = assets.at(n);
+            auto &p = assets.at(n);
             p.raw = word == "-" ? nullptr : std::make_shared<std::vector<std::uint8_t>>(bytes(word));
             p.length = p.raw ? static_cast<int>(p.raw->size()) : 0;
             return "raw";
@@ -284,7 +297,7 @@ struct Probe {
         }
         if (op == "order") {
             std::string result;
-            for (auto& [key, value] : state->gathered) {
+            for (auto &[key, value] : state->gathered) {
                 if (!result.empty())
                     result += ',';
                 result += label(key);
@@ -294,8 +307,8 @@ struct Probe {
         if (op == "scene") {
             int cancel, nth;
             in >> cancel >> nth;
-            auto fixture = std::make_shared<SceneFixture>(
-                n, cancel, nth, [this](auto& s) { log(s); }, [this](int p) { hook(p); });
+            auto fixture =
+                std::make_shared<SceneFixture>(n, cancel, nth, [this](auto &s) { log(s); }, [this](int p) { hook(p); });
             scene = fixture;
             live = fixture->live;
             try {
@@ -313,10 +326,10 @@ struct Probe {
             int sides, mutation, nth;
             in >> sides >> mutation >> nth;
             auto fixture = std::make_shared<LiveFixture>(
-                n, sides, mutation, nth, [this](auto& s) { log(s); }, [this](int p) { hook(p); });
+                n, sides, mutation, nth, [this](auto &s) { log(s); }, [this](int p) { hook(p); });
             live = fixture;
             try {
-                g.add_for_inspection(fixture->group, [this](auto& text) {
+                g.add_for_inspection(fixture->group, [this](auto &text) {
                     log("W:" + text);
                     live->hit(24, 0);
                 });
@@ -330,7 +343,7 @@ struct Probe {
         if (op == "index") {
             std::string source, pattern;
             in >> source >> pattern;
-            auto decode = [](const std::string& value) {
+            auto decode = [](const std::string &value) {
                 auto b = bytes(value);
                 std::u16string text;
                 for (std::size_t i = 0; i + 1 < b.size(); i += 2)
@@ -378,21 +391,22 @@ struct Probe {
         }
         throw std::runtime_error("command");
     }
+
     std::string snapshot() {
-        auto& g = *gatherers[selected];
+        auto &g = *gatherers[selected];
         std::string out;
         bool first = true;
         std::map<framework::Uuid, std::int8_t> sorted;
-        for (auto& [key, type] : state->gathered)
+        for (auto &[key, type] : state->gathered)
             sorted[key] = type;
-        for (auto& [key, type] : sorted) {
+        for (auto &[key, type] : sorted) {
             if (!first)
                 out += ',';
             first = false;
             out += label(key) + ":" + std::to_string(type);
         }
         out += '|';
-        for (auto* set : {&state->failed, &state->uncertain}) {
+        for (auto *set : {&state->failed, &state->uncertain}) {
             first = true;
             for (auto key : set->values()) {
                 if (!first)
@@ -414,26 +428,23 @@ struct Probe {
         return out;
     }
 };
-void require(bool ok, const char* message) {
+
+void require(bool ok, const char *message) {
     if (!ok)
         throw std::runtime_error(message);
 }
+
 void native_service() {
     auto cache = std::make_shared<services::FlotsamMemoryCache>(
-        services::FlotsamMemoryCache::Options{true, true, 3600, 120000, false, false, 0}, [] { return 0.; },
-        false);
-    auto put = [&](int n, int type, const std::string& text) {
+        services::FlotsamMemoryCache::Options{true, true, 3600, 120000, false, false, 0}, [] { return 0.; }, false);
+    auto put = [&](int n, int type, const std::string &text) {
         auto a = std::make_shared<framework::AssetBase>(id(n), "fixture", static_cast<std::int8_t>(type), "");
         a->data = std::make_shared<std::vector<std::uint8_t>>(text.begin(), text.end());
         cache->cache(a, false);
     };
-    put(1, 10,
-        "script " + id(2).str() + "  " + id(3).str() + "  " + id(7).str() + "  " + id(1).str() + " end");
-    put(2, 5,
-        "LLWearable version 22\nname\ndescription\n{\nparameters 1\n0 0.5\ntextures 1\n0 " + id(4).str() +
-            "\n");
-    put(3, 21,
-        "2\n0\n0\ntrigger\nreplace\n2\n0\nanim\n" + id(5).str() + "\n0\n1\nsound\n" + id(6).str() + "\n0\n");
+    put(1, 10, "script " + id(2).str() + "  " + id(3).str() + "  " + id(7).str() + "  " + id(1).str() + " end");
+    put(2, 5, "LLWearable version 22\nname\ndescription\n{\nparameters 1\n0 0.5\ntextures 1\n0 " + id(4).str() + "\n");
+    put(3, 21, "2\n0\n0\ntrigger\nreplace\n2\n0\nanim\n" + id(5).str() + "\n0\n1\nsound\n" + id(6).str() + "\n0\n");
     put(7, 7,
         "Linden text version 2\n{\nLLEmbeddedItems version 1\n{\ncount 0\n}\nText length 99\n" + id(8).str() +
             " end\n}");
@@ -442,29 +453,27 @@ void native_service() {
     std::vector<std::string> errors;
     UuidGatherer g(native_uuid_gatherer_backend(
         cache,
-        [&](auto&, auto&) {
+        [&](auto &, auto &) {
             ++object_calls;
             throw std::runtime_error("Unexpected object asset");
         },
-        [&](auto& text) { errors.push_back(text); }, [](auto&) {}));
+        [&](auto &text) { errors.push_back(text); }, [](auto &) {}));
     g.add_for_inspection(id(1));
     require(g.gather_all(), "native service graph gather");
     auto state = g.state();
-    require(
-        state->gathered.size() == 9 && g.asset_get_count == 5 && g.error_count == 0 &&
-            g.possible_not_asset_count == 0 && object_calls == 0 && errors.empty(),
-        "native text references traverse actual cache/service without fetching leaf textures/sounds/animations");
-    require(state->gathered.at(id(4)) == 0 && state->gathered.at(id(5)) == 20 &&
-                state->gathered.at(id(6)) == 1 && state->gathered.at(id(9)) == 0 &&
-                state->uncertain.size() == 1 && state->uncertain.contains(id(1)),
+    require(state->gathered.size() == 9 && g.asset_get_count == 5 && g.error_count == 0 &&
+                g.possible_not_asset_count == 0 && object_calls == 0 && errors.empty(),
+            "native text references traverse actual cache/service without fetching leaf textures/sounds/animations");
+    require(state->gathered.at(id(4)) == 0 && state->gathered.at(id(5)) == 20 && state->gathered.at(id(6)) == 1 &&
+                state->gathered.at(id(9)) == 0 && state->uncertain.size() == 1 && state->uncertain.contains(id(1)),
             "native typed leaf references preserve source self-reference uncertainty");
-    auto xml = [](const std::string& name, const std::string& body) {
+    auto xml = [](const std::string &name, const std::string &body) {
         return "<" + name + ">" + body + "</" + name + ">";
     };
     auto uuid_xml = [&](int n) { return xml("UUID", id(n).str()); };
-    auto binary_xml = [&](const std::string& name, const std::vector<std::uint8_t>& data) {
-        return xml(name, network::binary_base64(
-                             network::osd_from_binary(std::make_shared<std::vector<std::uint8_t>>(data))));
+    auto binary_xml = [&](const std::string &name, const std::vector<std::uint8_t> &data) {
+        return xml(name,
+                   network::binary_base64(network::osd_from_binary(std::make_shared<std::vector<std::uint8_t>>(data))));
     };
     framework::TextureEntry entry(id(13));
     entry.default_texture->material_id(id(8));
@@ -487,72 +496,68 @@ void native_service() {
                 binary_xml("ParticleSystem", particles) +
                 xml("TaskInventory",
                     xml("Item", xml("AssetID", uuid_xml(1))) + xml("Item", xml("AssetID", uuid_xml(17)))) +
-                binary_xml("MatOvrd",
-                           std::vector<std::uint8_t>(override_text.begin(), override_text.end()))));
+                binary_xml("MatOvrd", std::vector<std::uint8_t>(override_text.begin(), override_text.end()))));
     put(17, 6,
         xml("SceneObjectGroup",
             xml("SoundID", uuid_xml(18)) + xml("TaskInventory", xml("Item", xml("AssetID", uuid_xml(10))))));
     UuidGatherer objects(
-        native_uuid_gatherer_backend(cache, [&](auto& text) { errors.push_back(text); }, [](auto&) {}));
+        native_uuid_gatherer_backend(cache, [&](auto &text) { errors.push_back(text); }, [](auto &) {}));
     objects.add_for_inspection(id(10));
     require(objects.gather_all(), "native serialized object graph");
-    require(
-        objects.state()->gathered.size() == 18 && objects.asset_get_count == 7 && objects.error_count == 0 &&
-            errors.empty(),
-        "native serialized objects traverse textures, materials, particles, nested inventory and cyclic objects through actual cache/service");
+    require(objects.state()->gathered.size() == 18 && objects.asset_get_count == 7 && objects.error_count == 0 &&
+                errors.empty(),
+            "native serialized objects traverse textures, materials, particles, nested inventory and cyclic objects "
+            "through actual cache/service");
     require(objects.state()->gathered.at(id(15)) == 0 && objects.state()->gathered.at(id(16)) == 0 &&
                 objects.state()->gathered.at(id(18)) == 1,
             "native projection, particle and nested sound references");
-    auto live_backend =
-        native_uuid_gatherer_backend(cache, [&](auto& text) { errors.push_back(text); }, [](auto&) {});
+    auto live_backend = native_uuid_gatherer_backend(cache, [&](auto &text) { errors.push_back(text); }, [](auto &) {});
     ObjectAssetLinkset snapshot;
-    auto& root_part = snapshot.parts.emplace_back();
+    auto &root_part = snapshot.parts.emplace_back();
     root_part.object.texture_entry = framework::TextureEntry(id(201)).bytes();
     root_part.object.looped_sound = id(202);
     root_part.object.object_animations = {1, 0};
     const auto animation = id(203);
-    auto& animation_bytes = root_part.object.object_animations;
+    auto &animation_bytes = root_part.object.object_animations;
     animation_bytes.insert(animation_bytes.end(), animation.bytes().begin(), animation.bytes().end());
     animation_bytes.insert(animation_bytes.end(), {1, 'a'});
     root_part.object.dynamic_attributes_xml =
         "<llsd><map><key>OpenSim</key><map><key>Materials</key><map><key>Materials</key>"
-        "<array><map><key>Material</key><map><key>NormMap</key><uuid>" + id(204).str() +
-        "</uuid></map></map></array></map></map></map></llsd>";
-    auto& child_part = snapshot.parts.emplace_back();
+        "<array><map><key>Material</key><map><key>NormMap</key><uuid>" +
+        id(204).str() + "</uuid></map></map></array></map></map></map></llsd>";
+    auto &child_part = snapshot.parts.emplace_back();
     child_part.object.collision_sound = id(205);
-    auto& item = child_part.inventory.emplace_back();
+    auto &item = child_part.inventory.emplace_back();
     item.asset_id = id(206);
     item.type = 0;
     UuidGatherer snapshot_gatherer(live_backend);
-    snapshot_gatherer.add_for_inspection(gather_object_snapshot(std::move(snapshot)), [](auto&) {});
+    snapshot_gatherer.add_for_inspection(gather_object_snapshot(std::move(snapshot)), [](auto &) {});
     snapshot_gatherer.gather_all();
-    const auto& snapshot_assets = snapshot_gatherer.state()->gathered;
-    require(snapshot_assets.at(id(201)) == 0 && snapshot_assets.at(id(202)) == 1 &&
-                snapshot_assets.at(id(203)) == 20 && snapshot_assets.at(id(204)) == 0 &&
-                snapshot_assets.at(id(205)) == 1 && snapshot_assets.at(id(206)) == 0 && errors.empty(),
+    const auto &snapshot_assets = snapshot_gatherer.state()->gathered;
+    require(snapshot_assets.at(id(201)) == 0 && snapshot_assets.at(id(202)) == 1 && snapshot_assets.at(id(203)) == 20 &&
+                snapshot_assets.at(id(204)) == 0 && snapshot_assets.at(id(205)) == 1 &&
+                snapshot_assets.at(id(206)) == 0 && errors.empty(),
             "native scene snapshots preserve linked-part textures, sounds, animations, materials and inventory");
     services::GridRegion region;
     region.id = id(210);
     services::NullPresenceStore presence_store;
     services::PresenceService presence(presence_store);
     RegionPolicies policies;
-    policies.access = [](auto, const auto&, auto&) { return true; };
-    policies.authorize = [](const auto&, auto&) { return true; };
-    const auto environment = [](const char* type, const char* key, framework::Uuid texture) {
+    policies.background_admission = false;
+    policies.access = [](auto, const auto &, auto &) { return true; };
+    policies.authorize = [](const auto &, auto &) { return true; };
+    const auto environment = [](const char *type, const char *key, framework::Uuid texture) {
         using network::Value;
         EnvironmentDay day;
-        day.apply(Value::object({{"day_cycle", Value::object({
-            {"frames", Value::object({{"frame", Value::object({
-                {"type", Value(type)}, {key, Value(texture.str())}
-            })}})}
-        })}}));
+        day.apply(Value::object(
+            {{"day_cycle",
+              Value::object({{"frames", Value::object({{"frame", Value::object({{"type", Value(type)},
+                                                                                {key, Value(texture.str())}})}})}})}}));
         return day;
     };
     auto parcel = std::make_shared<ScriptParcel>();
     parcel->environment_day = environment("water", "normal_map", id(216));
-    policies.list_parcels = [parcel] {
-        return std::vector<std::shared_ptr<const ScriptParcel>>{parcel};
-    };
+    policies.list_parcels = [parcel] { return std::vector<std::shared_ptr<const ScriptParcel>>{parcel}; };
     RegionRuntime runtime(region, presence, std::move(policies));
     runtime.set_terrain_texture_assets({id(213), {}, {}, {}}, {id(214), {}, {}, {}});
     runtime.load_region_map_images(id(215), {});
@@ -571,10 +576,9 @@ void native_service() {
                 live_objects.front()->parts()->size() == 2,
             "runtime snapshots a live linkset with its root and child");
     UuidGatherer runtime_gatherer(live_backend);
-    runtime_gatherer.add_for_inspection(live_objects.front(), [](auto&) {});
+    runtime_gatherer.add_for_inspection(live_objects.front(), [](auto &) {});
     runtime.gather_region_asset_references(runtime_gatherer);
-    require(runtime_gatherer.state()->gathered.at(id(212)) == 1,
-            "runtime snapshot protects a linked child's sound");
+    require(runtime_gatherer.state()->gathered.at(id(212)) == 1, "runtime snapshot protects a linked child's sound");
     require(runtime_gatherer.state()->gathered.at(particle_texture) == 0,
             "runtime snapshot protects a linked child's particle texture");
     for (const auto asset : {id(213), id(214), id(215), id(216), id(217)})
@@ -589,7 +593,7 @@ void native_service() {
                 runtime_gatherer.state()->gathered.contains(id(220)) &&
                 !runtime_gatherer.state()->gathered.contains(id(221)),
             "bake collection selects both legacy and extended baked faces");
-    SceneFixture scan(0, 0, 1, [](auto&) {}, [](int) {});
+    SceneFixture scan(0, 0, 1, [](auto &) {}, [](int) {});
     scan.call(live_backend);
     require(scan.last && scan.last->failed.size() == 0 && scan.last->uncertain.size() == 0,
             "scene sweep clears source failure/uncertainty sets");
@@ -597,8 +601,7 @@ void native_service() {
                 scan.last->gathered.contains(id(20)) && scan.last->gathered.contains(id(30)) &&
                 scan.last->gathered.contains(id(88)),
             "actual native cache/service and live object/avatar/terrain/environment provider graph");
-    auto root =
-        std::filesystem::temp_directory_path() / ("opensim-live-gather-" + framework::Uuid::random().str());
+    auto root = std::filesystem::temp_directory_path() / ("opensim-live-gather-" + framework::Uuid::random().str());
     std::filesystem::create_directories(root / "a");
     auto protected_file = root / "a" / id(13).str(), stale_file = root / "a" / id(900).str();
     {
@@ -613,11 +616,11 @@ void native_service() {
         [&] {
             scan.call(live_backend);
             services::FlotsamProtectedAssets ids;
-            for (auto& [key, type] : scan.last->gathered)
+            for (auto &[key, type] : scan.last->gathered)
                 ids.insert(key);
             return ids;
         },
-        [] { return std::int64_t(0); }, [](auto&, auto&) {});
+        [] { return std::int64_t(0); }, [](auto &, auto &) {});
     services::FlotsamCacheCleaner cleaner({root, 0, 30000}, life, shared, cleanup);
     cleaner.clean_all(framework::AssetDateTime(3155378975999999999, 2));
     require(std::filesystem::exists(protected_file) && !std::filesystem::exists(stale_file),
@@ -626,6 +629,7 @@ void native_service() {
     std::filesystem::remove(root / "a");
     std::filesystem::remove(root);
 }
+
 void unit() {
     native_service();
     Probe p;
@@ -649,15 +653,16 @@ void unit() {
     bool rejected = false;
     try {
         UuidGatherer incomplete(std::make_shared<UuidGathererBackend>());
-    } catch (const std::invalid_argument&) {
+    } catch (const std::invalid_argument &) {
         rejected = true;
     }
     require(rejected, "missing inspectors rejected");
-    std::cout
-        << "PASS: recursive shared collector, cycle prevention, uncertain failure and mandatory inspector dependencies\n";
+    std::cout << "PASS: recursive shared collector, cycle prevention, uncertain failure and mandatory inspector "
+                 "dependencies\n";
 }
-}
-int main(int argc, char** argv) {
+} // namespace
+
+int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string(argv[1]) == "--probe") {
             Probe p;
@@ -672,7 +677,7 @@ int main(int argc, char** argv) {
                     result = "EX";
                 }
                 std::string trace;
-                for (auto& item : p.trace) {
+                for (auto &item : p.trace) {
                     if (!trace.empty())
                         trace += ';';
                     trace += item;
@@ -683,7 +688,7 @@ int main(int argc, char** argv) {
         }
         unit();
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

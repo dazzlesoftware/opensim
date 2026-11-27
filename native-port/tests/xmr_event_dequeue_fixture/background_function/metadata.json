@@ -1,0 +1,595 @@
+{
+  "migration_version": 12,
+  "reserved": 16,
+  "event_arguments": {
+    "kind": 9,
+    "id": 0,
+    "element_type": "ob",
+    "children": []
+  },
+  "initialize_globals": false,
+  "state_index": 0,
+  "event_code": 30,
+  "globals": [
+    {
+      "kind": 9,
+      "id": 1,
+      "element_type": "xa",
+      "children": []
+    },
+    {
+      "kind": 9,
+      "id": 2,
+      "element_type": "ch",
+      "children": []
+    },
+    {
+      "kind": 9,
+      "id": 3,
+      "element_type": "do",
+      "children": []
+    },
+    {
+      "kind": 9,
+      "id": 4,
+      "element_type": "in",
+      "children": [
+        {
+          "kind": 12,
+          "value": 1
+        },
+        {
+          "kind": 12,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "kind": 9,
+      "id": 5,
+      "element_type": "li",
+      "children": [
+        {
+          "kind": 0
+        }
+      ]
+    },
+    {
+      "kind": 15,
+      "reference": 0
+    },
+    {
+      "kind": 9,
+      "id": 6,
+      "element_type": "ro",
+      "children": []
+    },
+    {
+      "kind": 9,
+      "id": 7,
+      "element_type": "st",
+      "children": []
+    },
+    {
+      "kind": 9,
+      "id": 8,
+      "element_type": "ve",
+      "children": []
+    },
+    {
+      "kind": 9,
+      "id": 9,
+      "element_type": "sc",
+      "children": []
+    },
+    {
+      "kind": 9,
+      "id": 10,
+      "element_type": "de[]",
+      "children": []
+    }
+  ],
+  "frames": [
+    {
+      "function": "default state_entry",
+      "call_no": 1,
+      "slots": {
+        "kind": 9,
+        "id": 11,
+        "element_type": "ob",
+        "children": [
+          {
+            "kind": 17
+          },
+          {
+            "kind": 12,
+            "value": 0
+          }
+        ]
+      }
+    },
+    {
+      "function": "xmrEventDequeue",
+      "call_no": 1,
+      "slots": {
+        "kind": 9,
+        "id": 12,
+        "element_type": "ob",
+        "children": [
+          {
+            "kind": 13,
+            "id": 13,
+            "value": "2026-11-26 2:40:53 AM"
+          },
+          {
+            "kind": 12,
+            "value": 536870912
+          },
+          {
+            "kind": 12,
+            "value": 0
+          },
+          {
+            "kind": 12,
+            "value": 538968064
+          },
+          {
+            "kind": 12,
+            "value": 0
+          },
+          {
+            "kind": 12,
+            "value": 21
+          },
+          {
+            "kind": 12,
+            "value": 21
+          },
+          {
+            "kind": 9,
+            "id": 14,
+            "element_type": "ob",
+            "children": [
+              {
+                "kind": 3,
+                "value": 1
+              },
+              {
+                "kind": 4,
+                "children": [
+                  {
+                    "kind": 13,
+                    "id": 15,
+                    "value": "11111111-2222-3333-4444-555555555555"
+                  }
+                ]
+              },
+              {
+                "kind": 8,
+                "value": [
+                  21.125,
+                  21.25,
+                  21.5
+                ]
+              },
+              {
+                "kind": 3,
+                "value": 23
+              },
+              {
+                "kind": 4,
+                "children": [
+                  {
+                    "kind": 13,
+                    "id": 16,
+                    "value": "33333333-4444-5555-6666-777777777777"
+                  }
+                ]
+              },
+              {
+                "kind": 4,
+                "children": [
+                  {
+                    "kind": 13,
+                    "id": 17,
+                    "value": "touch_start detect marker"
+                  }
+                ]
+              },
+              {
+                "kind": 4,
+                "children": [
+                  {
+                    "kind": 13,
+                    "id": 18,
+                    "value": "22222222-3333-4444-5555-666666666666"
+                  }
+                ]
+              },
+              {
+                "kind": 8,
+                "value": [
+                  31.000000030000002,
+                  32.00000003,
+                  33.00000003
+                ]
+              },
+              {
+                "kind": 6,
+                "value": [
+                  0.125,
+                  0.25,
+                  0.5,
+                  0.875
+                ]
+              },
+              {
+                "kind": 3,
+                "value": 29
+              },
+              {
+                "kind": 8,
+                "value": [
+                  41.000000029999995,
+                  42.000000029999995,
+                  43.000000029999995
+                ]
+              },
+              {
+                "kind": 8,
+                "value": [
+                  22.00000003,
+                  23.00000003,
+                  24.00000003
+                ]
+              },
+              {
+                "kind": 8,
+                "value": [
+                  25.00000003,
+                  26.00000003,
+                  27.00000003
+                ]
+              },
+              {
+                "kind": 8,
+                "value": [
+                  28.00000003,
+                  29.00000003,
+                  30.00000003
+                ]
+              },
+              {
+                "kind": 8,
+                "value": [
+                  31.00000003,
+                  32.000000029999995,
+                  33.000000029999995
+                ]
+              },
+              {
+                "kind": 8,
+                "value": [
+                  34.000000029999995,
+                  35.000000029999995,
+                  36.000000029999995
+                ]
+              },
+              {
+                "kind": 3,
+                "value": 24
+              }
+            ]
+          },
+          {
+            "kind": 9,
+            "id": 19,
+            "element_type": "ob",
+            "children": [
+              {
+                "kind": 12,
+                "value": 7
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "function": "default touch_start",
+      "call_no": 1,
+      "slots": {
+        "kind": 9,
+        "id": 20,
+        "element_type": "ob",
+        "children": [
+          {
+            "kind": 17
+          },
+          {
+            "kind": 12,
+            "value": 7
+          },
+          {
+            "kind": 12,
+            "value": 7
+          },
+          {
+            "kind": 12,
+            "value": 0
+          },
+          {
+            "kind": 0
+          }
+        ]
+      }
+    },
+    {
+      "function": "advance(integer)",
+      "call_no": 0,
+      "slots": {
+        "kind": 9,
+        "id": 21,
+        "element_type": "ob",
+        "children": [
+          {
+            "kind": 12,
+            "value": 7
+          },
+          {
+            "kind": 12,
+            "value": 0
+          }
+        ]
+      }
+    }
+  ],
+  "source_hash": "934EC04E4A6A70919C581F612AFC32F8",
+  "captured_checks": 3,
+  "api_sleep_before_resume": "0001-01-01T00:00:00.0000000",
+  "original_method": "list xmrEventDequeue(Double, Int32, Int32, Int32, Int32)",
+  "frame_summary": [
+    {
+      "function": "default state_entry",
+      "call_no": 1,
+      "slots": [
+        {
+          "type": "FunctionExecutionReferenceInstance",
+          "value": "FunctionExecutionReferenceInstance"
+        },
+        {
+          "type": "System.Int32",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "function": "xmrEventDequeue",
+      "call_no": 1,
+      "slots": [
+        {
+          "type": "System.String",
+          "value": "2026-11-26 2:40:53 AM"
+        },
+        {
+          "type": "System.Int32",
+          "value": "536870912"
+        },
+        {
+          "type": "System.Int32",
+          "value": "0"
+        },
+        {
+          "type": "System.Int32",
+          "value": "538968064"
+        },
+        {
+          "type": "System.Int32",
+          "value": "0"
+        },
+        {
+          "type": "System.Int32",
+          "value": "21"
+        },
+        {
+          "type": "System.Int32",
+          "value": "21"
+        },
+        {
+          "type": "System.Object[]",
+          "value": "System.Object[]"
+        },
+        {
+          "type": "System.Object[]",
+          "value": "System.Object[]"
+        }
+      ]
+    },
+    {
+      "function": "default touch_start",
+      "call_no": 1,
+      "slots": [
+        {
+          "type": "FunctionExecutionReferenceInstance",
+          "value": "FunctionExecutionReferenceInstance"
+        },
+        {
+          "type": "System.Int32",
+          "value": "7"
+        },
+        {
+          "type": "System.Int32",
+          "value": "7"
+        },
+        {
+          "type": "System.Int32",
+          "value": "0"
+        },
+        null
+      ]
+    },
+    {
+      "function": "advance(integer)",
+      "call_no": 0,
+      "slots": [
+        {
+          "type": "System.Int32",
+          "value": "7"
+        },
+        {
+          "type": "System.Int32",
+          "value": "0"
+        }
+      ]
+    }
+  ],
+  "source_background_detector": {
+    "key": "11111111-2222-3333-4444-555555555555",
+    "owner": "22222222-3333-4444-5555-666666666666",
+    "group": "33333333-4444-5555-6666-777777777777",
+    "name": "touch_start detect marker",
+    "link_number": 23,
+    "type": 29,
+    "grab": [
+      21.125,
+      21.25,
+      21.5
+    ],
+    "position": [
+      31.000000030000002,
+      32.00000003,
+      33.00000003
+    ],
+    "rotation": [
+      0.125,
+      0.25,
+      0.5,
+      0.875
+    ],
+    "velocity": [
+      41.000000029999995,
+      42.000000029999995,
+      43.000000029999995
+    ],
+    "touch_st": [
+      22.00000003,
+      23.00000003,
+      24.00000003
+    ],
+    "touch_normal": [
+      25.00000003,
+      26.00000003,
+      27.00000003
+    ],
+    "touch_binormal": [
+      28.00000003,
+      29.00000003,
+      30.00000003
+    ],
+    "touch_pos": [
+      31.00000003,
+      32.000000029999995,
+      33.000000029999995
+    ],
+    "touch_uv": [
+      34.000000029999995,
+      35.000000029999995,
+      36.000000029999995
+    ],
+    "touch_face": 24
+  },
+  "restored_background_detector": {
+    "key": "11111111-2222-3333-4444-555555555555",
+    "owner": "22222222-3333-4444-5555-666666666666",
+    "group": "33333333-4444-5555-6666-777777777777",
+    "name": "touch_start detect marker",
+    "link_number": 23,
+    "type": 29,
+    "grab": [
+      21.125,
+      21.25,
+      21.5
+    ],
+    "position": [
+      31.000000030000002,
+      32.00000003,
+      33.00000003
+    ],
+    "rotation": [
+      0.125,
+      0.25,
+      0.5,
+      0.875
+    ],
+    "velocity": [
+      41.000000029999995,
+      42.000000029999995,
+      43.000000029999995
+    ],
+    "touch_st": [
+      22,
+      23,
+      24
+    ],
+    "touch_normal": [
+      25,
+      26,
+      27
+    ],
+    "touch_binormal": [
+      28,
+      29,
+      30
+    ],
+    "touch_pos": [
+      31,
+      32,
+      33
+    ],
+    "touch_uv": [
+      34,
+      35,
+      36
+    ],
+    "touch_face": 24
+  },
+  "original_deadline_utc_ticks": 639312576530000000,
+  "original_outer_deadline_utc_ticks": 639312576530000000,
+  "api_sleep_after_resume": "0001-01-01T00:00:00.0000000",
+  "original_resume_globals": {
+    "background": 7,
+    "count": 11,
+    "result": "299"
+  },
+  "original_resume_result_items": [
+    {
+      "type": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+      "value": "29"
+    },
+    {
+      "type": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+      "value": "9"
+    }
+  ],
+  "remaining_queue": [
+    "timer"
+  ],
+  "detect_name_after_resume": "touch_end detect marker",
+  "original_resume_check_count": 8,
+  "event_codes": {
+    "touch_start": 21,
+    "touch_end": 29,
+    "timer": 2
+  },
+  "sha256": {
+    "source.lsl": "694853F007E6C29D09705CFDCDBF41EFF1C4EF1E1FF0761C7ED53A58FE693268",
+    "snapshot.bin": "D3C2AE85F0D8A74DA770F0ECCD5CEBA182E516A8B7BC8AE8AD56C2E602244C40",
+    "original.yobj": "18A81BBA8620591B17FF6A8C07DF4E49F8AC05D0B763CF091DD7371150DE4F31",
+    "original.il.txt": "F12F50BFAF9975468C0C05AB7798801D81A5302FA4509858335E52F5D106CF84",
+    "state.xml": "623A1114855A636B5767F6ADC117DF08A1A64EB1EC412D41E644855AE0156D72",
+    "cache_key.txt": "5E10663FA13BD273A64AD1C681BAFF3CD79BC2F15F2937DE0EFE9811B377BA63",
+    "original_yengine_assembly": "25D54EAE1428018C259AA00632342E41B17A3041472F65A8EC2F31E8A8811056",
+    "generator_source": "58E6440E193DC1BE51734BC64F95E40C2024E799C62481FA57F765F0253EB133",
+    "generator_assembly": "4544FEE9734C777719179590E5ABE8A08424E7D5FD4E7C71E972B1769F00B53E"
+  }
+}

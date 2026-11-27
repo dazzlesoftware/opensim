@@ -1,0 +1,1 @@
+string early=(string)read();list later;integer after;list read(){return later;}default{state_entry(){after=1;}}

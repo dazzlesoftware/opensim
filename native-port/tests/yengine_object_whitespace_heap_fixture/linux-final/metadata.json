@@ -1,0 +1,3100 @@
+[
+  {
+    "name": "constructor_pressure",
+    "process_id": 1,
+    "marvin_seed": "40b75df6cbf4c0d5",
+    "imported_capture": false,
+    "imported_from": null,
+    "direct_object_input": {
+      "type": "script_class_reference",
+      "clr": "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj",
+      "reference_id": 1
+    },
+    "direct_object_hash": 35416756,
+    "direct_object_exception": null,
+    "hash_call_lines": [],
+    "production_culture": "",
+    "runtime": ".NET 8.0.34",
+    "architecture": "X64",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "76A952F1983FCF0C01B0F1DE6DAE67F7",
+    "compiled_version": -11,
+    "suspended": true,
+    "migrated": false,
+    "binary_load_exception": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=128, newtotal=148, limit=128",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 284\n   at OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj.Restore(XMRInstAbstract inst, Recver recvValue) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRSDTypeClObj.cs:line 272\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.RecvObjValue() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1967\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.RecvObjValue() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1911\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.MigrateIn(BinaryReader mir) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1827\n   at FixedArrayReference.\u003C\u003Ec__DisplayClass19_1.\u003CRun\u003Eg__Migrate|5(Byte[] data, \u003C\u003Ec__DisplayClass19_0\u0026) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-object-whitespace-heap-phase37-reference\\Reference.cs:line 986\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-object-whitespace-heap-phase37-reference\\Reference.cs:line 1212"
+    },
+    "queue_restore_exception": null,
+    "after_binary_load": null,
+    "production_write_exception": null,
+    "permissive_write_exception": null,
+    "permissive_control_resume": null,
+    "permissive_control_resume_exception": null,
+    "production_writer": "Unchanged private XMRInstance.MigrateOutEventHandler(Stream): new BinaryWriter(stream)",
+    "initial_exception": null,
+    "live_cycles": [],
+    "migrated_cycles": [],
+    "prefix_resume": null,
+    "live_resume_exception": null,
+    "live_resume": {
+      "heap_used": 128,
+      "heap_left": 0,
+      "arrays_heap_used": 128,
+      "locals_heap_used": 0,
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 1
+        },
+        "before": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 16
+        },
+        "during": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 128
+        },
+        "input": {
+          "type": "script_class",
+          "clr": "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj",
+          "reference_id": 1,
+          "script_type": "integer[]",
+          "class_index": 0,
+          "rank": 1,
+          "element_type": "integer",
+          "arrays_heap_use": 20,
+          "integers": [
+            4
+          ],
+          "objects": [
+            {
+              "type": "clr_array",
+              "clr": "System.Int32[]",
+              "reference_id": 2,
+              "element_type": "System.Int32",
+              "length": 4,
+              "items": [
+                {
+                  "type": "integer",
+                  "clr": "System.Int32",
+                  "value": 0
+                },
+                {
+                  "type": "integer",
+                  "clr": "System.Int32",
+                  "value": 0
+                },
+                {
+                  "type": "integer",
+                  "clr": "System.Int32",
+                  "value": 0
+                },
+                {
+                  "type": "integer",
+                  "clr": "System.Int32",
+                  "value": 0
+                }
+              ]
+            }
+          ]
+        },
+        "pressure": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "                                                        ",
+          "utf16": [
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32
+          ]
+        },
+        "result": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 4
+        }
+      },
+      "object_hash": {
+        "input": {
+          "type": "script_class_reference",
+          "clr": "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj",
+          "reference_id": 1
+        },
+        "direct_hash": 35416756,
+        "direct_exception": null,
+        "component_hashes": null,
+        "formula": null,
+        "alias_same_backing": null
+      },
+      "object_reference_pairs": [],
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 639313475073385466,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            {
+              "clr": "System.Double",
+              "value": 0.125,
+              "bits": "3fc0000000000000",
+              "text": "0.125"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0.25,
+              "bits": "3fd0000000000000",
+              "text": "0.25"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0.5,
+              "bits": "3fe0000000000000",
+              "text": "0.5"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0.875,
+              "bits": "3fec000000000000",
+              "text": "0.875"
+            }
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "heap_used": 128,
+      "heap_left": 0,
+      "arrays_heap_used": 128,
+      "locals_heap_used": 0,
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "before": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 16
+        },
+        "during": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 128
+        },
+        "input": {
+          "type": "null",
+          "clr": null,
+          "value": null
+        },
+        "pressure": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "                                                        ",
+          "utf16": [
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32
+          ]
+        },
+        "result": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      },
+      "object_hash": {
+        "input": {
+          "type": "null",
+          "clr": null,
+          "value": null
+        },
+        "direct_hash": null,
+        "direct_exception": {
+          "type": "System.NullReferenceException",
+          "message": "Object reference not set to an instance of an object.",
+          "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrHashCode(Object o) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 747\n   at FixedArrayReference.\u003C\u003Ec__DisplayClass19_1.\u003CRun\u003Eg__HashObservation|2(XMRInstance i) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-object-whitespace-heap-phase37-reference\\Reference.cs:line 788"
+        },
+        "component_hashes": null,
+        "formula": null,
+        "alias_same_backing": null
+      },
+      "object_reference_pairs": [],
+      "event_code": "state_entry",
+      "call_mode": 1,
+      "sleep_until_ticks": 639313475073385466,
+      "object_description": "",
+      "event_arguments": [],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            {
+              "clr": "System.Double",
+              "value": 0.125,
+              "bits": "3fc0000000000000",
+              "text": "0.125"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0.25,
+              "bits": "3fd0000000000000",
+              "text": "0.25"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0.5,
+              "bits": "3fe0000000000000",
+              "text": "0.5"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0.875,
+              "bits": "3fec000000000000",
+              "text": "0.875"
+            }
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 1,
+          "slots": 3,
+          "slot_types": [
+            "EventHelpersInstance",
+            "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj",
+            "System.Int32"
+          ],
+          "slot_values": [
+            {
+              "type": "unsupported",
+              "clr": "EventHelpersInstance",
+              "value": "EventHelpersInstance"
+            },
+            {
+              "type": "script_class",
+              "clr": "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj",
+              "reference_id": 1,
+              "script_type": "integer[]",
+              "class_index": 0,
+              "rank": 1,
+              "element_type": "integer",
+              "arrays_heap_use": 20,
+              "integers": [
+                4
+              ],
+              "objects": [
+                {
+                  "type": "clr_array",
+                  "clr": "System.Int32[]",
+                  "reference_id": 2,
+                  "element_type": "System.Int32",
+                  "length": 4,
+                  "items": [
+                    {
+                      "type": "integer",
+                      "clr": "System.Int32",
+                      "value": 0
+                    },
+                    {
+                      "type": "integer",
+                      "clr": "System.Int32",
+                      "value": 0
+                    },
+                    {
+                      "type": "integer",
+                      "clr": "System.Int32",
+                      "value": 0
+                    },
+                    {
+                      "type": "integer",
+                      "clr": "System.Int32",
+                      "value": 0
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            }
+          ],
+          "wait_deadline_utc_ticks": null
+        },
+        {
+          "function": "Pause()",
+          "call_no": 1,
+          "slots": 1,
+          "slot_types": [
+            "System.Int32"
+          ],
+          "slot_values": [
+            {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            }
+          ],
+          "wait_deadline_utc_ticks": null
+        }
+      ]
+    },
+    "after_followup": null,
+    "after_load": null,
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "heap_used": 128,
+      "heap_left": 0,
+      "arrays_heap_used": 128,
+      "locals_heap_used": 0,
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "before": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 16
+        },
+        "during": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 128
+        },
+        "input": {
+          "type": "null",
+          "clr": null,
+          "value": null
+        },
+        "pressure": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "                                                        ",
+          "utf16": [
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32
+          ]
+        },
+        "result": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      },
+      "object_hash": {
+        "input": {
+          "type": "null",
+          "clr": null,
+          "value": null
+        },
+        "direct_hash": null,
+        "direct_exception": {
+          "type": "System.NullReferenceException",
+          "message": "Object reference not set to an instance of an object.",
+          "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrHashCode(Object o) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 747\n   at FixedArrayReference.\u003C\u003Ec__DisplayClass19_1.\u003CRun\u003Eg__HashObservation|2(XMRInstance i) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-object-whitespace-heap-phase37-reference\\Reference.cs:line 788"
+        },
+        "component_hashes": null,
+        "formula": null,
+        "alias_same_backing": null
+      },
+      "object_reference_pairs": [],
+      "event_code": "state_entry",
+      "call_mode": 1,
+      "sleep_until_ticks": 639313475073385466,
+      "object_description": "",
+      "event_arguments": [],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            {
+              "clr": "System.Double",
+              "value": 0.125,
+              "bits": "3fc0000000000000",
+              "text": "0.125"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0.25,
+              "bits": "3fd0000000000000",
+              "text": "0.25"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0.5,
+              "bits": "3fe0000000000000",
+              "text": "0.5"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0.875,
+              "bits": "3fec000000000000",
+              "text": "0.875"
+            }
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 1,
+          "slots": 3,
+          "slot_types": [
+            "EventHelpersInstance",
+            "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj",
+            "System.Int32"
+          ],
+          "slot_values": [
+            {
+              "type": "unsupported",
+              "clr": "EventHelpersInstance",
+              "value": "EventHelpersInstance"
+            },
+            {
+              "type": "script_class",
+              "clr": "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj",
+              "reference_id": 1,
+              "script_type": "integer[]",
+              "class_index": 0,
+              "rank": 1,
+              "element_type": "integer",
+              "arrays_heap_use": 20,
+              "integers": [
+                4
+              ],
+              "objects": [
+                {
+                  "type": "clr_array",
+                  "clr": "System.Int32[]",
+                  "reference_id": 2,
+                  "element_type": "System.Int32",
+                  "length": 4,
+                  "items": [
+                    {
+                      "type": "integer",
+                      "clr": "System.Int32",
+                      "value": 0
+                    },
+                    {
+                      "type": "integer",
+                      "clr": "System.Int32",
+                      "value": 0
+                    },
+                    {
+                      "type": "integer",
+                      "clr": "System.Int32",
+                      "value": 0
+                    },
+                    {
+                      "type": "integer",
+                      "clr": "System.Int32",
+                      "value": 0
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            }
+          ],
+          "wait_deadline_utc_ticks": null
+        },
+        {
+          "function": "Pause()",
+          "call_no": 1,
+          "slots": 1,
+          "slot_types": [
+            "System.Int32"
+          ],
+          "slot_values": [
+            {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            }
+          ],
+          "wait_deadline_utc_ticks": null
+        }
+      ]
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual original full Object value source controls, gated YOption arrays. Scalar boxes/unboxes, defaults/locals/parameters/returns, CLR reference vs object.Equals and string identity observed from original object/string storage only (no synthetic boxing of value-storage during observation). RealSleep/privateproductionbinary/SAME-live and optional separateprocessimport; hash numbers are not assumed portable for identity-bearing values. Preserved separate hash baseline/gating groups.",
+    "sha256": {
+      "cache_key.txt": "f3a65cf5fef9b15b6690e3d3c6c42730c0aa5598eb2d63f618191864458fad05",
+      "detect-array.xml": "a54ca4e5f26d31a98b63cca7e3c95a199a39e5bdc40fb23eb9c8287d8de2c615",
+      "event-queue.xml": "09030ac3a8d5dbaa452ef2076d8c8a18f45eb5608570c79b134fc4ffc843309e",
+      "original.il.txt": "868d086129ae8fadc25fcf0a4c4f0785468319882a2d3bfcfb7af0a104c63286",
+      "original.yobj": "3ab5ec19241bad9a4604a4d069ae8a38a5970f0a289fac88d4738f1cb9f17858",
+      "permissive-control.bin": "0adae45ddbd1546fb17aec5c1d523d3907ec74814c5d37d52230df78cade6e65",
+      "retained-constructor-capture.json": "cfc9e32c41a2da2ed7d91df90cc65e5df85b435930daabbdde4822a8d5d2b0e1",
+      "retained-constructor-live.json": "8ad582f64f0d984c95ee13769a3edf4d7ceffa65ab430a3da6cd1c8f0e0dece1",
+      "snapshot.bin": "0adae45ddbd1546fb17aec5c1d523d3907ec74814c5d37d52230df78cade6e65",
+      "source.lsl": "c314e8fade2e5846034a9aea242b3e235f98a0bc2405bf8cd050082b8e18f661",
+      "generator_source": "99e370b121bb82c5f1651985e492cadd18e13c7b951a432c5e8c3ae135e6b265",
+      "generator_assembly": "761139d7ca8ef2f11f3bdd104a1207f86da1b3ea259be06441d17d48f080da25",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRInstCapture.cs": "775f1d83bd4610f788891269ea9ea08b1f79cf4bf3b44300d926f49c8a277cbd",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_Helpers.cs": "96b7c3090cdded9c12e986bc538705272eae4c0fc12f01deab8f0f1bb94c7bcf",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "whitespace_values",
+    "process_id": 1,
+    "marvin_seed": "40b75df6cbf4c0d5",
+    "imported_capture": false,
+    "imported_from": null,
+    "direct_object_input": {
+      "type": "null",
+      "clr": null,
+      "value": null
+    },
+    "direct_object_hash": null,
+    "direct_object_exception": {
+      "type": "System.NullReferenceException",
+      "message": "Object reference not set to an instance of an object.",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrHashCode(Object o) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 747\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-object-whitespace-heap-phase37-reference\\Reference.cs:line 1291"
+    },
+    "hash_call_lines": [],
+    "production_culture": "",
+    "runtime": ".NET 8.0.34",
+    "architecture": "X64",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "CD2CB5C988F5A18FA1FC4C397FCE07A6",
+    "compiled_version": -11,
+    "suspended": true,
+    "migrated": true,
+    "binary_load_exception": null,
+    "queue_restore_exception": null,
+    "after_binary_load": {
+      "heap_used": 40,
+      "heap_left": 99999960,
+      "arrays_heap_used": 40,
+      "locals_heap_used": 0,
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "baseline": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 20
+        },
+        "boxed": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "   ",
+          "utf16": [
+            32,
+            32,
+            32
+          ]
+        },
+        "items": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "string",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+              "value": "   ",
+              "utf16": [
+                32,
+                32,
+                32
+              ]
+            }
+          ]
+        },
+        "listheap": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 40
+        },
+        "objectheap": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 26
+        },
+        "stringheap": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 26
+        },
+        "typed": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "   ",
+          "utf16": [
+            32,
+            32,
+            32
+          ]
+        }
+      },
+      "object_hash": {
+        "input": {
+          "type": "null",
+          "clr": null,
+          "value": null
+        },
+        "direct_hash": null,
+        "direct_exception": {
+          "type": "System.NullReferenceException",
+          "message": "Object reference not set to an instance of an object.",
+          "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrHashCode(Object o) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 747\n   at FixedArrayReference.\u003C\u003Ec__DisplayClass19_1.\u003CRun\u003Eg__HashObservation|2(XMRInstance i) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-object-whitespace-heap-phase37-reference\\Reference.cs:line 788"
+        },
+        "component_hashes": null,
+        "formula": null,
+        "alias_same_backing": null
+      },
+      "object_reference_pairs": [
+        {
+          "left": "boxed",
+          "right": "typed",
+          "same_reference": true,
+          "object_equals": true
+        }
+      ],
+      "event_code": "state_entry",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": [],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13,
+            14,
+            15
+          ],
+          "rotation": [
+            {
+              "clr": "System.Double",
+              "value": 0.125,
+              "bits": "3fc0000000000000",
+              "text": "0.125"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0.25,
+              "bits": "3fd0000000000000",
+              "text": "0.25"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0.5,
+              "bits": "3fe0000000000000",
+              "text": "0.5"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0.875,
+              "bits": "3fec000000000000",
+              "text": "0.875"
+            }
+          ],
+          "velocity": [
+            23,
+            24,
+            25
+          ],
+          "touch_st": [
+            -1,
+            -1,
+            0
+          ],
+          "touch_normal": [
+            0,
+            0,
+            0
+          ],
+          "touch_binormal": [
+            0,
+            0,
+            0
+          ],
+          "touch_pos": [
+            0,
+            0,
+            0
+          ],
+          "touch_uv": [
+            -1,
+            -1,
+            0
+          ],
+          "touch_face": -1
+        }
+      ],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 1,
+          "slots": 2,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32"
+          ],
+          "slot_values": [
+            {
+              "type": "unsupported",
+              "clr": "EventHelpersInstance",
+              "value": "EventHelpersInstance"
+            },
+            {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            }
+          ],
+          "wait_deadline_utc_ticks": null
+        }
+      ]
+    },
+    "production_write_exception": null,
+    "permissive_write_exception": null,
+    "permissive_control_resume": null,
+    "permissive_control_resume_exception": null,
+    "production_writer": "Unchanged private XMRInstance.MigrateOutEventHandler(Stream): new BinaryWriter(stream)",
+    "initial_exception": null,
+    "live_cycles": [],
+    "migrated_cycles": [],
+    "prefix_resume": null,
+    "live_resume_exception": null,
+    "live_resume": {
+      "heap_used": 40,
+      "heap_left": 99999960,
+      "arrays_heap_used": 40,
+      "locals_heap_used": 0,
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 40
+        },
+        "baseline": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 20
+        },
+        "boxed": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "   ",
+          "utf16": [
+            32,
+            32,
+            32
+          ]
+        },
+        "items": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "string",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+              "value": "   ",
+              "utf16": [
+                32,
+                32,
+                32
+              ]
+            }
+          ]
+        },
+        "listheap": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 40
+        },
+        "objectheap": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 26
+        },
+        "stringheap": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 26
+        },
+        "typed": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "   ",
+          "utf16": [
+            32,
+            32,
+            32
+          ]
+        }
+      },
+      "object_hash": {
+        "input": {
+          "type": "null",
+          "clr": null,
+          "value": null
+        },
+        "direct_hash": null,
+        "direct_exception": {
+          "type": "System.NullReferenceException",
+          "message": "Object reference not set to an instance of an object.",
+          "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrHashCode(Object o) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 747\n   at FixedArrayReference.\u003C\u003Ec__DisplayClass19_1.\u003CRun\u003Eg__HashObservation|2(XMRInstance i) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-object-whitespace-heap-phase37-reference\\Reference.cs:line 788"
+        },
+        "component_hashes": null,
+        "formula": null,
+        "alias_same_backing": null
+      },
+      "object_reference_pairs": [
+        {
+          "left": "boxed",
+          "right": "typed",
+          "same_reference": true,
+          "object_equals": true
+        }
+      ],
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 639313475075937569,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            {
+              "clr": "System.Double",
+              "value": 0.125,
+              "bits": "3fc0000000000000",
+              "text": "0.125"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0.25,
+              "bits": "3fd0000000000000",
+              "text": "0.25"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0.5,
+              "bits": "3fe0000000000000",
+              "text": "0.5"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0.875,
+              "bits": "3fec000000000000",
+              "text": "0.875"
+            }
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "heap_used": 40,
+      "heap_left": 99999960,
+      "arrays_heap_used": 40,
+      "locals_heap_used": 0,
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "baseline": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 20
+        },
+        "boxed": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "   ",
+          "utf16": [
+            32,
+            32,
+            32
+          ]
+        },
+        "items": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "string",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+              "value": "   ",
+              "utf16": [
+                32,
+                32,
+                32
+              ]
+            }
+          ]
+        },
+        "listheap": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 40
+        },
+        "objectheap": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 26
+        },
+        "stringheap": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 26
+        },
+        "typed": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "   ",
+          "utf16": [
+            32,
+            32,
+            32
+          ]
+        }
+      },
+      "object_hash": {
+        "input": {
+          "type": "null",
+          "clr": null,
+          "value": null
+        },
+        "direct_hash": null,
+        "direct_exception": {
+          "type": "System.NullReferenceException",
+          "message": "Object reference not set to an instance of an object.",
+          "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrHashCode(Object o) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 747\n   at FixedArrayReference.\u003C\u003Ec__DisplayClass19_1.\u003CRun\u003Eg__HashObservation|2(XMRInstance i) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-object-whitespace-heap-phase37-reference\\Reference.cs:line 788"
+        },
+        "component_hashes": null,
+        "formula": null,
+        "alias_same_backing": null
+      },
+      "object_reference_pairs": [
+        {
+          "left": "boxed",
+          "right": "typed",
+          "same_reference": true,
+          "object_equals": true
+        }
+      ],
+      "event_code": "state_entry",
+      "call_mode": 1,
+      "sleep_until_ticks": 639313475075937569,
+      "object_description": "",
+      "event_arguments": [],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            {
+              "clr": "System.Double",
+              "value": 0.125,
+              "bits": "3fc0000000000000",
+              "text": "0.125"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0.25,
+              "bits": "3fd0000000000000",
+              "text": "0.25"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0.5,
+              "bits": "3fe0000000000000",
+              "text": "0.5"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0.875,
+              "bits": "3fec000000000000",
+              "text": "0.875"
+            }
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 1,
+          "slots": 2,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32"
+          ],
+          "slot_values": [
+            {
+              "type": "unsupported",
+              "clr": "EventHelpersInstance",
+              "value": "EventHelpersInstance"
+            },
+            {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            }
+          ],
+          "wait_deadline_utc_ticks": null
+        }
+      ]
+    },
+    "after_followup": null,
+    "after_load": {
+      "heap_used": 40,
+      "heap_left": 99999960,
+      "arrays_heap_used": 40,
+      "locals_heap_used": 0,
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "baseline": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 20
+        },
+        "boxed": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "   ",
+          "utf16": [
+            32,
+            32,
+            32
+          ]
+        },
+        "items": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "string",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+              "value": "   ",
+              "utf16": [
+                32,
+                32,
+                32
+              ]
+            }
+          ]
+        },
+        "listheap": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 40
+        },
+        "objectheap": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 26
+        },
+        "stringheap": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 26
+        },
+        "typed": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "   ",
+          "utf16": [
+            32,
+            32,
+            32
+          ]
+        }
+      },
+      "object_hash": {
+        "input": {
+          "type": "null",
+          "clr": null,
+          "value": null
+        },
+        "direct_hash": null,
+        "direct_exception": {
+          "type": "System.NullReferenceException",
+          "message": "Object reference not set to an instance of an object.",
+          "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrHashCode(Object o) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 747\n   at FixedArrayReference.\u003C\u003Ec__DisplayClass19_1.\u003CRun\u003Eg__HashObservation|2(XMRInstance i) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-object-whitespace-heap-phase37-reference\\Reference.cs:line 788"
+        },
+        "component_hashes": null,
+        "formula": null,
+        "alias_same_backing": null
+      },
+      "object_reference_pairs": [
+        {
+          "left": "boxed",
+          "right": "typed",
+          "same_reference": true,
+          "object_equals": true
+        }
+      ],
+      "event_code": "state_entry",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": [],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13,
+            14,
+            15
+          ],
+          "rotation": [
+            {
+              "clr": "System.Double",
+              "value": 0.125,
+              "bits": "3fc0000000000000",
+              "text": "0.125"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0.25,
+              "bits": "3fd0000000000000",
+              "text": "0.25"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0.5,
+              "bits": "3fe0000000000000",
+              "text": "0.5"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0.875,
+              "bits": "3fec000000000000",
+              "text": "0.875"
+            }
+          ],
+          "velocity": [
+            23,
+            24,
+            25
+          ],
+          "touch_st": [
+            -1,
+            -1,
+            0
+          ],
+          "touch_normal": [
+            0,
+            0,
+            0
+          ],
+          "touch_binormal": [
+            0,
+            0,
+            0
+          ],
+          "touch_pos": [
+            0,
+            0,
+            0
+          ],
+          "touch_uv": [
+            -1,
+            -1,
+            0
+          ],
+          "touch_face": -1
+        }
+      ],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 1,
+          "slots": 2,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32"
+          ],
+          "slot_values": [
+            {
+              "type": "unsupported",
+              "clr": "EventHelpersInstance",
+              "value": "EventHelpersInstance"
+            },
+            {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            }
+          ],
+          "wait_deadline_utc_ticks": null
+        }
+      ]
+    },
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "heap_used": 40,
+      "heap_left": 99999960,
+      "arrays_heap_used": 40,
+      "locals_heap_used": 0,
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 40
+        },
+        "baseline": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 20
+        },
+        "boxed": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "   ",
+          "utf16": [
+            32,
+            32,
+            32
+          ]
+        },
+        "items": {
+          "type": "list",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+          "value": [
+            {
+              "type": "string",
+              "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+              "value": "   ",
+              "utf16": [
+                32,
+                32,
+                32
+              ]
+            }
+          ]
+        },
+        "listheap": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 40
+        },
+        "objectheap": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 26
+        },
+        "stringheap": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 26
+        },
+        "typed": {
+          "type": "string",
+          "clr": "System.String",
+          "value": "   ",
+          "utf16": [
+            32,
+            32,
+            32
+          ]
+        }
+      },
+      "object_hash": {
+        "input": {
+          "type": "null",
+          "clr": null,
+          "value": null
+        },
+        "direct_hash": null,
+        "direct_exception": {
+          "type": "System.NullReferenceException",
+          "message": "Object reference not set to an instance of an object.",
+          "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrHashCode(Object o) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 747\n   at FixedArrayReference.\u003C\u003Ec__DisplayClass19_1.\u003CRun\u003Eg__HashObservation|2(XMRInstance i) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-object-whitespace-heap-phase37-reference\\Reference.cs:line 788"
+        },
+        "component_hashes": null,
+        "formula": null,
+        "alias_same_backing": null
+      },
+      "object_reference_pairs": [
+        {
+          "left": "boxed",
+          "right": "typed",
+          "same_reference": true,
+          "object_equals": true
+        }
+      ],
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13,
+            14,
+            15
+          ],
+          "rotation": [
+            {
+              "clr": "System.Double",
+              "value": 0.125,
+              "bits": "3fc0000000000000",
+              "text": "0.125"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0.25,
+              "bits": "3fd0000000000000",
+              "text": "0.25"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0.5,
+              "bits": "3fe0000000000000",
+              "text": "0.5"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0.875,
+              "bits": "3fec000000000000",
+              "text": "0.875"
+            }
+          ],
+          "velocity": [
+            23,
+            24,
+            25
+          ],
+          "touch_st": [
+            -1,
+            -1,
+            0
+          ],
+          "touch_normal": [
+            0,
+            0,
+            0
+          ],
+          "touch_binormal": [
+            0,
+            0,
+            0
+          ],
+          "touch_pos": [
+            0,
+            0,
+            0
+          ],
+          "touch_uv": [
+            -1,
+            -1,
+            0
+          ],
+          "touch_face": -1
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual original full Object value source controls, gated YOption arrays. Scalar boxes/unboxes, defaults/locals/parameters/returns, CLR reference vs object.Equals and string identity observed from original object/string storage only (no synthetic boxing of value-storage during observation). RealSleep/privateproductionbinary/SAME-live and optional separateprocessimport; hash numbers are not assumed portable for identity-bearing values. Preserved separate hash baseline/gating groups.",
+    "sha256": {
+      "cache_key.txt": "91dc54facf4ef7eaddb8ea0995167f579f8464500eef3b2866936ffe42e1751f",
+      "detect-array.xml": "a54ca4e5f26d31a98b63cca7e3c95a199a39e5bdc40fb23eb9c8287d8de2c615",
+      "event-queue.xml": "09030ac3a8d5dbaa452ef2076d8c8a18f45eb5608570c79b134fc4ffc843309e",
+      "original.il.txt": "a7e77713cf99d9a1eb718a2fa3e6b04afa1e947e87a1ece7aaa80dcbfe73e0b9",
+      "original.yobj": "38879b098668d8dd4b770d36f45a84d5493a459799a3676777ed19ee78a11964",
+      "permissive-control.bin": "c38310445b48c73cb7dd4483e099e0150e56edb40898883317cf69f41e507a00",
+      "retained-constructor-capture.json": "1fdabafef267c2b67ae893a14ece19e25e88ee5a01ed429e7c00620192576586",
+      "retained-constructor-live.json": "268736bfe4ffc744edf24bd2e9efd72e9f4defa6fe6523ab4357fd879d1f70b8",
+      "snapshot.bin": "c38310445b48c73cb7dd4483e099e0150e56edb40898883317cf69f41e507a00",
+      "source.lsl": "0481a65fd5d9ae89eceb56341b602d95ab3adff118953c8b5b040cadd891fdb4",
+      "generator_source": "99e370b121bb82c5f1651985e492cadd18e13c7b951a432c5e8c3ae135e6b265",
+      "generator_assembly": "761139d7ca8ef2f11f3bdd104a1207f86da1b3ea259be06441d17d48f080da25",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRInstCapture.cs": "775f1d83bd4610f788891269ea9ea08b1f79cf4bf3b44300d926f49c8a277cbd",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_Helpers.cs": "96b7c3090cdded9c12e986bc538705272eae4c0fc12f01deab8f0f1bb94c7bcf",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  },
+  {
+    "name": "whitespace_object_array",
+    "process_id": 1,
+    "marvin_seed": "40b75df6cbf4c0d5",
+    "imported_capture": false,
+    "imported_from": null,
+    "direct_object_input": {
+      "type": "null",
+      "clr": null,
+      "value": null
+    },
+    "direct_object_hash": null,
+    "direct_object_exception": {
+      "type": "System.NullReferenceException",
+      "message": "Object reference not set to an instance of an object.",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrHashCode(Object o) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 747\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-object-whitespace-heap-phase37-reference\\Reference.cs:line 1291"
+    },
+    "hash_call_lines": [],
+    "production_culture": "",
+    "runtime": ".NET 8.0.34",
+    "architecture": "X64",
+    "accepted": true,
+    "diagnostics": [],
+    "compile_exception": null,
+    "source_hash": "818F03E1E9D878624E1222131D712B23",
+    "compiled_version": -11,
+    "suspended": true,
+    "migrated": true,
+    "binary_load_exception": null,
+    "queue_restore_exception": null,
+    "after_binary_load": {
+      "heap_used": 32,
+      "heap_left": 99999968,
+      "arrays_heap_used": 32,
+      "locals_heap_used": 0,
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "alias": {
+          "type": "array_reference",
+          "clr": "System.Object[]",
+          "reference_id": 1
+        },
+        "aliased": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 26
+        },
+        "allocated": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 20
+        },
+        "baseline": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 20
+        },
+        "mutated": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 20
+        },
+        "raw": {
+          "type": "clr_array",
+          "clr": "System.Object[]",
+          "reference_id": 1,
+          "element_type": "System.Object",
+          "length": 1,
+          "items": [
+            {
+              "type": "string",
+              "clr": "System.String",
+              "value": "   ",
+              "utf16": [
+                32,
+                32,
+                32
+              ]
+            }
+          ]
+        }
+      },
+      "object_hash": {
+        "input": {
+          "type": "null",
+          "clr": null,
+          "value": null
+        },
+        "direct_hash": null,
+        "direct_exception": {
+          "type": "System.NullReferenceException",
+          "message": "Object reference not set to an instance of an object.",
+          "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrHashCode(Object o) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 747\n   at FixedArrayReference.\u003C\u003Ec__DisplayClass19_1.\u003CRun\u003Eg__HashObservation|2(XMRInstance i) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-object-whitespace-heap-phase37-reference\\Reference.cs:line 788"
+        },
+        "component_hashes": null,
+        "formula": null,
+        "alias_same_backing": null
+      },
+      "object_reference_pairs": [
+        {
+          "left": "raw",
+          "right": "alias",
+          "same_reference": true,
+          "object_equals": true
+        },
+        {
+          "left": "raw",
+          "right": "raw[0]",
+          "same_reference": false,
+          "object_equals": false
+        },
+        {
+          "left": "raw",
+          "right": "alias[0]",
+          "same_reference": false,
+          "object_equals": false
+        },
+        {
+          "left": "alias",
+          "right": "raw[0]",
+          "same_reference": false,
+          "object_equals": false
+        },
+        {
+          "left": "alias",
+          "right": "alias[0]",
+          "same_reference": false,
+          "object_equals": false
+        },
+        {
+          "left": "raw[0]",
+          "right": "alias[0]",
+          "same_reference": true,
+          "object_equals": true
+        }
+      ],
+      "event_code": "state_entry",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": [],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13,
+            14,
+            15
+          ],
+          "rotation": [
+            {
+              "clr": "System.Double",
+              "value": 0.125,
+              "bits": "3fc0000000000000",
+              "text": "0.125"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0.25,
+              "bits": "3fd0000000000000",
+              "text": "0.25"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0.5,
+              "bits": "3fe0000000000000",
+              "text": "0.5"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0.875,
+              "bits": "3fec000000000000",
+              "text": "0.875"
+            }
+          ],
+          "velocity": [
+            23,
+            24,
+            25
+          ],
+          "touch_st": [
+            -1,
+            -1,
+            0
+          ],
+          "touch_normal": [
+            0,
+            0,
+            0
+          ],
+          "touch_binormal": [
+            0,
+            0,
+            0
+          ],
+          "touch_pos": [
+            0,
+            0,
+            0
+          ],
+          "touch_uv": [
+            -1,
+            -1,
+            0
+          ],
+          "touch_face": -1
+        }
+      ],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 1,
+          "slots": 2,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32"
+          ],
+          "slot_values": [
+            {
+              "type": "unsupported",
+              "clr": "EventHelpersInstance",
+              "value": "EventHelpersInstance"
+            },
+            {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            }
+          ],
+          "wait_deadline_utc_ticks": null
+        }
+      ]
+    },
+    "production_write_exception": null,
+    "permissive_write_exception": null,
+    "permissive_control_resume": null,
+    "permissive_control_resume_exception": null,
+    "production_writer": "Unchanged private XMRInstance.MigrateOutEventHandler(Stream): new BinaryWriter(stream)",
+    "initial_exception": null,
+    "live_cycles": [],
+    "migrated_cycles": [],
+    "prefix_resume": null,
+    "live_resume_exception": null,
+    "live_resume": {
+      "heap_used": 26,
+      "heap_left": 99999974,
+      "arrays_heap_used": 26,
+      "locals_heap_used": 0,
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 26
+        },
+        "alias": {
+          "type": "array_reference",
+          "clr": "System.Object[]",
+          "reference_id": 1
+        },
+        "aliased": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 26
+        },
+        "allocated": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 20
+        },
+        "baseline": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 20
+        },
+        "mutated": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 20
+        },
+        "raw": {
+          "type": "clr_array",
+          "clr": "System.Object[]",
+          "reference_id": 1,
+          "element_type": "System.Object",
+          "length": 1,
+          "items": [
+            {
+              "type": "string",
+              "clr": "System.String",
+              "value": "   ",
+              "utf16": [
+                32,
+                32,
+                32
+              ]
+            }
+          ]
+        }
+      },
+      "object_hash": {
+        "input": {
+          "type": "null",
+          "clr": null,
+          "value": null
+        },
+        "direct_hash": null,
+        "direct_exception": {
+          "type": "System.NullReferenceException",
+          "message": "Object reference not set to an instance of an object.",
+          "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrHashCode(Object o) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 747\n   at FixedArrayReference.\u003C\u003Ec__DisplayClass19_1.\u003CRun\u003Eg__HashObservation|2(XMRInstance i) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-object-whitespace-heap-phase37-reference\\Reference.cs:line 788"
+        },
+        "component_hashes": null,
+        "formula": null,
+        "alias_same_backing": null
+      },
+      "object_reference_pairs": [
+        {
+          "left": "raw",
+          "right": "alias",
+          "same_reference": true,
+          "object_equals": true
+        },
+        {
+          "left": "raw",
+          "right": "raw[0]",
+          "same_reference": false,
+          "object_equals": false
+        },
+        {
+          "left": "raw",
+          "right": "alias[0]",
+          "same_reference": false,
+          "object_equals": false
+        },
+        {
+          "left": "alias",
+          "right": "raw[0]",
+          "same_reference": false,
+          "object_equals": false
+        },
+        {
+          "left": "alias",
+          "right": "alias[0]",
+          "same_reference": false,
+          "object_equals": false
+        },
+        {
+          "left": "raw[0]",
+          "right": "alias[0]",
+          "same_reference": true,
+          "object_equals": true
+        }
+      ],
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 639313475077750138,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            {
+              "clr": "System.Double",
+              "value": 0.125,
+              "bits": "3fc0000000000000",
+              "text": "0.125"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0.25,
+              "bits": "3fd0000000000000",
+              "text": "0.25"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0.5,
+              "bits": "3fe0000000000000",
+              "text": "0.5"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0.875,
+              "bits": "3fec000000000000",
+              "text": "0.875"
+            }
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "direct_reset_scheduler_boundary": false,
+    "initial": {
+      "heap_used": 26,
+      "heap_left": 99999974,
+      "arrays_heap_used": 26,
+      "locals_heap_used": 0,
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "alias": {
+          "type": "array_reference",
+          "clr": "System.Object[]",
+          "reference_id": 1
+        },
+        "aliased": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 26
+        },
+        "allocated": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 20
+        },
+        "baseline": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 20
+        },
+        "mutated": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 20
+        },
+        "raw": {
+          "type": "clr_array",
+          "clr": "System.Object[]",
+          "reference_id": 1,
+          "element_type": "System.Object",
+          "length": 1,
+          "items": [
+            {
+              "type": "string",
+              "clr": "System.String",
+              "value": "   ",
+              "utf16": [
+                32,
+                32,
+                32
+              ]
+            }
+          ]
+        }
+      },
+      "object_hash": {
+        "input": {
+          "type": "null",
+          "clr": null,
+          "value": null
+        },
+        "direct_hash": null,
+        "direct_exception": {
+          "type": "System.NullReferenceException",
+          "message": "Object reference not set to an instance of an object.",
+          "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrHashCode(Object o) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 747\n   at FixedArrayReference.\u003C\u003Ec__DisplayClass19_1.\u003CRun\u003Eg__HashObservation|2(XMRInstance i) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-object-whitespace-heap-phase37-reference\\Reference.cs:line 788"
+        },
+        "component_hashes": null,
+        "formula": null,
+        "alias_same_backing": null
+      },
+      "object_reference_pairs": [
+        {
+          "left": "raw",
+          "right": "alias",
+          "same_reference": true,
+          "object_equals": true
+        },
+        {
+          "left": "raw",
+          "right": "raw[0]",
+          "same_reference": false,
+          "object_equals": false
+        },
+        {
+          "left": "raw",
+          "right": "alias[0]",
+          "same_reference": false,
+          "object_equals": false
+        },
+        {
+          "left": "alias",
+          "right": "raw[0]",
+          "same_reference": false,
+          "object_equals": false
+        },
+        {
+          "left": "alias",
+          "right": "alias[0]",
+          "same_reference": false,
+          "object_equals": false
+        },
+        {
+          "left": "raw[0]",
+          "right": "alias[0]",
+          "same_reference": true,
+          "object_equals": true
+        }
+      ],
+      "event_code": "state_entry",
+      "call_mode": 1,
+      "sleep_until_ticks": 639313475077750138,
+      "object_description": "",
+      "event_arguments": [],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13.00000003,
+            14.00000003,
+            15.00000003
+          ],
+          "rotation": [
+            {
+              "clr": "System.Double",
+              "value": 0.125,
+              "bits": "3fc0000000000000",
+              "text": "0.125"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0.25,
+              "bits": "3fd0000000000000",
+              "text": "0.25"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0.5,
+              "bits": "3fe0000000000000",
+              "text": "0.5"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0.875,
+              "bits": "3fec000000000000",
+              "text": "0.875"
+            }
+          ],
+          "velocity": [
+            23.00000003,
+            24.00000003,
+            25.00000003
+          ],
+          "touch_st": [
+            4.00000003,
+            5.00000003,
+            6.00000003
+          ],
+          "touch_normal": [
+            7.00000003,
+            8.000000029999999,
+            9.000000029999999
+          ],
+          "touch_binormal": [
+            10.000000029999999,
+            11.000000029999999,
+            12.000000029999999
+          ],
+          "touch_pos": [
+            13.000000029999999,
+            14.000000029999999,
+            15.000000029999999
+          ],
+          "touch_uv": [
+            16.00000003,
+            17.00000003,
+            18.00000003
+          ],
+          "touch_face": 6
+        }
+      ],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 1,
+          "slots": 2,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32"
+          ],
+          "slot_values": [
+            {
+              "type": "unsupported",
+              "clr": "EventHelpersInstance",
+              "value": "EventHelpersInstance"
+            },
+            {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            }
+          ],
+          "wait_deadline_utc_ticks": null
+        }
+      ]
+    },
+    "after_followup": null,
+    "after_load": {
+      "heap_used": 32,
+      "heap_left": 99999968,
+      "arrays_heap_used": 32,
+      "locals_heap_used": 0,
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        "alias": {
+          "type": "array_reference",
+          "clr": "System.Object[]",
+          "reference_id": 1
+        },
+        "aliased": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 26
+        },
+        "allocated": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 20
+        },
+        "baseline": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 20
+        },
+        "mutated": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 20
+        },
+        "raw": {
+          "type": "clr_array",
+          "clr": "System.Object[]",
+          "reference_id": 1,
+          "element_type": "System.Object",
+          "length": 1,
+          "items": [
+            {
+              "type": "string",
+              "clr": "System.String",
+              "value": "   ",
+              "utf16": [
+                32,
+                32,
+                32
+              ]
+            }
+          ]
+        }
+      },
+      "object_hash": {
+        "input": {
+          "type": "null",
+          "clr": null,
+          "value": null
+        },
+        "direct_hash": null,
+        "direct_exception": {
+          "type": "System.NullReferenceException",
+          "message": "Object reference not set to an instance of an object.",
+          "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrHashCode(Object o) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 747\n   at FixedArrayReference.\u003C\u003Ec__DisplayClass19_1.\u003CRun\u003Eg__HashObservation|2(XMRInstance i) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-object-whitespace-heap-phase37-reference\\Reference.cs:line 788"
+        },
+        "component_hashes": null,
+        "formula": null,
+        "alias_same_backing": null
+      },
+      "object_reference_pairs": [
+        {
+          "left": "raw",
+          "right": "alias",
+          "same_reference": true,
+          "object_equals": true
+        },
+        {
+          "left": "raw",
+          "right": "raw[0]",
+          "same_reference": false,
+          "object_equals": false
+        },
+        {
+          "left": "raw",
+          "right": "alias[0]",
+          "same_reference": false,
+          "object_equals": false
+        },
+        {
+          "left": "alias",
+          "right": "raw[0]",
+          "same_reference": false,
+          "object_equals": false
+        },
+        {
+          "left": "alias",
+          "right": "alias[0]",
+          "same_reference": false,
+          "object_equals": false
+        },
+        {
+          "left": "raw[0]",
+          "right": "alias[0]",
+          "same_reference": true,
+          "object_equals": true
+        }
+      ],
+      "event_code": "state_entry",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": [],
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13,
+            14,
+            15
+          ],
+          "rotation": [
+            {
+              "clr": "System.Double",
+              "value": 0.125,
+              "bits": "3fc0000000000000",
+              "text": "0.125"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0.25,
+              "bits": "3fd0000000000000",
+              "text": "0.25"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0.5,
+              "bits": "3fe0000000000000",
+              "text": "0.5"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0.875,
+              "bits": "3fec000000000000",
+              "text": "0.875"
+            }
+          ],
+          "velocity": [
+            23,
+            24,
+            25
+          ],
+          "touch_st": [
+            -1,
+            -1,
+            0
+          ],
+          "touch_normal": [
+            0,
+            0,
+            0
+          ],
+          "touch_binormal": [
+            0,
+            0,
+            0
+          ],
+          "touch_pos": [
+            0,
+            0,
+            0
+          ],
+          "touch_uv": [
+            -1,
+            -1,
+            0
+          ],
+          "touch_face": -1
+        }
+      ],
+      "queue": [],
+      "frames": [
+        {
+          "function": "default state_entry",
+          "call_no": 1,
+          "slots": 2,
+          "slot_types": [
+            "EventHelpersInstance",
+            "System.Int32"
+          ],
+          "slot_values": [
+            {
+              "type": "unsupported",
+              "clr": "EventHelpersInstance",
+              "value": "EventHelpersInstance"
+            },
+            {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            }
+          ],
+          "wait_deadline_utc_ticks": null
+        }
+      ]
+    },
+    "after_stop": null,
+    "after_restart_wait": null,
+    "resume_exception": null,
+    "final": {
+      "heap_used": 32,
+      "heap_left": 99999968,
+      "arrays_heap_used": 32,
+      "locals_heap_used": 0,
+      "globals": {
+        "after": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 32
+        },
+        "alias": {
+          "type": "array_reference",
+          "clr": "System.Object[]",
+          "reference_id": 1
+        },
+        "aliased": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 26
+        },
+        "allocated": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 20
+        },
+        "baseline": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 20
+        },
+        "mutated": {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 20
+        },
+        "raw": {
+          "type": "clr_array",
+          "clr": "System.Object[]",
+          "reference_id": 1,
+          "element_type": "System.Object",
+          "length": 1,
+          "items": [
+            {
+              "type": "string",
+              "clr": "System.String",
+              "value": "   ",
+              "utf16": [
+                32,
+                32,
+                32
+              ]
+            }
+          ]
+        }
+      },
+      "object_hash": {
+        "input": {
+          "type": "null",
+          "clr": null,
+          "value": null
+        },
+        "direct_hash": null,
+        "direct_exception": {
+          "type": "System.NullReferenceException",
+          "message": "Object reference not set to an instance of an object.",
+          "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrHashCode(Object o) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 747\n   at FixedArrayReference.\u003C\u003Ec__DisplayClass19_1.\u003CRun\u003Eg__HashObservation|2(XMRInstance i) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-object-whitespace-heap-phase37-reference\\Reference.cs:line 788"
+        },
+        "component_hashes": null,
+        "formula": null,
+        "alias_same_backing": null
+      },
+      "object_reference_pairs": [
+        {
+          "left": "raw",
+          "right": "alias",
+          "same_reference": true,
+          "object_equals": true
+        },
+        {
+          "left": "raw",
+          "right": "raw[0]",
+          "same_reference": false,
+          "object_equals": false
+        },
+        {
+          "left": "raw",
+          "right": "alias[0]",
+          "same_reference": false,
+          "object_equals": false
+        },
+        {
+          "left": "alias",
+          "right": "raw[0]",
+          "same_reference": false,
+          "object_equals": false
+        },
+        {
+          "left": "alias",
+          "right": "alias[0]",
+          "same_reference": false,
+          "object_equals": false
+        },
+        {
+          "left": "raw[0]",
+          "right": "alias[0]",
+          "same_reference": true,
+          "object_equals": true
+        }
+      ],
+      "event_code": "None",
+      "call_mode": 0,
+      "sleep_until_ticks": 0,
+      "object_description": "",
+      "event_arguments": null,
+      "state_index": 0,
+      "new_state_index": -1,
+      "initialize_globals": false,
+      "running": true,
+      "detectors": [
+        {
+          "key": "11111111-2222-3333-4444-555555555555",
+          "owner": "22222222-3333-4444-5555-666666666666",
+          "group": "33333333-4444-5555-6666-777777777777",
+          "name": "original rich detector 3",
+          "link_number": 5,
+          "type": 11,
+          "grab": [
+            3.125,
+            3.25,
+            3.5
+          ],
+          "position": [
+            13,
+            14,
+            15
+          ],
+          "rotation": [
+            {
+              "clr": "System.Double",
+              "value": 0.125,
+              "bits": "3fc0000000000000",
+              "text": "0.125"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0.25,
+              "bits": "3fd0000000000000",
+              "text": "0.25"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0.5,
+              "bits": "3fe0000000000000",
+              "text": "0.5"
+            },
+            {
+              "clr": "System.Double",
+              "value": 0.875,
+              "bits": "3fec000000000000",
+              "text": "0.875"
+            }
+          ],
+          "velocity": [
+            23,
+            24,
+            25
+          ],
+          "touch_st": [
+            -1,
+            -1,
+            0
+          ],
+          "touch_normal": [
+            0,
+            0,
+            0
+          ],
+          "touch_binormal": [
+            0,
+            0,
+            0
+          ],
+          "touch_pos": [
+            0,
+            0,
+            0
+          ],
+          "touch_uv": [
+            -1,
+            -1,
+            0
+          ],
+          "touch_face": -1
+        }
+      ],
+      "queue": [],
+      "frames": []
+    },
+    "incomplete_scene_resource_boundary": false,
+    "scheduler_guard_boundary": false,
+    "stop_scheduler_context": null,
+    "methodology": "Actual original full Object value source controls, gated YOption arrays. Scalar boxes/unboxes, defaults/locals/parameters/returns, CLR reference vs object.Equals and string identity observed from original object/string storage only (no synthetic boxing of value-storage during observation). RealSleep/privateproductionbinary/SAME-live and optional separateprocessimport; hash numbers are not assumed portable for identity-bearing values. Preserved separate hash baseline/gating groups.",
+    "sha256": {
+      "cache_key.txt": "754bf719bf9e1b6feb0c0f1b8532314d0f6e01e74479424a523ddd555ec431fa",
+      "detect-array.xml": "a54ca4e5f26d31a98b63cca7e3c95a199a39e5bdc40fb23eb9c8287d8de2c615",
+      "event-queue.xml": "09030ac3a8d5dbaa452ef2076d8c8a18f45eb5608570c79b134fc4ffc843309e",
+      "original.il.txt": "ed8e1296286b3a51f712abaf26c4e4d482a31b2748d2a9d27cb16722f15739ff",
+      "original.yobj": "ec8a18c8427a32aaed3d9085cb9f2f6c680e5dc420078042be6eda6fe24da6dd",
+      "permissive-control.bin": "9ba6a970192fb48698638ff45f65d033118d4413c164d03f0071197e688f176b",
+      "retained-constructor-capture.json": "f362b5a9e234e4fc0f5a7ec8fcbecfba6eee8d88c572f18868a5a55f8ec1eb63",
+      "retained-constructor-live.json": "ebff966002b0c38f37f448b8f10de5429f0e666f031655ed4730d8de297542ce",
+      "snapshot.bin": "9ba6a970192fb48698638ff45f65d033118d4413c164d03f0071197e688f176b",
+      "source.lsl": "3c424e81783b12656ed60603f9a44389c63815255caa76c5c65e8f3999d9bc3e",
+      "generator_source": "99e370b121bb82c5f1651985e492cadd18e13c7b951a432c5e8c3ae135e6b265",
+      "generator_assembly": "761139d7ca8ef2f11f3bdd104a1207f86da1b3ea259be06441d17d48f080da25",
+      "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+      "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+      "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+      "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+      "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+      "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+      "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+      "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+      "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+      "original_source_XMRInstCapture.cs": "775f1d83bd4610f788891269ea9ea08b1f79cf4bf3b44300d926f49c8a277cbd",
+      "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+      "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+      "original_source_Helpers.cs": "96b7c3090cdded9c12e986bc538705272eae4c0fc12f01deab8f0f1bb94c7bcf",
+      "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+      "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+      "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+      "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+      "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+      "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+      "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+    }
+  }
+]

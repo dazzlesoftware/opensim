@@ -1,0 +1,1 @@
+list first=read();list later;integer result;integer after;list read(){return later;}default{state_entry(){result=first!=later;after=1;}}

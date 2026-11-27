@@ -1,0 +1,1 @@
+rotation item=<0,0,0,1>;integer result;default{state_entry(){result=(integer)item;}}

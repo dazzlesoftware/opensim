@@ -1,0 +1,1 @@
+vector result;integer count;vector inner(){count++;return llRot2Fwd(<0,0,0,1>);}default{state_entry(){result=inner();}}

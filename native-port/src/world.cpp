@@ -1,43 +1,46 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/scene/world.hpp"
+#include "opensim/scene/object_teleport_motion.hpp"
 #include "opensim/framework/primitive_base_shape.hpp"
 #include "opensim/framework/texture_entry.hpp"
 #include "opensim/framework/permissions.hpp"
 #include "opensim/framework/sdk_quaternion.hpp"
+#include "opensim/framework/sdk_utf8.hpp"
+#include "opensim/framework/text.hpp"
 #include <tuple>
 #include <chrono>
 #include <bit>
 #include <algorithm>
 #include <cmath>
 #include <numbers>
+
 namespace opensim::scene {
 namespace {
 constexpr std::uint8_t prim_physics_shape = 0;
 constexpr std::uint8_t no_physics_shape = 1;
 constexpr std::uint8_t convex_hull_shape = 2;
 constexpr std::uint8_t mesh_sculpt_type = 5;
+} // namespace
 
-std::uint8_t default_physics_shape(const SceneObject& object) {
+std::uint8_t default_physics_shape(const SceneObject &object) {
     if (object.extra_params.size() > 1) {
-        auto geometry = framework::PrimitiveBaseShapeCore::create([](const std::string&) {});
+        auto geometry = framework::PrimitiveBaseShapeCore::create([](const std::string &) {});
         geometry.read_extra_params(std::make_shared<framework::ShapeByteArray>(object.extra_params));
         if (geometry.sculpt_type == mesh_sculpt_type)
             return convex_hull_shape;
     }
     return prim_physics_shape;
 }
-}
 
 SceneObject::SceneObject()
     : rezzed_at(std::chrono::system_clock::now()),
-      texture_entry(
-          framework::TextureEntry(framework::Uuid("89556747-24cb-43ed-920b-47caed15465f")).bytes()) {
+      texture_entry(framework::TextureEntry(framework::Uuid("89556747-24cb-43ed-920b-47caed15465f")).bytes()) {
     creation_date = std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(
         std::chrono::duration_cast<std::chrono::seconds>(rezzed_at.time_since_epoch()).count()));
 }
-SceneObject SceneObject::primitive(framework::Uuid owner, framework::Vector3 position,
-                                   framework::Vector3 scale) {
+
+SceneObject SceneObject::primitive(framework::Uuid owner, framework::Vector3 position, framework::Vector3 scale) {
     SceneObject result;
     result.id = framework::Uuid::random();
     result.owner = result.creator = result.rezzer = result.last_owner = owner;
@@ -45,23 +48,29 @@ SceneObject SceneObject::primitive(framework::Uuid owner, framework::Vector3 pos
     result.scale = scale;
     return result;
 }
+
 World::World(framework::Uuid region, std::uint32_t width, std::uint32_t height, std::uint32_t last_local_id)
-    : region_(region), terrain_(width, height), last_local_id_(last_local_id) {
-}
+    : region_(region), terrain_(width, height), last_local_id_(last_local_id) {}
+
 void World::clamp_inserted_prim_sizes(float minimum, float maximum) {
     std::lock_guard lock(mutex_);
     insertion_scale_limits_.emplace(minimum, maximum);
 }
+
 std::uint32_t World::allocate_local_id() {
     return last_local_id_.fetch_add(1, std::memory_order_relaxed) + 1u;
 }
-void World::event_unlocked(WorldEventKind kind, const SceneObject& object, std::int32_t script_changes) {
-    events_.push_back({kind, object, ++sequence_, script_changes});
+
+void World::event_unlocked(WorldEventKind kind, const SceneObject &object, std::int32_t script_changes,
+                           bool suppress_viewer_kill) {
+    events_.push_back({kind, object, ++sequence_, script_changes, suppress_viewer_kill});
 }
+
 std::optional<SceneObject> World::add(SceneObject object, bool attach_to_backup, bool send_update) {
     std::lock_guard lock(mutex_);
     return add_unlocked(std::move(object), attach_to_backup, send_update);
 }
+
 std::optional<SceneObject> World::add_unlocked(SceneObject object, bool attach_to_backup, bool send_update) {
     if (object.id.is_zero())
         return {};
@@ -71,7 +80,7 @@ std::optional<SceneObject> World::add_unlocked(SceneObject object, bool attach_t
         const auto parent = by_local_.find(object.parent_id);
         if (object.shape.pcode != 9 || parent == by_local_.end())
             return {};
-        const auto& root = objects_.at(parent->second);
+        const auto &root = objects_.at(parent->second);
         if ((!root.is_attachment && root.parent_id != 0) || root.shape.pcode != 9)
             return {};
     }
@@ -88,6 +97,8 @@ std::optional<SceneObject> World::add_unlocked(SceneObject object, bool attach_t
         };
         object.scale = {clamp(object.scale.x), clamp(object.scale.y), clamp(object.scale.z)};
     }
+    if (!object.parent_id && !object.is_attachment && object.shape.state == 0)
+        object.attached_group_position.reset();
     if (object.shape.pcode == 9 && !object.parent_id && object.physics.shape == no_physics_shape)
         object.physics.shape = default_physics_shape(object);
     if (object.local_id == 0)
@@ -114,20 +125,20 @@ std::optional<SceneObject> World::add_unlocked(SceneObject object, bool attach_t
         event_unlocked(WorldEventKind::Added, object);
     return object;
 }
+
 bool World::add_crossing_linkset(std::vector<SceneObject> parts, std::uint32_t wearer_local_id) {
     if (parts.empty() || (wearer_local_id && parts.front().shape.state == 0))
         return false;
     std::lock_guard lock(mutex_);
     std::set<framework::Uuid> ids;
-    const bool standalone_plant =
-        !wearer_local_id && parts.size() == 1 && is_vegetation(parts.front().shape.pcode);
-    for (const auto& part : parts)
+    const bool standalone_plant = !wearer_local_id && parts.size() == 1 && is_vegetation(parts.front().shape.pcode);
+    for (const auto &part : parts)
         if (part.id.is_zero() || (!standalone_plant && part.shape.pcode != 9) ||
-            (part.is_attachment && (!wearer_local_id || &part != &parts.front())) ||
-            objects_.contains(part.id) || !ids.insert(part.id).second)
+            (part.is_attachment && (!wearer_local_id || &part != &parts.front())) || objects_.contains(part.id) ||
+            !ids.insert(part.id).second)
             return false;
     std::set<std::uint32_t> local_ids;
-    for (auto& part : parts) {
+    for (auto &part : parts) {
         do {
             part.local_id = allocate_local_id();
         } while (!part.local_id || by_local_.contains(part.local_id) || !local_ids.insert(part.local_id).second);
@@ -135,24 +146,29 @@ bool World::add_crossing_linkset(std::vector<SceneObject> parts, std::uint32_t w
     const auto parent = parts.front().local_id;
     parts.front().is_attachment = wearer_local_id != 0;
     parts.front().parent_id = wearer_local_id;
-    for (auto& part : std::span(parts).subspan(1))
+    for (auto &part : std::span(parts).subspan(1))
         part.parent_id = parent;
-    for (auto& part : parts)
+    for (auto &part : parts)
         add_unlocked(std::move(part), !wearer_local_id, false);
     return true;
 }
-bool World::drop_attachment(framework::Uuid id, std::uint32_t wearer_local_id, framework::Vector3 position) {
+
+bool World::drop_attachment(framework::Uuid id, std::uint32_t wearer_local_id, framework::Vector3 position,
+                            framework::Quaternion rotation) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
     if (entry == objects_.end() || !entry->second.is_attachment || entry->second.parent_id != wearer_local_id)
         return false;
-    auto& root = entry->second;
+    auto &root = entry->second;
     if (const auto worn = attachments_.find(wearer_local_id); worn != attachments_.end()) {
         std::erase(worn->second, id);
         if (worn->second.empty())
             attachments_.erase(worn);
     }
+    // The active AttachmentsModule drop path preserves RootPart.AttachedPos.
+    // Native attachment position is that live offset; root OffsetPosition is independent.
     root.saved_attachment_position = root.position;
+    ++root.transform_history_generation;
     root.last_attachment_point = root.shape.state;
     root.from_inventory_item = root.from_inventory_folder = root.attachment_source_asset = {};
     root.parent_id = 0;
@@ -160,21 +176,29 @@ bool World::drop_attachment(framework::Uuid id, std::uint32_t wearer_local_id, f
     if (root.physics.shape == no_physics_shape)
         root.physics.shape = default_physics_shape(root);
     root.position = position;
+    root.attached_group_position.reset();
+    if (rotation != framework::Quaternion{0, 0, 0, 1})
+        root.rotation = rotation;
+    note_physics_edit_unlocked(root.id);
+    note_physics_group_pose_unlocked(root.id);
+    root.rezzed_at = std::chrono::system_clock::now();
     root.attached_to_backup = true;
     root.flags &= ~0x20000000u;
     temporary_expiry_.erase(id);
     root.shape.state = 0;
     root.changed = true;
     event_unlocked(WorldEventKind::Updated, root);
-    for (auto& [part_id, part] : objects_) {
+    for (auto &[part_id, part] : objects_) {
         if (part.is_attachment || part.parent_id != root.local_id)
             continue;
+        part.rezzed_at = root.rezzed_at;
         part.shape.state = 0;
         part.changed = true;
         event_unlocked(WorldEventKind::Updated, part);
     }
     return true;
 }
+
 bool World::attach_from_ground(framework::Uuid id, std::uint32_t wearer_local_id, std::uint8_t point,
                                framework::Vector3 offset, framework::Uuid item, framework::Uuid folder,
                                framework::Uuid asset) {
@@ -183,8 +207,9 @@ bool World::attach_from_ground(framework::Uuid id, std::uint32_t wearer_local_id
     if (entry == objects_.end() || entry->second.is_attachment || entry->second.parent_id ||
         entry->second.shape.pcode != 9 || !wearer_local_id || !point)
         return false;
-    auto& root = entry->second;
+    auto &root = entry->second;
     attachments_[wearer_local_id].push_back(id);
+    root.attached_group_position = offset;
     root.is_attachment = true;
     root.parent_id = wearer_local_id;
     root.position = offset;
@@ -196,17 +221,19 @@ bool World::attach_from_ground(framework::Uuid id, std::uint32_t wearer_local_id
     root.changed = true;
     temporary_expiry_.erase(id);
     event_unlocked(WorldEventKind::Updated, root);
-    for (const auto& [part_id, part] : objects_)
+    for (const auto &[part_id, part] : objects_)
         if (!part.is_attachment && part.parent_id == root.local_id)
             event_unlocked(WorldEventKind::Updated, part);
     return true;
 }
+
 std::optional<SceneObject> World::object(framework::Uuid id) const {
     std::lock_guard lock(mutex_);
     auto i = objects_.find(id);
     return i == objects_.end() ? std::nullopt
-                              : std::optional(snapshot_unlocked(i->second, std::chrono::steady_clock::now()));
+                               : std::optional(snapshot_unlocked(i->second, std::chrono::steady_clock::now()));
 }
+
 std::optional<SceneObject> World::object(std::uint32_t local_id) const {
     std::lock_guard lock(mutex_);
     auto i = by_local_.find(local_id);
@@ -214,29 +241,53 @@ std::optional<SceneObject> World::object(std::uint32_t local_id) const {
         return {};
     auto row = objects_.find(i->second);
     return row == objects_.end() ? std::nullopt
-                                : std::optional(snapshot_unlocked(row->second, std::chrono::steady_clock::now()));
+                                 : std::optional(snapshot_unlocked(row->second, std::chrono::steady_clock::now()));
 }
+
 std::vector<SceneObject> World::objects() const {
     std::lock_guard lock(mutex_);
     std::vector<SceneObject> result;
     result.reserve(objects_.size());
     const auto now = std::chrono::steady_clock::now();
-    for (const auto& [id, object] : objects_)
+    for (const auto &[id, object] : objects_)
         result.push_back(snapshot_unlocked(object, now));
     return result;
 }
-SceneObject World::snapshot_unlocked(const SceneObject& part, std::chrono::steady_clock::time_point now) const {
+
+std::vector<SceneObject> World::take_keyframed_motion_restores() {
+    std::lock_guard lock(mutex_);
+    std::vector<SceneObject> result;
+    for (auto &[id, part] : objects_)
+        if ((!part.parent_id || part.is_attachment) && !part.keyframed_motion.empty()) {
+            result.push_back(part);
+            part.keyframed_motion.clear();
+        }
+    return result;
+}
+
+bool World::clear_keyframed_motion(const SceneObject &expected) {
+    std::lock_guard lock(mutex_);
+    const auto part = objects_.find(expected.id);
+    if (part == objects_.end() || part->second.local_id != expected.local_id)
+        return false;
+    part->second.keyframed_motion.clear();
+    return true;
+}
+
+SceneObject World::snapshot_unlocked(const SceneObject &part, std::chrono::steady_clock::time_point now) const {
     auto snapshot = part;
     if (!snapshot.particle_system.empty() && particles_expired_unlocked(part.id, now))
         snapshot.particle_system.clear();
     return snapshot;
 }
+
 bool World::particles_expired_unlocked(framework::Uuid id, std::chrono::steady_clock::time_point now) const {
     const auto expiry = particle_expiry_.find(id);
     return expiry != particle_expiry_.end() && now.time_since_epoch() > expiry->second;
 }
+
 namespace {
-std::optional<PhysicalPrim> collision_prim(const SceneObject& object, const SceneObject& root) {
+std::optional<PhysicalPrim> collision_prim(const SceneObject &object, const SceneObject &root) {
     constexpr std::uint32_t physical = 1u, phantom = 0x400u;
     const bool dynamic = (root.flags & physical) != 0;
     const bool volume_detect = (object.flags & prim_flag_volume_detect) != 0;
@@ -247,13 +298,27 @@ std::optional<PhysicalPrim> collision_prim(const SceneObject& object, const Scen
 
     const auto make_prim = [&](framework::PrimType type, std::uint8_t segments, float hollow,
                                framework::LinearPrimPath path, framework::Uuid asset = {}) {
-        PhysicalPrim result{object.id, object.position, object.scale, {}, {}, {}, object.rotation,
-                            object.physics.density, dynamic, type, segments, hollow, path, {}, asset,
+        PhysicalPrim result{object.id,
+                            object.position,
+                            object.scale,
+                            {},
+                            {},
+                            {},
+                            object.rotation,
+                            object.physics.density,
+                            dynamic,
+                            type,
+                            segments,
+                            hollow,
+                            path,
+                            {},
+                            asset,
                             !asset.is_zero() && object.physics.shape == convex_hull_shape,
                             {object.physics.friction, object.physics.restitution}};
         result.volume_detect = volume_detect;
         result.phantom = is_phantom;
         result.root_id = root.id;
+        result.local_id = object.local_id;
         if (dynamic) {
             result.velocity = object.velocity;
             result.angular_velocity = object.angular_velocity;
@@ -283,7 +348,7 @@ std::optional<PhysicalPrim> collision_prim(const SceneObject& object, const Scen
         return result;
     };
     if (object.extra_params.size() > 1) {
-        auto geometry = framework::PrimitiveBaseShapeCore::create([](const std::string&) {});
+        auto geometry = framework::PrimitiveBaseShapeCore::create([](const std::string &) {});
         geometry.read_extra_params(std::make_shared<framework::ShapeByteArray>(object.extra_params));
         if (geometry.flexi_entry)
             return {};
@@ -293,7 +358,7 @@ std::optional<PhysicalPrim> collision_prim(const SceneObject& object, const Scen
             return {};
         }
     }
-    const auto& shape = object.shape;
+    const auto &shape = object.shape;
     const PrimShape box;
     const auto profile = shape.profile_curve & 0x0f;
     const bool is_box = shape.path_curve == box.path_curve && profile == box.profile_curve;
@@ -305,8 +370,7 @@ std::optional<PhysicalPrim> collision_prim(const SceneObject& object, const Scen
     const bool convex = object.physics.shape == convex_hull_shape;
     const bool linear = is_box || is_cylinder || is_prism;
     const bool supported_hollow = (linear || swept) && hollow_profile <= 0x30;
-    if (shape.pcode != box.pcode || (!linear && !is_sphere && !swept) ||
-        (swept && convex) ||
+    if (shape.pcode != box.pcode || (!linear && !is_sphere && !swept) || (swept && convex) ||
         (convex && (shape.profile_begin || shape.profile_end)) ||
         (shape.profile_hollow && !convex && !supported_hollow) ||
         (!swept && (shape.path_radius_offset || shape.path_taper_x || shape.path_taper_y || shape.path_skew)))
@@ -317,18 +381,19 @@ std::optional<PhysicalPrim> collision_prim(const SceneObject& object, const Scen
     };
     if (linear) {
         constexpr float radians_per_twist_unit = std::numbers::pi_v<float> * .01f;
-        path = {shape.path_begin * 2.e-5f, 1.f - shape.path_end * 2.e-5f,
+        path = {shape.path_begin * 2.e-5f,
+                1.f - shape.path_end * 2.e-5f,
                 std::clamp((int(shape.path_scale_x) - 100) * .01f, -1.f, 1.f),
                 std::clamp((int(shape.path_scale_y) - 100) * .01f, -1.f, 1.f),
-                decode_shear(shape.path_shear_x), decode_shear(shape.path_shear_y),
-                shape.path_twist_begin * radians_per_twist_unit, shape.path_twist * radians_per_twist_unit};
+                decode_shear(shape.path_shear_x),
+                decode_shear(shape.path_shear_y),
+                shape.path_twist_begin * radians_per_twist_unit,
+                shape.path_twist * radians_per_twist_unit};
         if (path.begin >= path.end)
             return {};
-    } else if ((!swept && (shape.path_begin || shape.path_end ||
-                          shape.path_scale_x != box.path_scale_x || shape.path_scale_y != box.path_scale_y ||
-                          shape.path_shear_x || shape.path_shear_y)) ||
-               (!swept && (shape.path_twist || shape.path_twist_begin || shape.profile_begin ||
-                           shape.profile_end))) {
+    } else if ((!swept && (shape.path_begin || shape.path_end || shape.path_scale_x != box.path_scale_x ||
+                           shape.path_scale_y != box.path_scale_y || shape.path_shear_x || shape.path_shear_y)) ||
+               (!swept && (shape.path_twist || shape.path_twist_begin || shape.profile_begin || shape.profile_end))) {
         return {};
     }
     if (linear || swept) {
@@ -359,8 +424,8 @@ std::optional<PhysicalPrim> collision_prim(const SceneObject& object, const Scen
         path.shear_y = decode_shear(shape.path_shear_y);
         // The managed curved mesher uses PathTwistBegin for both endpoints.
         path.twist_begin = path.twist_end = shape.path_twist_begin * (std::numbers::pi_v<float> * .02f);
-        if (path.begin >= path.end || path.hole_x <= 0.f || path.hole_x > 1.f ||
-            path.hole_y <= 0.f || path.hole_y > .5f)
+        if (path.begin >= path.end || path.hole_x <= 0.f || path.hole_x > 1.f || path.hole_y <= 0.f ||
+            path.hole_y > .5f)
             return {};
     }
     const bool uniform_sphere = is_sphere && object.scale.x == object.scale.y && object.scale.y == object.scale.z;
@@ -369,8 +434,9 @@ std::optional<PhysicalPrim> collision_prim(const SceneObject& object, const Scen
     const bool large_enough_to_mesh = std::max({object.scale.x, object.scale.y, object.scale.z}) > .1f;
     if (large_enough_to_mesh && !uniform_sphere) {
         if (swept) {
-            type = profile == 0 ? framework::PrimType::Torus :
-                   profile == 1 ? framework::PrimType::Tube : framework::PrimType::Ring;
+            type = profile == 0   ? framework::PrimType::Torus
+                   : profile == 1 ? framework::PrimType::Tube
+                                  : framework::PrimType::Ring;
             mesh_segments = profile == 0 ? 24 : profile == 1 ? 4 : 3;
         } else if (is_prism) {
             type = framework::PrimType::Prism;
@@ -382,24 +448,42 @@ std::optional<PhysicalPrim> collision_prim(const SceneObject& object, const Scen
             mesh_segments = 4;
         }
     }
-    const float hollow = mesh_segments && !convex && supported_hollow
-        ? shape.profile_hollow * 2.e-5f : 0.f;
+    const float hollow = mesh_segments && !convex && supported_hollow ? shape.profile_hollow * 2.e-5f : 0.f;
     if (!mesh_segments)
         path.hollow_segments = 0;
     return make_prim(type, mesh_segments, hollow, path);
 }
-}
+} // namespace
+
 std::vector<PhysicalPrim> World::collision_prims() const {
     std::lock_guard lock(mutex_);
     std::vector<PhysicalPrim> boxes;
     std::map<framework::Uuid, std::vector<PhysicalPrimPart>> children;
-    for (const auto& [id, object] : objects_) {
-        if (selected_.contains(id))
+    std::set<framework::Uuid> edited_groups;
+    std::set<framework::Uuid> edited_parts;
+    std::set<framework::Uuid> edited_group_poses;
+    for (const auto &[id, part] : objects_) {
+        const auto root = linkset_root_id_unlocked(id);
+        const auto selection = physics_selection_.find(root);
+        if (selection == physics_selection_.end() || selection->second.generation == 0)
             continue;
-        const SceneObject* root = &object;
+        const auto at_selection = selection->second.geometry_at_selection.find(id);
+        const auto revision = physics_geometry_revision_.find(id);
+        const auto current = revision == physics_geometry_revision_.end() ? 0 : revision->second;
+        if (at_selection == selection->second.geometry_at_selection.end() || at_selection->second != current) {
+            edited_groups.insert(root);
+            edited_parts.insert(id);
+        }
+        const auto pose = physics_group_pose_revision_.find(root);
+        const auto pose_revision = pose == physics_group_pose_revision_.end() ? 0 : pose->second;
+        if (selection->second.group_pose_at_selection != pose_revision)
+            edited_group_poses.insert(root);
+    }
+    for (const auto &[id, object] : objects_) {
+        const SceneObject *root = &object;
         if (object.parent_id) {
             const auto parent = by_local_.find(object.parent_id);
-            if (parent == by_local_.end() || selected_.contains(parent->second))
+            if (parent == by_local_.end())
                 continue;
             root = &objects_.at(parent->second);
             if (root->parent_id)
@@ -408,35 +492,75 @@ std::vector<PhysicalPrim> World::collision_prims() const {
         auto box = collision_prim(object, *root);
         if (!box)
             continue;
+        box->selected = group_selected_.contains(root->id);
+        box->edited_after_selection = box->dynamic ? edited_groups.contains(root->id)
+                                                   : edited_parts.contains(id) || edited_group_poses.contains(root->id);
+        if (const auto selection = physics_selection_.find(root->id); selection != physics_selection_.end()) {
+            box->selection_generation = selection->second.generation;
+            box->linear_command = selection->second.linear;
+            box->angular_command = selection->second.angular;
+            box->linear_after_selection = selection->second.linear != selection->second.selection_linear;
+            box->angular_after_selection = selection->second.angular != selection->second.selection_angular;
+        }
         if (object.parent_id && box->dynamic) {
-            children[root->id].push_back({box->scale, box->position, box->rotation, box->density,
-                                          box->type, box->mesh_segments, box->hollow, box->path, box->mesh_asset,
-                                          box->convex_mesh, box->contact_material, box->id, box->volume_detect, box->phantom});
+            children[root->id].push_back({box->scale, box->position, box->rotation, box->density, box->type,
+                                          box->mesh_segments, box->hollow, box->path, box->mesh_asset, box->convex_mesh,
+                                          box->contact_material, box->id, box->volume_detect, box->phantom,
+                                          box->local_id});
         } else {
             boxes.push_back(std::move(*box));
         }
     }
-    for (auto& box : boxes)
+    for (auto &box : boxes)
         if (const auto parts = children.find(box.id); parts != children.end())
             box.children = std::move(parts->second);
     return boxes;
 }
-bool World::apply_physical_prim_motion(const PhysicalPrim& expected, const PhysicalPrim& motion) {
+
+bool World::apply_physics_selection_stop(PhysicalPrim &expected) {
+    std::lock_guard lock(mutex_);
+    const auto part = objects_.find(expected.id);
+    if (part == objects_.end() || part->second.local_id != expected.local_id)
+        return false;
+    const auto root_id = linkset_root_id_unlocked(expected.id);
+    const auto state = physics_selection_.find(root_id);
+    const auto generation = state == physics_selection_.end() ? 0 : state->second.generation;
+    if (generation != expected.selection_generation || group_selected_.contains(root_id) != expected.selected ||
+        (state != physics_selection_.end() &&
+         (state->second.linear != expected.linear_command || state->second.angular != expected.angular_command)))
+        return false;
+    if (expected.id != root_id)
+        return true; // Child actors do not own the group's cached motion.
+    auto &object = part->second;
+    // Static actor motion is not read back by SceneObjectPart's getters.
+    // Selected nonphysical KFM keeps its stored visual motion.
+    if (expected.dynamic) {
+        if (expected.selected || !expected.linear_after_selection)
+            object.velocity = expected.velocity = {};
+        if (expected.selected || !expected.angular_after_selection)
+            object.angular_velocity = expected.angular_velocity = {};
+        object.acceleration = expected.acceleration = {};
+    }
+    event_unlocked(WorldEventKind::TerseUpdated, object);
+    return true;
+}
+
+bool World::apply_physical_prim_motion(const PhysicalPrim &expected, const PhysicalPrim &motion) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(expected.id);
-    if (entry == objects_.end() || entry->second.parent_id || !expected.dynamic || selected_.contains(expected.id))
+    if (entry == objects_.end() || entry->second.local_id != expected.local_id || entry->second.parent_id ||
+        !expected.dynamic)
         return false;
-    auto& object = entry->second;
+    auto &object = entry->second;
     const auto current = collision_prim(object, object);
-    if (!current || !current->dynamic || current->type != expected.type ||
-        current->mesh_asset != expected.mesh_asset || current->convex_mesh != expected.convex_mesh ||
-        current->mesh_segments != expected.mesh_segments || current->hollow != expected.hollow ||
-        current->path != expected.path || current->contact_material != expected.contact_material ||
-        current->scale != expected.scale || current->gravity_modifier != expected.gravity_modifier ||
-        current->buoyancy != expected.buoyancy || current->force != expected.force ||
-        current->torque != expected.torque || current->hover != expected.hover ||
-        current->move_target != expected.move_target ||
-        current->look_at != expected.look_at || current->inertia_override != expected.inertia_override ||
+    if (!current || !current->dynamic || current->type != expected.type || current->mesh_asset != expected.mesh_asset ||
+        current->convex_mesh != expected.convex_mesh || current->mesh_segments != expected.mesh_segments ||
+        current->hollow != expected.hollow || current->path != expected.path ||
+        current->contact_material != expected.contact_material || current->scale != expected.scale ||
+        current->gravity_modifier != expected.gravity_modifier || current->buoyancy != expected.buoyancy ||
+        current->force != expected.force || current->torque != expected.torque || current->hover != expected.hover ||
+        current->move_target != expected.move_target || current->look_at != expected.look_at ||
+        current->inertia_override != expected.inertia_override ||
         current->rotation_axis_locks != expected.rotation_axis_locks ||
         current->volume_detect != expected.volume_detect || current->phantom != expected.phantom ||
         current->density != expected.density || current->position != expected.position ||
@@ -452,31 +576,31 @@ bool World::apply_physical_prim_motion(const PhysicalPrim& expected, const Physi
     event_unlocked(WorldEventKind::TerseUpdated, object);
     return true;
 }
+
 std::vector<LandPrimGroup> World::land_prim_groups(bool include_temporary) const {
     constexpr std::uint32_t temporary_on_rez = 0x20000000u;
     std::lock_guard lock(mutex_);
     std::map<std::uint32_t, LandPrimGroup> groups;
-    for (const auto& [id, object] : objects_) {
-        if (!object.is_attachment && !object.parent_id &&
-            (include_temporary || !(object.flags & temporary_on_rez))) {
-            groups.emplace(object.local_id, LandPrimGroup{
-                object.owner, object.group, object.position, object.local_id, 1, selected_.contains(id)});
+    for (const auto &[id, object] : objects_) {
+        if (!object.is_attachment && !object.parent_id && (include_temporary || !(object.flags & temporary_on_rez))) {
+            groups.emplace(object.local_id, LandPrimGroup{object.owner, object.group, object.position, object.local_id,
+                                                          1, group_selected_.contains(id)});
         }
     }
-    for (const auto& [id, object] : objects_) {
+    for (const auto &[id, object] : objects_) {
         if (object.is_attachment || !object.parent_id)
             continue;
         if (const auto root = groups.find(object.parent_id); root != groups.end()) {
             ++root->second.prims;
-            root->second.selected |= selected_.contains(id);
         }
     }
     std::vector<LandPrimGroup> result;
     result.reserve(groups.size());
-    for (const auto& [local_id, group] : groups)
+    for (const auto &[local_id, group] : groups)
         result.push_back(group);
     return result;
 }
+
 std::vector<SceneObject> World::attachments(std::uint32_t parent) const {
     std::lock_guard lock(mutex_);
     std::vector<SceneObject> result;
@@ -484,36 +608,39 @@ std::vector<SceneObject> World::attachments(std::uint32_t parent) const {
     if (worn == attachments_.end())
         return result;
     result.reserve(worn->second.size());
-    for (const auto& id : worn->second)
+    for (const auto &id : worn->second)
         result.push_back(objects_.at(id));
     return result;
 }
+
 std::size_t World::size() const {
     std::lock_guard lock(mutex_);
     return objects_.size();
 }
+
 std::int32_t World::prim_count(framework::Uuid id, bool include_attachments) const {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
     if (entry == objects_.end())
         return 0;
-    const auto& object = entry->second;
+    const auto &object = entry->second;
     const auto root = object.parent_id && !object.is_attachment ? object.parent_id : object.local_id;
     const auto parent = by_local_.find(root);
     if (!include_attachments && parent != by_local_.end() && objects_.at(parent->second).is_attachment)
         return 0;
     std::int32_t count = 1;
     if (root)
-        for (const auto& [part_id, part] : objects_)
+        for (const auto &[part_id, part] : objects_)
             if (!part.is_attachment && part.parent_id == root)
                 ++count;
     return count;
 }
+
 std::uint64_t World::assign_link_membership_unlocked(framework::Uuid root) {
     const auto entry = free_link_memberships_.find(root);
     if (entry == free_link_memberships_.end())
         return ++link_sequence_;
-    auto& free = entry->second;
+    auto &free = entry->second;
     const auto order = free.back();
     free.pop_back();
     if (free.empty())
@@ -526,17 +653,18 @@ std::vector<framework::Uuid> World::link_children_in_membership_order(framework:
     const auto root = objects_.find(id);
     if (root == objects_.end() || !root->second.local_id)
         return {};
-    std::vector<const SceneObject*> children;
-    for (const auto& [part_id, part] : objects_)
+    std::vector<const SceneObject *> children;
+    for (const auto &[part_id, part] : objects_)
         if (!part.is_attachment && part.parent_id == root->second.local_id)
             children.push_back(&part);
     std::ranges::sort(children, {}, &SceneObject::link_membership_order);
     std::vector<framework::Uuid> result;
     result.reserve(children.size());
-    for (const auto* child : children)
+    for (const auto *child : children)
         result.push_back(child->id);
     return result;
 }
+
 framework::Uuid World::link_key(framework::Uuid id, std::int32_t number) const {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
@@ -544,7 +672,7 @@ framework::Uuid World::link_key(framework::Uuid id, std::int32_t number) const {
         return id;
     if (entry == objects_.end() || number < 0)
         return {};
-    const auto& object = entry->second;
+    const auto &object = entry->second;
     auto root = entry;
     if (object.parent_id && !object.is_attachment) {
         const auto parent = by_local_.find(object.parent_id);
@@ -558,8 +686,8 @@ framework::Uuid World::link_key(framework::Uuid id, std::int32_t number) const {
         return root->first;
     if (!root->second.local_id)
         return {};
-    std::vector<const SceneObject*> children;
-    for (const auto& [part_id, part] : objects_)
+    std::vector<const SceneObject *> children;
+    for (const auto &[part_id, part] : objects_)
         if (!part.is_attachment && part.parent_id == root->second.local_id)
             children.push_back(&part);
     const auto index = static_cast<std::size_t>(number - 2);
@@ -567,21 +695,22 @@ framework::Uuid World::link_key(framework::Uuid id, std::int32_t number) const {
         return {};
     const auto child = children.begin() + index;
     std::nth_element(children.begin(), child, children.end(),
-                     [](const auto* a, const auto* b) { return a->link_order < b->link_order; });
+                     [](const auto *a, const auto *b) { return a->link_order < b->link_order; });
     return (*child)->id;
 }
+
 std::int32_t World::link_number(framework::Uuid id) const {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
     if (entry == objects_.end())
         return 0;
-    const auto& object = entry->second;
+    const auto &object = entry->second;
     const bool child = object.parent_id && !object.is_attachment;
     const auto parent = child ? object.parent_id : object.local_id;
     if (!parent)
         return 0;
     std::int32_t number = child ? 2 : 0;
-    for (const auto& [part_id, part] : objects_) {
+    for (const auto &[part_id, part] : objects_) {
         if (part.is_attachment || part.parent_id != parent)
             continue;
         if (!child)
@@ -591,42 +720,46 @@ std::int32_t World::link_number(framework::Uuid id) const {
     }
     return number;
 }
+
 framework::Vector3 World::geometric_center(framework::Uuid id) const {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
     if (entry == objects_.end())
         return {};
-    const auto& object = entry->second;
+    const auto &object = entry->second;
     const auto root_local = object.parent_id && !object.is_attachment ? object.parent_id : object.local_id;
     if (!root_local || !by_local_.contains(root_local))
         return {};
+    std::vector<const SceneObject *> children;
+    for (const auto &[part_id, part] : objects_)
+        if (!part.is_attachment && part.parent_id == root_local)
+            children.push_back(&part);
+    // Match the original part array's addition order for float accumulation.
+    std::ranges::sort(children, {}, &SceneObject::link_membership_order);
     framework::Vector3 center{};
-    std::size_t count = 1;
-    for (const auto& [part_id, part] : objects_) {
-        if (part.is_attachment || part.parent_id != root_local)
-            continue;
-        center.x += part.position.x;
-        center.y += part.position.y;
-        center.z += part.position.z;
-        ++count;
+    for (const auto *part : children) {
+        center.x += part->position.x;
+        center.y += part->position.y;
+        center.z += part->position.z;
     }
-    const auto divisor = static_cast<float>(count);
+    const auto divisor = static_cast<float>(children.size() + 1);
     return {center.x / divisor, center.y / divisor, center.z / divisor};
 }
+
 std::array<framework::Vector3, 2> World::bounding_box(framework::Uuid id) const {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
     if (entry == objects_.end())
         return {};
-    const auto& object = entry->second;
+    const auto &object = entry->second;
     const auto root_id = object.parent_id && !object.is_attachment ? object.parent_id : object.local_id;
     const auto local = by_local_.find(root_id);
     if (local == by_local_.end())
         return {};
-    const auto& root = objects_.at(local->second);
+    const auto &root = objects_.at(local->second);
     framework::Vector3 upper{root.scale.x * .5f, root.scale.y * .5f, root.scale.z * .5f};
     framework::Vector3 lower{-upper.x, -upper.y, -upper.z};
-    for (const auto& [part_id, part] : objects_) {
+    for (const auto &[part_id, part] : objects_) {
         if (part.is_attachment || part.parent_id != root_id)
             continue;
         const auto x = framework::sdk_rotate_vector({1, 0, 0}, part.rotation);
@@ -646,18 +779,151 @@ std::array<framework::Vector3, 2> World::bounding_box(framework::Uuid id) const 
     }
     return {lower, upper};
 }
+
+std::optional<ObjectTeleportWorldGroup> World::teleport_group(framework::Uuid id) const {
+    std::lock_guard lock(mutex_);
+    const auto entry = objects_.find(id);
+    if (entry == objects_.end())
+        return std::nullopt;
+    const auto &root = entry->second;
+    if (root.parent_id && !root.is_attachment)
+        return std::nullopt;
+    return ObjectTeleportWorldGroup{snapshot_unlocked(root, std::chrono::steady_clock::now()),
+                                    group_selected_.contains(id)};
+}
+
+std::optional<ObjectTeleportMotion> World::store_teleport_motion(const SceneObject &expected,
+                                                                 const ObjectTeleportMotion &motion) {
+    std::lock_guard lock(mutex_);
+    const auto entry = objects_.find(expected.id);
+    if (entry == objects_.end() || entry->second.local_id != expected.local_id || entry->second.parent_id ||
+        entry->second.is_attachment)
+        return std::nullopt;
+    auto &root = entry->second;
+    const auto stored = object_teleport_root_storage(motion);
+    root.velocity = stored.velocity;
+    root.angular_velocity = stored.angular_velocity;
+    root.acceleration = stored.acceleration;
+    root.rotation = stored.orientation;
+    note_physics_edit_unlocked(root.id);
+    note_physics_group_pose_unlocked(root.id);
+    return stored;
+}
+
+std::optional<ObjectTeleportMotion> World::store_crossing_teleport_motion(const SceneObject &expected,
+                                                                          const ObjectTeleportMotion &motion) {
+    std::lock_guard lock(mutex_);
+    const auto entry = objects_.find(expected.id);
+    if (entry == objects_.end() || entry->second.local_id != expected.local_id || entry->second.parent_id ||
+        entry->second.is_attachment)
+        return std::nullopt;
+    auto &root = entry->second;
+    const auto stored = object_teleport_root_storage(motion);
+    root.look_at.enabled = false;
+    root.velocity = stored.velocity;
+    root.angular_velocity = stored.angular_velocity;
+    root.acceleration = stored.acceleration;
+    root.rotation = stored.orientation;
+    note_physics_edit_unlocked(root.id);
+    note_physics_group_pose_unlocked(root.id);
+    return stored;
+}
+
+bool World::store_keyframed_properties(const SceneObject &expected, std::optional<framework::Quaternion> rotation,
+                                       std::optional<framework::Vector3> velocity,
+                                       std::optional<framework::Vector3> angular_velocity) {
+    std::lock_guard lock(mutex_);
+    const auto entry = objects_.find(expected.id);
+    if (entry == objects_.end() || entry->second.local_id != expected.local_id ||
+        (entry->second.parent_id && !entry->second.is_attachment))
+        return false;
+    auto &root = entry->second;
+    // Teleport uses the same original SceneObjectPart property setters. This
+    // includes the original Util.IsNanOrInfinity Z-infinity validation quirk.
+    const auto stored = object_teleport_root_storage({velocity.value_or(root.velocity),
+                                                      angular_velocity.value_or(root.angular_velocity),
+                                                      root.acceleration, rotation.value_or(root.rotation)});
+    if (rotation) {
+        root.rotation = stored.orientation;
+        note_physics_edit_unlocked(root.id);
+        note_physics_group_pose_unlocked(root.id);
+    }
+    if (velocity)
+        root.velocity = stored.velocity;
+    if (angular_velocity)
+        root.angular_velocity = stored.angular_velocity;
+    return true;
+}
+
+bool World::store_keyframed_position(const SceneObject &expected, framework::Vector3 position) {
+    std::lock_guard lock(mutex_);
+    const auto entry = objects_.find(expected.id);
+    if (entry == objects_.end() || entry->second.local_id != expected.local_id ||
+        (entry->second.parent_id && !entry->second.is_attachment))
+        return false;
+    note_physics_edit_unlocked(expected.id);
+    note_physics_group_pose_unlocked(expected.id);
+    // GroupPosition assignment itself does not schedule an update or mark the
+    // group changed. The KFM timer explicitly schedules terse afterwards.
+    if (entry->second.is_attachment)
+        entry->second.attached_group_position = position;
+    else
+        entry->second.position = position;
+    return true;
+}
+
+std::optional<framework::Vector3> World::keyframed_group_position(const SceneObject &expected) const {
+    std::lock_guard lock(mutex_);
+    const auto entry = objects_.find(expected.id);
+    if (entry == objects_.end() || entry->second.local_id != expected.local_id ||
+        (entry->second.parent_id && !entry->second.is_attachment))
+        return {};
+    return entry->second.is_attachment ? entry->second.attached_group_position : std::optional{entry->second.position};
+}
+
+bool World::schedule_keyframed_terse(const SceneObject &expected) {
+    std::lock_guard lock(mutex_);
+    const auto entry = objects_.find(expected.id);
+    if (entry == objects_.end() || entry->second.local_id != expected.local_id ||
+        (entry->second.parent_id && !entry->second.is_attachment))
+        return false;
+    mark_linkset_changed_unlocked(entry->second);
+    event_unlocked(WorldEventKind::TerseUpdated, entry->second);
+    return true;
+}
+
+bool World::finish_object_teleport(const SceneObject &expected, framework::Vector3 position) {
+    std::lock_guard lock(mutex_);
+    const auto entry = objects_.find(expected.id);
+    if (entry == objects_.end() || entry->second.local_id != expected.local_id || entry->second.parent_id ||
+        entry->second.is_attachment)
+        return false;
+    auto &root = entry->second;
+    root.position = position;
+    note_physics_edit_unlocked(root.id);
+    note_physics_group_pose_unlocked(root.id);
+    mark_linkset_changed_unlocked(root);
+    event_unlocked(WorldEventKind::TerseUpdated, root);
+    return true;
+}
+
 bool World::update_transform(framework::Uuid id, framework::Vector3 position, framework::Quaternion rotation,
                              framework::Vector3 scale) {
     return patch_transform(id, position, rotation, scale);
 }
+
 bool World::patch_transform(framework::Uuid id, std::optional<framework::Vector3> position,
-                            std::optional<framework::Quaternion> rotation,
-                            std::optional<framework::Vector3> scale, bool preserve_children) {
+                            std::optional<framework::Quaternion> rotation, std::optional<framework::Vector3> scale,
+                            bool preserve_children) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
     if (entry == objects_.end())
         return false;
-    auto& object = entry->second;
+    auto &object = entry->second;
+    if (position || rotation || scale)
+        note_physics_edit_unlocked(id);
+    if (position || rotation)
+        note_physics_group_pose_unlocked(id);
     constexpr std::int32_t changed_scale = 8;
     const auto changes = scale && object.scale != *scale ? changed_scale : 0;
     if (preserve_children && object.local_id && object.parent_id == 0 && !object.is_attachment &&
@@ -668,13 +934,14 @@ bool World::patch_transform(framework::Uuid id, std::optional<framework::Vector3
         const auto adjustment = framework::sdk_multiply_quaternion(inverse, object.rotation);
         const auto delta = framework::sdk_rotate_vector(
             {object.position.x - next.x, object.position.y - next.y, object.position.z - next.z}, inverse);
-        for (auto& [part_id, part] : objects_) {
+        for (auto &[part_id, part] : objects_) {
             if (part.is_attachment || part.parent_id != object.local_id)
                 continue;
             const auto offset = framework::sdk_rotate_vector(part.position, adjustment);
             part.position = {offset.x + delta.x, offset.y + delta.y, offset.z + delta.z};
             if (rotation)
                 part.rotation = framework::sdk_multiply_quaternion(adjustment, part.rotation);
+            note_physics_edit_unlocked(part_id);
             part.changed = true;
             event_unlocked(WorldEventKind::Updated, part);
         }
@@ -689,7 +956,8 @@ bool World::patch_transform(framework::Uuid id, std::optional<framework::Vector3
     event_unlocked(WorldEventKind::Updated, object, changes);
     return true;
 }
-void World::mark_linkset_changed_unlocked(SceneObject& part) {
+
+void World::mark_linkset_changed_unlocked(SceneObject &part) {
     part.changed = true;
     if (!part.is_attachment && part.parent_id) {
         const auto parent = by_local_.find(part.parent_id);
@@ -697,13 +965,36 @@ void World::mark_linkset_changed_unlocked(SceneObject& part) {
             objects_.at(parent->second).changed = true;
     }
 }
+
 bool World::update_object_text(framework::Uuid id, bool description, std::string value) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
     if (entry == objects_.end())
         return false;
-    auto& object = entry->second;
-    auto& text = description ? object.description : object.name;
+    const auto bytes = framework::sdk_utf8_no_term(framework::utf16_replacing(value),
+                                                   description ? std::optional<std::size_t>{127} : std::nullopt);
+    return update_object_text_normalized_unlocked(entry->second, description, {bytes.begin(), bytes.end()});
+}
+
+bool World::update_object_text_utf16(framework::Uuid id, bool description, std::u16string_view value) {
+    std::lock_guard lock(mutex_);
+    const auto entry = objects_.find(id);
+    if (entry == objects_.end())
+        return false;
+    const auto bytes = framework::sdk_utf8_no_term(value, description ? std::optional<std::size_t>{127} : std::nullopt);
+    return update_object_text_normalized_unlocked(entry->second, description, {bytes.begin(), bytes.end()});
+}
+
+bool World::update_object_text_normalized(framework::Uuid id, bool description, std::string value) {
+    std::lock_guard lock(mutex_);
+    const auto entry = objects_.find(id);
+    if (entry == objects_.end())
+        return false;
+    return update_object_text_normalized_unlocked(entry->second, description, std::move(value));
+}
+
+bool World::update_object_text_normalized_unlocked(SceneObject &object, bool description, std::string value) {
+    auto &text = description ? object.description : object.name;
     if (text == value)
         return true;
     text = std::move(value);
@@ -711,6 +1002,7 @@ bool World::update_object_text(framework::Uuid id, bool description, std::string
     event_unlocked(WorldEventKind::Updated, object);
     return true;
 }
+
 bool World::update_click_action(framework::Uuid id, std::uint8_t action, bool broadcast) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
@@ -724,12 +1016,13 @@ bool World::update_click_action(framework::Uuid id, std::uint8_t action, bool br
         event_unlocked(WorldEventKind::Updated, entry->second);
     return true;
 }
+
 void World::set_searchable(framework::Uuid id, bool searchable) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
     if (entry == objects_.end())
         return;
-    auto& object = entry->second;
+    auto &object = entry->second;
     constexpr std::uint32_t include_in_search = 0x8000u;
     if (searchable)
         object.flags |= include_in_search;
@@ -737,12 +1030,13 @@ void World::set_searchable(framework::Uuid id, bool searchable) {
         object.flags &= ~include_in_search;
     mark_linkset_changed_unlocked(object);
 }
+
 void World::set_allowed_drop(framework::Uuid id, bool allowed) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
     if (entry == objects_.end())
         return;
-    auto& part = entry->second;
+    auto &part = entry->second;
     constexpr std::uint32_t flag = 0x10000u;
     const auto flags = allowed ? part.flags | flag : part.flags & ~flag;
     if (flags != part.flags) {
@@ -750,6 +1044,7 @@ void World::set_allowed_drop(framework::Uuid id, bool allowed) {
         mark_linkset_changed_unlocked(part);
     }
 }
+
 void World::set_script_access_pin(framework::Uuid id, std::int32_t pin) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
@@ -758,11 +1053,12 @@ void World::set_script_access_pin(framework::Uuid id, std::int32_t pin) {
         mark_linkset_changed_unlocked(entry->second);
     }
 }
+
 void World::set_seat_camera(framework::Uuid id, std::optional<framework::Vector3> eye,
-                             std::optional<framework::Vector3> at, std::optional<bool> mouselook) {
+                            std::optional<framework::Vector3> at, std::optional<bool> mouselook) {
     std::lock_guard lock(mutex_);
     if (const auto entry = objects_.find(id); entry != objects_.end()) {
-        auto& part = entry->second;
+        auto &part = entry->second;
         if (eye)
             part.camera_eye_offset = *eye;
         if (at)
@@ -771,6 +1067,7 @@ void World::set_seat_camera(framework::Uuid id, std::optional<framework::Vector3
             part.force_mouselook = *mouselook;
     }
 }
+
 void World::set_stand_target(framework::Uuid id, framework::Vector3 offset) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
@@ -779,6 +1076,7 @@ void World::set_stand_target(framework::Uuid id, framework::Vector3 offset) {
         mark_linkset_changed_unlocked(entry->second);
     }
 }
+
 void World::set_sit_active_range(framework::Uuid id, float range) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
@@ -787,18 +1085,20 @@ void World::set_sit_active_range(framework::Uuid id, float range) {
         mark_linkset_changed_unlocked(entry->second);
     }
 }
+
 void World::set_sit_target(framework::Uuid id, framework::Vector3 position, framework::Quaternion orientation) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
     if (entry == objects_.end())
         return;
-    auto& part = entry->second;
+    auto &part = entry->second;
     if (part.sit_target_position == position && part.sit_target_orientation == orientation)
         return;
     part.sit_target_position = position;
     part.sit_target_orientation = orientation;
     mark_linkset_changed_unlocked(part);
 }
+
 void World::set_pass_collisions(framework::Uuid id, bool pass) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
@@ -807,6 +1107,7 @@ void World::set_pass_collisions(framework::Uuid id, bool pass) {
         mark_linkset_changed_unlocked(entry->second);
     }
 }
+
 void World::set_pass_touches(framework::Uuid id, bool pass) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
@@ -815,6 +1116,7 @@ void World::set_pass_touches(framework::Uuid id, bool pass) {
         mark_linkset_changed_unlocked(entry->second);
     }
 }
+
 void World::set_die_at_edge(framework::Uuid root, bool enabled) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(root);
@@ -823,12 +1125,14 @@ void World::set_die_at_edge(framework::Uuid root, bool enabled) {
         mark_linkset_changed_unlocked(entry->second);
     }
 }
+
 void World::set_return_at_edge(framework::Uuid root, bool enabled) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(root);
     if (entry != objects_.end())
         entry->second.return_at_edge = enabled;
 }
+
 void World::set_sandbox(framework::Uuid part, framework::Uuid root, bool enabled) {
     std::lock_guard lock(mutex_);
     const auto host = objects_.find(part);
@@ -838,6 +1142,7 @@ void World::set_sandbox(framework::Uuid part, framework::Uuid root, bool enabled
     host->second.sandbox_origin = entry->second.position;
     entry->second.sandboxed = enabled;
 }
+
 void World::enable_cast_shadows(framework::Uuid id) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
@@ -845,6 +1150,7 @@ void World::enable_cast_shadows(framework::Uuid id) {
         return;
     entry->second.flags |= cast_shadows_flag;
 }
+
 void World::set_grab_block(framework::Uuid id, bool whole_linkset, bool enabled) {
     std::lock_guard lock(mutex_);
     const auto part = objects_.find(id);
@@ -855,13 +1161,32 @@ void World::set_grab_block(framework::Uuid id, bool whole_linkset, bool enabled)
     else
         part->second.block_grab = enabled;
 }
-bool World::update_motion(framework::Uuid id, framework::Vector3 velocity,
-                          framework::Vector3 angular_velocity, framework::Vector3 acceleration) {
+
+bool World::restore_rejected_crossing(framework::Uuid id) {
+    std::lock_guard lock(mutex_);
+    const auto entry = objects_.find(id);
+    if (entry == objects_.end() || entry->second.parent_id || entry->second.is_attachment)
+        return false;
+    auto &root = entry->second;
+    root.position.x = std::clamp(root.position.x, .5f, static_cast<float>(terrain_.width()) - .5f);
+    root.position.y = std::clamp(root.position.y, .5f, static_cast<float>(terrain_.height()) - .5f);
+    root.velocity = {};
+    root.angular_velocity = {};
+    root.acceleration = {};
+    root.look_at.enabled = false;
+    root.attached_to_backup = true;
+    root.changed = true;
+    event_unlocked(WorldEventKind::Updated, root);
+    return true;
+}
+
+bool World::update_motion(framework::Uuid id, framework::Vector3 velocity, framework::Vector3 angular_velocity,
+                          framework::Vector3 acceleration) {
     std::lock_guard lock(mutex_);
     auto i = objects_.find(id);
     if (i == objects_.end())
         return false;
-    auto& object = i->second;
+    auto &object = i->second;
     object.velocity = velocity;
     object.angular_velocity = angular_velocity;
     object.acceleration = acceleration;
@@ -869,12 +1194,13 @@ bool World::update_motion(framework::Uuid id, framework::Vector3 velocity,
     event_unlocked(WorldEventKind::Updated, object);
     return true;
 }
+
 std::optional<std::uint8_t> World::update_material(framework::Uuid id, std::uint8_t material) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
     if (entry == objects_.end())
         return std::nullopt;
-    auto& object = entry->second;
+    auto &object = entry->second;
     constexpr float friction[] = {.8f, .3f, .2f, .6f, .9f, .4f, .9f, 0.f};
     constexpr float restitution[] = {.4f, .4f, .7f, .5f, .3f, .7f, .95f, 0.f};
     if (material <= 7 && (object.material != material || object.physics.friction != friction[material] ||
@@ -887,18 +1213,20 @@ std::optional<std::uint8_t> World::update_material(framework::Uuid id, std::uint
     }
     return object.material;
 }
+
 std::optional<SceneObject> World::prepare_attached_sound(framework::Uuid id, float default_radius) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
     if (entry == objects_.end())
         return {};
-    auto& object = entry->second;
+    auto &object = entry->second;
     if (object.sound_radius == 0)
         object.sound_radius = default_radius;
     object.sound_flags = 0;
     return object;
 }
-void World::set_pay_prices(framework::Uuid id, const std::array<std::int32_t, 5>& prices) {
+
+void World::set_pay_prices(framework::Uuid id, const std::array<std::int32_t, 5> &prices) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
     if (entry == objects_.end() || (entry->second.parent_id && !entry->second.is_attachment))
@@ -906,40 +1234,44 @@ void World::set_pay_prices(framework::Uuid id, const std::array<std::int32_t, 5>
     entry->second.pay_prices = prices;
     mark_linkset_changed_unlocked(entry->second);
 }
+
 void World::set_linkset_damage(framework::Uuid part, float damage) {
     std::lock_guard lock(mutex_);
     if (const auto root = objects_.find(linkset_root_id_unlocked(part)); root != objects_.end())
         root->second.damage = damage;
 }
-void World::set_collision_sound(framework::Uuid id, framework::Uuid asset, float volume,
-                                bool default_volume_override) {
+
+void World::set_collision_sound(framework::Uuid id, framework::Uuid asset, float volume, bool default_volume_override) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
     if (entry == objects_.end())
         return;
-    auto& object = entry->second;
+    auto &object = entry->second;
     object.collision_sound = asset;
     object.collision_sound_volume_override = default_volume_override;
     object.collision_sound_volume = volume >= 0.f ? volume : 0.f;
     mark_linkset_changed_unlocked(object);
 }
+
 void World::set_sound_queueing(framework::Uuid id, bool queue) {
     std::lock_guard lock(mutex_);
     if (const auto entry = objects_.find(id); entry != objects_.end())
         entry->second.sound_queueing = queue;
 }
+
 void World::set_sound_radius(framework::Uuid id, float radius) {
     std::lock_guard lock(mutex_);
     if (const auto entry = objects_.find(id); entry != objects_.end())
         entry->second.sound_radius = radius;
 }
+
 void World::set_looped_sound(framework::Uuid id, framework::Uuid asset, float gain, float radius,
                              std::uint8_t sync_flags) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
     if (entry == objects_.end())
         return;
-    auto& object = entry->second;
+    auto &object = entry->second;
     object.looped_sound = asset;
     object.looped_sound_gain = gain;
     object.sound_flags = asset.is_zero() ? 32 : 1 | sync_flags | (object.sound_queueing ? 16 : 0);
@@ -948,18 +1280,20 @@ void World::set_looped_sound(framework::Uuid id, framework::Uuid asset, float ga
     mark_linkset_changed_unlocked(object);
     event_unlocked(WorldEventKind::Updated, object);
 }
+
 void World::set_interaction_label(framework::Uuid id, bool sit, std::string text) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
     if (entry == objects_.end())
         return;
-    auto& object = entry->second;
-    auto& label = sit ? object.sit_name : object.touch_name;
+    auto &object = entry->second;
+    auto &label = sit ? object.sit_name : object.touch_name;
     if (label == text)
         return;
     label = std::move(text);
     mark_linkset_changed_unlocked(object);
 }
+
 void World::set_floating_text(framework::Uuid id, std::string text, std::uint32_t argb) {
     if (text.size() > 254) {
         std::size_t end = 254;
@@ -971,7 +1305,7 @@ void World::set_floating_text(framework::Uuid id, std::string text, std::uint32_
     const auto entry = objects_.find(id);
     if (entry == objects_.end())
         return;
-    auto& object = entry->second;
+    auto &object = entry->second;
     if (object.floating_text == text && object.text_argb == argb)
         return;
     object.floating_text = std::move(text);
@@ -979,31 +1313,37 @@ void World::set_floating_text(framework::Uuid id, std::string text, std::uint32_
     mark_linkset_changed_unlocked(object);
     event_unlocked(WorldEventKind::Updated, object);
 }
+
 void World::update_extra_param(framework::Uuid id, std::uint16_t type, bool enabled,
-                               const std::vector<std::uint8_t>& data) {
+                               const std::vector<std::uint8_t> &data, bool skip_unchanged) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
     if (entry == objects_.end())
         return;
-    auto& object = entry->second;
-    framework::PrimitiveBaseShapeCore shape([](const std::string&) {});
+    auto &object = entry->second;
+    framework::PrimitiveBaseShapeCore shape([](const std::string &) {});
     try {
         shape.read_extra_params(std::make_shared<framework::ShapeByteArray>(object.extra_params));
+        if (skip_unchanged && type == 64 && !enabled && !shape.projection_entry)
+            return;
         shape.update_extra_param(type, enabled, std::make_shared<framework::ShapeByteArray>(data));
-    } catch (const framework::PrimitiveShapeError&) {
+    } catch (const framework::PrimitiveShapeError &) {
         return;
     }
     object.extra_params = shape.extra_params();
+    if (type == 16 || type == 48)
+        note_physics_edit_unlocked(id);
     mark_linkset_changed_unlocked(object);
     event_unlocked(WorldEventKind::Updated, object);
 }
-bool World::set_render_materials(const SceneObject& previous, std::vector<std::uint8_t> extra_params,
+
+bool World::set_render_materials(const SceneObject &previous, std::vector<std::uint8_t> extra_params,
                                  std::vector<std::uint8_t> overrides, std::int32_t script_changes) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(previous.id);
     if (entry == objects_.end())
         return false;
-    auto& part = entry->second;
+    auto &part = entry->second;
     if (part.extra_params != previous.extra_params || part.material_overrides != previous.material_overrides)
         return false;
     part.extra_params = std::move(extra_params);
@@ -1012,15 +1352,17 @@ bool World::set_render_materials(const SceneObject& previous, std::vector<std::u
     event_unlocked(WorldEventKind::MaterialsUpdated, part, script_changes);
     return true;
 }
+
 bool World::update_shape(framework::Uuid id, PrimShape shape) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
     if (entry == objects_.end())
         return false;
-    auto& object = entry->second;
+    auto &object = entry->second;
     shape.pcode = object.shape.pcode;
     shape.state = object.shape.state;
     object.shape = shape;
+    note_physics_edit_unlocked(id);
     if (!object.is_attachment && object.parent_id != 0) {
         const auto parent = by_local_.find(object.parent_id);
         if (parent != by_local_.end())
@@ -1031,13 +1373,13 @@ bool World::update_shape(framework::Uuid id, PrimShape shape) {
     event_unlocked(WorldEventKind::Updated, object, changed_shape);
     return true;
 }
+
 int PrimShape::face_count() const {
     const auto profile = profile_curve & 7;
     const bool straight = path_curve == 16 || path_curve == 128;
     const bool curved = path_curve == 32;
     const bool profile_cut = profile_begin != 0 || profile_end != 0;
-    const bool path_cut =
-        path_begin != 0 || path_end != 0 || path_skew != 0 || path_twist_begin != path_twist;
+    const bool path_cut = path_begin != 0 || path_end != 0 || path_skew != 0 || path_twist_begin != path_twist;
     const bool hollow = profile_hollow != 0;
     if (profile == 5 && (curved || path_curve == 48))
         return 1 + 2 * path_cut + 2 * (profile_cut || hollow) + hollow;
@@ -1059,17 +1401,19 @@ int PrimShape::face_count() const {
     const bool curved_primitive = curved && (profile == 0 || profile == 1 || profile == 3);
     return faces + (curved_primitive && curved_path_cut ? 2 : 0) + (profile_cut ? 2 - removed : 0) + hollow;
 }
+
 bool World::set_object_animations(framework::Uuid id, std::vector<std::uint8_t> animations) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
     if (entry == objects_.end())
         return false;
-    auto& part = entry->second;
+    auto &part = entry->second;
     part.object_animations = std::move(animations);
     mark_linkset_changed_unlocked(part);
     event_unlocked(WorldEventKind::AnimationsUpdated, part);
     return true;
 }
+
 bool World::set_dynamic_attributes(framework::Uuid id, std::string_view expected, std::string xml) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
@@ -1079,15 +1423,16 @@ bool World::set_dynamic_attributes(framework::Uuid id, std::string_view expected
     mark_linkset_changed_unlocked(entry->second);
     return true;
 }
-bool World::set_legacy_material_textures(const SceneObject& previous, std::vector<std::uint8_t> textures,
+
+bool World::set_legacy_material_textures(const SceneObject &previous, std::vector<std::uint8_t> textures,
                                          bool publish_update) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(previous.id);
     if (entry == objects_.end())
         return false;
-    auto& part = entry->second;
-    if (part.texture_entry != previous.texture_entry || part.owner != previous.owner ||
-        part.group != previous.group || part.parent_id != previous.parent_id)
+    auto &part = entry->second;
+    if (part.texture_entry != previous.texture_entry || part.owner != previous.owner || part.group != previous.group ||
+        part.parent_id != previous.parent_id)
         return false;
     part.texture_entry = std::move(textures);
     mark_linkset_changed_unlocked(part);
@@ -1096,23 +1441,25 @@ bool World::set_legacy_material_textures(const SceneObject& previous, std::vecto
         event_unlocked(WorldEventKind::Updated, part, changed_texture);
     return true;
 }
-void World::set_texture_animation(framework::Uuid id, const std::vector<std::uint8_t>& bytes) {
+
+void World::set_texture_animation(framework::Uuid id, const std::vector<std::uint8_t> &bytes) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
     if (entry == objects_.end())
         return;
-    auto& part = entry->second;
+    auto &part = entry->second;
     part.texture_animation = bytes;
     mark_linkset_changed_unlocked(part);
     event_unlocked(WorldEventKind::Updated, part);
 }
-void World::set_particle_system(framework::Uuid id, std::vector<std::uint8_t> bytes,
-                                std::optional<float> timed_age, std::chrono::steady_clock::time_point now) {
+
+void World::set_particle_system(framework::Uuid id, std::vector<std::uint8_t> bytes, std::optional<float> timed_age,
+                                std::chrono::steady_clock::time_point now) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
     if (entry == objects_.end())
         return;
-    auto& part = entry->second;
+    auto &part = entry->second;
     if (particles_expired_unlocked(id, now))
         part.particle_system.clear();
     particle_expiry_.erase(id);
@@ -1126,6 +1473,7 @@ void World::set_particle_system(framework::Uuid id, std::vector<std::uint8_t> by
         mark_linkset_changed_unlocked(part);
     event_unlocked(WorldEventKind::Updated, part);
 }
+
 void World::expire_particle_systems(std::chrono::steady_clock::time_point now) {
     std::lock_guard lock(mutex_);
     for (auto expiry = particle_expiry_.begin(); expiry != particle_expiry_.end();) {
@@ -1138,20 +1486,21 @@ void World::expire_particle_systems(std::chrono::steady_clock::time_point now) {
         expiry = particle_expiry_.erase(expiry);
     }
 }
-bool World::update_texture(framework::Uuid id, const std::vector<std::uint8_t>& bytes) {
+
+bool World::update_texture(framework::Uuid id, const std::vector<std::uint8_t> &bytes) {
     framework::TextureEntry incoming(bytes);
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
     if (entry == objects_.end())
         return false;
-    auto& object = entry->second;
+    auto &object = entry->second;
     framework::TextureEntry current(object.texture_entry);
     const auto blank = framework::TextureEntry(framework::TextureEntry::white_texture).default_texture;
     if (!incoming.default_texture)
         incoming.default_texture = blank;
     if (!current.default_texture)
         current.default_texture = blank;
-    const auto properties = [](const framework::TextureFace& face) {
+    const auto properties = [](const framework::TextureFace &face) {
         return std::tuple{face.texture_id(),  face.bump(),     face.fullbright(), face.glow(),
                           face.media_flags(), face.offset_u(), face.offset_v(),   face.repeat_u(),
                           face.repeat_v(),    face.rotation(), face.shiny(),      face.mapping()};
@@ -1160,8 +1509,8 @@ bool World::update_texture(framework::Uuid id, const std::vector<std::uint8_t>& 
     constexpr std::int32_t changed_color = 2, changed_texture = 16;
     std::int32_t changes = 0;
     for (int i = 0; i < sides; ++i) {
-        const auto& before = current.faces[i] ? current.faces[i] : current.default_texture;
-        const auto& after = incoming.faces[i] ? incoming.faces[i] : incoming.default_texture;
+        const auto &before = current.faces[i] ? current.faces[i] : current.default_texture;
+        const auto &after = incoming.faces[i] ? incoming.faces[i] : incoming.default_texture;
         if (before->color() != after->color())
             changes |= changed_color;
         if (properties(*before) != properties(*after))
@@ -1180,13 +1529,14 @@ bool World::update_texture(framework::Uuid id, const std::vector<std::uint8_t>& 
     event_unlocked(WorldEventKind::Updated, object, changes);
     return true;
 }
-bool World::update_face_media(const SceneObject& previous, std::string xml, std::string version,
+
+bool World::update_face_media(const SceneObject &previous, std::string xml, std::string version,
                               std::vector<std::uint8_t> textures) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(previous.id);
     if (entry == objects_.end())
         return false;
-    auto& object = entry->second;
+    auto &object = entry->second;
     if (object.media_url != previous.media_url || object.face_media_xml != previous.face_media_xml ||
         object.texture_entry != previous.texture_entry || object.shape.face_count() != previous.shape.face_count())
         return false;
@@ -1200,19 +1550,95 @@ bool World::update_face_media(const SceneObject& previous, std::string xml, std:
     return true;
 }
 
+void World::note_physics_edit_unlocked(framework::Uuid id) {
+    ++physics_geometry_revision_[id];
+}
+
+void World::note_physics_group_pose_unlocked(framework::Uuid id) {
+    const auto root = objects_.find(id);
+    if (root != objects_.end() && !root->second.parent_id && !root->second.is_attachment)
+        ++physics_group_pose_revision_[id];
+}
+
+void World::record_physics_selection_unlocked(framework::Uuid id) {
+    auto &physics = physics_selection_[id];
+    ++physics.generation;
+    physics.selection_linear = physics.linear;
+    physics.selection_angular = physics.angular;
+    physics.group_pose_at_selection = physics_group_pose_revision_[id];
+    physics.geometry_at_selection.clear();
+    const auto root = objects_.find(id);
+    if (root == objects_.end())
+        return;
+    for (const auto &[part_id, part] : objects_)
+        if (part_id == id || (!part.is_attachment && part.parent_id == root->second.local_id))
+            physics.geometry_at_selection[part_id] = physics_geometry_revision_[part_id];
+}
+
 bool World::set_selected(framework::Uuid id, bool selected) {
     std::lock_guard lock(mutex_);
     if (!objects_.contains(id))
         return false;
-    return selected ? selected_.insert(id).second : selected_.erase(id) != 0;
+    const bool part_changed = selected ? selected_.insert(id).second : selected_.erase(id) != 0;
+    const auto root_id = linkset_root_id_unlocked(id);
+    const auto root = objects_.find(root_id);
+    if (root == objects_.end() || group_selected_.contains(root_id) == selected)
+        return part_changed;
+    // SceneObjectPart.IsSelected always calls PartSelectChanged, even when its
+    // own flag was unchanged. A forced group deselection can leave selected parts.
+    if (!selected)
+        for (const auto &[part_id, part] : objects_)
+            if ((part_id == root_id || (!part.is_attachment && part.parent_id == root->second.local_id)) &&
+                selected_.contains(part_id))
+                return part_changed;
+    if (selected)
+        group_selected_.insert(root_id);
+    else
+        group_selected_.erase(root_id);
+    record_physics_selection_unlocked(root_id);
+    return true;
 }
-bool World::update_angular_velocity(framework::Uuid id, framework::Vector3 angular_velocity,
-                                    bool full_refresh) {
+
+bool World::part_selected(framework::Uuid id) const {
+    std::lock_guard lock(mutex_);
+    return selected_.contains(id);
+}
+
+std::optional<std::pair<std::uint64_t, bool>> World::physics_selection_state(framework::Uuid id) const {
+    std::lock_guard lock(mutex_);
+    const auto root = linkset_root_id_unlocked(id);
+    if (!objects_.contains(root))
+        return {};
+    const auto state = physics_selection_.find(root);
+    return std::pair{state == physics_selection_.end() ? std::uint64_t{0} : state->second.generation,
+                     group_selected_.contains(root)};
+}
+
+bool World::set_group_selected(const SceneObject &expected, bool selected) {
+    std::lock_guard lock(mutex_);
+    const auto root = objects_.find(expected.id);
+    if (root == objects_.end() || root->second.local_id != expected.local_id ||
+        (root->second.parent_id && !root->second.is_attachment))
+        return false;
+    if (group_selected_.contains(expected.id) != selected) {
+        if (selected)
+            group_selected_.insert(expected.id);
+        else
+            group_selected_.erase(expected.id);
+        record_physics_selection_unlocked(expected.id);
+    }
+    return true;
+}
+
+bool World::update_angular_velocity(framework::Uuid id, framework::Vector3 angular_velocity, bool full_refresh) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
     if (entry == objects_.end())
         return false;
-    auto& object = entry->second;
+    auto &object = entry->second;
+    if (!object.parent_id && (object.flags & 1u) && group_selected_.contains(id))
+        return false;
+    ++physics_selection_[id].angular;
     if (object.angular_velocity != angular_velocity) {
         object.angular_velocity = angular_velocity;
         object.changed = true;
@@ -1222,29 +1648,28 @@ bool World::update_angular_velocity(framework::Uuid id, framework::Vector3 angul
     event_unlocked(full_refresh ? WorldEventKind::Updated : WorldEventKind::TerseUpdated, object);
     return true;
 }
+
 bool World::link_prim(framework::Uuid id, framework::Uuid root_id, int physical_capacity, bool insert) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
     const auto parent = objects_.find(root_id);
     if (entry == objects_.end() || parent == objects_.end() || entry == parent)
         return false;
-    auto& child = entry->second;
-    auto& root = parent->second;
-    if (child.is_attachment || root.is_attachment || child.parent_id || root.parent_id ||
-        child.shape.pcode != 9 || root.shape.pcode != 9 || child.owner != root.owner || !child.local_id ||
-        !root.local_id)
+    auto &child = entry->second;
+    auto &root = parent->second;
+    if (child.is_attachment || root.is_attachment || child.parent_id || root.parent_id || child.shape.pcode != 9 ||
+        root.shape.pcode != 9 || child.owner != root.owner || !child.local_id || !root.local_id)
         return false;
     constexpr std::uint32_t physics = 1u;
-    const auto in_linksets = [&](const SceneObject& part) {
+    const auto in_linksets = [&](const SceneObject &part) {
         return part.id == id || part.id == root_id ||
                (!part.is_attachment && (part.parent_id == child.local_id || part.parent_id == root.local_id));
     };
     if ((root.flags & physics) && physical_capacity > 0) {
-        const auto shapes = std::ranges::count_if(objects_, [&](const auto& entry) {
-            return in_linksets(entry.second) && entry.second.physics.shape != 1;
-        });
+        const auto shapes = std::ranges::count_if(
+            objects_, [&](const auto &entry) { return in_linksets(entry.second) && entry.second.physics.shape != 1; });
         if (shapes > physical_capacity) {
-            for (auto& [part_id, part] : objects_) {
+            for (auto &[part_id, part] : objects_) {
                 if (in_linksets(part)) {
                     part.flags &= ~physics;
                     part.changed = true;
@@ -1258,13 +1683,12 @@ bool World::link_prim(framework::Uuid id, framework::Uuid root_id, int physical_
     const auto source_position = child.position;
     const auto source_rotation = child.rotation;
     constexpr std::int32_t changed_link = 32;
-    const auto reparent = [&](SceneObject& part, framework::Vector3 position,
-                              framework::Quaternion rotation) {
+    const auto reparent = [&](SceneObject &part, framework::Vector3 position, framework::Quaternion rotation) {
         part.position = framework::sdk_rotate_vector(
-            {position.x - root.position.x, position.y - root.position.y, position.z - root.position.z},
-            inverse);
+            {position.x - root.position.x, position.y - root.position.y, position.z - root.position.z}, inverse);
         part.rotation = framework::sdk_multiply_quaternion(inverse, rotation);
         part.parent_id = root.local_id;
+        ++part.transform_history_generation;
         part.attached_to_backup = false;
         part.link_order = ++link_sequence_;
         part.link_membership_order = assign_link_membership_unlocked(root.id);
@@ -1273,8 +1697,8 @@ bool World::link_prim(framework::Uuid id, framework::Uuid root_id, int physical_
     };
     root.changed = true;
     event_unlocked(WorldEventKind::Updated, root, changed_link);
-    std::vector<SceneObject*> existing_children;
-    for (auto& [part_id, part] : objects_) {
+    std::vector<SceneObject *> existing_children;
+    for (auto &[part_id, part] : objects_) {
         if (!part.is_attachment && part.parent_id == root.local_id) {
             if (insert)
                 existing_children.push_back(&part);
@@ -1286,38 +1710,41 @@ bool World::link_prim(framework::Uuid id, framework::Uuid root_id, int physical_
     child.sale_price = 10;
     temporary_expiry_.erase(child.id);
     free_link_memberships_.erase(child.id);
+    // The source group ceases to exist; linking does not assign the target's IsSelected.
+    group_selected_.erase(child.id);
+    physics_selection_.erase(child.id);
     reparent(child, source_position, source_rotation);
-    std::vector<SceneObject*> source_children;
-    for (auto& [part_id, part] : objects_)
+    std::vector<SceneObject *> source_children;
+    for (auto &[part_id, part] : objects_)
         if (!part.is_attachment && part.parent_id == source_local)
             source_children.push_back(&part);
     std::sort(source_children.begin(), source_children.end(),
-              [](const auto* a, const auto* b) { return a->link_order < b->link_order; });
-    for (auto* child_part : source_children) {
-        auto& part = *child_part;
+              [](const auto *a, const auto *b) { return a->link_order < b->link_order; });
+    for (auto *child_part : source_children) {
+        auto &part = *child_part;
         const auto offset = framework::sdk_rotate_vector(part.position, source_rotation);
-        reparent(part,
-                 {source_position.x + offset.x, source_position.y + offset.y, source_position.z + offset.z},
+        reparent(part, {source_position.x + offset.x, source_position.y + offset.y, source_position.z + offset.z},
                  framework::sdk_multiply_quaternion(source_rotation, part.rotation));
     }
     std::ranges::sort(existing_children, {}, &SceneObject::link_order);
-    for (auto* part : existing_children) {
+    for (auto *part : existing_children) {
         part->link_order = ++link_sequence_;
         part->changed = true;
         event_unlocked(WorldEventKind::Updated, *part, changed_link);
     }
     return true;
 }
+
 bool World::delink_child(framework::Uuid id, framework::Uuid expected_root, bool notify_remaining) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
     const auto parent = objects_.find(expected_root);
     if (entry == objects_.end() || parent == objects_.end())
         return false;
-    auto& child = entry->second;
-    auto& root = parent->second;
-    if (child.is_attachment || child.parent_id == 0 || child.parent_id != root.local_id ||
-        root.is_attachment || root.parent_id != 0)
+    auto &child = entry->second;
+    auto &root = parent->second;
+    if (child.is_attachment || child.parent_id == 0 || child.parent_id != root.local_id || root.is_attachment ||
+        root.parent_id != 0)
         return false;
     const auto offset = framework::sdk_rotate_vector(child.position, root.rotation);
     child.position = {root.position.x + offset.x, root.position.y + offset.y, root.position.z + offset.z};
@@ -1326,6 +1753,10 @@ bool World::delink_child(framework::Uuid id, framework::Uuid expected_root, bool
     child.rezzer = root.rezzer;
     child.rezzed_at = root.rezzed_at;
     child.parent_id = 0;
+    // DelinkFromGroup wraps the part in a new group, whose selection defaults false.
+    group_selected_.erase(child.id);
+    physics_selection_.erase(child.id);
+    ++child.transform_history_generation;
     if (child.physics.shape == no_physics_shape)
         child.physics.shape = default_physics_shape(child);
     child.attached_to_backup = true;
@@ -1337,11 +1768,12 @@ bool World::delink_child(framework::Uuid id, framework::Uuid expected_root, bool
     constexpr std::int32_t changed_link = 32;
     event_unlocked(WorldEventKind::Updated, child, changed_link);
     event_unlocked(WorldEventKind::Updated, root, notify_remaining ? changed_link : 0);
-    for (const auto& [part_id, part] : objects_)
+    for (const auto &[part_id, part] : objects_)
         if (!part.is_attachment && part.parent_id == root.local_id)
             event_unlocked(WorldEventKind::Updated, part, notify_remaining ? changed_link : 0);
     return true;
 }
+
 framework::Uuid World::linkset_root_id_unlocked(framework::Uuid id) const {
     const auto part = objects_.find(id);
     if (part == objects_.end())
@@ -1351,6 +1783,7 @@ framework::Uuid World::linkset_root_id_unlocked(framework::Uuid id) const {
     const auto root = by_local_.find(part->second.parent_id);
     return root != by_local_.end() ? root->second : framework::Uuid{};
 }
+
 void World::set_prim_buoyancy(framework::Uuid id, float buoyancy) {
     if (!std::isfinite(buoyancy))
         return;
@@ -1359,6 +1792,7 @@ void World::set_prim_buoyancy(framework::Uuid id, float buoyancy) {
     if (part != objects_.end() && !part->second.is_attachment)
         part->second.buoyancy = buoyancy;
 }
+
 void World::set_prim_force(framework::Uuid id, framework::Vector3 force) {
     if (!std::isfinite(force.x) || !std::isfinite(force.y) || !std::isfinite(force.z))
         return;
@@ -1367,36 +1801,40 @@ void World::set_prim_force(framework::Uuid id, framework::Vector3 force) {
     if (root != objects_.end())
         root->second.force = force;
 }
+
 framework::Vector3 World::prim_force(framework::Uuid id) const {
     std::lock_guard lock(mutex_);
     const auto root = objects_.find(linkset_root_id_unlocked(id));
     return root != objects_.end() ? root->second.force : framework::Vector3{};
 }
+
 void World::set_prim_torque(framework::Uuid id, framework::Vector3 torque, bool local) {
     std::lock_guard lock(mutex_);
     const auto root = objects_.find(linkset_root_id_unlocked(id));
-    if (root == objects_.end())
+    if (root == objects_.end() || group_selected_.contains(root->first))
         return;
     if (local) {
         const auto rotation = root->second.rotation;
-        const auto world_rotation = root->second.parent_id
-            ? framework::sdk_multiply_quaternion(rotation, rotation) : rotation;
+        const auto world_rotation =
+            root->second.parent_id ? framework::sdk_multiply_quaternion(rotation, rotation) : rotation;
         torque = framework::sdk_rotate_vector(torque, world_rotation);
     }
     if (std::isfinite(torque.x) && std::isfinite(torque.y) && std::isfinite(torque.z))
         root->second.torque = torque;
 }
+
 framework::Vector3 World::prim_torque(framework::Uuid id) const {
     std::lock_guard lock(mutex_);
     const auto root = objects_.find(linkset_root_id_unlocked(id));
     return root != objects_.end() ? root->second.torque : framework::Vector3{};
 }
+
 void World::set_rotation_axes(framework::Uuid id, std::uint8_t axes, bool enabled) {
     std::lock_guard lock(mutex_);
     const auto root = objects_.find(linkset_root_id_unlocked(id));
     if (root == objects_.end())
         return;
-    auto& object = root->second;
+    auto &object = root->second;
     const auto previous = object.rotation_axis_locks;
     const auto updated = static_cast<std::uint8_t>(enabled ? previous & ~axes : previous | axes);
     if (updated == previous)
@@ -1425,7 +1863,7 @@ void World::set_prim_look_at(framework::Uuid id, framework::PrimLookAt target) {
     const auto root = objects_.find(linkset_root_id_unlocked(id));
     if (root == objects_.end() || root->second.is_attachment)
         return;
-    auto& object = root->second;
+    auto &object = root->second;
     if (target.active()) {
         if (object.flags & 1u)
             object.look_at = target;
@@ -1435,17 +1873,18 @@ void World::set_prim_look_at(framework::Uuid id, framework::PrimLookAt target) {
         object.look_at = {};
     }
 }
+
 void World::set_prim_move_target(framework::Uuid id, framework::PrimMoveTarget target) {
     const auto position = target.position;
     if (!std::isfinite(target.tau) ||
-        (target.active() && (!std::isfinite(position.x) || !std::isfinite(position.y) ||
-                             !std::isfinite(position.z))))
+        (target.active() && (!std::isfinite(position.x) || !std::isfinite(position.y) || !std::isfinite(position.z))))
         return;
     std::lock_guard lock(mutex_);
     const auto root = objects_.find(linkset_root_id_unlocked(id));
     if (root != objects_.end() && !root->second.is_attachment)
         root->second.move_target = target.active() ? target : framework::PrimMoveTarget{};
 }
+
 void World::set_prim_hover(framework::Uuid id, framework::PrimHover hover) {
     if (!std::isfinite(hover.height) || !std::isfinite(hover.tau))
         return;
@@ -1454,19 +1893,22 @@ void World::set_prim_hover(framework::Uuid id, framework::PrimHover hover) {
     if (root != objects_.end() && !root->second.is_attachment)
         root->second.hover = hover.height == 0.f ? framework::PrimHover{} : hover;
 }
+
 void World::set_prim_velocity(framework::Uuid id, framework::Vector3 velocity, bool local, bool angular) {
     std::lock_guard lock(mutex_);
     const auto part = objects_.find(id);
     const auto root = objects_.find(linkset_root_id_unlocked(id));
     if (part == objects_.end() || root == objects_.end() || root->second.is_attachment)
         return;
-    auto& object = root->second;
+    auto &object = root->second;
+    if (group_selected_.contains(object.id))
+        return;
     const auto collider = collision_prim(object, object);
     if (!collider || !collider->dynamic)
         return;
     if (local) {
-        const auto rotation = part == root ? object.rotation
-            : framework::sdk_multiply_quaternion(object.rotation, part->second.rotation);
+        const auto rotation =
+            part == root ? object.rotation : framework::sdk_multiply_quaternion(object.rotation, part->second.rotation);
         velocity = framework::sdk_rotate_vector(velocity, rotation);
     }
     if (!std::isfinite(velocity.x) || !std::isfinite(velocity.y) || !std::isfinite(velocity.z))
@@ -1478,21 +1920,23 @@ void World::set_prim_velocity(framework::Uuid id, framework::Vector3 velocity, b
             velocity = {velocity.x * scale, velocity.y * scale, velocity.z * scale};
         }
     }
-    auto& current = angular ? object.angular_velocity : object.velocity;
+    auto &physics = physics_selection_[object.id];
+    ++(angular ? physics.angular : physics.linear);
+    auto &current = angular ? object.angular_velocity : object.velocity;
     if (current == velocity)
         return;
     current = velocity;
     event_unlocked(WorldEventKind::Updated, object);
 }
-std::optional<PrimPhysicsProperties> World::update_extra_physics(framework::Uuid id,
-                                                                 PrimPhysicsProperties requested,
+
+std::optional<PrimPhysicsProperties> World::update_extra_physics(framework::Uuid id, PrimPhysicsProperties requested,
                                                                  bool update_shape) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
     if (entry == objects_.end())
         return {};
-    auto& part = entry->second;
-    auto& current = part.physics;
+    auto &part = entry->second;
+    auto &current = part.physics;
     if (requested.shape == 255)
         return current;
     const auto previous = current;
@@ -1509,21 +1953,24 @@ std::optional<PrimPhysicsProperties> World::update_extra_physics(framework::Uuid
         current.restitution = requested.restitution;
     if (requested.gravity >= -1.f && requested.gravity <= 28.f)
         current.gravity = requested.gravity;
+    if (current.shape != previous.shape)
+        note_physics_edit_unlocked(id);
     if (current != previous) {
         mark_linkset_changed_unlocked(part);
         event_unlocked(WorldEventKind::Updated, part);
     }
     return current;
 }
+
 bool World::set_script_permission_mask(framework::Uuid id, std::int32_t selector, std::int32_t value) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
     if (entry == objects_.end())
         return false;
-    auto& part = entry->second;
+    auto &part = entry->second;
     if (!framework::set_lsl_permission_mask(
-            {&part.base_mask, &part.owner_mask, &part.group_mask, &part.everyone_mask, &part.next_mask},
-            selector, value))
+            {&part.base_mask, &part.owner_mask, &part.group_mask, &part.everyone_mask, &part.next_mask}, selector,
+            value))
         return false;
     mark_linkset_changed_unlocked(part);
     return true;
@@ -1534,24 +1981,27 @@ bool World::set_sale_info(framework::Uuid id, std::uint8_t type, std::int32_t pr
     const auto entry = objects_.find(id);
     if (entry == objects_.end())
         return false;
-    auto& root = entry->second;
+    auto &root = entry->second;
     root.sale_type = type;
     root.sale_price = price;
     root.changed = true;
     return true;
 }
-bool World::set_linkset_data(framework::Uuid id, std::vector<std::uint8_t> data,
-                             std::optional<std::int32_t> empty_limit) {
+
+bool World::set_linkset_data(framework::Uuid id, std::vector<std::uint8_t> data, std::optional<std::int32_t> limit,
+                             std::optional<std::int32_t> free) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
     if (entry == objects_.end())
         return false;
     entry->second.linkset_data = std::move(data);
-    entry->second.empty_linkset_data_limit = empty_limit;
+    entry->second.linkset_data_limit = limit;
+    entry->second.linkset_data_free = free;
     entry->second.changed = true;
     return true;
 }
-static void transfer_part_owner(SceneObject& part, framework::Uuid owner, framework::Uuid group,
+
+static void transfer_part_owner(SceneObject &part, framework::Uuid owner, framework::Uuid group,
                                 bool apply_next_permissions) {
     if (part.group != part.owner)
         part.last_owner = part.owner;
@@ -1567,17 +2017,17 @@ static void transfer_part_owner(SceneObject& part, framework::Uuid owner, framew
     part.changed = true;
 }
 
-bool World::transfer_temporary_attachment(const SceneObject& expected, framework::Uuid owner, framework::Uuid group,
+bool World::transfer_temporary_attachment(const SceneObject &expected, framework::Uuid owner, framework::Uuid group,
                                           bool apply_next_permissions) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(expected.id);
-    if (entry == objects_.end() || entry->second.owner != expected.owner ||
-        entry->second.is_attachment || entry->second.parent_id)
+    if (entry == objects_.end() || entry->second.owner != expected.owner || entry->second.is_attachment ||
+        entry->second.parent_id)
         return false;
-    auto& root = entry->second;
+    auto &root = entry->second;
     root.sale_type = 0;
     root.sale_price = 10;
-    for (auto& [id, part] : objects_) {
+    for (auto &[id, part] : objects_) {
         if (id != root.id && (part.is_attachment || !root.local_id || part.parent_id != root.local_id))
             continue;
         transfer_part_owner(part, owner, group, apply_next_permissions);
@@ -1586,19 +2036,18 @@ bool World::transfer_temporary_attachment(const SceneObject& expected, framework
     return true;
 }
 
-bool World::sell_original(const SceneObject& expected, framework::Uuid owner, framework::Uuid group,
+bool World::sell_original(const SceneObject &expected, framework::Uuid owner, framework::Uuid group,
                           bool apply_next_permissions, bool propagate_permissions, bool included_with_parcel) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(expected.id);
     if (entry == objects_.end())
         return false;
-    auto& root = entry->second;
+    auto &root = entry->second;
     const bool listed_original = root.sale_type == 1 && root.sale_price == 0;
-    if (root.owner != expected.owner ||
-        (included_with_parcel ? root.is_attachment : !listed_original) ||
+    if (root.owner != expected.owner || (included_with_parcel ? root.is_attachment : !listed_original) ||
         (!root.is_attachment && root.parent_id))
         return false;
-    for (auto& [id, part] : objects_) {
+    for (auto &[id, part] : objects_) {
         if (id != root.id && (part.is_attachment || !root.local_id || part.parent_id != root.local_id))
             continue;
         transfer_part_owner(part, owner, group, apply_next_permissions);
@@ -1608,18 +2057,18 @@ bool World::sell_original(const SceneObject& expected, framework::Uuid owner, fr
             part.click_action = 0;
         }
         constexpr std::int32_t changed_owner = 128;
-        event_unlocked(WorldEventKind::Updated, part,
-                       propagate_permissions || id == root.id ? changed_owner : 0);
+        event_unlocked(WorldEventKind::Updated, part, propagate_permissions || id == root.id ? changed_owner : 0);
     }
     return true;
 }
+
 void World::set_group_flags(framework::Uuid id, bool physical, bool temporary, bool phantom,
                             std::optional<bool> volume_detect) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
     if (entry == objects_.end())
         return;
-    const auto& root = entry->second;
+    const auto &root = entry->second;
     constexpr std::uint32_t physics = 1u, phantom_flag = 0x400u, temporary_on_rez = 0x20000000u;
     const bool detect = volume_detect.value_or((root.flags & prim_flag_volume_detect) != 0);
     const auto flags = (physical ? physics : 0u) | (temporary ? temporary_on_rez : 0u);
@@ -1630,30 +2079,33 @@ void World::set_group_flags(framework::Uuid id, bool physical, bool temporary, b
         if (!temporary)
             temporary_expiry_.erase(id);
     }
-    for (auto& [part_id, part] : objects_) {
+    for (auto &[part_id, part] : objects_) {
         if (part_id != id && (!root.local_id || part.is_attachment || part.parent_id != root.local_id))
             continue;
         const bool was_detecting = (part.flags & prim_flag_volume_detect) != 0;
         const bool part_phantom = detect || (phantom && !was_detecting);
-        const auto updated = (part.flags & ~group_flags) | flags |
-                             (part_phantom ? phantom_flag : 0u) | (detect ? prim_flag_volume_detect : 0u);
+        const auto updated = (part.flags & ~group_flags) | flags | (part_phantom ? phantom_flag : 0u) |
+                             (detect ? prim_flag_volume_detect : 0u);
         if (updated == part.flags)
             continue;
+        if ((part.flags ^ updated) & (physics | prim_flag_volume_detect))
+            note_physics_edit_unlocked(part_id);
         part.flags = updated;
         part.changed = true;
         event_unlocked(WorldEventKind::Updated, part);
     }
 }
+
 void World::set_part_volume_detect(framework::Uuid id, bool enabled) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
     if (entry == objects_.end() || entry->second.is_attachment)
         return;
-    auto& part = entry->second;
+    auto &part = entry->second;
     const auto parent = by_local_.find(part.parent_id);
     if (parent == by_local_.end())
         return;
-    const auto& root = objects_.at(parent->second);
+    const auto &root = objects_.at(parent->second);
     if (root.is_attachment || (root.flags & prim_flag_volume_detect))
         return;
 
@@ -1671,23 +2123,24 @@ void World::set_part_volume_detect(framework::Uuid id, bool enabled) {
         event_unlocked(WorldEventKind::Updated, part);
     }
 }
+
 bool World::resize_group(framework::Uuid id, framework::Vector3 scale, float minimum, float maximum,
                          std::optional<framework::Vector3> position) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
     if (entry == objects_.end())
         return false;
-    auto& root = entry->second;
+    auto &root = entry->second;
     if (root.scale.x <= 0 || root.scale.y <= 0 || root.scale.z <= 0)
         return false;
     framework::Vector3 factors{scale.x / root.scale.x, scale.y / root.scale.y, scale.z / root.scale.z};
-    std::vector<SceneObject*> children;
+    std::vector<SceneObject *> children;
     if (root.local_id)
-        for (auto& [part_id, part] : objects_)
+        for (auto &[part_id, part] : objects_)
             if (!part.is_attachment && part.parent_id == root.local_id)
                 children.push_back(&part);
     std::sort(children.begin(), children.end(),
-              [](const auto* a, const auto* b) { return a->link_order < b->link_order; });
+              [](const auto *a, const auto *b) { return a->link_order < b->link_order; });
     const auto product = [](framework::Vector3 a, framework::Vector3 b) {
         return framework::Vector3{a.x * b.x, a.y * b.y, a.z * b.z};
     };
@@ -1697,35 +2150,40 @@ bool World::resize_group(framework::Uuid id, framework::Vector3 scale, float min
         const auto adjustment = std::clamp(size, minimum, maximum) / size;
         factors = product(factors, {adjustment, adjustment, adjustment});
     };
-    for (const auto* part : children) {
+    for (const auto *part : children) {
         limit(part->scale.x * factors.x);
         limit(part->scale.y * factors.y);
         limit(part->scale.z * factors.z);
     }
     constexpr std::int32_t changed_scale = 8;
-    if (position)
+    if (position) {
         root.position = *position;
+        note_physics_group_pose_unlocked(id);
+    }
     root.scale = product(root.scale, factors);
+    note_physics_edit_unlocked(id);
     root.changed = true;
     event_unlocked(WorldEventKind::Updated, root, changed_scale);
-    for (auto* part : children) {
+    for (auto *part : children) {
         part->scale = product(part->scale, factors);
+        note_physics_edit_unlocked(part->id);
         part->position = product(part->position, factors);
         part->changed = true;
         event_unlocked(WorldEventKind::Updated, *part, changed_scale);
     }
     return true;
 }
+
 float World::group_scale_limit(framework::Uuid id, float limit, bool maximum) const {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
     if (entry == objects_.end())
         return 1.f;
 
-    const auto& root = entry->second;
+    const auto &root = entry->second;
     float dimension = maximum ? std::min({root.scale.x, root.scale.y, root.scale.z})
                               : std::max({root.scale.x, root.scale.y, root.scale.z});
-    for (const auto& [part_id, part] : objects_) {
+    for (const auto &[part_id, part] : objects_) {
         if (part_id != id && (part.is_attachment || part.parent_id != root.local_id))
             continue;
         dimension = maximum ? std::max({dimension, part.scale.x, part.scale.y, part.scale.z})
@@ -1747,13 +2205,13 @@ bool World::resize_group_uniform(framework::Uuid id, double factor, float minimu
     if (entry == objects_.end())
         return false;
 
-    auto& root = entry->second;
-    std::vector<SceneObject*> parts{&root};
-    for (auto& [part_id, part] : objects_)
+    auto &root = entry->second;
+    std::vector<SceneObject *> parts{&root};
+    for (auto &[part_id, part] : objects_)
         if (part_id != id && !part.is_attachment && part.parent_id == root.local_id)
             parts.push_back(&part);
 
-    for (const auto* part : parts) {
+    for (const auto *part : parts) {
         for (const float dimension : {part->scale.x, part->scale.y, part->scale.z}) {
             const float scaled = static_cast<float>(dimension * factor);
             if (scaled < minimum || scaled > maximum)
@@ -1766,8 +2224,9 @@ bool World::resize_group_uniform(framework::Uuid id, double factor, float minimu
         return framework::Vector3{vector.x * scale, vector.y * scale, vector.z * scale};
     };
     constexpr std::int32_t changed_scale = 8;
-    for (auto* part : parts) {
+    for (auto *part : parts) {
         part->scale = multiply(part->scale);
+        note_physics_edit_unlocked(part->id);
         if (part != &root)
             part->position = multiply(part->position);
         part->changed = true;
@@ -1782,27 +2241,29 @@ bool World::delink_root(framework::Uuid id, bool membership_order) {
     if (entry == objects_.end() || entry->second.is_attachment || entry->second.parent_id != 0 ||
         entry->second.local_id == 0)
         return false;
-    auto& root = entry->second;
-    std::vector<SceneObject*> children;
-    for (auto& [part_id, part] : objects_)
+    auto &root = entry->second;
+    std::vector<SceneObject *> children;
+    for (auto &[part_id, part] : objects_)
         if (!part.is_attachment && part.parent_id == root.local_id)
             children.push_back(&part);
     if (children.empty())
         return false;
     const auto order = membership_order ? &SceneObject::link_membership_order : &SceneObject::link_order;
     std::ranges::sort(children, {}, order);
-    auto& replacement = *children.front();
-    auto& free = free_link_memberships_[root.id];
-    for (const auto* child : children)
+    auto &replacement = *children.front();
+    auto &free = free_link_memberships_[root.id];
+    for (const auto *child : children)
         free.push_back(child->link_membership_order);
     const auto origin = replacement.position;
     const auto rotation = replacement.rotation;
     const framework::Quaternion inverse{-rotation.x, -rotation.y, -rotation.z, rotation.w};
     const auto offset = framework::sdk_rotate_vector(origin, root.rotation);
-    replacement.position = {root.position.x + offset.x, root.position.y + offset.y,
-                            root.position.z + offset.z};
+    replacement.position = {root.position.x + offset.x, root.position.y + offset.y, root.position.z + offset.z};
     replacement.rotation = framework::sdk_multiply_quaternion(root.rotation, rotation);
     replacement.parent_id = 0;
+    group_selected_.erase(replacement.id);
+    physics_selection_.erase(replacement.id);
+    ++replacement.transform_history_generation;
     if (replacement.physics.shape == no_physics_shape)
         replacement.physics.shape = default_physics_shape(replacement);
     replacement.rezzed_at = root.rezzed_at;
@@ -1813,14 +2274,14 @@ bool World::delink_root(framework::Uuid id, bool membership_order) {
     constexpr std::int32_t changed_link = 32;
     replacement.changed = root.changed = true;
     event_unlocked(WorldEventKind::Updated, replacement, changed_link);
-    for (auto* child : children) {
+    for (auto *child : children) {
         if (child == &replacement)
             continue;
         child->position = framework::sdk_rotate_vector(
-            {child->position.x - origin.x, child->position.y - origin.y, child->position.z - origin.z},
-            inverse);
+            {child->position.x - origin.x, child->position.y - origin.y, child->position.z - origin.z}, inverse);
         child->rotation = framework::sdk_multiply_quaternion(inverse, child->rotation);
         child->parent_id = replacement.local_id;
+        ++child->transform_history_generation;
         if (membership_order)
             child->link_order = child->link_membership_order = ++link_sequence_;
         child->rezzed_at = root.rezzed_at;
@@ -1830,6 +2291,25 @@ bool World::delink_root(framework::Uuid id, bool membership_order) {
     event_unlocked(WorldEventKind::Updated, root, changed_link);
     return true;
 }
+
+std::vector<framework::Uuid> World::assign_linkset_group(framework::Uuid id, framework::Uuid owner,
+                                                         framework::Uuid group) {
+    std::lock_guard lock(mutex_);
+    const auto root = objects_.find(linkset_root_id_unlocked(id));
+    if (root == objects_.end() || root->second.owner != owner)
+        return {};
+    const auto root_local = root->second.local_id;
+    std::vector<framework::Uuid> parts;
+    for (auto &[part_id, part] : objects_) {
+        if (part_id != root->first && (part.is_attachment || part.parent_id != root_local))
+            continue;
+        part.group = group;
+        part.changed = true;
+        parts.push_back(part_id);
+    }
+    return parts;
+}
+
 void World::schedule_linkset_update(framework::Uuid id, std::int32_t script_changes) {
     std::lock_guard lock(mutex_);
     const auto root = objects_.find(id);
@@ -1837,7 +2317,7 @@ void World::schedule_linkset_update(framework::Uuid id, std::int32_t script_chan
         return;
     root->second.changed = true;
     event_unlocked(WorldEventKind::Updated, root->second, script_changes);
-    for (const auto& [part_id, part] : objects_) {
+    for (const auto &[part_id, part] : objects_) {
         if (!part.is_attachment && part.parent_id == root->second.local_id && part.parent_id)
             event_unlocked(WorldEventKind::Updated, part, script_changes);
     }
@@ -1849,24 +2329,31 @@ void World::publish_added_linkset(framework::Uuid id) {
     if (root == objects_.end())
         return;
     event_unlocked(WorldEventKind::Added, root->second);
-    for (const auto& [part_id, part] : objects_)
+    for (const auto &[part_id, part] : objects_)
         if (part_id != id && !part.is_attachment && part.parent_id == root->second.local_id)
             event_unlocked(WorldEventKind::Added, part);
 }
+
 bool World::remove(framework::Uuid id, bool send_update) {
     std::lock_guard lock(mutex_);
     return remove_unlocked(id, send_update);
 }
+
+bool World::remove_crossing_group(framework::Uuid id, bool silent) {
+    std::lock_guard lock(mutex_);
+    return remove_unlocked(id, true, silent);
+}
+
 bool World::derez_script_object(framework::Uuid source, framework::Uuid target, bool temporary,
-                               std::chrono::steady_clock::time_point now) {
+                                std::chrono::steady_clock::time_point now) {
     std::lock_guard lock(mutex_);
     const auto host = objects_.find(source);
     const auto destination = objects_.find(target);
     if (host == objects_.end() || destination == objects_.end())
         return false;
 
-    const auto& source_part = host->second;
-    auto& root = destination->second;
+    const auto &source_part = host->second;
+    auto &root = destination->second;
     if (root.is_attachment || root.parent_id || root.owner != source_part.owner)
         return false;
 
@@ -1889,6 +2376,7 @@ bool World::derez_script_object(framework::Uuid source, framework::Uuid target, 
     }
     return true;
 }
+
 void World::expire_temporary_objects(std::chrono::steady_clock::time_point now) {
     std::lock_guard lock(mutex_);
     for (auto expiry = temporary_expiry_.begin(); expiry != temporary_expiry_.end();) {
@@ -1900,7 +2388,8 @@ void World::expire_temporary_objects(std::chrono::steady_clock::time_point now) 
         remove_unlocked(id);
     }
 }
-bool World::remove_unlocked(framework::Uuid id, bool send_update) {
+
+bool World::remove_unlocked(framework::Uuid id, bool send_update, bool suppress_viewer_kill) {
     temporary_expiry_.erase(id);
     particle_expiry_.erase(id);
     auto i = objects_.find(id);
@@ -1913,20 +2402,23 @@ bool World::remove_unlocked(framework::Uuid id, bool send_update) {
             free_link_memberships_[root->second].push_back(object.link_membership_order);
     }
     if (!send_update) {
-        std::erase_if(events_, [&](const auto& event) {
-            return event.object.id == id ||
-                   ((object.is_attachment || !object.parent_id) && !event.object.is_attachment &&
-                    event.object.parent_id == object.local_id);
+        std::erase_if(events_, [&](const auto &event) {
+            return event.object.id == id || ((object.is_attachment || !object.parent_id) &&
+                                             !event.object.is_attachment && event.object.parent_id == object.local_id);
         });
     }
     if (object.is_attachment || object.parent_id == 0) {
         for (auto child = objects_.begin(); child != objects_.end();) {
-            const auto& part = child->second;
+            const auto &part = child->second;
             if (!part.is_attachment && part.parent_id == object.local_id && part.parent_id != 0) {
                 if (send_update)
-                    event_unlocked(WorldEventKind::Removed, part);
+                    event_unlocked(WorldEventKind::Removed, part, 0, suppress_viewer_kill);
                 by_local_.erase(part.local_id);
                 selected_.erase(part.id);
+                group_selected_.erase(part.id);
+                physics_selection_.erase(part.id);
+                physics_geometry_revision_.erase(part.id);
+                physics_group_pose_revision_.erase(part.id);
                 particle_expiry_.erase(part.id);
                 child = objects_.erase(child);
             } else
@@ -1941,35 +2433,40 @@ bool World::remove_unlocked(framework::Uuid id, bool send_update) {
     }
     by_local_.erase(object.local_id);
     selected_.erase(id);
+    group_selected_.erase(id);
+    physics_selection_.erase(id);
+    physics_geometry_revision_.erase(id);
+    physics_group_pose_revision_.erase(id);
     objects_.erase(i);
     if (send_update)
-        event_unlocked(WorldEventKind::Removed, object);
+        event_unlocked(WorldEventKind::Removed, object, 0, suppress_viewer_kill);
     return true;
 }
+
 bool World::set_inventory_state(framework::Uuid id, bool empty, bool scripted, bool touch,
                                 std::optional<std::uint32_t> local) {
     std::lock_guard lock(mutex_);
     auto i = objects_.find(id);
     if (i == objects_.end())
         return false;
-    auto& object = i->second;
+    auto &object = i->second;
     object.inventory_empty = empty;
     if (local)
         object.flags = (object.flags & ~0x10280u) | (*local & 0x10280u);
     object.flags = (object.flags & ~0xc0u) | (scripted ? 0x40u : 0u) | (touch ? 0x80u : 0u);
     const auto parent = by_local_.find(object.parent_id);
-    const bool worn = object.is_attachment ||
-        (parent != by_local_.end() && objects_.at(parent->second).is_attachment);
+    const bool worn = object.is_attachment || (parent != by_local_.end() && objects_.at(parent->second).is_attachment);
     // Restoring or starting scripts refreshes these flags. The task registry tracks actual inventory edits.
     if (!worn)
         object.changed = true;
     event_unlocked(WorldEventKind::Updated, object);
     return true;
 }
+
 std::vector<WorldEvent> World::drain_events() {
     std::lock_guard lock(mutex_);
     std::vector<WorldEvent> result;
     result.swap(events_);
     return result;
 }
-}
+} // namespace opensim::scene

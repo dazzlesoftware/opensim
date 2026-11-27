@@ -1,0 +1,1 @@
+vector item=<xmrString2Float("NaN"),xmrString2Float("Infinity"),xmrString2Float("-Infinity")>;string result;default{state_entry(){result=(string)item;}}

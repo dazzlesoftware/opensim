@@ -37,4 +37,4 @@ std::string random_uuid();
 // Legacy wire/storage compatibility only: OpenSim viewers send MD5 prehashes.
 std::string md5(std::string_view utf8);
 bool constant_time_equal(std::string_view left, std::string_view right) noexcept;
-}
+} // namespace opensim::framework

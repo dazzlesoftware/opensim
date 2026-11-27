@@ -1,0 +1,1 @@
+list result;default{state_entry(){result=(list)(<0,0,0,1>);}}

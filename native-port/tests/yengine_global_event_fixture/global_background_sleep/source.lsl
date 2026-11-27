@@ -1,0 +1,1 @@
+integer calls;integer background;list result=init();integer complete;string seen;list init(){calls++;return xmrEventDequeue(600.0,536870912,0,2097152,0);}default{state_entry(){seen=llDetectedName(0);complete=1;}touch_start(integer n){background+=n;llSleep(1.0);background+=100;}touch_end(integer n){}}

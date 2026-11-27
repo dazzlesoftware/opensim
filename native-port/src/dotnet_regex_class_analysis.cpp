@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <array>
 #include <bit>
+
 namespace opensim::framework {
 std::shared_ptr<const std::u16string> dotnet_regex_class_literal(std::u16string_view value) {
     static std::mutex mutex;
@@ -20,39 +21,45 @@ std::shared_ptr<const std::u16string> dotnet_regex_class_literal(std::u16string_
 
 namespace {
 using namespace std::literals;
+
 std::u16string_view required(DotnetRegexClassText text) {
     if (!text)
         throw DotnetRegexClassError("System.NullReferenceException", 0x80004003u,
                                     "Object reference not set to an instance of an object.");
     return *text;
 }
+
 char16_t at(std::u16string_view text, std::size_t index) {
     if (index >= text.size())
         throw DotnetRegexClassError("System.IndexOutOfRangeException", 0x80131508u,
                                     "Index was outside the bounds of the array.");
     return text[index];
 }
+
 int signed_at(std::u16string_view text, std::size_t index) {
     return std::bit_cast<std::int16_t>(static_cast<std::uint16_t>(at(text, index)));
 }
-bool easy(std::u16string_view set, bool& subtraction) {
+
+bool easy(std::u16string_view set, bool &subtraction) {
     subtraction = dotnet_regex_class_subtraction(set);
     return set.size() > 3 && at(set, 1) > 0 && at(set, 1) % 2 == 0 && at(set, 2) == 0;
 }
+
 bool easy(std::u16string_view set) {
     bool subtraction = false;
     return easy(set, subtraction) && !subtraction;
 }
+
 bool distinct(std::u16string_view first, std::u16string_view second) {
     if (first == u"\0\0\u0001d"sv || first == u"\0\u0004\0\t\u000e !"sv)
-        return second == u"\0\0\u0001\t"sv ||
-               second == u"\0\0\n\0\u0002\u0004\u0005\u0003\u0001\u0006\t\u0013\0"sv ||
+        return second == u"\0\0\u0001\t"sv || second == u"\0\0\n\0\u0002\u0004\u0005\u0003\u0001\u0006\t\u0013\0"sv ||
                second == u"\0\u0002\0"
                          u"0:"sv ||
                second == u"\0\n\0"
                          u"0:A[_`a{\u0130\u0131"sv;
     return false;
 }
+
 bool overlap_enumerated(std::u16string_view target, std::u16string_view enumerated) {
     for (int i = 3; i < 3 + at(enumerated, 1); i += 2) {
         int end = at(enumerated, i + 1);
@@ -62,39 +69,47 @@ bool overlap_enumerated(std::u16string_view target, std::u16string_view enumerat
     }
     return false;
 }
-}
+} // namespace
+
 char16_t dotnet_regex_singleton_char(DotnetRegexClassText text) {
     return at(required(text), 3);
 }
+
 bool dotnet_regex_class_negated(DotnetRegexClassText text, int offset) {
     return at(required(text), static_cast<std::size_t>(offset)) == 1;
 }
+
 bool dotnet_regex_class_subtraction(DotnetRegexClassText text) {
     auto set = required(text);
     return set.size() > std::size_t(3) + at(set, 2) + at(set, 1);
 }
+
 bool dotnet_regex_class_mergeable(DotnetRegexClassText text) {
     return text && !dotnet_regex_class_negated(text) && !dotnet_regex_class_subtraction(text);
 }
+
 bool dotnet_regex_class_empty(DotnetRegexClassText text) {
     auto set = required(text);
     return at(set, 2) == 0 && at(set, 1) == 0 && !dotnet_regex_class_negated(set) &&
            !dotnet_regex_class_subtraction(set);
 }
+
 bool dotnet_regex_class_singleton(DotnetRegexClassText text) {
     auto set = required(text);
     return at(set, 2) == 0 && at(set, 1) == 2 && !dotnet_regex_class_negated(set) &&
            !dotnet_regex_class_subtraction(set) &&
            (at(set, 3) == 65535 || static_cast<unsigned>(at(set, 3)) + 1 == at(set, 4));
 }
+
 bool dotnet_regex_class_singleton_inverse(DotnetRegexClassText text) {
     auto set = required(text);
     return at(set, 2) == 0 && at(set, 1) == 2 && dotnet_regex_class_negated(set) &&
            !dotnet_regex_class_subtraction(set) &&
            (at(set, 3) == 65535 || static_cast<unsigned>(at(set, 3)) + 1 == at(set, 4));
 }
-bool dotnet_regex_only_categories(DotnetRegexClassText text, std::span<std::int32_t> output, int& count,
-                                  bool& negated) {
+
+bool dotnet_regex_only_categories(DotnetRegexClassText text, std::span<std::int32_t> output, int &count,
+                                  bool &negated) {
     negated = false;
     count = 0;
     bool seen = false;
@@ -146,7 +161,8 @@ bool dotnet_regex_only_categories(DotnetRegexClassText text, std::span<std::int3
     negated ^= dotnet_regex_class_negated(set);
     return true;
 }
-bool dotnet_regex_single_range(DotnetRegexClassText text, char16_t& low, char16_t& high) {
+
+bool dotnet_regex_single_range(DotnetRegexClassText text, char16_t &low, char16_t &high) {
     auto set = required(text);
     if (at(set, 2) == 0 && set.size() == std::size_t(3) + at(set, 1)) {
         switch (at(set, 1)) {
@@ -163,7 +179,8 @@ bool dotnet_regex_single_range(DotnetRegexClassText text, char16_t& low, char16_
     low = high = 0;
     return false;
 }
-bool dotnet_regex_double_range(DotnetRegexClassText text, DotnetRegexRange& first, DotnetRegexRange& second) {
+
+bool dotnet_regex_double_range(DotnetRegexClassText text, DotnetRegexRange &first, DotnetRegexRange &second) {
     auto set = required(text);
     if (at(set, 2) == 0 && set.size() == std::size_t(3) + at(set, 1)) {
         auto count = at(set, 1);
@@ -176,6 +193,7 @@ bool dotnet_regex_double_range(DotnetRegexClassText text, DotnetRegexRange& firs
     first = second = {};
     return false;
 }
+
 int dotnet_regex_set_chars(DotnetRegexClassText text, std::span<char16_t> chars) {
     auto set = required(text);
     if (!easy(set))
@@ -191,6 +209,7 @@ int dotnet_regex_set_chars(DotnetRegexClassText text, std::span<char16_t> chars)
     }
     return count;
 }
+
 std::optional<std::u16string> dotnet_regex_ascii_set_chars(DotnetRegexClassText text) {
     std::array<char16_t, 128> buffer{};
     auto count = dotnet_regex_set_chars(text, buffer);
@@ -198,14 +217,14 @@ std::optional<std::u16string> dotnet_regex_ascii_set_chars(DotnetRegexClassText 
         return {};
     return std::u16string(buffer.data(), count);
 }
+
 bool dotnet_regex_may_overlap(DotnetRegexClassText first, DotnetRegexClassText second) {
     if (first == second)
         return true;
     constexpr auto any = u"\0\u0001\0\0"sv;
     if ((first && *first == any) || (second && *second == any))
         return true;
-    bool first_negated = dotnet_regex_class_negated(first),
-         second_negated = dotnet_regex_class_negated(second);
+    bool first_negated = dotnet_regex_class_negated(first), second_negated = dotnet_regex_class_negated(second);
     auto a = required(first), b = required(second);
     if (first_negated != second_negated)
         return a.substr(1) != b.substr(1);
@@ -219,6 +238,7 @@ bool dotnet_regex_may_overlap(DotnetRegexClassText first, DotnetRegexClassText s
         return overlap_enumerated(b, a);
     return true;
 }
+
 bool dotnet_regex_participates_in_case_conversion(std::int32_t value) {
     switch (dotnet_regex_unicode_category(static_cast<char16_t>(value))) {
     case 8:
@@ -239,18 +259,22 @@ bool dotnet_regex_participates_in_case_conversion(std::int32_t value) {
         return true;
     }
 }
+
 bool dotnet_regex_participates_in_case_conversion(std::span<const char16_t> text) {
     return std::any_of(text.begin(), text.end(), [](char16_t c) {
         return dotnet_regex_participates_in_case_conversion(static_cast<std::int32_t>(c));
     });
 }
+
 bool dotnet_regex_is_ascii(std::span<const char16_t> text) {
     return std::all_of(text.begin(), text.end(), [](char16_t c) { return c < 128; });
 }
-bool dotnet_regex_differ_by_one_bit(char16_t first, char16_t second, int& mask) {
+
+bool dotnet_regex_differ_by_one_bit(char16_t first, char16_t second, int &mask) {
     mask = first ^ second;
     return std::has_single_bit(static_cast<unsigned>(mask));
 }
+
 DotnetRegexClassAnalysis dotnet_regex_analyze_class(DotnetRegexClassText text) {
     bool negated = dotnet_regex_class_negated(text), subtraction = false;
     auto set = required(text);
@@ -272,6 +296,7 @@ DotnetRegexClassAnalysis dotnet_regex_analyze_class(DotnetRegexClassText text) {
     }
     return result;
 }
+
 std::optional<std::vector<DotnetRegexRange>> dotnet_regex_compute_ranges(std::span<const char16_t> input) {
     std::u16string_view set(input.data(), input.size());
     auto count = at(set, 1);
@@ -279,17 +304,17 @@ std::optional<std::vector<DotnetRegexRange>> dotnet_regex_compute_ranges(std::sp
         return {};
     std::vector<DotnetRegexRange> ranges;
     for (int i = 3; i < 3 + count; i += 2)
-        ranges.push_back(
-            {at(set, i), i + 1 < 3 + count ? static_cast<char16_t>(at(set, i + 1) - 1) : char16_t(65535)});
+        ranges.push_back({at(set, i), i + 1 < 3 + count ? static_cast<char16_t>(at(set, i + 1) - 1) : char16_t(65535)});
     return ranges;
 }
+
 std::shared_ptr<const std::u16string> dotnet_regex_chars_to_string_class(std::span<const char16_t> chars) {
     static const auto empty = std::make_shared<const std::u16string>(std::u16string{0, 0, 0});
     static std::array<opensim::framework::AtomicSharedPtr<const std::u16string>, 128> ascii;
     static std::array<opensim::framework::AtomicSharedPtr<const std::u16string>, 26> letters;
     if (chars.empty())
         return empty;
-    opensim::framework::AtomicSharedPtr<const std::u16string>* cache = nullptr;
+    opensim::framework::AtomicSharedPtr<const std::u16string> *cache = nullptr;
     std::u16string text;
     if (chars.size() == 1 && chars[0] < 128) {
         cache = &ascii[chars[0]];
@@ -328,7 +353,8 @@ std::shared_ptr<const std::u16string> dotnet_regex_chars_to_string_class(std::sp
     }
     return std::make_shared<const std::u16string>(std::move(text));
 }
+
 std::shared_ptr<const std::u16string> dotnet_regex_one_to_string_class(char16_t c) {
     return dotnet_regex_chars_to_string_class(std::span<const char16_t>(&c, 1));
 }
-}
+} // namespace opensim::framework

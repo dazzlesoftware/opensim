@@ -1,0 +1,1 @@
+YOption chars;integer unit=0;string input;integer result;integer after;default{state_entry(){input="a"+(string)(char)unit+"b";result=xmrHashCode(input);after=1;}}

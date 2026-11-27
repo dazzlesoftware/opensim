@@ -1,0 +1,3576 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "fullParityVerified": false,
+  "nativeParityVerified": false,
+  "scope": "Actual original xmrList2Array source entry points and direct CLR/SDK element SetValue/partial-mutation matrix",
+  "generatorSha256": "233ed7c977346718fb282e4a952942bf6f6aedbf6f819da2877379dfefa1ee1d",
+  "generatorAssemblySha256": "63bb2f8ce8e40325c8c49cd05f7bd833d84097387258c2807c9383929b8c9c76",
+  "decoderSha256": "a761826b1c9f1c97398ff14298fccce94a12f782fe301c445eb0435edd7afc0f",
+  "platforms": {
+    "windows": {
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "processId": 18880,
+      "metadataSha256": "540e02edf19765cc0737877978753566592078d669495e4c8162f9e80beab340",
+      "sourceCaptureCases": 10,
+      "sourceListToArrayCases": 6,
+      "directHelperCases": 132,
+      "cases": [
+        {
+          "name": "matrix_C",
+          "sourceHelperExecuted": false,
+          "sourceSha256": "be0bd515e965b07437bcdebfdcd40d7b29c1c7d78f1f54d5765eb6a4f8420651",
+          "metadataSha256": "c62f23ff2e49308188f5efdef9d5e4fefb27ace38d8f4f1dba894cab8b628bb9",
+          "originalObjectSha256": "4362e442bbced5c3eb2f985dbb3e6f2a2b64b5b5dd7bf854c495831cabbac14f",
+          "snapshotSha256": "2a7f6f001ca170e096b6d1627cc690b4fc75d8b5a108c0a7b5f1b2bacc34d1a1",
+          "snapshotBytes": 247,
+          "sourceHash": "014945BC5621458A2047A880421D7FBD",
+          "directHelper": {
+            "sha256": "e59ac0f871597b16add116e238e46df11bf299a52842aec298fe2a968d485072",
+            "cases": 33,
+            "summary": [
+              {
+                "name": "null",
+                "sourceClr": null,
+                "storedClr": "System.Char",
+                "error": null,
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "raw_char",
+                "sourceClr": "System.Char",
+                "storedClr": "System.Char",
+                "error": null,
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "raw_int",
+                "sourceClr": "System.Int32",
+                "storedClr": "System.Char",
+                "error": {
+                  "type": "System.ArgumentException",
+                  "message": "Cannot widen from source type to target type either because the source type is a not a primitive type or the conversion cannot be accomplished."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "raw_single",
+                "sourceClr": "System.Single",
+                "storedClr": "System.Char",
+                "error": {
+                  "type": "System.ArgumentException",
+                  "message": "Cannot widen from source type to target type either because the source type is a not a primitive type or the conversion cannot be accomplished."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "raw_double",
+                "sourceClr": "System.Double",
+                "storedClr": "System.Char",
+                "error": {
+                  "type": "System.ArgumentException",
+                  "message": "Cannot widen from source type to target type either because the source type is a not a primitive type or the conversion cannot be accomplished."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "raw_bool",
+                "sourceClr": "System.Boolean",
+                "storedClr": "System.Char",
+                "error": {
+                  "type": "System.ArgumentException",
+                  "message": "Cannot widen from source type to target type either because the source type is a not a primitive type or the conversion cannot be accomplished."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "raw_string",
+                "sourceClr": "System.String",
+                "storedClr": "System.Char",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "sdk_int",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+LSLInteger",
+                "storedClr": "System.Char",
+                "error": {
+                  "type": "System.ArgumentException",
+                  "message": "Cannot widen from source type to target type either because the source type is a not a primitive type or the conversion cannot be accomplished."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "sdk_float",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+LSLFloat",
+                "storedClr": "System.Char",
+                "error": {
+                  "type": "System.ArgumentException",
+                  "message": "Cannot widen from source type to target type either because the source type is a not a primitive type or the conversion cannot be accomplished."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "sdk_string",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+LSLString",
+                "storedClr": "System.Char",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "sdk_null_string",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+LSLString",
+                "storedClr": "System.Char",
+                "error": null,
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "sdk_key",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+key",
+                "storedClr": "System.Char",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "vector",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+Vector3",
+                "storedClr": "System.Char",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "rotation",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+Quaternion",
+                "storedClr": "System.Char",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "list",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+list",
+                "storedClr": "System.Char",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "class",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj",
+                "storedClr": "System.Char",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "zero_bad_indices",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": null,
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "negative_count",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": null,
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "partial_source",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "partial_destination",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "negative_source",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "negative_destination",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "null_list_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.NullReferenceException",
+                  "message": "Object reference not set to an instance of an object."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "null_data_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": null,
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "null_data_one",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "null_backing_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "null_backing_one",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.NullReferenceException",
+                  "message": "Object reference not set to an instance of an object."
+                },
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "null_backing_bad_source",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "wrong_backing_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Unable to cast object of type 'System.String' to type 'System.Array'."
+                },
+                "ownBefore": 14,
+                "ownAfter": 14,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "wrong_backing_null_list",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.NullReferenceException",
+                  "message": "Object reference not set to an instance of an object."
+                },
+                "ownBefore": 14,
+                "ownAfter": 14,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "null_wrapper_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.NullReferenceException",
+                  "message": "Object reference not set to an instance of an object."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "raw_array_wrapper_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Unable to cast object of type 'System.Char[]' to type 'OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj'."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "raw_string_wrapper_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Unable to cast object of type 'System.String' to type 'OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj'."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              }
+            ]
+          },
+          "liveFault": null,
+          "migratedFault": null
+        },
+        {
+          "name": "matrix_F",
+          "sourceHelperExecuted": false,
+          "sourceSha256": "a6be800af9d6e007c4d5d0f8db27f226bf722aa1cff6741b99abd9d5ee8781cd",
+          "metadataSha256": "c3a4a2d1fd2862c6793651e6e128a8dac9a31153a2db53b69b311ea63bbe68b0",
+          "originalObjectSha256": "8c6dcd44021832555022b4b74ee66df63dca8d30462fcc573a3cc57cd87e030f",
+          "snapshotSha256": "956d2087c0d0e1d6dfd6559ea03b271bf9c8f8b15c29a8fb1721c87ba6df47f6",
+          "snapshotBytes": 268,
+          "sourceHash": "11BF2703AB3C5EC6E80C2DE5FC226444",
+          "directHelper": {
+            "sha256": "40b62335d4982c626baded53eea2d8198ebb7726623da686abc092cf6c882a4b",
+            "cases": 33,
+            "summary": [
+              {
+                "name": "null",
+                "sourceClr": null,
+                "storedClr": "System.Double",
+                "error": null,
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "raw_char",
+                "sourceClr": "System.Char",
+                "storedClr": "System.Double",
+                "error": null,
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "raw_int",
+                "sourceClr": "System.Int32",
+                "storedClr": "System.Double",
+                "error": null,
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "raw_single",
+                "sourceClr": "System.Single",
+                "storedClr": "System.Double",
+                "error": null,
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "raw_double",
+                "sourceClr": "System.Double",
+                "storedClr": "System.Double",
+                "error": null,
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "raw_bool",
+                "sourceClr": "System.Boolean",
+                "storedClr": "System.Double",
+                "error": {
+                  "type": "System.ArgumentException",
+                  "message": "Cannot widen from source type to target type either because the source type is a not a primitive type or the conversion cannot be accomplished."
+                },
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "raw_string",
+                "sourceClr": "System.String",
+                "storedClr": "System.Double",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "sdk_int",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+LSLInteger",
+                "storedClr": "System.Double",
+                "error": null,
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "sdk_float",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+LSLFloat",
+                "storedClr": "System.Double",
+                "error": null,
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "sdk_string",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+LSLString",
+                "storedClr": "System.Double",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "sdk_null_string",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+LSLString",
+                "storedClr": "System.Double",
+                "error": null,
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "sdk_key",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+key",
+                "storedClr": "System.Double",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "vector",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+Vector3",
+                "storedClr": "System.Double",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "rotation",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+Quaternion",
+                "storedClr": "System.Double",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "list",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+list",
+                "storedClr": "System.Double",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "class",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj",
+                "storedClr": "System.Double",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "zero_bad_indices",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": null,
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "negative_count",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": null,
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "partial_source",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "partial_destination",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "negative_source",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "negative_destination",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "null_list_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.NullReferenceException",
+                  "message": "Object reference not set to an instance of an object."
+                },
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "null_data_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": null,
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "null_data_one",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "null_backing_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "null_backing_one",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.NullReferenceException",
+                  "message": "Object reference not set to an instance of an object."
+                },
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "null_backing_bad_source",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "wrong_backing_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Unable to cast object of type 'System.String' to type 'System.Array'."
+                },
+                "ownBefore": 14,
+                "ownAfter": 14,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "wrong_backing_null_list",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.NullReferenceException",
+                  "message": "Object reference not set to an instance of an object."
+                },
+                "ownBefore": 14,
+                "ownAfter": 14,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "null_wrapper_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.NullReferenceException",
+                  "message": "Object reference not set to an instance of an object."
+                },
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "raw_array_wrapper_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Unable to cast object of type 'System.Double[]' to type 'OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj'."
+                },
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "raw_string_wrapper_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Unable to cast object of type 'System.String' to type 'OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj'."
+                },
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              }
+            ]
+          },
+          "liveFault": null,
+          "migratedFault": null
+        },
+        {
+          "name": "matrix_I",
+          "sourceHelperExecuted": false,
+          "sourceSha256": "e397d221c0afcad58d38d64f76bbca0628e1323aeb17d69bf5e307874a3d1d5d",
+          "metadataSha256": "fd54d4b7dffcacbc6203454fcff0932b0dedd4ccc319a9b4edfca38417a56273",
+          "originalObjectSha256": "8b3d4bbf513e9fc225541079119e648362bcd770cbcb70cffd5d80b378756681",
+          "snapshotSha256": "249b893656a1d13ff93f91323dddf270d108d8201e12d21b529a093696284f42",
+          "snapshotBytes": 256,
+          "sourceHash": "EAB2687AEADA8C5DC621852BD475158D",
+          "directHelper": {
+            "sha256": "998743e4550b0e8ec094116f10c0f5c22d9185362c3e6af77057352caeb6701f",
+            "cases": 33,
+            "summary": [
+              {
+                "name": "null",
+                "sourceClr": null,
+                "storedClr": "System.Int32",
+                "error": null,
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "raw_char",
+                "sourceClr": "System.Char",
+                "storedClr": "System.Int32",
+                "error": null,
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "raw_int",
+                "sourceClr": "System.Int32",
+                "storedClr": "System.Int32",
+                "error": null,
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "raw_single",
+                "sourceClr": "System.Single",
+                "storedClr": "System.Int32",
+                "error": {
+                  "type": "System.ArgumentException",
+                  "message": "Cannot widen from source type to target type either because the source type is a not a primitive type or the conversion cannot be accomplished."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "raw_double",
+                "sourceClr": "System.Double",
+                "storedClr": "System.Int32",
+                "error": {
+                  "type": "System.ArgumentException",
+                  "message": "Cannot widen from source type to target type either because the source type is a not a primitive type or the conversion cannot be accomplished."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "raw_bool",
+                "sourceClr": "System.Boolean",
+                "storedClr": "System.Int32",
+                "error": {
+                  "type": "System.ArgumentException",
+                  "message": "Cannot widen from source type to target type either because the source type is a not a primitive type or the conversion cannot be accomplished."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "raw_string",
+                "sourceClr": "System.String",
+                "storedClr": "System.Int32",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "sdk_int",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+LSLInteger",
+                "storedClr": "System.Int32",
+                "error": null,
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "sdk_float",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+LSLFloat",
+                "storedClr": "System.Int32",
+                "error": {
+                  "type": "System.ArgumentException",
+                  "message": "Cannot widen from source type to target type either because the source type is a not a primitive type or the conversion cannot be accomplished."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "sdk_string",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+LSLString",
+                "storedClr": "System.Int32",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "sdk_null_string",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+LSLString",
+                "storedClr": "System.Int32",
+                "error": null,
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "sdk_key",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+key",
+                "storedClr": "System.Int32",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "vector",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+Vector3",
+                "storedClr": "System.Int32",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "rotation",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+Quaternion",
+                "storedClr": "System.Int32",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "list",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+list",
+                "storedClr": "System.Int32",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "class",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj",
+                "storedClr": "System.Int32",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "zero_bad_indices",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": null,
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "negative_count",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": null,
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "partial_source",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "partial_destination",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "negative_source",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "negative_destination",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "null_list_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.NullReferenceException",
+                  "message": "Object reference not set to an instance of an object."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "null_data_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": null,
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "null_data_one",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "null_backing_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "null_backing_one",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.NullReferenceException",
+                  "message": "Object reference not set to an instance of an object."
+                },
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "null_backing_bad_source",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "wrong_backing_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Unable to cast object of type 'System.String' to type 'System.Array'."
+                },
+                "ownBefore": 14,
+                "ownAfter": 14,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "wrong_backing_null_list",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.NullReferenceException",
+                  "message": "Object reference not set to an instance of an object."
+                },
+                "ownBefore": 14,
+                "ownAfter": 14,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "null_wrapper_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.NullReferenceException",
+                  "message": "Object reference not set to an instance of an object."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "raw_array_wrapper_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Unable to cast object of type 'System.Int32[]' to type 'OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj'."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "raw_string_wrapper_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Unable to cast object of type 'System.String' to type 'OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj'."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              }
+            ]
+          },
+          "liveFault": null,
+          "migratedFault": null
+        },
+        {
+          "name": "matrix_O",
+          "sourceHelperExecuted": false,
+          "sourceSha256": "1e58ba0efffa3a587f03b5cdab6e8ce3c5271a37e827ccab2f058b0100c54fec",
+          "metadataSha256": "4e031740cc6ad35465ace1596a208be7574d127d51bc4e779f970be04bf9aaa4",
+          "originalObjectSha256": "703d6550994c80889447a8f995cdd68c662ccacbf06fbd75eaeff56fa5fe1122",
+          "snapshotSha256": "5c02c451dea8772b3116c60016f2fa5f31728ecb089a46fc27268613d0a1b948",
+          "snapshotBytes": 244,
+          "sourceHash": "022F7EB502C83D88F649A55124354C27",
+          "directHelper": {
+            "sha256": "092d037e9c62c1f1e7f6fabcd9320a8d5b867e075352ad6e396f1dd31bb385c3",
+            "cases": 33,
+            "summary": [
+              {
+                "name": "null",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "raw_char",
+                "sourceClr": "System.Char",
+                "storedClr": "System.Char",
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "raw_int",
+                "sourceClr": "System.Int32",
+                "storedClr": "System.Int32",
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "raw_single",
+                "sourceClr": "System.Single",
+                "storedClr": "System.Single",
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "raw_double",
+                "sourceClr": "System.Double",
+                "storedClr": "System.Double",
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "raw_bool",
+                "sourceClr": "System.Boolean",
+                "storedClr": "System.Boolean",
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "raw_string",
+                "sourceClr": "System.String",
+                "storedClr": "System.String",
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "sdk_int",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+LSLInteger",
+                "storedClr": "System.Int32",
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "sdk_float",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+LSLFloat",
+                "storedClr": "System.Double",
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "sdk_string",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+LSLString",
+                "storedClr": "System.String",
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "sdk_null_string",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+LSLString",
+                "storedClr": null,
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "sdk_key",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+key",
+                "storedClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+key",
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "vector",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+Vector3",
+                "storedClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+Vector3",
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "rotation",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+Quaternion",
+                "storedClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+Quaternion",
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "list",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+list",
+                "storedClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+list",
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "class",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj",
+                "storedClr": "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj",
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "zero_bad_indices",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "negative_count",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "partial_source",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "partial_destination",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "negative_source",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "negative_destination",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "null_list_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.NullReferenceException",
+                  "message": "Object reference not set to an instance of an object."
+                },
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "null_data_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "null_data_one",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "null_backing_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "null_backing_one",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.NullReferenceException",
+                  "message": "Object reference not set to an instance of an object."
+                },
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "null_backing_bad_source",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "wrong_backing_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Unable to cast object of type 'System.String' to type 'System.Array'."
+                },
+                "ownBefore": 14,
+                "ownAfter": 14,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "wrong_backing_null_list",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.NullReferenceException",
+                  "message": "Object reference not set to an instance of an object."
+                },
+                "ownBefore": 14,
+                "ownAfter": 14,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "null_wrapper_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.NullReferenceException",
+                  "message": "Object reference not set to an instance of an object."
+                },
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "raw_array_wrapper_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Unable to cast object of type 'System.Object[]' to type 'OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj'."
+                },
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "raw_string_wrapper_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Unable to cast object of type 'System.String' to type 'OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj'."
+                },
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              }
+            ]
+          },
+          "liveFault": null,
+          "migratedFault": null
+        },
+        {
+          "name": "source_integer_success",
+          "sourceHelperExecuted": true,
+          "sourceSha256": "5646d3f2f5681675c3fbbaed09ec879d7e697f738de0cc3089c93e21f2faebd3",
+          "metadataSha256": "b065dc3b71b09ce05ca4a43f40c0eef52113cbfd3aea2631452481fb91e089a4",
+          "originalObjectSha256": "d3ffbcf19a8d69b8c8e3f86bff1f0246308e89df7e7b94631af8bc55a4e843af",
+          "snapshotSha256": "249b893656a1d13ff93f91323dddf270d108d8201e12d21b529a093696284f42",
+          "snapshotBytes": 256,
+          "sourceHash": "8C296D6449FE30BF667160BA66EEF4D3",
+          "directHelper": null,
+          "liveFault": null,
+          "migratedFault": null
+        },
+        {
+          "name": "source_float_widen",
+          "sourceHelperExecuted": true,
+          "sourceSha256": "dff29d67bc5ba3c8825e567ad0ce07ce825a6a105b0cc3f09aaf6919e1143f9f",
+          "metadataSha256": "07988914229cb586ee36b7db0dbcc5233d272a66210f37f9b72e876cf3c64686",
+          "originalObjectSha256": "8bdbc08b425b23911e3eefd058ad6cad85649d7f4d8c2005cd0a59a70c802162",
+          "snapshotSha256": "956d2087c0d0e1d6dfd6559ea03b271bf9c8f8b15c29a8fb1721c87ba6df47f6",
+          "snapshotBytes": 268,
+          "sourceHash": "E2AD777520B7C53F29D44FD3FEBDE5D4",
+          "directHelper": null,
+          "liveFault": null,
+          "migratedFault": null
+        },
+        {
+          "name": "source_char_narrow_fault",
+          "sourceHelperExecuted": true,
+          "sourceSha256": "7c7cc9364df4e43bdc53b2ac7625fe9e2e30a7890a5f92a9c84529626ded2aa0",
+          "metadataSha256": "c26f80f7f6cec36f6a6121c7fb849049f141397724aefcdaa465ab5ba307c185",
+          "originalObjectSha256": "f16e2a9c81231899943df242b766b483c29b93cc382ae6f3b7fdd37d7cbd4c3c",
+          "snapshotSha256": "2a7f6f001ca170e096b6d1627cc690b4fc75d8b5a108c0a7b5f1b2bacc34d1a1",
+          "snapshotBytes": 247,
+          "sourceHash": "CD1B87151E2CFCBB9D8E055CC64E59B8",
+          "directHelper": null,
+          "liveFault": {
+            "type": "System.ArgumentException",
+            "message": "Cannot widen from source type to target type either because the source type is a not a primitive type or the conversion cannot be accomplished."
+          },
+          "migratedFault": {
+            "type": "System.ArgumentException",
+            "message": "Cannot widen from source type to target type either because the source type is a not a primitive type or the conversion cannot be accomplished."
+          }
+        },
+        {
+          "name": "source_object_unwrap",
+          "sourceHelperExecuted": true,
+          "sourceSha256": "0f2d04ec5bb6720c2b19ff924a5cce80eadaae1cc45c70ef71b7044dcffda7d6",
+          "metadataSha256": "b3a58b618cf641271044b46e2a599cd63b48376926258441a09af3d60b24cc08",
+          "originalObjectSha256": "f9a60975362ad35b7eaae743fa9299a3cee6461b1ce9b0cdfdf189a242109a27",
+          "snapshotSha256": "5c02c451dea8772b3116c60016f2fa5f31728ecb089a46fc27268613d0a1b948",
+          "snapshotBytes": 244,
+          "sourceHash": "48D84569797AA2261EBAFF9C27D4900F",
+          "directHelper": null,
+          "liveFault": null,
+          "migratedFault": null
+        },
+        {
+          "name": "source_integer_partial_cast",
+          "sourceHelperExecuted": true,
+          "sourceSha256": "d8abc75fd7beab27bf94eded30cfe9411eedcae295b723dede97524fdba21cad",
+          "metadataSha256": "03c9bfadb97c3a12d446095a0702b0e57474b10bccbd7823368c941fa6709bf4",
+          "originalObjectSha256": "abc715ec4b71c663edbe9cc68b50173f1bb5a3cdebb18216361374acc0088e9e",
+          "snapshotSha256": "249b893656a1d13ff93f91323dddf270d108d8201e12d21b529a093696284f42",
+          "snapshotBytes": 256,
+          "sourceHash": "23B703792738AA0E347A440FE7A9D9B4",
+          "directHelper": null,
+          "liveFault": {
+            "type": "System.InvalidCastException",
+            "message": "Object cannot be stored in an array of this type."
+          },
+          "migratedFault": {
+            "type": "System.InvalidCastException",
+            "message": "Object cannot be stored in an array of this type."
+          }
+        },
+        {
+          "name": "source_integer_partial_source",
+          "sourceHelperExecuted": true,
+          "sourceSha256": "45ac33a26578de4fc6b50543dec36b3b2ac2cdcb059d6d4ad826e582a938bb03",
+          "metadataSha256": "67f09724fcd56249450f5c2983242db7716b20c5511fa320aba4e38a4137255f",
+          "originalObjectSha256": "09b19fe3316f89521380358ddf43c35999e408324adbb42effafa90ca4cdcfa1",
+          "snapshotSha256": "249b893656a1d13ff93f91323dddf270d108d8201e12d21b529a093696284f42",
+          "snapshotBytes": 256,
+          "sourceHash": "5EC32279E0C87CF2F8EC68A98BE0503D",
+          "directHelper": null,
+          "liveFault": {
+            "type": "System.IndexOutOfRangeException",
+            "message": "Index was outside the bounds of the array."
+          },
+          "migratedFault": {
+            "type": "System.IndexOutOfRangeException",
+            "message": "Index was outside the bounds of the array."
+          }
+        }
+      ],
+      "originalBackendSha256": {
+        "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+        "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+        "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+        "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+        "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+        "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+        "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+        "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+        "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+        "original_source_XMRInstCapture.cs": "775f1d83bd4610f788891269ea9ea08b1f79cf4bf3b44300d926f49c8a277cbd",
+        "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+        "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+        "original_source_Helpers.cs": "96b7c3090cdded9c12e986bc538705272eae4c0fc12f01deab8f0f1bb94c7bcf",
+        "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+        "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+        "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+        "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+        "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+        "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+        "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+      }
+    },
+    "linux": {
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "processId": 1,
+      "metadataSha256": "8636ee834e352fa91923546f0b3f56f22621ae58b1cdf222c2d62e22707dbfcc",
+      "sourceCaptureCases": 10,
+      "sourceListToArrayCases": 6,
+      "directHelperCases": 132,
+      "cases": [
+        {
+          "name": "matrix_C",
+          "sourceHelperExecuted": false,
+          "sourceSha256": "be0bd515e965b07437bcdebfdcd40d7b29c1c7d78f1f54d5765eb6a4f8420651",
+          "metadataSha256": "95bb717b6a18400eb18d53d641bf4e3d6cc9004e980b4fe265f0437bdf5937b2",
+          "originalObjectSha256": "4362e442bbced5c3eb2f985dbb3e6f2a2b64b5b5dd7bf854c495831cabbac14f",
+          "snapshotSha256": "2a7f6f001ca170e096b6d1627cc690b4fc75d8b5a108c0a7b5f1b2bacc34d1a1",
+          "snapshotBytes": 247,
+          "sourceHash": "014945BC5621458A2047A880421D7FBD",
+          "directHelper": {
+            "sha256": "24faf31b21eaec4d07ff67a46b5dd9caf7d8819ca856ff2c6ef878263c12f623",
+            "cases": 33,
+            "summary": [
+              {
+                "name": "null",
+                "sourceClr": null,
+                "storedClr": "System.Char",
+                "error": null,
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "raw_char",
+                "sourceClr": "System.Char",
+                "storedClr": "System.Char",
+                "error": null,
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "raw_int",
+                "sourceClr": "System.Int32",
+                "storedClr": "System.Char",
+                "error": {
+                  "type": "System.ArgumentException",
+                  "message": "Cannot widen from source type to target type either because the source type is a not a primitive type or the conversion cannot be accomplished."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "raw_single",
+                "sourceClr": "System.Single",
+                "storedClr": "System.Char",
+                "error": {
+                  "type": "System.ArgumentException",
+                  "message": "Cannot widen from source type to target type either because the source type is a not a primitive type or the conversion cannot be accomplished."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "raw_double",
+                "sourceClr": "System.Double",
+                "storedClr": "System.Char",
+                "error": {
+                  "type": "System.ArgumentException",
+                  "message": "Cannot widen from source type to target type either because the source type is a not a primitive type or the conversion cannot be accomplished."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "raw_bool",
+                "sourceClr": "System.Boolean",
+                "storedClr": "System.Char",
+                "error": {
+                  "type": "System.ArgumentException",
+                  "message": "Cannot widen from source type to target type either because the source type is a not a primitive type or the conversion cannot be accomplished."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "raw_string",
+                "sourceClr": "System.String",
+                "storedClr": "System.Char",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "sdk_int",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+LSLInteger",
+                "storedClr": "System.Char",
+                "error": {
+                  "type": "System.ArgumentException",
+                  "message": "Cannot widen from source type to target type either because the source type is a not a primitive type or the conversion cannot be accomplished."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "sdk_float",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+LSLFloat",
+                "storedClr": "System.Char",
+                "error": {
+                  "type": "System.ArgumentException",
+                  "message": "Cannot widen from source type to target type either because the source type is a not a primitive type or the conversion cannot be accomplished."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "sdk_string",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+LSLString",
+                "storedClr": "System.Char",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "sdk_null_string",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+LSLString",
+                "storedClr": "System.Char",
+                "error": null,
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "sdk_key",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+key",
+                "storedClr": "System.Char",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "vector",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+Vector3",
+                "storedClr": "System.Char",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "rotation",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+Quaternion",
+                "storedClr": "System.Char",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "list",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+list",
+                "storedClr": "System.Char",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "class",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj",
+                "storedClr": "System.Char",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "zero_bad_indices",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": null,
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "negative_count",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": null,
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "partial_source",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "partial_destination",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "negative_source",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "negative_destination",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "null_list_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.NullReferenceException",
+                  "message": "Object reference not set to an instance of an object."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "null_data_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": null,
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "null_data_one",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "null_backing_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "null_backing_one",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.NullReferenceException",
+                  "message": "Object reference not set to an instance of an object."
+                },
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "null_backing_bad_source",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "wrong_backing_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Unable to cast object of type 'System.String' to type 'System.Array'."
+                },
+                "ownBefore": 14,
+                "ownAfter": 14,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "wrong_backing_null_list",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.NullReferenceException",
+                  "message": "Object reference not set to an instance of an object."
+                },
+                "ownBefore": 14,
+                "ownAfter": 14,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "null_wrapper_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.NullReferenceException",
+                  "message": "Object reference not set to an instance of an object."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "raw_array_wrapper_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Unable to cast object of type 'System.Char[]' to type 'OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj'."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              },
+              {
+                "name": "raw_string_wrapper_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Unable to cast object of type 'System.String' to type 'OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj'."
+                },
+                "ownBefore": 10,
+                "ownAfter": 10,
+                "globalBefore": 10,
+                "globalAfter": 10
+              }
+            ]
+          },
+          "liveFault": null,
+          "migratedFault": null
+        },
+        {
+          "name": "matrix_F",
+          "sourceHelperExecuted": false,
+          "sourceSha256": "a6be800af9d6e007c4d5d0f8db27f226bf722aa1cff6741b99abd9d5ee8781cd",
+          "metadataSha256": "7bb1ab2f77ff607b9812c72eb68cb14f9699d5cef7d37c3959056c8413218f43",
+          "originalObjectSha256": "8c6dcd44021832555022b4b74ee66df63dca8d30462fcc573a3cc57cd87e030f",
+          "snapshotSha256": "956d2087c0d0e1d6dfd6559ea03b271bf9c8f8b15c29a8fb1721c87ba6df47f6",
+          "snapshotBytes": 268,
+          "sourceHash": "11BF2703AB3C5EC6E80C2DE5FC226444",
+          "directHelper": {
+            "sha256": "2a3354a66de8708629d05f1e960d7fcf3ad55ed4734aeb61d73e748da555887f",
+            "cases": 33,
+            "summary": [
+              {
+                "name": "null",
+                "sourceClr": null,
+                "storedClr": "System.Double",
+                "error": null,
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "raw_char",
+                "sourceClr": "System.Char",
+                "storedClr": "System.Double",
+                "error": null,
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "raw_int",
+                "sourceClr": "System.Int32",
+                "storedClr": "System.Double",
+                "error": null,
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "raw_single",
+                "sourceClr": "System.Single",
+                "storedClr": "System.Double",
+                "error": null,
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "raw_double",
+                "sourceClr": "System.Double",
+                "storedClr": "System.Double",
+                "error": null,
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "raw_bool",
+                "sourceClr": "System.Boolean",
+                "storedClr": "System.Double",
+                "error": {
+                  "type": "System.ArgumentException",
+                  "message": "Cannot widen from source type to target type either because the source type is a not a primitive type or the conversion cannot be accomplished."
+                },
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "raw_string",
+                "sourceClr": "System.String",
+                "storedClr": "System.Double",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "sdk_int",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+LSLInteger",
+                "storedClr": "System.Double",
+                "error": null,
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "sdk_float",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+LSLFloat",
+                "storedClr": "System.Double",
+                "error": null,
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "sdk_string",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+LSLString",
+                "storedClr": "System.Double",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "sdk_null_string",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+LSLString",
+                "storedClr": "System.Double",
+                "error": null,
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "sdk_key",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+key",
+                "storedClr": "System.Double",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "vector",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+Vector3",
+                "storedClr": "System.Double",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "rotation",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+Quaternion",
+                "storedClr": "System.Double",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "list",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+list",
+                "storedClr": "System.Double",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "class",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj",
+                "storedClr": "System.Double",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "zero_bad_indices",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": null,
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "negative_count",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": null,
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "partial_source",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "partial_destination",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "negative_source",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "negative_destination",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "null_list_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.NullReferenceException",
+                  "message": "Object reference not set to an instance of an object."
+                },
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "null_data_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": null,
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "null_data_one",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "null_backing_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "null_backing_one",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.NullReferenceException",
+                  "message": "Object reference not set to an instance of an object."
+                },
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "null_backing_bad_source",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "wrong_backing_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Unable to cast object of type 'System.String' to type 'System.Array'."
+                },
+                "ownBefore": 14,
+                "ownAfter": 14,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "wrong_backing_null_list",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.NullReferenceException",
+                  "message": "Object reference not set to an instance of an object."
+                },
+                "ownBefore": 14,
+                "ownAfter": 14,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "null_wrapper_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.NullReferenceException",
+                  "message": "Object reference not set to an instance of an object."
+                },
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "raw_array_wrapper_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Unable to cast object of type 'System.Double[]' to type 'OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj'."
+                },
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              },
+              {
+                "name": "raw_string_wrapper_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Unable to cast object of type 'System.String' to type 'OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj'."
+                },
+                "ownBefore": 28,
+                "ownAfter": 28,
+                "globalBefore": 28,
+                "globalAfter": 28
+              }
+            ]
+          },
+          "liveFault": null,
+          "migratedFault": null
+        },
+        {
+          "name": "matrix_I",
+          "sourceHelperExecuted": false,
+          "sourceSha256": "e397d221c0afcad58d38d64f76bbca0628e1323aeb17d69bf5e307874a3d1d5d",
+          "metadataSha256": "51729b8a2c3119b7fa646e4b581372e713d9bba786f8da45581c52ec5a77b7ae",
+          "originalObjectSha256": "8b3d4bbf513e9fc225541079119e648362bcd770cbcb70cffd5d80b378756681",
+          "snapshotSha256": "249b893656a1d13ff93f91323dddf270d108d8201e12d21b529a093696284f42",
+          "snapshotBytes": 256,
+          "sourceHash": "EAB2687AEADA8C5DC621852BD475158D",
+          "directHelper": {
+            "sha256": "e14d2956374cc5862dc0cb11e47b8237e2b8407b7132df90cb489cfd0862de14",
+            "cases": 33,
+            "summary": [
+              {
+                "name": "null",
+                "sourceClr": null,
+                "storedClr": "System.Int32",
+                "error": null,
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "raw_char",
+                "sourceClr": "System.Char",
+                "storedClr": "System.Int32",
+                "error": null,
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "raw_int",
+                "sourceClr": "System.Int32",
+                "storedClr": "System.Int32",
+                "error": null,
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "raw_single",
+                "sourceClr": "System.Single",
+                "storedClr": "System.Int32",
+                "error": {
+                  "type": "System.ArgumentException",
+                  "message": "Cannot widen from source type to target type either because the source type is a not a primitive type or the conversion cannot be accomplished."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "raw_double",
+                "sourceClr": "System.Double",
+                "storedClr": "System.Int32",
+                "error": {
+                  "type": "System.ArgumentException",
+                  "message": "Cannot widen from source type to target type either because the source type is a not a primitive type or the conversion cannot be accomplished."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "raw_bool",
+                "sourceClr": "System.Boolean",
+                "storedClr": "System.Int32",
+                "error": {
+                  "type": "System.ArgumentException",
+                  "message": "Cannot widen from source type to target type either because the source type is a not a primitive type or the conversion cannot be accomplished."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "raw_string",
+                "sourceClr": "System.String",
+                "storedClr": "System.Int32",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "sdk_int",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+LSLInteger",
+                "storedClr": "System.Int32",
+                "error": null,
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "sdk_float",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+LSLFloat",
+                "storedClr": "System.Int32",
+                "error": {
+                  "type": "System.ArgumentException",
+                  "message": "Cannot widen from source type to target type either because the source type is a not a primitive type or the conversion cannot be accomplished."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "sdk_string",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+LSLString",
+                "storedClr": "System.Int32",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "sdk_null_string",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+LSLString",
+                "storedClr": "System.Int32",
+                "error": null,
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "sdk_key",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+key",
+                "storedClr": "System.Int32",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "vector",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+Vector3",
+                "storedClr": "System.Int32",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "rotation",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+Quaternion",
+                "storedClr": "System.Int32",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "list",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+list",
+                "storedClr": "System.Int32",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "class",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj",
+                "storedClr": "System.Int32",
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Object cannot be stored in an array of this type."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "zero_bad_indices",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": null,
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "negative_count",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": null,
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "partial_source",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "partial_destination",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "negative_source",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "negative_destination",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "null_list_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.NullReferenceException",
+                  "message": "Object reference not set to an instance of an object."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "null_data_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": null,
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "null_data_one",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "null_backing_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "null_backing_one",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.NullReferenceException",
+                  "message": "Object reference not set to an instance of an object."
+                },
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "null_backing_bad_source",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "wrong_backing_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Unable to cast object of type 'System.String' to type 'System.Array'."
+                },
+                "ownBefore": 14,
+                "ownAfter": 14,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "wrong_backing_null_list",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.NullReferenceException",
+                  "message": "Object reference not set to an instance of an object."
+                },
+                "ownBefore": 14,
+                "ownAfter": 14,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "null_wrapper_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.NullReferenceException",
+                  "message": "Object reference not set to an instance of an object."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "raw_array_wrapper_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Unable to cast object of type 'System.Int32[]' to type 'OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj'."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              },
+              {
+                "name": "raw_string_wrapper_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Unable to cast object of type 'System.String' to type 'OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj'."
+                },
+                "ownBefore": 16,
+                "ownAfter": 16,
+                "globalBefore": 16,
+                "globalAfter": 16
+              }
+            ]
+          },
+          "liveFault": null,
+          "migratedFault": null
+        },
+        {
+          "name": "matrix_O",
+          "sourceHelperExecuted": false,
+          "sourceSha256": "1e58ba0efffa3a587f03b5cdab6e8ce3c5271a37e827ccab2f058b0100c54fec",
+          "metadataSha256": "6de0b635540f06fd0ed60ede9ec6d0274c4dae8aa5be0341f4ffd8d7ccf39b6f",
+          "originalObjectSha256": "703d6550994c80889447a8f995cdd68c662ccacbf06fbd75eaeff56fa5fe1122",
+          "snapshotSha256": "5c02c451dea8772b3116c60016f2fa5f31728ecb089a46fc27268613d0a1b948",
+          "snapshotBytes": 244,
+          "sourceHash": "022F7EB502C83D88F649A55124354C27",
+          "directHelper": {
+            "sha256": "1085e28cf780ddc9aea9a14fbb1f1bfa5689df0e924a3517dcb1832ce4b42cec",
+            "cases": 33,
+            "summary": [
+              {
+                "name": "null",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "raw_char",
+                "sourceClr": "System.Char",
+                "storedClr": "System.Char",
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "raw_int",
+                "sourceClr": "System.Int32",
+                "storedClr": "System.Int32",
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "raw_single",
+                "sourceClr": "System.Single",
+                "storedClr": "System.Single",
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "raw_double",
+                "sourceClr": "System.Double",
+                "storedClr": "System.Double",
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "raw_bool",
+                "sourceClr": "System.Boolean",
+                "storedClr": "System.Boolean",
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "raw_string",
+                "sourceClr": "System.String",
+                "storedClr": "System.String",
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "sdk_int",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+LSLInteger",
+                "storedClr": "System.Int32",
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "sdk_float",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+LSLFloat",
+                "storedClr": "System.Double",
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "sdk_string",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+LSLString",
+                "storedClr": "System.String",
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "sdk_null_string",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+LSLString",
+                "storedClr": null,
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "sdk_key",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+key",
+                "storedClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+key",
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "vector",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+Vector3",
+                "storedClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+Vector3",
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "rotation",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+Quaternion",
+                "storedClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+Quaternion",
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "list",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+list",
+                "storedClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+list",
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "class",
+                "sourceClr": "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj",
+                "storedClr": "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj",
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "zero_bad_indices",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "negative_count",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "partial_source",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "partial_destination",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "negative_source",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "negative_destination",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "null_list_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.NullReferenceException",
+                  "message": "Object reference not set to an instance of an object."
+                },
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "null_data_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "null_data_one",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "null_backing_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": null,
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "null_backing_one",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.NullReferenceException",
+                  "message": "Object reference not set to an instance of an object."
+                },
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "null_backing_bad_source",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.IndexOutOfRangeException",
+                  "message": "Index was outside the bounds of the array."
+                },
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "wrong_backing_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Unable to cast object of type 'System.String' to type 'System.Array'."
+                },
+                "ownBefore": 14,
+                "ownAfter": 14,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "wrong_backing_null_list",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.NullReferenceException",
+                  "message": "Object reference not set to an instance of an object."
+                },
+                "ownBefore": 14,
+                "ownAfter": 14,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "null_wrapper_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.NullReferenceException",
+                  "message": "Object reference not set to an instance of an object."
+                },
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "raw_array_wrapper_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Unable to cast object of type 'System.Object[]' to type 'OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj'."
+                },
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              },
+              {
+                "name": "raw_string_wrapper_zero",
+                "sourceClr": null,
+                "storedClr": null,
+                "error": {
+                  "type": "System.InvalidCastException",
+                  "message": "Unable to cast object of type 'System.String' to type 'OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj'."
+                },
+                "ownBefore": 4,
+                "ownAfter": 4,
+                "globalBefore": 4,
+                "globalAfter": 4
+              }
+            ]
+          },
+          "liveFault": null,
+          "migratedFault": null
+        },
+        {
+          "name": "source_integer_success",
+          "sourceHelperExecuted": true,
+          "sourceSha256": "5646d3f2f5681675c3fbbaed09ec879d7e697f738de0cc3089c93e21f2faebd3",
+          "metadataSha256": "19f154eab68848045701ce4ef52fdbb6687813c49bd33b40a952e4454d05cf06",
+          "originalObjectSha256": "d3ffbcf19a8d69b8c8e3f86bff1f0246308e89df7e7b94631af8bc55a4e843af",
+          "snapshotSha256": "249b893656a1d13ff93f91323dddf270d108d8201e12d21b529a093696284f42",
+          "snapshotBytes": 256,
+          "sourceHash": "8C296D6449FE30BF667160BA66EEF4D3",
+          "directHelper": null,
+          "liveFault": null,
+          "migratedFault": null
+        },
+        {
+          "name": "source_float_widen",
+          "sourceHelperExecuted": true,
+          "sourceSha256": "dff29d67bc5ba3c8825e567ad0ce07ce825a6a105b0cc3f09aaf6919e1143f9f",
+          "metadataSha256": "717b4e1c8c6573e22863ef898b6055c61a4073730fa48f43f99e1559cc44f27a",
+          "originalObjectSha256": "8bdbc08b425b23911e3eefd058ad6cad85649d7f4d8c2005cd0a59a70c802162",
+          "snapshotSha256": "956d2087c0d0e1d6dfd6559ea03b271bf9c8f8b15c29a8fb1721c87ba6df47f6",
+          "snapshotBytes": 268,
+          "sourceHash": "E2AD777520B7C53F29D44FD3FEBDE5D4",
+          "directHelper": null,
+          "liveFault": null,
+          "migratedFault": null
+        },
+        {
+          "name": "source_char_narrow_fault",
+          "sourceHelperExecuted": true,
+          "sourceSha256": "7c7cc9364df4e43bdc53b2ac7625fe9e2e30a7890a5f92a9c84529626ded2aa0",
+          "metadataSha256": "d1df748a7fb403fcd610f675747ea07149bf51f9e9ff04bda00923acd165791b",
+          "originalObjectSha256": "f16e2a9c81231899943df242b766b483c29b93cc382ae6f3b7fdd37d7cbd4c3c",
+          "snapshotSha256": "2a7f6f001ca170e096b6d1627cc690b4fc75d8b5a108c0a7b5f1b2bacc34d1a1",
+          "snapshotBytes": 247,
+          "sourceHash": "CD1B87151E2CFCBB9D8E055CC64E59B8",
+          "directHelper": null,
+          "liveFault": {
+            "type": "System.ArgumentException",
+            "message": "Cannot widen from source type to target type either because the source type is a not a primitive type or the conversion cannot be accomplished."
+          },
+          "migratedFault": {
+            "type": "System.ArgumentException",
+            "message": "Cannot widen from source type to target type either because the source type is a not a primitive type or the conversion cannot be accomplished."
+          }
+        },
+        {
+          "name": "source_object_unwrap",
+          "sourceHelperExecuted": true,
+          "sourceSha256": "0f2d04ec5bb6720c2b19ff924a5cce80eadaae1cc45c70ef71b7044dcffda7d6",
+          "metadataSha256": "d3c4512b4df91f9b72ff023b8684b4c08959763db9ad7ca2200b1551a785aa41",
+          "originalObjectSha256": "f9a60975362ad35b7eaae743fa9299a3cee6461b1ce9b0cdfdf189a242109a27",
+          "snapshotSha256": "5c02c451dea8772b3116c60016f2fa5f31728ecb089a46fc27268613d0a1b948",
+          "snapshotBytes": 244,
+          "sourceHash": "48D84569797AA2261EBAFF9C27D4900F",
+          "directHelper": null,
+          "liveFault": null,
+          "migratedFault": null
+        },
+        {
+          "name": "source_integer_partial_cast",
+          "sourceHelperExecuted": true,
+          "sourceSha256": "d8abc75fd7beab27bf94eded30cfe9411eedcae295b723dede97524fdba21cad",
+          "metadataSha256": "4b5394c9dab973852cff42d9b646a4909ff2ddb2683e2bcacaf2714453d1a08a",
+          "originalObjectSha256": "abc715ec4b71c663edbe9cc68b50173f1bb5a3cdebb18216361374acc0088e9e",
+          "snapshotSha256": "249b893656a1d13ff93f91323dddf270d108d8201e12d21b529a093696284f42",
+          "snapshotBytes": 256,
+          "sourceHash": "23B703792738AA0E347A440FE7A9D9B4",
+          "directHelper": null,
+          "liveFault": {
+            "type": "System.InvalidCastException",
+            "message": "Object cannot be stored in an array of this type."
+          },
+          "migratedFault": {
+            "type": "System.InvalidCastException",
+            "message": "Object cannot be stored in an array of this type."
+          }
+        },
+        {
+          "name": "source_integer_partial_source",
+          "sourceHelperExecuted": true,
+          "sourceSha256": "45ac33a26578de4fc6b50543dec36b3b2ac2cdcb059d6d4ad826e582a938bb03",
+          "metadataSha256": "f14b8746342834c75a55296dc1ead06b0e5fbbe82f8efc525a3b1082c6616f27",
+          "originalObjectSha256": "09b19fe3316f89521380358ddf43c35999e408324adbb42effafa90ca4cdcfa1",
+          "snapshotSha256": "249b893656a1d13ff93f91323dddf270d108d8201e12d21b529a093696284f42",
+          "snapshotBytes": 256,
+          "sourceHash": "5EC32279E0C87CF2F8EC68A98BE0503D",
+          "directHelper": null,
+          "liveFault": {
+            "type": "System.IndexOutOfRangeException",
+            "message": "Index was outside the bounds of the array."
+          },
+          "migratedFault": {
+            "type": "System.IndexOutOfRangeException",
+            "message": "Index was outside the bounds of the array."
+          }
+        }
+      ],
+      "originalBackendSha256": {
+        "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+        "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+        "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+        "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+        "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+        "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+        "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+        "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+        "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+        "original_source_XMRInstCapture.cs": "775f1d83bd4610f788891269ea9ea08b1f79cf4bf3b44300d926f49c8a277cbd",
+        "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+        "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+        "original_source_Helpers.cs": "96b7c3090cdded9c12e986bc538705272eae4c0fc12f01deab8f0f1bb94c7bcf",
+        "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+        "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+        "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+        "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+        "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+        "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+        "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+      }
+    }
+  },
+  "measuredBehavior": {
+    "unwrap": "Only LSLInteger,LSLFloat,LSLString unwrap; SDK key stays its key struct. SDK null String unwraps null.",
+    "primitiveNull": "Null becomes primitive element default0.",
+    "numericWidening": "C accepts Char; I accepts Char/Int32; F accepts Char/Int32/Single/Double. Unsupported numeric conversions throw ArgumentException; nonprimitive incompatible values throw InvalidCastException.",
+    "objectBacking": "Public obj Object[] accepts every tested CLR/SDK payload; raw boxes/references retained, only three SDK scalars unwrap. Class value can preserve class/backing self-cycle.",
+    "faultOrdering": "Wrapper validation precedes source List.Data; source Data access precedes backing Array cast; source index is evaluated before destination SetValue/null access. Nonpositive count still performs pre-loop validation.",
+    "partialMutation": "Previously copied elements survive subsequent source bounds/destination bounds/type failures.",
+    "heap": "Mutating existing backing through this helper leaves cached global/class-own ledgers unchanged, including Object[] cells whose current sizes change."
+  },
+  "crossPlatformSnapshotsIdentical": true,
+  "boundaries": [
+    "Ten actual source captures per OS:four matrix setup wrappers andsix source xmrList2Array calls;132 direct helper observations per OS.",
+    "Direct CLR/SDK boxed payload matrix is backend evidence, not a source-language representation/boxing claim.",
+    "No native execution/parity claim or exhaustive CLR primitive/rank/jagged/type matrix claim.",
+    "Combined invalid element and invalid destination-index priority remains unmeasured.",
+    "No forced GC or GC-cause claim."
+  ],
+  "verifierSha256": "be8fa4cb754e4a982f171191c63bdb8938979338502d7a425e4b4575d542a616"
+}

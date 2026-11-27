@@ -4,11 +4,13 @@
 #include "opensim/framework/text.hpp"
 #include <bit>
 #include <stdexcept>
+
 namespace opensim::scene {
 namespace {
 std::int32_t signed_mask(std::uint32_t v) {
     return std::bit_cast<std::int32_t>(v);
 }
+
 std::string agent_text(const std::optional<std::string> &text, bool description) {
     if (!text || text->empty() || (description && framework::trim_utf8(*text).empty()))
         return {};
@@ -22,14 +24,16 @@ std::string agent_text(const std::optional<std::string> &text, bool description)
             value[i] = 0;
     return value;
 }
-}
+} // namespace
+
 TaskInventoryMoveController::TaskInventoryMoveController(TaskInventoryMoveBackend backend)
     : backend_(std::move(backend)) {
     if (!backend_.task_item || !backend_.propagate_permissions || !backend_.bypass_permissions ||
-        !backend_.random_uuid || !backend_.unix_time || !backend_.add_client ||
-        !backend_.remove_script_events || !backend_.active_script_count || !backend_.remove_item)
+        !backend_.random_uuid || !backend_.unix_time || !backend_.add_client || !backend_.remove_script_events ||
+        !backend_.active_script_count || !backend_.remove_item)
         throw std::invalid_argument("Incomplete task inventory move backend");
 }
+
 TaskInventoryMoveOutcome TaskInventoryMoveController::create_agent_item(framework::Uuid destination,
                                                                         const TaskInventoryMovePart &part,
                                                                         framework::Uuid key) const {
@@ -83,8 +87,8 @@ TaskInventoryMoveOutcome TaskInventoryMoveController::create_agent_item(framewor
     item.flags = signed_mask(flags);
     return {std::move(agent), {}};
 }
-void TaskInventoryMoveController::remove_noncopy(const TaskInventoryMovePart &part,
-                                                 framework::Uuid key) const {
+
+void TaskInventoryMoveController::remove_noncopy(const TaskInventoryMovePart &part, framework::Uuid key) const {
     auto task = backend_.task_item(part, key);
     if (!task)
         return;
@@ -96,9 +100,9 @@ void TaskInventoryMoveController::remove_noncopy(const TaskInventoryMovePart &pa
         backend_.remove_item(part, key);
     }
 }
+
 TaskInventoryMoveOutcome TaskInventoryMoveController::move(const TaskInventoryMoveClient &client,
-                                                           framework::Uuid folder,
-                                                           const TaskInventoryMovePart &part,
+                                                           framework::Uuid folder, const TaskInventoryMovePart &part,
                                                            framework::Uuid key) const {
     if (backend_.debug)
         backend_.debug("Move task inventory item to client");
@@ -111,6 +115,7 @@ TaskInventoryMoveOutcome TaskInventoryMoveController::move(const TaskInventoryMo
     outcome.message = {};
     return outcome;
 }
+
 TaskInventoryMoveOutcome TaskInventoryMoveController::move(framework::Uuid avatar, framework::Uuid folder,
                                                            const TaskInventoryMovePart &part,
                                                            framework::Uuid key) const {
@@ -129,6 +134,7 @@ TaskInventoryMoveOutcome TaskInventoryMoveController::move(framework::Uuid avata
     remove_noncopy(part, key);
     return outcome;
 }
+
 void TaskInventoryMoveController::client_move(const TaskInventoryMoveClient &client, framework::Uuid folder,
                                               std::uint32_t local, framework::Uuid key) const {
     if (key.is_zero())
@@ -153,4 +159,4 @@ void TaskInventoryMoveController::client_move(const TaskInventoryMoveClient &cli
     if (!outcome.item)
         client.alert(outcome.message, false);
 }
-}
+} // namespace opensim::scene

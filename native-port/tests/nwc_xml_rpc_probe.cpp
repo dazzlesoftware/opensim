@@ -17,7 +17,8 @@
 using namespace opensim;
 using network::Value;
 using Text = std::optional<std::u16string>;
-std::string H(const Text& t) {
+
+std::string H(const Text &t) {
     if (!t)
         return "-";
     if (t->empty())
@@ -30,23 +31,25 @@ std::string H(const Text& t) {
         }
     return o;
 }
-Text D(const std::string& h) {
+
+Text D(const std::string &h) {
     if (h == "-")
         return {};
     if (h == ".")
         return u"";
     std::u16string o;
     for (std::size_t i = 0; i < h.size(); i += 4)
-        o += char16_t(std::stoi(h.substr(i, 2), nullptr, 16) |
-                      (std::stoi(h.substr(i + 2, 2), nullptr, 16) << 8));
+        o += char16_t(std::stoi(h.substr(i, 2), nullptr, 16) | (std::stoi(h.substr(i + 2, 2), nullptr, 16) << 8));
     return o;
 }
-std::unordered_map<const void*, int> ids;
+
+std::unordered_map<const void *, int> ids;
 std::vector<std::shared_ptr<const void>> retained;
-std::string Dump(const std::shared_ptr<Value>& input) {
+
+std::string Dump(const std::shared_ptr<Value> &input) {
     if (!input || input->kind == Value::Kind::NullReference)
         return "N";
-    const auto& v = input->view();
+    const auto &v = input->view();
     using K = Value::Kind;
     switch (v.kind) {
     case K::String:
@@ -75,10 +78,8 @@ std::string Dump(const std::shared_ptr<Value>& input) {
     ids[object.get()] = id;
     retained.push_back(object);
     std::string out;
-    auto dump = [](const Value& x) {
-        return Dump(x.kind == K::NullReference ? nullptr
-                    : x.reference              ? x.reference
-                                               : std::make_shared<Value>(x));
+    auto dump = [](const Value &x) {
+        return Dump(x.kind == K::NullReference ? nullptr : x.reference ? x.reference : std::make_shared<Value>(x));
     };
     if (v.kind == K::Binary) {
         out = "B:" + std::to_string(id) + ":";
@@ -90,7 +91,7 @@ std::string Dump(const std::shared_ptr<Value>& input) {
     }
     if (v.kind == K::Array) {
         out = "A:" + std::to_string(id) + "[";
-        for (const auto& x : v.array) {
+        for (const auto &x : v.array) {
             if (out.back() != '[')
                 out += ',';
             out += dump(x);
@@ -100,9 +101,8 @@ std::string Dump(const std::shared_ptr<Value>& input) {
     if (v.kind == K::Map) {
         out = "M:" + std::to_string(id) + "{";
         auto keys = v.ordered_keys();
-        std::sort(keys.begin(), keys.end(),
-                  [](auto& a, auto& b) { return framework::utf16(a) < framework::utf16(b); });
-        for (const auto& k : keys) {
+        std::sort(keys.begin(), keys.end(), [](auto &a, auto &b) { return framework::utf16(a) < framework::utf16(b); });
+        for (const auto &k : keys) {
             if (out.back() != '{')
                 out += ',';
             out += H(framework::utf16(k)) + "=" + dump(v.map.at(k));
@@ -111,7 +111,8 @@ std::string Dump(const std::shared_ptr<Value>& input) {
     }
     return "X";
 }
-std::string Run(network::NwcXmlRpcResponseDeserializer& parser, const Text& xml, int action) {
+
+std::string Run(network::NwcXmlRpcResponseDeserializer &parser, const Text &xml, int action) {
     std::string result;
     try {
         auto r = parser.deserialize(xml);
@@ -120,17 +121,16 @@ std::string Run(network::NwcXmlRpcResponseDeserializer& parser, const Text& xml,
             result += ";C:" + std::to_string(r->fault_code());
         if (action & 2)
             result += ";S:" + H(r->fault_string());
-    } catch (const network::NwcXmlRpcError& e) {
+    } catch (const network::NwcXmlRpcError &e) {
         result += ";E:" + e.source_type + ":" + H(e.message);
-    } catch (const framework::NiniXmlProviderError& e) {
+    } catch (const framework::NiniXmlProviderError &e) {
         result += ";E:" + e.source_type + ":" + H(e.message);
-    } catch (const framework::InvariantNumberError& e) {
+    } catch (const framework::InvariantNumberError &e) {
         result += ";E:" +
-                  std::string(e.kind == framework::InvariantNumberError::Kind::Overflow
-                                  ? "System.OverflowException"
-                                  : "System.FormatException") +
+                  std::string(e.kind == framework::InvariantNumberError::Kind::Overflow ? "System.OverflowException"
+                                                                                        : "System.FormatException") +
                   ":" + H(e.message);
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         result += ";E:System.Exception:" + H(framework::utf16_replacing(e.what()));
     }
     return result;
@@ -141,10 +141,11 @@ struct TextInput : framework::NativeNiniXmlTextInput {
     std::size_t position = 0;
     int chunk, fail, reads = 0;
     bool close_fail;
-    std::vector<std::string>& calls;
-    TextInput(std::u16string d, int c, int f, bool x, std::vector<std::string>& log)
-        : data(std::move(d)), chunk(c), fail(f), close_fail(x), calls(log) {
-    }
+    std::vector<std::string> &calls;
+
+    TextInput(std::u16string d, int c, int f, bool x, std::vector<std::string> &log)
+        : data(std::move(d)), chunk(c), fail(f), close_fail(x), calls(log) {}
+
     std::int32_t read(std::span<char16_t> destination) override {
         calls.push_back("R:" + std::to_string(destination.size()));
         if (++reads == fail)
@@ -154,35 +155,41 @@ struct TextInput : framework::NativeNiniXmlTextInput {
         position += n;
         return static_cast<std::int32_t>(n);
     }
+
     void close() override {
         calls.push_back("X");
         if (close_fail)
             throw std::runtime_error("close");
     }
 };
+
 struct BytesInput : framework::NiniByteStream {
     std::vector<std::uint8_t> data;
     std::size_t at = 0;
     int chunk, fail, reads = 0;
     bool close_fail, readable;
-    std::vector<std::string>& calls;
-    BytesInput(std::vector<std::uint8_t> d, int c, int f, bool x, bool readable,
-               std::vector<std::string>& log)
-        : data(std::move(d)), chunk(c), fail(f), close_fail(x), readable(readable), calls(log) {
-    }
+    std::vector<std::string> &calls;
+
+    BytesInput(std::vector<std::uint8_t> d, int c, int f, bool x, bool readable, std::vector<std::string> &log)
+        : data(std::move(d)), chunk(c), fail(f), close_fail(x), readable(readable), calls(log) {}
+
     bool can_read() override {
         calls.push_back("C");
         return readable;
     }
+
     bool can_seek() override {
         return false;
     }
+
     bool can_write() override {
         return false;
     }
+
     std::int64_t position() override {
         return at;
     }
+
     std::size_t read(std::span<std::uint8_t> buffer, std::size_t offset, std::size_t count) override {
         calls.push_back("R:" + std::to_string(count));
         if (++reads == fail)
@@ -193,37 +200,41 @@ struct BytesInput : framework::NiniByteStream {
         at += n;
         return n;
     }
+
     void write(std::span<const std::uint8_t>) override {
         throw std::logic_error("unused");
     }
+
     void flush() override {
         throw std::logic_error("unused");
     }
+
     void close() override {
         calls.push_back("X");
         if (close_fail)
             throw std::runtime_error("close");
     }
 };
+
 std::string StreamError() {
     try {
         throw;
-    } catch (const network::NwcXmlRpcError& e) {
+    } catch (const network::NwcXmlRpcError &e) {
         return e.source_type + ":" + H(e.message);
-    } catch (const framework::NiniXmlProviderError& e) {
+    } catch (const framework::NiniXmlProviderError &e) {
         return e.source_type + ":" + H(e.message);
-    } catch (const framework::InvariantNumberError& e) {
-        return std::string(e.kind == framework::InvariantNumberError::Kind::Overflow
-                               ? "System.OverflowException"
-                               : "System.FormatException") +
+    } catch (const framework::InvariantNumberError &e) {
+        return std::string(e.kind == framework::InvariantNumberError::Kind::Overflow ? "System.OverflowException"
+                                                                                     : "System.FormatException") +
                ":" + H(e.message);
-    } catch (const framework::NiniStreamError& e) {
+    } catch (const framework::NiniStreamError &e) {
         return e.source_type + ":" + H(e.message);
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         return "System.Exception:" + H(framework::utf16_replacing(e.what()));
     }
 }
-void StreamCase(const std::string& line) {
+
+void StreamCase(const std::string &line) {
     std::istringstream row(line);
     std::string prefix, h;
     int mode, chunk, fail, close_fail, flags;
@@ -247,9 +258,9 @@ void StreamCase(const std::string& line) {
                     for (std::size_t i = 0; i < h.size(); i += 2)
                         bytes.push_back(std::uint8_t(std::stoi(h.substr(i, 2), nullptr, 16)));
                 input = framework::native_xml_stream_reader_input(
-                    flags & 2 ? nullptr
-                              : std::make_shared<BytesInput>(bytes, chunk, fail, close_fail != 0,
-                                                             !(flags & 16), calls));
+                    flags & 2
+                        ? nullptr
+                        : std::make_shared<BytesInput>(bytes, chunk, fail, close_fail != 0, !(flags & 16), calls));
             }
         }
         auto r = parser.deserialize_reader(input);
@@ -275,6 +286,7 @@ void StreamCase(const std::string& line) {
     }
     std::cout << '\n';
 }
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -291,7 +303,7 @@ int main() {
         bool nested = false;
         ids.clear();
         retained.clear();
-        network::NwcXmlRpcResponseDeserializer* current = nullptr;
+        network::NwcXmlRpcResponseDeserializer *current = nullptr;
         network::NwcXmlRpcResponseDeserializer::Logger log;
         if (logMode)
             log = [&](std::u16string_view message) {

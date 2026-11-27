@@ -31,15 +31,18 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <thread>
 #include <vector>
 using namespace opensim::framework;
+
 namespace {
 int failures = 0;
-void check(bool okay, const char* name) {
+
+void check(bool okay, const char *name) {
     if (!okay) {
         std::cerr << "FAIL: " << name << '\n';
         ++failures;
     }
 }
-auto circuit(std::uint32_t code, const Uuid& agent, const Uuid& session) {
+
+auto circuit(std::uint32_t code, const Uuid &agent, const Uuid &session) {
     auto data = std::make_shared<AgentCircuitData>();
     data->circuit_code = code;
     data->agent_id = agent;
@@ -53,6 +56,7 @@ auto circuit(std::uint32_t code, const Uuid& agent, const Uuid& session) {
     data->start_far = 512;
     return data;
 }
+
 void manager_tests() {
     const Uuid agent = Uuid::random(), other = Uuid::random(), session = Uuid::random();
     AgentCircuitManager manager;
@@ -61,13 +65,12 @@ void manager_tests() {
     check(!first->child, "explicit circuit-code overload preserves child status");
     auto response = manager.authenticate_session(session, agent, 1);
     check(response.authorised && response.login_info.has_value(), "triple circuit authentication");
-    const auto& login = *response.login_info;
-    check(login.agent == agent && login.session == session &&
-              login.secure_session == first->secure_session_id,
+    const auto &login = *response.login_info;
+    check(login.agent == agent && login.session == session && login.secure_session == first->secure_session_id,
           "authentication session data");
     check(login.first == first->first_name && login.base_folder == first->base_folder &&
-              login.inventory_folder == first->inventory_folder &&
-              login.start_position == first->start_position && login.start_far == 512,
+              login.inventory_folder == first->inventory_folder && login.start_position == first->start_position &&
+              login.start_far == 512,
           "authentication login payload");
     check(login.circuit_code == 0 && login.caps_path.empty() && !login.appearance,
           "authentication preserves source Login defaults");
@@ -87,16 +90,14 @@ void manager_tests() {
           "code collision removes previous agent index");
     auto another = circuit(2, other, Uuid::random());
     manager.add_new_circuit(another);
-    check(manager.get_agent_circuit_data(1) == replacement &&
-              manager.get_agent_circuit_data(other) == another,
+    check(manager.get_agent_circuit_data(1) == replacement && manager.get_agent_circuit_data(other) == another,
           "same agent may retain multiple circuit-code entries");
     manager.remove_circuit(replacement);
     check(!manager.get_agent_circuit_data(1) && !manager.get_agent_circuit_data(2) &&
               !manager.get_agent_circuit_data(other),
           "object removal cleans both old and current code entries");
     manager.add_new_circuit(10, first);
-    check(manager.try_change_circuit_code(10, 11) && first->circuit_code == 11 &&
-              !manager.get_agent_circuit_data(10),
+    check(manager.try_change_circuit_code(10, 11) && first->circuit_code == 11 && !manager.get_agent_circuit_data(10),
           "circuit code change updates aliased data");
     check(!manager.try_change_circuit_code(11, 11) && !manager.try_change_circuit_code(99, 12),
           "occupied or missing circuit-code change rejected");
@@ -108,12 +109,10 @@ void manager_tests() {
     update.start_position = {10, 20, 30};
     update.start_far = 64;
     manager.update_agent_data(update);
-    check(first->first_name == update.first_name && first->session_id == update.session_id &&
-              first->agent_id == agent,
+    check(first->first_name == update.first_name && first->session_id == update.session_id && first->agent_id == agent,
           "agent update changes only source-selected fields");
     manager.update_agent_child_status(11, false);
-    check(!manager.get_agent_child_status(11) && !manager.get_agent_child_status(99),
-          "child status lookup/update");
+    check(!manager.get_agent_child_status(11) && !manager.get_agent_child_status(99), "child status lookup/update");
     manager.remove_circuit(agent);
     check(!manager.get_agent_circuit_data(11), "remove by agent");
     auto old_session = circuit(20, agent, session);
@@ -121,8 +120,7 @@ void manager_tests() {
     manager.add_new_circuit(old_session);
     manager.add_new_circuit(new_session);
     check(!manager.remove_current_circuit(old_session) && !manager.get_agent_circuit_data(20) &&
-              manager.get_agent_circuit_data(agent) == new_session &&
-              manager.get_agent_circuit_data(21) == new_session,
+              manager.get_agent_circuit_data(agent) == new_session && manager.get_agent_circuit_data(21) == new_session,
           "stale cleanup removes its old circuit code and preserves the replacement login");
     check(manager.remove_current_circuit(new_session) && !manager.get_agent_circuit_data(agent),
           "current session cleanup removes both indexes");
@@ -134,6 +132,7 @@ void manager_tests() {
     first->viewer(std::nullopt);
     check(!first->viewer(), "nullable viewer normalization");
 }
+
 void concurrent_tests() {
     AgentCircuitManager manager;
     std::vector<std::thread> workers;
@@ -149,10 +148,11 @@ void concurrent_tests() {
                 manager.remove_circuit(code);
             }
         });
-    for (auto& worker : workers)
+    for (auto &worker : workers)
         worker.join();
     check(manager.get_agent_circuits().empty(), "concurrent admission/removal keeps indexes consistent");
 }
+
 void codec_tests() {
     using namespace opensim::network::lludp;
     check(packet_catalog().size() == 387, "all baseline packet types present");
@@ -171,7 +171,7 @@ void codec_tests() {
         bool rejected = false;
         try {
             decode_datagram(std::span(wire).first(length));
-        } catch (const std::exception&) {
+        } catch (const std::exception &) {
             rejected = true;
         }
         check(rejected, "truncated circuit packet rejected");
@@ -183,18 +183,19 @@ void codec_tests() {
     bool rejected = false;
     try {
         zero_decode(zero_encode(zeros), 100);
-    } catch (const std::length_error&) {
+    } catch (const std::length_error &) {
         rejected = true;
     }
     check(rejected, "zero expansion limit");
 }
-}
+} // namespace
+
 int main() {
     try {
         manager_tests();
         concurrent_tests();
         codec_tests();
-    } catch (const std::exception& error) {
+    } catch (const std::exception &error) {
         std::cerr << error.what() << '\n';
         return 1;
     }

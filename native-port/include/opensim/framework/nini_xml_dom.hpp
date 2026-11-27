@@ -3,9 +3,11 @@
 // native-port/third_party/dotnet_collation/LICENSE.
 #pragma once
 #include "opensim/framework/nini_xml_config.hpp"
+
 namespace opensim::framework {
 struct NiniXmlDomState;
 struct NiniXmlDtdInfo;
+
 // Internal native load/write transaction: defer cycle collection while an
 // iterative operation owns an in-flight, not-yet-published subtree.
 class NiniXmlDomCollectionScope {
@@ -15,11 +17,12 @@ class NiniXmlDomCollectionScope {
 
   public:
     ~NiniXmlDomCollectionScope();
-    NiniXmlDomCollectionScope(const NiniXmlDomCollectionScope&) = delete;
-    NiniXmlDomCollectionScope& operator=(const NiniXmlDomCollectionScope&) = delete;
-    NiniXmlDomCollectionScope(NiniXmlDomCollectionScope&&) noexcept;
-    NiniXmlDomCollectionScope& operator=(NiniXmlDomCollectionScope&&) = delete;
+    NiniXmlDomCollectionScope(const NiniXmlDomCollectionScope &) = delete;
+    NiniXmlDomCollectionScope &operator=(const NiniXmlDomCollectionScope &) = delete;
+    NiniXmlDomCollectionScope(NiniXmlDomCollectionScope &&) noexcept;
+    NiniXmlDomCollectionScope &operator=(NiniXmlDomCollectionScope &&) = delete;
 };
+
 class NiniXmlDomNode final : public NiniXmlNode {
     std::shared_ptr<NiniXmlDomState> state_;
     std::size_t id_;
@@ -28,8 +31,8 @@ class NiniXmlDomNode final : public NiniXmlNode {
   public:
     NiniXmlDomNode(std::shared_ptr<NiniXmlDomState>, std::size_t);
     ~NiniXmlDomNode() override;
-    NiniXmlDomNode(const NiniXmlDomNode&) = delete;
-    NiniXmlDomNode& operator=(const NiniXmlDomNode&) = delete;
+    NiniXmlDomNode(const NiniXmlDomNode &) = delete;
+    NiniXmlDomNode &operator=(const NiniXmlDomNode &) = delete;
     std::int32_t node_type() override;
     NiniWriterText name() override;
     NiniWriterText prefix() const;
@@ -54,9 +57,14 @@ class NiniXmlDomNode final : public NiniXmlNode {
     NiniWriterText dtd_public_id() const, dtd_system_id() const, dtd_subset() const;
     bool is_empty_element() const;
     void is_empty_element(bool);
-    std::size_t identity() const noexcept { return id_; }
-    bool same_owner(const NiniXmlDomNode&) const noexcept;
+
+    std::size_t identity() const noexcept {
+        return id_;
+    }
+
+    bool same_owner(const NiniXmlDomNode &) const noexcept;
 };
+
 // This closes native retained nodes/mutation/enumeration, not XML text parsing or
 // serialization. No default reader/writer backend is supplied by this layer.
 class NiniXmlDom {

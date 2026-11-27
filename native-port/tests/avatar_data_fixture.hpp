@@ -7,6 +7,7 @@
 #include <cmath>
 #include <iomanip>
 using namespace opensim;
+
 std::string hex(std::string_view text) {
     constexpr char d[] = "0123456789abcdef";
     std::string s;
@@ -16,25 +17,28 @@ std::string hex(std::string_view text) {
     }
     return s;
 }
-template <class T> std::string bytes(const T& b) {
-    return hex({reinterpret_cast<const char*>(b.data()), b.size()});
+
+template <class T> std::string bytes(const T &b) {
+    return hex({reinterpret_cast<const char *>(b.data()), b.size()});
 }
+
 std::string number(float f) {
     std::ostringstream s;
     s << std::hex << (std::isnan(f) ? 0x7fc00000u : std::bit_cast<std::uint32_t>(f));
     return s.str();
 }
+
 framework::Uuid id(int n) {
     std::ostringstream s;
     s << "00000000-0000-0000-0000-" << std::hex << std::setw(12) << std::setfill('0') << n;
     return framework::Uuid(s.str());
 }
-std::string appearance(const framework::AvatarAppearance& a) {
+
+std::string appearance(const framework::AvatarAppearance &a) {
     std::string s = std::to_string(a.serial) + ":" + number(a.avatar_height) + ":" + number(a.hover_z);
     for (auto v : {a.avatar_size(), a.avatar_box_size()})
         s += ":" + number(v.x) + "," + number(v.y) + "," + number(v.z);
-    s += ":" + number(a.avatar_feet_offset()) + ":" + (a.visual_params ? bytes(*a.visual_params) : "null") +
-         ":";
+    s += ":" + number(a.avatar_feet_offset()) + ":" + (a.visual_params ? bytes(*a.visual_params) : "null") + ":";
     if (!a.wearables)
         s += "null";
     else
@@ -60,8 +64,7 @@ std::string appearance(const framework::AvatarAppearance& a) {
         s += "null";
     else
         for (auto c : *a.cache_items)
-            s += c ? std::to_string(c->texture_index) + "," + c->cache_id.str() + "," + c->texture_id.str() +
-                         ";"
+            s += c ? std::to_string(c->texture_index) + "," + c->cache_id.str() + "," + c->texture_id.str() + ";"
                    : "null;";
     return s;
 }

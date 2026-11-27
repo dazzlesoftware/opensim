@@ -27,19 +27,23 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "opensim/server/presence_endpoint.hpp"
 #include "opensim/framework/text.hpp"
+
 namespace opensim::server {
 using namespace network;
+
 namespace {
-std::string text(const FormValue& value) {
-    if (const auto* scalar = std::get_if<std::string>(&value))
+std::string text(const FormValue &value) {
+    if (const auto *scalar = std::get_if<std::string>(&value))
         return *scalar;
     return "System.Collections.Generic.List`1[System.String]";
 }
-ServiceXmlValue info(const services::PresenceInfo& value) {
+
+ServiceXmlValue info(const services::PresenceInfo &value) {
     return ServiceXmlValue::object({{"UserID", value.user_id}, {"RegionID", value.region_id.str()}});
 }
-}
-HttpResponse PresenceEndpoint::handle(const HttpRequest& request) {
+} // namespace
+
+HttpResponse PresenceEndpoint::handle(const HttpRequest &request) {
     HttpResponse response;
     response.content_type = "application/xml";
     response.headers["Cache-Control"] = "no-store";
@@ -57,23 +61,22 @@ HttpResponse PresenceEndpoint::handle(const HttpRequest& request) {
         const auto method = fields.find("METHOD");
         if (method == fields.end() || !std::holds_alternative<std::string>(method->second))
             return response;
-        const auto& name = std::get<std::string>(method->second);
+        const auto &name = std::get<std::string>(method->second);
         if (name == "login")
             return response;
         if (name == "logout" && fields.contains("SessionID"))
             response.body = service_result(service_.logout(framework::Uuid(text(fields.at("SessionID")))));
         else if (name == "logoutregion" && fields.contains("RegionID"))
-            response.body =
-                service_result(service_.logout_region(framework::Uuid(text(fields.at("RegionID")))));
+            response.body = service_result(service_.logout_region(framework::Uuid(text(fields.at("RegionID")))));
         else if (name == "report" && fields.contains("SessionID") && fields.contains("RegionID"))
             response.body = service_result(service_.report(framework::Uuid(text(fields.at("SessionID"))),
                                                            framework::Uuid(text(fields.at("RegionID")))));
         else if (name == "getagent" && fields.contains("SessionID")) {
             const auto value = service_.agent(framework::Uuid(text(fields.at("SessionID"))));
-            response.body = service_xml(
-                ServiceXmlValue::object({{"result", value ? info(*value) : ServiceXmlValue("null")}}));
+            response.body =
+                service_xml(ServiceXmlValue::object({{"result", value ? info(*value) : ServiceXmlValue("null")}}));
         } else if (name == "getagents" && fields.contains("uuids")) {
-            if (const auto* users = std::get_if<std::vector<std::string>>(&fields.at("uuids"))) {
+            if (const auto *users = std::get_if<std::vector<std::string>>(&fields.at("uuids"))) {
                 const auto values = service_.agents(*users);
                 auto result = ServiceXmlValue::object({});
                 if (values.empty())
@@ -89,4 +92,4 @@ HttpResponse PresenceEndpoint::handle(const HttpRequest& request) {
     }
     return response;
 }
-}
+} // namespace opensim::server

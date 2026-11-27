@@ -1610,6 +1610,50 @@ HttpAuthPassword=service-password
                 home_thread.join(timeout=5)
             check(process.returncode == 0, "Configured user-agent login server shuts down cleanly")
 
+        config.write_text(
+            settings.replace("[FriendsService]", '[FriendsService]\n'
+                             'ConnectionString="Data Source=missing-friends.db;FailIfMissing=True"'),
+            encoding="utf-8",
+        )
+        result = cli("--console", expected=1)
+        check("unable to open database file" in result.stderr.lower()
+              and not (root / "missing-friends.db").exists(),
+              "Friends startup honors FailIfMissing and leaves the database absent")
+
+        config.write_text(
+            '[NativeServer]\nEnableFriendsService=true\n'
+            'UserAccountDatabase=missing-friends-preflight.db\n'
+            'AuthenticationDatabase=missing-friends-preflight.db\n'
+            '[FriendsService]\n'
+            'ConnectionString="Data Source=missing-friends.db;FailIfMissing=True"\n',
+            encoding="utf-8",
+        )
+        result = cli("--init-db", expected=1)
+        check("FailIfMissing" in result.stderr
+              and not (root / "missing-friends.db").exists()
+              and not (root / "missing-friends-preflight.db").exists(),
+              "Friends initialization checks FailIfMissing before creating databases")
+
+        config.write_text(
+            settings + '\n[GridUserService]\n'
+            'ConnectionString="Data Source=missing-grid-user.db;FailIfMissing=True"\n',
+            encoding="utf-8",
+        )
+        result = cli("--console", expected=1)
+        check("unable to open database file" in result.stderr.lower()
+              and not (root / "missing-grid-user.db").exists(),
+              "Grid-user startup honors FailIfMissing and leaves the database absent")
+
+        config.write_text(
+            settings + '\n[PresenceService]\nStorageProvider=OpenSim.Data.SQLite.dll\n'
+            'ConnectionString="Data Source=missing-presence.db;FailIfMissing=True"\n',
+            encoding="utf-8",
+        )
+        result = cli("--console", expected=1)
+        check("unable to open database file" in result.stderr.lower()
+              and not (root / "missing-presence.db").exists(),
+              "Presence startup honors FailIfMissing and leaves the database absent")
+
         # Preflight must reject an existing inventory destination before creating account files.
         config.write_text(settings.replace("accounts.db", "untouched.db"), encoding="utf-8")
         cli("--init-db", expected=1)

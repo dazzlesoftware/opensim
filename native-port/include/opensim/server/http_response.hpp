@@ -4,45 +4,56 @@
 #include "opensim/server/http_cookies.hpp"
 #include <mutex>
 #include <span>
+
 namespace opensim::server {
 using HttpBytes = std::shared_ptr<std::vector<std::uint8_t>>;
 enum class HttpConnectionType : std::int32_t { Close, KeepAlive };
+
 struct HttpEncoding {
     std::string name;
 };
 enum class HttpSeekOrigin : std::int32_t { Begin, Current, End };
 std::shared_ptr<HttpEncoding> http_utf8_encoding();
+
 class HttpBodyStream {
   public:
     virtual ~HttpBodyStream() = default;
     virtual bool can_read() const = 0;
     virtual std::int64_t length() const = 0;
     virtual void dispose() = 0;
+
     virtual bool can_seek() const {
         return false;
     }
+
     virtual bool can_write() const {
         return false;
     }
+
     virtual std::size_t read(std::span<std::uint8_t> bytes);
     virtual void write(std::span<const std::uint8_t> bytes);
     virtual std::int64_t position() const;
     virtual void position(std::int64_t value);
     virtual std::int64_t seek(std::int64_t offset, HttpSeekOrigin origin);
     virtual void set_length(std::int64_t value);
+
     virtual void flush() {}
 };
+
 class HttpMemoryStream : public HttpBodyStream, public std::enable_shared_from_this<HttpMemoryStream> {
   public:
     bool can_read() const override;
     std::int64_t length() const override;
     void dispose() override;
+
     bool can_seek() const override {
         return can_read();
     }
+
     bool can_write() const override {
         return can_read();
     }
+
     std::size_t read(std::span<std::uint8_t> bytes) override;
     std::int32_t read_byte();
     HttpBytes get_buffer() const;
@@ -63,6 +74,7 @@ class HttpMemoryStream : public HttpBodyStream, public std::enable_shared_from_t
     bool open_ = true;
 };
 class HttpResponseState;
+
 class HttpResponseContext {
   public:
     virtual ~HttpResponseContext() = default;
@@ -75,6 +87,7 @@ class HttpResponseContext {
     virtual void end_send_response(std::uint32_t request_id, HttpConnectionType connection) = 0;
     virtual void continue_send_response() = 0;
 };
+
 class HttpResponseRequest {
   public:
     virtual ~HttpResponseRequest() = default;
@@ -84,19 +97,20 @@ class HttpResponseRequest {
     virtual std::uint32_t id() const = 0;
     virtual double arrival_timestamp() const = 0;
 };
+
 class HttpResponseState : public std::enable_shared_from_this<HttpResponseState> {
   public:
-    explicit HttpResponseState(std::shared_ptr<HttpResponseRequest> request, HttpClock& clock = http_clock());
-    HttpResponseState(std::shared_ptr<HttpResponseContext> context, HttpName version,
-                      HttpConnectionType connection, HttpClock& clock = http_clock());
-#define OPENSIM_HTTP_PROPERTY(Type, Name)                                                                    \
-    Type Name() const {                                                                                      \
-        std::lock_guard lock(mutex_);                                                                        \
-        return Name##_;                                                                                      \
-    }                                                                                                        \
-    void Name(Type value) {                                                                                  \
-        std::lock_guard lock(mutex_);                                                                        \
-        Name##_ = std::move(value);                                                                          \
+    explicit HttpResponseState(std::shared_ptr<HttpResponseRequest> request, HttpClock &clock = http_clock());
+    HttpResponseState(std::shared_ptr<HttpResponseContext> context, HttpName version, HttpConnectionType connection,
+                      HttpClock &clock = http_clock());
+#define OPENSIM_HTTP_PROPERTY(Type, Name)                                                                              \
+    Type Name() const {                                                                                                \
+        std::lock_guard lock(mutex_);                                                                                  \
+        return Name##_;                                                                                                \
+    }                                                                                                                  \
+    void Name(Type value) {                                                                                            \
+        std::lock_guard lock(mutex_);                                                                                  \
+        Name##_ = std::move(value);                                                                                    \
     }
     OPENSIM_HTTP_PROPERTY(HttpConnectionType, connection)
     OPENSIM_HTTP_PROPERTY(bool, chunked)
@@ -116,16 +130,21 @@ class HttpResponseState : public std::enable_shared_from_this<HttpResponseState>
     void keep_alive(std::int32_t value);
     bool headers_sent() const;
     bool sent() const;
+
     std::uint32_t request_id() const {
         return request_id_;
     }
+
     double request_timestamp() const {
         return request_timestamp_;
     }
+
     std::shared_ptr<HttpBodyStream> body();
+
     std::shared_ptr<ResponseCookies> cookies() const {
         return cookies_;
     }
+
     HttpBytes header_bytes() const;
     void redirect(HttpName url, std::int32_t status = 302);
     void add_header(HttpName name, HttpName value);
@@ -143,7 +162,7 @@ class HttpResponseState : public std::enable_shared_from_this<HttpResponseState>
     std::shared_ptr<ResponseCookies> cookies_ = std::make_shared<ResponseCookies>();
     std::vector<std::pair<HttpName, HttpName>> headers_;
     std::shared_ptr<HttpBodyStream> body_;
-    HttpClock& clock_;
+    HttpClock &clock_;
     HttpConnectionType connection_ = HttpConnectionType::Close;
     std::int32_t priority_ = 0, keep_alive_ = 60, status_ = 200, raw_start_ = 0, raw_length_ = 0;
     std::int64_t content_length_ = 0;
@@ -154,4 +173,4 @@ class HttpResponseState : public std::enable_shared_from_this<HttpResponseState>
     double request_timestamp_ = 0;
     HttpBytes raw_buffer_, header_bytes_;
 };
-}
+} // namespace opensim::server

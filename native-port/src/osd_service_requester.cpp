@@ -9,39 +9,44 @@
 #include "opensim/framework/text.hpp"
 #include "opensim/framework/culture_prefix.hpp"
 #include <bit>
+
 namespace opensim::network {
 namespace {
 using Text = std::u16string;
 using Nullable = std::optional<Text>;
+
 Text number(std::int32_t n) {
     return framework::utf16(std::to_string(n));
 }
+
 [[noreturn]] void null_reference() {
-    throw OsdServiceError("System.NullReferenceException",
-                          u"Object reference not set to an instance of an object.");
+    throw OsdServiceError("System.NullReferenceException", u"Object reference not set to an instance of an object.");
 }
+
 Value boxed_text(Text text) {
     Value v(framework::utf8(text));
     v.sdk_string = std::make_shared<const Text>(std::move(text));
     return v;
 }
+
 Value error_map(Text message) {
     auto result = Value::object({});
     result.set("Success", Value("False"));
     result.set("Message", boxed_text(u"Service request failed: " + message));
     return result;
 }
-}
+} // namespace
+
 OsdServiceError::OsdServiceError(std::string type, Text text, std::optional<int> code)
-    : runtime_error(framework::utf8(text)), source_type(std::move(type)), message(std::move(text)),
-      status(code) {
-}
+    : runtime_error(framework::utf8(text)), source_type(std::move(type)), message(std::move(text)), status(code) {}
+
 std::int32_t osd_service_receive_timeout(std::optional<std::int64_t> length, bool keepalive) {
     if (!length)
         return keepalive ? 5000 : 30000;
     auto t = std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(*length / 1024));
     return t > 55000 ? 60000 : framework::wrapping_add(t, 5000);
 }
+
 Value canonical_osd_response_utf16(std::u16string_view text) {
     auto bytes = framework::utf8(text);
     bool is_false = framework::ordinal_equals_ignore_case(bytes, "false"),
@@ -62,8 +67,9 @@ Value canonical_osd_response_utf16(std::u16string_view text) {
     result.set("_Result", std::move(parsed));
     return result;
 }
+
 OsdServiceRequester::OsdServiceRequester(OsdServiceServices services) : services_(std::move(services)) {
-    auto& s = services_;
+    auto &s = services_;
     const bool has_counter = s.next_request_number || (s.request_number && s.set_request_number);
     if (!has_counter || !s.debug_level || !s.debug || !s.info || !s.client || !s.request || !s.reader ||
         !s.cancellation)
@@ -78,41 +84,42 @@ OsdServiceRequester::OsdServiceRequester(OsdServiceServices services) : services
     if (!s.outgoing_detail) {
         auto level = s.debug_level;
         auto log = s.debug;
-        s.outgoing_detail = [level, log](const auto& method, auto id, const auto& text) {
+        s.outgoing_detail = [level, log](const auto &method, auto id, const auto &text) {
             xml_rpc_log_detail(level, log, method.value_or(u"") + u" " + number(id) + u": ", text);
         };
     }
     if (!s.response_detail) {
         auto level = s.debug_level;
         auto log = s.debug;
-        s.response_detail = [level, log](auto id, const auto& text) {
+        s.response_detail = [level, log](auto id, const auto &text) {
             xml_rpc_log_detail(level, log, u"RESPONSE " + number(id) + u": ", text);
         };
     }
     if (!s.serialize_text)
-        s.serialize_text = [](const auto& data) { return framework::utf16_replacing(osd_json(data)); };
+        s.serialize_text = [](const auto &data) { return framework::utf16_replacing(osd_json(data)); };
     if (!s.serialize_bytes)
-        s.serialize_bytes = [](const auto& data) { return osd_json(data); };
+        s.serialize_bytes = [](const auto &data) { return osd_json(data); };
     if (!s.utf8_bytes)
-        s.utf8_bytes = [](const auto& text) { return framework::utf8(text); };
+        s.utf8_bytes = [](const auto &text) { return framework::utf8(text); };
     if (!s.compress)
         s.compress = gzip_compress;
     if (!s.canonicalize)
-        s.canonicalize = [](const auto& text) { return canonical_osd_response_utf16(text); };
+        s.canonicalize = [](const auto &text) { return canonical_osd_response_utf16(text); };
     if (!s.describe)
         s.describe = [](std::exception_ptr error) -> OsdServiceException {
             try {
                 std::rethrow_exception(error);
-            } catch (const OsdServiceError& e) {
+            } catch (const OsdServiceError &e) {
                 return {e.message, e.source_type == "System.Net.Http.HttpRequestException", e.status};
-            } catch (const std::exception& e) {
+            } catch (const std::exception &e) {
                 return {framework::utf16_replacing(e.what()), false, {}};
             }
         };
 }
-Value OsdServiceRequester::send(const Nullable& url, const Value* data, const Nullable& method,
-                                std::int32_t timeout, bool compressed, bool rpc, bool keepalive) {
-    auto& s = services_;
+
+Value OsdServiceRequester::send(const Nullable &url, const Value *data, const Nullable &method, std::int32_t timeout,
+                                bool compressed, bool rpc, bool keepalive) {
+    auto &s = services_;
     const auto id = s.next_request_number ? s.next_request_number() : s.request_number();
     if (!s.next_request_number)
         s.set_request_number(framework::wrapping_add(id, 1));
@@ -149,8 +156,7 @@ Value OsdServiceRequester::send(const Nullable& url, const Value* data, const Nu
                     }
                     sent = std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(bytes.size()));
                     request->body = std::move(bytes);
-                    request->headers.emplace_back("Content-Type",
-                                                  rpc ? u"application/json-rpc" : u"application/json");
+                    request->headers.emplace_back("Content-Type", rpc ? u"application/json-rpc" : u"application/json");
                     request->headers.emplace_back("Content-Length", number(sent));
                 }
             }
@@ -173,8 +179,7 @@ Value OsdServiceRequester::send(const Nullable& url, const Value* data, const Nu
                 auto reader = s.reader(stream);
                 std::exception_ptr reader_error;
                 try {
-                    auto timer =
-                        s.cancellation(osd_service_receive_timeout(response->content_length(), keepalive));
+                    auto timer = s.cancellation(osd_service_receive_timeout(response->content_length(), keepalive));
                     std::exception_ptr timer_error;
                     Text text;
                     try {
@@ -228,8 +233,8 @@ Value OsdServiceRequester::send(const Nullable& url, const Value* data, const Nu
         client->close();
     auto elapsed = s.elapsed(ticks);
     if (body_timed_out->load())
-        error = u"[WEB UTIL]: receive timeout " + number(id) + u" " + method.value_or(u"") + u" " +
-                url.value_or(u"") + u" (" + number(elapsed) + u"ms); " + error;
+        error = u"[WEB UTIL]: receive timeout " + number(id) + u" " + method.value_or(u"") + u" " + url.value_or(u"") +
+                u" (" + number(elapsed) + u"ms); " + error;
     else if (elapsed > 3000)
         s.info(u"[WEB UTIL]: SvcOSD " + number(id) + u" " + method.value_or(u"") + u" " + url.value_or(u"") +
                u" took " + number(elapsed) + u"ms, " + number(sent) + u"/" + number(received) + u"bytes");
@@ -243,4 +248,4 @@ Value OsdServiceRequester::send(const Nullable& url, const Value* data, const Nu
             u" FAILED: " + error);
     return error_map(std::move(error));
 }
-}
+} // namespace opensim::network

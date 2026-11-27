@@ -34,37 +34,48 @@ constexpr float avatar_density = 3.f;
 
 struct Vec {
     float X = 0, Y = 0, Z = 0;
+
     bool IsZero() const {
         return X == 0 && Y == 0 && Z == 0;
     }
+
     float LengthSquared() const {
         return (X * X + Y * Y) + Z * Z;
     }
+
     static float Dot(Vec a, Vec b) {
         return (a.X * b.X + a.Y * b.Y) + a.Z * b.Z;
     }
 };
+
 Vec operator+(Vec a, Vec b) {
     return {a.X + b.X, a.Y + b.Y, a.Z + b.Z};
 }
+
 Vec operator-(Vec a, Vec b) {
     return {a.X - b.X, a.Y - b.Y, a.Z - b.Z};
 }
+
 Vec operator-(Vec a) {
     return {-a.X, -a.Y, -a.Z};
 }
+
 Vec operator*(Vec a, float b) {
     return {a.X * b, a.Y * b, a.Z * b};
 }
+
 Vec from(framework::Vector3 a) {
     return {a.x, a.y, a.z};
 }
+
 framework::Vector3 to(Vec a) {
     return {a.X, a.Y, a.Z};
 }
+
 bool finite(Vec a) {
     return std::isfinite(a.X) && std::isfinite(a.Y) && std::isfinite(a.Z);
 }
+
 bool sdk_sse41() {
     static const bool enabled = []() {
 #if defined(_MSC_VER) && (defined(_M_X64) || defined(_M_IX86))
@@ -80,6 +91,7 @@ bool sdk_sse41() {
     }();
     return enabled;
 }
+
 framework::Quaternion normalize(framework::Quaternion q) {
     float sum = sdk_sse41() ? (q.x * q.x + q.y * q.y) + (q.z * q.z + q.w * q.w)
                             : ((q.x * q.x + q.y * q.y) + q.z * q.z) + q.w * q.w;
@@ -100,54 +112,65 @@ framework::Quaternion normalize(framework::Quaternion q) {
     }
     return q;
 }
+
 struct NativeQuaternion {
     float W = 1, X = 0, Y = 0, Z = 0;
 };
+
 NativeQuaternion to_native(framework::Quaternion orientation) {
     return {orientation.w, orientation.x, orientation.y, orientation.z};
 }
+
 bool finite(framework::Quaternion rotation) {
-    return std::isfinite(rotation.x) && std::isfinite(rotation.y) &&
-           std::isfinite(rotation.z) && std::isfinite(rotation.w);
+    return std::isfinite(rotation.x) && std::isfinite(rotation.y) && std::isfinite(rotation.z) &&
+           std::isfinite(rotation.w);
 }
+
 struct NativeVector {
     float X, Y, Z, padding;
 };
+
 struct NativeContact {
     int mode = 0x3004;
     float mu = 0, mu2 = 0, bounce = 0, bounce_velocity = 1.5f, erp = .75f, cfm = .0001f;
     float motion1 = 0, motion2 = 0, motion_normal = 0, slip1 = 0, slip2 = 0;
     NativeVector position{}, normal{};
     float depth = 0;
-    void* geometry1 = nullptr;
-    void* geometry2 = nullptr;
+    void *geometry1 = nullptr;
+    void *geometry2 = nullptr;
     int side1 = -1, side2 = -1;
     NativeVector direction{};
 };
+
 static_assert(sizeof(NativeContact) == 128 && offsetof(NativeContact, position) == 48 &&
               offsetof(NativeContact, geometry1) == 88);
+
 struct Mass {
     float mass;
     float c[4];
     float inertia[12];
 };
-using NearCallback = void(ODE_CALL*)(void*, void*, void*);
-using TriCallback = int(ODE_CALL*)(void*, void*, int);
-using TriArrayCallback = void(ODE_CALL*)(void*, void*, const int*, int);
-using TriRayCallback = int(ODE_CALL*)(void*, void*, int, float, float);
-static_assert(sizeof(void*) == 8 && sizeof(float) == 4 && std::numeric_limits<float>::is_iec559 &&
+
+using NearCallback = void(ODE_CALL *)(void *, void *, void *);
+using TriCallback = int(ODE_CALL *)(void *, void *, int);
+using TriArrayCallback = void(ODE_CALL *)(void *, void *, const int *, int);
+using TriRayCallback = int(ODE_CALL *)(void *, void *, int, float, float);
+static_assert(sizeof(void *) == 8 && sizeof(float) == 4 && std::numeric_limits<float>::is_iec559 &&
                   std::endian::native == std::endian::little,
               "ubODE profile requires64-bit little-endian IEEE binary32 ABI");
 static_assert(sizeof(NativeVector) == 16 && sizeof(NativeQuaternion) == 16 && sizeof(Mass) == 68);
+
 struct ContactPoint {
     float PenetrationDepth;
     Vec Position, SurfaceNormal;
     float RelativeSpeed;
     bool CharacterFeet;
 };
+
 float sign(float v) {
     return v > 0 ? 1.f : v < 0 ? -1.f : 0.f;
 }
+
 // MathF.Round uses midpoint-to-even. Arithmetic remains binary32 at each source operation.
 float rounded(float v) {
     if (!std::isfinite(v) || std::abs(v) >= 1.e8f)
@@ -159,147 +182,159 @@ float rounded(float v) {
     float result = static_cast<float>(lo) / 100.f;
     return result == 0 ? std::copysign(0.f, v) : result;
 }
-void SetSmooth(Vec& dst, const Vec& value) {
+
+void SetSmooth(Vec &dst, const Vec &value) {
     dst.X = rounded(.4f * dst.X + .6f * value.X);
     dst.Y = rounded(.4f * dst.Y + .6f * value.Y);
     dst.Z = rounded(.4f * dst.Z + .6f * value.Z);
 }
-#define ODE_FUNCTIONS(X)                                                                                     \
-    X(const char*, GetConfiguration, (), "dGetConfiguration")                                                \
-    X(int, InitODE2, (unsigned), "dInitODE2")                                                                \
-    X(void, CloseODE, (), "dCloseODE")                                                                       \
-    X(int, AllocateODEDataForThread, (unsigned), "dAllocateODEDataForThread")                                \
-    X(void*, WorldCreate, (), "dWorldCreate")                                                                \
-    X(void, WorldDestroy, (void*), "dWorldDestroy")                                                          \
-    X(void*, SimpleSpaceCreate, (void*), "dSimpleSpaceCreate")                                               \
-    X(void*, HashSpaceCreate, (void*), "dHashSpaceCreate")                                                   \
-    X(void, SpaceCollide, (void*, void*, NearCallback), "dSpaceCollide")                                     \
-    X(void, SpaceCollide2, (void*, void*, void*, NearCallback), "dSpaceCollide2")                             \
-    X(void, SpaceDestroy, (void*), "dSpaceDestroy")                                                          \
-    X(void, WorldSetAutoDisableFlag, (void*, int), "dWorldSetAutoDisableFlag")                               \
-    X(void, WorldSetCFM, (void*, float), "dWorldSetCFM")                                                     \
-    X(void, WorldSetERP, (void*, float), "dWorldSetERP")                                                     \
-    X(void, WorldSetGravity, (void*, float, float, float), "dWorldSetGravity")                               \
-    X(void, WorldSetLinearDamping, (void*, float), "dWorldSetLinearDamping")                                 \
-    X(void, WorldSetAngularDamping, (void*, float), "dWorldSetAngularDamping")                               \
-    X(void, WorldSetAngularDampingThreshold, (void*, float), "dWorldSetAngularDampingThreshold")             \
-    X(void, WorldSetLinearDampingThreshold, (void*, float), "dWorldSetLinearDampingThreshold")               \
-    X(void, WorldSetMaxAngularSpeed, (void*, float), "dWorldSetMaxAngularSpeed")                             \
-    X(void, WorldSetQuickStepNumIterations, (void*, int), "dWorldSetQuickStepNumIterations")                 \
-    X(void, WorldSetContactSurfaceLayer, (void*, float), "dWorldSetContactSurfaceLayer")                     \
-    X(void, WorldSetContactMaxCorrectingVel, (void*, float), "dWorldSetContactMaxCorrectingVel")             \
-    X(void, WorldQuickStep, (void*, float), "dWorldQuickStep")                                               \
-    X(void*, CreateCapsule, (void*, float, float), "dCreateCapsule")                                         \
-    X(void*, CreateBox, (void*, float, float, float), "dCreateBox")                                           \
-    X(void*, CreateSphere, (void*, float), "dCreateSphere")                                                   \
-    X(void*, TriMeshDataCreate, (), "dGeomTriMeshDataCreate")                                                 \
-    X(void, TriMeshDataDestroy, (void*), "dGeomTriMeshDataDestroy")                                          \
-    X(void, TriMeshDataBuild, (void*, const void*, int, int, const void*, int, int),                         \
-      "dGeomTriMeshDataBuildSingle")                                                                          \
-    X(void, TriMeshDataPreprocess, (void*), "dGeomTriMeshDataPreprocess")                                    \
-    X(void*, CreateTriMesh, (void*, void*, TriCallback, TriArrayCallback, TriRayCallback),                  \
-      "dCreateTriMesh")                                                                                     \
-    X(int, GeomGetClass, (void*), "dGeomGetClass")                                                            \
-    X(float, GeomSphereGetRadius, (void*), "dGeomSphereGetRadius")                                            \
-    X(void*, CreateOSTerrain, (void*, void*, int), "dCreateOSTerrain")                                        \
-    X(void*, TerrainDataCreate, (), "dGeomOSTerrainDataCreate")                                              \
-    X(void, TerrainDataDestroy, (void*), "dGeomOSTerrainDataDestroy")                                        \
-    X(void, TerrainDataBuild, (void*, const float*, int, float, int, int, float, int),                       \
-      "dGeomOSTerrainDataBuild")                                                                             \
-    X(void, TerrainDataSetBounds, (void*, float, float), "dGeomOSTerrainDataSetBounds")                       \
-    X(void, GeomSetPosition, (void*, float, float, float), "dGeomSetPosition")                                \
-    X(void, GeomSetQuaternion, (void*, const NativeQuaternion*), "dGeomSetQuaternion")                        \
-    X(void, GeomSetOffsetPosition, (void*, float, float, float), "dGeomSetOffsetPosition")                     \
-    X(void, GeomSetOffsetQuaternion, (void*, const NativeQuaternion*), "dGeomSetOffsetQuaternion")           \
-    X(void, GeomGetAABB, (void*, float*), "dGeomGetAABB")                                                    \
-    X(int, Collide, (void*, void*, int, void*, int), "dCollide")                                               \
-    X(void, GeomCapsuleSetParams, (void*, float, float), "dGeomCapsuleSetParams")                            \
-    X(void, GeomDestroy, (void*), "dGeomDestroy")                                                            \
-    X(void, GeomSetCategoryBits, (void*, unsigned), "dGeomSetCategoryBits")                                  \
-    X(void, GeomSetCollideBits, (void*, unsigned), "dGeomSetCollideBits")                                    \
-    X(void, MassSetBoxTotal, (Mass*, float, float, float, float), "dMassSetBoxTotal")                        \
-    X(void, MassAdd, (Mass*, const Mass*), "dMassAdd")                                                         \
-    X(void, MassRotate, (Mass*, const float*), "dMassRotate")                                                 \
-    X(void, MassTranslate, (Mass*, float, float, float), "dMassTranslate")                                     \
-    X(void*, BodyCreate, (void*), "dBodyCreate")                                                             \
-    X(void, BodyDestroy, (void*), "dBodyDestroy")                                                            \
-    X(void, BodySetAutoDisableFlag, (void*, int), "dBodySetAutoDisableFlag")                                 \
-    X(void, BodySetPosition, (void*, float, float, float), "dBodySetPosition")                               \
-    X(void, BodySetMass, (void*, const Mass*), "dBodySetMass")                                               \
-    X(void, BodySetGravityMode, (void*, int), "dBodySetGravityMode")                                         \
-    X(void, GeomSetBody, (void*, void*), "dGeomSetBody")                                                     \
-    X(void, GeomSetData, (void*, void*), "dGeomSetData")                                                       \
-    X(void*, GeomGetData, (void*), "dGeomGetData")                                                            \
-    X(void*, GeomGetBody, (void*), "dGeomGetBody")                                                            \
-    X(void*, JointCreateAMotor, (void*, void*), "dJointCreateAMotor")                                        \
-    X(void*, JointCreateContact, (void*, void*, const NativeContact*), "dJointCreateContact")                \
-    X(void*, JointGroupCreate, (int), "dJointGroupCreate")                                                   \
-    X(void, JointGroupEmpty, (void*), "dJointGroupEmpty")                                                    \
-    X(void, JointGroupDestroy, (void*), "dJointGroupDestroy")                                                \
-    X(void, JointAttach, (void*, void*, void*), "dJointAttach")                                              \
-    X(void, JointSetAMotorMode, (void*, int), "dJointSetAMotorMode")                                         \
-    X(void, JointSetAMotorNumAxes, (void*, int), "dJointSetAMotorNumAxes")                                   \
-    X(void, JointSetAMotorAxis, (void*, int, int, float, float, float), "dJointSetAMotorAxis")               \
-    X(void, JointSetAMotorAngle, (void*, int, float), "dJointSetAMotorAngle")                                \
-    X(void, JointSetAMotorParam, (void*, int, float), "dJointSetAMotorParam")                                \
-    X(void, JointDestroy, (void*), "dJointDestroy")                                                          \
-    X(int, BodyIsEnabled, (void*), "dBodyIsEnabled")                                                         \
-    X(void, BodyEnable, (void*), "dBodyEnable")                                                              \
-    X(void, BodySetAngularVel, (void*, float, float, float), "dBodySetAngularVel")                           \
-    X(void, BodySetLinearVel, (void*, float, float, float), "dBodySetLinearVel")                             \
-    X(void, BodySetQuaternion, (void*, const NativeQuaternion*), "dBodySetQuaternion")                       \
-    X(void, BodyAddForce, (void*, float, float, float), "dBodyAddForce")                                     \
-    X(void, BodyAddTorque, (void*, float, float, float), "dBodyAddTorque")                                   \
-    X(void, BodySetTorque, (void*, float, float, float), "dBodySetTorque")                                   \
-    X(const float*, BodyGetQuaternion, (void*), "dBodyGetQuaternion")                                        \
-    X(const float*, BodyGetForce, (void*), "dBodyGetForce")                                                  \
-    X(const float*, BodyGetPosition, (void*), "dBodyGetPosition")                                            \
-    X(const float*, BodyGetLinearVel, (void*), "dBodyGetLinearVel")                                          \
-    X(const float*, BodyGetAngularVel, (void*), "dBodyGetAngularVel")
+
+#define ODE_FUNCTIONS(X)                                                                                               \
+    X(const char *, GetConfiguration, (), "dGetConfiguration")                                                         \
+    X(int, InitODE2, (unsigned), "dInitODE2")                                                                          \
+    X(void, CloseODE, (), "dCloseODE")                                                                                 \
+    X(int, AllocateODEDataForThread, (unsigned), "dAllocateODEDataForThread")                                          \
+    X(void *, WorldCreate, (), "dWorldCreate")                                                                         \
+    X(void, WorldDestroy, (void *), "dWorldDestroy")                                                                   \
+    X(void *, SimpleSpaceCreate, (void *), "dSimpleSpaceCreate")                                                       \
+    X(void *, HashSpaceCreate, (void *), "dHashSpaceCreate")                                                           \
+    X(void, SpaceCollide, (void *, void *, NearCallback), "dSpaceCollide")                                             \
+    X(void, SpaceCollide2, (void *, void *, void *, NearCallback), "dSpaceCollide2")                                   \
+    X(void, SpaceDestroy, (void *), "dSpaceDestroy")                                                                   \
+    X(void, WorldSetAutoDisableFlag, (void *, int), "dWorldSetAutoDisableFlag")                                        \
+    X(void, WorldSetCFM, (void *, float), "dWorldSetCFM")                                                              \
+    X(void, WorldSetERP, (void *, float), "dWorldSetERP")                                                              \
+    X(void, WorldSetGravity, (void *, float, float, float), "dWorldSetGravity")                                        \
+    X(void, WorldSetLinearDamping, (void *, float), "dWorldSetLinearDamping")                                          \
+    X(void, WorldSetAngularDamping, (void *, float), "dWorldSetAngularDamping")                                        \
+    X(void, WorldSetAngularDampingThreshold, (void *, float), "dWorldSetAngularDampingThreshold")                      \
+    X(void, WorldSetLinearDampingThreshold, (void *, float), "dWorldSetLinearDampingThreshold")                        \
+    X(void, WorldSetMaxAngularSpeed, (void *, float), "dWorldSetMaxAngularSpeed")                                      \
+    X(void, WorldSetQuickStepNumIterations, (void *, int), "dWorldSetQuickStepNumIterations")                          \
+    X(void, WorldSetContactSurfaceLayer, (void *, float), "dWorldSetContactSurfaceLayer")                              \
+    X(void, WorldSetContactMaxCorrectingVel, (void *, float), "dWorldSetContactMaxCorrectingVel")                      \
+    X(void, WorldQuickStep, (void *, float), "dWorldQuickStep")                                                        \
+    X(void *, CreateCapsule, (void *, float, float), "dCreateCapsule")                                                 \
+    X(void *, CreateBox, (void *, float, float, float), "dCreateBox")                                                  \
+    X(void *, CreateSphere, (void *, float), "dCreateSphere")                                                          \
+    X(void *, TriMeshDataCreate, (), "dGeomTriMeshDataCreate")                                                         \
+    X(void, TriMeshDataDestroy, (void *), "dGeomTriMeshDataDestroy")                                                   \
+    X(void, TriMeshDataBuild, (void *, const void *, int, int, const void *, int, int), "dGeomTriMeshDataBuildSingle") \
+    X(void, TriMeshDataPreprocess, (void *), "dGeomTriMeshDataPreprocess")                                             \
+    X(void *, CreateTriMesh, (void *, void *, TriCallback, TriArrayCallback, TriRayCallback), "dCreateTriMesh")        \
+    X(int, GeomGetClass, (void *), "dGeomGetClass")                                                                    \
+    X(float, GeomSphereGetRadius, (void *), "dGeomSphereGetRadius")                                                    \
+    X(void *, CreateOSTerrain, (void *, void *, int), "dCreateOSTerrain")                                              \
+    X(void *, TerrainDataCreate, (), "dGeomOSTerrainDataCreate")                                                       \
+    X(void, TerrainDataDestroy, (void *), "dGeomOSTerrainDataDestroy")                                                 \
+    X(void, TerrainDataBuild, (void *, const float *, int, float, int, int, float, int), "dGeomOSTerrainDataBuild")    \
+    X(void, TerrainDataSetBounds, (void *, float, float), "dGeomOSTerrainDataSetBounds")                               \
+    X(void, GeomSetPosition, (void *, float, float, float), "dGeomSetPosition")                                        \
+    X(void, GeomSetQuaternion, (void *, const NativeQuaternion *), "dGeomSetQuaternion")                               \
+    X(void, GeomSetOffsetPosition, (void *, float, float, float), "dGeomSetOffsetPosition")                            \
+    X(void, GeomSetOffsetQuaternion, (void *, const NativeQuaternion *), "dGeomSetOffsetQuaternion")                   \
+    X(void, GeomGetAABB, (void *, float *), "dGeomGetAABB")                                                            \
+    X(int, Collide, (void *, void *, int, void *, int), "dCollide")                                                    \
+    X(void, GeomCapsuleSetParams, (void *, float, float), "dGeomCapsuleSetParams")                                     \
+    X(void, GeomDestroy, (void *), "dGeomDestroy")                                                                     \
+    X(void, GeomSetCategoryBits, (void *, unsigned), "dGeomSetCategoryBits")                                           \
+    X(void, GeomSetCollideBits, (void *, unsigned), "dGeomSetCollideBits")                                             \
+    X(void, MassSetBoxTotal, (Mass *, float, float, float, float), "dMassSetBoxTotal")                                 \
+    X(void, MassAdd, (Mass *, const Mass *), "dMassAdd")                                                               \
+    X(void, MassRotate, (Mass *, const float *), "dMassRotate")                                                        \
+    X(void, MassTranslate, (Mass *, float, float, float), "dMassTranslate")                                            \
+    X(void *, BodyCreate, (void *), "dBodyCreate")                                                                     \
+    X(void, BodyDestroy, (void *), "dBodyDestroy")                                                                     \
+    X(void, BodySetAutoDisableFlag, (void *, int), "dBodySetAutoDisableFlag")                                          \
+    X(void, BodySetPosition, (void *, float, float, float), "dBodySetPosition")                                        \
+    X(void, BodySetMass, (void *, const Mass *), "dBodySetMass")                                                       \
+    X(void, BodySetGravityMode, (void *, int), "dBodySetGravityMode")                                                  \
+    X(void, GeomSetBody, (void *, void *), "dGeomSetBody")                                                             \
+    X(void, GeomSetData, (void *, void *), "dGeomSetData")                                                             \
+    X(void *, GeomGetData, (void *), "dGeomGetData")                                                                   \
+    X(void *, GeomGetBody, (void *), "dGeomGetBody")                                                                   \
+    X(void *, JointCreateAMotor, (void *, void *), "dJointCreateAMotor")                                               \
+    X(void *, JointCreateContact, (void *, void *, const NativeContact *), "dJointCreateContact")                      \
+    X(void *, JointGroupCreate, (int), "dJointGroupCreate")                                                            \
+    X(void, JointGroupEmpty, (void *), "dJointGroupEmpty")                                                             \
+    X(void, JointGroupDestroy, (void *), "dJointGroupDestroy")                                                         \
+    X(void, JointAttach, (void *, void *, void *), "dJointAttach")                                                     \
+    X(void, JointSetAMotorMode, (void *, int), "dJointSetAMotorMode")                                                  \
+    X(void, JointSetAMotorNumAxes, (void *, int), "dJointSetAMotorNumAxes")                                            \
+    X(void, JointSetAMotorAxis, (void *, int, int, float, float, float), "dJointSetAMotorAxis")                        \
+    X(void, JointSetAMotorAngle, (void *, int, float), "dJointSetAMotorAngle")                                         \
+    X(void, JointSetAMotorParam, (void *, int, float), "dJointSetAMotorParam")                                         \
+    X(void, JointDestroy, (void *), "dJointDestroy")                                                                   \
+    X(int, BodyIsEnabled, (void *), "dBodyIsEnabled")                                                                  \
+    X(void, BodyEnable, (void *), "dBodyEnable")                                                                       \
+    X(void, BodyDisable, (void *), "dBodyDisable")                                                                     \
+    X(void, BodySetAngularVel, (void *, float, float, float), "dBodySetAngularVel")                                    \
+    X(void, BodySetLinearVel, (void *, float, float, float), "dBodySetLinearVel")                                      \
+    X(void, BodySetQuaternion, (void *, const NativeQuaternion *), "dBodySetQuaternion")                               \
+    X(void, BodyAddForce, (void *, float, float, float), "dBodyAddForce")                                              \
+    X(void, BodySetForce, (void *, float, float, float), "dBodySetForce")                                              \
+    X(void, BodyAddTorque, (void *, float, float, float), "dBodyAddTorque")                                            \
+    X(void, BodySetTorque, (void *, float, float, float), "dBodySetTorque")                                            \
+    X(const float *, BodyGetQuaternion, (void *), "dBodyGetQuaternion")                                                \
+    X(const float *, BodyGetForce, (void *), "dBodyGetForce")                                                          \
+    X(const float *, BodyGetPosition, (void *), "dBodyGetPosition")                                                    \
+    X(const float *, BodyGetLinearVel, (void *), "dBodyGetLinearVel")                                                  \
+    X(const float *, BodyGetAngularVel, (void *), "dBodyGetAngularVel")
+
 struct Api {
-    void* module = nullptr;
+    void *module = nullptr;
     bool initialized = false;
     std::string config;
     std::recursive_mutex mutex;
-#define DECLARE(ret, name, args, symbol) ret(ODE_CALL* name) args = nullptr;
+#define DECLARE(ret, name, args, symbol) ret(ODE_CALL *name) args = nullptr;
     ODE_FUNCTIONS(DECLARE)
 #undef DECLARE
-    Vec BodyGetPositionOMV(void* body) {
+
+    Vec BodyGetPositionOMV(void *body) {
         auto p = BodyGetPosition(body);
         return {p[0], p[1], p[2]};
     }
-    Vec BodyGetLinearVelOMV(void* body) {
+
+    Vec BodyGetLinearVelOMV(void *body) {
         auto p = BodyGetLinearVel(body);
         return {p[0], p[1], p[2]};
     }
-    Vec BodyGetAngularVelOMVforAvatar(void* body) {
+
+    Vec BodyGetAngularVelOMVforAvatar(void *body) {
         auto p = BodyGetAngularVel(body);
         return {p[0], p[1], p[2]};
     }
+
     void allocate() {
         if (!AllocateODEDataForThread(~0u))
             throw std::runtime_error("ubODE thread allocation failed");
     }
+
     ~Api();
 };
-std::recursive_mutex& library_mutex() {
+
+std::recursive_mutex &library_mutex() {
     static std::recursive_mutex value;
     return value;
 }
-std::map<void*, std::shared_ptr<Api>>& libraries() {
-    static std::map<void*, std::shared_ptr<Api>> value;
+
+std::map<void *, std::shared_ptr<Api>> &libraries() {
+    static std::map<void *, std::shared_ptr<Api>> value;
     return value;
 }
+
 // Registry owns a strong reference until the last world lease is released under
 // its lock. A weak registry could reinitialize while the old final destructor
 // waits for this lock, then close the newly initialized process-global engine.
 struct Lease {
     std::shared_ptr<Api> value;
-    explicit Lease(std::shared_ptr<Api> v) : value(std::move(v)) {
-    }
-    Api* operator->() const {
+
+    explicit Lease(std::shared_ptr<Api> v) : value(std::move(v)) {}
+
+    Api *operator->() const {
         return value.get();
     }
+
     ~Lease() {
         std::lock_guard guard(library_mutex());
         auto it = libraries().find(value->module);
@@ -308,7 +343,8 @@ struct Lease {
         value.reset();
     }
 };
-void unload(void* module) {
+
+void unload(void *module) {
     if (!module)
         return;
 #ifdef _WIN32
@@ -317,6 +353,7 @@ void unload(void* module) {
     dlclose(module);
 #endif
 }
+
 Api::~Api() {
     std::lock_guard lock(library_mutex());
     if (initialized)
@@ -324,20 +361,22 @@ Api::~Api() {
     libraries().erase(module);
     unload(module);
 }
-void* lookup(void* module, const char* symbol) {
+
+void *lookup(void *module, const char *symbol) {
 #ifdef _WIN32
-    return reinterpret_cast<void*>(GetProcAddress(static_cast<HMODULE>(module), symbol));
+    return reinterpret_cast<void *>(GetProcAddress(static_cast<HMODULE>(module), symbol));
 #else
     return dlsym(module, symbol);
 #endif
 }
-std::shared_ptr<Api> load(const std::filesystem::path& path) {
+
+std::shared_ptr<Api> load(const std::filesystem::path &path) {
     auto absolute = std::filesystem::canonical(path);
     std::lock_guard guard(library_mutex());
-    void* handle = nullptr;
+    void *handle = nullptr;
 #ifdef _WIN32
-    handle = LoadLibraryExW(absolute.c_str(), nullptr,
-                            LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+    handle =
+        LoadLibraryExW(absolute.c_str(), nullptr, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
 #else
     handle = dlopen(absolute.c_str(), RTLD_NOW | RTLD_LOCAL);
 #endif
@@ -349,13 +388,13 @@ std::shared_ptr<Api> load(const std::filesystem::path& path) {
     }
     auto api = std::make_shared<Api>();
     api->module = handle;
-#define LOAD(ret, name, args, symbol)                                                                        \
-    {                                                                                                        \
-        void* address = nullptr;                                                                             \
-        address = lookup(handle, symbol);                                                                    \
-        if (!address)                                                                                        \
-            throw std::runtime_error("ubODE missing ABI symbol: " symbol);                                   \
-        std::memcpy(&api->name, &address, sizeof(address));                                                  \
+#define LOAD(ret, name, args, symbol)                                                                                  \
+    {                                                                                                                  \
+        void *address = nullptr;                                                                                       \
+        address = lookup(handle, symbol);                                                                              \
+        if (!address)                                                                                                  \
+            throw std::runtime_error("ubODE missing ABI symbol: " symbol);                                             \
+        std::memcpy(&api->name, &address, sizeof(address));                                                            \
     }
     ODE_FUNCTIONS(LOAD)
 #undef LOAD
@@ -364,10 +403,8 @@ std::shared_ptr<Api> load(const std::filesystem::path& path) {
         throw std::runtime_error("ubODE configuration unavailable");
     api->config = config;
     if (api->config.find("ODE_single_precision") == std::string::npos ||
-        api->config.find("ODE_OPENSIM") == std::string::npos ||
-        api->config.find("OS0.13.4") == std::string::npos)
-        throw std::runtime_error(
-            "Unsupported ubODE ABI/configuration; expected single-precision OpenSim OS0.13.4");
+        api->config.find("ODE_OPENSIM") == std::string::npos || api->config.find("OS0.13.4") == std::string::npos)
+        throw std::runtime_error("Unsupported ubODE ABI/configuration; expected single-precision OpenSim OS0.13.4");
     if (!api->InitODE2(0))
         throw std::runtime_error("ubODE initialization failed");
     api->initialized = true;
@@ -375,10 +412,11 @@ std::shared_ptr<Api> load(const std::filesystem::path& path) {
     libraries()[handle] = api;
     return api;
 }
+
 struct OdeScene {
     struct Collider {
-        void* geom = nullptr;
-        void* mesh_data = nullptr;
+        void *geom = nullptr;
+        void *mesh_data = nullptr;
         std::vector<float> vertices;
         std::vector<std::int32_t> indices;
         framework::Vector3 inertia_size;
@@ -387,15 +425,18 @@ struct OdeScene {
         framework::Uuid part_id;
         bool volume_detect = false;
         bool phantom = false;
+        bool selection_disabled = false;
         float collision_score = 0.f;
+        float physics_cost = 0.1f;
         float mass = 0.f;
         framework::Vector3 offset;
         framework::Quaternion rotation;
     };
+
     struct Box {
-        void* body = nullptr;
+        void *body = nullptr;
         std::vector<Collider> colliders;
-        void* axis_motor = nullptr;
+        void *axis_motor = nullptr;
         std::uint8_t rotation_locks = 0;
         framework::Vector3 center_of_mass;
         UbodeBodyState static_pose;
@@ -406,17 +447,19 @@ struct OdeScene {
         framework::PrimHover hover;
         framework::PrimMoveTarget move_target;
         framework::PrimLookAt look_at;
+        bool selected = false;
+        bool delayed_selection = false;
     };
 
     float water_height = 20.f;
     Lease api;
-    void* world = nullptr;
-    void* space = nullptr;
-    void* contacts = nullptr;
+    void *world = nullptr;
+    void *space = nullptr;
+    void *contacts = nullptr;
     std::vector<float> terrain_heights;
-    void* terrain_data = nullptr;
-    void* terrain_geom = nullptr;
-    void* object_space = nullptr;
+    void *terrain_data = nullptr;
+    void *terrain_geom = nullptr;
+    void *object_space = nullptr;
     std::map<framework::Uuid, Box> boxes;
     PrimCollisionReport prim_contacts;
     std::vector<PrimCollisionReport> prim_collision_reports;
@@ -425,11 +468,12 @@ struct OdeScene {
     std::size_t dynamic_box_count = 0;
     static constexpr unsigned dynamic_box_category = 1u, static_box_category = 2u;
     static constexpr unsigned avatar_category = 4u, volume_detect_category = 8u;
+    static constexpr unsigned selected_category = 0x04000u;
     static constexpr int max_pair_contacts = 8;
 
-    explicit OdeScene(std::shared_ptr<Api> value) : api(std::move(value)) {
-    }
-    std::optional<Mass> override_mass(const framework::PrimInertiaOverride& custom) const {
+    explicit OdeScene(std::shared_ptr<Api> value) : api(std::move(value)) {}
+
+    std::optional<Mass> override_mass(const framework::PrimInertiaOverride &custom) const {
         const auto [ix, iy, iz] = custom.diagonal;
         if (!(custom.mass > 0.f) || !std::isfinite(custom.mass) || !finite(from(custom.center)) ||
             !finite(custom.rotation) || !std::isfinite(ix) || !std::isfinite(iy) || !std::isfinite(iz) ||
@@ -451,10 +495,14 @@ struct OdeScene {
         }
         return inertia;
     }
-    static framework::PrimInertiaData describe_inertia(const Mass& mass, framework::Vector3 center) {
-        return {mass.mass, center, {mass.inertia[0], mass.inertia[5], mass.inertia[10]},
+
+    static framework::PrimInertiaData describe_inertia(const Mass &mass, framework::Vector3 center) {
+        return {mass.mass,
+                center,
+                {mass.inertia[0], mass.inertia[5], mass.inertia[10]},
                 {mass.inertia[1], mass.inertia[2], mass.inertia[6]}};
     }
+
     void refresh_collision_terrain_bounds(int width, int height) {
         const auto [lowest, highest] = std::minmax_element(terrain_heights.begin(), terrain_heights.end());
         api->TerrainDataSetBounds(terrain_data, *lowest, *highest);
@@ -462,6 +510,7 @@ struct OdeScene {
             api->GeomSetPosition(terrain_geom, static_cast<float>(width - 3) * .5f,
                                  static_cast<float>(height - 3) * .5f, 0.f);
     }
+
     void ensure_collision_terrain(int width, int height) {
         if (terrain_geom)
             return;
@@ -474,26 +523,29 @@ struct OdeScene {
         terrain_geom = api->CreateOSTerrain(nullptr, terrain_data, 1);
         if (!terrain_geom)
             throw std::runtime_error("ubODE terrain geometry creation failed");
-        api->GeomSetPosition(terrain_geom, static_cast<float>(width - 3) * .5f,
-                             static_cast<float>(height - 3) * .5f, 0.f);
+        api->GeomSetPosition(terrain_geom, static_cast<float>(width - 3) * .5f, static_cast<float>(height - 3) * .5f,
+                             0.f);
     }
+
     void ensure_object_space() {
         if (!object_space)
             object_space = api->HashSpaceCreate(nullptr);
         if (!object_space)
             throw std::runtime_error("ubODE object space creation failed");
     }
+
     static framework::PrimContactMaterial clamp_contact_material(framework::PrimContactMaterial material) {
-        return {
-            std::isfinite(material.friction) ? std::clamp(material.friction, 0.f, 255.f) : .6f,
-            std::isfinite(material.restitution) ? std::clamp(material.restitution, 0.f, 1.f) : .5f
-        };
+        return {std::isfinite(material.friction) ? std::clamp(material.friction, 0.f, 255.f) : .6f,
+                std::isfinite(material.restitution) ? std::clamp(material.restitution, 0.f, 1.f) : .5f};
     }
 
-    void configure_collision_filter(Collider& collider, bool dynamic, bool volume_detect, bool phantom) {
+    void configure_collision_filter(Collider &collider, bool dynamic, bool volume_detect, bool phantom) {
         collider.volume_detect = volume_detect;
         collider.phantom = phantom;
-        if (volume_detect) {
+        if (collider.selection_disabled) {
+            api->GeomSetCategoryBits(collider.geom, selected_category);
+            api->GeomSetCollideBits(collider.geom, 0u);
+        } else if (volume_detect) {
             const unsigned mask = dynamic ? dynamic_box_category | static_box_category : 0u;
             api->GeomSetCategoryBits(collider.geom, volume_detect_category);
             api->GeomSetCollideBits(collider.geom, mask);
@@ -503,17 +555,51 @@ struct OdeScene {
             api->GeomSetCollideBits(collider.geom, 0);
         } else {
             const unsigned category = dynamic ? dynamic_box_category : static_box_category;
-            const unsigned mask = dynamic ? dynamic_box_category | static_box_category | volume_detect_category
-                                          : dynamic_box_category;
+            const unsigned mask =
+                dynamic ? dynamic_box_category | static_box_category | volume_detect_category : dynamic_box_category;
             api->GeomSetCategoryBits(collider.geom, category);
             api->GeomSetCollideBits(collider.geom, mask | avatar_category);
         }
     }
 
-    void destroy_box(const Box& box) {
+    void stop_prim_motion(Box &box) {
+        if (box.body) {
+            api->BodySetForce(box.body, 0.f, 0.f, 0.f);
+            api->BodySetTorque(box.body, 0.f, 0.f, 0.f);
+            api->BodySetLinearVel(box.body, 0.f, 0.f, 0.f);
+            api->BodySetAngularVel(box.body, 0.f, 0.f, 0.f);
+        }
+        for (auto &collider : box.colliders)
+            collider.collision_score = 0.f;
+    }
+
+    void select_prim(Box &box, bool selected, bool edited, bool force_stop) {
+        const bool changed = box.selected != selected || force_stop;
+        const bool finish_delay = selected && edited && box.delayed_selection;
+        if (!changed && !finish_delay)
+            return;
+        box.selected = selected;
+        stop_prim_motion(box);
+        if (changed)
+            box.delayed_selection = selected && !box.body;
+        if (edited || !selected)
+            box.delayed_selection = false;
+        if (box.body) {
+            if (selected)
+                api->BodyDisable(box.body);
+            else
+                api->BodyEnable(box.body);
+        }
+        for (auto &collider : box.colliders) {
+            collider.selection_disabled = selected && !box.delayed_selection;
+            configure_collision_filter(collider, box.body != nullptr, collider.volume_detect, collider.phantom);
+        }
+    }
+
+    void destroy_box(const Box &box) {
         if (box.axis_motor)
             api->JointDestroy(box.axis_motor);
-        for (const auto& collider : box.colliders) {
+        for (const auto &collider : box.colliders) {
             if (collider.geom)
                 api->GeomDestroy(collider.geom);
             if (collider.mesh_data)
@@ -522,7 +608,8 @@ struct OdeScene {
         if (box.body)
             api->BodyDestroy(box.body);
     }
-    bool lock_rotation(Box& box, std::uint8_t locks, framework::Quaternion rotation) {
+
+    bool lock_rotation(Box &box, std::uint8_t locks, framework::Quaternion rotation) {
         constexpr unsigned rotation_axes = 0x0e;
         locks &= rotation_axes;
         if (!locks) {
@@ -549,15 +636,15 @@ struct OdeScene {
             api->JointSetAMotorAxis(motor, slot, 0, x, y, z);
             api->JointSetAMotorAngle(motor, slot, 0.f);
             const int parameter = slot * 256;
-            api->JointSetAMotorParam(motor, parameter + 0, 0.f); // LoStop
-            api->JointSetAMotorParam(motor, parameter + 1, 0.f); // HiStop
-            api->JointSetAMotorParam(motor, parameter + 2, 0.f); // Vel
-            api->JointSetAMotorParam(motor, parameter + 3, 5.e8f); // FMax
+            api->JointSetAMotorParam(motor, parameter + 0, 0.f);    // LoStop
+            api->JointSetAMotorParam(motor, parameter + 1, 0.f);    // HiStop
+            api->JointSetAMotorParam(motor, parameter + 2, 0.f);    // Vel
+            api->JointSetAMotorParam(motor, parameter + 3, 5.e8f);  // FMax
             api->JointSetAMotorParam(motor, parameter + 4, .0001f); // FudgeFactor
-            api->JointSetAMotorParam(motor, parameter + 5, 0.f); // Bounce
-            api->JointSetAMotorParam(motor, parameter + 6, 0.f); // CFM
-            api->JointSetAMotorParam(motor, parameter + 7, .8f); // StopERP
-            api->JointSetAMotorParam(motor, parameter + 8, 0.f); // StopCFM
+            api->JointSetAMotorParam(motor, parameter + 5, 0.f);    // Bounce
+            api->JointSetAMotorParam(motor, parameter + 6, 0.f);    // CFM
+            api->JointSetAMotorParam(motor, parameter + 7, .8f);    // StopERP
+            api->JointSetAMotorParam(motor, parameter + 8, 0.f);    // StopCFM
             ++slot;
         }
         if (box.axis_motor)
@@ -567,7 +654,7 @@ struct OdeScene {
         return true;
     }
 
-    static std::vector<float> profile_fractions(int count, const framework::LinearPrimPath& path) {
+    static std::vector<float> profile_fractions(int count, const framework::LinearPrimPath &path) {
         const bool cut = path.profile_begin > 0.f || path.profile_end < 1.f;
         std::vector<float> fractions;
         fractions.reserve(count + 2);
@@ -582,6 +669,7 @@ struct OdeScene {
             fractions.push_back(path.profile_end);
         return fractions;
     }
+
     static std::array<float, 2> profile_point(float fraction, int count, double angle_start) {
         const auto profile_vertex = [&](int corner) {
             const double angle = angle_start + 2. * std::numbers::pi * (corner % count) / count;
@@ -594,15 +682,16 @@ struct OdeScene {
         const auto next = profile_vertex(corner + 1);
         return {std::lerp(first[0], next[0], offset), std::lerp(first[1], next[1], offset)};
     }
-    static void stitch_hollow_caps(std::vector<std::int32_t>& indices, const std::vector<float>& outer,
-                                   const std::vector<float>& inner, bool cut, int wall_vertices,
-                                   int top_ring, int inner_top_ring) {
+
+    static void stitch_hollow_caps(std::vector<std::int32_t> &indices, const std::vector<float> &outer,
+                                   const std::vector<float> &inner, bool cut, int wall_vertices, int top_ring,
+                                   int inner_top_ring) {
         const int ring_size = static_cast<int>(outer.size());
         const int inner_size = static_cast<int>(inner.size());
         const int edges = ring_size - (cut ? 1 : 0);
         const int inner_edges = inner_size - (cut ? 1 : 0);
         // Connect nearby profile angles so the cap triangles stay outside the opening.
-        const auto fraction_at = [](const auto& fractions, int vertex) {
+        const auto fraction_at = [](const auto &fractions, int vertex) {
             return vertex < static_cast<int>(fractions.size()) ? fractions[vertex] : 1.f;
         };
         int outer_edge = 0;
@@ -610,25 +699,24 @@ struct OdeScene {
         while (outer_edge < edges || inner_edge < inner_edges) {
             const int a = outer_edge % ring_size;
             const int b = inner_edge % inner_size;
-            const float outer_span = std::abs(fraction_at(outer, outer_edge + 1) -
-                                              fraction_at(inner, inner_edge));
-            const float inner_span = std::abs(fraction_at(inner, inner_edge + 1) -
-                                              fraction_at(outer, outer_edge));
+            const float outer_span = std::abs(fraction_at(outer, outer_edge + 1) - fraction_at(inner, inner_edge));
+            const float inner_span = std::abs(fraction_at(inner, inner_edge + 1) - fraction_at(outer, outer_edge));
             if (outer_edge < edges && (inner_edge == inner_edges || outer_span <= inner_span)) {
                 const int next = ++outer_edge % ring_size;
-                indices.insert(indices.end(), {a, wall_vertices + b, next,
-                                               top_ring + a, top_ring + next, inner_top_ring + b});
+                indices.insert(indices.end(),
+                               {a, wall_vertices + b, next, top_ring + a, top_ring + next, inner_top_ring + b});
             } else {
                 const int next = ++inner_edge % inner_size;
-                indices.insert(indices.end(), {a, wall_vertices + b, wall_vertices + next,
-                                               top_ring + a, inner_top_ring + next, inner_top_ring + b});
+                indices.insert(indices.end(), {a, wall_vertices + b, wall_vertices + next, top_ring + a,
+                                               inner_top_ring + next, inner_top_ring + b});
             }
         }
     }
-    void build_linear_mesh(Collider& collider, framework::Vector3 size, int sides, float hollow,
-                           const framework::LinearPrimPath& path) {
-        auto& vertices = collider.vertices;
-        auto& indices = collider.indices;
+
+    void build_linear_mesh(Collider &collider, framework::Vector3 size, int sides, float hollow,
+                           const framework::LinearPrimPath &path) {
+        auto &vertices = collider.vertices;
+        auto &indices = collider.indices;
         const bool has_hole = hollow > 0.f;
         const bool cut = path.profile_begin > 0.f || path.profile_end < 1.f;
         const double angle_start = sides == 4 ? std::numbers::pi * 1.25 : 0.;
@@ -655,7 +743,7 @@ struct OdeScene {
         const auto scale_at = [](float taper, float position) {
             return taper >= 0.f ? 1.f - taper * position : 1.f + taper * (1.f - position);
         };
-        const auto append_wall = [&](const std::vector<float>& fractions, int count, float radius) {
+        const auto append_wall = [&](const std::vector<float> &fractions, int count, float radius) {
             std::vector<std::array<float, 2>> profile;
             profile.reserve(fractions.size());
             for (const float fraction : fractions)
@@ -667,7 +755,7 @@ struct OdeScene {
                 const float sine = std::sin(rotation);
                 const float scale_x = radius * scale_at(path.taper_x, position);
                 const float scale_y = radius * scale_at(path.taper_y, position);
-                for (const auto& point : profile) {
+                for (const auto &point : profile) {
                     const float x = point[0] * scale_x;
                     const float y = point[1] * scale_y;
                     vertices.push_back(size.x * (x * cosine - y * sine + path.shear_x * position));
@@ -690,8 +778,7 @@ struct OdeScene {
         } else {
             for (int step = 0; step <= steps; ++step) {
                 const float position = path_position(step);
-                vertices.insert(vertices.end(), {size.x * path.shear_x * position,
-                                                 size.y * path.shear_y * position,
+                vertices.insert(vertices.end(), {size.x * path.shear_x * position, size.y * path.shear_y * position,
                                                  size.z * (position - .5f)});
             }
         }
@@ -700,8 +787,8 @@ struct OdeScene {
             const int upper = lower + ring_size;
             for (int i = 0; i < edges; ++i) {
                 const int next = (i + 1) % ring_size;
-                indices.insert(indices.end(), {lower + i, lower + next, upper + i,
-                                               lower + next, upper + next, upper + i});
+                indices.insert(indices.end(),
+                               {lower + i, lower + next, upper + i, lower + next, upper + next, upper + i});
             }
             if (has_hole) {
                 const int inner_lower = wall_vertices + layer * inner_size;
@@ -717,9 +804,9 @@ struct OdeScene {
                 const int inner_start_top = inner_start + (has_hole ? inner_size : 1);
                 const int inner_end = inner_start + (has_hole ? inner_edges : 0);
                 const int inner_end_top = inner_start_top + (has_hole ? inner_edges : 0);
-                indices.insert(indices.end(), {lower, upper, inner_start, upper, inner_start_top, inner_start,
-                                               lower + edges, inner_end, upper + edges,
-                                               upper + edges, inner_end, inner_end_top});
+                indices.insert(indices.end(),
+                               {lower, upper, inner_start, upper, inner_start_top, inner_start, lower + edges,
+                                inner_end, upper + edges, upper + edges, inner_end, inner_end_top});
             }
         }
         if (has_hole) {
@@ -735,8 +822,9 @@ struct OdeScene {
             indices.insert(indices.end(), {bottom_center, next, i, top_center, top, next_top});
         }
     }
-    void build_ring_mesh(Collider& collider, framework::Vector3 size, int profile_sides, float hollow,
-                         const framework::LinearPrimPath& path) {
+
+    void build_ring_mesh(Collider &collider, framework::Vector3 size, int profile_sides, float hollow,
+                         const framework::LinearPrimPath &path) {
         constexpr int path_sides = 24;
         const double start = profile_sides == 4 ? std::numbers::pi * .25 : std::numbers::pi;
         const double profile_radius = profile_sides == 4 ? std::numbers::sqrt2 * .5 : .5;
@@ -770,16 +858,15 @@ struct OdeScene {
         const double end = path.end * path.revolutions - shear_phase;
         const double axial_shear = path.shear_x * (.25 + .5 * (.5 - path.hole_y));
         const double y_shear_scale = 1. + .25 * std::abs(path.shear_y);
-        auto& vertices = collider.vertices;
-        auto& indices = collider.indices;
-        const bool capped = path.begin > 0.f || path.end < 1.f ||
-                            path.taper_x != 0.f || path.taper_y != 0.f || path.twist_begin != path.twist_end ||
-                            path.radius_offset != 0.f || path.skew != 0.f;
+        auto &vertices = collider.vertices;
+        auto &indices = collider.indices;
+        const bool capped = path.begin > 0.f || path.end < 1.f || path.taper_x != 0.f || path.taper_y != 0.f ||
+                            path.twist_begin != path.twist_end || path.radius_offset != 0.f || path.skew != 0.f;
         const bool closed = !capped && std::abs(path.revolutions - std::round(path.revolutions)) < 1.e-6f;
         std::vector<double> fractions;
         fractions.reserve(static_cast<int>(path_sides * path.revolutions) + 2);
         fractions.push_back(begin);
-        for (int step = static_cast<int>(begin * path_sides) + 1; ; ++step) {
+        for (int step = static_cast<int>(begin * path_sides) + 1;; ++step) {
             const double fraction = static_cast<double>(step) / path_sides;
             constexpr double endpoint_tolerance = 1.e-7;
             if (fraction >= end - endpoint_tolerance)
@@ -807,15 +894,15 @@ struct OdeScene {
             const double profile_angle_on_path = angle + path.shear_y;
             const double cosine = std::cos(profile_angle_on_path);
             const double sine = std::sin(profile_angle_on_path);
-            const double twist = std::lerp(static_cast<double>(path.twist_begin),
-                                          static_cast<double>(path.twist_end), path_fraction);
+            const double twist =
+                std::lerp(static_cast<double>(path.twist_begin), static_cast<double>(path.twist_end), path_fraction);
             const double twist_cosine = std::cos(twist);
             const double twist_sine = std::sin(twist);
-            const double scale_x = profile_radius * path.hole_x * (1. - std::abs(path.skew)) *
-                                   scale_at(path.taper_x, path_fraction);
+            const double scale_x =
+                profile_radius * path.hole_x * (1. - std::abs(path.skew)) * scale_at(path.taper_x, path_fraction);
             const double scale_y = profile_radius * path.hole_y * scale_at(path.taper_y, path_fraction);
-            const double axial_offset = path.skew * ((fraction + shear_phase) / path.revolutions - .5) +
-                                        axial_shear * std::sin(angle);
+            const double axial_offset =
+                path.skew * ((fraction + shear_phase) / path.revolutions - .5) + axial_shear * std::sin(angle);
             double radius_scale = 1.;
             if (path.radius_offset > .001f)
                 radius_scale -= path.radius_offset * path_fraction;
@@ -823,14 +910,14 @@ struct OdeScene {
                 radius_scale += path.radius_offset * (1. - path_fraction);
             const double center_radius = path_radius * radius_scale;
             const double center_y = y_shear_scale * center_radius * std::cos(angle);
-            for (const auto& point : profile) {
+            for (const auto &point : profile) {
                 const double x = point[0] * scale_x;
                 const double y = point[1] * scale_y;
                 const double radial_offset = x * twist_sine + y * twist_cosine;
-                vertices.insert(vertices.end(), {static_cast<float>(size.x * (axial_offset + x * twist_cosine -
-                                                                            y * twist_sine)),
-                                                static_cast<float>(size.y * (center_y + radial_offset * cosine)),
-                                                static_cast<float>(size.z * (center_radius + radial_offset) * sine)});
+                vertices.insert(vertices.end(),
+                                {static_cast<float>(size.x * (axial_offset + x * twist_cosine - y * twist_sine)),
+                                 static_cast<float>(size.y * (center_y + radial_offset * cosine)),
+                                 static_cast<float>(size.z * (center_radius + radial_offset) * sine)});
             }
         }
         for (int ring = 0; ring < segments; ++ring) {
@@ -860,24 +947,25 @@ struct OdeScene {
         if (capped) {
             const int last = (rings - 1) * ring_size;
             if (has_hole) {
-                stitch_hollow_caps(indices, outer_fractions, inner_fractions, profile_cut,
-                                   outer_size, last, last + outer_size);
+                stitch_hollow_caps(indices, outer_fractions, inner_fractions, profile_cut, outer_size, last,
+                                   last + outer_size);
                 return;
             }
             const int anchor = profile_cut ? ring_size - 1 : 0;
             const int first = profile_cut ? 0 : 1;
             const int last_edge = profile_cut ? ring_size - 2 : ring_size - 1;
             for (int point = first; point < last_edge; ++point)
-                indices.insert(indices.end(), {anchor, point + 1, point, last + anchor,
-                                               last + point, last + point + 1});
+                indices.insert(indices.end(),
+                               {anchor, point + 1, point, last + anchor, last + point, last + point + 1});
         }
     }
-    void build_ellipsoid_mesh(Collider& collider, framework::Vector3 size, int profile_sides) {
+
+    void build_ellipsoid_mesh(Collider &collider, framework::Vector3 size, int profile_sides) {
         // The half-circle profile is revolved about the prim's local X axis.
         constexpr int path_sides = 24;
         const int profile_steps = profile_sides / 2;
-        auto& vertices = collider.vertices;
-        auto& indices = collider.indices;
+        auto &vertices = collider.vertices;
+        auto &indices = collider.indices;
         const int ring_count = profile_steps - 1;
         vertices.reserve((ring_count * path_sides + 2) * 3);
         indices.reserve(6 * ring_count * path_sides);
@@ -888,7 +976,7 @@ struct OdeScene {
             for (int i = 0; i < path_sides; ++i) {
                 const double angle = 2. * std::numbers::pi * i / path_sides;
                 vertices.insert(vertices.end(), {x, static_cast<float>(std::cos(angle) * radius * size.y),
-                                                static_cast<float>(std::sin(angle) * radius * size.z)});
+                                                 static_cast<float>(std::sin(angle) * radius * size.z)});
             }
         }
         vertices.insert(vertices.end(), {-size.x * .5f, 0.f, 0.f, size.x * .5f, 0.f, 0.f});
@@ -900,54 +988,75 @@ struct OdeScene {
             for (int ring = 0; ring < ring_count - 1; ++ring) {
                 const int base = ring * path_sides;
                 const int upper = base + path_sides;
-                indices.insert(indices.end(), {base + i, base + next, upper + i,
-                                               base + next, upper + next, upper + i});
+                indices.insert(indices.end(), {base + i, base + next, upper + i, base + next, upper + next, upper + i});
             }
             const int last = (ring_count - 1) * path_sides;
             indices.insert(indices.end(), {positive_pole, last + i, last + next});
         }
     }
-    void create_triangle_mesh(Collider& collider) {
-        const auto& vertices = collider.vertices;
-        const auto& indices = collider.indices;
+
+    void create_triangle_mesh(Collider &collider) {
+        const auto &vertices = collider.vertices;
+        const auto &indices = collider.indices;
+        if (indices.empty())
+            return;
+        const auto vertex = [&](std::int32_t index, std::size_t axis) {
+            return vertices[static_cast<std::size_t>(index) * 3 + axis];
+        };
+        float radius_squared = 0.0f;
+        for (std::size_t axis = 0; axis < 3; ++axis) {
+            float minimum = vertex(indices.front(), axis);
+            float maximum = minimum;
+            for (const auto index : indices) {
+                minimum = std::min(minimum, vertex(index, axis));
+                maximum = std::max(maximum, vertex(index, axis));
+            }
+            const float half_extent = (maximum - minimum) * 0.5f;
+            radius_squared += half_extent * half_extent;
+        }
+        const float index_cost = 0.0013f * static_cast<float>(indices.size());
+        collider.physics_cost = std::max(0.1f, index_cost * (radius_squared * (1.33f * 0.2f)));
         collider.mesh_data = api->TriMeshDataCreate();
         if (!collider.mesh_data)
             return;
         // ubODE retains pointers to both arrays for the lifetime of the geometry.
         api->TriMeshDataBuild(collider.mesh_data, vertices.data(), 3 * sizeof(float),
-                              static_cast<int>(vertices.size() / 3), indices.data(),
-                              static_cast<int>(indices.size()), 3 * sizeof(std::int32_t));
+                              static_cast<int>(vertices.size() / 3), indices.data(), static_cast<int>(indices.size()),
+                              3 * sizeof(std::int32_t));
         api->TriMeshDataPreprocess(collider.mesh_data);
         collider.geom = api->CreateTriMesh(object_space, collider.mesh_data, nullptr, nullptr, nullptr);
     }
-    int collect_contacts(void* first, void* second, std::span<NativeContact> collision,
-                         std::size_t budget) {
+
+    int collect_contacts(void *first, void *second, std::span<NativeContact> collision, std::size_t budget) {
         if (!budget)
             return 0;
         const int limit = static_cast<int>(std::min(budget, collision.size()));
         return api->Collide(first, second, limit, &collision.front().position, sizeof(NativeContact));
     }
-    void attach_contact(const NativeContact& contact, void* first_body, void* second_body,
-                        std::size_t& budget) {
+
+    void attach_contact(const NativeContact &contact, void *first_body, void *second_body, std::size_t &budget) {
         if (auto joint = api->JointCreateContact(world, contacts, &contact)) {
             api->JointAttach(joint, first_body, second_body);
             --budget;
         }
     }
-    framework::PrimContactMaterial contact_material(void* geom) const {
+
+    framework::PrimContactMaterial contact_material(void *geom) const {
         constexpr framework::PrimContactMaterial terrain_material{.3f, .001f};
         if (geom == terrain_geom)
             return terrain_material;
-        return static_cast<const Collider*>(api->GeomGetData(geom))->contact_material;
+        return static_cast<const Collider *>(api->GeomGetData(geom))->contact_material;
     }
-    Vec linear_velocity(void* body) const {
+
+    Vec linear_velocity(void *body) const {
         return body ? api->BodyGetLinearVelOMV(body) : Vec{};
     }
+
     void record_impact(PrimCollisionActor recipient, PrimCollisionActor other, CollisionImpact impact) {
         const auto [entry, added] = prim_contacts.impacts.try_emplace({recipient, other}, impact);
         if (added)
             return;
-        auto& previous = entry->second;
+        auto &previous = entry->second;
         if (previous.depth < impact.depth) {
             if (std::abs(previous.depth) > std::abs(impact.speed))
                 impact.speed = previous.depth;
@@ -956,8 +1065,9 @@ struct OdeScene {
             previous.speed = impact.speed;
         }
     }
-    bool collide(void* first_geom, void* second_geom, void* first_body, void* second_body,
-                 std::size_t& budget, CollisionImpact& impact) {
+
+    bool collide(void *first_geom, void *second_geom, void *first_body, void *second_body, std::size_t &budget,
+                 CollisionImpact &impact) {
         NativeContact collision[max_pair_contacts];
         const int count = collect_contacts(first_geom, second_geom, collision, budget);
         if (count <= 0)
@@ -969,7 +1079,8 @@ struct OdeScene {
             const Vec normal{shallowest->normal.X, shallowest->normal.Y, shallowest->normal.Z};
             const auto relative = linear_velocity(second_body) - linear_velocity(first_body);
             impact = {{deepest->position.X, deepest->position.Y, deepest->position.Z},
-                      Vec::Dot(relative, normal), deepest->depth};
+                      Vec::Dot(relative, normal),
+                      deepest->depth};
         }
         const auto first_material = contact_material(first_geom);
         const auto second_material = contact_material(second_geom);
@@ -977,20 +1088,22 @@ struct OdeScene {
         const float restitution = first_material.restitution * second_material.restitution;
         const auto initial_budget = budget;
         for (int i = 0; i < count; ++i) {
-            auto& contact = collision[i];
+            auto &contact = collision[i];
             contact.mu = friction;
             contact.bounce = restitution;
             attach_contact(contact, first_body, second_body, budget);
         }
         return budget != initial_budget;
     }
-    Vec root_position(const Box& box) const {
+
+    Vec root_position(const Box &box) const {
         const auto center = api->BodyGetPositionOMV(box.body);
         const auto rotation = api->BodyGetQuaternion(box.body);
         const framework::Quaternion orientation{rotation[1], rotation[2], rotation[3], rotation[0]};
         return center - from(framework::sdk_rotate_vector(box.center_of_mass, orientation));
     }
-    float hover_force(const Box& box, const auto& terrain_height) const {
+
+    float hover_force(const Box &box, const auto &terrain_height) const {
         const auto root = root_position(box);
         const float ground = terrain_height(root.X, root.Y);
         const float base = box.hover.above_water ? std::max(ground, water_height) : ground;
@@ -1010,7 +1123,8 @@ struct OdeScene {
         const float force = box.mass * ((target_speed - velocity.Z) / UbodeWorld::time_step);
         return std::isfinite(force) ? force : 0.f;
     }
-    bool apply_move_target(const Box& box, Vec& force) const {
+
+    bool apply_move_target(const Box &box, Vec &force) const {
         const auto target = from(box.move_target.position);
         const auto error = target - root_position(box);
         if (std::abs(error.X) < .02f && std::abs(error.Y) < .02f && std::abs(error.Z) < .02f) {
@@ -1027,13 +1141,14 @@ struct OdeScene {
             force = force + control_force;
         return true;
     }
+
     void update_look_at() {
-        for (const auto& [id, box] : boxes) {
-            if (!box.look_at.active())
+        for (const auto &[id, box] : boxes) {
+            if (box.selected || !box.look_at.active())
                 continue;
             const auto native_rotation = api->BodyGetQuaternion(box.body);
-            const framework::Quaternion orientation{
-                native_rotation[1], native_rotation[2], native_rotation[3], native_rotation[0]};
+            const framework::Quaternion orientation{native_rotation[1], native_rotation[2], native_rotation[3],
+                                                    native_rotation[0]};
             const framework::Quaternion inverse{-orientation.x, -orientation.y, -orientation.z, orientation.w};
             const auto error = framework::sdk_multiply_quaternion(inverse, box.look_at.rotation);
             const float sine = std::hypot(error.x, error.y, error.z);
@@ -1049,11 +1164,13 @@ struct OdeScene {
             api->BodySetAngularVel(box.body, angular_velocity.X, angular_velocity.Y, angular_velocity.Z);
         }
     }
-    void configure_prim_forces(Box& box, const UbodePrimForces& forces) {
-        box.hover = std::isfinite(forces.hover.height) && std::isfinite(forces.hover.tau)
-            ? forces.hover : framework::PrimHover{};
+
+    void configure_prim_forces(Box &box, const UbodePrimForces &forces) {
+        box.hover = std::isfinite(forces.hover.height) && std::isfinite(forces.hover.tau) ? forces.hover
+                                                                                          : framework::PrimHover{};
         box.move_target = std::isfinite(forces.move_target.tau) && finite(from(forces.move_target.position))
-            ? forces.move_target : framework::PrimMoveTarget{};
+                              ? forces.move_target
+                              : framework::PrimMoveTarget{};
         box.look_at = {};
         if (forces.look_at.active() && finite(forces.look_at.rotation))
             box.look_at = {normalize(forces.look_at.rotation), forces.look_at.strength};
@@ -1061,7 +1178,8 @@ struct OdeScene {
         const auto force = from(forces.force);
         const auto torque = from(forces.torque);
         box.constant_force = finite(force) ? force : Vec{};
-        box.constant_torque = finite(torque) ? torque : Vec{};
+        if (!box.selected)
+            box.constant_torque = finite(torque) ? torque : Vec{};
 
         const float gravity_scale = (1.f - forces.buoyancy) * forces.gravity_modifier;
         const float gravity_force_z = box.mass * (world_gravity_z * gravity_scale);
@@ -1073,8 +1191,10 @@ struct OdeScene {
             box.constant_force.Z = combined_force_z;
     }
 
-    void apply_prim_forces(const auto& terrain_height) {
-        for (const auto& [id, box] : boxes) {
+    void apply_prim_forces(const auto &terrain_height) {
+        for (const auto &[id, box] : boxes) {
+            if (!box.body || box.selected)
+                continue;
             auto force = box.constant_force;
             if (box.move_target.active()) {
                 if (!apply_move_target(box, force))
@@ -1088,19 +1208,20 @@ struct OdeScene {
                 api->BodyAddTorque(box.body, torque.X, torque.Y, torque.Z);
         }
     }
-    void collide_dynamic_boxes(std::size_t& budget) {
+
+    void collide_dynamic_boxes(std::size_t &budget) {
         if (!dynamic_box_count)
             return;
         // ubODE resets active prim scores after the character collision pass.
-        for (auto& [id, box] : boxes) {
+        for (auto &[id, box] : boxes) {
             if (box.body)
-                for (auto& collider : box.colliders)
+                for (auto &collider : box.colliders)
                     collider.collision_score = 0.f;
         }
-        for (auto& [id, box] : boxes) {
-            if (!box.body)
+        for (auto &[id, box] : boxes) {
+            if (!box.body || box.selected)
                 continue;
-            for (auto& collider : box.colliders) {
+            for (auto &collider : box.colliders) {
                 if (collider.volume_detect)
                     continue;
                 // The native terrain collider uses the box's cached bounds.
@@ -1120,18 +1241,20 @@ struct OdeScene {
         }
 
         struct CollisionPass {
-            OdeScene& scene;
-            std::size_t& budget;
+            OdeScene &scene;
+            std::size_t &budget;
 
-            static void ODE_CALL on_pair(void* context, void* first, void* second) {
-                auto& pass = *static_cast<CollisionPass*>(context);
-                auto& scene = pass.scene;
+            static void ODE_CALL on_pair(void *context, void *first, void *second) {
+                auto &pass = *static_cast<CollisionPass *>(context);
+                auto &scene = pass.scene;
                 const auto first_body = scene.api->GeomGetBody(first);
                 const auto second_body = scene.api->GeomGetBody(second);
                 if (first_body == second_body)
                     return;
-                auto& first_part = *static_cast<Collider*>(scene.api->GeomGetData(first));
-                auto& second_part = *static_cast<Collider*>(scene.api->GeomGetData(second));
+                auto &first_part = *static_cast<Collider *>(scene.api->GeomGetData(first));
+                auto &second_part = *static_cast<Collider *>(scene.api->GeomGetData(second));
+                if (first_part.selection_disabled || second_part.selection_disabled)
+                    return;
                 if (first_part.volume_detect || second_part.volume_detect) {
                     if (first_part.volume_detect == second_part.volume_detect)
                         return;
@@ -1140,8 +1263,8 @@ struct OdeScene {
                         ++first_part.collision_score;
                         ++second_part.collision_score;
                         if (scene.report_prim_collisions) {
-                            const auto& sensor = first_part.volume_detect ? first_part : second_part;
-                            const auto& other = first_part.volume_detect ? second_part : first_part;
+                            const auto &sensor = first_part.volume_detect ? first_part : second_part;
+                            const auto &other = first_part.volume_detect ? second_part : first_part;
                             scene.prim_contacts.objects.emplace(sensor.part_id, PrimCollisionActor{other.part_id});
                         }
                     }
@@ -1162,9 +1285,11 @@ struct OdeScene {
                 }
             }
         };
+
         CollisionPass pass{*this, budget};
         api->SpaceCollide(object_space, &pass, CollisionPass::on_pair);
     }
+
     void finish_prim_collision_frame() {
         if (!report_prim_collisions)
             return;
@@ -1175,6 +1300,7 @@ struct OdeScene {
         prim_contacts = {};
         prim_collision_elapsed_ms = 0;
     }
+
     void initialize(float frame_time) {
         std::lock_guard guard(api->mutex);
         api->allocate();
@@ -1196,6 +1322,7 @@ struct OdeScene {
         api->WorldSetContactSurfaceLayer(world, .002f);
         api->WorldSetContactMaxCorrectingVel(world, 60);
     }
+
     ~OdeScene() {
         if (!world && !space && !contacts)
             return;
@@ -1207,7 +1334,7 @@ struct OdeScene {
         }
         if (contacts)
             api->JointGroupDestroy(contacts);
-        for (const auto& [id, box] : boxes)
+        for (const auto &[id, box] : boxes)
             destroy_box(box);
         if (object_space)
             api->SpaceDestroy(object_space);
@@ -1222,59 +1349,64 @@ struct OdeScene {
     }
 };
 } // namespace
+
 struct UbodeWorld::Impl {
     std::shared_ptr<OdeScene> native_scene;
-    Lease& api = native_scene->api;
-    void*& world = native_scene->world;
-    void*& TopSpace = native_scene->space;
+    Lease &api = native_scene->api;
+    void *&world = native_scene->world;
+    void *&TopSpace = native_scene->space;
     std::thread::id owner = std::this_thread::get_id();
     PrimCollisionActor collision_actor;
-    void* Body = nullptr;
-    void* collider = nullptr;
-    void* Amotor = nullptr;
+    void *Body = nullptr;
+    void *collider = nullptr;
+    void *Amotor = nullptr;
     NativeQuaternion m_NativeOrientation2D;
     framework::Quaternion orientation{0, 0, 0, 1};
     Mass ShellMass{};
-    Vec WorldExtents, _position, _zeroPosition, _velocity, _acceleration, m_rotationalVelocity,
-        m_targetVelocity, m_lastFallVel, CollideNormal, last_force;
-    float CapsuleSizeZ = 0, PID_D = 0, PID_P = 0, m_mass = 0, m_massInvTimeScaled = 0,
-          m_scenegravityForceZ = 0;
+    Vec WorldExtents, _position, _zeroPosition, _velocity, _acceleration, m_rotationalVelocity, m_targetVelocity,
+        m_lastFallVel, CollideNormal, last_force;
+    float CapsuleSizeZ = 0, PID_D = 0, PID_P = 0, m_mass = 0, m_massInvTimeScaled = 0, m_scenegravityForceZ = 0;
     float capsule_radius = 0, half_x_squared = 0, half_y_squared = 0;
     const float m_sceneTimeStep = .02f, m_sceneInverseTimeStep = 50.f, m_walkMultiplier = 1.f / 1.3f,
                 m_runMultiplier = 1.f / .8f;
-    bool m_flying = false, m_alwaysRun = false, m_pidControllerActive = true, m_freemove = false,
-         _zeroFlag = false, m_haveLastFallVel = false, m_iscolliding = false, m_iscollidingGround = false;
+    bool m_flying = false, m_alwaysRun = false, m_pidControllerActive = true, m_freemove = false, _zeroFlag = false,
+         m_haveLastFallVel = false, m_iscolliding = false, m_iscollidingGround = false;
     int m_bodydisablecontrol = 0, Colliderfilter = 0, m_colliderGroundfilter = 0;
     int avatar_contact_filter = 0;
     float feet_offset = 0.f;
     // Unsupported hover/buoyancy configuration stays at original defaults.
     bool m_useHoverPID = false;
-    float m_PIDHoverTau = 0, m_PIDHoverHeight = 0, m_buoyancy = 0,
-          MinimumGroundFlightOffset = 3;
+    float m_PIDHoverTau = 0, m_PIDHoverHeight = 0, m_buoyancy = 0, MinimumGroundFlightOffset = 3;
     HoverReference m_PIDHoverType = HoverReference::Ground;
     std::uint32_t width, height;
     int m_heightmapWidthSamples, m_heightmapHeightSamples;
-    const std::vector<float>& heights = native_scene->terrain_heights;
+    const std::vector<float> &heights = native_scene->terrain_heights;
+
     void check() const {
         if (std::this_thread::get_id() != owner)
             throw std::logic_error("ubODE world accessed from another thread");
     }
+
     void set_free_move();
+
     void avatar() const {
         check();
         if (!Body)
             throw std::logic_error("ubODE avatar not added");
     }
+
     std::array<float, 4> collision_plane{0, 0, 0, 1};
     std::array<float, 4> pending_collision_plane{0, 0, 0, 1};
     float lowest_foot_contact = std::numeric_limits<float>::max();
     int collision_elapsed_ms = 0;
+
     void reset_collision_plane() {
         collision_plane = {0, 0, 0, 1};
         pending_collision_plane = collision_plane;
         lowest_foot_contact = std::numeric_limits<float>::max();
         collision_elapsed_ms = 0;
     }
+
     void finish_collision_frame() {
         constexpr int report_interval_ms = 100;
         constexpr int step_ms = static_cast<int>(UbodeWorld::time_step * 1000.f + .5f);
@@ -1286,13 +1418,15 @@ struct UbodeWorld::Impl {
         lowest_foot_contact = std::numeric_limits<float>::max();
         collision_elapsed_ms = 0;
     }
-    void AddCollisionEvent(unsigned, const ContactPoint& contact) {
+
+    void AddCollisionEvent(unsigned, const ContactPoint &contact) {
         if (contact.CharacterFeet && contact.Position.Z < lowest_foot_contact) {
             const auto normal = -contact.SurfaceNormal;
             pending_collision_plane = {normal.X, normal.Y, normal.Z, Vec::Dot(contact.Position, normal)};
             lowest_foot_contact = contact.Position.Z;
         }
     }
+
     void filter_collision() {
         if (Colliderfilter < -1) {
             Colliderfilter = -1;
@@ -1306,27 +1440,33 @@ struct UbodeWorld::Impl {
             m_freemove = false;
         }
     }
-    void collide_with_boxes(std::size_t& budget) {
+
+    void collide_with_boxes(std::size_t &budget) {
         if (!native_scene->object_space || native_scene->boxes.empty() || !budget)
             return;
-        struct CollisionPass {
-            Impl& avatar;
-            std::size_t& budget;
 
-            static void ODE_CALL on_pair(void* context, void* first, void* second) {
-                auto& pass = *static_cast<CollisionPass*>(context);
-                auto& avatar = pass.avatar;
+        struct CollisionPass {
+            Impl &avatar;
+            std::size_t &budget;
+
+            static void ODE_CALL on_pair(void *context, void *first, void *second) {
+                auto &pass = *static_cast<CollisionPass *>(context);
+                auto &avatar = pass.avatar;
                 avatar.collide_box(first == avatar.collider ? second : first, pass.budget);
             }
         };
+
         CollisionPass pass{*this, budget};
         api->SpaceCollide2(collider, native_scene->object_space, &pass, CollisionPass::on_pair);
     }
-    void collide_box(void* geom, std::size_t& budget) {
-        auto& scene = *native_scene;
+
+    void collide_box(void *geom, std::size_t &budget) {
+        auto &scene = *native_scene;
+        const auto &part = *static_cast<const OdeScene::Collider *>(api->GeomGetData(geom));
+        if (part.selection_disabled)
+            return;
         NativeContact contacts[OdeScene::max_pair_contacts];
         const int count = scene.collect_contacts(collider, geom, contacts, budget);
-        const auto& part = *static_cast<const OdeScene::Collider*>(api->GeomGetData(geom));
         if (part.volume_detect) {
             if (count > 0 && scene.report_prim_collisions && collision_actor.avatar_local_id)
                 scene.prim_contacts.objects.emplace(part.part_id, collision_actor);
@@ -1334,13 +1474,13 @@ struct UbodeWorld::Impl {
         }
         const auto box_body = api->GeomGetBody(geom);
         constexpr int sphere_class = 0;
-        const bool small_dynamic_sphere = box_body && api->GeomGetClass(geom) == sphere_class &&
-                                          api->GeomSphereGetRadius(geom) < .5f;
+        const bool small_dynamic_sphere =
+            box_body && api->GeomGetClass(geom) == sphere_class && api->GeomSphereGetRadius(geom) < .5f;
         ContactPoint reported{};
         float deepest = -std::numeric_limits<float>::max();
         float shallowest = std::numeric_limits<float>::max();
         for (int i = 0; i < count; ++i) {
-            auto& contact = contacts[i];
+            auto &contact = contacts[i];
             const float height = contact.position.Z - _position.Z;
             const bool on_top = contact.normal.Z > .35f;
             if (contact.depth > deepest) {
@@ -1367,8 +1507,8 @@ struct UbodeWorld::Impl {
                                height - feet_offset - .2f};
                     offset = offset * (1.f / std::sqrt(offset.LengthSquared()));
                     const float horizontal = std::abs(offset.X);
-                    contact.depth = std::min(.25f, horizontal > 1e-6f
-                        ? contact.depth / horizontal * contact.normal.X : contact.depth * 10.f);
+                    contact.depth = std::min(.25f, horizontal > 1e-6f ? contact.depth / horizontal * contact.normal.X
+                                                                      : contact.depth * 10.f);
                     contact.normal = {-offset.X, -offset.Y, -offset.Z, 0.f};
                 }
             }
@@ -1380,14 +1520,15 @@ struct UbodeWorld::Impl {
                 const PrimCollisionActor other{part.part_id};
                 scene.prim_contacts.objects.emplace(part.part_id, collision_actor);
                 const auto relative = scene.linear_velocity(box_body) - scene.linear_velocity(Body);
-                const CollisionImpact impact{to(reported.Position),
-                                             Vec::Dot(relative, reported.SurfaceNormal), deepest};
+                const CollisionImpact impact{to(reported.Position), Vec::Dot(relative, reported.SurfaceNormal),
+                                             deepest};
                 scene.record_impact(other, collision_actor, impact);
                 scene.record_impact(collision_actor, other, impact);
                 scene.prim_contacts.avatar_contacts.emplace(collision_actor, other);
             }
         }
     }
+
     float horizontal_radius_squared_inverse(Vec direction) const {
         const float z = m_NativeOrientation2D.Z, w = m_NativeOrientation2D.W;
         const float cosine = 1.f - 2.f * z * z, sine = 2.f * z * w;
@@ -1395,7 +1536,8 @@ struct UbodeWorld::Impl {
         const float y = cosine * direction.Y - sine * direction.X;
         return x * x / half_x_squared + y * y / half_y_squared;
     }
-    bool collide_avatar(Impl& other) {
+
+    bool collide_avatar(Impl &other) {
         auto delta = _position - other._position;
         const float radius = capsule_radius + other.capsule_radius;
         if (std::abs(delta.X) > radius || std::abs(delta.Y) > radius)
@@ -1420,9 +1562,8 @@ struct UbodeWorld::Impl {
                     return false;
                 normal = {delta.X / distance, delta.Y / distance, 0};
                 const float first_radius = 1.f / std::sqrt(horizontal_radius_squared_inverse(normal));
-                const float overlap = first_radius +
-                                      1.f / std::sqrt(other.horizontal_radius_squared_inverse(normal)) -
-                                      distance;
+                const float overlap =
+                    first_radius + 1.f / std::sqrt(other.horizontal_radius_squared_inverse(normal)) - distance;
                 if (overlap < .0005f)
                     return false;
                 const float offset = first_radius - .5f * overlap;
@@ -1450,7 +1591,7 @@ struct UbodeWorld::Impl {
             }
         }
         if (feet) {
-            auto& standing = feet > 0 ? *this : other;
+            auto &standing = feet > 0 ? *this : other;
             standing.CollideNormal = feet > 0 ? normal : -normal;
             standing.Colliderfilter = std::min(9, standing.Colliderfilter + 3);
         }
@@ -1463,7 +1604,7 @@ struct UbodeWorld::Impl {
             return false;
         api->JointAttach(joint, Body, other.Body);
         if (feet) {
-            auto& standing = feet > 0 ? *this : other;
+            auto &standing = feet > 0 ? *this : other;
             const auto reported_normal = feet > 0 ? -normal : normal;
             standing.AddCollisionEvent(0, {.PenetrationDepth = depth,
                                            .Position = position,
@@ -1480,7 +1621,8 @@ struct UbodeWorld::Impl {
         m_pidControllerActive = other.m_pidControllerActive = false;
         return true;
     }
-    void sample_indices(float x, float y, int& ix, int& iy, float& dx, float& dy) const {
+
+    void sample_indices(float x, float y, int &ix, int &iy, float &dx, float &dy) const {
         x += 1.f;
         y += 1.f;
         if (x < 0) {
@@ -1504,6 +1646,7 @@ struct UbodeWorld::Impl {
             dy = 0;
         }
     }
+
     float GetTerrainHeightAtXY(float x, float y) const {
         int ix, iy;
         float dx, dy;
@@ -1525,6 +1668,7 @@ struct UbodeWorld::Impl {
         }
         return h0 + h1 + h2;
     }
+
     Vec GetTerrainNormalAtXY(float x, float y) const {
         int ix, iy;
         float dx, dy;
@@ -1550,9 +1694,10 @@ struct UbodeWorld::Impl {
         h0 = 1.f / std::sqrt(h0);
         return {rx * h0, ry * h0, h0};
     }
-    Impl(std::shared_ptr<OdeScene> value, const scene::Terrain& terrain, UbodeWorldOptions options)
-        : native_scene(std::move(value)), width(terrain.width()), height(terrain.height()),
-          m_heightmapWidthSamples(0), m_heightmapHeightSamples(0) {
+
+    Impl(std::shared_ptr<OdeScene> value, const scene::Terrain &terrain, UbodeWorldOptions options)
+        : native_scene(std::move(value)), width(terrain.width()), height(terrain.height()), m_heightmapWidthSamples(0),
+          m_heightmapHeightSamples(0) {
         native_scene->water_height = options.water_height;
         native_scene->report_prim_collisions = options.report_prim_collisions;
         if (!std::isfinite(options.scene_frame_time) || options.scene_frame_time <= 0)
@@ -1565,7 +1710,8 @@ struct UbodeWorld::Impl {
         update_terrain(terrain);
         native_scene->initialize(options.scene_frame_time);
     }
-    void update_terrain(const scene::Terrain& terrain) {
+
+    void update_terrain(const scene::Terrain &terrain) {
         check();
         if (terrain.width() != width || terrain.height() != height)
             throw std::invalid_argument("ubODE terrain dimensions cannot change");
@@ -1595,10 +1741,12 @@ struct UbodeWorld::Impl {
             native_scene->terrain_heights.swap(samples);
         }
     }
-    Impl(const Impl& source)
+
+    Impl(const Impl &source)
         : native_scene(source.native_scene), WorldExtents(source.WorldExtents), width(source.width),
           height(source.height), m_heightmapWidthSamples(source.m_heightmapWidthSamples),
           m_heightmapHeightSamples(source.m_heightmapHeightSamples) {}
+
     void destroy_avatar() {
         if (Amotor) {
             api->JointDestroy(Amotor);
@@ -1613,6 +1761,7 @@ struct UbodeWorld::Impl {
             collider = nullptr;
         }
     }
+
     ~Impl() {
         if (!Body && !collider && !Amotor)
             return;
@@ -1624,6 +1773,7 @@ struct UbodeWorld::Impl {
         }
         destroy_avatar();
     }
+
     void add(Vec p, Vec size, bool flying) {
         check();
         if (Body)
@@ -1651,8 +1801,7 @@ struct UbodeWorld::Impl {
         m_NativeOrientation2D = {};
         orientation = {0, 0, 0, 1};
         m_pidControllerActive = true;
-        m_freemove = _zeroFlag = m_haveLastFallVel = m_iscolliding = m_iscollidingGround = m_alwaysRun =
-            false;
+        m_freemove = _zeroFlag = m_haveLastFallVel = m_iscolliding = m_iscollidingGround = m_alwaysRun = false;
         m_bodydisablecontrol = Colliderfilter = m_colliderGroundfilter = 0;
         m_flying = flying;
         CapsuleSizeZ = half.Z;
@@ -1661,7 +1810,8 @@ struct UbodeWorld::Impl {
             throw std::runtime_error("ubODE capsule creation failed");
         api->GeomSetCategoryBits(collider, OdeScene::avatar_category);
         api->GeomSetCollideBits(collider, OdeScene::avatar_category | OdeScene::dynamic_box_category |
-                                        OdeScene::static_box_category | OdeScene::volume_detect_category | 0x2000u);
+                                              OdeScene::static_box_category | OdeScene::volume_detect_category |
+                                              0x2000u);
         m_mass = 8.f * avatar_density * half.X * half.Y * half.Z;
         api->MassSetBoxTotal(&ShellMass, m_mass, 2.f * half.X, 2.f * half.Y, 2.f * half.Z);
         m_massInvTimeScaled = m_mass * m_sceneInverseTimeStep;
@@ -1692,6 +1842,7 @@ struct UbodeWorld::Impl {
             api->JointSetAMotorParam(Amotor, 3 + i * 256, 5.e8f);
         }
     }
+
     void Move() {
         if (Body == nullptr)
             return;
@@ -1763,8 +1914,8 @@ struct UbodeWorld::Impl {
             ctv = Vec{};
         else {
             if (m_alwaysRun) {
-                ctv = Vec{m_targetVelocity.X * m_runMultiplier, m_targetVelocity.Y * m_runMultiplier,
-                          m_targetVelocity.Z};
+                ctv =
+                    Vec{m_targetVelocity.X * m_runMultiplier, m_targetVelocity.Y * m_runMultiplier, m_targetVelocity.Z};
             } else {
                 ctv = Vec{m_targetVelocity.X * m_walkMultiplier, m_targetVelocity.Y * m_walkMultiplier,
                           m_targetVelocity.Z};
@@ -1872,7 +2023,8 @@ struct UbodeWorld::Impl {
                     AddCollisionEvent(0, contact);
                     if (native_scene->report_prim_collisions && collision_actor.avatar_local_id) {
                         native_scene->prim_contacts.avatar_contacts.emplace(collision_actor, PrimCollisionActor{});
-                        native_scene->record_impact(collision_actor, {},
+                        native_scene->record_impact(
+                            collision_actor, {},
                             {to(contact.Position), contact.RelativeSpeed, contact.PenetrationDepth});
                     }
                     m_lastFallVel = Vec{};
@@ -1905,8 +2057,7 @@ struct UbodeWorld::Impl {
 
             // movement relative to surface if moving on it
             // dont disturbe vertical movement, ie jumps
-            if (m_iscolliding && !m_flying && ctv.Z == 0.0f && CollideNormal.Z > 0.2f &&
-                CollideNormal.Z < 0.94f) {
+            if (m_iscolliding && !m_flying && ctv.Z == 0.0f && CollideNormal.Z > 0.2f && CollideNormal.Z < 0.94f) {
                 float p = ctv.X * CollideNormal.X + ctv.Y * CollideNormal.Y;
                 ctv.X *= std::sqrt(1 - CollideNormal.X * CollideNormal.X);
                 ctv.Y *= std::sqrt(1 - CollideNormal.Y * CollideNormal.Y);
@@ -2074,15 +2225,17 @@ struct UbodeWorld::Impl {
         }
     }
 };
-UbodeWorld::UbodeWorld(const std::filesystem::path& library, const scene::Terrain& terrain,
-                       UbodeWorldOptions options)
-    : impl_(std::make_unique<Impl>(std::make_shared<OdeScene>(load(library)), terrain, options)) {
-}
-UbodeWorld::UbodeWorld(UbodeWorld& scene) {
+
+UbodeWorld::UbodeWorld(const std::filesystem::path &library, const scene::Terrain &terrain, UbodeWorldOptions options)
+    : impl_(std::make_unique<Impl>(std::make_shared<OdeScene>(load(library)), terrain, options)) {}
+
+UbodeWorld::UbodeWorld(UbodeWorld &scene) {
     scene.impl_->check();
     impl_ = std::make_unique<Impl>(*scene.impl_);
 }
+
 UbodeWorld::~UbodeWorld() = default;
+
 void UbodeWorld::add_avatar(framework::Vector3 p, framework::Vector3 size, bool flying,
                             PrimCollisionActor collision_actor) {
     std::lock_guard guard(impl_->api->mutex);
@@ -2093,8 +2246,9 @@ void UbodeWorld::add_avatar(framework::Vector3 p, framework::Vector3 size, bool 
     impl_->m_useHoverPID = false;
     impl_->reset_collision_plane();
 }
+
 void UbodeWorld::resize_avatar(framework::Vector3 size) {
-    auto& avatar = *impl_;
+    auto &avatar = *impl_;
     std::lock_guard guard(avatar.api->mutex);
     avatar.api->allocate();
     avatar.check();
@@ -2115,8 +2269,7 @@ void UbodeWorld::resize_avatar(framework::Vector3 size) {
         avatar.PID_D = .55f * avatar.m_massInvTimeScaled;
         avatar.PID_P = .225f * avatar.m_massInvTimeScaled;
         avatar.m_scenegravityForceZ = -9.8f * avatar.m_mass;
-        avatar.api->MassSetBoxTotal(&avatar.ShellMass, avatar.m_mass, 2.f * half.X, 2.f * half.Y,
-                                    2.f * half.Z);
+        avatar.api->MassSetBoxTotal(&avatar.ShellMass, avatar.m_mass, 2.f * half.X, 2.f * half.Y, 2.f * half.Z);
         avatar.api->BodySetMass(avatar.Body, &avatar.ShellMass);
         avatar._position.Z += half.Z - old_height;
         avatar.api->BodySetPosition(avatar.Body, avatar._position.X, avatar._position.Y, avatar._position.Z);
@@ -2127,12 +2280,14 @@ void UbodeWorld::resize_avatar(framework::Vector3 size) {
     avatar.m_freemove = false;
     avatar.m_pidControllerActive = true;
 }
+
 void UbodeWorld::remove_avatar() {
     impl_->check();
     std::lock_guard guard(impl_->api->mutex);
     impl_->api->allocate();
     impl_->destroy_avatar();
 }
+
 void UbodeWorld::set_target_velocity(framework::Vector3 v) {
     impl_->avatar();
     if (!finite(from(v)))
@@ -2142,24 +2297,29 @@ void UbodeWorld::set_target_velocity(framework::Vector3 v) {
     impl_->m_targetVelocity = from(v);
     impl_->api->BodyEnable(impl_->Body);
 }
+
 void UbodeWorld::set_flying(bool value) {
     impl_->avatar();
     impl_->m_flying = value;
 }
+
 void UbodeWorld::set_running(bool value) {
     impl_->avatar();
     impl_->m_alwaysRun = value;
 }
+
 void UbodeWorld::set_buoyancy(float buoyancy) {
     impl_->avatar();
     if (std::isfinite(buoyancy))
         impl_->m_buoyancy = buoyancy;
 }
+
 void UbodeWorld::set_water_height(float height) {
     if (!std::isfinite(height))
         throw std::invalid_argument("Nonfinite ubODE water height");
     impl_->native_scene->water_height = height;
 }
+
 void UbodeWorld::set_hover(float height, float tau, HoverReference reference, bool active) {
     impl_->avatar();
     if (!std::isfinite(height) || !std::isfinite(tau))
@@ -2169,12 +2329,13 @@ void UbodeWorld::set_hover(float height, float tau, HoverReference reference, bo
     impl_->m_PIDHoverType = reference;
     impl_->m_useHoverPID = active && height != 0.f;
 }
+
 void UbodeWorld::set_orientation(framework::Quaternion input) {
     impl_->avatar();
     auto q = normalize(input);
     std::lock_guard guard(impl_->api->mutex);
     impl_->api->allocate();
-    auto& c = *impl_;
+    auto &c = *impl_;
     if (c.orientation != q) {
         float squared = q.z * q.z + q.w * q.w;
         // SDK Vector2.Normalize uses a double literal threshold; a zero yaw quaternion
@@ -2191,6 +2352,7 @@ void UbodeWorld::set_orientation(framework::Quaternion input) {
     }
     c.api->BodyEnable(c.Body);
 }
+
 void UbodeWorld::Impl::set_free_move() {
     m_pidControllerActive = true;
     _zeroFlag = false;
@@ -2201,8 +2363,9 @@ void UbodeWorld::Impl::set_free_move() {
     m_iscolliding = false;
     m_iscollidingGround = false;
 }
+
 void UbodeWorld::set_momentum(framework::Vector3 momentum) {
-    auto& avatar = *impl_;
+    auto &avatar = *impl_;
     avatar.avatar();
     const auto velocity = from(momentum);
     if (!finite(velocity))
@@ -2214,8 +2377,9 @@ void UbodeWorld::set_momentum(framework::Vector3 momentum) {
     avatar.api->BodySetLinearVel(avatar.Body, velocity.X, velocity.Y, velocity.Z);
     avatar.api->BodyEnable(avatar.Body);
 }
+
 void UbodeWorld::move_avatar_position(framework::Vector3 position) {
-    auto& avatar = *impl_;
+    auto &avatar = *impl_;
     avatar.avatar();
     const auto target = from(position);
     if (!finite(target))
@@ -2229,6 +2393,7 @@ void UbodeWorld::move_avatar_position(framework::Vector3 position) {
     avatar._zeroFlag = false;
     avatar.m_pidControllerActive = true;
 }
+
 void UbodeWorld::snap_avatar_position(framework::Vector3 position) {
     impl_->avatar();
     const auto target = from(position);
@@ -2241,13 +2406,14 @@ void UbodeWorld::snap_avatar_position(framework::Vector3 position) {
     impl_->_position = target;
     impl_->_velocity = {};
 }
+
 void UbodeWorld::avatar_jump(float impulse) {
     impl_->avatar();
     if (!std::isfinite(impulse))
         throw std::invalid_argument("Nonfinite ubODE jump impulse");
     std::lock_guard guard(impl_->api->mutex);
     impl_->api->allocate();
-    auto& c = *impl_;
+    auto &c = *impl_;
     // OdeCharacter.AvatarJump/changeForce/setFreeMove, with no collision event
     // subscribers or other object contacts in this profile.
     c.set_free_move();
@@ -2256,6 +2422,7 @@ void UbodeWorld::avatar_jump(float impulse) {
         c.api->BodyAddForce(c.Body, 0, 0, force);
     c.api->BodyEnable(c.Body);
 }
+
 void UbodeWorld::push_avatar(framework::Vector3 impulse) {
     impl_->avatar();
     const auto force = from(impulse) * (avatar_density / (time_step * 28.f));
@@ -2267,84 +2434,96 @@ void UbodeWorld::push_avatar(framework::Vector3 impulse) {
     impl_->api->BodyAddForce(impl_->Body, force.X, force.Y, force.Z);
     impl_->api->BodyEnable(impl_->Body);
 }
+
 void UbodeWorld::step(std::size_t count) {
     step_with({}, count);
 }
-void UbodeWorld::update_terrain(const scene::Terrain& terrain) {
+
+void UbodeWorld::update_terrain(const scene::Terrain &terrain) {
     impl_->update_terrain(terrain);
 }
-void UbodeWorld::add_dynamic_box(framework::Uuid id, framework::Vector3 size, float mass,
-                                 const UbodeBodyState& state) {
+
+void UbodeWorld::add_dynamic_box(framework::Uuid id, framework::Vector3 size, float mass, const UbodeBodyState &state) {
     const UbodePrimPart part{size, {}, {0, 0, 0, 1}, mass};
     add_dynamic_linkset(id, {&part, 1}, state);
 }
+
 void UbodeWorld::add_dynamic_linkset(framework::Uuid id, std::span<const UbodePrimPart> parts,
-                                     const UbodeBodyState& state, UbodePrimForces forces) {
+                                     const UbodeBodyState &state, UbodePrimForces forces) {
     add_prims(id, parts, state, true, forces);
 }
+
 void UbodeWorld::add_static_box(framework::Uuid id, framework::Vector3 size, framework::Vector3 position,
                                 framework::Quaternion rotation) {
     add_static_prim(id, framework::PrimType::Box, size, position, rotation);
 }
+
 void UbodeWorld::add_static_prim(framework::Uuid id, framework::PrimType type, framework::Vector3 size,
                                  framework::Vector3 position, framework::Quaternion rotation,
                                  std::uint8_t mesh_segments, float hollow, framework::LinearPrimPath path,
                                  std::shared_ptr<const AssetPhysicsMesh> asset_mesh,
                                  framework::PrimContactMaterial contact_material, bool volume_detect, float mass) {
-    const UbodePrimPart part{size, {}, {0, 0, 0, 1}, mass, type, mesh_segments, hollow, path,
-                            std::move(asset_mesh), contact_material, id, volume_detect};
+    const UbodePrimPart part{size,
+                             {},
+                             {0, 0, 0, 1},
+                             mass,
+                             type,
+                             mesh_segments,
+                             hollow,
+                             path,
+                             std::move(asset_mesh),
+                             contact_material,
+                             id,
+                             volume_detect};
     add_prims(id, {&part, 1}, {position, rotation, {}, {}}, false);
 }
-void UbodeWorld::add_prims(framework::Uuid id, std::span<const UbodePrimPart> parts,
-                           const UbodeBodyState& state, bool dynamic, UbodePrimForces forces) {
+
+void UbodeWorld::add_prims(framework::Uuid id, std::span<const UbodePrimPart> parts, const UbodeBodyState &state,
+                           bool dynamic, UbodePrimForces forces) {
     impl_->check();
     if (id.is_zero() || parts.empty() || !finite(from(state.position)) || !finite(state.rotation) ||
         !finite(from(state.velocity)) || !finite(from(state.angular_velocity)) ||
         !(forces.gravity_modifier >= -1.f && forces.gravity_modifier <= 28.f))
         throw std::invalid_argument("Invalid ubODE box");
-    for (const auto& part : parts) {
+    for (const auto &part : parts) {
         const bool mesh = part.mesh_segments == 6 || part.mesh_segments == 24;
-        const bool native_sphere = part.mesh_segments == 0 &&
-                                   part.size.x == part.size.y && part.size.y == part.size.z;
-        const auto& path = part.path;
+        const bool native_sphere = part.mesh_segments == 0 && part.size.x == part.size.y && part.size.y == part.size.z;
+        const auto &path = part.path;
         const bool swept = part.type == framework::PrimType::Torus || part.type == framework::PrimType::Tube ||
                            part.type == framework::PrimType::Ring;
         const bool swept_mesh = (part.type == framework::PrimType::Torus && part.mesh_segments == 24) ||
                                 (part.type == framework::PrimType::Tube && part.mesh_segments == 4) ||
                                 (part.type == framework::PrimType::Ring && part.mesh_segments == 3);
         const bool asset_mesh = part.type == framework::PrimType::Sculpt && part.asset_mesh && !part.mesh_segments;
-        const bool supported_type = asset_mesh || swept_mesh || (part.type == framework::PrimType::Box &&
-                                     (part.mesh_segments == 0 || part.mesh_segments == 4)) ||
-                                    (part.type == framework::PrimType::Cylinder && mesh) ||
-                                    (part.type == framework::PrimType::Prism && part.mesh_segments == 3) ||
-                                    (part.type == framework::PrimType::Sphere && (mesh || native_sphere));
-        const bool valid_hollow_profile = !path.hollow_segments ||
-                                          (part.type != framework::PrimType::Sphere && part.hollow > 0.f &&
-                                           (path.hollow_segments == 3 || path.hollow_segments == 4 ||
-                                            path.hollow_segments == 24));
+        const bool supported_type =
+            asset_mesh || swept_mesh ||
+            (part.type == framework::PrimType::Box && (part.mesh_segments == 0 || part.mesh_segments == 4)) ||
+            (part.type == framework::PrimType::Cylinder && mesh) ||
+            (part.type == framework::PrimType::Prism && part.mesh_segments == 3) ||
+            (part.type == framework::PrimType::Sphere && (mesh || native_sphere));
+        const bool valid_hollow_profile =
+            !path.hollow_segments ||
+            (part.type != framework::PrimType::Sphere && part.hollow > 0.f &&
+             (path.hollow_segments == 3 || path.hollow_segments == 4 || path.hollow_segments == 24));
         const float twist_limit = swept ? 8.1f : 4.1f;
-        const bool valid_path = path.begin >= 0.f && path.begin < path.end && path.end <= 1.f &&
-                                path.profile_begin >= 0.f && path.profile_begin < path.profile_end &&
-                                path.profile_end <= 1.f &&
-                                std::abs(path.taper_x) <= 1.f && std::abs(path.taper_y) <= 1.f &&
-                                std::isfinite(path.shear_x) && std::isfinite(path.shear_y) &&
-                                std::abs(path.twist_begin) <= twist_limit && std::abs(path.twist_end) <= twist_limit;
-        if (!finite(from(part.size)) || part.size.x <= 0 || part.size.y <= 0 || part.size.z <= 0 ||
-            !supported_type || !finite(from(part.offset)) || !finite(part.rotation) ||
-            !valid_path || !valid_hollow_profile ||
-            (swept && (!(path.hole_x > 0.f && path.hole_x <= 1.f &&
-                         path.hole_y > 0.f && path.hole_y <= .5f &&
+        const bool valid_path =
+            path.begin >= 0.f && path.begin < path.end && path.end <= 1.f && path.profile_begin >= 0.f &&
+            path.profile_begin < path.profile_end && path.profile_end <= 1.f && std::abs(path.taper_x) <= 1.f &&
+            std::abs(path.taper_y) <= 1.f && std::isfinite(path.shear_x) && std::isfinite(path.shear_y) &&
+            std::abs(path.twist_begin) <= twist_limit && std::abs(path.twist_end) <= twist_limit;
+        if (!finite(from(part.size)) || part.size.x <= 0 || part.size.y <= 0 || part.size.z <= 0 || !supported_type ||
+            !finite(from(part.offset)) || !finite(part.rotation) || !valid_path || !valid_hollow_profile ||
+            (swept && (!(path.hole_x > 0.f && path.hole_x <= 1.f && path.hole_y > 0.f && path.hole_y <= .5f &&
                          std::abs(path.radius_offset) <= 1.28f && std::abs(path.skew) <= 1.28f &&
                          std::abs(path.shear_x) <= 1.28f && std::abs(path.shear_y) <= 1.28f &&
                          path.revolutions >= 1.f && path.revolutions <= 4.825f))) ||
-            !std::isfinite(part.hollow) ||
-            part.hollow < 0.f || part.hollow > .95f ||
+            !std::isfinite(part.hollow) || part.hollow < 0.f || part.hollow > .95f ||
             (part.hollow > 0.f && (!part.mesh_segments || part.type == framework::PrimType::Sphere)) ||
             (dynamic && (!std::isfinite(part.mass) || part.mass <= 0)))
             throw std::invalid_argument("Invalid ubODE prim part");
     }
 
-    auto& scene = *impl_->native_scene;
+    auto &scene = *impl_->native_scene;
     std::lock_guard guard(scene.api->mutex);
     scene.api->allocate();
     if (dynamic)
@@ -2356,7 +2535,7 @@ void UbodeWorld::add_prims(framework::Uuid id, std::span<const UbodePrimPart> pa
     if (!inserted)
         throw std::invalid_argument("Duplicate ubODE box ID");
 
-    auto& box = entry->second;
+    auto &box = entry->second;
     const auto fail_creation = [&] {
         scene.destroy_box(box);
         scene.boxes.erase(entry);
@@ -2366,15 +2545,15 @@ void UbodeWorld::add_prims(framework::Uuid id, std::span<const UbodePrimPart> pa
     const auto native_rotation = to_native(orientation);
     try {
         for (std::size_t i = 0; i < parts.size(); ++i) {
-            const auto& part = parts[i];
+            const auto &part = parts[i];
             const auto size = part.size;
-            auto& collider = box.colliders[i];
+            auto &collider = box.colliders[i];
             collider.inertia_size = size;
             collider.mass = part.mass;
             collider.offset = part.offset;
             collider.rotation = normalize(part.rotation);
             if (part.type == framework::PrimType::Sculpt) {
-                const auto& mesh = *part.asset_mesh;
+                const auto &mesh = *part.asset_mesh;
                 if (mesh.vertices.empty() || mesh.vertices.size() > std::numeric_limits<int>::max() ||
                     mesh.indices.empty() || mesh.indices.size() > std::numeric_limits<int>::max() ||
                     mesh.indices.size() % 3)
@@ -2402,8 +2581,9 @@ void UbodeWorld::add_prims(framework::Uuid id, std::span<const UbodePrimPart> pa
                     const auto first = point(a), second = point(b), third = point(c);
                     if (first == second || first == third || second == third)
                         continue;
-                    collider.indices.insert(collider.indices.end(), {static_cast<std::int32_t>(a),
-                        static_cast<std::int32_t>(b), static_cast<std::int32_t>(c)});
+                    collider.indices.insert(
+                        collider.indices.end(),
+                        {static_cast<std::int32_t>(a), static_cast<std::int32_t>(b), static_cast<std::int32_t>(c)});
                     if (dynamic)
                         used_points.insert({first, second, third});
                 }
@@ -2413,7 +2593,7 @@ void UbodeWorld::add_prims(framework::Uuid id, std::span<const UbodePrimPart> pa
                     auto minimum = *used_points.begin();
                     auto maximum = minimum;
                     std::array<double, 3> sum{};
-                    for (const auto& vertex : used_points) {
+                    for (const auto &vertex : used_points) {
                         for (std::size_t axis = 0; axis < 3; ++axis) {
                             minimum[axis] = std::min(minimum[axis], vertex[axis]);
                             maximum[axis] = std::max(maximum[axis], vertex[axis]);
@@ -2471,8 +2651,8 @@ void UbodeWorld::add_prims(framework::Uuid id, std::span<const UbodePrimPart> pa
         fail_creation();
     Mass inertia{};
     for (std::size_t i = 0; i < parts.size(); ++i) {
-        const auto& part = parts[i];
-        const auto& collider = box.colliders[i];
+        const auto &part = parts[i];
+        const auto &collider = box.colliders[i];
         const auto size = collider.inertia_size;
         Mass part_inertia{};
         scene.api->MassSetBoxTotal(&part_inertia, part.mass, size.x, size.y, size.z);
@@ -2489,7 +2669,7 @@ void UbodeWorld::add_prims(framework::Uuid id, std::span<const UbodePrimPart> pa
     }
     box.center_of_mass = {inertia.c[0], inertia.c[1], inertia.c[2]};
     scene.api->MassTranslate(&inertia, -inertia.c[0], -inertia.c[1], -inertia.c[2]);
-    if (const auto& custom = forces.inertia_override) {
+    if (const auto &custom = forces.inertia_override) {
         if (const auto mass = scene.override_mass(*custom)) {
             inertia = *mass;
             box.center_of_mass = custom->center;
@@ -2500,7 +2680,7 @@ void UbodeWorld::add_prims(framework::Uuid id, std::span<const UbodePrimPart> pa
     box.mass = inertia.mass;
     scene.configure_prim_forces(box, forces);
     for (std::size_t i = 0; i < parts.size(); ++i) {
-        const auto& part = parts[i];
+        const auto &part = parts[i];
         const auto offset = from(part.offset) - from(box.center_of_mass);
         const auto rotation = to_native(normalize(part.rotation));
         const auto geom = box.colliders[i].geom;
@@ -2515,34 +2695,49 @@ void UbodeWorld::add_prims(framework::Uuid id, std::span<const UbodePrimPart> pa
     scene.api->BodySetPosition(box.body, center.X, center.Y, center.Z);
     scene.api->BodySetLinearVel(box.body, state.velocity.x, state.velocity.y, state.velocity.z);
     scene.api->BodySetAngularVel(box.body, state.angular_velocity.x, state.angular_velocity.y,
-                                state.angular_velocity.z);
+                                 state.angular_velocity.z);
     if (!scene.lock_rotation(box, forces.rotation_axis_locks, orientation))
         fail_creation();
     ++scene.dynamic_box_count;
 }
+
 void UbodeWorld::update_prim_look_at() {
     impl_->check();
-    auto& scene = *impl_->native_scene;
+    auto &scene = *impl_->native_scene;
     std::lock_guard guard(scene.api->mutex);
     scene.api->allocate();
     scene.update_look_at();
 }
+
 std::vector<PrimCollisionReport> UbodeWorld::take_prim_collision_reports() {
     impl_->check();
-    auto& reports = impl_->native_scene->prim_collision_reports;
+    auto &reports = impl_->native_scene->prim_collision_reports;
     std::vector<PrimCollisionReport> result;
     result.swap(reports);
     return result;
 }
+
+bool UbodeWorld::set_prim_selected(framework::Uuid id, bool selected, bool edited, bool force_stop) {
+    impl_->check();
+    auto &scene = *impl_->native_scene;
+    std::lock_guard guard(scene.api->mutex);
+    const auto entry = scene.boxes.find(id);
+    if (entry == scene.boxes.end())
+        return false;
+    scene.api->allocate();
+    scene.select_prim(entry->second, selected, edited, force_stop);
+    return true;
+}
+
 void UbodeWorld::apply_prim_impulse(framework::Uuid id, framework::Vector3 impulse, bool angular) {
     impl_->check();
     const auto force = from(impulse) * (1.f / time_step);
     if (!finite(force) || force.IsZero())
         return;
-    auto& scene = *impl_->native_scene;
+    auto &scene = *impl_->native_scene;
     std::lock_guard guard(scene.api->mutex);
     const auto entry = scene.boxes.find(id);
-    if (entry == scene.boxes.end() || !entry->second.body)
+    if (entry == scene.boxes.end() || !entry->second.body || entry->second.selected)
         return;
     scene.api->allocate();
     const auto body = entry->second.body;
@@ -2552,22 +2747,23 @@ void UbodeWorld::apply_prim_impulse(framework::Uuid id, framework::Vector3 impul
         scene.api->BodyAddForce(body, force.X, force.Y, force.Z);
     scene.api->BodyEnable(body);
 }
+
 bool UbodeWorld::update_body_motion(framework::Uuid id, std::optional<framework::Vector3> position,
-                                   std::optional<framework::Vector3> linear, std::optional<framework::Vector3> angular,
-                                   const std::optional<UbodePrimForces>& forces,
-                                   std::optional<std::uint8_t> rotation_locks,
-                                   std::optional<framework::Quaternion> rotation) {
+                                    std::optional<framework::Vector3> linear, std::optional<framework::Vector3> angular,
+                                    const std::optional<UbodePrimForces> &forces,
+                                    std::optional<std::uint8_t> rotation_locks,
+                                    std::optional<framework::Quaternion> rotation) {
     impl_->check();
-    if ((position && !finite(from(*position))) ||
-        (linear && !finite(from(*linear))) || (angular && !finite(from(*angular))))
+    if ((position && !finite(from(*position))) || (linear && !finite(from(*linear))) ||
+        (angular && !finite(from(*angular))))
         return false;
-    auto& scene = *impl_->native_scene;
+    auto &scene = *impl_->native_scene;
     const auto entry = scene.boxes.find(id);
     if (entry == scene.boxes.end() || !entry->second.body)
         return false;
     std::lock_guard guard(scene.api->mutex);
     scene.api->allocate();
-    auto& box = entry->second;
+    auto &box = entry->second;
     const auto body = box.body;
     const auto q = scene.api->BodyGetQuaternion(body);
     const framework::Quaternion previous_orientation{q[1], q[2], q[3], q[0]};
@@ -2592,43 +2788,47 @@ bool UbodeWorld::update_body_motion(framework::Uuid id, std::optional<framework:
         const auto offset = from(framework::sdk_rotate_vector(box.center_of_mass, orientation));
         const auto center = root + offset;
         scene.api->BodySetPosition(body, center.X, center.Y, center.Z);
-        for (auto& collider : box.colliders)
+        for (auto &collider : box.colliders)
             collider.collision_score = 0.f;
     }
-    if (linear)
+    if (linear && !box.selected)
         scene.api->BodySetLinearVel(body, linear->x, linear->y, linear->z);
-    if (angular)
+    if (angular && !box.selected)
         scene.api->BodySetAngularVel(body, angular->x, angular->y, angular->z);
     if (forces)
         scene.configure_prim_forces(box, *forces);
-    if (position || rotation || linear || angular || forces || rotation_locks)
+    if (!box.selected && (position || rotation || linear || angular || forces || rotation_locks))
         scene.api->BodyEnable(body);
+    else if (box.selected)
+        scene.api->BodyDisable(body);
     return true;
 }
-bool UbodeWorld::update_collider_properties(framework::Uuid id,
-                                           std::span<const UbodeColliderProperties> properties) {
+
+bool UbodeWorld::update_collider_properties(framework::Uuid id, std::span<const UbodeColliderProperties> properties) {
     impl_->check();
-    auto& scene = *impl_->native_scene;
+    auto &scene = *impl_->native_scene;
     std::lock_guard guard(scene.api->mutex);
     const auto entry = scene.boxes.find(id);
     if (entry == scene.boxes.end() || entry->second.colliders.size() != properties.size())
         return false;
 
     scene.api->allocate();
-    auto& box = entry->second;
+    auto &box = entry->second;
     for (std::size_t i = 0; i < properties.size(); ++i) {
-        auto& collider = box.colliders[i];
+        auto &collider = box.colliders[i];
+        if (box.delayed_selection && collider.volume_detect != properties[i].volume_detect)
+            scene.select_prim(box, box.selected, true, false);
         collider.contact_material = scene.clamp_contact_material(properties[i].material);
         if (collider.volume_detect != properties[i].volume_detect || collider.phantom != properties[i].phantom)
-            scene.configure_collision_filter(collider, box.body != nullptr,
-                                             properties[i].volume_detect, properties[i].phantom);
+            scene.configure_collision_filter(collider, box.body != nullptr, properties[i].volume_detect,
+                                             properties[i].phantom);
     }
     return true;
 }
 
 void UbodeWorld::remove_box(framework::Uuid id) {
     impl_->check();
-    auto& scene = *impl_->native_scene;
+    auto &scene = *impl_->native_scene;
     std::lock_guard guard(scene.api->mutex);
     const auto entry = scene.boxes.find(id);
     if (entry == scene.boxes.end())
@@ -2639,12 +2839,13 @@ void UbodeWorld::remove_box(framework::Uuid id) {
     scene.destroy_box(entry->second);
     scene.boxes.erase(entry);
 }
+
 UbodeBodyState UbodeWorld::body_state(framework::Uuid id) const {
     impl_->check();
-    auto& scene = *impl_->native_scene;
+    auto &scene = *impl_->native_scene;
     std::lock_guard guard(scene.api->mutex);
     scene.api->allocate();
-    const auto& box = scene.boxes.at(id);
+    const auto &box = scene.boxes.at(id);
     const auto body = box.body;
     if (!body)
         throw std::invalid_argument("Static ubODE box has no body");
@@ -2652,10 +2853,13 @@ UbodeBodyState UbodeWorld::body_state(framework::Uuid id) const {
     const auto angular = scene.api->BodyGetAngularVel(body);
     const framework::Quaternion orientation{rotation[1], rotation[2], rotation[3], rotation[0]};
     const auto center_offset = from(framework::sdk_rotate_vector(box.center_of_mass, orientation));
-    return {to(scene.api->BodyGetPositionOMV(body) - center_offset), orientation,
-            to(scene.api->BodyGetLinearVelOMV(body)), {angular[0], angular[1], angular[2]}};
+    return {to(scene.api->BodyGetPositionOMV(body) - center_offset),
+            orientation,
+            to(scene.api->BodyGetLinearVelOMV(body)),
+            {angular[0], angular[1], angular[2]}};
 }
-void UbodeWorld::step_with(std::span<UbodeWorld* const> peers, std::size_t count) {
+
+void UbodeWorld::step_with(std::span<UbodeWorld *const> peers, std::size_t count) {
     impl_->check();
     for (std::size_t i = 0; i < peers.size(); ++i) {
         const auto peer = peers[i];
@@ -2666,25 +2870,21 @@ void UbodeWorld::step_with(std::span<UbodeWorld* const> peers, std::size_t count
     }
     std::lock_guard guard(impl_->api->mutex);
     impl_->api->allocate();
-    const auto move = [](Impl& avatar) {
+    const auto move = [](Impl &avatar) {
         avatar.Move();
         const auto force = avatar.api->BodyGetForce(avatar.Body);
         avatar.last_force = {force[0], force[1], force[2]};
     };
-    const auto controller = [&](std::size_t index) -> Impl& {
-        return index == 0 ? *impl_ : *peers[index - 1]->impl_;
-    };
+    const auto controller = [&](std::size_t index) -> Impl & { return index == 0 ? *impl_ : *peers[index - 1]->impl_; };
     for (std::size_t frame = 0; frame < count; ++frame) {
         if (impl_->Body)
             move(*impl_);
         for (auto peer : peers)
             move(*peer->impl_);
-        impl_->native_scene->apply_prim_forces([&](float x, float y) {
-            return impl_->GetTerrainHeightAtXY(x, y);
-        });
+        impl_->native_scene->apply_prim_forces([&](float x, float y) { return impl_->GetTerrainHeightAtXY(x, y); });
         std::size_t contact_budget = 6000;
         for (std::size_t i = 0; i <= peers.size(); ++i) {
-            auto& avatar = controller(i);
+            auto &avatar = controller(i);
             if (!avatar.Body)
                 continue;
             const bool skip_contacts = avatar.Colliderfilter < -1;
@@ -2697,7 +2897,7 @@ void UbodeWorld::step_with(std::span<UbodeWorld* const> peers, std::size_t count
             }
             avatar.collide_with_boxes(contact_budget);
             for (std::size_t j = i + 1; j <= peers.size() && contact_budget; ++j) {
-                auto& other = controller(j);
+                auto &other = controller(j);
                 if (other.Colliderfilter >= -1 && avatar.collide_avatar(other))
                     --contact_budget;
             }
@@ -2708,23 +2908,37 @@ void UbodeWorld::step_with(std::span<UbodeWorld* const> peers, std::size_t count
         impl_->api->JointGroupEmpty(impl_->native_scene->contacts);
         if (impl_->Body)
             impl_->finish_collision_frame();
-        for (auto* peer : peers)
+        for (auto *peer : peers)
             peer->impl_->finish_collision_frame();
     }
 }
+
+std::optional<float> UbodeWorld::prim_physics_cost(framework::Uuid actor, framework::Uuid part) const {
+    impl_->check();
+    const auto &boxes = impl_->native_scene->boxes;
+    const auto entry = boxes.find(actor);
+    if (entry == boxes.end())
+        return {};
+    const auto &colliders = entry->second.colliders;
+    const auto collider = std::ranges::find(colliders, part, &OdeScene::Collider::part_id);
+    if (collider == colliders.end())
+        return {};
+    return collider->physics_cost;
+}
+
 std::optional<UbodeMassProperties> UbodeWorld::mass_properties(framework::Uuid actor, framework::Uuid part) const {
     impl_->check();
-    const auto& scene = *impl_->native_scene;
+    const auto &scene = *impl_->native_scene;
     const auto entry = scene.boxes.find(actor);
     if (entry == scene.boxes.end())
         return {};
-    const auto& box = entry->second;
-    const auto& api = scene.api;
+    const auto &box = entry->second;
+    const auto &api = scene.api;
     std::lock_guard guard(api->mutex);
     api->allocate();
     if (box.body && part.is_zero()) {
         float mass = 0.f;
-        for (const auto& collider : box.colliders)
+        for (const auto &collider : box.colliders)
             mass += collider.mass;
         return UbodeMassProperties{mass, to(api->BodyGetPositionOMV(box.body))};
     }
@@ -2746,10 +2960,10 @@ std::optional<UbodeMassProperties> UbodeWorld::mass_properties(framework::Uuid a
     return UbodeMassProperties{collider->mass, to(center)};
 }
 
-std::optional<framework::PrimInertiaData> UbodeWorld::inertia_data(
-    framework::Uuid root, const std::optional<framework::PrimInertiaOverride>& requested) const {
+std::optional<framework::PrimInertiaData>
+UbodeWorld::inertia_data(framework::Uuid root, const std::optional<framework::PrimInertiaOverride> &requested) const {
     impl_->check();
-    const auto& scene = *impl_->native_scene;
+    const auto &scene = *impl_->native_scene;
     const auto entry = scene.boxes.find(root);
     if (entry == scene.boxes.end() || !entry->second.body)
         return {};
@@ -2765,23 +2979,23 @@ std::optional<framework::PrimInertiaData> UbodeWorld::inertia_data(
 std::vector<std::pair<framework::Uuid, float>> UbodeWorld::top_colliders() const {
     impl_->check();
     std::vector<std::pair<framework::Uuid, float>> ranked;
-    for (const auto& [id, box] : impl_->native_scene->boxes) {
+    for (const auto &[id, box] : impl_->native_scene->boxes) {
         if (box.body)
-            for (const auto& collider : box.colliders)
+            for (const auto &collider : box.colliders)
                 ranked.emplace_back(collider.part_id, collider.collision_score);
     }
-    std::stable_sort(ranked.begin(), ranked.end(), [](const auto& left, const auto& right) {
-        return left.second > right.second;
-    });
+    std::stable_sort(ranked.begin(), ranked.end(),
+                     [](const auto &left, const auto &right) { return left.second > right.second; });
     if (ranked.size() > 25)
         ranked.resize(25);
     return ranked;
 }
+
 UbodeSnapshot UbodeWorld::snapshot() const {
     impl_->avatar();
     std::lock_guard guard(impl_->api->mutex);
     impl_->api->allocate();
-    auto& c = *impl_;
+    auto &c = *impl_;
     return {to(c._position),
             to(c._velocity),
             to(c._acceleration),
@@ -2800,20 +3014,24 @@ UbodeSnapshot UbodeWorld::snapshot() const {
             c.collision_plane,
             to(c.m_rotationalVelocity)};
 }
+
 float UbodeWorld::avatar_mass() const {
     impl_->check();
     return impl_->Body ? impl_->m_mass : 0.f;
 }
+
 float UbodeWorld::terrain_height(float x, float y) const {
     impl_->check();
     return impl_->GetTerrainHeightAtXY(x, y);
 }
+
 framework::Vector3 UbodeWorld::terrain_normal(float x, float y) const {
     impl_->check();
     return to(impl_->GetTerrainNormalAtXY(x, y));
 }
+
 std::string UbodeWorld::configuration() const {
-    impl_->check();
+    // The library configuration is immutable after loading.
     return impl_->api->config;
 }
-}
+} // namespace opensim::physics

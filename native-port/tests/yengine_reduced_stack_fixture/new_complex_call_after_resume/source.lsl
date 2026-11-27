@@ -1,0 +1,1 @@
+integer entries;integer calls;integer result;integer checkedLeaf(){while(FALSE){}return 7;}integer recur(integer n){calls++;if(n>0)return recur(n-1);integer k=1;while(k>0){k--;}return checkedLeaf();}default{state_entry(){entries++;result=recur(130);}}

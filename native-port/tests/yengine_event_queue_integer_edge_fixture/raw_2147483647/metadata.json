@@ -1,0 +1,26 @@
+{
+  "name": "raw_2147483647",
+  "input": {
+    "clr": "System.Int32",
+    "value": 2147483647,
+    "bits": "7fffffff"
+  },
+  "append_exception": null,
+  "outer_xml_exception": null,
+  "load_xml_exception": null,
+  "restore_event_queue_exception": null,
+  "restored": {
+    "clr": "System.Int32",
+    "value": 2147483647,
+    "bits": "7fffffff"
+  },
+  "strict_xml_reader_control_exception": null,
+  "strict_xml_reader_control_restored": {
+    "clr": "System.Int32",
+    "value": 2147483647,
+    "bits": "7fffffff"
+  },
+  "sha256": {
+    "serialized.xml": "5c1f38b70aaf40cd75b894b8d3d0c2d2433cfd0e914e7086e96e40d555eeb489"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "exit_code": 3221225725,
+  "timed_out": false,
+  "platform": "windows",
+  "case": "cycle_self_heap",
+  "elapsed_seconds": 1.7422210999939125,
+  "command": [
+    "dotnet",
+    "G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\yengine-fixed-array-cycle-reference\\bin\\Release\\net8.0\\Reference.dll",
+    "G:\\GitHub\\SecondLife\\opensim\\bin",
+    "G:\\GitHub\\SecondLife\\opensim\\native-port\\tests\\yengine_fixed_array_fixture\\cycles_windows\\cycle_self_heap",
+    "G:\\GitHub\\SecondLife\\opensim\\native-port\\tests\\yengine_fixed_array_cycle_reference.cs",
+    "G:\\GitHub\\SecondLife\\opensim"
+  ]
+}

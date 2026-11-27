@@ -29,10 +29,12 @@
 #include <functional>
 #include <optional>
 #include <string>
+
 namespace opensim::framework {
-bool valid_http_host(const std::string& host);
+bool valid_http_host(const std::string &host);
+
 class RegionUri {
-public:
+  public:
     enum Flags : std::int32_t {
         HasHost = 2,
         HasResolvedHost = 4,
@@ -42,24 +44,30 @@ public:
         HasCoords = 64,
         IsLocalGrid = 128
     };
-    using Resolver = std::function<std::optional<std::string>(const std::string&)>;
-    using LocalGrid = std::function<int(const std::string&)>;
-    explicit RegionUri(const std::optional<std::string>& value);
-    RegionUri(const std::optional<std::string>& value, const LocalGrid& grid, const Resolver& resolver = {});
-    void parse(const std::optional<std::string>& value);
-    bool resolve_dns(const Resolver& resolver = {});
+
+    using Resolver = std::function<std::optional<std::string>(const std::string &)>;
+    using LocalGrid = std::function<int(const std::string &)>;
+    explicit RegionUri(const std::optional<std::string> &value);
+    RegionUri(const std::optional<std::string> &value, const LocalGrid &grid, const Resolver &resolver = {});
+    void parse(const std::optional<std::string> &value);
+    bool resolve_dns(const Resolver &resolver = {});
+
     bool valid() const {
         return (flags & (HasHost | HasRegionName)) != 0;
     }
+
     bool has_host() const {
         return (flags & HasHost) != 0;
     }
+
     bool has_region_name() const {
         return (flags & HasRegionName) != 0;
     }
+
     bool local() const {
         return (flags & IsLocalGrid) != 0;
     }
+
     void set_local(bool value);
     std::string host_url() const;
     std::string host_url_slash() const;
@@ -69,4 +77,4 @@ public:
     std::optional<std::string> original = std::string{}, ip;
     std::string schema = "http://", host, region_name, username, user_pass;
 };
-}
+} // namespace opensim::framework

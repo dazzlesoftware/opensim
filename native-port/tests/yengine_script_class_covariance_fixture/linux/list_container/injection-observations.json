@@ -1,0 +1,16 @@
+{
+  "method": "Backend-injected CLR covariant global storage, not source-generated container",
+  "containerClr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist[]",
+  "inputAliases": [
+    false,
+    false
+  ],
+  "primitiveControlError": {
+    "type": "System.InvalidCastException",
+    "message": "Unable to cast object of type \u0027System.Int32[]\u0027 to type \u0027System.Object[]\u0027.",
+    "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.RecvArrays(Recver recver) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 234\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-class-global-lane-covariance-phase37-reference\\Reference.cs:line 544",
+    "inner": null
+  },
+  "primitiveLanesRead": 6,
+  "primitiveGlobalUsage": 0
+}

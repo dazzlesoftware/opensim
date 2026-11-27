@@ -38,7 +38,7 @@ void HttpRequestThrottle::stop(std::uint32_t prim, double now_seconds) {
     const auto entry = prims_.find(prim);
     if (entry == prims_.end())
         return;
-    const auto& [last_time, credit] = entry->second;
+    const auto &[last_time, credit] = entry->second;
     // StopHttpRequest uses the owner refill rate for this prim's cleanup check.
     if (credit + settings_.owner_rate * (now_seconds - last_time) >= settings_.prim_burst)
         prims_.erase(entry);
@@ -50,4 +50,4 @@ void HttpRequestThrottle::clear() {
     owners_.clear();
 }
 
-}
+} // namespace opensim::script

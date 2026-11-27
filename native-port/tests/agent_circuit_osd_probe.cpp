@@ -5,18 +5,21 @@
 #include <iomanip>
 #include <iostream>
 using namespace opensim;
-using network::Value;
 using framework::AgentCircuitData;
-std::string hex(const std::string& text) {
+using network::Value;
+
+std::string hex(const std::string &text) {
     std::ostringstream s;
     for (unsigned char b : text)
         s << std::hex << std::setw(2) << std::setfill('0') << unsigned(b);
     return s.str();
 }
-std::string token(const std::string& text) {
+
+std::string token(const std::string &text) {
     return text == "." ? "" : fixture::unhex(text);
 }
-std::string canonical(const Value& v) {
+
+std::string canonical(const Value &v) {
     switch (v.kind) {
     case Value::Kind::Integer:
         return "i" + std::to_string(v.integer);
@@ -32,19 +35,18 @@ std::string canonical(const Value& v) {
     }
     case Value::Kind::Real: {
         std::ostringstream s;
-        s << 'r' << std::hex
-          << (std::isnan(v.real) ? 0x7ff8000000000000ull : std::bit_cast<std::uint64_t>(v.real));
+        s << 'r' << std::hex << (std::isnan(v.real) ? 0x7ff8000000000000ull : std::bit_cast<std::uint64_t>(v.real));
         return s.str();
     }
     case Value::Kind::Array: {
         std::string s = "[";
-        for (auto& item : v.array)
+        for (auto &item : v.array)
             s += canonical(item) + ",";
         return s + "]";
     }
     case Value::Kind::Map: {
         std::string s = "{";
-        for (auto& [key, item] : v.map)
+        for (auto &[key, item] : v.map)
             s += hex(key) + "=" + canonical(item) + ",";
         return s + "}";
     }
@@ -52,7 +54,8 @@ std::string canonical(const Value& v) {
         return "u";
     }
 }
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     if (argc > 1 && std::string(argv[1]) == "ignorables") {
         int start = -1, last = -1;
         for (int n = 0; n <= 0x10ffff; ++n) {
@@ -202,7 +205,7 @@ int main(int argc, char** argv) {
                     (*c.service_urls)[key] = std::string("changed");
             } else if (op == "objects") {
                 c.service_urls = std::make_shared<AgentCircuitData::ServiceUrls>();
-                auto& urls = *c.service_urls;
+                auto &urls = *c.service_urls;
                 urls["null"] = std::any{};
                 urls["boolean"] = true;
                 urls["integer"] = std::int32_t{-7};
@@ -244,24 +247,24 @@ int main(int argc, char** argv) {
                 std::string bits;
                 in >> bits;
                 framework::EntityTransferContext ctx;
-                ctx.outbound_version =
-                    std::bit_cast<float>(static_cast<std::uint32_t>(std::stoul(bits, nullptr, 16)));
+                ctx.outbound_version = std::bit_cast<float>(static_cast<std::uint32_t>(std::stoul(bits, nullptr, 16)));
                 out = canonical(c.pack(&ctx));
             } else if (op == "roundtrip")
                 c.unpack(network::parse_llsd_xml(network::llsd_xml(c.pack())));
             else if (op == "xml-order") {
                 auto map = network::parse_llsd_xml(
-                    "<llsd><map><key>serviceurls</key><map><key>z</key><string>Z</string><key>a</key><string>A</string><key>m</key><string>M</string></map></map></llsd>");
+                    "<llsd><map><key>serviceurls</key><map><key>z</key><string>Z</string><key>a</key><string>A</"
+                    "string><key>m</key><string>M</string></map></map></llsd>");
                 c.unpack(network::parse_llsd_xml(network::llsd_xml(map)));
             }
-        } catch (const std::exception&) {
+        } catch (const std::exception &) {
             status = "EX";
         }
         std::string state;
         try {
             state = canonical(c.pack()) + "|" + std::to_string(c.teleport_flags) + "|" +
                     (c.children_cap_seeds ? "1" : "0") + (c.service_urls ? "1" : "0");
-        } catch (const std::exception&) {
+        } catch (const std::exception &) {
             state = "STATEEX";
         }
         std::cout << status << '|' << out << '|' << state << '\n';

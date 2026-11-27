@@ -1,0 +1,3 @@
+YOption allowall;
+float[] input; object backing; integer after;
+default{state_entry(){input=new float[](3);backing=input.obj;llSleep(0.1);after=1;}}

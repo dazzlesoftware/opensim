@@ -1,0 +1,1 @@
+list left=[1,2];key right=(key)"bad";list result;default{state_entry(){result=[left>right];}}

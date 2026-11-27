@@ -1,0 +1,1 @@
+default{state_entry(){list nested=[1];xmrEventLoadDets([nested]);}}

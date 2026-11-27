@@ -1,0 +1,1 @@
+key left=(key)"bad";integer right=7;default{state_entry(){left+=right;}}

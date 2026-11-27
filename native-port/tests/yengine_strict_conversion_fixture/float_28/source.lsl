@@ -1,0 +1,1 @@
+float result;integer after;default{state_entry(){result=xmrString2Float("∞");after=1;}}

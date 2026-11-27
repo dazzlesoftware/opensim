@@ -6,11 +6,13 @@
 #include <iostream>
 using namespace opensim;
 using namespace scene;
+
 namespace {
 framework::Uuid id(int n) {
     auto s = std::to_string(n);
     return framework::Uuid("11223344-5566-7788-99aa-" + std::string(12 - s.size(), '0') + s);
 }
+
 std::string hex(const std::optional<std::string> &s) {
     if (!s)
         return "NULL";
@@ -21,6 +23,7 @@ std::string hex(const std::optional<std::string> &s) {
     }
     return out;
 }
+
 std::string dump(InventoryCopyItem p, bool fresh = false) {
     if (!p)
         return "NULL";
@@ -29,11 +32,12 @@ std::string dump(InventoryCopyItem p, bool fresh = false) {
     return (fresh ? std::string(i.id.is_zero() ? "ZERO" : "NEW") : i.id.str()) + ":" + i.owner.str() + ":" +
            i.asset_id.str() + ":" + hex(i.creator_id) + ":" + hex(p->creator_data) + ":" + hex(i.name) + ":" +
            hex(i.description) + ":" + u(i.base_permissions) + "," + u(i.current_permissions) + "," +
-           u(i.everyone_permissions) + "," + u(i.next_permissions) + "," + u(i.group_permissions) + "," +
-           u(i.flags) + "," + std::to_string(i.asset_type) + "," + std::to_string(i.inventory_type) + "," +
-           std::to_string(i.creation_date) + "," + i.group_id.str() + "," + std::to_string(i.group_owned) +
-           "," + std::to_string(i.sale_price) + "," + std::to_string(i.sale_type) + "," + i.parent.str();
+           u(i.everyone_permissions) + "," + u(i.next_permissions) + "," + u(i.group_permissions) + "," + u(i.flags) +
+           "," + std::to_string(i.asset_type) + "," + std::to_string(i.inventory_type) + "," +
+           std::to_string(i.creation_date) + "," + i.group_id.str() + "," + std::to_string(i.group_owned) + "," +
+           std::to_string(i.sale_price) + "," + std::to_string(i.sale_type) + "," + i.parent.str();
 }
+
 std::string probe(int kind, int mode, int value, int failure) {
     auto bit = [&](int m) { return (mode & m) != 0; };
     std::string trace;
@@ -53,8 +57,8 @@ std::string probe(int kind, int mode, int value, int failure) {
     i.name = bit(32768) ? "脚本 😃" : "Stored script";
     i.description = bit(32768) ? "説明 é" : "Description";
     i.base_permissions = std::bit_cast<std::int32_t>(0xf00fffffu);
-    i.current_permissions = std::bit_cast<std::int32_t>((bit(16) ? 0xffff7fffu : 0xffffffffu) &
-                                                        (bit(32) ? 0xffffdfffu : 0xffffffffu));
+    i.current_permissions =
+        std::bit_cast<std::int32_t>((bit(16) ? 0xffff7fffu : 0xffffffffu) & (bit(32) ? 0xffffdfffu : 0xffffffffu));
     i.everyone_permissions = 0x8a000;
     i.next_permissions = value;
     i.group_permissions = 0x84000;
@@ -163,7 +167,8 @@ std::string probe(int kind, int mode, int value, int failure) {
     }
     return result + ":" + dump(source) + trace;
 }
-}
+} // namespace
+
 int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string_view(argv[1]) == "--probe") {
@@ -183,8 +188,7 @@ int main(int argc, char **argv) {
         check(probe(0, 64 | 32, 10, 0).find("|BYPASS") == std::string::npos, "transfer before bypass");
         check(probe(0, 64 | 512 | 1024, 10, 0).find("|PERMISSION:") == std::string::npos,
               "bypass short circuits copy policy");
-        check(probe(0, 2048, 10, 0).find("|ALERT:Failed to create item") != std::string::npos,
-              "add failure alerts");
+        check(probe(0, 2048, 10, 0).find("|ALERT:Failed to create item") != std::string::npos, "add failure alerts");
         check(probe(0, 2048, 10, 0).find("|REPLY:") == std::string::npos, "add failure has no create reply");
         check(probe(7, 0, 24, 0).find("|LIBRARY") == std::string::npos &&
                   probe(7, 0, 24, 0).find("|USER") == std::string::npos,

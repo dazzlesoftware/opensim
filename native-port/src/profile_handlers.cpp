@@ -2,21 +2,25 @@
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/server/profile_handlers.hpp"
 #include "opensim/framework/sdk_uuid.hpp"
+
 namespace opensim::server {
 namespace {
 using network::Value;
 using K = Value::Kind;
 using namespace framework;
+
 [[noreturn]] void null_reference() {
     throw std::runtime_error("Object reference not set to an instance of an object.");
 }
-template <class T> T& required(const std::shared_ptr<T>& p) {
+
+template <class T> T &required(const std::shared_ptr<T> &p) {
     if (!p)
         null_reference();
     return *p;
 }
-std::string cast_message(K kind, const char* target) {
-    const char* type = "OSD";
+
+std::string cast_message(K kind, const char *target) {
+    const char *type = "OSD";
     switch (kind) {
     case K::Map:
         type = "OSDMap";
@@ -57,45 +61,52 @@ std::string cast_message(K kind, const char* target) {
     return std::string("Unable to cast object of type 'OpenMetaverse.StructuredData.") + type +
            "' to type 'OpenMetaverse.StructuredData." + target + "'.";
 }
-const Value& as_map(const Value& value) {
-    const auto& v = value.view();
+
+const Value &as_map(const Value &value) {
+    const auto &v = value.view();
     if (v.kind != K::Map)
         throw std::runtime_error(cast_message(v.kind, "OSDMap"));
     return v;
 }
-bool map_value(const Value& value) {
+
+bool map_value(const Value &value) {
     return value.kind != K::NullReference && value.view().kind == K::Map;
 }
-template <class T> std::shared_ptr<T> model(const Value& params) {
+
+template <class T> std::shared_ptr<T> model(const Value &params) {
     auto result = std::make_shared<T>();
     result->deserialize_members(params);
     return result;
 }
-template <class T> void serialized(JsonRpcResponse& response, const std::shared_ptr<T>& value) {
+
+template <class T> void serialized(JsonRpcResponse &response, const std::shared_ptr<T> &value) {
     response.result = std::make_shared<Value>(required(value).serialize_members());
 }
-void array_result(const std::shared_ptr<JsonRpcResponse>& response, std::shared_ptr<Value> value) {
+
+void array_result(const std::shared_ptr<JsonRpcResponse> &response, std::shared_ptr<Value> value) {
     if (value && value->view().kind != K::Array)
         throw std::runtime_error(cast_message(value->view().kind, "OSDArray"));
     required(response).result = std::move(value);
 }
-}
-void JsonRpcProfileHandlers::register_handlers(JsonRpcDispatcher& dispatcher) const {
+} // namespace
+
+void JsonRpcProfileHandlers::register_handlers(JsonRpcDispatcher &dispatcher) const {
     for (auto method :
          {u"avatarclassifiedsrequest", u"classified_update", u"classifieds_info_query", u"classified_delete",
           u"avatarpicksrequest", u"pickinforequest", u"picks_update", u"picks_delete", u"avatarnotesrequest",
-          u"avatar_notes_update", u"avatar_properties_request", u"avatar_properties_update",
-          u"avatar_interests_update", u"user_preferences_update", u"user_preferences_request",
-          u"image_assets_request", u"user_data_request", u"user_data_update"})
+          u"avatar_notes_update", u"avatar_properties_request", u"avatar_properties_update", u"avatar_interests_update",
+          u"user_preferences_update", u"user_preferences_request", u"image_assets_request", u"user_data_request",
+          u"user_data_update"})
         dispatcher.add(method, [copy = *this, name = std::u16string(method)](
-                                   const Value& json, std::shared_ptr<JsonRpcResponse>& response) {
+                                   const Value &json, std::shared_ptr<JsonRpcResponse> &response) {
             return copy.handle(name, json, response);
         });
 }
-bool JsonRpcProfileHandlers::handle(std::u16string_view method, const Value& json,
-                                    std::shared_ptr<JsonRpcResponse>& response) const {
+
+bool JsonRpcProfileHandlers::handle(std::u16string_view method, const Value &json,
+                                    std::shared_ptr<JsonRpcResponse> &response) const {
     auto fail = [&](int code, std::optional<std::u16string> message = {}, std::u16string_view log = {}) {
-        auto& error = required(required(response).error);
+        auto &error = required(required(response).error);
         error.code(code);
         if (message)
             error.message(message);
@@ -103,36 +114,33 @@ bool JsonRpcProfileHandlers::handle(std::u16string_view method, const Value& jso
             logger_(ProfileLogLevel::Debug, log);
         return false;
     };
-    auto params = [&](bool typed, std::optional<std::u16string> message,
-                      std::u16string_view log) -> const Value* {
+    auto params = [&](bool typed, std::optional<std::u16string> message, std::u16string_view log) -> const Value * {
         if (!json.contains("params") || (typed && !map_value(json.get("params")))) {
             fail(JsonRpcErrorCode::ParseError, message, log);
             return nullptr;
         }
         return &as_map(json.get("params"));
     };
-    auto error = [&](const std::optional<std::u16string>& text) {
+    auto error = [&](const std::optional<std::u16string> &text) {
         return fail(JsonRpcErrorCode::InternalError, text.value_or(u""));
     };
-    auto service = [&]() -> services::UserProfilesService& { return required(service_); };
+    auto service = [&]() -> services::UserProfilesService & { return required(service_); };
     std::optional<std::u16string> result = u"";
-    if (method == u"avatarclassifiedsrequest" || method == u"image_assets_request" ||
-        method == u"classified_delete") {
+    if (method == u"avatarclassifiedsrequest" || method == u"image_assets_request" || method == u"classified_delete") {
         auto p = params(false, {},
                         method == u"avatarclassifiedsrequest" ? u"Classified Request"
                         : method == u"classified_delete"      ? u"Classified Delete Request"
                                                               : u"Avatar Image Assets Request");
         if (!p)
             return false;
-        auto id = construct_sdk_uuid(
-            network::osd_string_utf16(p->get(method == u"avatarclassifiedsrequest" ? "creatorId"
-                                             : method == u"classified_delete"      ? "classifiedId"
-                                                                                   : "avatarId")));
+        auto id =
+            construct_sdk_uuid(network::osd_string_utf16(p->get(method == u"avatarclassifiedsrequest" ? "creatorId"
+                                                                : method == u"classified_delete"      ? "classifiedId"
+                                                                                                      : "avatarId")));
         if (method == u"classified_delete")
             return service().ClassifiedDelete(id) || error(u"data error removing record");
-        array_result(response, method == u"avatarclassifiedsrequest"
-                                   ? service().AvatarClassifiedsRequest(id)
-                                   : service().AvatarImageAssetsRequest(id));
+        array_result(response, method == u"avatarclassifiedsrequest" ? service().AvatarClassifiedsRequest(id)
+                                                                     : service().AvatarImageAssetsRequest(id));
         return true;
     }
     if (method == u"avatarpicksrequest" || method == u"picks_delete") {
@@ -140,11 +148,10 @@ bool JsonRpcProfileHandlers::handle(std::u16string_view method, const Value& jso
         auto p = params(true, {}, list ? u"Avatar Picks Request" : u"Avatar Picks Delete Request");
         if (!p)
             return false;
-        const char* key = list ? "creatorId" : "pickId";
+        const char *key = list ? "creatorId" : "pickId";
         if (!p->contains(key))
             return fail(JsonRpcErrorCode::ParseError, u"missing parameters",
-                        list ? u"Avatar Picks Request missing Parameters"
-                             : u"Avatar Pick Delete missing Parameter");
+                        list ? u"Avatar Picks Request missing Parameters" : u"Avatar Pick Delete missing Parameter");
         auto id = network::osd_uuid(p->get(key));
         if (list) {
             array_result(response, service().AvatarPicksRequest(id));
@@ -161,8 +168,7 @@ bool JsonRpcProfileHandlers::handle(std::u16string_view method, const Value& jso
         auto ad = model<UserClassifiedAdd>(*p);
         if (update && (ad->Flags & 0x4e) == 0)
             ad->Flags |= 0x04;
-        bool ok =
-            update ? service().ClassifiedUpdate(ad, result) : service().ClassifiedInfoRequest(ad, result);
+        bool ok = update ? service().ClassifiedUpdate(ad, result) : service().ClassifiedInfoRequest(ad, result);
         if (!ok)
             return error(result);
         if (!update && (required(ad).Flags & 0x4e) == 0)
@@ -172,9 +178,8 @@ bool JsonRpcProfileHandlers::handle(std::u16string_view method, const Value& jso
     }
     if (method == u"pickinforequest" || method == u"picks_update") {
         bool info = method == u"pickinforequest";
-        auto p =
-            params(true, u"no parameters supplied",
-                   info ? u"Avatar Picks Info Request Invalid Parameters" : u"Avatar Picks Update Request");
+        auto p = params(true, u"no parameters supplied",
+                        info ? u"Avatar Picks Info Request Invalid Parameters" : u"Avatar Picks Update Request");
         if (!p)
             return false;
         std::shared_ptr<UserProfilePick> pick;
@@ -231,14 +236,13 @@ bool JsonRpcProfileHandlers::handle(std::u16string_view method, const Value& jso
     }
     if (method == u"user_preferences_request" || method == u"user_preferences_update") {
         bool update = method == u"user_preferences_update";
-        auto p =
-            params(false, update ? std::optional<std::u16string>(u"no parameters supplied") : std::nullopt,
-                   update ? u"User Preferences Update Request" : u"User Preferences Request");
+        auto p = params(false, update ? std::optional<std::u16string>(u"no parameters supplied") : std::nullopt,
+                        update ? u"User Preferences Update Request" : u"User Preferences Request");
         if (!p)
             return false;
         auto prefs = model<UserPreferences>(*p);
-        bool ok = update ? service().UserPreferencesUpdate(prefs, result)
-                         : service().UserPreferencesRequest(prefs, result);
+        bool ok =
+            update ? service().UserPreferencesUpdate(prefs, result) : service().UserPreferencesRequest(prefs, result);
         if (ok) {
             serialized(required(response), prefs);
             return true;
@@ -251,14 +255,13 @@ bool JsonRpcProfileHandlers::handle(std::u16string_view method, const Value& jso
     }
     if (method == u"user_data_request" || method == u"user_data_update") {
         bool update = method == u"user_data_update";
-        auto p = params(false, u"no parameters supplied",
-                        update ? u"User App Data Update Request"
-                               : u"User Application Service URL Request: No Parameters!");
+        auto p =
+            params(false, u"no parameters supplied",
+                   update ? u"User App Data Update Request" : u"User Application Service URL Request: No Parameters!");
         if (!p)
             return false;
         auto props = model<UserAppData>(*p);
-        bool ok =
-            update ? service().SetUserAppData(props, result) : service().RequestUserAppData(props, result);
+        bool ok = update ? service().SetUserAppData(props, result) : service().RequestUserAppData(props, result);
         if (!ok)
             return error(result);
         if (update)
@@ -266,11 +269,11 @@ bool JsonRpcProfileHandlers::handle(std::u16string_view method, const Value& jso
         else {
             auto token = Value(utf8(result.value_or(u"")));
             token.sdk_string = std::make_shared<const std::u16string>(result.value_or(u""));
-            required(response).result = std::make_shared<Value>(
-                Value::object({{"result", Value("success")}, {"token", std::move(token)}}));
+            required(response).result =
+                std::make_shared<Value>(Value::object({{"result", Value("success")}, {"token", std::move(token)}}));
         }
         return true;
     }
     throw std::invalid_argument("Unknown profile handler");
 }
-}
+} // namespace opensim::server

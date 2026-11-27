@@ -1,0 +1,1 @@
+rotation item=<xmrString2Float("0"),xmrString2Float("0"),xmrString2Float("0"),xmrString2Float("-1")>;integer converted;integer ordinary;integer negated;integer casted;list boxed;default{state_entry(){converted=xmrRotationToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrRotationToBool(item);boxed=[xmrRotationToBool(item)];}}

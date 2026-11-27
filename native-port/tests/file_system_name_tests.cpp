@@ -6,8 +6,9 @@
 #include <sstream>
 #include <stdexcept>
 using namespace opensim::framework::file_system_name;
+
 namespace {
-String decode(const std::string& text) {
+String decode(const std::string &text) {
     if (text == "~")
         return {};
     std::u16string out;
@@ -20,6 +21,7 @@ String decode(const std::string& text) {
     }
     return std::make_shared<const std::u16string>(std::move(out));
 }
+
 std::string encode(std::u16string_view text) {
     if (text.empty())
         return ".";
@@ -31,13 +33,16 @@ std::string encode(std::u16string_view text) {
         }
     return out;
 }
-std::u16string_view view(const String& s) {
+
+std::u16string_view view(const String &s) {
     return s ? std::u16string_view(*s) : std::u16string_view{};
 }
-void require(bool b, const char* name) {
+
+void require(bool b, const char *name) {
     if (!b)
         throw std::runtime_error(name);
 }
+
 void probe(CasingMode mode) {
     for (std::string line; std::getline(std::cin, line);) {
         try {
@@ -57,21 +62,21 @@ void probe(CasingMode mode) {
                 std::string kind, ignore, e, n;
                 row >> kind >> ignore >> e >> n;
                 auto expression = decode(e), name = decode(n);
-                std::cout << (kind == "w" ? matches_win32_expression(view(expression), view(name),
-                                                                     ignore == "1", mode)
-                                          : matches_simple_expression(view(expression), view(name),
-                                                                      ignore == "1", mode))
+                std::cout << (kind == "w"
+                                  ? matches_win32_expression(view(expression), view(name), ignore == "1", mode)
+                                  : matches_simple_expression(view(expression), view(name), ignore == "1", mode))
                           << '\n'
                           << std::flush;
             } else
                 throw std::runtime_error("Unknown query");
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
             std::cout << "EX:" << e.what() << '\n' << std::flush;
         }
     }
 }
-}
-int main(int argc, char** argv) {
+} // namespace
+
+int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string(argv[1]) == "--probe") {
             probe(argc > 2 && std::string(argv[2]) == "invariant" ? CasingMode::GlobalizationInvariant
@@ -84,8 +89,7 @@ int main(int argc, char** argv) {
         require(*translate_win32_expression(dot) == *dot && translate_win32_expression(dot) != dot,
                 "Dot retains modified identity even when value unchanged");
         require(translate_win32_expression({}) == star_literal(), "Null star literal");
-        require(*translate_win32_expression(std::make_shared<const std::u16string>(u"*.")) == u"<",
-                "DOS terminal dot");
+        require(*translate_win32_expression(std::make_shared<const std::u16string>(u"*.")) == u"<", "DOS terminal dot");
         require(!matches_simple_expression(u"*", u""), "Empty name rejection");
         require(matches_simple_expression(u"\\?", u"x"), "Source escaped-question behavior");
         require(matches_simple_expression(u"\\", u"x") && !matches_simple_expression(u"\\", u"xx"),
@@ -120,7 +124,7 @@ int main(int argc, char** argv) {
                 "Case backend is consulted lazily");
         std::cout << "PASS: FileSystemName identity/NFA/casing checks\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

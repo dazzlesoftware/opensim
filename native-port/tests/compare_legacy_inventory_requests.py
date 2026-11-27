@@ -96,6 +96,8 @@ def main():
         512,
         1024 | 1,
         2048 | 2,
+        4096,
+        4096 | 4,
     ]
     commands = [
         f'0 {n} 2 {mode} 3' for n, mode in itertools.product([0, 1, 2, 3, 10, 11, 12], modes)

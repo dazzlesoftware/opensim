@@ -5,52 +5,63 @@
 #include "dotnet_regex_sort.hpp"
 #include <array>
 #include <bit>
+
 namespace opensim::framework {
 namespace {
 using K = DotnetRegexNodeKind;
 using M = DotnetRegexFindMode;
 using Sets = std::vector<DotnetRegexFixedDistanceSet>;
+
 [[noreturn]] void slice_error() {
     throw DotnetRegexClassError("System.ArgumentOutOfRangeException", 0x80131502u,
                                 "Specified argument was out of the range of valid values.");
 }
+
 [[noreturn]] void index_error() {
     throw DotnetRegexClassError("System.IndexOutOfRangeException", 0x80131508u,
                                 "Index was outside the bounds of the array.");
 }
+
 int wrap(std::int64_t value) {
     return std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(value));
 }
+
 std::u16string_view slice(std::u16string_view value, int start) {
     if (start < 0 || static_cast<std::size_t>(start) > value.size())
         slice_error();
     return value.substr(start);
 }
+
 std::u16string_view prefix(std::u16string_view value, int count) {
     if (count < 0 || static_cast<std::size_t>(count) > value.size())
         slice_error();
     return value.substr(0, count);
 }
+
 char16_t at(std::u16string_view value, int index) {
     if (index < 0 || static_cast<std::size_t>(index) >= value.size())
         index_error();
     return value[index];
 }
-std::u16string_view str(const DotnetRegexNodeText& value) {
+
+std::u16string_view str(const DotnetRegexNodeText &value) {
     if (!value)
         throw DotnetRegexClassError("System.NullReferenceException", 0x80004003u,
                                     "Object reference not set to an instance of an object.");
     return *value;
 }
+
 int index(std::u16string_view value, std::u16string_view target) {
     auto found = value.find(target);
     return found == std::u16string_view::npos ? -1 : static_cast<int>(found);
 }
+
 int index(std::u16string_view value, char16_t target) {
     auto found = value.find(target);
     return found == std::u16string_view::npos ? -1 : static_cast<int>(found);
 }
-int any(std::u16string_view value, const std::vector<char16_t>& chars, bool negate = false) {
+
+int any(std::u16string_view value, const std::vector<char16_t> &chars, bool negate = false) {
     for (std::size_t i = 0; i < value.size(); ++i) {
         bool contained = std::find(chars.begin(), chars.end(), value[i]) != chars.end();
         if (contained != negate)
@@ -58,6 +69,7 @@ int any(std::u16string_view value, const std::vector<char16_t>& chars, bool nega
     }
     return -1;
 }
+
 int ordinal_ignore_case_index(std::u16string_view value, std::u16string_view ascii) {
     // The source prefix extractor accepts ASCII characters and ASCII case pairs
     // only. Non-ASCII input cannot equal an ASCII character ordinal-ignore-case.
@@ -71,9 +83,7 @@ int ordinal_ignore_case_index(std::u16string_view value, std::u16string_view asc
                 continue;
             if (a >= 128 || b >= 128)
                 break;
-            auto upper = [](char16_t c) {
-                return c >= u'a' && c <= u'z' ? static_cast<char16_t>(c - 32) : c;
-            };
+            auto upper = [](char16_t c) { return c >= u'a' && c <= u'z' ? static_cast<char16_t>(c - 32) : c; };
             if (upper(a) != upper(b))
                 break;
         }
@@ -82,11 +92,12 @@ int ordinal_ignore_case_index(std::u16string_view value, std::u16string_view asc
     }
     return -1;
 }
-std::optional<std::pair<DotnetRegexNodeText, int>> fixed_string(Sets& sets) {
+
+std::optional<std::pair<DotnetRegexNodeText, int>> fixed_string(Sets &sets) {
     std::optional<std::pair<DotnetRegexNodeText, int>> result;
     if (sets.size() < 2)
         return result;
-    regex_detail::sort(sets, [](auto& a, auto& b) {
+    regex_detail::sort(sets, [](auto &a, auto &b) {
         return a.distance < b.distance ? -1 : a.distance > b.distance ? 1 : 0;
     });
     std::u16string pending;
@@ -94,11 +105,9 @@ std::optional<std::pair<DotnetRegexNodeText, int>> fixed_string(Sets& sets) {
     for (int i = 0; i < static_cast<int>(sets.size()) + 1; ++i) {
         auto chars = i < static_cast<int>(sets.size()) ? sets[i].chars : nullptr;
         bool stop = !chars || chars->size() != 1 || sets[i].negated;
-        if (stop ||
-            (i > 0 && sets[i].distance != wrap(static_cast<std::int64_t>(sets[i - 1].distance) + 1))) {
+        if (stop || (i > 0 && sets[i].distance != wrap(static_cast<std::int64_t>(sets[i - 1].distance) + 1))) {
             if (start != -1 && i - start >= (result ? static_cast<int>(result->first->size()) : 2))
-                result = std::pair{std::make_shared<const std::u16string>(std::move(pending)),
-                                   sets[start].distance};
+                result = std::pair{std::make_shared<const std::u16string>(std::move(pending)), sets[start].distance};
             pending.clear();
             start = -1;
             if (stop)
@@ -110,24 +119,27 @@ std::optional<std::pair<DotnetRegexNodeText, int>> fixed_string(Sets& sets) {
     }
     return result;
 }
-}
+} // namespace
+
 void DotnetRegexFindOptimizations::caches(std::size_t count) {
     ascii_ = std::make_unique<DotnetRegexAsciiCacheSlot[]>(count);
     ascii_count_ = count;
 }
-const DotnetRegexAsciiCacheSlot& DotnetRegexFindOptimizations::ascii_lookup(std::size_t index) const {
+
+const DotnetRegexAsciiCacheSlot &DotnetRegexFindOptimizations::ascii_lookup(std::size_t index) const {
     if (index >= ascii_count_)
         index_error();
     return ascii_[index];
 }
-DotnetRegexFindOptimizations::DotnetRegexFindOptimizations(const DotnetRegexParsedPattern& tree,
-                                                           const DotnetRegexExecutionStack& stack)
+
+DotnetRegexFindOptimizations::DotnetRegexFindOptimizations(const DotnetRegexParsedPattern &tree,
+                                                           const DotnetRegexExecutionStack &stack)
     : owner_(tree.arena) {
     auto root = tree.root;
     if (!root)
         throw DotnetRegexClassError("System.NullReferenceException", 0x80004003u,
                                     "Object reference not set to an instance of an object.");
-    auto& d = data_;
+    auto &d = data_;
     bool rtl = (tree.options & 64) != 0;
     d.leading_prefix = runtime_empty_text();
     d.minimum_length = root->compute_min_length(stack);
@@ -162,8 +174,7 @@ DotnetRegexFindOptimizations::DotnetRegexFindOptimizations(const DotnetRegexPars
         d.mode = rtl ? M::LeadingString_RightToLeft : M::LeadingString_LeftToRight;
         return;
     }
-    bool non_backtracking = (tree.options & 1024) != 0,
-         compiled = (tree.options & 8) != 0 && !non_backtracking,
+    bool non_backtracking = (tree.options & 1024) != 0, compiled = (tree.options & 8) != 0 && !non_backtracking,
          interpreted = !compiled && !non_backtracking;
     if (rtl) {
         auto first = dotnet_regex_find_first_char_class(root, stack);
@@ -217,9 +228,8 @@ DotnetRegexFindOptimizations::DotnetRegexFindOptimizations(const DotnetRegexPars
             if (sets->size() > 3)
                 sets->erase(sets->begin() + 3, sets->end());
             d.fixed_sets = std::move(sets);
-            d.mode = d.fixed_sets->size() == 1 && (*d.fixed_sets)[0].distance == 0
-                         ? M::LeadingSet_LeftToRight
-                         : M::FixedDistanceSets_LeftToRight;
+            d.mode = d.fixed_sets->size() == 1 && (*d.fixed_sets)[0].distance == 0 ? M::LeadingSet_LeftToRight
+                                                                                   : M::FixedDistanceSets_LeftToRight;
             caches(d.fixed_sets->size());
             return;
         }
@@ -230,8 +240,9 @@ DotnetRegexFindOptimizations::DotnetRegexFindOptimizations(const DotnetRegexPars
         caches(1);
     }
 }
-bool DotnetRegexFindOptimizations::try_find_right_to_left(std::u16string_view value, int& pos, int start) {
-    auto& d = data_;
+
+bool DotnetRegexFindOptimizations::try_find_right_to_left(std::u16string_view value, int &pos, int start) {
+    auto &d = data_;
     int length = static_cast<int>(value.size());
     if (pos < d.minimum_length) {
         pos = 0;
@@ -293,8 +304,9 @@ bool DotnetRegexFindOptimizations::try_find_right_to_left(std::u16string_view va
         return true;
     }
 }
-bool DotnetRegexFindOptimizations::try_find_left_to_right(std::u16string_view value, int& pos, int start) {
-    auto& d = data_;
+
+bool DotnetRegexFindOptimizations::try_find_left_to_right(std::u16string_view value, int &pos, int start) {
+    auto &d = data_;
     int length = static_cast<int>(value.size());
     if (pos > wrap(static_cast<std::int64_t>(length) - d.minimum_length)) {
         pos = length;
@@ -346,9 +358,8 @@ bool DotnetRegexFindOptimizations::try_find_left_to_right(std::u16string_view va
     case M::LeadingString_LeftToRight:
     case M::LeadingString_OrdinalIgnoreCase_LeftToRight: {
         auto tail = slice(value, pos);
-        int found = d.mode == M::LeadingString_LeftToRight
-                        ? index(tail, str(d.leading_prefix))
-                        : ordinal_ignore_case_index(tail, str(d.leading_prefix));
+        int found = d.mode == M::LeadingString_LeftToRight ? index(tail, str(d.leading_prefix))
+                                                           : ordinal_ignore_case_index(tail, str(d.leading_prefix));
         if (found >= 0) {
             pos = wrap(static_cast<std::int64_t>(pos) + found);
             return true;
@@ -357,7 +368,7 @@ bool DotnetRegexFindOptimizations::try_find_left_to_right(std::u16string_view va
         return false;
     }
     case M::LeadingSet_LeftToRight: {
-        auto& set = (*d.fixed_sets)[0];
+        auto &set = (*d.fixed_sets)[0];
         auto tail = slice(value, pos);
         if (set.chars && set.chars->size() <= 5) {
             int found = any(tail, *set.chars, set.negated);
@@ -387,8 +398,8 @@ bool DotnetRegexFindOptimizations::try_find_left_to_right(std::u16string_view va
         return false;
     }
     case M::FixedDistanceSets_LeftToRight: {
-        auto& sets = *d.fixed_sets;
-        auto& first = sets[0];
+        auto &sets = *d.fixed_sets;
+        auto &first = sets[0];
         int limit = wrap(static_cast<std::int64_t>(length) - std::max(1, d.minimum_length));
         bool small = first.chars && first.chars->size() <= 5;
         for (int candidate = pos; candidate <= limit; ++candidate) {
@@ -402,14 +413,14 @@ bool DotnetRegexFindOptimizations::try_find_left_to_right(std::u16string_view va
                 if (candidate > limit)
                     break;
             } else if (!dotnet_regex_char_in_class(
-                           at(value, wrap(static_cast<std::int64_t>(candidate) + first.distance)),
-                           str(first.set), ascii_[0]))
+                           at(value, wrap(static_cast<std::int64_t>(candidate) + first.distance)), str(first.set),
+                           ascii_[0]))
                 continue;
             std::size_t i = 1;
             for (; i < sets.size(); ++i)
                 if (!dotnet_regex_char_in_class(
-                        at(value, wrap(static_cast<std::int64_t>(candidate) + sets[i].distance)),
-                        str(sets[i].set), ascii_[i]))
+                        at(value, wrap(static_cast<std::int64_t>(candidate) + sets[i].distance)), str(sets[i].set),
+                        ascii_[i]))
                     break;
             if (i == sets.size()) {
                 pos = candidate;
@@ -420,7 +431,7 @@ bool DotnetRegexFindOptimizations::try_find_left_to_right(std::u16string_view va
         return false;
     }
     case M::LiteralAfterLoop_LeftToRight: {
-        auto& literal = *d.literal_after_loop;
+        auto &literal = *d.literal_after_loop;
         auto loop = literal.loop;
         int search = pos;
         for (;;) {
@@ -448,4 +459,4 @@ bool DotnetRegexFindOptimizations::try_find_left_to_right(std::u16string_view va
         return true;
     }
 }
-}
+} // namespace opensim::framework

@@ -2,8 +2,9 @@
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/services/local_simulation.hpp"
 #include <stdexcept>
+
 namespace opensim::services {
-void LocalSimulationConnector::initialise(const server::IniConfig* config) {
+void LocalSimulationConnector::initialise(const server::IniConfig *config) {
     if (!config)
         throw std::invalid_argument("Null module configuration");
     if (config->has_section("Modules") && config->get("Modules", "SimulationServices", "") == name) {
@@ -11,7 +12,8 @@ void LocalSimulationConnector::initialise(const server::IniConfig* config) {
         enabled_ = true;
     }
 }
-void LocalSimulationConnector::init(const Scene& input) {
+
+void LocalSimulationConnector::init(const Scene &input) {
     auto scene = input;
     if (!scene)
         throw std::invalid_argument("Null scene");
@@ -19,7 +21,8 @@ void LocalSimulationConnector::init(const Scene& input) {
     if (!scenes_.contains(scene->region_id().str()))
         scenes_[scene->region_id().str()] = scene;
 }
-void LocalSimulationConnector::remove_scene(const Scene& input) {
+
+void LocalSimulationConnector::remove_scene(const Scene &input) {
     auto scene = input;
     if (!scene)
         throw std::invalid_argument("Null scene");
@@ -27,27 +30,30 @@ void LocalSimulationConnector::remove_scene(const Scene& input) {
     if (scenes_.contains(scene->region_id().str()))
         scenes_.erase(scene->region_id().str());
 }
-void LocalSimulationConnector::add_region(const Scene& input) {
+
+void LocalSimulationConnector::add_region(const Scene &input) {
     if (!enabled_)
         return;
     auto scene = input;
     init(scene);
     scene->register_simulation_service(this);
 }
-void LocalSimulationConnector::remove_region(const Scene& input) {
+
+void LocalSimulationConnector::remove_region(const Scene &input) {
     if (!enabled_)
         return;
     auto scene = input;
     remove_scene(scene);
     scene->unregister_simulation_service(this);
 }
-LocalSimulationConnector::Scene LocalSimulationConnector::find(const framework::Uuid& region) const {
+
+LocalSimulationConnector::Scene LocalSimulationConnector::find(const framework::Uuid &region) const {
     std::lock_guard lock(mutex_);
     auto found = scenes_.find(region.str());
     return found == scenes_.end() ? nullptr : found->second;
 }
-std::shared_ptr<framework::AgentTransferScene>
-LocalSimulationConnector::get_scene(const framework::Uuid& region) {
+
+std::shared_ptr<framework::AgentTransferScene> LocalSimulationConnector::get_scene(const framework::Uuid &region) {
     if (auto scene = find(region))
         return scene;
     std::lock_guard lock(mutex_);
@@ -55,7 +61,8 @@ LocalSimulationConnector::get_scene(const framework::Uuid& region) {
         throw std::out_of_range("No fallback simulation scene");
     return scenes_.begin()->second;
 }
-bool LocalSimulationConnector::visit(const std::function<bool(const Scene&)>& action) {
+
+bool LocalSimulationConnector::visit(const std::function<bool(const Scene &)> &action) {
     std::unique_lock lock(mutex_);
     auto cursor = scenes_.begin();
     while (cursor != scenes_.end()) {
@@ -69,22 +76,25 @@ bool LocalSimulationConnector::visit(const std::function<bool(const Scene&)>& ac
     }
     return false;
 }
-bool LocalSimulationConnector::is_local_region(const framework::Uuid& region) const {
+
+bool LocalSimulationConnector::is_local_region(const framework::Uuid &region) const {
     std::lock_guard lock(mutex_);
     return scenes_.contains(region.str());
 }
+
 bool LocalSimulationConnector::is_local_region(std::uint64_t handle) {
-    return visit([&](const Scene& scene) { return scene->region_handle() == handle; });
+    return visit([&](const Scene &scene) { return scene->region_handle() == handle; });
 }
-bool LocalSimulationConnector::create_agent(const GridRegion* source, GridRegion& destination,
-                                            const std::shared_ptr<framework::AgentCircuitData>& circuit,
-                                            std::uint32_t flags, LoginTransferContext& context,
-                                            std::string& reason) {
+
+bool LocalSimulationConnector::create_agent(const GridRegion *source, GridRegion &destination,
+                                            const std::shared_ptr<framework::AgentCircuitData> &circuit,
+                                            std::uint32_t flags, LoginTransferContext &context, std::string &reason) {
     return create_agent(source, &destination, circuit, flags, &context, reason);
 }
-bool LocalSimulationConnector::create_agent(const GridRegion* source, GridRegion* destination,
-                                            const std::shared_ptr<framework::AgentCircuitData>& input,
-                                            std::uint32_t flags, LoginTransferContext*, std::string& reason) {
+
+bool LocalSimulationConnector::create_agent(const GridRegion *source, GridRegion *destination,
+                                            const std::shared_ptr<framework::AgentCircuitData> &input,
+                                            std::uint32_t flags, LoginTransferContext *, std::string &reason) {
     auto circuit = input;
     if (!destination) {
         reason = "Given destination was null";
@@ -95,14 +105,14 @@ bool LocalSimulationConnector::create_agent(const GridRegion* source, GridRegion
     reason = "Did not find region " + destination->name.value_or("");
     return false;
 }
-bool LocalSimulationConnector::update_agent(GridRegion& destination,
-                                            const std::shared_ptr<framework::AgentData>& data,
-                                            LoginTransferContext& context) {
+
+bool LocalSimulationConnector::update_agent(GridRegion &destination, const std::shared_ptr<framework::AgentData> &data,
+                                            LoginTransferContext &context) {
     return update_agent(&destination, data, &context);
 }
-bool LocalSimulationConnector::update_agent(GridRegion* destination,
-                                            const std::shared_ptr<framework::AgentData>& input,
-                                            LoginTransferContext*) {
+
+bool LocalSimulationConnector::update_agent(GridRegion *destination, const std::shared_ptr<framework::AgentData> &input,
+                                            LoginTransferContext *) {
     auto data = input;
     if (!destination)
         return false;
@@ -110,33 +120,35 @@ bool LocalSimulationConnector::update_agent(GridRegion* destination,
         return scene->incoming_update_child_agent(data);
     return false;
 }
-bool LocalSimulationConnector::update_agent(GridRegion& destination,
-                                            const std::shared_ptr<framework::AgentPosition>& data) {
+
+bool LocalSimulationConnector::update_agent(GridRegion &destination,
+                                            const std::shared_ptr<framework::AgentPosition> &data) {
     return update_agent(&destination, data);
 }
-bool LocalSimulationConnector::update_agent(GridRegion* destination,
-                                            const std::shared_ptr<framework::AgentPosition>& input) {
+
+bool LocalSimulationConnector::update_agent(GridRegion *destination,
+                                            const std::shared_ptr<framework::AgentPosition> &input) {
     auto data = input;
     if (!destination)
         return false;
-    visit([&](const Scene& scene) {
+    visit([&](const Scene &scene) {
         scene->incoming_update_child_agent(data);
         return false;
     });
     return true;
 }
-bool LocalSimulationConnector::query_access(GridRegion& destination, const framework::Uuid& agent,
-                                            const std::optional<std::string>& home, bool teleport,
-                                            const framework::Vector3& position,
-                                            std::vector<framework::Uuid>& features,
-                                            LoginTransferContext& context, std::string& reason) {
+
+bool LocalSimulationConnector::query_access(GridRegion &destination, const framework::Uuid &agent,
+                                            const std::optional<std::string> &home, bool teleport,
+                                            const framework::Vector3 &position, std::vector<framework::Uuid> &features,
+                                            LoginTransferContext &context, std::string &reason) {
     return query_access(&destination, agent, home, teleport, position, &features, &context, reason);
 }
-bool LocalSimulationConnector::query_access(GridRegion* destination, const framework::Uuid& agent,
-                                            const std::optional<std::string>& home, bool teleport,
-                                            const framework::Vector3& position,
-                                            std::vector<framework::Uuid>* features,
-                                            LoginTransferContext* context, std::string& reason) {
+
+bool LocalSimulationConnector::query_access(GridRegion *destination, const framework::Uuid &agent,
+                                            const std::optional<std::string> &home, bool teleport,
+                                            const framework::Vector3 &position, std::vector<framework::Uuid> *features,
+                                            LoginTransferContext *context, std::string &reason) {
     reason = "Communications failure";
     if (!destination)
         return false;
@@ -145,16 +157,16 @@ bool LocalSimulationConnector::query_access(GridRegion* destination, const frame
         if (!context)
             throw std::invalid_argument("Null transfer context");
         if (context->outbound_version < 0.3f && (x != 256 || y != 256)) {
-            reason =
-                "Destination is a variable-sized region, and source is an old simulator. Consider upgrading.";
+            reason = "Destination is a variable-sized region, and source is an old simulator. Consider upgrading.";
             return false;
         }
         return scene->query_access(agent, home, teleport, position, features, reason);
     }
     return false;
 }
-bool LocalSimulationConnector::release_agent(const framework::Uuid& origin, const framework::Uuid& agent,
-                                             const std::string&) {
+
+bool LocalSimulationConnector::release_agent(const framework::Uuid &origin, const framework::Uuid &agent,
+                                             const std::string &) {
     if (auto scene = find(origin)) {
         auto transfer = scene->entity_transfer_module();
         if (!transfer)
@@ -164,12 +176,14 @@ bool LocalSimulationConnector::release_agent(const framework::Uuid& origin, cons
     }
     return false;
 }
-bool LocalSimulationConnector::close_agent(GridRegion& destination, const framework::Uuid& agent,
-                                           const std::optional<std::string>& auth) {
+
+bool LocalSimulationConnector::close_agent(GridRegion &destination, const framework::Uuid &agent,
+                                           const std::optional<std::string> &auth) {
     return close_agent(&destination, agent, auth);
 }
-bool LocalSimulationConnector::close_agent(GridRegion* destination, const framework::Uuid& agent,
-                                           const std::optional<std::string>& auth) {
+
+bool LocalSimulationConnector::close_agent(GridRegion *destination, const framework::Uuid &agent,
+                                           const std::optional<std::string> &auth) {
     if (!destination)
         return false;
     if (auto scene = find(destination->id)) {
@@ -178,7 +192,8 @@ bool LocalSimulationConnector::close_agent(GridRegion* destination, const framew
     }
     return false;
 }
-bool LocalSimulationConnector::create_object(GridRegion* destination, const framework::Vector3& position,
+
+bool LocalSimulationConnector::create_object(GridRegion *destination, const framework::Vector3 &position,
                                              std::shared_ptr<SimulationObject> object, bool local_call) {
     if (!destination)
         return false;
@@ -197,4 +212,4 @@ bool LocalSimulationConnector::create_object(GridRegion* destination, const fram
     }
     return false;
 }
-}
+} // namespace opensim::services

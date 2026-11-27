@@ -1,0 +1,1 @@
+YOption chars;YOption arrays;float result;integer after;default{state_entry(){result=llFabs('A');after=1;}}

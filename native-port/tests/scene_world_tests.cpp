@@ -12,27 +12,33 @@
 #include <stdexcept>
 #include <thread>
 using namespace opensim;
+
 namespace {
 int checks = 0;
-void check(bool okay, const char* name) {
+
+void check(bool okay, const char *name) {
     if (!okay)
         throw std::runtime_error(name);
     ++checks;
 }
+
 template <class F> bool throws(F call) {
     try {
         call();
         return false;
-    } catch (const std::exception&) {
+    } catch (const std::exception &) {
         return true;
     }
 }
+
 std::uint32_t bits(float value) {
     return std::bit_cast<std::uint32_t>(value);
 }
-float parse_bits(const std::string& text) {
+
+float parse_bits(const std::string &text) {
     return std::bit_cast<float>(static_cast<std::uint32_t>(std::stoul(text, nullptr, 16)));
 }
+
 void terrain_probe() {
     scene::Terrain terrain(32, 32);
     for (int x = 0; x < 32; ++x)
@@ -90,6 +96,7 @@ void terrain_probe() {
         std::cout << '\n';
     }
 }
+
 void terrain_tests() {
     scene::Terrain t(32, 16);
     check(t.width() == 32 && t.height() == 16 && t.get(0, 0) == 0 && !t.tainted(),
@@ -111,8 +118,7 @@ void terrain_tests() {
     t.set(1, 1, 100);
     check(t.height_at(.25f, .75f) == 35.f && t.height_at(.75f, .25f) == 30.f,
           "height sampling follows source triangles");
-    check(t.height_at(-1, .25f) == 5.f && t.height_at(.25f, -1) == 2.5f,
-          "height sampling interpolates clamped edges");
+    check(t.height_at(-1, .25f) == 5.f && t.height_at(.25f, -1) == 2.5f, "height sampling interpolates clamped edges");
     check(t.height_at(100, 100) == 0.f, "height sampling clamps finite outer edge");
     check(throws([&] { t.height_at(std::numeric_limits<float>::quiet_NaN(), 0); }),
           "NaN coordinate preserves source indexing failure");
@@ -135,14 +141,14 @@ void terrain_tests() {
     auto clone = t.clone();
     check(clone.get(0, 15) == -100 && !clone.tainted() && t.tainted_count() == 2,
           "source Clone copies heights without taints");
-    check(throws([&] { t.get(-1, 0); }) && throws([&] { t.patch(2, 0); }),
-          "checked native array/patch bounds");
+    check(throws([&] { t.get(-1, 0); }) && throws([&] { t.patch(2, 0); }), "checked native array/patch bounds");
     auto nan = std::numeric_limits<float>::quiet_NaN();
     t.set(0, 0, nan);
     t.clear_taint();
     t.set(0, 0, nan);
     check(t.tainted(), "NaN assignment always marks source change");
 }
+
 void world_tests() {
     {
         scene::World clamped;
@@ -161,8 +167,8 @@ void world_tests() {
     framework::Uuid owner("00000000-0000-0000-0000-000000000007");
     scene::World world({}, 256, 256, 100);
     auto object = scene::SceneObject::primitive(owner, {128, 128, 25});
-    check(!object.id.is_zero() && object.owner == owner && object.creator == owner &&
-              object.rezzer == owner && object.last_owner == owner,
+    check(!object.id.is_zero() && object.owner == owner && object.creator == owner && object.rezzer == owner &&
+              object.last_owner == owner,
           "new primitive source identity/ownership");
     check(object.name == "Object" && object.rotation.w == 1 && !object.texture_entry.empty() &&
               object.shape.pcode == 9 && object.shape.path_scale_x == 100,
@@ -181,9 +187,8 @@ void world_tests() {
           "remove clears both indexes and missing remove returns false");
     auto events = world.drain_events();
     check(events.size() == 4 && events[0].kind == scene::WorldEventKind::Added &&
-              events[1].kind == scene::WorldEventKind::Updated &&
-              events[3].kind == scene::WorldEventKind::Removed && events[0].object.position.x == 128 &&
-              events[3].sequence == 4,
+              events[1].kind == scene::WorldEventKind::Updated && events[3].kind == scene::WorldEventKind::Removed &&
+              events[0].object.position.x == 128 && events[3].sequence == 4,
           "lifecycle events retain snapshots and order");
     check(world.drain_events().empty(), "events drain once");
     scene::PrimShape shape;
@@ -217,13 +222,11 @@ void world_tests() {
     paint.default_texture->color({0.5f, 1.f, 1.f, 1.f});
     check(world.update_texture(object.id, paint.bytes()), "visible prim color edit is applied");
     texture_events = world.drain_events();
-    check(texture_events.size() == 1 && texture_events.front().script_changes == 2,
-          "color edit reports CHANGED_COLOR");
+    check(texture_events.size() == 1 && texture_events.front().script_changes == 2, "color edit reports CHANGED_COLOR");
     paint.default_texture->material_id(owner);
     check(!world.update_texture(object.id, paint.bytes()), "material-only texture edit is ignored");
     world.drain_events();
-    check(world.update_extra_physics(object.id, {2, 1200.f, .1f, .2f, -.5f}).has_value(),
-          "custom physics applied");
+    check(world.update_extra_physics(object.id, {2, 1200.f, .1f, .2f, -.5f}).has_value(), "custom physics applied");
     world.drain_events();
     check(world.update_material(object.id, 2) == 2, "glass material is applied");
     check(world.object(object.id)->physics == scene::PrimPhysicsProperties{2, 1200.f, .2f, .7f, -.5f},
@@ -275,8 +278,7 @@ void world_tests() {
     attachment.shape.state = 1;
     attachment.parent_id = 9;
     auto a = world.add(attachment, true);
-    check(a && a->parent_id == 9 && !a->attached_to_backup && a->changed,
-          "attachment root parent and backup state");
+    check(a && a->parent_id == 9 && !a->attached_to_backup && a->changed, "attachment root parent and backup state");
     auto earlier_id = attachment;
     auto listed_root = scene::SceneObject::primitive(owner, {10, 20, 30});
     listed_root.sale_type = 2;
@@ -289,6 +291,23 @@ void world_tests() {
     const auto linked = world.add(child);
     check(linked && linked->parent_id == root->local_id && !linked->attached_to_backup,
           "linked child retains parent and has no separate backup registration");
+    check(world.geometric_center(linked->id) == framework::Vector3{.5f, 1.f, 1.5f},
+          "geometric center averages local offsets and includes the root in the divisor");
+    {
+        scene::World center_world;
+        const auto center_root = center_world.add(scene::SceneObject::primitive(owner, {128, 128, 25}));
+        const auto add_child = [&](const char *id, float y) {
+            auto part = scene::SceneObject::primitive(owner, {0, y, 0});
+            part.id = framework::Uuid(id);
+            part.parent_id = center_root->local_id;
+            check(center_world.add(part).has_value(), "insert geometric center fixture child");
+        };
+        add_child("00000000-0000-4000-8000-000000000001", 100.f);
+        add_child("00000000-0000-4000-8000-000000000003", -100.f);
+        add_child("00000000-0000-4000-8000-000000000002", .000001f);
+        check(center_world.geometric_center(center_root->id).y == .000001f / 4.f,
+              "geometric center accumulates in membership order before rounding");
+    }
     {
         scene::World bounds_world({}, 16, 16);
         const auto box = bounds_world.add(scene::SceneObject::primitive(owner, {4, 4, 4}, {2, 2, 2}));
@@ -306,8 +325,8 @@ void world_tests() {
     check(world.update_object_text(child.id, false, "Renamed child"), "rename linked child");
     const auto rename_events = world.drain_events();
     check(rename_events.size() == 1 && rename_events.front().kind == scene::WorldEventKind::Updated &&
-              rename_events.front().object.id == child.id &&
-              rename_events.front().object.name == "Renamed child" && world.object(root->id)->changed,
+              rename_events.front().object.id == child.id && rename_events.front().object.name == "Renamed child" &&
+              world.object(root->id)->changed,
           "child rename schedules update and marks root changed");
     check(world.update_object_text(child.id, false, "Renamed child") && world.drain_events().empty(),
           "same name does not schedule another update");
@@ -319,18 +338,16 @@ void world_tests() {
     const auto extra = world.add(scene::SceneObject::primitive(owner, {2, 3, 5}), false, false);
     check(extra && world.link_prim(extra->id, destination->id), "add part to existing linkset");
     const auto link_events = world.drain_events();
-    check(std::any_of(
-              link_events.begin(), link_events.end(),
-              [&](const auto& event) { return event.object.id == child.id && event.script_changes == 32; }),
+    check(std::any_of(link_events.begin(), link_events.end(),
+                      [&](const auto &event) { return event.object.id == child.id && event.script_changes == 32; }),
           "existing child receives link-change event");
     check(world.delink_child(extra->id, destination->id), "delink extra part");
     check(world.object(extra->id)->attached_to_backup, "delinked child gets its own backup registration");
     check(world.object(extra->id)->rezzed_at == destination_prim.rezzed_at,
           "delinked child inherits the linkset root rez time");
     const auto delink_events = world.drain_events();
-    check(std::any_of(
-              delink_events.begin(), delink_events.end(),
-              [&](const auto& event) { return event.object.id == child.id && event.script_changes == 32; }),
+    check(std::any_of(delink_events.begin(), delink_events.end(),
+                      [&](const auto &event) { return event.object.id == child.id && event.script_changes == 32; }),
           "remaining child receives delink-change event");
     check(world.update_shape(child.id, child.shape), "edit a linked child shape");
     check(world.object(destination->id)->rezzed_at > destination_prim.rezzed_at &&
@@ -341,18 +358,15 @@ void world_tests() {
               !former_root->attached_to_backup,
           "linking clears the source root sale listing");
     const auto merged = world.object(child.id);
-    check(merged && merged->parent_id == destination->local_id &&
-              merged->position == framework::Vector3{9, 19, 29},
+    check(merged && merged->parent_id == destination->local_id && merged->position == framework::Vector3{9, 19, 29},
           "merge flattens child while retaining world position");
     check(world.delink_root(destination->id), "delink selected root");
     const auto promoted = world.object(root->id);
     const auto retained = world.object(child.id);
-    check(promoted && promoted->parent_id == 0 && promoted->position == framework::Vector3{10, 20, 30} &&
-              retained && retained->parent_id == promoted->local_id &&
-              retained->position == framework::Vector3{1, 2, 3},
+    check(promoted && promoted->parent_id == 0 && promoted->position == framework::Vector3{10, 20, 30} && retained &&
+              retained->parent_id == promoted->local_id && retained->position == framework::Vector3{1, 2, 3},
           "remaining parts stay linked with their world transforms");
-    check(promoted->rezzed_at == world.object(destination->id)->rezzed_at &&
-              retained->rezzed_at == promoted->rezzed_at,
+    check(promoted->rezzed_at == world.object(destination->id)->rezzed_at && retained->rezzed_at == promoted->rezzed_at,
           "remaining parts inherit the former root rez time when the root is delinked");
     check(world.remove(root->id) && !world.object(child.id), "root removal removes linked child");
     check(!world.add(child), "missing link parent rejected");
@@ -390,15 +404,13 @@ void world_tests() {
     world.expire_temporary_objects(before_expiry + std::chrono::seconds(59));
     check(world.object(temporary->id).has_value(), "temporary group survives before its deadline");
     world.expire_temporary_objects(before_expiry + std::chrono::seconds(61));
-    check(!world.object(temporary->id) && !world.object(temporary_child.id),
-          "temporary expiry removes whole linkset");
+    check(!world.object(temporary->id) && !world.object(temporary_child.id), "temporary expiry removes whole linkset");
     earlier_id.id = framework::Uuid("00000000-0000-0000-0000-000000000001");
     check(world.add(earlier_id, false).has_value(), "second attachment");
     const auto worn = world.attachments(9);
     check(worn.size() == 2 && worn[0].id == attachment.id && worn[1].id == earlier_id.id,
           "attachments preserve insertion order");
-    check(world.remove(attachment.id) && world.attachments(9).size() == 1,
-          "removed attachment leaves wearer index");
+    check(world.remove(attachment.id) && world.attachments(9).size() == 1, "removed attachment leaves wearer index");
     scene::World wrapping({}, 16, 16, 0xffffffffu);
     check(wrapping.allocate_local_id() == 0 && wrapping.allocate_local_id() == 1,
           "unchecked uint32 local-ID wrap includes zero");
@@ -410,8 +422,7 @@ void world_tests() {
     check(event_world.object(event_object.id)->flags == 0x102c8u,
           "source local touch/money/drop flags preserve unrelated flags and scripted state");
     event_world.set_inventory_state(event_object.id, true, false, false, 0u);
-    check(event_world.object(event_object.id)->flags == 8 &&
-              event_world.object(event_object.id)->inventory_empty,
+    check(event_world.object(event_object.id)->flags == 8 && event_world.object(event_object.id)->inventory_empty,
           "clearing script registrations clears only source local flags");
     scene::World threaded;
     std::mutex ids_mutex;
@@ -425,13 +436,14 @@ void world_tests() {
                 ids.insert(id);
             }
         });
-    for (auto& thread : threads)
+    for (auto &thread : threads)
         thread.join();
     check(ids.size() == 8000 && *ids.begin() == 720001 && *ids.rbegin() == 728000,
           "concurrent shared allocator produces unique source increment sequence");
 }
-}
-int main(int argc, char** argv) {
+} // namespace
+
+int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string(argv[1]) == "--terrain-probe") {
             terrain_probe();
@@ -441,7 +453,7 @@ int main(int argc, char** argv) {
         world_tests();
         std::cout << "PASS: " << checks << " scene/world foundation checks\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << "FAIL: " << e.what() << '\n';
         return 1;
     }

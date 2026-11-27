@@ -29,8 +29,9 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <filesystem>
 #include <string>
 #include <string_view>
+
 namespace opensim::framework {
 inline std::filesystem::path utf8_path(std::string_view text) {
-    return std::filesystem::path(std::u8string(text.begin(),text.end()));
+    return std::filesystem::path(std::u8string(text.begin(), text.end()));
 }
-}
+} // namespace opensim::framework

@@ -19,26 +19,26 @@ bool valid_hash(std::string_view hash) {
            hash.find_first_not_of("0123456789abcdefABCDEF") == std::string_view::npos;
 }
 
-std::optional<std::string> read_file(const fs::path& file) {
+std::optional<std::string> read_file(const fs::path &file) {
     std::ifstream stream(file, std::ios::binary);
     if (!stream)
         return std::nullopt;
     try {
         return std::string(std::istreambuf_iterator<char>(stream), std::istreambuf_iterator<char>());
-    } catch (const std::ios_base::failure&) {
+    } catch (const std::ios_base::failure &) {
         return std::nullopt;
     }
 }
 
-bool regular_file(const fs::path& path) {
+bool regular_file(const fs::path &path) {
     std::error_code error;
     return fs::is_regular_file(path, error);
 }
 
-void create_archive_path(const fs::path& base, const fs::path& relative) {
+void create_archive_path(const fs::path &base, const fs::path &relative) {
     fs::create_directories(base);
     auto directory = base;
-    for (const auto& component : relative) {
+    for (const auto &component : relative) {
         directory /= component;
         const auto status = fs::symlink_status(directory);
         if (fs::is_regular_file(status)) {
@@ -54,7 +54,7 @@ void create_archive_path(const fs::path& base, const fs::path& relative) {
     }
 }
 
-void publish(const fs::path& temporary_directory, const fs::path& destination, std::string_view bytes) {
+void publish(const fs::path &temporary_directory, const fs::path &destination, std::string_view bytes) {
     const auto temporary = temporary_directory / (framework::Uuid::random().str() + ".tmp");
     try {
         std::ofstream stream(temporary, std::ios::binary);
@@ -69,7 +69,7 @@ void publish(const fs::path& temporary_directory, const fs::path& destination, s
         throw;
     }
 }
-}
+} // namespace
 
 FsAssetFiles::FsAssetFiles(fs::path base, fs::path spool, bool osgrid_layout)
     : base_(std::move(base)), spool_(std::move(spool)), osgrid_layout_(osgrid_layout) {
@@ -80,7 +80,7 @@ FsAssetFiles::FsAssetFiles(fs::path base, fs::path spool, bool osgrid_layout)
 
 std::string FsAssetFiles::digest(std::string_view bytes) {
     auto hash = framework::sha256_hex(bytes);
-    for (auto& digit : hash)
+    for (auto &digit : hash)
         if (digit >= 'a' && digit <= 'f')
             digit -= 'a' - 'A';
     return hash;
@@ -114,7 +114,7 @@ std::optional<std::string> FsAssetFiles::read(std::string_view hash) const {
             return std::nullopt;
         try {
             return network::inflate_gzip(*bytes);
-        } catch (const std::exception&) {
+        } catch (const std::exception &) {
             return std::nullopt;
         }
     }
@@ -131,7 +131,7 @@ bool FsAssetFiles::stage(std::string_view hash, std::string_view bytes) const {
     try {
         publish(spool_ / "spool", staged, bytes);
         return true;
-    } catch (const fs::filesystem_error&) {
+    } catch (const fs::filesystem_error &) {
         if (!regular_file(staged) && !regular_file(compressed))
             throw;
         return false;
@@ -141,7 +141,7 @@ bool FsAssetFiles::stage(std::string_view hash, std::string_view bytes) const {
 std::size_t FsAssetFiles::flush() const {
     std::size_t count = 0;
     std::exception_ptr first_failure;
-    for (const auto& file : fs::directory_iterator(spool_)) {
+    for (const auto &file : fs::directory_iterator(spool_)) {
         if (!file.is_regular_file() || file.path().extension() != ".asset")
             continue;
         const auto hash = file.path().stem().string();
@@ -167,4 +167,4 @@ std::size_t FsAssetFiles::flush() const {
         std::rethrow_exception(first_failure);
     return count;
 }
-}
+} // namespace opensim::services

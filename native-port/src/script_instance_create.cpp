@@ -3,17 +3,18 @@
 #include "opensim/scene/script_instance_create.hpp"
 #include "opensim/script/asset_text.hpp"
 #include <stdexcept>
+
 namespace opensim::scene {
 ScriptInstanceCreateController::ScriptInstanceCreateController(ScriptInstanceCreateBackend backend)
     : backend_(std::move(backend)) {
-    if (!backend_.can_run || !backend_.mark_scripted || !backend_.scripts_disabled ||
-        !backend_.trust_binaries || !backend_.has_saved_state || !backend_.find_item ||
-        !backend_.load_asset || !backend_.local_id || !backend_.trigger_rez || !backend_.store_errors ||
-        !backend_.active_scripts || !backend_.schedule_full)
+    if (!backend_.can_run || !backend_.mark_scripted || !backend_.scripts_disabled || !backend_.trust_binaries ||
+        !backend_.has_saved_state || !backend_.find_item || !backend_.load_asset || !backend_.local_id ||
+        !backend_.trigger_rez || !backend_.store_errors || !backend_.active_scripts || !backend_.schedule_full)
         throw std::invalid_argument("Incomplete script instance creation backend");
 }
-bool ScriptInstanceCreateController::create(std::shared_ptr<framework::TaskInventoryItem> item, int start,
-                                            bool post, const std::string& engine, int state) const {
+
+bool ScriptInstanceCreateController::create(std::shared_ptr<framework::TaskInventoryItem> item, int start, bool post,
+                                            const std::string &engine, int state) const {
     if (!backend_.can_run(item)) {
         if (!item)
             throw std::invalid_argument("Null task inventory item");
@@ -28,8 +29,8 @@ bool ScriptInstanceCreateController::create(std::shared_ptr<framework::TaskInven
     auto key = item->item_id;
     auto found = backend_.find_item(item->item_id);
     if (!found) {
-        backend_.store_errors(
-            key, std::vector<std::string>{"TaskItem ID " + item->item_id.str() + " could not be found"});
+        backend_.store_errors(key,
+                              std::vector<std::string>{"TaskItem ID " + item->item_id.str() + " could not be found"});
         if (backend_.error)
             backend_.error("Could not start script: task inventory item not found");
         return false;
@@ -48,8 +49,8 @@ bool ScriptInstanceCreateController::create(std::shared_ptr<framework::TaskInven
     }
     auto asset = backend_.load_asset(item->asset_id);
     if (!asset) {
-        backend_.store_errors(
-            key, std::vector<std::string>{"asset ID " + item->asset_id.str() + " could not be found"});
+        backend_.store_errors(key,
+                              std::vector<std::string>{"asset ID " + item->asset_id.str() + " could not be found"});
         if (backend_.error)
             backend_.error("Could not start script: asset not found");
         return false;
@@ -70,4 +71,4 @@ bool ScriptInstanceCreateController::create(std::shared_ptr<framework::TaskInven
     backend_.active_scripts(1);
     return true;
 }
-}
+} // namespace opensim::scene

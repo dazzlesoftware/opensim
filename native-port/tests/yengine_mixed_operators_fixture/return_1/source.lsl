@@ -1,0 +1,1 @@
+key result;key join(){return [1,2]+"a";}default{state_entry(){result=join();}}

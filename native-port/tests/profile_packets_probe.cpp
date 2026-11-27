@@ -10,6 +10,7 @@ using namespace opensim;
 using namespace framework;
 using namespace scene;
 using namespace network::lludp;
+
 std::string H(std::span<const std::uint8_t> data) {
     std::string out;
     for (auto c : data) {
@@ -18,7 +19,8 @@ std::string H(std::span<const std::uint8_t> data) {
     }
     return out;
 }
-ProfileText Text(const std::string& value) {
+
+ProfileText Text(const std::string &value) {
     if (value == "-")
         return {};
     if (value == ".")
@@ -29,6 +31,7 @@ ProfileText Text(const std::string& value) {
                                    (std::stoi(value.substr(i + 2, 2), nullptr, 16) << 8));
     return s;
 }
+
 Uuid Key(int i) {
     std::ostringstream out;
     out << "00000000-0000-0000-0000-" << std::hex << std::setfill('0') << std::setw(12) << i;
@@ -40,9 +43,10 @@ class GroupEventsProbe : public ProfileEvents {
     std::uint32_t flags;
     std::string trace;
     std::shared_ptr<services::EventQueueByteBuffer> buffer;
-    explicit GroupEventsProbe(std::uint32_t value) : flags(value) {
-    }
-    std::shared_ptr<services::EventQueueByteBuffer> start_event(const std::string& name) override {
+
+    explicit GroupEventsProbe(std::uint32_t value) : flags(value) {}
+
+    std::shared_ptr<services::EventQueueByteBuffer> start_event(const std::string &name) override {
         trace += "S|";
         if (flags & 32)
             throw std::runtime_error("start");
@@ -50,6 +54,7 @@ class GroupEventsProbe : public ProfileEvents {
             return {};
         return buffer = ProfileEvents::start_event(name);
     }
+
     server::PollBytes end_event(std::shared_ptr<services::EventQueueByteBuffer> value) override {
         trace += "F|";
         if (flags & 128)
@@ -58,6 +63,7 @@ class GroupEventsProbe : public ProfileEvents {
             return {};
         return ProfileEvents::end_event(std::move(value));
     }
+
     bool enqueue(server::PollBytes bytes, Uuid agent) override {
         trace += "E:" + agent.str() + ":" + (bytes ? H(*bytes) : "-") + "|";
         if (flags & 512)
@@ -65,12 +71,12 @@ class GroupEventsProbe : public ProfileEvents {
         return !(flags & 256);
     }
 };
-std::string GroupProbe(const ProfileText& first, const ProfileText& last, int count, std::uint32_t flags) {
+
+std::string GroupProbe(const ProfileText &first, const ProfileText &last, int count, std::uint32_t flags) {
     GroupEventsProbe events(flags);
     std::string result = "OK";
     try {
-        Uuid recipient("00000000-0000-0000-0000-000000000001"),
-            avatar("00000000-0000-0000-0000-000000000002");
+        Uuid recipient("00000000-0000-0000-0000-000000000001"), avatar("00000000-0000-0000-0000-000000000002");
         if (flags & 4)
             throw services::EventQueueNullReference();
         std::vector<std::shared_ptr<AvatarProfileGroup>> groups;
@@ -92,9 +98,9 @@ std::string GroupProbe(const ProfileText& first, const ProfileText& last, int co
         events.trace += "Q|";
         send_avatar_groups(recipient, (flags & 1) ? recipient : avatar, count < 0 ? nullptr : &groups,
                            (flags & 2) ? nullptr : &events);
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::string error = e.what();
-        result = "EX:" + H(std::span(reinterpret_cast<const std::uint8_t*>(error.data()), error.size()));
+        result = "EX:" + H(std::span(reinterpret_cast<const std::uint8_t *>(error.data()), error.size()));
     }
     return result + "|" + events.trace + "|" + (events.buffer ? H(*events.buffer->to_array()) : "-");
 }
@@ -108,8 +114,7 @@ int main() {
         std::uint32_t flags;
         in >> mode >> first >> last >> length >> flags;
         try {
-            Uuid recipient("00000000-0000-0000-0000-000000000001"),
-                target("00000000-0000-0000-0000-000000000002");
+            Uuid recipient("00000000-0000-0000-0000-000000000001"), target("00000000-0000-0000-0000-000000000002");
             Packet packet;
             if (mode == 9) {
                 std::cout << GroupProbe(Text(first), Text(last), length, flags) << "\n";
@@ -148,7 +153,7 @@ int main() {
                      {-123456.789, 1e30, -1e-30},
                      {std::numeric_limits<double>::infinity(), -std::numeric_limits<double>::infinity(), 0},
                      {0, 0, 0}}};
-                const auto& v = positions.at(length);
+                const auto &v = positions.at(length);
                 if (mode == 4) {
                     AvatarClassifiedInfo p;
                     p.classified = target;
@@ -162,8 +167,7 @@ int main() {
                     p.description = Text(last);
                     p.sim_name = Text(first);
                     p.parcel_name = Text(last);
-                    p.global_position = {static_cast<float>(v[0]), static_cast<float>(v[1]),
-                                         static_cast<float>(v[2])};
+                    p.global_position = {static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2])};
                     p.flags = static_cast<std::uint8_t>(flags);
                     p.price = std::bit_cast<std::int32_t>(flags);
                     packet = avatar_classified_info_packet(recipient, p);
@@ -214,15 +218,13 @@ int main() {
                 if (length > 1 && (flags & 2) != 0)
                     list[Key(1)] = Text(first);
                 packet = mode == 6 ? avatar_picks_list_packet(recipient, target, length < 0 ? nullptr : &list)
-                                   : avatar_classifieds_list_packet(recipient, target,
-                                                                    length < 0 ? nullptr : &list);
+                                   : avatar_classifieds_list_packet(recipient, target, length < 0 ? nullptr : &list);
             }
             auto raw = encode_packet(packet), wire = encode_datagram(packet);
             std::cout << H(raw) << "|" << H(wire) << "\n";
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
             std::string text = e.what();
-            std::cout << "EX:"
-                      << H(std::span(reinterpret_cast<const std::uint8_t*>(text.data()), text.size()))
+            std::cout << "EX:" << H(std::span(reinterpret_cast<const std::uint8_t *>(text.data()), text.size()))
                       << "\n";
         }
     }

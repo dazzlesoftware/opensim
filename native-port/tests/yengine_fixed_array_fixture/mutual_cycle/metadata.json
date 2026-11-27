@@ -1,0 +1,46 @@
+{
+  "accepted": true,
+  "executed": true,
+  "globals": {
+    "a": {
+      "type": "array",
+      "clr": "System.Object[]",
+      "id": 0,
+      "entries": [
+        {
+          "type": "array",
+          "clr": "System.Object[]",
+          "id": 1,
+          "entries": [
+            {
+              "type": "reference",
+              "id": 0
+            }
+          ]
+        }
+      ]
+    },
+    "b": {
+      "type": "reference",
+      "id": 1
+    }
+  },
+  "errors": [],
+  "exception": null,
+  "exceptionType": null,
+  "stackSize": 1000000,
+  "stackLimit": 1024,
+  "finalStackLeft": 1000000,
+  "stackSamples": [],
+  "name": "mutual_cycle",
+  "source": "YOption arrays;object a;object b;default{state_entry(){a=xmrFixedArrayAllocO(1);b=xmrFixedArrayAllocO(1);xmrFixedArraySetO(a,0,b);xmrFixedArraySetO(b,0,a);}}",
+  "methodology": "Actual original CodeGen/CallSEH; scheduler CheckRunWork no-op. Separate process per case. No migration claim.",
+  "sha256": {
+    "original.il.txt": "66412f4f4f89b15f0e5b3286803b9c240e4b5ab8d42ced6ca1f22aa29a63fde8",
+    "original.yobj": "919cfa5be669d09100030476240e5b0c866fa497b3d3f433782574ee4516ceda",
+    "source.lsl": "a951d284c336d0e8a3c45f537c9af0c4ac5bfdb13f4998276945117e167c607e",
+    "source_hash.txt": "22fdcfe1f3393545d2e45f1c797477e0286accb5239b394a5436a72fd584fc71",
+    "generator_source": "d86517a13d8f4094e933279614d487a0e69d44a49f2296c4af7562bf7386d651",
+    "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056"
+  }
+}

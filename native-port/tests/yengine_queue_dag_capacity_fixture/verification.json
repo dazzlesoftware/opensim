@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "checkedAtUtc": "2026-11-26T23:40:11.131750+00:00",
+  "passed": true,
+  "scope": "Unchanged original PostEvent and production XML helper save/reload of a20-level shared List DAG on Windows/Linux x64",
+  "fullParityVerified": false,
+  "sourceCompilationOrTypedEventDispatchClaimed": false,
+  "expectedListOccurrences": 1048575,
+  "expectedInt32Leaves": 1048576,
+  "expectedLeafCellsSha256": "0abd34e81866c56a09904565070e9e929e0ae889e79b6dd186510030f6e1478c",
+  "generatorSha256": "7bee0c96474311bced9f1a55d9dcf0c8f2c7b875fb9295b776d04c867918c391",
+  "generatorAssemblySha256": "c6f7262f97cd07437ebde2a6cdc837c1d8f43f41a5e1b1e86fd677694b3c24bd",
+  "platforms": {
+    "windows": {
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "metadataSha256": "2864a410dcb3470ee9517fc7d98200c22dc95ac8361d393a025dcfbd0da8aa8b",
+      "xmlSha256": "b172cd28259ea91ad143997dd788e4155bf1c32fb3c94f900a883043f7b65d96",
+      "xmlBytes": 61866020,
+      "originalUniqueListsBefore": 20,
+      "originalUniqueListsAfter": 1048575,
+      "everyXmlListAndLeafVerified": true,
+      "leafCellsSha256": "0abd34e81866c56a09904565070e9e929e0ae889e79b6dd186510030f6e1478c"
+    },
+    "linux": {
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "metadataSha256": "f7acc2a41a355dfc4ae32f3b868b42a39cbaf5a927e8f8fe6f554e31e777c11a",
+      "xmlSha256": "b172cd28259ea91ad143997dd788e4155bf1c32fb3c94f900a883043f7b65d96",
+      "xmlBytes": 61866020,
+      "originalUniqueListsBefore": 20,
+      "originalUniqueListsAfter": 1048575,
+      "everyXmlListAndLeafVerified": true,
+      "leafCellsSha256": "0abd34e81866c56a09904565070e9e929e0ae889e79b6dd186510030f6e1478c"
+    }
+  },
+  "verifierSha256": "cb7776d7346d44713b5ef1aca7e9b8f6862e0bce5b922a04ec0ec418b83676d2"
+}

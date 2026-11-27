@@ -2,15 +2,16 @@
 #include "opensim/framework/config_uri_components.hpp"
 #include "opensim/framework/config_generic_uri_object.hpp"
 #include "opensim/framework/config_http_argument_error.hpp"
+
 namespace opensim::framework {
 bool config_http_supported_proxy_scheme(std::u16string_view scheme) {
     std::u16string lower(scheme);
     for (auto &c : lower)
         if (c >= u'A' && c <= u'Z')
             c += u'a' - u'A';
-    return lower == u"http" || lower == u"https" || lower == u"socks4" || lower == u"socks4a" ||
-           lower == u"socks5";
+    return lower == u"http" || lower == u"https" || lower == u"socks4" || lower == u"socks4a" || lower == u"socks5";
 }
+
 ConfigHttpProxyEndpoint config_http_proxy_endpoint(ConfigUriObjectPtr uri) {
     ConfigHttpProxyEndpoint result;
     if (auto http = uri->http_components()) {
@@ -33,8 +34,8 @@ ConfigHttpProxyEndpoint config_http_proxy_endpoint(ConfigUriObjectPtr uri) {
     }
     return result;
 }
-ConfigUriObjectPtr config_http_resolve_proxy(ConfigUriObjectPtr target,
-                                             const std::shared_ptr<ConfigHttpProxy> &proxy) {
+
+ConfigUriObjectPtr config_http_resolve_proxy(ConfigUriObjectPtr target, const std::shared_ptr<ConfigHttpProxy> &proxy) {
     ConfigUriObjectPtr result;
     if (proxy) {
         try {
@@ -49,8 +50,7 @@ ConfigUriObjectPtr config_http_resolve_proxy(ConfigUriObjectPtr target,
     if (result && !config_http_supported_proxy_scheme(*result->scheme()))
         throw ConfigUriComponentsError(
             "System.NotSupportedException",
-            u"Only the 'http', 'https', 'socks4', 'socks4a' and 'socks5' schemes are allowed for proxies.",
-            0x80131515);
+            u"Only the 'http', 'https', 'socks4', 'socks4a' and 'socks5' schemes are allowed for proxies.", 0x80131515);
     return result;
 }
-}
+} // namespace opensim::framework

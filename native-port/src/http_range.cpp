@@ -4,8 +4,9 @@
 #include "opensim/framework/culture_prefix.hpp"
 #include "opensim/framework/text.hpp"
 #include "opensim/services/user_account.hpp"
+
 namespace opensim::server {
-bool try_parse_http_range(const std::optional<std::string>& header, int32_t& start, int32_t& end) {
+bool try_parse_http_range(const std::optional<std::string> &header, int32_t &start, int32_t &end) {
     start = end = 0;
     if (!header || framework::trim_utf8(*header).empty())
         return false;
@@ -33,4 +34,4 @@ bool try_parse_http_range(const std::optional<std::string>& header, int32_t& sta
     start = end = 0;
     return false;
 }
-}
+} // namespace opensim::server

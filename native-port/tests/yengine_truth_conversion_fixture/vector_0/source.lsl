@@ -1,0 +1,1 @@
+vector item=<xmrString2Float("0"),xmrString2Float("0"),xmrString2Float("0")>;integer converted;integer ordinary;integer negated;integer casted;list boxed;default{state_entry(){converted=xmrVectorToBool(item);if(item)ordinary=1;negated=!item;casted=(integer)xmrVectorToBool(item);boxed=[xmrVectorToBool(item)];}}

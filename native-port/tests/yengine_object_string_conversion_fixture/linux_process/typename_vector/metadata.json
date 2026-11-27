@@ -1,0 +1,1105 @@
+{
+  "name": "typename_vector",
+  "process_id": 1,
+  "marvin_seed": "e26d5eb188d592ef",
+  "imported_capture": false,
+  "imported_from": null,
+  "direct_object_input": {
+    "type": "vector",
+    "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+    "value": [
+      {
+        "clr": "System.Double",
+        "value": 0,
+        "bits": "0000000000000000",
+        "text": "0"
+      },
+      {
+        "clr": "System.Double",
+        "value": 0,
+        "bits": "0000000000000000",
+        "text": "0"
+      },
+      {
+        "clr": "System.Double",
+        "value": 0,
+        "bits": "0000000000000000",
+        "text": "0"
+      }
+    ]
+  },
+  "direct_object_hash": 0,
+  "direct_object_exception": null,
+  "conversion_call_lines": [
+    "  003F    call        XMRInstAbstract:xmrTypeName(Object) -\u003E String",
+    "  006D    call        XMRInstAbstract:xmrTypeName(Object) -\u003E String",
+    "  0174    call        XMRInstAbstract:xmrTypeName(Object) -\u003E String"
+  ],
+  "hash_call_lines": [],
+  "production_culture": "",
+  "runtime": ".NET 8.0.34",
+  "architecture": "X64",
+  "accepted": true,
+  "diagnostics": [],
+  "compile_exception": null,
+  "source_hash": "226D00E63C668828F67CA7D3B7A72CB7",
+  "compiled_version": -11,
+  "suspended": false,
+  "migrated": false,
+  "production_write_exception": null,
+  "permissive_write_exception": null,
+  "permissive_control_resume": null,
+  "permissive_control_resume_exception": null,
+  "production_writer": "Unchanged private XMRInstance.MigrateOutEventHandler(Stream): new BinaryWriter(stream)",
+  "initial_exception": null,
+  "live_cycles": [],
+  "migrated_cycles": [],
+  "prefix_resume": null,
+  "live_resume_exception": null,
+  "live_resume": null,
+  "direct_reset_scheduler_boundary": false,
+  "initial": {
+    "globals": {
+      "a": {
+        "type": "string",
+        "clr": "System.String",
+        "value": "vector",
+        "utf16": [
+          118,
+          101,
+          99,
+          116,
+          111,
+          114
+        ]
+      },
+      "after": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 1
+      },
+      "after_pair": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 1
+      },
+      "again": {
+        "type": "string",
+        "clr": "System.String",
+        "value": "vector",
+        "utf16": [
+          118,
+          101,
+          99,
+          116,
+          111,
+          114
+        ]
+      },
+      "b": {
+        "type": "string",
+        "clr": "System.String",
+        "value": "vector",
+        "utf16": [
+          118,
+          101,
+          99,
+          116,
+          111,
+          114
+        ]
+      },
+      "c": {
+        "type": "string",
+        "clr": "System.String",
+        "value": "vector",
+        "utf16": [
+          118,
+          101,
+          99,
+          116,
+          111,
+          114
+        ]
+      },
+      "first": {
+        "type": "string",
+        "clr": "System.String",
+        "value": "vector",
+        "utf16": [
+          118,
+          101,
+          99,
+          116,
+          111,
+          114
+        ]
+      },
+      "generated_match": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 1
+      },
+      "input": {
+        "type": "vector",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+        "value": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ]
+      },
+      "literal_match": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 1
+      },
+      "repeated": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 1
+      },
+      "second": {
+        "type": "string",
+        "clr": "System.String",
+        "value": "vector",
+        "utf16": [
+          118,
+          101,
+          99,
+          116,
+          111,
+          114
+        ]
+      },
+      "text_match": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 1
+      }
+    },
+    "object_hash": {
+      "input": {
+        "type": "vector",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+        "value": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ]
+      },
+      "direct_hash": 0,
+      "direct_exception": null,
+      "component_hashes": [
+        0,
+        0,
+        0
+      ],
+      "formula": 0,
+      "alias_same_backing": null
+    },
+    "object_reference_pairs": [
+      {
+        "left": "first",
+        "right": "second",
+        "same_reference": true,
+        "object_equals": true
+      },
+      {
+        "left": "first",
+        "right": "again",
+        "same_reference": true,
+        "object_equals": true
+      },
+      {
+        "left": "first",
+        "right": "a",
+        "same_reference": true,
+        "object_equals": true
+      },
+      {
+        "left": "first",
+        "right": "b",
+        "same_reference": true,
+        "object_equals": true
+      },
+      {
+        "left": "first",
+        "right": "c",
+        "same_reference": true,
+        "object_equals": true
+      },
+      {
+        "left": "second",
+        "right": "again",
+        "same_reference": true,
+        "object_equals": true
+      },
+      {
+        "left": "second",
+        "right": "a",
+        "same_reference": true,
+        "object_equals": true
+      },
+      {
+        "left": "second",
+        "right": "b",
+        "same_reference": true,
+        "object_equals": true
+      },
+      {
+        "left": "second",
+        "right": "c",
+        "same_reference": true,
+        "object_equals": true
+      },
+      {
+        "left": "again",
+        "right": "a",
+        "same_reference": true,
+        "object_equals": true
+      },
+      {
+        "left": "again",
+        "right": "b",
+        "same_reference": true,
+        "object_equals": true
+      },
+      {
+        "left": "again",
+        "right": "c",
+        "same_reference": true,
+        "object_equals": true
+      },
+      {
+        "left": "a",
+        "right": "b",
+        "same_reference": true,
+        "object_equals": true
+      },
+      {
+        "left": "a",
+        "right": "c",
+        "same_reference": true,
+        "object_equals": true
+      },
+      {
+        "left": "b",
+        "right": "c",
+        "same_reference": true,
+        "object_equals": true
+      }
+    ],
+    "all_reference_pairs": [
+      {
+        "left": "global/first",
+        "right": "global/second",
+        "left_clr": "System.String",
+        "right_clr": "System.String",
+        "same_object_reference": true,
+        "left_has_string_field": true,
+        "right_has_string_field": true,
+        "same_string_field_reference": true
+      },
+      {
+        "left": "global/first",
+        "right": "global/again",
+        "left_clr": "System.String",
+        "right_clr": "System.String",
+        "same_object_reference": true,
+        "left_has_string_field": true,
+        "right_has_string_field": true,
+        "same_string_field_reference": true
+      },
+      {
+        "left": "global/first",
+        "right": "global/a",
+        "left_clr": "System.String",
+        "right_clr": "System.String",
+        "same_object_reference": true,
+        "left_has_string_field": true,
+        "right_has_string_field": true,
+        "same_string_field_reference": true
+      },
+      {
+        "left": "global/first",
+        "right": "global/b",
+        "left_clr": "System.String",
+        "right_clr": "System.String",
+        "same_object_reference": true,
+        "left_has_string_field": true,
+        "right_has_string_field": true,
+        "same_string_field_reference": true
+      },
+      {
+        "left": "global/first",
+        "right": "global/c",
+        "left_clr": "System.String",
+        "right_clr": "System.String",
+        "same_object_reference": true,
+        "left_has_string_field": true,
+        "right_has_string_field": true,
+        "same_string_field_reference": true
+      },
+      {
+        "left": "global/second",
+        "right": "global/again",
+        "left_clr": "System.String",
+        "right_clr": "System.String",
+        "same_object_reference": true,
+        "left_has_string_field": true,
+        "right_has_string_field": true,
+        "same_string_field_reference": true
+      },
+      {
+        "left": "global/second",
+        "right": "global/a",
+        "left_clr": "System.String",
+        "right_clr": "System.String",
+        "same_object_reference": true,
+        "left_has_string_field": true,
+        "right_has_string_field": true,
+        "same_string_field_reference": true
+      },
+      {
+        "left": "global/second",
+        "right": "global/b",
+        "left_clr": "System.String",
+        "right_clr": "System.String",
+        "same_object_reference": true,
+        "left_has_string_field": true,
+        "right_has_string_field": true,
+        "same_string_field_reference": true
+      },
+      {
+        "left": "global/second",
+        "right": "global/c",
+        "left_clr": "System.String",
+        "right_clr": "System.String",
+        "same_object_reference": true,
+        "left_has_string_field": true,
+        "right_has_string_field": true,
+        "same_string_field_reference": true
+      },
+      {
+        "left": "global/again",
+        "right": "global/a",
+        "left_clr": "System.String",
+        "right_clr": "System.String",
+        "same_object_reference": true,
+        "left_has_string_field": true,
+        "right_has_string_field": true,
+        "same_string_field_reference": true
+      },
+      {
+        "left": "global/again",
+        "right": "global/b",
+        "left_clr": "System.String",
+        "right_clr": "System.String",
+        "same_object_reference": true,
+        "left_has_string_field": true,
+        "right_has_string_field": true,
+        "same_string_field_reference": true
+      },
+      {
+        "left": "global/again",
+        "right": "global/c",
+        "left_clr": "System.String",
+        "right_clr": "System.String",
+        "same_object_reference": true,
+        "left_has_string_field": true,
+        "right_has_string_field": true,
+        "same_string_field_reference": true
+      },
+      {
+        "left": "global/a",
+        "right": "global/b",
+        "left_clr": "System.String",
+        "right_clr": "System.String",
+        "same_object_reference": true,
+        "left_has_string_field": true,
+        "right_has_string_field": true,
+        "same_string_field_reference": true
+      },
+      {
+        "left": "global/a",
+        "right": "global/c",
+        "left_clr": "System.String",
+        "right_clr": "System.String",
+        "same_object_reference": true,
+        "left_has_string_field": true,
+        "right_has_string_field": true,
+        "same_string_field_reference": true
+      },
+      {
+        "left": "global/b",
+        "right": "global/c",
+        "left_clr": "System.String",
+        "right_clr": "System.String",
+        "same_object_reference": true,
+        "left_has_string_field": true,
+        "right_has_string_field": true,
+        "same_string_field_reference": true
+      }
+    ],
+    "event_code": "None",
+    "call_mode": 0,
+    "sleep_until_ticks": 0,
+    "object_description": "",
+    "event_arguments": null,
+    "state_index": 0,
+    "new_state_index": -1,
+    "initialize_globals": false,
+    "running": true,
+    "detectors": [
+      {
+        "key": "11111111-2222-3333-4444-555555555555",
+        "owner": "22222222-3333-4444-5555-666666666666",
+        "group": "33333333-4444-5555-6666-777777777777",
+        "name": "original rich detector 3",
+        "link_number": 5,
+        "type": 11,
+        "grab": [
+          3.125,
+          3.25,
+          3.5
+        ],
+        "position": [
+          13.00000003,
+          14.00000003,
+          15.00000003
+        ],
+        "rotation": [
+          {
+            "clr": "System.Double",
+            "value": 0.125,
+            "bits": "3fc0000000000000",
+            "text": "0.125"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.25,
+            "bits": "3fd0000000000000",
+            "text": "0.25"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.5,
+            "bits": "3fe0000000000000",
+            "text": "0.5"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.875,
+            "bits": "3fec000000000000",
+            "text": "0.875"
+          }
+        ],
+        "velocity": [
+          23.00000003,
+          24.00000003,
+          25.00000003
+        ],
+        "touch_st": [
+          4.00000003,
+          5.00000003,
+          6.00000003
+        ],
+        "touch_normal": [
+          7.00000003,
+          8.000000029999999,
+          9.000000029999999
+        ],
+        "touch_binormal": [
+          10.000000029999999,
+          11.000000029999999,
+          12.000000029999999
+        ],
+        "touch_pos": [
+          13.000000029999999,
+          14.000000029999999,
+          15.000000029999999
+        ],
+        "touch_uv": [
+          16.00000003,
+          17.00000003,
+          18.00000003
+        ],
+        "touch_face": 6
+      }
+    ],
+    "queue": [],
+    "frames": []
+  },
+  "after_followup": null,
+  "after_load": null,
+  "after_stop": null,
+  "after_restart_wait": null,
+  "resume_exception": null,
+  "final": {
+    "globals": {
+      "a": {
+        "type": "string",
+        "clr": "System.String",
+        "value": "vector",
+        "utf16": [
+          118,
+          101,
+          99,
+          116,
+          111,
+          114
+        ]
+      },
+      "after": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 1
+      },
+      "after_pair": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 1
+      },
+      "again": {
+        "type": "string",
+        "clr": "System.String",
+        "value": "vector",
+        "utf16": [
+          118,
+          101,
+          99,
+          116,
+          111,
+          114
+        ]
+      },
+      "b": {
+        "type": "string",
+        "clr": "System.String",
+        "value": "vector",
+        "utf16": [
+          118,
+          101,
+          99,
+          116,
+          111,
+          114
+        ]
+      },
+      "c": {
+        "type": "string",
+        "clr": "System.String",
+        "value": "vector",
+        "utf16": [
+          118,
+          101,
+          99,
+          116,
+          111,
+          114
+        ]
+      },
+      "first": {
+        "type": "string",
+        "clr": "System.String",
+        "value": "vector",
+        "utf16": [
+          118,
+          101,
+          99,
+          116,
+          111,
+          114
+        ]
+      },
+      "generated_match": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 1
+      },
+      "input": {
+        "type": "vector",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+        "value": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ]
+      },
+      "literal_match": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 1
+      },
+      "repeated": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 1
+      },
+      "second": {
+        "type": "string",
+        "clr": "System.String",
+        "value": "vector",
+        "utf16": [
+          118,
+          101,
+          99,
+          116,
+          111,
+          114
+        ]
+      },
+      "text_match": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 1
+      }
+    },
+    "object_hash": {
+      "input": {
+        "type": "vector",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+        "value": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ]
+      },
+      "direct_hash": 0,
+      "direct_exception": null,
+      "component_hashes": [
+        0,
+        0,
+        0
+      ],
+      "formula": 0,
+      "alias_same_backing": null
+    },
+    "object_reference_pairs": [
+      {
+        "left": "first",
+        "right": "second",
+        "same_reference": true,
+        "object_equals": true
+      },
+      {
+        "left": "first",
+        "right": "again",
+        "same_reference": true,
+        "object_equals": true
+      },
+      {
+        "left": "first",
+        "right": "a",
+        "same_reference": true,
+        "object_equals": true
+      },
+      {
+        "left": "first",
+        "right": "b",
+        "same_reference": true,
+        "object_equals": true
+      },
+      {
+        "left": "first",
+        "right": "c",
+        "same_reference": true,
+        "object_equals": true
+      },
+      {
+        "left": "second",
+        "right": "again",
+        "same_reference": true,
+        "object_equals": true
+      },
+      {
+        "left": "second",
+        "right": "a",
+        "same_reference": true,
+        "object_equals": true
+      },
+      {
+        "left": "second",
+        "right": "b",
+        "same_reference": true,
+        "object_equals": true
+      },
+      {
+        "left": "second",
+        "right": "c",
+        "same_reference": true,
+        "object_equals": true
+      },
+      {
+        "left": "again",
+        "right": "a",
+        "same_reference": true,
+        "object_equals": true
+      },
+      {
+        "left": "again",
+        "right": "b",
+        "same_reference": true,
+        "object_equals": true
+      },
+      {
+        "left": "again",
+        "right": "c",
+        "same_reference": true,
+        "object_equals": true
+      },
+      {
+        "left": "a",
+        "right": "b",
+        "same_reference": true,
+        "object_equals": true
+      },
+      {
+        "left": "a",
+        "right": "c",
+        "same_reference": true,
+        "object_equals": true
+      },
+      {
+        "left": "b",
+        "right": "c",
+        "same_reference": true,
+        "object_equals": true
+      }
+    ],
+    "all_reference_pairs": [
+      {
+        "left": "global/first",
+        "right": "global/second",
+        "left_clr": "System.String",
+        "right_clr": "System.String",
+        "same_object_reference": true,
+        "left_has_string_field": true,
+        "right_has_string_field": true,
+        "same_string_field_reference": true
+      },
+      {
+        "left": "global/first",
+        "right": "global/again",
+        "left_clr": "System.String",
+        "right_clr": "System.String",
+        "same_object_reference": true,
+        "left_has_string_field": true,
+        "right_has_string_field": true,
+        "same_string_field_reference": true
+      },
+      {
+        "left": "global/first",
+        "right": "global/a",
+        "left_clr": "System.String",
+        "right_clr": "System.String",
+        "same_object_reference": true,
+        "left_has_string_field": true,
+        "right_has_string_field": true,
+        "same_string_field_reference": true
+      },
+      {
+        "left": "global/first",
+        "right": "global/b",
+        "left_clr": "System.String",
+        "right_clr": "System.String",
+        "same_object_reference": true,
+        "left_has_string_field": true,
+        "right_has_string_field": true,
+        "same_string_field_reference": true
+      },
+      {
+        "left": "global/first",
+        "right": "global/c",
+        "left_clr": "System.String",
+        "right_clr": "System.String",
+        "same_object_reference": true,
+        "left_has_string_field": true,
+        "right_has_string_field": true,
+        "same_string_field_reference": true
+      },
+      {
+        "left": "global/second",
+        "right": "global/again",
+        "left_clr": "System.String",
+        "right_clr": "System.String",
+        "same_object_reference": true,
+        "left_has_string_field": true,
+        "right_has_string_field": true,
+        "same_string_field_reference": true
+      },
+      {
+        "left": "global/second",
+        "right": "global/a",
+        "left_clr": "System.String",
+        "right_clr": "System.String",
+        "same_object_reference": true,
+        "left_has_string_field": true,
+        "right_has_string_field": true,
+        "same_string_field_reference": true
+      },
+      {
+        "left": "global/second",
+        "right": "global/b",
+        "left_clr": "System.String",
+        "right_clr": "System.String",
+        "same_object_reference": true,
+        "left_has_string_field": true,
+        "right_has_string_field": true,
+        "same_string_field_reference": true
+      },
+      {
+        "left": "global/second",
+        "right": "global/c",
+        "left_clr": "System.String",
+        "right_clr": "System.String",
+        "same_object_reference": true,
+        "left_has_string_field": true,
+        "right_has_string_field": true,
+        "same_string_field_reference": true
+      },
+      {
+        "left": "global/again",
+        "right": "global/a",
+        "left_clr": "System.String",
+        "right_clr": "System.String",
+        "same_object_reference": true,
+        "left_has_string_field": true,
+        "right_has_string_field": true,
+        "same_string_field_reference": true
+      },
+      {
+        "left": "global/again",
+        "right": "global/b",
+        "left_clr": "System.String",
+        "right_clr": "System.String",
+        "same_object_reference": true,
+        "left_has_string_field": true,
+        "right_has_string_field": true,
+        "same_string_field_reference": true
+      },
+      {
+        "left": "global/again",
+        "right": "global/c",
+        "left_clr": "System.String",
+        "right_clr": "System.String",
+        "same_object_reference": true,
+        "left_has_string_field": true,
+        "right_has_string_field": true,
+        "same_string_field_reference": true
+      },
+      {
+        "left": "global/a",
+        "right": "global/b",
+        "left_clr": "System.String",
+        "right_clr": "System.String",
+        "same_object_reference": true,
+        "left_has_string_field": true,
+        "right_has_string_field": true,
+        "same_string_field_reference": true
+      },
+      {
+        "left": "global/a",
+        "right": "global/c",
+        "left_clr": "System.String",
+        "right_clr": "System.String",
+        "same_object_reference": true,
+        "left_has_string_field": true,
+        "right_has_string_field": true,
+        "same_string_field_reference": true
+      },
+      {
+        "left": "global/b",
+        "right": "global/c",
+        "left_clr": "System.String",
+        "right_clr": "System.String",
+        "same_object_reference": true,
+        "left_has_string_field": true,
+        "right_has_string_field": true,
+        "same_string_field_reference": true
+      }
+    ],
+    "event_code": "None",
+    "call_mode": 0,
+    "sleep_until_ticks": 0,
+    "object_description": "",
+    "event_arguments": null,
+    "state_index": 0,
+    "new_state_index": -1,
+    "initialize_globals": false,
+    "running": true,
+    "detectors": [
+      {
+        "key": "11111111-2222-3333-4444-555555555555",
+        "owner": "22222222-3333-4444-5555-666666666666",
+        "group": "33333333-4444-5555-6666-777777777777",
+        "name": "original rich detector 3",
+        "link_number": 5,
+        "type": 11,
+        "grab": [
+          3.125,
+          3.25,
+          3.5
+        ],
+        "position": [
+          13.00000003,
+          14.00000003,
+          15.00000003
+        ],
+        "rotation": [
+          {
+            "clr": "System.Double",
+            "value": 0.125,
+            "bits": "3fc0000000000000",
+            "text": "0.125"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.25,
+            "bits": "3fd0000000000000",
+            "text": "0.25"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.5,
+            "bits": "3fe0000000000000",
+            "text": "0.5"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.875,
+            "bits": "3fec000000000000",
+            "text": "0.875"
+          }
+        ],
+        "velocity": [
+          23.00000003,
+          24.00000003,
+          25.00000003
+        ],
+        "touch_st": [
+          4.00000003,
+          5.00000003,
+          6.00000003
+        ],
+        "touch_normal": [
+          7.00000003,
+          8.000000029999999,
+          9.000000029999999
+        ],
+        "touch_binormal": [
+          10.000000029999999,
+          11.000000029999999,
+          12.000000029999999
+        ],
+        "touch_pos": [
+          13.000000029999999,
+          14.000000029999999,
+          15.000000029999999
+        ],
+        "touch_uv": [
+          16.00000003,
+          17.00000003,
+          18.00000003
+        ],
+        "touch_face": 6
+      }
+    ],
+    "queue": [],
+    "frames": []
+  },
+  "incomplete_scene_resource_boundary": false,
+  "scheduler_guard_boundary": false,
+  "stop_scheduler_context": null,
+  "methodology": "Actual original source primitive cast versus Object.ToString, xmrTypeName and CLR String reference identity. Runtime variable inputs prevent constant folding; literal/text equality flags distinguish interned literals from Number small-number caches, fresh formatting and special symbols. RealSleep captures preserve separate LIVE versus production binary migration semantics. Lone-char literal comparison uses UFFFD portable literal while runtime UTF16 retains the lone unit; it is not a same-text literal case. No content-based identity inference.",
+  "sha256": {
+    "cache_key.txt": "e75dbae6ae1b169cb2a457173316ee1629b98b893f8adb76ecc23a1201f7f933",
+    "detect-array.xml": "a54ca4e5f26d31a98b63cca7e3c95a199a39e5bdc40fb23eb9c8287d8de2c615",
+    "original.il.txt": "3c58e652fee8968701e72f1c8106cca311a778551d94f571b34ba94cdebf9ded",
+    "original.yobj": "e4fc9fc1d9fac622a7f415b8bdc451e058ffa5da573aa63d4d0e46af21f293b8",
+    "source.lsl": "8bf3aa30523b31caf3ec8f39216494b3385e131c61f8a2ffa830d2becdad9d99",
+    "generator_source": "d9c1e6737fee58cb92e97915e5a0fb6db18a731db5110312ff6e026111e7fcf4",
+    "generator_assembly": "1bfd4f83d47f448f1200948e357f127e0e7080bddb75786dea784d0c4d3ecc14",
+    "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+    "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+    "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+    "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+    "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+    "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+    "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+    "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+    "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+    "original_source_XMRInstCapture.cs": "775f1d83bd4610f788891269ea9ea08b1f79cf4bf3b44300d926f49c8a277cbd",
+    "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+    "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+    "original_source_Helpers.cs": "96b7c3090cdded9c12e986bc538705272eae4c0fc12f01deab8f0f1bb94c7bcf",
+    "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+    "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+    "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+    "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+    "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+    "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+    "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+  }
+}

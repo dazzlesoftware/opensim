@@ -1,0 +1,1 @@
+YOption chars;integer input=65535;integer unit;integer calls;integer after;integer pause(){char value=(char)input;calls++;llSleep(3.0);unit=(integer)value;after=1;return 0;}default{state_entry(){pause();}}

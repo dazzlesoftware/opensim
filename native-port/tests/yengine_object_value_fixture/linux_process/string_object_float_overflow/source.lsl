@@ -1,0 +1,1 @@
+YOption arrays;object input="1e309";float result;integer after;default{state_entry(){result=(float)input;after=1;}}

@@ -10,15 +10,16 @@
 
 namespace opensim::services {
 namespace {
-constexpr std::pair<const char*, const char*> fields[] = {
-    {"FromAgentID", "fromAgentID"}, {"FromAgentName", "fromAgentName"}, {"ToAgentID", "toAgentID"},
-    {"Dialog", "dialog"}, {"FromGroup", "fromGroup"}, {"Message", "message"},
-    {"SessionID", "imSessionID"}, {"Offline", "offline"}, {"EstateID", "ParentEstateID"},
-    {"RegionID", "RegionID"}, {"Timestamp", "timestamp"}
-};
+constexpr std::pair<const char *, const char *> fields[] = {
+    {"FromAgentID", "fromAgentID"}, {"FromAgentName", "fromAgentName"},
+    {"ToAgentID", "toAgentID"},     {"Dialog", "dialog"},
+    {"FromGroup", "fromGroup"},     {"Message", "message"},
+    {"SessionID", "imSessionID"},   {"Offline", "offline"},
+    {"EstateID", "ParentEstateID"}, {"RegionID", "RegionID"},
+    {"Timestamp", "timestamp"}};
 }
-network::ServiceXmlValue read_legacy_offline_im(std::string_view xml)
-{
+
+network::ServiceXmlValue read_legacy_offline_im(std::string_view xml) {
     pugi::xml_document document;
     if (!document.load_buffer(xml.data(), xml.size(), pugi::parse_default | pugi::parse_ws_pcdata_single))
         throw std::runtime_error("Invalid offline message XML");
@@ -27,7 +28,7 @@ network::ServiceXmlValue read_legacy_offline_im(std::string_view xml)
         throw std::runtime_error("Unknown offline message XML");
 
     auto result = network::ServiceXmlValue::object({});
-    for (const auto& [wire, stored] : fields) {
+    for (const auto &[wire, stored] : fields) {
         if (const auto field = message.child(stored)) {
             const std::string_view value = field.child_value();
             if (std::string_view(wire) == "FromGroup") {
@@ -47,11 +48,12 @@ network::ServiceXmlValue read_legacy_offline_im(std::string_view xml)
     }
     if (const auto position = message.child("Position")) {
         result.fields.emplace_back("Position", std::string("<") + position.child_value("X") + ", " +
-            position.child_value("Y") + ", " + position.child_value("Z") + ">");
+                                                   position.child_value("Y") + ", " + position.child_value("Z") + ">");
     }
     const auto bucket = message.child("binaryBucket");
     if (bucket) {
-        const auto binary = network::parse_llsd_xml(std::string("<llsd><binary>") + bucket.child_value() + "</binary></llsd>");
+        const auto binary =
+            network::parse_llsd_xml(std::string("<llsd><binary>") + bucket.child_value() + "</binary></llsd>");
         const auto bytes = network::osd_binary(binary);
         constexpr char digits[] = "0123456789ABCDEF";
         std::string hex;
@@ -68,11 +70,10 @@ network::ServiceXmlValue read_legacy_offline_im(std::string_view xml)
     return result;
 }
 
-std::string write_legacy_offline_im(const network::ServiceXmlValue& message)
-{
+std::string write_legacy_offline_im(const network::ServiceXmlValue &message) {
     pugi::xml_document document;
     auto root = document.append_child("GridInstantMessage");
-    for (const auto& [name, field] : message.fields) {
+    for (const auto &[name, field] : message.fields) {
         if (name == "BinaryBucket") {
             std::vector<std::uint8_t> bytes;
             std::string_view input(field.text);
@@ -98,7 +99,7 @@ std::string write_legacy_offline_im(const network::ServiceXmlValue& message)
             position.append_child("Y").text().set(vector.y);
             position.append_child("Z").text().set(vector.z);
         } else {
-            for (const auto& [wire, stored] : fields) {
+            for (const auto &[wire, stored] : fields) {
                 if (name == wire) {
                     const auto value = name == "FromGroup" ? (field.text == "True" ? "true" : "false") : field.text;
                     root.append_child(stored).text().set(value.c_str());
@@ -111,4 +112,4 @@ std::string write_legacy_offline_im(const network::ServiceXmlValue& message)
     document.save(output, "", pugi::format_raw);
     return output.str();
 }
-}
+} // namespace opensim::services

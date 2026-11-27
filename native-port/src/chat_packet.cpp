@@ -1,6 +1,7 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/scene/chat_packet.hpp"
+
 namespace opensim::scene {
 namespace {
 std::vector<std::uint8_t> terminated(std::string_view text, std::size_t limit) {
@@ -19,10 +20,11 @@ std::vector<std::uint8_t> terminated(std::string_view text, std::size_t limit) {
     bytes.push_back(0);
     return bytes;
 }
-}
-network::lludp::Packet chat_packet(const ChatMessage& message) {
+} // namespace
+
+network::lludp::Packet chat_packet(const ChatMessage &message) {
     auto p = network::lludp::make_packet("ChatFromSimulator");
-    auto& b = p.block("ChatData");
+    auto &b = p.block("ChatData");
     b["FromName"] = terminated(message.from_name, 255);
     b["Message"] = terminated(message.message, 1024);
     b["SourceID"] = message.source;
@@ -33,4 +35,4 @@ network::lludp::Packet chat_packet(const ChatMessage& message) {
     b["Position"] = std::vector<double>{message.position.x, message.position.y, message.position.z};
     return p;
 }
-}
+} // namespace opensim::scene

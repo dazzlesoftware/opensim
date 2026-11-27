@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <charconv>
 #include <cmath>
+
 namespace opensim::scene {
 namespace {
 std::string invariant(float value) {
@@ -38,20 +39,23 @@ std::string invariant(float value) {
     text[at] = 'E';
     return text;
 }
-}
+} // namespace
+
 InventoryNewLandmark generate_inventory_landmark(framework::Uuid region, framework::Vector3 position,
                                                  std::uint64_t handle) {
     return {"Landmark version 2\nregion_id " + region.str() + "\nlocal_pos " + invariant(position.x) + " " +
-                invariant(position.y) + " " + invariant(position.z) + "\nregion_handle " +
-                std::to_string(handle) + "\n",
+                invariant(position.y) + " " + invariant(position.z) + "\nregion_handle " + std::to_string(handle) +
+                "\n",
             std::string{}, std::string{}};
 }
+
 InventoryNewController::InventoryNewController(InventoryNewBackend b) : backend_(std::move(b)) {
     if (!backend_.can_create || !backend_.folder || !backend_.folder_type || !backend_.transactions ||
         !backend_.presence || !backend_.landmark || !backend_.create_asset || !backend_.store_asset ||
         !backend_.environment || !backend_.create)
         throw std::invalid_argument("Incomplete new inventory backend");
 }
+
 bool InventoryNewController::defined_folder(std::int8_t value) {
     switch (value) {
     case -1:
@@ -90,6 +94,7 @@ bool InventoryNewController::defined_folder(std::int8_t value) {
         return false;
     }
 }
+
 void InventoryNewController::create(InventoryNewRequest request) const {
     if (backend_.debug)
         backend_.debug("REQUEST");
@@ -170,4 +175,4 @@ void InventoryNewController::create(InventoryNewRequest request) const {
     }
     backend_.create(request, asset, flags, everyone, group);
 }
-}
+} // namespace opensim::scene

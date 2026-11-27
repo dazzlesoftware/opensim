@@ -1,0 +1,21 @@
+{
+  "accepted": false,
+  "executed": false,
+  "globals": {},
+  "errors": [
+    "illegal to cast from vector to integer"
+  ],
+  "exception": null,
+  "exceptionType": null,
+  "stackSize": 1000000,
+  "stackLimit": 1024,
+  "finalStackLeft": null,
+  "stackSamples": [],
+  "name": "selector_vector",
+  "source": "YOption advflowctl;YOption chars;vector value=<2,0,0>;integer result;integer calls;default{state_entry(){switch(value){case 2:result=7;break;default:result=9;}}}",
+  "sha256": {
+    "source.lsl": "c854aea7ec8ed2ea4412d600bf3d543251ab309396009cb76db37d63bbc4df3b",
+    "source_hash.txt": "0810463b028d7fbdf36997ceace1f34e91152a969e5a521b45823e6ab89352fd",
+    "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+  }
+}

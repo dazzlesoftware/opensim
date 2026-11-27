@@ -9,5 +9,5 @@
 namespace opensim::services {
 using MysqlConnection = std::unique_ptr<MYSQL, decltype(&mysql_close)>;
 
-MysqlConnection connect_mysql(const std::string& connection, unsigned long client_flags = 0);
-}
+MysqlConnection connect_mysql(const std::string &connection, unsigned long client_flags = 0);
+} // namespace opensim::services

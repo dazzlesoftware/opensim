@@ -1,0 +1,100 @@
+{
+  "name": "global_enqueue_return",
+  "accepted": true,
+  "diagnostics": [],
+  "compile_exception": null,
+  "source_hash": "E68FC12FDEC6ECE57392659D0C791A84",
+  "compiled_version": -11,
+  "suspended": false,
+  "migrated": false,
+  "initial_exception": null,
+  "initial": {
+    "globals": {
+      "complete": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 1
+      },
+      "result": {
+        "type": "list",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+        "value": [
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 21
+          },
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 7
+          }
+        ]
+      }
+    },
+    "event_code": "None",
+    "state_index": 0,
+    "new_state_index": -1,
+    "initialize_globals": false,
+    "running": true,
+    "detectors": [],
+    "queue": [],
+    "frames": []
+  },
+  "after_load": null,
+  "after_stop": null,
+  "after_restart_wait": null,
+  "resume_exception": null,
+  "final": {
+    "globals": {
+      "complete": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 1
+      },
+      "result": {
+        "type": "list",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+        "value": [
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 21
+          },
+          {
+            "type": "integer",
+            "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+            "value": 7
+          }
+        ]
+      }
+    },
+    "event_code": "None",
+    "state_index": 0,
+    "new_state_index": -1,
+    "initialize_globals": false,
+    "running": true,
+    "detectors": [],
+    "queue": [],
+    "frames": []
+  },
+  "incomplete_scene_resource_boundary": false,
+  "scheduler_guard_boundary": false,
+  "stop_scheduler_context": null,
+  "methodology": "Actual unchanged CodeGen/XMRInstance helpers/API/engine instance lookup/PostEvent/Running setter/MigrateOut/MigrateIn/CallSEH. Only CheckRunWork scheduler capture is overridden. Scene resource cleanup is not replaced; missing context is recorded as boundary exception, not successful state change.",
+  "sha256": {
+    "cache_key.txt": "74b5f500309a4fe462db111b7c2b7f268916b1ed190013195299c03400ef66db",
+    "original.il.txt": "fb9f0f840889d87e09bc4f632269f19fcc1f990f17599294abe57888a609d618",
+    "original.yobj": "7aedb24c4448ad238692f13a5751d4a2ba06b59ee457fed77fc2a9076d761319",
+    "source.lsl": "d35dc4729db3007d273429fcbe27627270b07f21a4ae123d93de88198a3f338c",
+    "generator_source": "849717b54d99f06e851c717fc345c1fc0339bc728355e9a6371531d93f229928",
+    "generator_assembly": "b5e257c950f03e3c0c886a7a7d488e96b270d3e9b633bcef31a9306cb64cbcff",
+    "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+    "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+    "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+    "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+    "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+    "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+    "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c"
+  }
+}

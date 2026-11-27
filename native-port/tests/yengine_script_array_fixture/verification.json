@@ -1,0 +1,160 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "fullParityVerified": false,
+  "nativeParityVerified": false,
+  "scope": "Actual unchanged original rank1 generated integer-array compilation, production binary capture/import, live/migrated resume and fresh-process imports",
+  "generatorSha256": "74e72c5cb6573ec910c5bb3f6c379b6737445ed23ff1297abc0256d36142589c",
+  "generatorAssemblySha256": "417f5d35e2af1cc1e3a41eb8995b0a1368d4591ba5f67146c2bdfb126417fe76",
+  "platforms": {
+    "windows": {
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "metadataSha256": "c395fcd6d60faa06385b6327ad2e2763d49e7dbd80978271637abf2d934afdd8",
+      "cases": [
+        {
+          "name": "rank1_members",
+          "sourceSha256": "d8acd3fe7b53673ae5473d911890abe7158edbf07d7f56de9e0f4c30720ddcec",
+          "metadataSha256": "421cceb496b184a01216ee9e7e0dfbcee82175edc923a6b44a9550f7164d5211",
+          "snapshotSha256": "57b4593f9cfc77b1372edbe68bcc2c91ed5d70d46eef524a4a0e41577a1728f0",
+          "snapshotBytes": 278,
+          "independentScriptClassDefinitions": 1,
+          "dimensions": [
+            3
+          ],
+          "backingCells": [
+            0,
+            7,
+            9
+          ]
+        },
+        {
+          "name": "rank1_identity",
+          "sourceSha256": "eab0c0cdd9f2b81d9116ca6f558b7194f283041f7c14a1d17591067b5a997b79",
+          "metadataSha256": "bac73c810ef2921a78f3f0ea22e1ddf595348b9d2cbaaf77bb4905c94680926e",
+          "snapshotSha256": "dace56e5c11a5e50a0ef28ff5cc225a4f599b9869644e0f8585382f1262245c7",
+          "snapshotBytes": 337,
+          "independentScriptClassDefinitions": 1,
+          "dimensions": [
+            2
+          ],
+          "backingCells": [
+            31,
+            0
+          ]
+        },
+        {
+          "name": "rank1_public_dimensions",
+          "sourceSha256": "666cbaf31a2ed2dac1db0a5bab8d4063e8dd6b27d40ae646ebc00bdbb4e8436d",
+          "metadataSha256": "869797e047a01b997c55c1da329a22e75cc6db80d747216a2ee571b0a5845773",
+          "snapshotSha256": "d1f64d36e60ede8cd27b01151f8c6d9b71a6d0d2cef905811f2d636f2a94f742",
+          "snapshotBytes": 273,
+          "independentScriptClassDefinitions": 1,
+          "dimensions": [
+            1
+          ],
+          "backingCells": [
+            0,
+            0,
+            11
+          ]
+        },
+        {
+          "name": "rank1_zero",
+          "sourceSha256": "ab869dc076e1d5f2788d8f375476ff1ce63ea102a51793a0b55c0a6fcb904973",
+          "metadataSha256": "60cb83ab0b59ce405c3b3e10c19ab2ac2641ac9e709d326eaa7c22e68847dd23",
+          "snapshotSha256": "fa06fc37d1732ce43b0ee76311d748c5cb22b8dd63e86595bf5922dc8be0e0e3",
+          "snapshotBytes": 262,
+          "independentScriptClassDefinitions": 1,
+          "dimensions": [
+            0
+          ],
+          "backingCells": []
+        }
+      ]
+    },
+    "linux": {
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "metadataSha256": "32e1f3ad9854c85674154a6832867c75dbe0dcca14259584b899f470cf89750d",
+      "cases": [
+        {
+          "name": "rank1_members",
+          "sourceSha256": "d8acd3fe7b53673ae5473d911890abe7158edbf07d7f56de9e0f4c30720ddcec",
+          "metadataSha256": "b0e750c0d0559fc778f9e510cbf10293408e9b8f595044fd2d958f8d3386cdfc",
+          "snapshotSha256": "57b4593f9cfc77b1372edbe68bcc2c91ed5d70d46eef524a4a0e41577a1728f0",
+          "snapshotBytes": 278,
+          "independentScriptClassDefinitions": 1,
+          "dimensions": [
+            3
+          ],
+          "backingCells": [
+            0,
+            7,
+            9
+          ]
+        },
+        {
+          "name": "rank1_identity",
+          "sourceSha256": "eab0c0cdd9f2b81d9116ca6f558b7194f283041f7c14a1d17591067b5a997b79",
+          "metadataSha256": "ceea99a860b76765987ac851eef5ead33a5e0fe981dd2b98714d9293fb8184af",
+          "snapshotSha256": "dace56e5c11a5e50a0ef28ff5cc225a4f599b9869644e0f8585382f1262245c7",
+          "snapshotBytes": 337,
+          "independentScriptClassDefinitions": 1,
+          "dimensions": [
+            2
+          ],
+          "backingCells": [
+            31,
+            0
+          ]
+        },
+        {
+          "name": "rank1_public_dimensions",
+          "sourceSha256": "666cbaf31a2ed2dac1db0a5bab8d4063e8dd6b27d40ae646ebc00bdbb4e8436d",
+          "metadataSha256": "0d825a36a4db70a27e6229933e54cad13df43a25819f389ef4c7a2b8915f2a5d",
+          "snapshotSha256": "d1f64d36e60ede8cd27b01151f8c6d9b71a6d0d2cef905811f2d636f2a94f742",
+          "snapshotBytes": 273,
+          "independentScriptClassDefinitions": 1,
+          "dimensions": [
+            1
+          ],
+          "backingCells": [
+            0,
+            0,
+            11
+          ]
+        },
+        {
+          "name": "rank1_zero",
+          "sourceSha256": "ab869dc076e1d5f2788d8f375476ff1ce63ea102a51793a0b55c0a6fcb904973",
+          "metadataSha256": "b8d6a7f63450ecf7cbcf8787e92a5d6d389e32efbe973b626d7c4cfee39dcc3a",
+          "snapshotSha256": "fa06fc37d1732ce43b0ee76311d748c5cb22b8dd63e86595bf5922dc8be0e0e3",
+          "snapshotBytes": 262,
+          "independentScriptClassDefinitions": 1,
+          "dimensions": [
+            0
+          ],
+          "backingCells": []
+        }
+      ]
+    }
+  },
+  "freshProcessImports": {
+    "Windows": {
+      "metadataSha256": "7d31db1b9235d0b762174147cff67f944b5fa670743cf7dd2b6263f666d7eb92",
+      "cases": 4,
+      "distinctProcessId": 58484
+    },
+    "Linux": {
+      "metadataSha256": "88661ba4a9a948c1578b36f333a2e5fcd207251be00985bfbb19a8c06a03ee61",
+      "cases": 4,
+      "distinctProcessId": 1
+    }
+  },
+  "crossPlatformSnapshotsIdentical": true,
+  "zeroLengthBackingAfterMigration": null,
+  "zeroLengthWrapperAfterMigration": "nonnull integer[] class",
+  "publicDimensionMutationDoesNotResizeBacking": true,
+  "verifierSha256": "77b3db6ef2109d71bad220820f03c74b278cbd199b5dabbaea61e5fd761b4012"
+}

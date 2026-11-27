@@ -6,6 +6,7 @@
 #undef PROFILES_PROVIDER_ONLY
 #include "opensim/services/profiles_configuration.hpp"
 #include "opensim/framework/nini_config_invariant.hpp"
+
 std::string U(std::string_view s) {
     if (s == "-" || s == ".")
         return {};
@@ -14,9 +15,11 @@ std::string U(std::string_view s) {
         out += static_cast<char>(std::stoi(std::string(s.substr(i, 2)), nullptr, 16));
     return out;
 }
-std::string text(const UserProfilesService::Text& value) {
+
+std::string text(const UserProfilesService::Text &value) {
     return value ? H(utf8(*value)) : "N";
 }
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -33,7 +36,7 @@ int main() {
         auto config = arena->create_ini_source(nini_string_reader(utf16(U(raw))));
         auto dispatcher = std::make_shared<server::JsonRpcDispatcher>();
         if (flags & 4)
-            dispatcher->add(u"classified_update", [](const auto&, auto&) { return true; });
+            dispatcher->add(u"classified_update", [](const auto &, auto &) { return true; });
         try {
             if (op == 'S') {
                 ProfilesPluginFactories factory;
@@ -67,7 +70,7 @@ int main() {
                         (connector.service_module ? "1" : "0") + ":" + text(connector.config_name);
             }
             status = "OK";
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
             status = "EX:" + H(e.what());
         }
         std::string keys;

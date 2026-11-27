@@ -1,13 +1,14 @@
 #include "opensim/framework/nini_xml_stream_writer.hpp"
 #include "nini_xml_encoding_tables.hpp"
 #include <bit>
+
 namespace opensim::framework {
 namespace {
-[[noreturn]] void fail(std::string type, unsigned h, std::u16string message,
-                       std::optional<std::u16string> param = {}, std::optional<int> actual = {}) {
-    throw NiniStreamWriterError(std::move(type), std::bit_cast<int>(h), std::move(message), std::move(param),
-                                actual);
+[[noreturn]] void fail(std::string type, unsigned h, std::u16string message, std::optional<std::u16string> param = {},
+                       std::optional<int> actual = {}) {
+    throw NiniStreamWriterError(std::move(type), std::bit_cast<int>(h), std::move(message), std::move(param), actual);
 }
+
 std::u16string line() {
 #ifdef _WIN32
     return u"\r\n";
@@ -15,6 +16,7 @@ std::u16string line() {
     return u"\n";
 #endif
 }
+
 int max_bytes(int page, int n) {
     if (n < 0) {
         if (page == 65001)
@@ -30,15 +32,17 @@ int max_bytes(int page, int n) {
     std::int64_t count = static_cast<std::int64_t>(n) + 1;
     count *= page == 65001 ? 3 : page == 1200 || page == 1201 ? 2 : page == 12000 || page == 12001 ? 4 : 1;
     if (count > 2147483647)
-        fail(
-            "System.ArgumentOutOfRangeException", 0x80131502,
-            u"Too many characters. The resulting number of bytes is larger than what can be returned as an int. (Parameter 'charCount')",
-            u"charCount");
+        fail("System.ArgumentOutOfRangeException", 0x80131502,
+             u"Too many characters. The resulting number of bytes is larger than what can be returned as an int. "
+             u"(Parameter 'charCount')",
+             u"charCount");
     return static_cast<int>(count);
 }
+
 struct Encoder {
     int page;
     char16_t pending = 0;
+
     unsigned char latin(char16_t c) {
         if (c <= 255)
             return static_cast<unsigned char>(c);
@@ -46,6 +50,7 @@ struct Encoder {
                                   [](auto pair, char16_t x) { return pair.first < x; });
         return p != xml_latin1_best_fit.end() && p->first == c ? p->second : '?';
     }
+
     int get_bytes(std::span<const char16_t> input, std::span<std::uint8_t> destination, bool flush) {
         std::vector<std::uint8_t> bytes;
         auto word = [&](std::uint16_t n) {
@@ -141,6 +146,7 @@ struct Encoder {
         return static_cast<int>(bytes.size());
     }
 };
+
 std::shared_ptr<XmlStreamEncoding> create(int page) {
     auto e = std::make_shared<XmlStreamEncoding>();
     e->xml_encoding = std::make_shared<NativeXmlTextEncoding>();
@@ -173,20 +179,18 @@ std::shared_ptr<XmlStreamEncoding> create(int page) {
         auto state = std::make_shared<Encoder>();
         state->page = page;
         auto encoder = std::make_shared<XmlStreamEncoder>();
-        encoder->get_bytes = [state](auto in, auto out, bool flush) {
-            return state->get_bytes(in, out, flush);
-        };
+        encoder->get_bytes = [state](auto in, auto out, bool flush) { return state->get_bytes(in, out, flush); };
         return encoder;
     };
     return e;
 }
-}
+} // namespace
+
 std::shared_ptr<XmlStreamEncoding> native_xml_intrinsic_encoding(NiniWriterText name) {
     if (!name)
-        fail("System.ArgumentNullException", 0x80004003, u"Value cannot be null. (Parameter 'name')",
-             u"name");
+        fail("System.ArgumentNullException", 0x80004003, u"Value cannot be null. (Parameter 'name')", u"name");
     std::u16string lower = *name;
-    for (auto& c : lower)
+    for (auto &c : lower)
         if (c >= u'A' && c <= u'Z')
             c += 32;
     int page = 0;
@@ -196,15 +200,14 @@ std::shared_ptr<XmlStreamEncoding> native_xml_intrinsic_encoding(NiniWriterText 
             break;
         }
     if (page == 65000)
-        fail(
-            "System.NotSupportedException", 0x80131515,
-            u"Support for UTF-7 is disabled. See https://aka.ms/dotnet-warnings/SYSLIB0001 for more information.");
+        fail("System.NotSupportedException", 0x80131515,
+             u"Support for UTF-7 is disabled. See https://aka.ms/dotnet-warnings/SYSLIB0001 for more information.");
     if (!page)
-        fail(
-            "System.ArgumentException", 0x80070057,
-            u"'" + *name +
-                u"' is not a supported encoding name. For information on defining a custom encoding, see the documentation for the Encoding.RegisterProvider method. (Parameter 'name')",
-            u"name");
+        fail("System.ArgumentException", 0x80070057,
+             u"'" + *name +
+                 u"' is not a supported encoding name. For information on defining a custom encoding, see the "
+                 u"documentation for the Encoding.RegisterProvider method. (Parameter 'name')",
+             u"name");
     static auto utf8 = create(65001), u16le = create(1200), u16be = create(1201), u32le = create(12000),
                 u32be = create(12001), ascii = create(20127), latin = create(28591);
     switch (page) {
@@ -224,4 +227,4 @@ std::shared_ptr<XmlStreamEncoding> native_xml_intrinsic_encoding(NiniWriterText 
         return latin;
     }
 }
-}
+} // namespace opensim::framework

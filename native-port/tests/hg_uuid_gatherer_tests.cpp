@@ -8,6 +8,7 @@
 #include <algorithm>
 using namespace opensim;
 using namespace scene;
+
 namespace {
 framework::Uuid id(int n) {
     if (n == -1)
@@ -16,10 +17,12 @@ framework::Uuid id(int n) {
     s << "00000000-0000-0000-0000-" << std::hex << std::setfill('0') << std::setw(12) << n;
     return framework::Uuid(s.str());
 }
+
 int number(framework::Uuid key) {
     return key == id(-1) ? -1 : std::stoi(key.str().substr(24), nullptr, 16);
 }
-std::string hex(const std::string& s) {
+
+std::string hex(const std::string &s) {
     std::string out;
     for (unsigned char c : s) {
         out += "0123456789abcdef"[c >> 4];
@@ -27,7 +30,8 @@ std::string hex(const std::string& s) {
     }
     return out;
 }
-std::optional<std::string> unhex(const std::string& s) {
+
+std::optional<std::string> unhex(const std::string &s) {
     if (s == "-")
         return {};
     std::string out;
@@ -37,19 +41,23 @@ std::optional<std::string> unhex(const std::string& s) {
         out.push_back(static_cast<char>(std::stoi(s.substr(i, 2), nullptr, 16)));
     return out;
 }
-std::string show_url(const std::optional<std::string>& url) {
+
+std::string show_url(const std::optional<std::string> &url) {
     return url ? "V:" + hex(*url) : "N";
 }
+
 struct RecordingService : services::StoredAssetService {
     int local_calls = 0, foreign_calls = 0;
     std::vector<std::optional<std::string>> urls;
-    explicit RecordingService(std::shared_ptr<services::AssetStore> db) : StoredAssetService(std::move(db)) {
-    }
-    Asset get_asset(const std::string& key) override {
+
+    explicit RecordingService(std::shared_ptr<services::AssetStore> db) : StoredAssetService(std::move(db)) {}
+
+    Asset get_asset(const std::string &key) override {
         ++local_calls;
         return StoredAssetService::get_asset(key);
     }
-    Asset get_foreign(const std::string& key, const std::optional<std::string>& url, bool local) override {
+
+    Asset get_foreign(const std::string &key, const std::optional<std::string> &url, bool local) override {
         if (!local)
             throw std::runtime_error("HG must store on the local grid");
         ++foreign_calls;
@@ -57,6 +65,7 @@ struct RecordingService : services::StoredAssetService {
         return StoredAssetService::get_asset(key);
     }
 };
+
 void integration() {
     auto db = std::make_shared<services::SqliteAssetStore>(":memory:", true);
     auto script = std::make_shared<framework::AssetBase>(id(1), "HG script", std::int8_t(10), "");
@@ -67,15 +76,14 @@ void integration() {
     if (!db->store(script) || !db->store(texture))
         throw std::runtime_error("HG SQLite seed");
     auto service = std::make_shared<RecordingService>(db);
-    auto error = [](const std::string& text) { throw std::runtime_error(text); };
-    auto debug = [](const std::string&) {};
+    auto error = [](const std::string &text) { throw std::runtime_error(text); };
+    auto debug = [](const std::string &) {};
     HGUuidGatherer remote(service, "http://asset-service/", [] { return 0; }, error, debug);
     remote.add_for_inspection(id(1));
     remote.gather_all();
     if (service->foreign_calls != 2 || service->local_calls || remote.state()->gathered.size() != 2 ||
         remote.core().asset_get_count != 2 ||
-        service->urls !=
-            std::vector<std::optional<std::string>>{"http://asset-service/", "http://asset-service/"})
+        service->urls != std::vector<std::optional<std::string>>{"http://asset-service/", "http://asset-service/"})
         throw std::runtime_error("Native HG backend/SQLite/embedded traversal integration");
     HGUuidGatherer local(service, "\xe3\x80\x80", [] { return 0; }, error, debug);
     local.add_for_inspection(id(1));
@@ -85,20 +93,23 @@ void integration() {
     remote.asset_server_url({});
     if (remote.fetch_asset(id(0)) || service->foreign_calls != 3 || service->urls.back() ||
         remote.core().asset_get_count != 2 || remote.state()->gathered.size() != 2)
-        throw std::runtime_error(
-            "Direct null-URL zero fetch must remain foreign and leave core state unchanged");
+        throw std::runtime_error("Direct null-URL zero fetch must remain foreign and leave core state unchanged");
 }
+
 struct Probe {
     int level = 0, mode = 0, point = 0, nth = 1, seen = 0, mut_url = 0, mut_level = 0, depth = 0;
     std::vector<std::string> trace;
-    HGUuidGatherer* hg = nullptr;
-    void log(const std::string& s) {
+    HGUuidGatherer *hg = nullptr;
+
+    void log(const std::string &s) {
         trace.push_back(s);
     }
+
     void hook(int p) {
         if (p == point && ++seen == nth)
             throw std::runtime_error("fault");
     }
+
     void mutate() {
         if (mut_url == 1)
             hg->asset_server_url({});
@@ -109,7 +120,8 @@ struct Probe {
         if (mut_level)
             level = mut_level - 2;
     }
-    UuidGatherer::Asset get(framework::Uuid key, bool foreign, const std::optional<std::string>& url = {},
+
+    UuidGatherer::Asset get(framework::Uuid key, bool foreign, const std::optional<std::string> &url = {},
                             bool local = false) {
         int n = number(key);
         log((foreign ? "F:" : "L:") + std::to_string(n) +
@@ -124,22 +136,22 @@ struct Probe {
             return {};
         auto a = std::make_shared<framework::AssetBase>(key, "asset", std::int8_t(10), "");
         if (mode != 3)
-            a->data =
-                std::make_shared<std::vector<std::uint8_t>>(mode == 4 || (mode == 7 && n == 2) ? 0 : 36);
+            a->data = std::make_shared<std::vector<std::uint8_t>>(mode == 4 || (mode == 7 && n == 2) ? 0 : 36);
         return a;
     }
+
     std::shared_ptr<UuidGathererBackend> backend() {
         auto b = std::make_shared<UuidGathererBackend>();
         b->get_asset = [this](auto key) { return get(key, false); };
-        b->error = [this](auto& s) {
+        b->error = [this](auto &s) {
             log("E:" + s);
             hook(5);
         };
-        b->debug = [this](auto& s) {
+        b->debug = [this](auto &s) {
             log("B:" + s);
             hook(6);
         };
-        auto inspect = [this](auto& g, auto& a) {
+        auto inspect = [this](auto &g, auto &a) {
             int n = number(a->full_id());
             log("I:" + std::to_string(n));
             hook(7);
@@ -151,14 +163,15 @@ struct Probe {
         b->wearable = b->gesture = b->notecard = b->embedded = b->material = b->object = inspect;
         return b;
     }
-    std::string snapshot(const UuidGatherer& g) {
+
+    std::string snapshot(const UuidGatherer &g) {
         std::vector<std::string> values;
-        for (auto& [key, type] : g.state()->gathered)
+        for (auto &[key, type] : g.state()->gathered)
             values.push_back(std::to_string(number(key)) + ":" + std::to_string(type));
         std::sort(values.begin(), values.end());
-        auto join = [](const auto& list) {
+        auto join = [](const auto &list) {
             std::string s;
-            for (auto& item : list) {
+            for (auto &item : list) {
                 if (!s.empty())
                     s += ',';
                 s += item;
@@ -172,17 +185,16 @@ struct Probe {
             uncertain.push_back(std::to_string(number(key)));
         for (auto key : g.pending())
             pending.push_back(std::to_string(number(key)));
-        return join(values) + "|" + join(failed) + "|" + join(uncertain) + "|" +
-               std::to_string(g.error_count) + ":" + std::to_string(g.asset_get_count) + ":" +
-               std::to_string(g.possible_not_asset_count) + ":" + (g.verbose() ? "1" : "0") + "|" +
-               join(pending);
+        return join(values) + "|" + join(failed) + "|" + join(uncertain) + "|" + std::to_string(g.error_count) + ":" +
+               std::to_string(g.asset_get_count) + ":" + std::to_string(g.possible_not_asset_count) + ":" +
+               (g.verbose() ? "1" : "0") + "|" + join(pending);
     }
-    std::string run(const std::string& line) {
+
+    std::string run(const std::string &line) {
         std::istringstream in(line);
         std::string url;
         int op, collector, target;
-        in >> url >> op >> level >> mode >> point >> nth >> mut_url >> mut_level >> collector >> target >>
-            depth;
+        in >> url >> op >> level >> mode >> point >> nth >> mut_url >> mut_level >> collector >> target >> depth;
         auto state = std::make_shared<UuidGathererState>();
         if (collector == 1)
             state->gathered[id(1)] = 7;
@@ -195,7 +207,7 @@ struct Probe {
         auto make = [&] {
             return std::make_unique<HGUuidGatherer>(
                 backend(),
-                [this](const auto& key, const auto& foreign, bool local) {
+                [this](const auto &key, const auto &foreign, bool local) {
                     return get(framework::Uuid(key), true, foreign, local);
                 },
                 unhex(url),
@@ -204,7 +216,7 @@ struct Probe {
                     hook(3);
                     return level;
                 },
-                [this](auto& s) {
+                [this](auto &s) {
                     log("H:" + s);
                     hook(4);
                 },
@@ -217,8 +229,8 @@ struct Probe {
         try {
             if (op == 0 || op == 4) {
                 auto a = first->fetch_asset(id(target));
-                result = a ? "A:" + std::to_string(number(a->full_id())) + ":" + std::to_string(a->type()) +
-                                 ":" + (a->data ? std::to_string(a->data->size()) : "N")
+                result = a ? "A:" + std::to_string(number(a->full_id())) + ":" + std::to_string(a->type()) + ":" +
+                                 (a->data ? std::to_string(a->data->size()) : "N")
                            : "-";
             }
             if (op != 0) {
@@ -237,18 +249,18 @@ struct Probe {
             result = "EX";
         }
         std::string events;
-        for (auto& event : trace) {
+        for (auto &event : trace) {
             if (!events.empty())
                 events += ';';
             events += event;
         }
-        return result + "|" + hex(events) + "|" + show_url(first->asset_server_url()) + "|" +
-               std::to_string(level) + "|" + snapshot(first->core()) +
-               (second ? "|S:" + snapshot(second->core()) : "");
+        return result + "|" + hex(events) + "|" + show_url(first->asset_server_url()) + "|" + std::to_string(level) +
+               "|" + snapshot(first->core()) + (second ? "|S:" + snapshot(second->core()) : "");
     }
 };
-}
-int main(int argc, char** argv) {
+} // namespace
+
+int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string_view(argv[1]) == "--probe") {
             std::string line;
@@ -268,7 +280,7 @@ int main(int argc, char** argv) {
             throw std::runtime_error("Public direct fetch must bypass zero/URL fallback");
         std::cout << "PASS: Hypergrid direct and recursive retrieval\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

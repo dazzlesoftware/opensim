@@ -167,7 +167,7 @@ def main():
 
     for seed in range(32):
         results = runs([str(seed)])
-        if len(results[0]) != 61:
+        if len(results[0]) != 62:
             raise AssertionError(("Registry observation count", seed, len(results[0])))
         for index, (expected, actual) in enumerate(zip(*results)):
             observations += 1
@@ -183,7 +183,8 @@ def main():
     cases = [{}, {"serverPort": "9000"}]
     base = {"serverPort": "9000"}
     for key, values in {
-        "uuid": [None, "", "bad", "00000000-0000-0000-0000-000000000001"],
+        "uuid": [None, "", "bad", "00000000-0000-0000-0000-000000000001",
+                 " 00000000-0000-0000-0000-000000000001suffix"],
         "locX": [
             None,
             "0",
@@ -194,6 +195,8 @@ def main():
             "  +257 ",
             "+-1",
             "1.0",
+            "256\0",
+            "\u00a0256\u00a0",
         ],
         "locY": ["-257", "256", "999999999999"],
         "sizeX": [None, "0", "-256", " 1024 ", "bad"],
@@ -202,12 +205,18 @@ def main():
         "flags": [None, "0", "-1", "2048", "4294967295", "bad"],
         "serverIP": [None, "", "localhost", "::1", "example.invalid"],
         "serverPort": [None, "", "bad", "-1", "65535", "65536", "2147483648", "+9000", "+-1"],
-        "serverHttpPort": [None, "", "0", "4294967295", "4294967296", "-1", "+1", "+-1", "bad"],
+        "serverHttpPort": [
+            None, "", "0", "-0", "4294967295", "4294967296", "-1", "+1", "+-1",
+            "9000\0", "\u00a09000\u00a0", "bad",
+        ],
         "serverURI": [None, "", "http://host", "http://host/", "arbitrary", "/"],
         "regionName": [None, "", "Alpha & <Beta>", "\u8a66\u9a13", " With Space "],
-        "regionMapTexture": [None, "bad", "00000000-0000-0000-0000-000000000001"],
-        "parcelMapTexture": [None, "bad", "00000000-0000-0000-0000-000000000002"],
-        "owner_uuid": [None, "bad", "00000000-0000-0000-0000-000000000003"],
+        "regionMapTexture": [None, "bad", "00000000-0000-0000-0000-000000000001",
+                             " 00000000-0000-0000-0000-000000000001suffix"],
+        "parcelMapTexture": [None, "bad", "00000000-0000-0000-0000-000000000002",
+                             " 00000000-0000-0000-0000-000000000002suffix"],
+        "owner_uuid": [None, "bad", "00000000-0000-0000-0000-000000000003",
+                       " 00000000-0000-0000-0000-000000000003suffix"],
         "Token": [None, "", "secret"],
         "regionSecret": [None, "", "secret"],
         "unknown": [None, "ignored"],

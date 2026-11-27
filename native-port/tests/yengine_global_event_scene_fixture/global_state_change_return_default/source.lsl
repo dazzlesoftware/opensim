@@ -1,0 +1,1 @@
+integer calls;integer value=init();integer init(){calls++;if(llGetObjectDesc()!="once"){llSetObjectDesc("once");state other;}return 7;}default{state_entry(){calls+=100;}state_exit(){calls+=10;}}state other{state_entry(){calls+=1000;}touch_start(integer n){state default;}}

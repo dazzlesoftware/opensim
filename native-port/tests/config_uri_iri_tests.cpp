@@ -3,7 +3,8 @@
 #include <sstream>
 #include <iomanip>
 using namespace opensim::framework;
-int main(int argc, char**) {
+
+int main(int argc, char **) {
     if (argc == 1) {
         if (!config_uri_has_iri_characters(u"x%41") || config_uri_has_iri_characters(u"x%2F"))
             return 1;

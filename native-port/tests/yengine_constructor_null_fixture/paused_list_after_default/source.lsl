@@ -1,0 +1,1 @@
+list later;integer calls;list early=pause();integer after;list pause(){list local=later;calls++;llSleep(3.0);return local;}default{state_entry(){after=1;}}

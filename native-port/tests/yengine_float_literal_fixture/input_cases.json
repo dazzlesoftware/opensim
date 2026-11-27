@@ -1,0 +1,382 @@
+[
+  {
+    "name": "literal_00",
+    "literal": "0.0",
+    "source": "float value=0.0;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_01",
+    "literal": "-0.0",
+    "source": "float value=-0.0;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_02",
+    "literal": ".0",
+    "source": "float value=.0;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_03",
+    "literal": "0.",
+    "source": "float value=0.;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_04",
+    "literal": "1.",
+    "source": "float value=1.;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_05",
+    "literal": "1.0",
+    "source": "float value=1.0;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_06",
+    "literal": ".5",
+    "source": "float value=.5;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_07",
+    "literal": "-.5",
+    "source": "float value=-.5;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_08",
+    "literal": "+.5",
+    "source": "float value=+.5;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_09",
+    "literal": "0.1",
+    "source": "float value=0.1;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_10",
+    "literal": "0.2",
+    "source": "float value=0.2;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_11",
+    "literal": "0.3",
+    "source": "float value=0.3;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_12",
+    "literal": ".123456789",
+    "source": "float value=.123456789;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_13",
+    "literal": "-.987654321",
+    "source": "float value=-.987654321;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_14",
+    "literal": "13.00000003",
+    "source": "float value=13.00000003;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_15",
+    "literal": "1.2345665",
+    "source": "float value=1.2345665;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_16",
+    "literal": "0.0000005",
+    "source": "float value=0.0000005;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_17",
+    "literal": "1e0",
+    "source": "float value=1e0;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_18",
+    "literal": "1E0",
+    "source": "float value=1E0;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_19",
+    "literal": "1e+2",
+    "source": "float value=1e+2;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_20",
+    "literal": "1e-2",
+    "source": "float value=1e-2;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_21",
+    "literal": "1.e2",
+    "source": "float value=1.e2;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_22",
+    "literal": ".1e2",
+    "source": "float value=.1e2;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_23",
+    "literal": "0e100",
+    "source": "float value=0e100;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_24",
+    "literal": "-0e100",
+    "source": "float value=-0e100;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_25",
+    "literal": "1e308",
+    "source": "float value=1e308;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_26",
+    "literal": "1e309",
+    "source": "float value=1e309;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_27",
+    "literal": "1e-308",
+    "source": "float value=1e-308;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_28",
+    "literal": "1e-324",
+    "source": "float value=1e-324;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_29",
+    "literal": "5e-324",
+    "source": "float value=5e-324;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_30",
+    "literal": "2.2250738585072014e-308",
+    "source": "float value=2.2250738585072014e-308;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_31",
+    "literal": "1.7976931348623157e308",
+    "source": "float value=1.7976931348623157e308;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_32",
+    "literal": "1.7976931348623159e308",
+    "source": "float value=1.7976931348623159e308;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_33",
+    "literal": "123456789012345678901234567890.12345",
+    "source": "float value=123456789012345678901234567890.12345;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_34",
+    "literal": "0.12345678901234567890123456789",
+    "source": "float value=0.12345678901234567890123456789;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_35",
+    "literal": "9007199254740993.0",
+    "source": "float value=9007199254740993.0;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_36",
+    "literal": "1.0000000000000001",
+    "source": "float value=1.0000000000000001;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_37",
+    "literal": "999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999.0",
+    "source": "float value=999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999.0;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_38",
+    "literal": "1e2147483647",
+    "source": "float value=1e2147483647;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_39",
+    "literal": "1e2147483648",
+    "source": "float value=1e2147483648;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_40",
+    "literal": "1e-2147483648",
+    "source": "float value=1e-2147483648;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_41",
+    "literal": "1e-2147483649",
+    "source": "float value=1e-2147483649;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_42",
+    "literal": "1e",
+    "source": "float value=1e;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_43",
+    "literal": "1e+",
+    "source": "float value=1e+;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_44",
+    "literal": "1e-",
+    "source": "float value=1e-;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_45",
+    "literal": ".e1",
+    "source": "float value=.e1;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_46",
+    "literal": "1.2.3",
+    "source": "float value=1.2.3;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_47",
+    "literal": "1f",
+    "source": "float value=1f;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_48",
+    "literal": "1.0f",
+    "source": "float value=1.0f;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_49",
+    "literal": "1d",
+    "source": "float value=1d;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_50",
+    "literal": "1.0d",
+    "source": "float value=1.0d;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_51",
+    "literal": "0x1.2",
+    "source": "float value=0x1.2;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_52",
+    "literal": "1_e2",
+    "source": "float value=1_e2;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_53",
+    "literal": "1e_2",
+    "source": "float value=1e_2;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_54",
+    "literal": "1e2x",
+    "source": "float value=1e2x;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_55",
+    "literal": "NaN",
+    "source": "float value=NaN;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_56",
+    "literal": "Infinity",
+    "source": "float value=Infinity;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_57",
+    "literal": "1E++2",
+    "source": "float value=1E++2;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_58",
+    "literal": "1E--2",
+    "source": "float value=1E--2;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_59",
+    "literal": "1e+ 2",
+    "source": "float value=1e+ 2;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_60",
+    "literal": "1.0e0",
+    "source": "float value=1.0e0;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_61",
+    "literal": "1.0e+2",
+    "source": "float value=1.0e+2;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_62",
+    "literal": "1.0e-2",
+    "source": "float value=1.0e-2;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_63",
+    "literal": "1.0e308",
+    "source": "float value=1.0e308;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_64",
+    "literal": "1.0e309",
+    "source": "float value=1.0e309;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_65",
+    "literal": "1.0e-308",
+    "source": "float value=1.0e-308;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_66",
+    "literal": "1.0e-324",
+    "source": "float value=1.0e-324;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_67",
+    "literal": "5.0e-324",
+    "source": "float value=5.0e-324;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_68",
+    "literal": "0.0e309",
+    "source": "float value=0.0e309;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_69",
+    "literal": "-0.0e309",
+    "source": "float value=-0.0e309;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_70",
+    "literal": "1.0e2147483647",
+    "source": "float value=1.0e2147483647;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_71",
+    "literal": "1.0e2147483648",
+    "source": "float value=1.0e2147483648;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_72",
+    "literal": "1.0e-2147483647",
+    "source": "float value=1.0e-2147483647;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_73",
+    "literal": "1.0E+2f",
+    "source": "float value=1.0E+2f;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_74",
+    "literal": "1.0F",
+    "source": "float value=1.0F;integer done;default{state_entry(){done=1;}}"
+  },
+  {
+    "name": "literal_75",
+    "literal": ".1e-2147483647",
+    "source": "float value=.1e-2147483647;integer done;default{state_entry(){done=1;}}"
+  }
+]

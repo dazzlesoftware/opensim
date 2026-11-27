@@ -1,0 +1,1 @@
+list result;default{state_entry(){xmrEventEnqueue([21,<.123456789,-.00000049,1.234567891>,(rotation)"<0,0,0,0>",<.123456789,-.987654321,.333333333,-.00000049>]);llSleep(0.1);result=xmrEventDequeue(0.0,2097152,0,0,0);}touch_start(integer n){}}

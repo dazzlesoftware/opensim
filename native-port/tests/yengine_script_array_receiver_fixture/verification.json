@@ -1,0 +1,579 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "fullParityVerified": false,
+  "nativeParityVerified": false,
+  "scope": "Unchanged original generated-array side-effectful receiver evaluation, Windows/Linux x64",
+  "generatorSha256": "3d57d8ca1af53f1374e7edd08982e80cc692e26df5863d70e0a9b4211f78068e",
+  "generatorAssemblySha256": "4e714cbdfa0a6637662c67f96d4b71731134ad2c02c112047c89f80f851ece1c",
+  "platforms": {
+    "windows": {
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "processId": 55900,
+      "metadataSha256": "b148a6c1818ebfe9ed7dacfd594d76c571a439bdc9ce235c2a625c5d9c8583d2",
+      "cases": [
+        {
+          "name": "receiver_assign_order",
+          "sourceSha256": "178b1b378f4f0b3e5039eb9983d5d69ed41cc8f51278a05287a167211bcd80fa",
+          "metadataSha256": "30ffca430de8a89bc3e13bf9922ba2367919144b8bcc392847d077ea693f2180",
+          "snapshotSha256": "5065cdad8531879a36c98391f6e0bbe9fe98ee89e7b941c3ccd7dcfd2db8b07c",
+          "snapshotBytes": 278,
+          "independentScriptClassDefinitions": 1,
+          "initialClasses": {
+            "input": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                7
+              ]
+            },
+            "alias": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                7
+              ]
+            }
+          },
+          "finalClasses": {
+            "input": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                7
+              ]
+            },
+            "alias": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                7
+              ]
+            }
+          }
+        },
+        {
+          "name": "receiver_compound_order",
+          "sourceSha256": "f775967cd7eb6e6563ad297e0d6f7435c2f41c2da3e7e14ed3d34a1639163df0",
+          "metadataSha256": "3b35be9ab54e2ce52188fc403a935f149cff3a86f968e235ec7549e17307972a",
+          "snapshotSha256": "2e3fb0c321a64fed709d90c2f80e89688fb961df7cf53bd64b2c2c952082f120",
+          "snapshotBytes": 278,
+          "independentScriptClassDefinitions": 1,
+          "initialClasses": {
+            "input": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                18
+              ]
+            },
+            "alias": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                18
+              ]
+            }
+          },
+          "finalClasses": {
+            "input": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                18
+              ]
+            },
+            "alias": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                18
+              ]
+            }
+          }
+        },
+        {
+          "name": "receiver_postfix_order",
+          "sourceSha256": "7870eb7166728d1585fc0ee6dd23ac90d7457b41d388210e6f9167b59ddd3187",
+          "metadataSha256": "45709a9d5b95402f88efb8f16e6825d0072181b03e3a7f086a239a909f7df97c",
+          "snapshotSha256": "96424ea670df032bf0461689f5bcc784c6ef374e6f18c92c50845decc7cb8572",
+          "snapshotBytes": 278,
+          "independentScriptClassDefinitions": 1,
+          "initialClasses": {
+            "input": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                12
+              ]
+            },
+            "alias": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                12
+              ]
+            }
+          },
+          "finalClasses": {
+            "input": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                12
+              ]
+            },
+            "alias": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                12
+              ]
+            }
+          }
+        },
+        {
+          "name": "receiver_compound_rhs_yield_rebind",
+          "sourceSha256": "dcb0ef1709f0aa504d3ec6f9f9d8a6afa22fccc275c071a64b7e8b1aa4c54f24",
+          "metadataSha256": "f3531662555b118fba183921961f8c274d0e34573cc2f008f2cb92c9edddab82",
+          "snapshotSha256": "fd724bdd3b00d3707da02defb55948dfb2b26199a8c7dcd0a00911990194b20f",
+          "snapshotBytes": 383,
+          "independentScriptClassDefinitions": 2,
+          "initialClasses": {
+            "input": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                100
+              ]
+            },
+            "alias": {
+              "reference": 3,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                11
+              ]
+            }
+          },
+          "finalClasses": {
+            "input": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                107
+              ]
+            },
+            "alias": {
+              "reference": 3,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                11
+              ]
+            }
+          }
+        },
+        {
+          "name": "receiver_compound_base_yield_rebind",
+          "sourceSha256": "ec6a0d55d4c2dd1aa9747e77a16fd331cc7a1a0207ffd0fa0697567fdf7db825",
+          "metadataSha256": "48ea3770853dec945cd5cbc7c415bd366399fdc8d0d179821b67359052528797",
+          "snapshotSha256": "2e9ee93e733078a57d30d6369fc1d9126fe0bf8fb371b285b0c6269e627cf348",
+          "snapshotBytes": 387,
+          "independentScriptClassDefinitions": 2,
+          "initialClasses": {
+            "input": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                100
+              ]
+            },
+            "alias": {
+              "reference": 3,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                11
+              ]
+            }
+          },
+          "finalClasses": {
+            "input": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                107
+              ]
+            },
+            "alias": {
+              "reference": 3,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                11
+              ]
+            }
+          }
+        }
+      ],
+      "originalBackendSha256": {
+        "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+        "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+        "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+        "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+        "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+        "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+        "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+        "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+        "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+        "original_source_XMRInstCapture.cs": "775f1d83bd4610f788891269ea9ea08b1f79cf4bf3b44300d926f49c8a277cbd",
+        "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+        "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+        "original_source_Helpers.cs": "96b7c3090cdded9c12e986bc538705272eae4c0fc12f01deab8f0f1bb94c7bcf",
+        "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+        "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+        "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+        "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+        "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+        "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+        "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+      }
+    },
+    "linux": {
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "processId": 1,
+      "metadataSha256": "1eda2947d087554a76876e596f14bc34b792621ddcb236c0adc0ad5a552d139e",
+      "cases": [
+        {
+          "name": "receiver_assign_order",
+          "sourceSha256": "178b1b378f4f0b3e5039eb9983d5d69ed41cc8f51278a05287a167211bcd80fa",
+          "metadataSha256": "2a66faee1018349416549c77a96a5895584f8ec92fcdd653001c3adc3ae582f5",
+          "snapshotSha256": "5065cdad8531879a36c98391f6e0bbe9fe98ee89e7b941c3ccd7dcfd2db8b07c",
+          "snapshotBytes": 278,
+          "independentScriptClassDefinitions": 1,
+          "initialClasses": {
+            "input": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                7
+              ]
+            },
+            "alias": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                7
+              ]
+            }
+          },
+          "finalClasses": {
+            "input": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                7
+              ]
+            },
+            "alias": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                7
+              ]
+            }
+          }
+        },
+        {
+          "name": "receiver_compound_order",
+          "sourceSha256": "f775967cd7eb6e6563ad297e0d6f7435c2f41c2da3e7e14ed3d34a1639163df0",
+          "metadataSha256": "0ab995c100e6d5e0c364417dc912e34919e4a34e6c077e963d5d13ecfac4ee3d",
+          "snapshotSha256": "2e3fb0c321a64fed709d90c2f80e89688fb961df7cf53bd64b2c2c952082f120",
+          "snapshotBytes": 278,
+          "independentScriptClassDefinitions": 1,
+          "initialClasses": {
+            "input": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                18
+              ]
+            },
+            "alias": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                18
+              ]
+            }
+          },
+          "finalClasses": {
+            "input": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                18
+              ]
+            },
+            "alias": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                18
+              ]
+            }
+          }
+        },
+        {
+          "name": "receiver_postfix_order",
+          "sourceSha256": "7870eb7166728d1585fc0ee6dd23ac90d7457b41d388210e6f9167b59ddd3187",
+          "metadataSha256": "4681cf127625ad4080cff576ed3155247d55b2d1d631671d7bc54b2ee55daea0",
+          "snapshotSha256": "96424ea670df032bf0461689f5bcc784c6ef374e6f18c92c50845decc7cb8572",
+          "snapshotBytes": 278,
+          "independentScriptClassDefinitions": 1,
+          "initialClasses": {
+            "input": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                12
+              ]
+            },
+            "alias": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                12
+              ]
+            }
+          },
+          "finalClasses": {
+            "input": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                12
+              ]
+            },
+            "alias": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                12
+              ]
+            }
+          }
+        },
+        {
+          "name": "receiver_compound_rhs_yield_rebind",
+          "sourceSha256": "dcb0ef1709f0aa504d3ec6f9f9d8a6afa22fccc275c071a64b7e8b1aa4c54f24",
+          "metadataSha256": "0d2a9e832a0ba4c1510852bd71e98934987d08a9a4cfa95bd61de64e2055c34f",
+          "snapshotSha256": "fd724bdd3b00d3707da02defb55948dfb2b26199a8c7dcd0a00911990194b20f",
+          "snapshotBytes": 383,
+          "independentScriptClassDefinitions": 2,
+          "initialClasses": {
+            "input": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                100
+              ]
+            },
+            "alias": {
+              "reference": 3,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                11
+              ]
+            }
+          },
+          "finalClasses": {
+            "input": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                107
+              ]
+            },
+            "alias": {
+              "reference": 3,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                11
+              ]
+            }
+          }
+        },
+        {
+          "name": "receiver_compound_base_yield_rebind",
+          "sourceSha256": "ec6a0d55d4c2dd1aa9747e77a16fd331cc7a1a0207ffd0fa0697567fdf7db825",
+          "metadataSha256": "cc089538ec7297e8ced713ccc47659b0218e36df12e43105ad2afe70a3398281",
+          "snapshotSha256": "2e9ee93e733078a57d30d6369fc1d9126fe0bf8fb371b285b0c6269e627cf348",
+          "snapshotBytes": 387,
+          "independentScriptClassDefinitions": 2,
+          "initialClasses": {
+            "input": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                100
+              ]
+            },
+            "alias": {
+              "reference": 3,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                11
+              ]
+            }
+          },
+          "finalClasses": {
+            "input": {
+              "reference": 1,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                107
+              ]
+            },
+            "alias": {
+              "reference": 3,
+              "dimensions": [
+                1
+              ],
+              "backing": [
+                11
+              ]
+            }
+          }
+        }
+      ],
+      "originalBackendSha256": {
+        "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+        "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+        "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+        "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+        "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+        "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+        "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+        "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+        "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+        "original_source_XMRInstCapture.cs": "775f1d83bd4610f788891269ea9ea08b1f79cf4bf3b44300d926f49c8a277cbd",
+        "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+        "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+        "original_source_Helpers.cs": "96b7c3090cdded9c12e986bc538705272eae4c0fc12f01deab8f0f1bb94c7bcf",
+        "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+        "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+        "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+        "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+        "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+        "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+        "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+      }
+    }
+  },
+  "freshProcessImports": {
+    "Windows": {
+      "metadataSha256": "35313df294aefae8a7987387c5c6c3dcb2bccc3c1be92b2560c6ab3f6ea38ac7",
+      "cases": 5,
+      "processId": 63268
+    },
+    "Linux": {
+      "metadataSha256": "6cf3110571fa4e2e7ba984016b30b388e730ca21d648012cb48eb75bf78a665f",
+      "cases": 5,
+      "processId": 1
+    }
+  },
+  "measuredBehavior": {
+    "simpleAssignment": "Base() then Index() then Right(), each once: order312",
+    "compoundAssignment": "Right() then Base() then Index(), each once: order231",
+    "postfix": "Base() then Index(), each once: order31; old11 returned, stored12",
+    "rhsSleepRebinding": "Capture order2/base0/index0; resume order231/new input107/old alias11",
+    "receiverSleepRebinding": "Capture order23/base1/index0; resume order231/new input107/old alias11"
+  },
+  "crossPlatformSnapshotsIdentical": true,
+  "observationSafety": "Copied original harness with ToArray for class integer observation; no production source modifications.",
+  "failedAttempts": [
+    {
+      "folder": "windows",
+      "reason": "Incorrect sourceRoot supplied to metadata hashing; execution files retained, no proof claim; windows-observed is complete corrected independent run."
+    }
+  ],
+  "verifierSha256": "dc2c24543a5137d23ebb7c527260228e1e64fc5c52d8c11b9349732bd8e2487d"
+}

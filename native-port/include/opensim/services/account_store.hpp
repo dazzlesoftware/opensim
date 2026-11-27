@@ -37,49 +37,63 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "opensim/services/user_account.hpp"
 #include "opensim/services/auth_info.hpp"
 struct sqlite3;
+
 namespace opensim::services {
 class SqliteUserAccountTable;
 class SqliteAuthenticationTable;
+
 struct AuthenticationResult {
     std::string token, real_id;
-    explicit operator bool() const noexcept { return !token.empty(); }
+
+    explicit operator bool() const noexcept {
+        return !token.empty();
+    }
 };
+
+struct AccountBackend {
+    using Fields = std::vector<std::pair<std::string, std::string>>;
+    std::function<std::optional<UserAccount>(std::string_view, const Fields &)> find;
+    std::function<std::vector<UserAccount>(std::string_view, std::string_view)> search;
+    std::function<bool(const UserAccount &)> store;
+};
+
 class AccountStore {
-public:
-    AccountStore(
-        const std::string& accounts_path,
-        const std::string& auth_path,
-        bool initialize = false,
-        bool source_accounts = false,
-        std::string account_realm = "UserAccounts",
-        std::string auth_realm = "auth",
-        bool local_authentication = true);
+  public:
+    AccountStore(const std::string &accounts_path, const std::string &auth_path, bool initialize = false,
+                 bool source_accounts = false, std::string account_realm = "UserAccounts",
+                 std::string auth_realm = "auth", bool local_authentication = true);
     ~AccountStore();
-    AccountStore(const AccountStore&) = delete;
-    AccountStore& operator=(const AccountStore&) = delete;
+    AccountStore(const AccountStore &) = delete;
+    AccountStore &operator=(const AccountStore &) = delete;
+    // Configure before starting request workers. A selected remote backend
+    // never falls back to local account rows on a missing or failed lookup.
+    void set_backend(AccountBackend backend);
     std::optional<UserAccount> find(std::string_view scope, std::string_view first, std::string_view last);
     std::optional<UserAccount> find_by_email(std::string_view scope, std::string_view email);
     std::optional<UserAccount> find_by_id(std::string_view scope, std::string_view principal);
     std::vector<UserAccount> search_accounts(std::string_view scope, std::string_view query);
-    bool store_service_urls(const UserAccount& account);
-    bool store_account(const UserAccount& account);
-    bool set_password(std::string_view principal,const std::optional<std::string>& password,
-        std::function<framework::Uuid()> random={});
+    bool store_service_urls(const UserAccount &account);
+    bool store_account(const UserAccount &account);
+    bool set_password(std::string_view principal, const std::optional<std::string> &password,
+                      std::function<framework::Uuid()> random = {});
     std::string create_user(std::string_view first, std::string_view last, std::string_view password,
-        std::string_view scope, int level = 0);
-    AuthenticationResult authenticate(std::string_view principal, std::string_view password_hash,
-        int lifetime_minutes, bool allow_web_keys = true);
+                            std::string_view scope, int level = 0);
+    AuthenticationResult authenticate(std::string_view principal, std::string_view password_hash, int lifetime_minutes,
+                                      bool allow_web_keys = true);
     bool verify(std::string_view principal, std::string_view token, int lifetime_minutes);
     bool release(std::string_view principal, std::string_view token);
     std::shared_ptr<AuthInfo> get_auth_info(framework::Uuid principal);
-    bool set_auth_info(const std::shared_ptr<AuthInfo>& info);
-private:
-    std::optional<UserAccount> find_fields(std::string_view scope, const std::vector<std::pair<std::string,std::string>>& fields);
-    sqlite3* db_ = nullptr;
+    bool set_auth_info(const std::shared_ptr<AuthInfo> &info);
+
+  private:
+    std::optional<UserAccount> find_fields(std::string_view scope,
+                                           const std::vector<std::pair<std::string, std::string>> &fields);
+    sqlite3 *db_ = nullptr;
     std::string auth_schema_;
     std::recursive_mutex mutex_;
-    bool has_country_=false;
+    bool has_country_ = false;
     std::unique_ptr<SqliteUserAccountTable> account_table_;
     std::unique_ptr<SqliteAuthenticationTable> authentication_table_;
+    std::optional<AccountBackend> backend_;
 };
-}
+} // namespace opensim::services

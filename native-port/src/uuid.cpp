@@ -29,6 +29,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "opensim/framework/identity.hpp"
 #include <algorithm>
 #include <stdexcept>
+
 namespace opensim::framework {
 Uuid parse_sdk_uuid(std::string_view text) {
     while (text.starts_with(' '))
@@ -37,6 +38,7 @@ Uuid parse_sdk_uuid(std::string_view text) {
         throw std::invalid_argument("Invalid SDK UUID");
     return Uuid(text.substr(0, text[8] == '-' ? 36 : 32));
 }
+
 bool try_parse_sdk_uuid(std::string_view text, Uuid &result) {
     result = {};
     while (text.starts_with(' '))
@@ -52,6 +54,7 @@ bool try_parse_sdk_uuid(std::string_view text, Uuid &result) {
         return false;
     }
 }
+
 Uuid::Uuid(std::string_view text) {
     const auto normalized = normalize_uuid(text);
     std::size_t position = 0;
@@ -61,11 +64,11 @@ Uuid::Uuid(std::string_view text) {
             ++i;
             continue;
         }
-        bytes_[position++] =
-            static_cast<std::uint8_t>((nibble(normalized[i]) << 4) | nibble(normalized[i + 1]));
+        bytes_[position++] = static_cast<std::uint8_t>((nibble(normalized[i]) << 4) | nibble(normalized[i + 1]));
         i += 2;
     }
 }
+
 Uuid Uuid::from_bytes(std::span<const std::uint8_t> bytes) {
     if (bytes.size() < 16)
         throw std::out_of_range("UUID requires sixteen bytes");
@@ -73,7 +76,11 @@ Uuid Uuid::from_bytes(std::span<const std::uint8_t> bytes) {
     std::copy_n(bytes.begin(), 16, result.bytes_.begin());
     return result;
 }
-Uuid Uuid::random() { return Uuid(random_uuid()); }
+
+Uuid Uuid::random() {
+    return Uuid(random_uuid());
+}
+
 std::string Uuid::str() const {
     constexpr char hex[] = "0123456789abcdef";
     std::string result;
@@ -86,13 +93,15 @@ std::string Uuid::str() const {
     }
     return result;
 }
+
 bool Uuid::is_zero() const noexcept {
     return std::all_of(bytes_.begin(), bytes_.end(), [](auto value) { return value == 0; });
 }
+
 std::size_t UuidHash::operator()(const Uuid &id) const noexcept {
     std::size_t hash = static_cast<std::size_t>(2166136261u);
     for (auto byte : id.bytes())
         hash = (hash ^ byte) * 16777619u;
     return hash;
 }
-}
+} // namespace opensim::framework

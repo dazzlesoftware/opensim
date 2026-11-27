@@ -33,9 +33,9 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "opensim/framework/culture_prefix.hpp"
 #include "opensim/framework/integer_text.hpp"
 #include <stdexcept>
+
 namespace opensim::framework {
-HttpHost::HttpHost(const std::optional<std::string>& input, bool with_dns,
-                   const RegionUri::Resolver& resolver) {
+HttpHost::HttpHost(const std::optional<std::string> &input, bool with_dns, const RegionUri::Resolver &resolver) {
     if (!input || input->empty())
         return;
     flags = None;
@@ -54,15 +54,15 @@ HttpHost::HttpHost(const std::optional<std::string>& input, bool with_dns,
             throw std::out_of_range("Invalid HTTP host span");
         auto colon = value.find(u':', start);
         bool explicit_port = colon != std::u16string::npos && colon < length && colon > 0;
-        auto candidate = std::make_shared<const std::u16string>(
-            value.substr(start, (explicit_port ? colon : length) - start));
+        auto candidate =
+            std::make_shared<const std::u16string>(value.substr(start, (explicit_port ? colon : length) - start));
         auto type = config_uri_check_host_name(candidate);
         if (type == ConfigUriHostNameType::Unknown || type == ConfigUriHostNameType::Basic)
             return;
         if (explicit_port) {
             std::uint32_t number;
-            if (!try_parse_unsigned_integer(
-                    utf8(std::u16string_view(value).substr(colon + 1, length - colon - 1)), number) ||
+            if (!try_parse_unsigned_integer(utf8(std::u16string_view(value).substr(colon + 1, length - colon - 1)),
+                                            number) ||
                 number > 65535)
                 return;
             port = static_cast<int>(number);
@@ -86,7 +86,8 @@ HttpHost::HttpHost(const std::optional<std::string>& input, bool with_dns,
         uri.clear();
     }
 }
-bool HttpHost::resolve_dns(const RegionUri::Resolver& resolver) {
+
+bool HttpHost::resolve_dns(const RegionUri::Resolver &resolver) {
     RegionUri lookup("");
     lookup.flags = RegionUri::HasHost;
     lookup.host = host;
@@ -97,7 +98,8 @@ bool HttpHost::resolve_dns(const RegionUri::Resolver& resolver) {
     flags = static_cast<unsigned char>(flags | Resolved);
     return true;
 }
-bool HttpHost::valid_and_resolved(std::string& error) const {
+
+bool HttpHost::valid_and_resolved(std::string &error) const {
     if (!valid()) {
         error = "failed to parse uri";
         return false;
@@ -109,9 +111,10 @@ bool HttpHost::valid_and_resolved(std::string& error) const {
     error.clear();
     return true;
 }
-int HttpHost::compare(const HttpHost& other) const {
+
+int HttpHost::compare(const HttpHost &other) const {
     if (port != other.port || ((flags & other.flags) & ValidHost) == 0)
         return -1;
     return invariant_compare(host, other.host);
 }
-}
+} // namespace opensim::framework

@@ -12,6 +12,7 @@
 #include "opensim/framework/config_http_environment_proxy_native.hpp"
 #include "opensim/framework/text.hpp"
 #include "opensim/framework/primitive_base_shape.hpp"
+#include "opensim/framework/task_inventory_item.hpp"
 #include <fstream>
 #include <iostream>
 #include <limits>
@@ -22,12 +23,44 @@
 #include <future>
 using namespace opensim;
 using namespace script;
-static void check(bool b, const char* text) {
+
+static void check(bool b, const char *text) {
     if (!b)
         throw std::runtime_error(text);
 }
+
+// Original PostEvent queues payloads before the handler's strict argument unwrap.
+static bool rejects_at_dispatch(const std::shared_ptr<const LslProgram> &program, LslEvent event,
+                                const LslContext &context, const LslHost &host) {
+    auto isolated_host = host;
+    unsigned chats = 0;
+    isolated_host.chat = [&](const LslChat &) { ++chats; };
+    LslInstance instance(program, context, isolated_host);
+    check(instance.run(100).status == LslRunStatus::Idle, "Invalid-event control did not initialize");
+    chats = 0;
+    const auto original_arguments = event.arguments;
+    check(instance.post_event(std::move(event)), "Original raw event admission was rejected");
+    const auto queued = instance.checkpoint();
+    check(queued && queued->queued_events.size() == 1 && queued->queued_events.front().arguments == original_arguments,
+          "Raw event admission changed its arguments");
+    const auto result = instance.run(1);
+    check(result.status == LslRunStatus::Faulted && result.instructions == 0 && chats == 0 &&
+              (result.error == "Specified cast is not valid." ||
+               result.error == "Index was outside the bounds of the array."),
+          "Invalid event argument was not rejected before handler execution");
+    return true;
+}
+
+static std::vector<LslValue> semantic_items(const LslList &list) {
+    std::vector<LslValue> result;
+    result.reserve(list.items.size());
+    for (const auto &item : list.items)
+        result.push_back(unbox_lsl_value(item));
+    return result;
+}
+
 static std::string hex(std::string_view text) {
-    static const char* digits = "0123456789abcdef";
+    static const char *digits = "0123456789abcdef";
     std::string out;
     for (unsigned char c : text) {
         out += digits[c >> 4];
@@ -35,12 +68,14 @@ static std::string hex(std::string_view text) {
     }
     return out;
 }
+
 static std::string unhex(std::string_view text) {
     std::string out;
     for (std::size_t i = 0; i < text.size(); i += 2)
         out += char(std::stoi(std::string(text.substr(i, 2)), nullptr, 16));
     return out;
 }
+
 static std::string quote(std::string_view text) {
     std::string out = "\"";
     for (char c : text) {
@@ -50,6 +85,7 @@ static std::string quote(std::string_view text) {
     }
     return out + '"';
 }
+
 static LslContext context() {
     LslContext c;
     c.object = framework::Uuid("00112233-4455-6677-8899-aabbccddeeff");
@@ -57,37 +93,28 @@ static LslContext context() {
     c.object_name = "Object";
     return c;
 }
-static std::string api_probe(int mode, int count, int channel, const std::string& text) {
+
+static std::string api_probe(int mode, int count, int channel, const std::string &text) {
     std::int64_t clock = 0;
     std::string output;
     auto c = context();
     if (mode & 1)
         c.group = c.owner;
     LslHost host;
-    host.clock_ticks = [&] {
-        return clock;
-    };
+    host.clock_ticks = [&] { return clock; };
     if (mode & 2)
         host.console_channel = channel;
-    host.chat = [&](const LslChat& x) {
-        output += (x.type == LslChatType::Owner ? "O:" : "S:") + std::to_string(x.channel) + ":" +
-                  hex(x.text) + ";";
+    host.chat = [&](const LslChat &x) {
+        output += (x.type == LslChatType::Owner ? "O:" : "S:") + std::to_string(x.channel) + ":" + hex(x.text) + ";";
     };
-    host.listener = [&](const LslChat& x) {
-        output += "L:" + std::to_string(x.channel) + ":" + hex(x.text) + ";";
-    };
-    host.console = [&](const std::string& text) {
-        output += "C:" + hex(text) + ";";
-    };
-    host.request_sleep = [&](int delay) {
-        output += "D:" + std::to_string(delay) + ";";
-    };
+    host.listener = [&](const LslChat &x) { output += "L:" + std::to_string(x.channel) + ":" + hex(x.text) + ";"; };
+    host.console = [&](const std::string &text) { output += "C:" + hex(text) + ";"; };
+    host.request_sleep = [&](int delay) { output += "D:" + std::to_string(delay) + ";"; };
     if (mode & 4)
         host.script_delay_factor = .001f;
     std::string source = "default{state_entry(){";
     for (int i = 0; i < count; i++) {
-        source +=
-            "llSay(" + std::to_string(channel) + "," + quote(text) + ");llOwnerSay(" + quote(text) + ");";
+        source += "llSay(" + std::to_string(channel) + "," + quote(text) + ");llOwnerSay(" + quote(text) + ");";
     }
     source += "}}";
     auto compiled = compile_lsl(source);
@@ -105,15 +132,1461 @@ static std::string api_probe(int mode, int count, int channel, const std::string
     }
     return output;
 }
-int main(int argc, char** argv) {
+
+static void check_task_inventory_queries(const LslHost &host, std::vector<std::string> &messages) {
+    auto task_host = host;
+    framework::TaskInventoryItem full_item, restricted_item;
+    full_item.item_id = framework::Uuid("10000000-0000-0000-0000-000000000001");
+    full_item.asset_id = framework::Uuid("10000000-0000-0000-0000-000000000002");
+    full_item.name = "full";
+    full_item.description = "description";
+    full_item.owner_id = framework::Uuid("10000000-0000-0000-0000-000000000003");
+    restricted_item.item_id = framework::Uuid("10000000-0000-0000-0000-000000000004");
+    restricted_item.name = "restricted";
+    restricted_item.current_permissions = 0;
+    task_host.task_inventory_items = [=](auto) { return std::vector{full_item, restricted_item}; };
+    task_host.link_key = [](auto part, int link) { return link == 0 ? part : framework::Uuid{}; };
+    const auto inventory_queries = compile_lsl(R"LSL(default {
+        state_entry() {
+            llSay(1, osGetInventoryName("10000000-0000-0000-0000-000000000001"));
+            llSay(1, osGetLinkInventoryDesc(0, "full"));
+            llSay(1, (string)osGetInventoryLastOwner("full"));
+            llSay(1, (string)osGetInventoryItemKey("full"));
+            llSay(1, (string)osGetLinkInventoryKey(0, "full", 0));
+            llSay(1, (string)llGetListLength(osGetInventoryItemKeys(0)));
+            llSay(1, (string)llGetListLength(osGetLinkInventoryItemKeys(0, 0)));
+            llSay(1, (string)llGetListLength(osGetLinkInventoryKeys(0, -1)));
+            llSay(1, (string)llGetListLength(osGetLinkInventoryNames(LINK_SET, 0)));
+        }
+    })LSL");
+    check(bool(inventory_queries), "OSSL task inventory queries compile");
+    LslInstance inventory_query_script(inventory_queries.program, context(), task_host);
+    const auto inventory_query_start = messages.size();
+    check(inventory_query_script.run(100).status == LslRunStatus::Idle &&
+              std::vector<std::string>(messages.begin() + inventory_query_start, messages.end()) ==
+                  std::vector<std::string>{"full", "description", full_item.owner_id.str(), full_item.item_id.str(),
+                                           full_item.asset_id.str(), "1", "2", "1", "0"},
+          "OSSL task inventory queries preserve link targeting and source permission filters");
+    auto script_context = context();
+    script_context.item = full_item.item_id;
+    const auto child = restricted_item.item_id;
+    task_host.link_key = [child](auto part, int link) {
+        if (link == -4)
+            return part;
+        return link == 2 ? child : framework::Uuid{};
+    };
+    std::vector<std::pair<framework::Uuid, std::string>> removals;
+    task_host.remove_inventory = [&](auto part, auto item, const std::string &name) {
+        check(item == script_context.item, "inventory removal passes the executing script ID");
+        removals.emplace_back(part, name);
+        return part == script_context.object && name == "self";
+    };
+    const auto remove = compile_lsl(R"LSL(default {
+        state_entry() {
+            osRemoveLinkInventory(LINK_SET, "ignored");
+            osRemoveLinkInventory(9, "missing link");
+            osRemoveLinkInventory(2, "child item");
+            osRemoveLinkInventory(LINK_THIS, "self");
+            llSay(1, "unreachable");
+        }
+    })LSL");
+    check(bool(remove), "OSSL linked inventory removal compiles");
+    LslInstance removal_script(remove.program, script_context, task_host);
+    const auto removal_message_start = messages.size();
+    check(removal_script.run(100).status == LslRunStatus::DeleteSelf &&
+              removals == std::vector<std::pair<framework::Uuid, std::string>>{{child, "child item"},
+                                                                               {script_context.object, "self"}} &&
+              messages.size() == removal_message_start,
+          "OSSL inventory removal targets one part and terminates a self-deleting script");
+    int transfers = 0;
+    task_host.give_link_inventory = [&](auto caller, auto source, auto recipient, const std::string &name) {
+        check(caller == script_context.object && source == child && recipient == full_item.owner_id &&
+                  name == "child item",
+              "OSSL inventory transfer distinguishes the calling prim from the source prim");
+        ++transfers;
+        return LslInventoryGiveResult{LslInventoryGiveStatus::MissingItem, {}};
+    };
+    const auto give = compile_lsl(R"LSL(default {
+        state_entry() {
+            osGiveLinkInventory(LINK_SET, "10000000-0000-0000-0000-000000000003", "ignored");
+            osGiveLinkInventory(2, "invalid", "ignored");
+            osGiveLinkInventory(2, "10000000-0000-0000-0000-000000000003", "child item");
+        }
+    })LSL");
+    check(bool(give), "OSSL linked inventory transfer compiles");
+    LslInstance give_script(give.program, script_context, task_host);
+    check(give_script.run(100).status == LslRunStatus::Idle && transfers == 1 &&
+              messages.size() == removal_message_start,
+          "OSSL linked inventory transfer silently ignores invalid requests and missing items");
+    std::vector<int> delays;
+    task_host.request_sleep = [&](int delay) { delays.push_back(delay); };
+    task_host.give_link_inventory_list = [&](auto caller, auto source, auto recipient, const std::string &category,
+                                             const std::vector<std::string> &names) {
+        check(caller == script_context.object && source == child && recipient == full_item.owner_id &&
+                  category == "folder" && names == std::vector<std::string>{"child item", full_item.item_id.str()},
+              "OSSL linked inventory list passes its source, caller and item selectors");
+        return LslInventoryGiveStatus::AvatarOffer;
+    };
+    const auto give_list = compile_lsl(R"LSL(default {
+        state_entry() {
+            osGiveLinkInventoryList(2, "10000000-0000-0000-0000-000000000003", "folder", []);
+            osGiveLinkInventoryList(2, "10000000-0000-0000-0000-000000000003", "folder",
+                ["child item", "10000000-0000-0000-0000-000000000001"]);
+        }
+    })LSL");
+    check(bool(give_list), "OSSL linked inventory list transfer compiles");
+    LslInstance give_list_script(give_list.program, script_context, task_host);
+    check(give_list_script.run(100).status == LslRunStatus::Sleeping && delays == std::vector{3000},
+          "OSSL inventory list avatar offers request a three-second delay");
+}
+
+static void check_ossl_interpolation_and_event_key() {
+    const auto script = compile_lsl(R"LSL(default {
+        state_entry() {
+            llSay(1, "[" + (string)osGetLastChangedEventKey() + "]");
+            vector middle = osSlerp(<1,0,0>, <0,1,0>, 0.5);
+            llSay(1, (string)middle);
+            llSay(1, (string)osSlerp(<1,0,0>, <0,1,0>, 2));
+            llSay(1, (string)osSlerp(<0,0,0,2>, <0,0,2,0>, 0.5));
+            llSay(1, (string)osSlerp(<0,0,0,2>, <0,0,0,-2>, 0.5));
+        }
+        changed(integer flags) {
+            llSay(1, (string)osGetLastChangedEventKey());
+        }
+    })LSL");
+    check(bool(script), "OSSL interpolation and event key functions compile");
+    std::vector<std::string> messages;
+    LslHost host;
+    host.chat = [&](const LslChat &chat) { messages.push_back(chat.text); };
+    LslInstance instance(script.program, context(), host);
+    check(instance.run(100).status == LslRunStatus::Idle &&
+              messages == std::vector<std::string>{"[]", "<0.707107, 0.707107, 0.000000>",
+                                                   "<0.000000, 1.000000, 0.000000>",
+                                                   "<0.000000, 0.000000, 0.707107, 0.707107>",
+                                                   "<0.000000, 0.000000, 0.000000, -1.000000>"},
+          "OSSL interpolation preserves clamping, normalization and negative-dot rotation handling");
+    LslDetector detector;
+    detector.key = context().owner;
+    instance.post_event({"changed", {std::int32_t{1}}, {detector}});
+    check(instance.run(100).status == LslRunStatus::Idle && messages.back() == detector.key.str(),
+          "OSSL changed event key comes from the first active detector");
+}
+
+static void check_ossl_script_reset() {
+    const auto program = compile_lsl(R"LSL(default {
+        state_entry() { osResetAllScripts(0); osResetAllScripts(1); }
+    })LSL");
+    check(bool(program), "OSSL bulk reset compiles");
+    auto caller = context();
+    caller.item = framework::Uuid::random();
+    const auto child = framework::Uuid::random();
+    framework::TaskInventoryItem self, sibling, linked, note;
+    self.item_id = caller.item;
+    sibling.item_id = framework::Uuid::random();
+    linked.item_id = framework::Uuid::random();
+    self.inventory_type = sibling.inventory_type = linked.inventory_type = 10;
+    LslHost host;
+    bool allow_linkset = true;
+    host.can_reset_linkset_scripts = [&](auto) { return allow_linkset; };
+    host.linked_prim_parts = [=](auto part, auto) { return std::vector{part, child}; };
+    host.task_inventory_items = [=](auto part) {
+        return part == child ? std::vector{linked} : std::vector{self, sibling, note};
+    };
+    std::vector<framework::Uuid> resets, url_releases;
+    host.reset_other_script = [&](auto item) { resets.push_back(item); };
+    host.release_script_urls = [&](auto item) { url_releases.push_back(item); };
+    LslInstance instance(program.program, caller, host);
+    check(instance.run(100).status == LslRunStatus::Idle &&
+              resets == std::vector{sibling.item_id, sibling.item_id, linked.item_id} &&
+              url_releases == std::vector{caller.item, caller.item},
+          "OSSL bulk reset handles prim and linkset scope and skips self during default state_entry");
+    allow_linkset = false;
+    resets.clear();
+    url_releases.clear();
+    LslInstance crossing(program.program, caller, host);
+    check(crossing.run(100).status == LslRunStatus::Idle && resets == std::vector{sibling.item_id} &&
+              url_releases == std::vector{caller.item},
+          "OSSL bulk linkset reset skips an in-transit linkset");
+}
+
+static void check_pacific_wallclock() {
+    const auto script = compile_lsl(R"LSL(default {
+        state_entry() { llSay(1, (string)osGetPSTWallclock()); }
+    })LSL");
+    check(bool(script), "OSSL Pacific wall clock compiles");
+    LslHost host;
+    std::int64_t utc = 638456615995000000LL; // 2024-03-10 09:59:59.5 UTC
+    host.clock_ticks = [&] { return utc; };
+    std::string message;
+    host.chat = [&](const LslChat &chat) { message = chat.text; };
+    LslInstance before(script.program, context(), host);
+    check(before.run(100).status == LslRunStatus::Idle && message == "7199.500000",
+          "OSSL Pacific wall clock uses standard time before the spring transition");
+    utc += 5000000;
+    LslInstance after(script.program, context(), host);
+    check(after.run(100).status == LslRunStatus::Idle && message == "10800.000000",
+          "OSSL Pacific wall clock advances at the spring transition");
+}
+
+static void check_ossl_terrain_sample() {
+    const auto program = compile_lsl(R"LSL(default {
+        state_entry() { llSay(1, (string)osGetTerrainHeight(300, 17)); }
+    })LSL");
+    check(bool(program), "OSSL terrain sample compiles");
+    auto region = context();
+    region.region_size = {512, 256, 0};
+    LslHost host;
+    host.ossl_enabled = true;
+    std::string output;
+    host.chat = [&](const auto &chat) { output = chat.text; };
+    host.terrain_sample = [](int x, int y) {
+        check(x == 300 && y == 17, "terrain sample receives absolute integer coordinates");
+        return 23.25f;
+    };
+    LslInstance valid(program.program, region, host);
+    check(valid.run(100).status == LslRunStatus::Idle && output == "23.250000",
+          "OSSL terrain lookup accepts coordinates in a larger region");
+    LslInstance invalid(program.program, context(), host);
+    const auto result = invalid.run(100);
+    check(result.status == LslRunStatus::Faulted &&
+              result.error == "OSSL Runtime Error: osGetTerrainHeight: Coordinate out of bounds",
+          "OSSL terrain lookup faults before reading outside the region");
+    const auto write = compile_lsl(R"LSL(default {
+        state_entry() { llSay(1, (string)osSetTerrainHeight(300, 17, 23.25)); }
+    })LSL");
+    check(bool(write), "OSSL terrain setter compiles");
+    bool allowed = false;
+    host.ossl_permission_error = [](auto, auto, std::string_view function) {
+        check(function == "osSetTerrainHeight", "terrain setter checks its named OSSL permission");
+        return std::string{};
+    };
+    host.set_terrain_sample = [&](auto part, int x, int y, float height) {
+        check(part == region.object && x == 300 && y == 17 && height == 23.25f,
+              "terrain setter passes the calling part and absolute sample");
+        return allowed;
+    };
+    LslInstance denied(write.program, region, host);
+    check(denied.run(100).status == LslRunStatus::Idle && output == "0",
+          "OSSL terrain setter reports denied land permission");
+    allowed = true;
+    LslInstance permitted(write.program, region, host);
+    check(permitted.run(100).status == LslRunStatus::Idle && output == "1",
+          "OSSL terrain setter reports a successful write");
+}
+
+static void check_ossl_terrain_textures() {
+    const auto program = compile_lsl(R"LSL(
+        default {
+            state_entry() {
+                osSetTerrainTexture(1, llGetOwner());
+                osSetTerrainTextures(["", "Named material", llGetOwner(), ""], 1);
+                osSetTerrainTextures([llGetOwner(), "", "", ""], 2);
+                osSetTerrainTextureHeight(3, -5, 50.5);
+            }
+        }
+    )LSL");
+    check(bool(program), "OSSL terrain texture setters compile");
+    const auto script_context = context();
+    std::vector<std::string> permissions;
+    using Textures = std::array<framework::Uuid, 4>;
+    std::vector<std::pair<Textures, int>> updates;
+    std::vector<std::tuple<std::size_t, float, float>> heights;
+    bool god = false;
+    LslHost host;
+    host.ossl_permission_error = [&](auto, auto, std::string_view function) {
+        permissions.emplace_back(function);
+        return std::string{};
+    };
+    host.script_owner_is_god = [&](auto part) {
+        check(part == script_context.object, "terrain god status uses the script part");
+        return god;
+    };
+    host.terrain_texture_asset = [&](auto part, const std::string &name, bool allow_material) {
+        check(part == script_context.object && name == "Named material" && allow_material,
+              "PBR terrain textures can resolve named materials from the script part");
+        return std::optional{script_context.object};
+    };
+    host.set_terrain_textures = [&](const auto &textures, auto type) { updates.emplace_back(textures, type); };
+    host.set_terrain_texture_height = [&](auto corner, auto low, auto high) {
+        heights.emplace_back(corner, low, high);
+    };
+    LslInstance regular(program.program, script_context, host);
+    check(regular.run(100).status == LslRunStatus::Idle &&
+              updates ==
+                  decltype(updates){
+                      {Textures{{{}, script_context.owner, {}, {}}}, 0},
+                      {Textures{{{}, script_context.object, script_context.owner, {}}}, 1},
+                      {Textures{{script_context.owner, {}, {}, {}}}, 2},
+                  } &&
+              heights.empty() &&
+              permissions == std::vector<std::string>{"osSetTerrainTexture", "osSetTerrainTexture",
+                                                      "osSetTerrainTexture", "osSetTerrainTextureHeight"},
+          "terrain setters preserve modes and enforce each managed permission check");
+    god = true;
+    permissions.clear();
+    LslInstance privileged(program.program, script_context, host);
+    check(privileged.run(100).status == LslRunStatus::Idle && heights == decltype(heights){{3, -5.f, 50.5f}} &&
+              permissions == std::vector<std::string>{"osSetTerrainTextureHeight"},
+          "god scripts bypass texture permission checks and can update corner heights");
+}
+
+static void check_ossl_projection() {
+    const auto program = compile_lsl(R"LSL(
+        default {
+            state_entry() {
+                osSetProjectionParams(TRUE, llGetOwner(), 4, -24, 2);
+                osSetProjectionParams(2, TRUE, llGetOwner(), 1, 2, 0.5);
+                osSetProjectionParams(llGetKey(), FALSE, "invalid", 0, 0, 0);
+                osSetProjectionParams("invalid target", TRUE, llGetOwner(), 0, 0, 0);
+                osSetProjectionParams(TRUE, "invalid texture", 0, 0, 0);
+            }
+        }
+    )LSL");
+    check(bool(program), "OSSL projection overloads compile");
+    const auto script_context = context();
+    using Edit = std::tuple<std::optional<int>, framework::Uuid, bool, framework::Uuid, float, float, float>;
+    std::vector<Edit> edits;
+    LslHost host;
+    host.set_projection = [&](auto part, auto link, auto target, auto enabled, auto texture, auto fov, auto focus,
+                              auto ambiance) {
+        check(part == script_context.object, "projection uses the script part");
+        edits.emplace_back(link, target, enabled, texture, fov, focus, ambiance);
+    };
+    LslInstance instance(program.program, script_context, host);
+    check(instance.run(100).status == LslRunStatus::Idle &&
+              edits ==
+                  std::vector<Edit>{
+                      {{}, {}, true, script_context.owner, 3.f, -20.f, 1.f},
+                      {2, {}, true, script_context.owner, 1.f, 2.f, 0.5f},
+                      {{}, script_context.object, false, {}, 0.f, 0.f, 0.f},
+                      {{}, {}, true, script_context.owner, 0.f, 0.f, 0.f},
+                  },
+          "projection chooses each target and clamps managed parameter ranges");
+}
+
+static void check_ossl_npc_queries() {
+    const auto program = compile_lsl(R"LSL(default {
+        state_entry() {
+            llSay(0, (string)osIsNpc(llGetOwner()));
+            llSay(0, (string)osIsNpc("invalid key"));
+            llSay(0, (string)llGetListLength(osGetNPCList()));
+            llSay(0, (string)(osNpcGetOwner(llGetOwner()) == NULL_KEY));
+            llSay(0, (string)(osNpcGetPos(llGetOwner()) == <1, 2, 3>));
+            llSay(0, (string)(osNpcGetRot(llGetOwner()) == <0, 0, 1, 0>));
+        }
+    })LSL");
+    check(bool(program), "OSSL NPC queries compile");
+    const auto script_context = context();
+    LslHost host;
+    host.ossl_enabled = true;
+    host.ossl_permission_error = [](auto, auto, std::string_view function) {
+        check(function == "osGetNPCList" || function == "osNpcGetOwner" || function == "osNpcGetPos" ||
+                  function == "osNpcGetRot",
+              "NPC queries use the managed named permissions");
+        return std::string{};
+    };
+    std::vector<std::string> messages;
+    host.chat = [&](const auto &chat) { messages.push_back(chat.text); };
+    LslInstance no_module(program.program, script_context, host);
+    check(no_module.run(100).status == LslRunStatus::Idle &&
+              messages == std::vector<std::string>{"0", "0", "0", "1", "0", "0"},
+          "NPC queries return false and an empty list without a module");
+    host.is_npc = [&](auto agent) { return agent == script_context.owner; };
+    host.region_npc_list = [&] {
+        return LslList{{script_context.owner.str(), framework::Vector3d{1, 2, 3}, std::string("NPC Fixture")}};
+    };
+    host.npc_state = [&](auto agent) -> std::optional<LslNpcState> {
+        if (agent != script_context.owner)
+            return std::nullopt;
+        return LslNpcState{framework::Uuid::random(), framework::Vector3d{1, 2, 3}, LslRotation{0, 0, 1, 0}};
+    };
+    messages.clear();
+    LslInstance with_module(program.program, script_context, host);
+    check(with_module.run(100).status == LslRunStatus::Idle &&
+              messages == std::vector<std::string>{"1", "0", "3", "0", "1", "1"},
+          "NPC queries dispatch through the module and skip invalid keys");
+}
+
+static void check_ossl_npc_creation() {
+    const auto program = compile_lsl(R"LSL(default {
+        state_entry() {
+            llSay(0, (string)osNpcCreate("New", "Resident", <1, 2, 3>, ""));
+            llSay(0, (string)osNpcCreate("New", "Resident", <1, 2, 3>, "Outfit",
+                                       OS_NPC_NOT_OWNED | OS_NPC_SENSE_AS_AGENT));
+        }
+    })LSL");
+    check(bool(program), "both NPC creation overloads compile");
+
+    const auto script_context = context();
+    const auto npc = framework::Uuid::random();
+    LslHost host;
+    host.ossl_enabled = true;
+    host.ossl_permission_error = [](auto, auto, std::string_view function) {
+        check(function == "osNpcCreate", "NPC creation uses its named OSSL permission");
+        return std::string{};
+    };
+    std::vector<std::string> messages;
+    host.chat = [&](const auto &chat) { messages.push_back(chat.text); };
+    unsigned calls = 0;
+    host.create_npc = [&](auto part, const std::string &first, const std::string &last, const auto &position,
+                          const std::string &appearance, std::optional<std::int32_t> options) {
+        check(part == script_context.object && first == "New" && last == "Resident" &&
+                  position == framework::Vector3d{1, 2, 3},
+              "NPC creation passes the script host and NPC details");
+        if (calls++ == 0)
+            check(appearance.empty() && !options, "four-argument NPC creation uses module defaults");
+        else
+            check(appearance == "Outfit" && options == 6, "five-argument NPC creation preserves options");
+        return npc;
+    };
+    LslInstance instance(program.program, script_context, host);
+    check(instance.run(100).status == LslRunStatus::Idle && calls == 2 &&
+              messages == std::vector<std::string>{npc.str(), npc.str()},
+          "NPC creation returns the ID provided by the region");
+}
+
+static void check_ossl_parcel_sip() {
+    const auto program =
+        compile_lsl(R"LSL(default { state_entry() { osSetParcelSIPAddress("sip:parcel@example.test"); } })LSL");
+    check(bool(program), "parcel SIP setter compiles");
+    auto script_context = context();
+    LslHost host;
+    bool allowed = false;
+    unsigned calls = 0;
+    host.ossl_permission_error = [&](auto, auto, std::string_view function) {
+        check(function == "osSetParcelSIPAddress", "parcel SIP checks its named permission");
+        return allowed ? std::string{} : std::string("denied");
+    };
+    host.set_parcel_sip_address = [&](auto part, std::string address) {
+        check(part == script_context.object && address == "sip:parcel@example.test",
+              "parcel SIP setter forwards the source prim and address");
+        ++calls;
+        return std::string{};
+    };
+    LslInstance denied(program.program, script_context, host);
+    check(denied.run(100).status == LslRunStatus::Faulted && calls == 0,
+          "parcel SIP permission denial prevents dispatch");
+    allowed = true;
+    LslInstance permitted(program.program, script_context, host);
+    check(permitted.run(100).status == LslRunStatus::Idle && calls == 1,
+          "parcel SIP dispatches after permission checks");
+    host.set_parcel_sip_address = {};
+    LslInstance missing_voice(program.program, script_context, host);
+    check(missing_voice.run(100).status == LslRunStatus::Faulted, "parcel SIP faults without a voice module");
+}
+
+static void check_ossl_float_on_water() {
+    const auto program = compile_lsl(R"LSL(default {
+        state_entry() {
+            integer enabled = 0;
+            osSetPrimFloatOnWater(++enabled);
+            llSay(0, (string)enabled);
+        }
+    })LSL");
+    check(bool(program), "float-on-water call compiles");
+    LslHost host;
+    bool allowed = true;
+    unsigned permission_checks = 0;
+    std::string message;
+    host.ossl_permission_error = [&](auto, auto, std::string_view function) {
+        check(function == "osSetPrimFloatOnWater", "float-on-water checks its named permission");
+        ++permission_checks;
+        return allowed ? std::string{} : std::string("denied");
+    };
+    host.chat = [&](const auto &chat) { message = chat.text; };
+    LslInstance permitted(program.program, context(), host);
+    check(permitted.run(100).status == LslRunStatus::Idle && permission_checks == 1 && message == "1",
+          "float-on-water evaluates its argument and returns immediately with ubODE");
+    allowed = false;
+    LslInstance denied(program.program, context(), host);
+    check(denied.run(100).status == LslRunStatus::Faulted && permission_checks == 2,
+          "float-on-water honors a named denial");
+}
+
+static void check_ossl_legacy_sun_setters() {
+    const auto program = compile_lsl(R"LSL(default {
+        state_entry() {
+            osSetSunParam("day_length", 100);
+            osSunSetParam("day_length", 200.0);
+        }
+    })LSL");
+    check(bool(program), "legacy sun setters compile");
+    LslHost host;
+    std::vector<std::string> permissions;
+    std::vector<LslChat> warnings;
+    host.ossl_permission_error = [&](auto, auto, std::string_view function) {
+        permissions.emplace_back(function);
+        return std::string{};
+    };
+    host.listener = [&](const auto &chat) { warnings.push_back(chat); };
+    LslInstance instance(program.program, context(), host);
+    check(instance.run(100).status == LslRunStatus::Sleeping &&
+              permissions == std::vector<std::string>{"osSetSunParam", "osSunSetParam"} && warnings.size() == 1 &&
+              warnings.front().type == LslChatType::Shout &&
+              warnings.front().channel == std::numeric_limits<std::int32_t>::max() &&
+              warnings.front().text == "Use of function osSunSetParam is deprecated. Use osSetSunParam instead.",
+          "legacy alias warns and sleeps after its own permission check");
+}
+
+static void check_ossl_terrain_flush() {
+    const auto program = compile_lsl(R"LSL(default {
+        state_entry() { osTerrainFlush(); osTerrainFlush(); }
+        touch_start(integer count) { osTerrainFlush(); }
+    })LSL");
+    check(bool(program), "OSSL terrain flush compiles");
+    std::int64_t now = 0;
+    int flushes = 0, permission_checks = 0;
+    LslHost host;
+    host.monotonic_ticks = [&] { return now; };
+    host.flush_terrain = [&] { ++flushes; };
+    host.ossl_permission_error = [&](auto, auto, std::string_view function) {
+        check(function == "osTerrainFlush", "terrain flush checks its named OSSL permission");
+        ++permission_checks;
+        return std::string{};
+    };
+    LslInstance script(program.program, context(), host);
+    check(script.run(100).status == LslRunStatus::Idle && flushes == 1 && permission_checks == 1,
+          "terrain flush suppresses repeat calls before the permission check");
+    now = 599999999;
+    script.post_event({"touch_start", {std::int32_t{1}}, {}});
+    check(script.run(100).status == LslRunStatus::Idle && flushes == 1 && permission_checks == 1,
+          "terrain flush remains rate-limited just before sixty seconds");
+    ++now;
+    script.post_event({"touch_start", {std::int32_t{1}}, {}});
+    check(script.run(100).status == LslRunStatus::Idle && flushes == 2 && permission_checks == 2,
+          "terrain flush becomes available at sixty seconds");
+}
+
+static void check_ossl_save_appearance() {
+    const auto program = compile_lsl(R"LSL(default {
+        state_entry() {
+            llSay(1, (string)osOwnerSaveAppearance("Owner default"));
+            osOwnerSaveAppearance("Owner without HUDs", FALSE);
+            osAgentSaveAppearance(llGetOwner(), "Agent default");
+            osAgentSaveAppearance(llGetOwner(), "Agent with HUDs", TRUE);
+            osAgentSaveAppearance(llGetOwner(), "Agent without HUDs", FALSE);
+            llSay(1, (string)osAgentSaveAppearance("invalid", "Invalid key"));
+        }
+    })LSL");
+    check(bool(program), "owner and agent appearance-saving overloads compile");
+    auto caller = context();
+    caller.item = framework::Uuid::random();
+    const auto asset = framework::Uuid::random();
+    std::vector<std::pair<std::string, bool>> calls;
+    std::vector<std::string> permissions, messages;
+    LslHost host;
+    host.ossl_enabled = true;
+    host.chat = [&](const auto &chat) { messages.push_back(chat.text); };
+    host.save_avatar_appearance = [&](auto object, auto item, auto avatar, auto name, bool no_huds) {
+        check(object == caller.object && item == caller.item && avatar == caller.owner,
+              "appearance saves forward the executing object, script and selected avatar");
+        calls.emplace_back(std::move(name), no_huds);
+        return asset;
+    };
+    host.ossl_permission_error = [&](auto, auto, auto function) {
+        permissions.emplace_back(function);
+        return std::string("denied");
+    };
+    LslInstance denied(program.program, caller, host);
+    check(denied.run(200).status == LslRunStatus::Faulted && calls.empty(),
+          "appearance saving checks permission before storing a notecard");
+    permissions.clear();
+    messages.clear();
+    host.ossl_permission_error = [&](auto, auto, auto function) {
+        permissions.emplace_back(function);
+        return std::string{};
+    };
+    LslInstance allowed(program.program, caller, host);
+    check(allowed.run(200).status == LslRunStatus::Idle &&
+              calls == std::vector<std::pair<std::string, bool>>{{"Owner default", false},
+                                                                 {"Owner without HUDs", true},
+                                                                 {"Agent default", false},
+                                                                 {"Agent with HUDs", false},
+                                                                 {"Agent without HUDs", true}},
+          "appearance saves include HUDs by default and only exclude them for a zero option");
+    if (permissions != std::vector<std::string>{"osOwnerSaveAppearance", "osOwnerSaveAppearance",
+                                                "osAgentSaveAppearance", "osAgentSaveAppearance",
+                                                "osAgentSaveAppearance", "osAgentSaveAppearance"}) {
+        std::string actual;
+        for (const auto &permission : permissions)
+            actual += "[" + permission + "]";
+        throw std::runtime_error("Appearance-saving permissions: " + actual);
+    }
+    if (messages != std::vector<std::string>{asset.str(), framework::Uuid{}.str()}) {
+        std::string actual;
+        for (const auto &message : messages)
+            actual += "[" + message + "]";
+        throw std::runtime_error("Appearance-saving return values: " + actual);
+    }
+    host.save_avatar_appearance = {};
+    LslInstance unavailable(program.program, caller, host);
+    check(unavailable.run(200).status == LslRunStatus::Idle, "appearance saving tolerates an unavailable host service");
+}
+
+static void check_ossl_kick_avatar() {
+    const auto program = compile_lsl(R"LSL(default {
+        state_entry() {
+            osKickAvatar("a1111111-1111-4111-8111-111111111111", "Leave");
+            osKickAvatar("Outside", "Resident", "");
+        }
+    })LSL");
+    check(bool(program), "osKickAvatar overloads compile");
+    LslHost host;
+    host.ossl_enabled = true;
+    std::vector<std::string> calls;
+    host.kick_avatar = [&](auto target, auto last, auto alert) {
+        calls.push_back(std::string(target) + "|" + (last ? std::string(*last) : "<key>") + "|" + std::string(alert));
+    };
+    host.ossl_permission_error = [](auto, auto, auto) { return std::string("denied"); };
+    LslInstance denied(program.program, context(), host);
+    check(denied.run(100).status == LslRunStatus::Faulted && calls.empty(),
+          "osKickAvatar checks authorization before disconnecting");
+    host.ossl_permission_error = [](auto, auto, auto) { return std::string{}; };
+    LslInstance allowed(program.program, context(), host);
+    check(allowed.run(100).status == LslRunStatus::Idle &&
+              calls ==
+                  std::vector<std::string>{"a1111111-1111-4111-8111-111111111111|<key>|Leave", "Outside|Resident|"},
+          "osKickAvatar preserves key and name selection and an empty alert");
+}
+
+static void check_ossl_entity_rotation() {
+    const auto program = compile_lsl(R"LSL(default {
+        state_entry() {
+            osSetRot("a1111111-1111-4111-8111-111111111111", <0, 0, 1, 0>);
+        }
+    })LSL");
+    check(bool(program), "osSetRot compiles");
+    LslHost host;
+    host.ossl_enabled = true;
+    int calls = 0;
+    host.set_entity_rotation = [&](auto target, auto rotation) {
+        ++calls;
+        check(target == opensim::framework::Uuid("a1111111-1111-4111-8111-111111111111") && rotation.z == 1.0 &&
+                  rotation.w == 0.0,
+              "osSetRot forwards the requested entity and quaternion");
+        return calls == 1;
+    };
+    host.ossl_permission_error = [](auto, auto, auto) { return std::string("denied"); };
+    LslInstance denied(program.program, context(), host);
+    check(denied.run(100).status == LslRunStatus::Faulted && calls == 0,
+          "osSetRot checks permission before changing an entity");
+    host.ossl_permission_error = [](auto, auto, auto) { return std::string{}; };
+    LslInstance allowed(program.program, context(), host);
+    check(allowed.run(100).status == LslRunStatus::Idle && calls == 1, "osSetRot can rotate a target when authorized");
+    LslInstance missing(program.program, context(), host);
+    const auto result = missing.run(100);
+    if (result.status != LslRunStatus::Faulted || result.error != "OSSL Runtime Error: osSetRot: Invalid target")
+        throw std::runtime_error("osSetRot reports a missing entity: " + result.error);
+}
+
+static void check_ossl_physics_queries() {
+    const auto program = compile_lsl(R"LSL(default {
+        state_entry() {
+            llSay(1, "[" + osGetPhysicsEngineType() + "]");
+            llSay(1, osGetPhysicsEngineName());
+            llSay(1, (string)osCheckODE());
+        }
+    })LSL");
+    check(bool(program), "OSSL physics queries compile");
+    LslHost host;
+    host.ossl_enabled = true;
+    std::vector<std::string> messages;
+    host.chat = [&](const auto &chat) { messages.push_back(chat.text); };
+    host.physics_engine = [] {
+        return std::optional{std::pair{std::string("ubODE"), std::string("ubODE 1.0-0.13.4")}};
+    };
+    host.ossl_permission_error = [](auto, auto, auto) { return std::string("denied"); };
+    LslInstance denied(program.program, context(), host);
+    check(denied.run(100).status == LslRunStatus::Idle &&
+              messages == std::vector<std::string>{"[]", "ubODE 1.0-0.13.4", "0"},
+          "OSSL physics type denial is silent and ubODE does not match OpenDynamicsEngine");
+    messages.clear();
+    host.ossl_permission_error = [](auto, auto, auto) { return std::string{}; };
+    LslInstance allowed(program.program, context(), host);
+    check(allowed.run(100).status == LslRunStatus::Idle && messages.front() == "[ubODE]",
+          "OSSL physics type returns the engine type when permitted");
+}
+
+static void check_ossl_simulator_version() {
+    const auto program = compile_lsl(R"LSL(default {
+        state_entry() { llSay(1, osGetSimulatorVersion()); }
+    })LSL");
+    check(bool(program), "OSSL simulator version query compiles");
+    LslHost host;
+    host.ossl_permission_error = [](auto, auto, std::string_view function) {
+        check(function == "osGetSimulatorVersion", "simulator version uses its named permission");
+        return std::string("denied");
+    };
+    int reads = 0;
+    host.region_environment_value = [&](std::string_view key) {
+        check(key == "sim_version", "OSSL simulator version shares the environment metadata");
+        ++reads;
+        return std::string("OpenSim fixture version");
+    };
+    LslInstance denied(program.program, context(), host);
+    check(denied.run(100).status == LslRunStatus::Faulted && reads == 0,
+          "OSSL simulator version denial prevents the metadata lookup");
+    host.ossl_permission_error = [](auto, auto, auto) { return std::string{}; };
+    std::string result;
+    host.chat = [&](const auto &chat) { result = chat.text; };
+    LslInstance allowed(program.program, context(), host);
+    check(allowed.run(100).status == LslRunStatus::Idle && reads == 1 && result == "OpenSim fixture version",
+          "OSSL simulator version returns the region metadata");
+}
+
+static void check_ossl_object_message() {
+    const auto sender = compile_lsl(R"LSL(default {
+        state_entry() {
+            osMessageObject("10000000-0000-0000-0000-000000000001", "payload");
+            osMessageObject("invalid", "ignored");
+        }
+    })LSL");
+    const auto receiver = compile_lsl(R"LSL(default {
+        dataserver(key source, string payload) { llSay(1, (string)source + "/" + payload); }
+    })LSL");
+    check(bool(sender) && bool(receiver), "OSSL object messaging scripts compile");
+    auto target = context();
+    target.object = framework::Uuid("10000000-0000-0000-0000-000000000001");
+    std::string delivered;
+    LslHost receive_host;
+    receive_host.chat = [&](const auto &chat) { delivered = chat.text; };
+    LslInstance destination(receiver.program, target, receive_host);
+    LslHost send_host;
+    send_host.ossl_permission_error = [](auto, auto, std::string_view name) {
+        check(name == "osMessageObject", "object messaging checks its named OSSL permission");
+        return std::string{};
+    };
+    send_host.message_object = [&](auto source, auto id, const std::string &message) {
+        check(id == target.object, "object message targets the requested prim");
+        destination.post_event({"dataserver", {source.str(), message}, {}});
+        return true;
+    };
+    std::optional<LslChat> warning;
+    send_host.chat = [&](const auto &chat) { warning = chat; };
+    LslInstance origin(sender.program, context(), send_host);
+    check(origin.run(100).status == LslRunStatus::Sleeping && warning && warning->type == LslChatType::Shout &&
+              warning->text.find("invalid UUIDs") != std::string::npos,
+          "object messaging reports an invalid UUID and sleeps");
+    check(destination.run(100).status == LslRunStatus::Idle && delivered == context().object.str() + "/payload",
+          "object message delivers the sending prim key and payload as a dataserver event");
+}
+
+static void check_ossl_simulator_memory() {
+    const auto program = compile_lsl(R"LSL(default {
+        state_entry() {
+            llSay(1, (string)osGetSimulatorMemory());
+            llSay(1, (string)osGetSimulatorMemoryKB());
+        }
+    })LSL");
+    check(bool(program), "OSSL process memory queries compile");
+    LslHost host;
+    std::vector<std::string> queried;
+    host.ossl_permission_error = [&](auto, auto, std::string_view name) {
+        queried.emplace_back(name);
+        return std::string{};
+    };
+    std::vector<int> sizes;
+    host.chat = [&](const auto &chat) { sizes.push_back(std::stoi(chat.text)); };
+    LslInstance instance(program.program, context(), host);
+    check(instance.run(100).status == LslRunStatus::Idle &&
+              queried == std::vector<std::string>{"osGetSimulatorMemory", "osGetSimulatorMemoryKB"} &&
+              sizes.size() == 2 && sizes[0] > sizes[1] && sizes[1] > 0,
+          "OSSL process memory queries report resident memory in bytes and KiB");
+}
+
+static void check_ossl_key_to_name() {
+    const auto program = compile_lsl(R"LSL(default {
+        state_entry() {
+            llSay(1, osKey2Name("10000000-0000-0000-0000-000000000001"));
+            llSay(1, "[" + osKey2Name("invalid") + "]");
+        }
+    })LSL");
+    check(bool(program), "OSSL grid avatar name query compiles");
+    LslHost host;
+    int lookups = 0;
+    std::vector<std::string> messages;
+    host.chat = [&](const auto &chat) { messages.push_back(chat.text); };
+    host.ossl_permission_error = [](auto, auto, std::string_view name) {
+        check(name == "osKey2Name", "grid avatar name query uses its named permission");
+        return std::string{};
+    };
+    host.grid_avatar_name = [&](auto id) {
+        check(id == framework::Uuid("10000000-0000-0000-0000-000000000001"),
+              "grid avatar name query forwards the parsed key");
+        ++lookups;
+        return std::string("Ada.Example @grid.example");
+    };
+    LslInstance instance(program.program, context(), host);
+    check(instance.run(100).status == LslRunStatus::Idle && lookups == 1 &&
+              messages == std::vector<std::string>{"Ada.Example @grid.example", "[]"},
+          "OSSL grid avatar lookup returns the name and ignores malformed keys");
+    const auto reverse = compile_lsl(R"LSL(default {
+        state_entry() {
+            llSay(1, osAvatarName2Key("Ada.Example", "@grid.example"));
+            llSay(1, osAvatarName2Key("Missing", "Resident"));
+        }
+    })LSL");
+    check(bool(reverse), "OSSL avatar name-to-key lookup compiles");
+    host.ossl_permission_error = [](auto, auto, std::string_view name) {
+        check(name == "osAvatarName2Key", "avatar name-to-key lookup uses its named permission");
+        return std::string{};
+    };
+    const framework::Uuid expected("10000000-0000-0000-0000-000000000001");
+    host.grid_avatar_key = [&](std::string_view first, std::string_view last) -> std::optional<framework::Uuid> {
+        if (first == "Ada.Example" && last == "@grid.example")
+            return expected;
+        return framework::Uuid{};
+    };
+    messages.clear();
+    LslInstance reverse_instance(reverse.program, context(), host);
+    check(reverse_instance.run(100).status == LslRunStatus::Idle &&
+              messages == std::vector<std::string>{expected.str(), framework::Uuid{}.str()},
+          "OSSL name lookup returns the resolved ID or NULL_KEY");
+}
+
+static void check_ossl_avatar_type() {
+    const auto script = compile_lsl(R"LSL(default {
+        state_entry() {
+            llSay(1, (string)osAvatarType("invalid"));
+            llSay(1, (string)osAvatarType(NULL_KEY));
+            llSay(1, (string)osAvatarType("10000000-0000-0000-0000-000000000001"));
+            llSay(1, (string)osAvatarType("Ada", "Example"));
+        }
+    })LSL");
+    check(bool(script), "OSSL avatar type overloads compile");
+    LslHost host;
+    host.avatar_type = [](auto id) { return id.is_zero() ? 0 : 1; };
+    host.avatar_type_by_name = [](auto first, auto last) {
+        check(first == "Ada" && last == "Example", "avatar type forwards both name fields");
+        return 1;
+    };
+    std::vector<std::string> results;
+    host.chat = [&](const auto &chat) { results.push_back(chat.text); };
+    LslInstance instance(script.program, context(), host);
+    check(instance.run(100).status == LslRunStatus::Idle && results == std::vector<std::string>{"-1", "0", "1", "1"},
+          "OSSL avatar type distinguishes malformed keys, absent avatars and root agents");
+}
+
+static void check_ossl_health() {
+    const auto script = compile_lsl(R"LSL(default {
+        state_entry() {
+            llSay(1, (string)osGetHealth("10000000-0000-0000-0000-000000000001"));
+            llSay(1, (string)osGetHealth(NULL_KEY));
+            llSay(1, (string)osGetHealth("invalid"));
+        }
+    })LSL");
+    check(bool(script), "OSSL health query compiles");
+    LslHost host;
+    std::vector<std::string> messages;
+    host.chat = [&](const auto &chat) { messages.push_back(chat.text); };
+    int reads = 0;
+    host.agent_health = [&](auto) -> std::optional<float> {
+        ++reads;
+        return 64.5f;
+    };
+    host.ossl_permission_error = [](auto, auto, auto) { return std::string("denied"); };
+    LslInstance denied(script.program, context(), host);
+    check(denied.run(100).status == LslRunStatus::Faulted && reads == 0,
+          "OSSL health query checks permission before reading health");
+    host.ossl_permission_error = [](auto, auto, auto) { return std::string{}; };
+    messages.clear();
+    LslInstance allowed(script.program, context(), host);
+    check(allowed.run(100).status == LslRunStatus::Idle && reads == 1 &&
+              messages == std::vector<std::string>{"64.500000", "-1.000000", "-1.000000"},
+          "OSSL health query returns avatar health and rejects zero or malformed UUIDs");
+    const auto mutations = compile_lsl(R"LSL(default {
+        state_entry() {
+            key target = "10000000-0000-0000-0000-000000000001";
+            osSetHealth(target, 40);
+            osCauseHealing(target, 5.5);
+            osCauseDamage(target, 10);
+            osCauseDamage("invalid", 100);
+        }
+    })LSL");
+    check(bool(mutations), "OSSL health mutations compile");
+    using Edit = LslHost::HealthEdit;
+    std::vector<std::pair<Edit, float>> edits;
+    std::vector<std::string> permissions;
+    host.ossl_permission_error = [&](auto, auto, std::string_view name) {
+        permissions.emplace_back(name);
+        return std::string{};
+    };
+    host.edit_agent_health = [&](auto source, auto target, Edit edit, float amount) {
+        check(source == context().object && target == framework::Uuid("10000000-0000-0000-0000-000000000001"),
+              "OSSL health mutation forwards source and target IDs");
+        edits.emplace_back(edit, amount);
+    };
+    LslInstance mutate(mutations.program, context(), host);
+    check(mutate.run(100).status == LslRunStatus::Idle &&
+              edits == std::vector<std::pair<Edit, float>>{{Edit::Set, 40}, {Edit::Heal, 5.5f}, {Edit::Damage, 10}} &&
+              permissions ==
+                  std::vector<std::string>{"osSetHealth", "osCauseHealing", "osCauseDamage", "osCauseDamage"},
+          "OSSL health mutations check each named permission and ignore malformed targets");
+}
+
+static void check_ossl_notecard_reads() {
+    const auto program = compile_lsl(R"LSL(default {
+        state_entry() {
+            llSay(1, osGetNotecard("card"));
+            llSay(1, (string)osGetNumberOfNotecardLines("card"));
+            llSay(1, osGetNotecardLine("card", 1));
+            llSay(1, "[" + osGetNotecardLine("card", -1) + "]");
+            llSay(1, osGetNotecardLine("card", 2));
+            llSay(1, osGetNotecard("missing"));
+        }
+    })LSL");
+    check(bool(program), "OSSL synchronous notecard reads compile");
+    LslHost host;
+    host.ossl_permission_error = [](auto, auto, auto) { return std::string{}; };
+    const auto lines =
+        std::make_shared<const std::vector<std::string>>(std::initializer_list<std::string>{"first", "second"});
+    host.read_notecard = [lines](auto, const std::string &name) { return name == "card" ? lines : nullptr; };
+    std::vector<std::string> messages;
+    host.chat = [&](const auto &chat) { messages.push_back(chat.text); };
+    LslInstance script(program.program, context(), host);
+    check(script.run(100).status == LslRunStatus::Sleeping &&
+              messages == std::vector<std::string>{"first\nsecond\n", "2", "second", "[]", "\n\n\n",
+                                                   "Notecard 'missing' could not be found.", "ERROR!"},
+          "OSSL notecard reads preserve line endings, EOF and missing-card behavior");
+    const auto writer = compile_lsl(R"LSL(default {
+        state_entry() {
+            osMakeNotecard("text", "hello");
+            osMakeNotecard("list", ["first", 2, ""]);
+            osMakeNotecard("empty", []);
+        }
+    })LSL");
+    check(bool(writer), "OSSL notecard writer overloads compile");
+    std::vector<std::pair<std::string, std::string>> written;
+    host.make_notecard = [&](auto part, std::string name, std::string text) {
+        check(part == context().object, "notecard creation uses the calling prim");
+        written.emplace_back(std::move(name), std::move(text));
+    };
+    LslInstance write_script(writer.program, context(), host);
+    check(write_script.run(100).status == LslRunStatus::Idle &&
+              written == std::vector<std::pair<std::string, std::string>>{{"text", "hello\n"},
+                                                                          {"list", "first\n2\n\n"},
+                                                                          {"empty", ""}},
+          "OSSL notecard writer preserves the source's text and list line endings");
+}
+
+static void check_ossl_wind_parameters() {
+    const auto program = compile_lsl(R"LSL(default {
+        state_entry() {
+            string plugin = osWindActiveModelPluginName();
+            llSay(1, plugin);
+            llSay(1, (string)osGetWindParam(plugin, "avgStrength"));
+            osSetWindParam(plugin, "avgStrength", 4.5);
+            llSay(1, (string)osGetWindParam(plugin, "avgStrength"));
+        }
+    })LSL");
+    check(bool(program), "OSSL wind parameter functions compile");
+    float strength = 3.f;
+    LslHost host;
+    host.wind_model_name = [] { return std::string("ConfigurableWind"); };
+    host.wind_parameter = [&](auto plugin, auto parameter, std::optional<float> value) {
+        check(plugin == "ConfigurableWind" && parameter == "avgStrength",
+              "OSSL wind functions preserve the plugin and parameter names");
+        if (value)
+            strength = *value;
+        return strength;
+    };
+    std::vector<std::string> permissions, messages;
+    host.ossl_permission_error = [&](auto, auto, std::string_view name) {
+        permissions.emplace_back(name);
+        return std::string{};
+    };
+    host.chat = [&](const auto &chat) { messages.push_back(chat.text); };
+    LslInstance instance(program.program, context(), host);
+    check(instance.run(100).status == LslRunStatus::Idle &&
+              permissions == std::vector<std::string>{"osWindActiveModelPluginName", "osGetWindParam", "osSetWindParam",
+                                                      "osGetWindParam"} &&
+              messages == std::vector<std::string>{"ConfigurableWind", "3.000000", "4.500000"},
+          "OSSL wind functions expose the model and parameter changes");
+}
+
+static void check_ossl_avatar_list() {
+    const auto program = compile_lsl(R"LSL(
+        default {
+            state_entry() {
+                list avatars = osGetAvatarList();
+                if (llGetListLength(avatars) == 3 &&
+                    llGetListEntryType(avatars, 0) == TYPE_KEY &&
+                    llGetListEntryType(avatars, 1) == TYPE_VECTOR &&
+                    llGetListEntryType(avatars, 2) == TYPE_STRING &&
+                    llList2Vector(avatars, 1) == <10, 20, 30> &&
+                    llList2String(avatars, 2) == "Example Resident") {
+                    llSay(1, llList2String(avatars, 0));
+                }
+            }
+        }
+    )LSL");
+    check(bool(program), "osGetAvatarList compiles");
+    LslHost host;
+    bool permitted = false;
+    int reads = 0;
+    host.ossl_permission_error = [&](auto, auto, std::string_view function) {
+        check(function == "osGetAvatarList", "avatar list uses its named permission");
+        return permitted ? std::string{} : std::string{"denied"};
+    };
+    const auto avatar = framework::Uuid::random();
+    host.region_avatar_list = [&](framework::Uuid owner) {
+        check(owner == context().owner, "avatar lookup receives the script owner to exclude");
+        ++reads;
+        return LslList{{avatar.str(), framework::Vector3d{10, 20, 30}, std::string{"Example Resident"}}};
+    };
+    LslInstance denied(program.program, context(), host);
+    check(denied.run(100).status == LslRunStatus::Faulted && reads == 0, "denied avatar list access skips the lookup");
+    permitted = true;
+    std::string result;
+    host.chat = [&](const auto &chat) { result = chat.text; };
+    LslInstance allowed(program.program, context(), host);
+    check(allowed.run(100).status == LslRunStatus::Idle && reads == 1 && result == avatar.str(),
+          "avatar list returns typed UUID, position, and name entries");
+}
+
+static void check_ossl_force_attach_inventory() {
+    const auto program = compile_lsl(R"LSL(
+        default {
+            state_entry() {
+                osForceAttachToAvatarFromInventory("Owner object", ATTACH_LHAND);
+                osForceAttachToOtherAvatarFromInventory(llGetKey(), "Other object", 6);
+                osForceAttachToOtherAvatarFromInventory("invalid", "Ignored object", 7);
+            }
+        }
+    )LSL");
+    check(bool(program), "forced inventory attachment calls compile");
+    const auto script_context = context();
+    LslHost host;
+    std::vector<std::string> permissions;
+    host.ossl_permission_error = [&](auto, auto, std::string_view function) {
+        permissions.emplace_back(function);
+        return std::string{};
+    };
+    using Request = std::tuple<framework::Uuid, std::string, std::int32_t>;
+    std::vector<Request> requests;
+    host.force_attach_inventory = [&](const auto &source, auto avatar, const auto &name, auto point) {
+        check(source.object == script_context.object, "forced attachment uses the script's inventory");
+        requests.emplace_back(avatar, name, point);
+    };
+    LslInstance instance(program.program, script_context, host);
+    check(instance.run(100).status == LslRunStatus::Idle &&
+              requests == std::vector<Request>{{script_context.owner, "Owner object", 5},
+                                               {script_context.object, "Other object", 6}} &&
+              permissions == std::vector<std::string>{"osForceAttachToAvatarFromInventory",
+                                                      "osForceAttachToOtherAvatarFromInventory",
+                                                      "osForceAttachToOtherAvatarFromInventory"},
+          "forced inventory attachment dispatches valid requests after the named permission check");
+}
+
+static void check_ossl_attachment_drop() {
+    const auto program = compile_lsl(R"LSL(
+        default {
+            state_entry() {
+                osForceDropAttachmentAt(<8, 9, 10>, <0, 0, 1, 0>);
+                osDropAttachment();
+            }
+        }
+    )LSL");
+    check(bool(program), "attachment drop calls compile");
+    LslHost host;
+    std::vector<std::string> permissions;
+    host.ossl_permission_error = [&](auto, auto, std::string_view function) {
+        permissions.emplace_back(function);
+        return std::string{};
+    };
+    int drops = 0;
+    host.drop_attachment = [&](auto part, auto position, auto rotation) {
+        ++drops;
+        check(part == context().object && position == framework::Vector3d{8, 9, 10} &&
+                  rotation == LslRotation{0, 0, 1, 0},
+              "forced attachment drop forwards its position and rotation");
+    };
+    std::string warning;
+    host.chat = [&](const auto &chat) { warning = chat.text; };
+    LslInstance instance(program.program, context(), host);
+    check(instance.run(100).status == LslRunStatus::Sleeping && drops == 1 &&
+              permissions == std::vector<std::string>{"osForceDropAttachmentAt", "osDropAttachment"} &&
+              warning == "Cannot drop attachment. Permissions not granted.",
+          "regular drop requires the attach grant and forced drop skips that check");
+}
+
+static void check_ossl_attachment_counts() {
+    const auto program = compile_lsl(R"LSL(
+        default {
+            state_entry() {
+                list points = [5, " +5 ", -1, 256, 5.0, "+-1", "2147483648"];
+                llSay(1, llList2CSV(osGetNumberOfAttachments(llGetOwner(), points)));
+            }
+        }
+    )LSL");
+    check(bool(program), "OSSL attachment counts compile");
+    LslHost host;
+    host.ossl_permission_error = [](auto, auto, std::string_view function) {
+        check(function == "osGetNumberOfAttachments", "attachment counts check their named permission");
+        return std::string{};
+    };
+    host.attachment_points = [](framework::Uuid avatar) {
+        check(avatar == context().owner, "attachment counts use the requested presence");
+        return std::optional{std::vector<std::uint8_t>{5, 7, 5}};
+    };
+    std::string result;
+    host.chat = [&](const auto &chat) { result = chat.text; };
+    LslInstance instance(program.program, context(), host);
+    check(instance.run(100).status == LslRunStatus::Idle && result == "5, 2, 5, 2, -1, 0, 256, 0",
+          "attachment counts retain duplicate requests and skip invalid point values");
+}
+
+static void check_ossl_attachment_message_selection() {
+    const auto program = compile_lsl(R"LSL(
+        default {
+            state_entry() {
+                key avatar = llGetOwner();
+                osMessageAttachments(avatar, "points", [5, " +5 ", -1, 7], 0);
+                osMessageAttachments(avatar, "all", [5, OS_ATTACH_MSG_ALL, 1.0], 0);
+                osMessageAttachments(avatar, "exclude", [5], OS_ATTACH_MSG_INVERT_POINTS
+                    | OS_ATTACH_MSG_OBJECT_CREATOR | OS_ATTACH_MSG_SCRIPT_CREATOR);
+                osMessageAttachments(avatar, "empty exclusion", [], OS_ATTACH_MSG_INVERT_POINTS);
+                osMessageAttachments(avatar, "invalid point", [5, 1.0], 0);
+                osMessageAttachments(avatar, "invalid inversion", [OS_ATTACH_MSG_ALL], OS_ATTACH_MSG_INVERT_POINTS);
+                osMessageAttachments(avatar, "empty selection", [], 0);
+                osMessageAttachments(NULL_KEY, "invalid avatar", [OS_ATTACH_MSG_ALL], 0);
+            }
+        }
+    )LSL");
+    check(bool(program), "attachment messages compile");
+    const auto sender = context();
+    using Selection = std::tuple<std::string, std::vector<std::int32_t>, bool, bool, bool>;
+    std::vector<Selection> selections;
+    LslHost host;
+    int permission_checks = 0;
+    host.ossl_permission_error = [&](auto, auto, std::string_view name) {
+        check(name == "osMessageAttachments", "attachment messages check their named permission");
+        ++permission_checks;
+        return std::string{};
+    };
+    host.message_attachments = [&](auto source, auto item, auto avatar, const auto &message, const auto &points,
+                                   bool invert, bool object_creator, bool script_creator) {
+        check(source == sender.object && item == sender.item && avatar == sender.owner,
+              "attachment messages retain sender and target identities");
+        selections.emplace_back(message, points, invert, object_creator, script_creator);
+    };
+    LslInstance instance(program.program, sender, host);
+    check(instance.run(100).status == LslRunStatus::Idle && permission_checks == 8 &&
+              selections ==
+                  std::vector<Selection>{
+                      {"points", {5, 5, 7}, false, false, false},
+                      {"all", {}, false, false, false},
+                      {"exclude", {5}, true, true, true},
+                      {"empty exclusion", {}, true, false, false},
+                  },
+          "attachment messages preserve selection order, sentinel behavior and creator filters");
+}
+
+static void check_agent_list_uses_root_position() {
+    const auto program = compile_lsl(R"LSL(
+        default {
+            state_entry() {
+                llSay(1, (string)llGetListLength(llGetAgentList(AGENT_LIST_PARCEL, [])));
+            }
+        }
+    )LSL");
+    check(bool(program), "parcel agent list compiles");
+    auto script_context = context();
+    script_context.position = {200, 20, 30};
+    script_context.root_position = framework::Vector3{100, 20, 30};
+    const framework::Vector3 live_root_position{110, 20, 30};
+    LslHost host;
+    host.object_position = [&](framework::Uuid part, bool local, bool root) {
+        check(part == script_context.object && !local && root, "agent list queries the live root");
+        return std::optional{live_root_position};
+    };
+    host.region_agents = [&](std::int32_t scope, framework::Vector3 position, bool exclude_npcs) {
+        check(scope == 1 && position == live_root_position && !exclude_npcs,
+              "parcel scope uses the live root position and includes NPCs by default");
+        return std::vector{script_context.owner};
+    };
+    std::string result;
+    host.chat = [&](const auto &chat) { result = chat.text; };
+    LslInstance instance(program.program, script_context, host);
+    check(instance.run(100).status == LslRunStatus::Idle && result == "1",
+          "parcel agent list returns the avatars resolved for the root");
+}
+
+static void check_ossl_parcel_queries() {
+    const auto program = compile_lsl(R"LSL(default {
+        state_entry() {
+            key id = osGetParcelID();
+            llSay(1, (string)id);
+            llSay(1, llList2CSV(osGetParcelIDs()));
+            llSay(1, llList2CSV(osGetParcelDetails(id, [0])));
+            llSay(1, llList2CSV(osGetParcelDetails("invalid", [0])));
+            llSay(1, (string)osGetParcelDwell(<10,20,0>));
+        }
+    })LSL");
+    check(bool(program), "OSSL parcel queries compile");
+    const auto id = context().object;
+    LslHost host;
+    host.parcel_ids = [=] { return std::vector{id}; };
+    host.parcel_details = [=](auto position, auto, const LslList &selectors) {
+        if (std::get<std::int32_t>(unbox_lsl_value(selectors.items.at(0))) == 5)
+            return LslList{{id.str()}};
+        check(position.x == 10 && position.y == 20, "parcel dwell uses the supplied position");
+        return LslList{{std::int32_t{37}}};
+    };
+    host.parcel_details_by_id = [=](auto supplied, auto, const LslList &selectors) {
+        check(supplied == id && semantic_items(selectors) == std::vector<LslValue>{std::int32_t{0}},
+              "OSSL parcel details uses the parsed UUID and selectors");
+        return LslList{{std::string("Fixture parcel")}};
+    };
+    std::vector<std::string> messages;
+    host.chat = [&](const auto &chat) { messages.push_back(chat.text); };
+    LslInstance instance(program.program, context(), host);
+    check(instance.run(100).status == LslRunStatus::Idle &&
+              messages == std::vector<std::string>{id.str(), id.str(), "Fixture parcel", "0", "37"},
+          "OSSL parcel queries preserve IDs, details, dwell and malformed-key fallback");
+}
+
+static void check_ossl_map_textures() {
+    const auto program = compile_lsl(R"LSL(default {
+        state_entry() {
+            llSay(1, (string)osGetMapTexture());
+            llSay(1, (string)osGetRegionMapTexture(" "));
+            llSay(1, (string)osGetRegionMapTexture("Fixture Region"));
+            llSay(1, (string)osGetRegionMapTexture("10000000-0000-0000-0000-000000000001"));
+        }
+    })LSL");
+    check(bool(program), "OSSL map texture queries compile");
+    LslHost host;
+    host.ossl_enabled = true;
+    host.script_delay_factor = 0.f;
+    host.ossl_permission_error = [](auto, auto, auto) { return std::string{}; };
+    const auto local = context().object;
+    const auto remote = context().owner;
+    host.map_texture = [=] { return local; };
+    host.region_map_texture = [=](std::string_view query, bool by_id) -> std::optional<framework::Uuid> {
+        if (by_id) {
+            check(query == "10000000-0000-0000-0000-000000000001", "map lookup forwards the region UUID");
+            return std::nullopt;
+        }
+        check(query == "Fixture Region", "map lookup forwards the region name");
+        return remote;
+    };
+    std::vector<std::string> messages;
+    host.chat = [&](const auto &chat) { messages.push_back(chat.text); };
+    LslInstance instance(program.program, context(), host);
+    check(instance.run(100).status == LslRunStatus::Idle &&
+              messages == std::vector<std::string>{local.str(), local.str(), remote.str(),
+                                                   "10000000-0000-0000-0000-000000000001"},
+          "OSSL map lookup handles local, named and unresolved UUID queries");
+}
+
+static void check_ossl_region_stats() {
+    const auto program = compile_lsl(R"LSL(default {
+        state_entry() { llSay(1, llList2CSV(osGetRegionStats())); }
+    })LSL");
+    check(bool(program), "OSSL region statistics query compiles");
+    LslHost host;
+    host.ossl_permission_error = [](auto, auto, std::string_view name) {
+        check(name == "osGetRegionStats", "region statistics use the named permission");
+        return std::string{};
+    };
+    host.region_stats = [] { return std::vector{0.5f, 45.f, 30.f}; };
+    std::string output;
+    host.chat = [&](const auto &chat) { output = chat.text; };
+    LslInstance instance(program.program, context(), host);
+    check(instance.run(100).status == LslRunStatus::Idle && output == "0.500000, 45.000000, 30.000000",
+          "OSSL region statistics return floating-point values in report order");
+}
+
+static void check_ossl_old_list_stride() {
+    const auto program = compile_lsl(R"LSL(default {
+        state_entry() {
+            list values = [0,1,2,3,4,5];
+            llSay(1, llList2CSV(osOldList2ListStrided(values, 4, 1, 2)));
+            llSay(1, llList2CSV(osOldList2ListStrided(values, 4, 1, -2)));
+            llSay(1, llList2CSV(osOldList2ListStrided(values, -3, -1, 0)));
+            llSay(1, llList2CSV(osOldList2ListStrided(values, 2, 2, -2)));
+        }
+    })LSL");
+    check(bool(program), "legacy OSSL list stride compiles");
+    LslHost host;
+    std::vector<std::string> messages;
+    host.chat = [&](const auto &chat) { messages.push_back(chat.text); };
+    LslInstance script(program.program, context(), host);
+    check(script.run(100).status == LslRunStatus::Idle &&
+              messages == std::vector<std::string>{"0, 4", "5, 1", "3, 4, 5", "2"},
+          "legacy OSSL list stride preserves wrapped ranges, reverse scanning and single indices");
+}
+
+static void check_ossl_in_place_sort() {
+    const auto program = compile_lsl(R"LSL(default {
+        state_entry() {
+            list values = [3, 1, 2];
+            list alias = values;
+            osListSortInPlace(values, 1, 1);
+            llSay(1, llList2CSV(alias));
+            list rows = ["b", 2, "c", 3, "a", 1];
+            osListSortInPlaceStrided(rows, 2, -1, 0);
+            llSay(1, llList2CSV(rows));
+            osListSortInPlaceStrided(rows, 2, 2, 1);
+            llSay(1, llList2CSV(rows));
+            list unsorted = [3, 1, 2];
+            list copy = llListSort(unsorted, 2, 1);
+            osListSortInPlace(unsorted, 1, 1);
+            llSay(1, llList2CSV(copy));
+            llSay(1, llList2CSV(llListSort([2147483647, -1], 1, 1)));
+            llSay(1, llList2CSV(llListSort([2147483647, "marker", -1], 1, 1)));
+            list rotations = [<1,0,0,1>, <2,0,0,1>, <3,0,0,1>, <4,0,0,1>, <5,0,0,1>, <6,0,0,1>,
+                <7,0,0,1>, <8,0,0,1>, <9,0,0,1>, <10,0,0,1>, <11,0,0,1>, <12,0,0,1>,
+                <13,0,0,1>, <14,0,0,1>, <15,0,0,1>, <16,0,0,1>, <17,0,0,1>];
+            osListSortInPlace(rotations, 1, 1);
+            rotation second = llList2Rot(rotations, 1);
+            llSay(1, (string)(second.x == 15.0));
+        }
+    })LSL");
+    if (!program) {
+        const auto &diagnostic = program.diagnostics.front();
+        throw std::runtime_error("OSSL in-place sorts failed to compile at " + std::to_string(diagnostic.line) + ":" +
+                                 std::to_string(diagnostic.column) + ": " + diagnostic.message);
+    }
+    LslHost host;
+    std::vector<std::string> messages;
+    host.chat = [&](const auto &chat) { messages.push_back(chat.text); };
+    LslInstance instance(program.program, context(), host);
+    check(instance.run(100).status == LslRunStatus::Idle &&
+              messages == std::vector<std::string>{"1, 2, 3", "c, 3, b, 2, a, 1", "c, 3, b, 2, a, 1", "3, 1, 2",
+                                                   "2147483647, -1", "-1, marker, 2147483647", "1"},
+          "list sorting preserves aliases, independent copies, and managed comparison rules");
+    const auto sleeping = compile_lsl(R"LSL(default {
+        state_entry() {
+            list values = [3, 1, 2];
+            list alias = values;
+            llSleep(1);
+            osListSortInPlace(values, 1, 1);
+            llSay(1, llList2CSV(alias));
+        }
+    })LSL");
+    check(bool(sleeping), "checkpoint list alias fixture compiles");
+    std::int64_t now = 0;
+    host.clock_ticks = [&] { return now; };
+    LslInstance before(sleeping.program, context(), host);
+    check(before.run(100).status == LslRunStatus::Sleeping, "checkpoint fixture sleeps before sorting");
+    const auto saved = before.checkpoint();
+    check(bool(saved), "checkpoint captures both list aliases");
+    const auto bytes = encode_lsl_checkpoint(*saved);
+    const auto decoded = decode_lsl_checkpoint(bytes);
+    check(decoded && encode_lsl_checkpoint(*decoded) == bytes,
+          "list references survive a deterministic checkpoint round trip");
+    auto transfer = *saved;
+    transfer.listeners.push_back({{}, 1, 7, "fixture", ".*", true, 2});
+    transfer.permissions_granter = context().owner;
+    transfer.permissions_mask = 128;
+    transfer.start_parameter = 17;
+    const auto archive_bytes = encode_lsl_checkpoint(transfer);
+    const auto archive = decode_lsl_checkpoint(archive_bytes);
+    check(archive && archive->listeners.size() == 1 && archive->listeners.front().regex_flags == 2 &&
+              archive->permissions_granter == transfer.permissions_granter && archive->permissions_mask == 128 &&
+              encode_lsl_checkpoint(*archive) == archive_bytes,
+          "list references coexist with archived regex listeners and permissions");
+    const auto crossing = decode_lsl_checkpoint(encode_lsl_checkpoint(transfer, false));
+    check(crossing && crossing->listeners.empty() && crossing->permissions_granter.is_zero() &&
+              crossing->permissions_mask == 0 && crossing->start_parameter == 17,
+          "crossing checkpoints preserve VM state and omit separately transported extensions");
+    const auto shared_alias = [](const LslCheckpoint &checkpoint) {
+        const auto &first = std::get<std::shared_ptr<const LslList>>(checkpoint.locals.at(0));
+        const auto &second = std::get<std::shared_ptr<const LslList>>(checkpoint.locals.at(1));
+        return first == second;
+    };
+    check(shared_alias(*archive) && shared_alias(*crossing),
+          "archive and crossing checkpoints both preserve list identity");
+    LslInstance after(sleeping.program, context(), host);
+    check(after.restore_checkpoint(*decoded), "checkpoint with list references restores");
+    now += 10000000;
+    check(after.run(100).status == LslRunStatus::Idle && messages.back() == "1, 2, 3",
+          "restored list aliases see in-place sorting");
+    check(encode_lsl_checkpoint(*decoded) == bytes, "running a restored script cannot mutate its saved checkpoint");
+    check(before.run(100).status == LslRunStatus::Idle && encode_lsl_checkpoint(*saved) == bytes,
+          "running the original script cannot mutate its captured checkpoint");
+}
+
+static void check_yengine_backing_list_aliases() {
+    // Two managed LSL list wrappers, with the second referring to the first's object array.
+    const std::vector<std::uint8_t> bytes{
+        12,  0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 9,  2, 'l', 'i', 2, 0, 0, 0, 5, 9, 2, 'o',
+        'b', 2, 0, 0, 0, 3, 3, 0, 0,   0,   3,   1,   0, 0, 0, 5, 15, 2, 0,   0,   0, 0, 0, 0, 0, 0, 0, 0,
+    };
+    const auto snapshot = decode_yengine_snapshot(bytes);
+    check(snapshot && snapshot->globals[4].size() == 2, "managed list alias fixture decodes");
+    const auto &first = std::get<std::shared_ptr<const LslList>>(snapshot->globals[4][0]);
+    const auto &second = std::get<std::shared_ptr<const LslList>>(snapshot->globals[4][1]);
+    check(first == second && first->items == std::vector<LslValue>{LslBoxedInteger{3}, LslBoxedInteger{1}},
+          "managed list wrappers sharing an array retain list identity");
+    constexpr std::string_view source = "list a; list b; default { touch_start(integer n) { "
+                                        "osListSortInPlace(a, 1, 1); llSay(1, llList2CSV(b)); } }";
+    const auto compiled = compile_lsl(source);
+    check(bool(compiled), "managed alias migration script compiles");
+    LslHost host;
+    std::string message;
+    host.chat = [&](const LslChat &chat) { message = chat.text; };
+    LslInstance imported(compiled.program, context(), host);
+    check(imported.restore_yengine_snapshot(*snapshot, "191D2A811944B64DEAFD93E89F8D2827", source),
+          "managed global list aliases restore into the native VM");
+    imported.post_event({"touch_start", {std::int32_t{1}}, {}});
+    check(imported.run(100).status == LslRunStatus::Idle && message == "1, 3" &&
+              first->items.front() == LslValue(LslBoxedInteger{3}),
+          "managed aliases share mutations within the native VM and keep the snapshot isolated");
+}
+
+int main(int argc, char **argv) {
     try {
+        check_yengine_backing_list_aliases();
+        check_ossl_in_place_sort();
+        check_ossl_old_list_stride();
+        check_ossl_region_stats();
+        check_ossl_map_textures();
+        check_ossl_parcel_queries();
+        check_ossl_avatar_list();
+        check_ossl_attachment_counts();
+        check_ossl_attachment_drop();
+        check_ossl_force_attach_inventory();
+        check_ossl_attachment_message_selection();
+        check_agent_list_uses_root_position();
+        check_ossl_wind_parameters();
+        check_ossl_notecard_reads();
+        check_ossl_health();
+        check_ossl_avatar_type();
+        check_ossl_key_to_name();
+        check_ossl_simulator_memory();
+        check_ossl_object_message();
+        check_ossl_simulator_version();
+        check_ossl_save_appearance();
+        check_ossl_kick_avatar();
+        check_ossl_entity_rotation();
+        check_ossl_physics_queries();
+        check_ossl_terrain_flush();
+        check_ossl_terrain_sample();
+        check_ossl_terrain_textures();
+        check_ossl_projection();
+        check_ossl_legacy_sun_setters();
+        check_ossl_float_on_water();
+        check_ossl_parcel_sip();
+        check_ossl_npc_queries();
+        check_ossl_npc_creation();
+        check_pacific_wallclock();
+        check_ossl_script_reset();
+        check_ossl_interpolation_and_event_key();
         {
             auto service = std::make_shared<network::ScriptHttpService>(
                 std::make_shared<framework::OutboundUrlFilter>(""), 16384, 2000, 1);
-            for (const auto* name : {"Ho\xc2\xad" "st", "Pro\xc2\xad" "xy-Example", "Se\xc2\xad" "c-Example"}) {
+            for (const auto *name : {"Ho\xc2\xad"
+                                     "st",
+                                     "Pro\xc2\xad"
+                                     "xy-Example",
+                                     "Se\xc2\xad"
+                                     "c-Example"}) {
                 network::ScriptHttpModule module(service, {0.f, 1.f, 0.f, 1.f});
-                const auto result = module.submit({}, 17, {}, {}, "http://127.0.0.1/",
-                                                  {{5, "5"}, {{}, name}, {{}, "fixture"}}, {}, {});
+                const auto result =
+                    module.submit({}, 17, {}, {}, "http://127.0.0.1/", {{5, "5"}, {{}, name}, {{}, "fixture"}}, {}, {});
                 check(result.key.empty() && result.errors.size() == 1 &&
                           result.errors.front().find("Name is invalid as a custom header") != std::string::npos,
                       "script HTTP forbidden header names and prefixes use invariant collation");
@@ -137,7 +1610,7 @@ int main(int argc, char** argv) {
             std::vector<std::string> messages;
             LslHost host;
             host.clock_ticks = [&] { return clock; };
-            host.chat = [&](const LslChat& chat) { messages.push_back(chat.text); };
+            host.chat = [&](const LslChat &chat) { messages.push_back(chat.text); };
             host.script_delay_factor = .5f;
             LslInstance script(program.program, context(), host);
             for (const int milliseconds : {500, 1500, 1500, 500}) {
@@ -158,7 +1631,7 @@ int main(int argc, char** argv) {
             const auto item = framework::Uuid::random();
             const auto owner = framework::Uuid::random();
             constexpr std::uint32_t local_id = 17;
-            const auto submit = [&](network::ScriptHttpModule& module, framework::Uuid script, std::string_view path) {
+            const auto submit = [&](network::ScriptHttpModule &module, framework::Uuid script, std::string_view path) {
                 return module.submit(part, local_id, owner, script, argv[2] + std::string(path), {}, {}, {}).key;
             };
             const auto first_key = submit(first, item, "/shared-first");
@@ -173,10 +1646,10 @@ int main(int argc, char** argv) {
             const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(4);
             bool first_done = false, second_done = false;
             while ((!first_done || !second_done) && std::chrono::steady_clock::now() < deadline) {
-                const auto check_reply = [&](network::ScriptHttpModule& module, const std::string& key,
-                                             std::string_view body, bool& done) {
+                const auto check_reply = [&](network::ScriptHttpModule &module, const std::string &key,
+                                             std::string_view body, bool &done) {
                     const auto replies = module.take_completed();
-                    for (const auto& reply : replies) {
+                    for (const auto &reply : replies) {
                         check(!done && reply.request.str() == key && reply.part == part && reply.local_id == local_id &&
                                   reply.reply.status == 200 && reply.reply.body == body,
                               "shared HTTP worker delivered a reply to the wrong region");
@@ -193,7 +1666,7 @@ int main(int argc, char** argv) {
             while (service->active_workers() && std::chrono::steady_clock::now() < retirement_deadline)
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
             check(service->active_workers() == 0, "idle script HTTP worker did not retire");
-            auto& restarted = removed;
+            auto &restarted = removed;
             const auto restarted_key = submit(restarted, item, "/shared-restart");
             const auto restart_deadline = std::chrono::steady_clock::now() + std::chrono::seconds(3);
             while (std::chrono::steady_clock::now() < restart_deadline) {
@@ -270,13 +1743,16 @@ int main(int argc, char** argv) {
                     request.body = "caf\xe9";
                     request.mime_type = "text/plain; charset=\"iso-8859-1\"";
                 } else if (encoding == "utf16-bom") {
-                    request.body = std::string("\xff\xfe" "c\0a\0f\0\xe9\0", 10);
+                    request.body = std::string("\xff\xfe"
+                                               "c\0a\0f\0\xe9\0",
+                                               10);
                     request.mime_type = "text/plain";
                 } else if (encoding == "utf32be") {
                     request.body = std::string("\0\0\xfe\xff\0\0\0c\0\0\0a\0\0\0f\0\0\0\xe9", 20);
                     request.mime_type = "text/plain; charset=utf-32BE";
                 } else if (encoding == "utf8-bom") {
-                    request.body = "\xef\xbb\xbf" "caf\xc3\xa9";
+                    request.body = "\xef\xbb\xbf"
+                                   "caf\xc3\xa9";
                 } else if (encoding == "invalid") {
                     request.mime_type = "text/plain; charset=unsupported-fixture-encoding";
                 } else {
@@ -326,7 +1802,7 @@ int main(int argc, char** argv) {
                 for (int index = 0; index < 2; ++index) {
                     framework::ConfigXmlHttpOperation operation;
                     operation.method = "GET";
-                    operation.response_headers = [](const auto& response) {
+                    operation.response_headers = [](const auto &response) {
                         check(response.status == 200, "authenticated SOCKS pool response status");
                     };
                     const auto body = client.send_headers(request.uri, operation);
@@ -337,13 +1813,14 @@ int main(int argc, char** argv) {
                 return 0;
             }
             network::ScriptHttpTransport transport(filter, network::native_web_http_handler_factory(), 1500, 8, proxy);
-            const auto cancel_after = argc == 5 && !custom_content_type && !custom_content_length &&
-                                      !custom_method && !invalid_header_name
-                ? std::stoi(argv[4]) : -1;
+            const auto cancel_after =
+                argc == 5 && !custom_content_type && !custom_content_length && !custom_method && !invalid_header_name
+                    ? std::stoi(argv[4])
+                    : -1;
             const auto started = std::chrono::steady_clock::now();
             const auto reply = transport.send(request, [&] {
                 return cancel_after >= 0 &&
-                    std::chrono::steady_clock::now() - started >= std::chrono::milliseconds(cancel_after);
+                       std::chrono::steady_clock::now() - started >= std::chrono::milliseconds(cancel_after);
             });
             if (reply)
                 std::cout << reply->status << ' ' << hex(reply->body) << '\n';
@@ -353,18 +1830,17 @@ int main(int argc, char** argv) {
         }
         if (argc == 7 && std::string_view(argv[1]) == "--smtp-probe") {
             const std::string_view mode = argv[4];
-            const auto tls = mode == "implicit" ? network::ScriptSmtpTls::Implicit :
-                mode == "1" || mode == "required-legacy" ? network::ScriptSmtpTls::StartTls :
-                                                          network::ScriptSmtpTls::Automatic;
+            const auto tls = mode == "implicit"                         ? network::ScriptSmtpTls::Implicit
+                             : mode == "1" || mode == "required-legacy" ? network::ScriptSmtpTls::StartTls
+                                                                        : network::ScriptSmtpTls::Automatic;
             const bool legacy = mode == "legacy" || mode == "required-legacy";
             network::ScriptSmtpSecurity security{tls, std::string_view(argv[5]) == "1",
-                std::string_view(argv[6]) == "1", legacy ? "" : "fixture-user",
-                legacy ? "" : "fixture-password"};
-            const auto body = mode == "eight-bit" || mode == "encoded" ? "first\n.café\nlast" :
-                                                                        "first\n.second\nlast";
+                                                 std::string_view(argv[6]) == "1", legacy ? "" : "fixture-user",
+                                                 legacy ? "" : "fixture-password"};
+            const auto body = mode == "eight-bit" || mode == "encoded" ? "first\n.café\nlast" : "first\n.second\nlast";
             network::send_script_smtp(argv[2], std::stoi(argv[3]), "\"Simulátor, Native\" <from@example.invalid>",
-                "Fixture Recipient <to@example.invalid>", "Fixture", body,
-                "fixture-owner", "fixture-object", security);
+                                      "Fixture Recipient <to@example.invalid>", "Fixture", body, "fixture-owner",
+                                      "fixture-object", security);
             return 0;
         }
         if (argc > 1 && std::string(argv[1]) == "--api-probe") {
@@ -391,7 +1867,7 @@ int main(int argc, char** argv) {
             return 0;
         }
         int checks = 0;
-        auto test = [&](bool b, const char* what) {
+        auto test = [&](bool b, const char *what) {
             check(b, what);
             checks++;
         };
@@ -399,11 +1875,11 @@ int main(int argc, char** argv) {
             const auto owner = context().owner;
             const auto other = context().object;
             HttpRequestThrottle throttle;
-            test(throttle.allow(1, owner, 0) && throttle.allow(1, owner, 0) &&
-                     throttle.allow(2, owner, 0) && !throttle.allow(3, owner, 0),
+            test(throttle.allow(1, owner, 0) && throttle.allow(1, owner, 0) && throttle.allow(2, owner, 0) &&
+                     !throttle.allow(3, owner, 0),
                  "script HTTP initializes the shared owner bucket with the prim burst");
-            test(throttle.allow(3, other, 0) && throttle.allow(3, other, 0) &&
-                     !throttle.allow(3, other, 0) && throttle.allow(3, other, .01),
+            test(throttle.allow(3, other, 0) && throttle.allow(3, other, 0) && !throttle.allow(3, other, 0) &&
+                     throttle.allow(3, other, .01),
                  "owner rejection still consumes prim credit and fractional refill permits a request");
             HttpRequestThrottle stopped;
             test(stopped.allow(7, owner, 0) && stopped.allow(7, owner, 0) && stopped.allow(7, owner, 0),
@@ -439,17 +1915,14 @@ int main(int argc, char** argv) {
             test(bool(original) && bool(recompiled), "compile checkpoint fixture");
             std::int64_t source_clock = 10000000;
             LslHost source_host;
-            source_host.clock_ticks = source_host.monotonic_ticks = [&] {
-                return source_clock;
-            };
+            source_host.clock_ticks = source_host.monotonic_ticks = [&] { return source_clock; };
             LslInstance sender(original.program, context(), source_host);
             test(sender.run(256).status == LslRunStatus::Sleeping, "checkpoint source sleeps in named state");
             LslDetector detector;
             detector.key = framework::Uuid::random();
             detector.touch_face = 3;
             detector.position = {1, 2, 3};
-            test(sender.post_event({"touch_start", {std::int32_t{77}}, {detector}}),
-                 "queue event before checkpoint");
+            test(sender.post_event({"touch_start", {std::int32_t{77}}, {detector}}), "queue event before checkpoint");
             source_clock += 2500000;
             const auto snapshot = sender.checkpoint();
             test(snapshot && snapshot->state == "working" && snapshot->sleep_remaining == 7500000 &&
@@ -459,12 +1932,8 @@ int main(int argc, char** argv) {
             std::int64_t destination_clock = 90000000;
             std::vector<std::string> messages;
             LslHost destination_host;
-            destination_host.clock_ticks = destination_host.monotonic_ticks = [&] {
-                return destination_clock;
-            };
-            destination_host.chat = [&](const LslChat& chat) {
-                messages.push_back(chat.text);
-            };
+            destination_host.clock_ticks = destination_host.monotonic_ticks = [&] { return destination_clock; };
+            destination_host.chat = [&](const LslChat &chat) { messages.push_back(chat.text); };
             LslInstance receiver(recompiled.program, context(), destination_host);
             const auto encoded = encode_lsl_checkpoint(*snapshot);
             const auto decoded = decode_lsl_checkpoint(encoded);
@@ -481,7 +1950,9 @@ int main(int argc, char** argv) {
             };
             const auto listener_wire = encode_lsl_checkpoint(with_listeners);
             const auto restored_listeners = decode_lsl_checkpoint(listener_wire);
-            test(encoded[3] == 1 && listener_wire[3] == 2 && restored_listeners &&
+            test(encoded[3] == 12 && listener_wire[3] == 12 && restored_listeners &&
+                     restored_listeners->global_initialization_pending == snapshot->global_initialization_pending &&
+                     restored_listeners->global_initializer_cursor == snapshot->global_initializer_cursor &&
                      encode_lsl_checkpoint(*restored_listeners) == listener_wire &&
                      restored_listeners->listeners.size() == 2 &&
                      restored_listeners->listeners.front().sender == detector.key &&
@@ -492,7 +1963,7 @@ int main(int argc, char** argv) {
             test(encode_lsl_checkpoint(with_listeners, false) == encoded && decoded_listeners &&
                      encode_lsl_listeners(*decoded_listeners) == separate_listeners &&
                      !decode_lsl_listeners(std::span(separate_listeners).first(separate_listeners.size() - 1)),
-                 "crossing sends legacy execution state and validates the separate listener extension");
+                 "crossing preserves constructor execution state and validates the separate listener extension");
             with_listeners.listeners.back().handle = with_listeners.listeners.front().handle;
             test(!decode_lsl_checkpoint(encode_lsl_checkpoint(with_listeners)),
                  "reject checkpoint with duplicate listener handles");
@@ -503,11 +1974,11 @@ int main(int argc, char** argv) {
             const auto parameter_wire = encode_lsl_checkpoint(with_start_parameter);
             const auto restored_parameter = decode_lsl_checkpoint(parameter_wire);
             const auto crossing_parameter = decode_lsl_checkpoint(encode_lsl_checkpoint(with_start_parameter, false));
-            test(parameter_wire[3] == 4 && restored_parameter && restored_parameter->start_parameter == -73 &&
-                     restored_parameter->permissions_granter == detector.key &&
-                     crossing_parameter && crossing_parameter->start_parameter == -73 &&
-                     crossing_parameter->permissions_granter.is_zero() && decoded->start_parameter == 0,
-                 "version four preserves start parameters without changing older checkpoint layouts");
+            test(parameter_wire[3] == 12 && restored_parameter && restored_parameter->start_parameter == -73 &&
+                     restored_parameter->permissions_granter == detector.key && crossing_parameter &&
+                     crossing_parameter->start_parameter == -73 && crossing_parameter->permissions_granter.is_zero() &&
+                     decoded->start_parameter == 0,
+                 "constructor-phase checkpoints preserve start parameters and separate permission extensions");
             test(!decode_lsl_checkpoint(std::span(parameter_wire).first(parameter_wire.size() - 1)),
                  "reject checkpoint truncated inside the start parameter");
             auto with_sensors = with_start_parameter;
@@ -515,21 +1986,20 @@ int main(int argc, char** argv) {
                                     {"Once", {}, 1, 20., 3., std::nullopt}};
             const auto sensor_wire = encode_lsl_checkpoint(with_sensors, false);
             const auto crossing_sensors = decode_lsl_checkpoint(sensor_wire);
-            test(sensor_wire[3] == 5 && crossing_sensors && crossing_sensors->sensors.size() == 2 &&
+            test(sensor_wire[3] == 12 && crossing_sensors && crossing_sensors->sensors.size() == 2 &&
                      crossing_sensors->sensors[0].name == "Nearest" &&
-                     crossing_sensors->sensors[0].key == detector.key &&
-                     crossing_sensors->sensors[0].type == 4 && crossing_sensors->sensors[0].range == 40. &&
-                     crossing_sensors->sensors[0].arc == 1.5 && crossing_sensors->sensors[0].interval == .25 &&
-                     !crossing_sensors->sensors[1].interval && crossing_sensors->start_parameter == -73 &&
+                     crossing_sensors->sensors[0].key == detector.key && crossing_sensors->sensors[0].type == 4 &&
+                     crossing_sensors->sensors[0].range == 40. && crossing_sensors->sensors[0].arc == 1.5 &&
+                     crossing_sensors->sensors[0].interval == .25 && !crossing_sensors->sensors[1].interval &&
+                     crossing_sensors->start_parameter == -73 &&
                      encode_lsl_checkpoint(*crossing_sensors, false) == sensor_wire && decoded->sensors.empty(),
-                 "version five preserves repeat and one-shot sensors in crossing checkpoints");
+                 "constructor-phase checkpoints preserve repeat and one-shot sensors in crossings");
             test(!decode_lsl_checkpoint(std::span(sensor_wire).first(sensor_wire.size() - 1)),
                  "reject checkpoint truncated inside a sensor record");
             auto invalid = *decoded;
             invalid.instruction = std::numeric_limits<std::size_t>::max();
             test(!receiver.restore_checkpoint(invalid), "reject checkpoint with invalid instruction");
-            test(receiver.restore_checkpoint(*decoded),
-                 "restore checkpoint after recompilation and wire decode");
+            test(receiver.restore_checkpoint(*decoded), "restore checkpoint after recompilation and wire decode");
             test(receiver.run(256).status == LslRunStatus::Sleeping && messages.empty(),
                  "restored sleep does not finish early");
             destination_clock += 7500000;
@@ -542,12 +2012,8 @@ int main(int argc, char** argv) {
         }
         std::vector<std::string> messages;
         LslHost host;
-        host.chat = [&](const LslChat& x) {
-            messages.push_back(x.text);
-        };
-        host.clock_ticks = [] {
-            return std::int64_t(0);
-        };
+        host.chat = [&](const LslChat &x) { messages.push_back(x.text); };
+        host.clock_ticks = [] { return std::int64_t(0); };
         {
             const auto program = compile_lsl(R"LSL(default {
                 state_entry() {
@@ -569,9 +2035,12 @@ int main(int argc, char** argv) {
             };
             rotation_host.object_rotation = [&](auto, LslRotationSpace space) -> std::optional<LslRotation> {
                 switch (space) {
-                case LslRotationSpace::Local: return current;
-                case LslRotationSpace::Root: return LslRotation{1, 0, 0, 0};
-                case LslRotationSpace::World: return LslRotation{0, 1, 0, 0};
+                case LslRotationSpace::Local:
+                    return current;
+                case LslRotationSpace::Root:
+                    return LslRotation{1, 0, 0, 0};
+                case LslRotationSpace::World:
+                    return LslRotation{0, 1, 0, 0};
                 }
                 return {};
             };
@@ -584,7 +2053,7 @@ int main(int argc, char** argv) {
         {
             auto url_host = host;
             bool delivered = false;
-            url_host.load_url = [&](auto, auto, const std::string&, const std::string&) { delivered = true; };
+            url_host.load_url = [&](auto, auto, const std::string &, const std::string &) { delivered = true; };
             auto url_context = context();
             url_context.group = framework::Uuid::random();
             const auto program = compile_lsl(
@@ -617,8 +2086,8 @@ int main(int argc, char** argv) {
             auto script_context = context();
             const auto target = framework::Uuid::random();
             std::vector<std::uint32_t> options;
-            map_host.map_destination = [&](auto object, auto recipient, const std::string& name,
-                                           auto position, std::uint32_t flags) {
+            map_host.map_destination = [&](auto object, auto recipient, const std::string &name, auto position,
+                                           std::uint32_t flags) {
                 test(object == script_context.object && position == framework::Vector3d{1, 2, 3},
                      "map request forwards the source prim and destination");
                 test((recipient == target && name == "Detected map") ||
@@ -640,8 +2109,7 @@ int main(int argc, char** argv) {
             test(options == std::vector<std::uint32_t>{3, 1, 0, 3}, "worn script opens the owner's map");
         }
         {
-            const auto program = compile_lsl(
-                "default { state_entry() { llDie(); llSay(0, \"still running\"); } }");
+            const auto program = compile_lsl("default { state_entry() { llDie(); llSay(0, \"still running\"); } }");
             test(bool(program), "llDie compiles");
             auto script_context = context();
             LslInstance rezzed(program.program, script_context, host);
@@ -666,8 +2134,7 @@ int main(int argc, char** argv) {
             })LSL");
             test(bool(program), "legacy no-op commands compile");
             LslInstance script(program.program, context(), host);
-            test(script.run(100).status == LslRunStatus::Idle &&
-                     messages == std::vector<std::string>{"1"},
+            test(script.run(100).status == LslRunStatus::Idle && messages == std::vector<std::string>{"1"},
                  "legacy no-op commands evaluate arguments without warnings or a sleep");
             messages.clear();
         }
@@ -718,8 +2185,8 @@ int main(int argc, char** argv) {
             LslInstance instance(program.program, script_context, force_host);
             test(instance.run(100).status == LslRunStatus::Idle &&
                      forces == std::vector<opensim::framework::Vector3>{{-2, -3, 4}, {5, 6, 7}} &&
-                     torques == std::vector<std::pair<opensim::framework::Vector3, bool>>{
-                         {{1, 2, 3}, true}, {{7, 8, 9}, false}},
+                     torques == std::vector<std::pair<opensim::framework::Vector3, bool>>{{{1, 2, 3}, true},
+                                                                                          {{7, 8, 9}, false}},
                  "force and torque dispatch with their respective coordinate modes");
         }
         {
@@ -772,14 +2239,11 @@ int main(int argc, char** argv) {
             const auto script_context = context();
             auto push_host = host;
             bool angular_evaluated = false;
-            push_host.chat = [&](const LslChat& chat) {
-                angular_evaluated = chat.text == "angular evaluated";
-            };
+            push_host.chat = [&](const LslChat &chat) { angular_evaluated = chat.text == "angular evaluated"; };
             int pushes = 0;
             push_host.push_object = [&](auto source, auto target, auto impulse, bool local) {
                 ++pushes;
-                test(source == script_context.object &&
-                         target.str() == "12345678-1234-1234-1234-123456789abc" &&
+                test(source == script_context.object && target.str() == "12345678-1234-1234-1234-123456789abc" &&
                          impulse == opensim::framework::Vector3{2, 3, 4} && local,
                      "llPushObject forwards the linear impulse and local flag");
             };
@@ -814,8 +2278,8 @@ int main(int argc, char** argv) {
                  "look-at calls deliver point and rotation targets and stop");
         }
         {
-            const auto program = compile_lsl(
-                "default { state_entry() { llMoveToTarget(<1, 2, 3>, 0.25); llStopMoveToTarget(); } }");
+            const auto program =
+                compile_lsl("default { state_entry() { llMoveToTarget(<1, 2, 3>, 0.25); llStopMoveToTarget(); } }");
             test(bool(program), "move-to-target start and stop compile");
             auto movement_host = host;
             std::vector<opensim::framework::PrimMoveTarget> commands;
@@ -826,8 +2290,8 @@ int main(int argc, char** argv) {
                  "move-to-target calls deliver the destination and stop command");
         }
         {
-            const auto program = compile_lsl(
-                "default { state_entry() { llSetHoverHeight(3, TRUE, 0.25); llStopHover(); } }");
+            const auto program =
+                compile_lsl("default { state_entry() { llSetHoverHeight(3, TRUE, 0.25); llStopHover(); } }");
             test(bool(program), "hover start and stop compile");
             auto hover_host = host;
             std::vector<opensim::framework::PrimHover> settings;
@@ -867,13 +2331,13 @@ int main(int argc, char** argv) {
             legacy_host.script_delay_factor = .5f;
             legacy_host.clock_ticks = [&] { return clock; };
             legacy_host.request_sleep = [&](int delay) { sleep_ms = delay; };
-            legacy_host.chat = [&](const LslChat& chat) {
+            legacy_host.chat = [&](const LslChat &chat) {
                 if (chat.type == LslChatType::Debug) {
                     check(chat.channel == 2147483647, "deprecated API uses the debug channel");
                     notices.push_back(chat.text);
                 }
             };
-            legacy_host.listener = [&](const LslChat& chat) { deliveries.push_back(chat.text); };
+            legacy_host.listener = [&](const LslChat &chat) { deliveries.push_back(chat.text); };
             LslInstance script(program.program, context(), legacy_host);
             const std::pair<std::string_view, int> expected[] = {
                 {"llSound: Command deprecated - Use llPlaySound instead", 1000},
@@ -889,7 +2353,7 @@ int main(int argc, char** argv) {
                 {"llSetPrimURL: Command deprecated - Use llSetPrimMediaParams instead", 1000},
                 {"llRefreshPrimURL: Command deprecated", 10000},
             };
-            for (const auto& [message, delay] : expected) {
+            for (const auto &[message, delay] : expected) {
                 const auto previous = notices.size();
                 test(script.run(100).status == LslRunStatus::Sleeping && notices.size() == previous + 1 &&
                          notices.back() == message && deliveries == notices && sleep_ms == delay,
@@ -923,7 +2387,7 @@ int main(int argc, char** argv) {
                 check(object == source.object && selector == -3, "sound link selector");
                 return std::vector{child};
             };
-            sound_host.resolve_sound_asset = [&](auto object, const auto& name) {
+            sound_host.resolve_sound_asset = [&](auto object, const auto &name) {
                 check(object == source.object && name == "Bell", "sound resolved in source inventory");
                 return asset;
             };
@@ -935,16 +2399,15 @@ int main(int argc, char** argv) {
                 check(part == child && radius == 12.5f, "linked sound radius");
                 calls.emplace_back("radius");
             };
-            sound_host.play_sound = [&](auto part, const auto& name, double gain, auto flags, bool triggered,
-                                        const auto& bounds) {
-                check(part == child && name == asset.str() && gain == 0.5 && flags == 4 && !triggered &&
-                          !bounds,
+            sound_host.play_sound = [&](auto part, const auto &name, double gain, auto flags, bool triggered,
+                                        const auto &bounds) {
+                check(part == child && name == asset.str() && gain == 0.5 && flags == 4 && !triggered && !bounds,
                       "linked sound plays as slave");
                 calls.emplace_back("play");
             };
-            sound_host.loop_sound = [&](auto part, const auto& name, double gain, auto flags) {
-                check(part == child && (name ? *name == asset.str() && gain == 0.5 && flags == 4
-                                            : gain == 0 && flags == 0),
+            sound_host.loop_sound = [&](auto part, const auto &name, double gain, auto flags) {
+                check(part == child &&
+                          (name ? *name == asset.str() && gain == 0.5 && flags == 4 : gain == 0 && flags == 0),
                       "linked sound loop and stop");
                 calls.emplace_back(name ? "loop" : "stop");
             };
@@ -956,6 +2419,414 @@ int main(int argc, char** argv) {
             test(script.run(100).status == LslRunStatus::Sleeping &&
                      calls == std::vector<std::string>{"queue", "radius", "loop", "play", "stop", "gain"},
                  "linked sound targets the selected prim and preserves playback modes and gain delay");
+
+            const auto ossl = compile_lsl(R"LSL(default {
+                state_entry() {
+                    osSetSoundRadius(LINK_ALL_CHILDREN, 99);
+                    osSetSoundRadius(2, 12.5);
+                    osAdjustSoundVolume(2, 2);
+                    osLoopSoundSlave(2, "Bell", 0.5);
+                    osPlaySoundSlave(2, "Bell", 0.5);
+                    osStopSound(LINK_ALL_CHILDREN);
+                    osPreloadSound(2, "Bell");
+                }
+            })LSL");
+            test(bool(ossl), "OSSL linked sound APIs compile");
+            calls.clear();
+            sound_host.linked_prim_parts = [&](auto object, int selector) {
+                check(object == source.object && (selector == 2 || selector == -3), "OSSL sound selector");
+                return std::vector{child};
+            };
+            sound_host.resolve_sound_asset = [&](auto part, const auto &name) {
+                check(name == "Bell", "OSSL sound inventory name");
+                return part == child ? asset : framework::Uuid{};
+            };
+            sound_host.preload_sound = [&](auto part, const auto &key) {
+                check(part == child && key == asset.str(), "OSSL preloads selected prim's sound");
+                calls.emplace_back("preload");
+                return true;
+            };
+            LslInstance ossl_script(ossl.program, source, sound_host);
+            test(ossl_script.run(100).status == LslRunStatus::Sleeping &&
+                     calls == std::vector<std::string>{"radius", "gain", "loop", "play", "stop", "preload"},
+                 "OSSL sound distinguishes single-prim selectors, group stop, and preload delay");
+        }
+        {
+            const auto country_program = compile_lsl(R"LSL(default {
+                touch_start(integer count) {
+                    llSay(1, osDetectedCountry(0));
+                    llSay(1, osDetectedCountry(count));
+                    llSay(1, osGetAgentCountry(llDetectedKey(0)));
+                    llSay(1, osGetAgentCountry("invalid"));
+                }
+            })LSL");
+            test(bool(country_program), "OSSL country queries compile");
+            auto country_host = host;
+            const auto source = context();
+            country_host.ossl_permission_error = [](auto, auto, std::string_view function) {
+                check(function == "osDetectedCountry" || function == "osGetAgentCountry",
+                      "country query checks its named OSSL permission");
+                return std::string{};
+            };
+            LslDetector detector;
+            detector.key = framework::Uuid::random();
+            bool allow_query = false;
+            country_host.can_query_agent_country = [&](auto owner, auto target) {
+                check(owner == source.owner && target == detector.key, "country query permission arguments");
+                return allow_query;
+            };
+            country_host.account_country = [&](auto target) {
+                check(target == detector.key, "country query uses detected avatar ID");
+                return "CA";
+            };
+            std::vector<std::string> country_messages;
+            country_host.chat = [&](const auto &chat) { country_messages.push_back(chat.text); };
+            LslInstance country_script(country_program.program, source, country_host);
+            for (const auto expected : {std::string{}, std::string{"CA"}}) {
+                country_messages.clear();
+                country_script.post_event({"touch_start", {std::int32_t{1}}, {detector}});
+                test(country_script.run(100).status == LslRunStatus::Idle &&
+                         country_messages == std::vector<std::string>{"CA", "", expected, ""},
+                     "country queries preserve detector bounds and restrict direct lookups");
+                allow_query = true;
+            }
+        }
+        {
+            const auto home_program = compile_lsl(R"LSL(default {
+                state_entry() {
+                    llSay(1, osGetAvatarHomeURI("d008df35-916d-4832-a494-57690e40b8a2"));
+                    llSay(1, osGetAvatarHomeURI(NULL_KEY));
+                }
+            })LSL");
+            test(bool(home_program), "avatar home URI query compiles");
+            auto home_host = host;
+            home_host.ossl_permission_error = [](auto, auto, std::string_view function) {
+                check(function == "osGetAvatarHomeURI", "avatar home URI uses its own permission");
+                return std::string{};
+            };
+            home_host.avatar_home_uri = [](auto id) -> std::string {
+                if (id.is_zero())
+                    return {};
+                check(id == framework::Uuid("d008df35-916d-4832-a494-57690e40b8a2"),
+                      "avatar home URI parses the avatar key");
+                return "https://foreign.example";
+            };
+            home_host.grid_info = [](auto query, auto) {
+                check(query == LslGridQuery::Home, "avatar home URI falls back to grid home");
+                return "https://local.example";
+            };
+            std::vector<std::string> home_messages;
+            home_host.chat = [&](const auto &chat) { home_messages.push_back(chat.text); };
+            LslInstance home_script(home_program.program, context(), home_host);
+            test(home_script.run(100).status == LslRunStatus::Idle &&
+                     home_messages == std::vector<std::string>{"https://foreign.example", "https://local.example"},
+                 "avatar home URI returns the foreign home and falls back to the local grid");
+        }
+        {
+            const auto program = compile_lsl(R"LSL(default {
+                changed(integer mask) {
+                    if (mask & CHANGED_LINK) {
+                        key sitter = llAvatarOnSitTarget();
+                        if (sitter && sitter == llAvatarOnLinkSitTarget(LINK_ROOT) &&
+                            llAvatarOnLinkSitTarget(0) == NULL_KEY &&
+                            sitter == llGetLinkKey(2) && sitter == llGetObjectLinkKey(llGetKey(), 2) &&
+                            llGetObjectPrimCount(llGetKey()) == 1 && llGetNumberOfPrims() == 2 &&
+                            llGetLinkName(2) == "Native Viewer" && llGetAnimation(sitter) == "Sitting" &&
+                            osGetSitActiveRange() == 128 && osGetLinkSitActiveRange(LINK_ROOT) == 128 &&
+                            osGetLinkSitActiveRange(LINK_SET) == -2147483648.0 &&
+                            osGetStandTarget() == <0,0,1.75> &&
+                            osGetLinkStandTarget(LINK_ROOT) == <0,0,1.75> &&
+                            osGetLinkStandTarget(LINK_SET) == ZERO_VECTOR &&
+                            llGetLinkSitFlags(LINK_THIS) == (SIT_FLAG_OPENSIMFORCED | SIT_FLAG_SIT_TARGET) &&
+                            llGetLinkSitFlags(LINK_SET) == 0)
+                            llOwnerSay("Seated link");
+                    }
+                }
+            })LSL");
+            test(bool(program), "seated link query compiles");
+            const auto source = context();
+            const auto sitter = framework::Uuid::random();
+            auto seat_host = host;
+            seat_host.sit_target_avatar = [&](auto, int) { return sitter; };
+            seat_host.link_key = [&](auto, int link) { return link == 2 ? sitter : framework::Uuid{}; };
+            seat_host.prim_count = [](auto, bool include_sitters) { return include_sitters ? 2 : 1; };
+            seat_host.object_name = [](auto) { return std::optional<std::string>{}; };
+            seat_host.avatar_name = [&](auto id) -> std::optional<std::string> {
+                if (id == sitter)
+                    return "Native Viewer";
+                return {};
+            };
+            seat_host.avatar_movement_state = [](auto) { return "Sitting"; };
+            seat_host.sit_active_range = [](auto, int link) { return link == -1 ? -2147483648.0f : 128.f; };
+            seat_host.stand_target = [](auto, int link) { return framework::Vector3d{0, 0, link == -1 ? 0. : 1.75}; };
+            seat_host.sit_flags = [](auto, int link) { return link == -4 ? 0x33 : 0; };
+            std::string message;
+            seat_host.chat = [&](const auto &chat) { message = chat.text; };
+            LslInstance script(program.program, source, seat_host);
+            script.post_event({"changed", {std::int32_t{32}}, {}});
+            const auto result = script.run(100);
+            if (result.status != LslRunStatus::Idle || message != "Seated link")
+                throw std::runtime_error("Seated link condition failed: " + result.error);
+        }
+        {
+            const auto program = compile_lsl(R"LSL(default {
+                state_entry() {
+                    llSay(1, osGetGender(llGetOwner()));
+                    llSay(1, osGetGender("invalid"));
+                }
+            })LSL");
+            test(bool(program), "osGetGender compiles");
+            const auto source = context();
+            auto gender_host = host;
+            gender_host.ossl_permission_error = [](auto, auto, std::string_view function) {
+                check(function == "osGetGender", "gender lookup uses its named OSSL permission");
+                return std::string{};
+            };
+            std::vector<std::string> results;
+            gender_host.chat = [&](const auto &chat) { results.push_back(chat.text); };
+            for (const auto male : {std::optional{true}, std::optional{false}, std::optional<bool>{}}) {
+                gender_host.avatar_shape_is_male = [&](auto id) {
+                    check(id == source.owner, "invalid keys skip the avatar lookup");
+                    return male;
+                };
+                LslInstance script(program.program, source, gender_host);
+                test(script.run(100).status == LslRunStatus::Idle, "osGetGender runs");
+            }
+            test(results == std::vector<std::string>{"male", "unknown", "female", "unknown", "unknown", "unknown"},
+                 "osGetGender distinguishes male, female, and unavailable avatar shapes");
+        }
+        {
+            const auto program = compile_lsl(R"LSL(default {
+                state_entry() {
+                    llSay(1, (string)osGetLinkColor(2, ALL_SIDES));
+                    llSay(1, (string)osGetLinkColor(LINK_SET, 0));
+                    llSay(1, (string)osTemperature2sRGB(1000));
+                    llSay(1, (string)osTemperature2sRGB(40000));
+                }
+            })LSL");
+            test(bool(program), "OSSL color queries compile");
+            const auto source = context();
+            const auto child = framework::Uuid::random();
+            auto color_host = host;
+            color_host.link_key = [&](auto part, int link) {
+                check(part == source.object, "link color starts at the script prim");
+                return link == 2 ? child : framework::Uuid{};
+            };
+            color_host.texture_property = [&](auto part, int face, auto property) -> std::optional<LslValue> {
+                check(part == child && face == -1 && property == LslTextureProperty::Color,
+                      "link color uses the selected prim and face");
+                return framework::Vector3d{0.25, 0.5, 0.75};
+            };
+            std::vector<std::string> results;
+            color_host.chat = [&](const auto &chat) { results.push_back(chat.text); };
+            LslInstance script(program.program, source, color_host);
+            test(script.run(100).status == LslRunStatus::Idle &&
+                     results ==
+                         std::vector<std::string>{"<0.250000, 0.500000, 0.750000>", "<0.000000, 0.000000, 0.000000>",
+                                                  "<1.000000, 0.040100, 0.000000>", "<0.327700, 0.502200, 1.000000>"},
+                 "OSSL color queries preserve linked face lookup and temperature limits");
+        }
+        {
+            const auto program = compile_lsl(R"LSL(default {
+                state_entry() {
+                    osDie(NULL_KEY);
+                    osDie("d008df35-916d-4832-a494-57690e40b8a2");
+                    osDie("invalid");
+                }
+            })LSL");
+            test(bool(program), "osDie compiles as a statement");
+            const auto source = context();
+            auto die_host = host;
+            int deletes = 0;
+            die_host.ossl_permission_error = [](auto, auto, std::string_view function) {
+                check(function == "osDie", "osDie uses its named permission");
+                return std::string{};
+            };
+            die_host.derez_object = [&](auto part, auto target, bool temporary) {
+                check(part == source.object && target == framework::Uuid("d008df35-916d-4832-a494-57690e40b8a2") &&
+                          !temporary,
+                      "osDie requests immediate deletion of a valid target");
+                ++deletes;
+                return true;
+            };
+            std::string diagnostic;
+            die_host.chat = [&](const auto &chat) {
+                check(chat.type == LslChatType::Debug, "osDie reports invalid keys on debug chat");
+                diagnostic = chat.text;
+            };
+            LslInstance script(program.program, source, die_host);
+            test(script.run(100).status == LslRunStatus::Sleeping && deletes == 1 &&
+                     diagnostic == "osDie() cannot delete objects with invalid UUIDs",
+                 "osDie ignores the null key and reports and delays on invalid keys");
+        }
+        {
+            const auto program = compile_lsl(R"LSL(default {
+                state_entry() {
+                    osRegionNotice("everyone");
+                    osRegionNotice(llGetOwner(), "one avatar");
+                    osRegionNotice("invalid", "ignored");
+                }
+            })LSL");
+            test(bool(program), "both osRegionNotice overloads compile");
+            const auto source = context();
+            auto notice_host = host;
+            notice_host.ossl_permission_error = [](auto, auto, std::string_view function) {
+                check(function == "osRegionNotice", "region notice uses its named permission");
+                return std::string{};
+            };
+            std::vector<std::pair<std::optional<framework::Uuid>, std::string>> notices;
+            notice_host.region_notice = [&](auto owner, auto target, const auto &message) {
+                check(owner == source.owner, "region notice uses the script owner's estate permissions");
+                notices.emplace_back(target, message);
+            };
+            LslInstance script(program.program, source, notice_host);
+            test(script.run(100).status == LslRunStatus::Idle && notices.size() == 2 && !notices[0].first &&
+                     notices[0].second == "everyone\n" && notices[1].first == source.owner &&
+                     notices[1].second == "one avatar\n",
+                 "region notices preserve recipients and trailing newlines");
+        }
+        {
+            const auto program = compile_lsl(R"LSL(default {
+                state_entry() {
+                    llSay(1, (string)osRegionRestart(30.5, "Maintenance"));
+                    llSay(1, (string)osRegionRestart(0));
+                }
+            })LSL");
+            test(bool(program), "osRegionRestart overloads compile");
+            const auto source = context();
+            auto restart_host = host;
+            restart_host.ossl_permission_error = [](auto, auto, std::string_view function) {
+                check(function == "osRegionRestart", "script restart checks its named permission");
+                return std::string{};
+            };
+            std::vector<std::pair<double, std::string>> requests;
+            restart_host.region_restart = [&](auto owner, double seconds, std::string message) {
+                check(owner == source.owner, "script restart uses the object's owner");
+                requests.emplace_back(seconds, std::move(message));
+                return seconds > 0;
+            };
+            std::vector<std::string> results;
+            restart_host.chat = [&](const auto &chat) { results.push_back(chat.text); };
+            LslInstance script(program.program, source, restart_host);
+            test(script.run(100).status == LslRunStatus::Idle &&
+                     requests == std::vector<std::pair<double, std::string>>{{30.5, "Maintenance"}, {0, ""}} &&
+                     results == std::vector<std::string>{"1", "0"},
+                 "script restart preserves arguments and reports the host result");
+        }
+        {
+            const auto program = compile_lsl(R"LSL(default {
+                state_entry() {
+                    osSetOwnerSpeed(8);
+                    osSetOwnerSpeed(-2);
+                    osSetSpeed(llGetOwner(), 5.5);
+                    osSetSpeed("invalid", 1);
+                }
+            })LSL");
+            test(bool(program), "OSSL speed modifiers compile");
+            auto speed_host = host;
+            const auto source = context();
+            std::vector<std::string> permissions;
+            speed_host.ossl_permission_error = [&](auto, auto, std::string_view function) {
+                permissions.emplace_back(function);
+                return std::string{};
+            };
+            std::vector<float> modifiers;
+            speed_host.set_avatar_speed = [&](auto avatar, float speed) {
+                check(avatar == source.owner, "OSSL speed identifies the avatar");
+                modifiers.push_back(speed);
+            };
+            LslInstance script(program.program, source, speed_host);
+            test(script.run(100).status == LslRunStatus::Idle && modifiers == std::vector<float>{4.f, -2.f, 5.5f} &&
+                     permissions ==
+                         std::vector<std::string>{"osSetOwnerSpeed", "osSetOwnerSpeed", "osSetSpeed", "osSetSpeed"},
+                 "OSSL speed preserves the owner cap and skips invalid targets");
+        }
+        {
+            const auto program = compile_lsl(R"LSL(default {
+                state_entry() {
+                    osSetParcelMusicURL("https://music.example");
+                    osSetParcelMediaURL("");
+                }
+            })LSL");
+            test(bool(program), "OSSL parcel URL setters compile");
+            auto parcel_host = host;
+            const auto source = context();
+            std::vector<std::string> permissions;
+            parcel_host.ossl_permission_error = [&](auto, auto, std::string_view function) {
+                permissions.emplace_back(function);
+                return std::string{};
+            };
+            std::vector<std::pair<std::string, bool>> updates;
+            parcel_host.set_ossl_parcel_url = [&](auto part, std::string url, bool media) {
+                check(part == source.object, "parcel URL setter uses the script prim");
+                updates.emplace_back(std::move(url), media);
+            };
+            LslInstance script(program.program, source, parcel_host);
+            test(script.run(100).status == LslRunStatus::Idle &&
+                     updates ==
+                         std::vector<std::pair<std::string, bool>>{{"https://music.example", false}, {"", true}} &&
+                     permissions == std::vector<std::string>{"osSetParcelMusicURL", "osSetParcelMediaURL"},
+                 "OSSL parcel URL setters use their own permissions and complete without sleeping");
+        }
+        {
+            const auto program = compile_lsl(R"LSL(default {
+                state_entry() {
+                    osParcelSubdivide(<20.5, 12, 0>, <8, 4, 0>);
+                    osParcelJoin(<20.5, 12, 0>, <8, 4, 0>);
+                }
+            })LSL");
+            test(bool(program), "OSSL parcel topology commands compile");
+            const auto source = context();
+            auto parcel_host = host;
+            std::vector<std::string> permissions;
+            parcel_host.ossl_permission_error = [&](auto, auto, std::string_view function) {
+                permissions.emplace_back(function);
+                return std::string{};
+            };
+            std::vector<bool> divides;
+            parcel_host.edit_parcel_topology = [&](auto owner, auto first, auto second, bool divide) {
+                check(owner == source.owner && first == framework::Vector3d{20.5, 12, 0} &&
+                          second == framework::Vector3d{8, 4, 0},
+                      "parcel topology passes the owner's identity and both corners");
+                divides.push_back(divide);
+            };
+            LslInstance script(program.program, source, parcel_host);
+            test(script.run(100).status == LslRunStatus::Idle && divides == std::vector<bool>{true, false} &&
+                     permissions == std::vector<std::string>{"osParcelSubdivide", "osParcelJoin"},
+                 "OSSL parcel topology commands check their own permissions and select the requested edit");
+        }
+        {
+            const auto program = compile_lsl(R"LSL(default {
+                state_entry() {
+                    osParcelSetDetails(<8, 4, 0>, [PARCEL_DETAILS_DESC, "Legacy edit"]);
+                }
+            })LSL");
+            test(bool(program), "deprecated parcel details setter compiles");
+            auto parcel_host = host;
+            const auto source = context();
+            std::vector<std::string> observations;
+            parcel_host.ossl_permission_error = [&](auto, auto, std::string_view function) {
+                observations.emplace_back(function);
+                return std::string{};
+            };
+            parcel_host.chat = [&](const auto &chat) {
+                check(chat.type == LslChatType::Debug, "deprecation warning uses debug chat");
+                observations.push_back(chat.text);
+            };
+            parcel_host.set_parcel_details = [&](auto owner, auto position, const auto &rules, const auto &) {
+                check(owner == source.owner && position == framework::Vector3d{8, 4, 0} &&
+                          semantic_items(rules) == std::vector<LslValue>{std::int32_t{1}, std::string{"Legacy edit"}},
+                      "deprecated setter passes the original parcel edit");
+                observations.emplace_back("edit");
+            };
+            LslInstance script(program.program, source, parcel_host);
+            test(script.run(100).status == LslRunStatus::Sleeping &&
+                     observations ==
+                         std::vector<std::string>{
+                             "osParcelSetDetails",
+                             "Use of function osParcelSetDetails is deprecated. Use osSetParcelDetails instead.",
+                             "edit"},
+                 "deprecated parcel setter checks its own permission, warns, and applies the edit");
         }
         const auto friendship_program = compile_lsl(R"LSL(
             default {
@@ -985,6 +2856,65 @@ int main(int argc, char** argv) {
                          std::vector<std::string>{result.value_or(true) ? "1" : "0", "0"},
                  "friendship query honors the host result and falls back to group membership");
         }
+        const auto invalid_http_header = compile_lsl(R"LSL(
+            default { state_entry() { string header = llGetHTTPHeader("invalid", "host"); } }
+        )LSL");
+        const auto parcel_http = compile_lsl(R"LSL(
+            default {
+                http_request(key id, string method, string body) {
+                    vector pos = <96, 64, 25>;
+                    llHTTPResponse(id, 200,
+                        (string)llGetParcelMaxPrims(pos, FALSE) + "|" +
+                        (string)llGetParcelMaxPrims(pos, TRUE) + "|" +
+                        (string)llGetParcelPrimCount(pos, PARCEL_COUNT_TOTAL, FALSE) + "|" +
+                        (string)llGetParcelPrimCount(pos, PARCEL_COUNT_TOTAL, TRUE) + "|" +
+                        (string)llGetParcelPrimCount(pos, PARCEL_COUNT_OWNER, TRUE) + "|" +
+                        (string)llGetParcelPrimCount(pos, PARCEL_COUNT_TEMP, FALSE) + "|" +
+                        (string)llGetParcelMaxPrims(<-1, 128, 0>, FALSE));
+                }
+            }
+        )LSL");
+        test(bool(parcel_http), "parcel prim HTTP fixture compiles");
+        LslHost parcel_http_host;
+        parcel_http_host.parcel_max_prims = [](auto point, bool sim_wide) {
+            return point.x < 0 ? 0 : sim_wide ? 200 : 100;
+        };
+        parcel_http_host.parcel_prim_count = [](auto, int category, bool sim_wide) {
+            return category == 0 ? (sim_wide ? 7 : 3) : 0;
+        };
+        std::string parcel_reply;
+        const auto parcel_request = opensim::framework::Uuid::random();
+        parcel_http_host.http_response = [&](auto, auto id, int status, std::string body) {
+            test(id == parcel_request && status == 200, "parcel prim HTTP preserves request identity");
+            parcel_reply = std::move(body);
+        };
+        LslInstance parcel_script(parcel_http.program, context(), parcel_http_host);
+        test(parcel_script.post_event(
+                 {"http_request", {parcel_request.str(), std::string("POST"), std::string("parcel-prims")}, {}}),
+             "parcel prim HTTP fixture accepts request");
+        const auto parcel_result = parcel_script.run(256);
+        test(parcel_result.status == LslRunStatus::Idle && parcel_reply == "100|200|3|7|0|0|0",
+             "parcel prim expressions produce the complete HTTP response within one VM slice");
+
+        const auto invalid_http_response = compile_lsl(R"LSL(
+            default { state_entry() { llHTTPResponse("invalid", 200, "body"); } }
+        )LSL");
+        test(bool(invalid_http_header) && bool(invalid_http_response), "HTTP request ID probes compile");
+        LslHost http_id_host;
+        int http_callbacks = 0;
+        http_id_host.http_header = [&](auto, auto, const auto &) {
+            ++http_callbacks;
+            return std::string{};
+        };
+        http_id_host.http_response = [&](auto, auto, auto, auto) { ++http_callbacks; };
+        for (const auto &program : {invalid_http_header.program, invalid_http_response.program}) {
+            LslInstance with_url_module(program, context(), http_id_host);
+            LslInstance without_url_module(program, context(), {});
+            test(with_url_module.run(100).status == LslRunStatus::Faulted && http_callbacks == 0,
+                 "URL module APIs fault on malformed request IDs before calling the host");
+            test(without_url_module.run(100).status == LslRunStatus::Idle,
+                 "HTTP request IDs are not parsed without the URL module");
+        }
         auto dataserver_program = compile_lsl(R"LSL(
             default {
                 dataserver(key query_id, string data) {
@@ -998,8 +2928,9 @@ int main(int argc, char** argv) {
         const auto query = framework::Uuid("d008df35-916d-4832-a494-57690e40b8a2").str();
         const auto dataserver_start = messages.size();
         test((dataserver_script.event_mask() & (1ull << 8)) != 0 &&
-                 !dataserver_script.post_event({"dataserver", {query}, {}}) &&
-                 !dataserver_script.post_event({"dataserver", {std::int32_t{1}, std::string("bad")}, {}}) &&
+                 rejects_at_dispatch(dataserver_program.program, {"dataserver", {query}, {}}, context(), host) &&
+                 rejects_at_dispatch(dataserver_program.program,
+                                     {"dataserver", {std::int32_t{1}, std::string("bad")}, {}}, context(), host) &&
                  dataserver_script.post_event({"dataserver", {query, std::string("first")}, {}}) &&
                  dataserver_script.post_event({"dataserver", {query, std::string("second")}, {}}),
              "dataserver exposes its source event bit and validates both arguments");
@@ -1017,11 +2948,14 @@ int main(int argc, char** argv) {
                 }
             )LSL");
             if (!response_program)
-                throw std::runtime_error("http_response compile failed: " + response_program.diagnostics.front().message);
+                throw std::runtime_error("http_response compile failed: " +
+                                         response_program.diagnostics.front().message);
             LslInstance receiver(response_program.program, context(), host);
             const auto metadata = std::make_shared<const LslList>();
             test((receiver.event_mask() & (1ull << 10)) != 0 &&
-                     !receiver.post_event({"http_response", {query, 200, std::string{}, std::string{}}, {}}) &&
+                     rejects_at_dispatch(response_program.program,
+                                         {"http_response", {query, 200, std::string{}, std::string{}}, {}}, context(),
+                                         host) &&
                      receiver.post_event({"http_response", {query, 200, metadata, std::string("reply")}, {}}),
                  "http_response exposes the managed event bit and validates metadata");
             const auto checkpoint = receiver.checkpoint();
@@ -1030,9 +2964,31 @@ int main(int argc, char** argv) {
             LslInstance restored(response_program.program, context(), host);
             const auto message_count = messages.size();
             test(restored_checkpoint && restored.restore_checkpoint(*restored_checkpoint) &&
-                     restored.run(100).status == LslRunStatus::Idle &&
-                     messages.size() == message_count + 1 && messages.back() == query + ":200:0:reply",
+                     restored.run(100).status == LslRunStatus::Idle && messages.size() == message_count + 1 &&
+                     messages.back() == query + ":200:0:reply",
                  "http_response preserves its key, status, metadata and body through checkpoint restore");
+        }
+        {
+            const auto program = compile_lsl(R"LSL(
+                default {
+                    transaction_result(string id, integer success, string data) {
+                        llSay(0, id + ":" + (string)success + ":" + data);
+                    }
+                }
+            )LSL");
+            test(bool(program), "transaction_result compiles with the managed signature");
+            LslInstance receiver(program.program, context(), host);
+            test((receiver.event_mask() & (1ull << 25)) != 0 &&
+                     rejects_at_dispatch(program.program,
+                                         {"transaction_result", {query, std::string("0"), std::string{}}, {}},
+                                         context(), host) &&
+                     receiver.post_event({"transaction_result", {query, 0, std::string("INVALID_AMOUNT")}, {}}),
+                 "transaction_result exposes its event bit and validates its arguments");
+            const auto checkpoint = receiver.checkpoint();
+            LslInstance restored(program.program, context(), host);
+            test(checkpoint && restored.restore_checkpoint(*checkpoint) &&
+                     restored.run(100).status == LslRunStatus::Idle && messages.back() == query + ":0:INVALID_AMOUNT",
+                 "transaction_result survives a script checkpoint");
         }
         {
             const auto program = compile_lsl(R"LSL(
@@ -1050,8 +3006,10 @@ int main(int argc, char** argv) {
             LslEvent reply{"remote_data", {3, channel, query, std::string("sender"), 42, std::string("reply")}, {}};
             auto malformed = reply;
             malformed.arguments[4] = std::string("42");
-            check(receiver.event_mask() == (1ull << 23) && !receiver.post_event(std::move(malformed)) &&
-                      receiver.post_event(std::move(reply)), "remote_data validates six arguments and exposes bit 23");
+            check(receiver.event_mask() == (1ull << 23) &&
+                      rejects_at_dispatch(program.program, std::move(malformed), context(), host) &&
+                      receiver.post_event(std::move(reply)),
+                  "remote_data validates six arguments and exposes bit 23");
             const auto checkpoint = receiver.checkpoint();
             check(bool(checkpoint), "queued remote_data can be saved");
             const auto saved = decode_lsl_checkpoint(encode_lsl_checkpoint(*checkpoint));
@@ -1097,18 +3055,19 @@ int main(int argc, char** argv) {
             channel_clock += 10000000;
             const auto receiver = channels.find(channel);
             check(receiver && receiver->local_id == 17 && receiver->item == script_context.item &&
-                      channels.open(18, script_context.item) == channel, "remote data reuses the existing item channel");
+                      channels.open(18, script_context.item) == channel,
+                  "remote data reuses the existing item channel");
             check(instance.run(100).status == LslRunStatus::Sleeping && messages.size() == before + 1 &&
-                      messages.back() == channel.str(), "remote data channel event delivers the provider channel");
+                      messages.back() == channel.str(),
+                  "remote data channel event delivers the provider channel");
             check(!channels.find(channel), "closed remote data channel is removed");
             const auto reopened = channels.open(17, script_context.item);
             const auto other_region = framework::Uuid::random();
             const auto other_channel = channels.open(17, script_context.item, {}, other_region);
             check(other_channel != reopened, "regions can host the same script item independently");
             using namespace std::chrono_literals;
-            auto pending = std::async(std::launch::async, [&] {
-                return channels.request(reopened, {42, "request"}, 2s);
-            });
+            auto pending =
+                std::async(std::launch::async, [&] { return channels.request(reopened, {42, "request"}, 2s); });
             std::vector<scene::RemoteDataChannels::Request> requests;
             const auto deadline = std::chrono::steady_clock::now() + 1s;
             while (requests.empty() && std::chrono::steady_clock::now() < deadline) {
@@ -1130,9 +3089,8 @@ int main(int argc, char** argv) {
             check(!channels.find(other_channel) && channels.find(reopened),
                   "cancelling a script in one region preserves its counterpart");
             const auto closing_channel = channels.open(17, script_context.item, {}, other_region);
-            auto closing_request = std::async(std::launch::async, [&] {
-                return channels.request(closing_channel, {0, "shutdown"}, 3s);
-            });
+            auto closing_request =
+                std::async(std::launch::async, [&] { return channels.request(closing_channel, {0, "shutdown"}, 3s); });
             std::vector<scene::RemoteDataChannels::Request> closing_events;
             const auto closing_deadline = std::chrono::steady_clock::now() + 1s;
             while (closing_events.empty() && std::chrono::steady_clock::now() < closing_deadline) {
@@ -1147,10 +3105,11 @@ int main(int argc, char** argv) {
                       !channels.find(closing_channel) && channels.find(reopened),
                   "region shutdown wakes pending callers and preserves channels in other regions");
             check(channels.request(reopened, {0, ""}, 0ms).status == scene::RemoteDataChannels::Status::TimedOut &&
-                      channels.take_requests().empty(), "remote data timeout removes undelivered requests");
+                      channels.take_requests().empty(),
+                  "remote data timeout removes undelivered requests");
             std::promise<void> release_slow;
             auto release = release_slow.get_future();
-            scene::RemoteDataChannels outbound([&](auto, auto destination, auto& data, std::stop_token) {
+            scene::RemoteDataChannels outbound([&](auto, auto destination, auto &data, std::stop_token) {
                 if (destination == "slow")
                     release.wait_for(3s);
                 data.text = std::string(destination);
@@ -1166,12 +3125,13 @@ int main(int argc, char** argv) {
             }
             release_slow.set_value();
             check(slow != fast && completions.size() == 1 && completions.front().message == fast &&
-                      completions.front().data.text == "fast", "slow remote data sends do not block other requests");
+                      completions.front().data.text == "fast",
+                  "slow remote data sends do not block other requests");
             std::promise<void> started;
             std::promise<void> stopped;
             auto started_signal = started.get_future();
             auto stopped_signal = stopped.get_future();
-            scene::RemoteDataChannels cancellable([&](auto, auto, auto&, std::stop_token stop) {
+            scene::RemoteDataChannels cancellable([&](auto, auto, auto &, std::stop_token stop) {
                 started.set_value();
                 const auto deadline = std::chrono::steady_clock::now() + 2s;
                 while (!stop.stop_requested() && std::chrono::steady_clock::now() < deadline)
@@ -1183,8 +3143,8 @@ int main(int argc, char** argv) {
             cancellable.send(script_context.item, "", "pending", {0, ""});
             check(started_signal.wait_for(1s) == std::future_status::ready, "remote data send starts");
             cancellable.cancel_script(script_context.item);
-            check(stopped_signal.wait_for(1s) == std::future_status::ready &&
-                      !cancellable.find(cancelled_channel) && cancellable.take_completed().empty(),
+            check(stopped_signal.wait_for(1s) == std::future_status::ready && !cancellable.find(cancelled_channel) &&
+                      cancellable.take_completed().empty(),
                   "script cancellation closes its channel and suppresses the outbound reply");
             channel_clock += 10000000;
             check(instance.run(100).status == LslRunStatus::Idle, "remote data close observes its delay");
@@ -1204,8 +3164,7 @@ int main(int argc, char** argv) {
              "script mail recipient limits are independent");
         scene::ScriptMailbox smtp_mailbox(500, 50, 4, 1);
         const auto smtp_start = scene::ScriptMailbox::Clock::now();
-        test(smtp_mailbox.allow_smtp("recipient", smtp_start) &&
-                 smtp_mailbox.allow_smtp("recipient", smtp_start) &&
+        test(smtp_mailbox.allow_smtp("recipient", smtp_start) && smtp_mailbox.allow_smtp("recipient", smtp_start) &&
                  !smtp_mailbox.allow_smtp("recipient", smtp_start) &&
                  smtp_mailbox.allow_smtp("second recipient", smtp_start) &&
                  !smtp_mailbox.allow_smtp("third recipient", smtp_start + std::chrono::hours(24)),
@@ -1227,18 +3186,18 @@ int main(int argc, char** argv) {
         };
         LslInstance email_script(email_program.program, email_context, email_host);
         test((email_script.event_mask() & (1ull << 9)) != 0 &&
-                 !email_script.post_event({"email", {"123", "sender", "subject", "body", "2"}, {}}) &&
+                 rejects_at_dispatch(email_program.program, {"email", {"123", "sender", "subject", "body", "2"}, {}},
+                                     email_context, email_host) &&
                  email_script.post_event({"email", {"123", "sender", "subject", "body", std::int32_t{2}}, {}}),
              "email exposes its source event bit and validates its typed arguments");
         test(email_script.run(100).status == LslRunStatus::Idle && mailbox_requested &&
                  messages.back() == "123:sender:subject:body:2",
              "email dispatch preserves all five fields");
-        const auto email_send_program = compile_lsl(
-            "default{state_entry(){llEmail(\"sender\",\"subject\",\"body\");}}");
+        const auto email_send_program =
+            compile_lsl("default{state_entry(){llEmail(\"sender\",\"subject\",\"body\");}}");
         test(bool(email_send_program), "llEmail compiles");
         bool email_queued = false;
-        email_host.send_email = [&](auto object, auto item, auto recipient, std::string subject,
-                                    std::string body) {
+        email_host.send_email = [&](auto object, auto item, auto recipient, std::string subject, std::string body) {
             email_queued = object == email_context.object && item == email_context.item &&
                            recipient == decltype(recipient){"sender"} && subject == "subject" && body == "body";
         };
@@ -1258,21 +3217,22 @@ int main(int argc, char** argv) {
             }
         )lsl";
         const auto idle_program = compile_lsl(idle_source);
-        const auto idle_wire = unhex(
-            "0c10000001000000ffffffff090278610000000009026368000000000902646f000000000902696e"
-            "010000000c2a00000009026c690000000009026f62000000000902726f000000000902737400000000"
-            "09027665000000000902736300000000090464655b5d0000000000");
-        const auto idle_bytes = std::span(reinterpret_cast<const std::uint8_t*>(idle_wire.data()), idle_wire.size());
+        const auto idle_wire =
+            unhex("0c10000001000000ffffffff090278610000000009026368000000000902646f000000000902696e"
+                  "010000000c2a00000009026c690000000009026f62000000000902726f000000000902737400000000"
+                  "09027665000000000902736300000000090464655b5d0000000000");
+        const auto idle_bytes = std::span(reinterpret_cast<const std::uint8_t *>(idle_wire.data()), idle_wire.size());
         const auto idle_snapshot = decode_yengine_snapshot(idle_bytes);
         test(bool(idle_program) && idle_snapshot && idle_snapshot->state_index == 1 &&
                  !decode_yengine_snapshot(idle_bytes.first(idle_bytes.size() - 1)),
              "YEngine v12 idle snapshot decodes and rejects truncated state");
         LslInstance idle_script(idle_program.program, email_context, email_host);
-        test(!idle_script.restore_yengine_snapshot(*idle_snapshot, "00000000000000000000000000000000", idle_source) &&
-                 idle_script.restore_yengine_snapshot(*idle_snapshot, "9403F8233FCB2421F4E7983DA100DCC2", idle_source) &&
-                 idle_script.queued_events() == 0 && idle_script.post_event({"timer", {}, {}}) &&
-                 idle_script.run(100).status == LslRunStatus::Idle && messages.back() == "42",
-             "YEngine idle restore verifies source and resumes the saved named state and globals without startup");
+        test(
+            !idle_script.restore_yengine_snapshot(*idle_snapshot, "00000000000000000000000000000000", idle_source) &&
+                idle_script.restore_yengine_snapshot(*idle_snapshot, "9403F8233FCB2421F4E7983DA100DCC2", idle_source) &&
+                idle_script.queued_events() == 0 && idle_script.post_event({"timer", {}, {}}) &&
+                idle_script.run(100).status == LslRunStatus::Idle && messages.back() == "42",
+            "YEngine idle restore verifies source and resumes the saved named state and globals without startup");
 
         constexpr std::string_view frame_free_source = R"lsl(
             integer counter = 1;
@@ -1289,26 +3249,24 @@ int main(int argc, char** argv) {
         const auto frame_free_program = compile_lsl(frame_free_source);
         const auto decode_snapshot = [](std::string_view hex_snapshot) {
             const auto wire = unhex(hex_snapshot);
-            return decode_yengine_snapshot(
-                {reinterpret_cast<const std::uint8_t*>(wire.data()), wire.size()});
+            return decode_yengine_snapshot({reinterpret_cast<const std::uint8_t *>(wire.data()), wire.size()});
         };
-        const auto transition = decode_snapshot(
-            "0c1000000000000001000000090278610000000009026368000000000902646f000000000902696e"
-            "010000000c2a00000009026c690000000009026f62000000000902726f000000000902737400000000"
-            "09027665000000000902736300000000090464655b5d00000000102a2a6e65775374617465436f6465"
-            "2a2a0100000000");
-        const auto active_reply = decode_snapshot(
-            "0c1009026f62020000000d2463666162313233342d313233342d343332312d313233342d3132333435"
-            "363738396162630d07616e737765723a00010000000800000009027861000000000902636800000000"
-            "0902646f000000000902696e010000000c2a00000009026c690000000009026f62000000000902726f"
-            "00000000090273740000000009027665000000000902736300000000090464655b5d0000000000");
+        const auto transition =
+            decode_snapshot("0c1000000000000001000000090278610000000009026368000000000902646f000000000902696e"
+                            "010000000c2a00000009026c690000000009026f62000000000902726f000000000902737400000000"
+                            "09027665000000000902736300000000090464655b5d00000000102a2a6e65775374617465436f6465"
+                            "2a2a0100000000");
+        const auto active_reply =
+            decode_snapshot("0c1009026f62020000000d2463666162313233342d313233342d343332312d313233342d3132333435"
+                            "363738396162630d07616e737765723a00010000000800000009027861000000000902636800000000"
+                            "0902646f000000000902696e010000000c2a00000009026c690000000009026f62000000000902726f"
+                            "00000000090273740000000009027665000000000902736300000000090464655b5d0000000000");
         test(bool(frame_free_program) && transition && active_reply,
              "YEngine frame-free event and transition snapshots decode");
         LslInstance changing_state(frame_free_program.program, email_context, email_host);
         const auto previous_messages = messages.size();
         test(changing_state.restore_yengine_snapshot(*transition, frame_free_hash, frame_free_source) &&
-                 changing_state.run(100).status == LslRunStatus::Idle &&
-                 messages.size() == previous_messages + 2 &&
+                 changing_state.run(100).status == LslRunStatus::Idle && messages.size() == previous_messages + 2 &&
                  messages[previous_messages] == "exit:42" && messages.back() == "entered" &&
                  changing_state.checkpoint()->state == "zed",
              "YEngine state transition runs state_exit and enters the saved destination");
@@ -1326,10 +3284,10 @@ int main(int argc, char** argv) {
         )lsl";
         constexpr std::string_view reset_hash = "8379A48ED4C8EF7B6498C7E6011BCB86";
         const auto reset_snapshot_program = compile_lsl(reset_source);
-        const auto reset_snapshot = decode_snapshot(
-            "0c100001000000001e000000090278610000000009026368000000000902646f000000000902696e"
-            "010000000c2a00000009026c69010000000009026f62000000000902726f0000000009027374000000"
-            "0009027665000000000902736300000000090464655b5d0000000000");
+        const auto reset_snapshot =
+            decode_snapshot("0c100001000000001e000000090278610000000009026368000000000902646f000000000902696e"
+                            "010000000c2a00000009026c69010000000009026f62000000000902726f0000000009027374000000"
+                            "0009027665000000000902736300000000090464655b5d0000000000");
         test(bool(reset_snapshot_program) && reset_snapshot && reset_snapshot->initialize_globals,
              "YEngine reset snapshot preserves pending global initialization and null list slots");
         for (const bool active_entry : {true, false}) {
@@ -1343,9 +3301,14 @@ int main(int argc, char** argv) {
                 resetting.restore_queued_events({{"state_entry", {}, {}}});
             const auto before = messages.size();
             test(resetting.run(1).status == LslRunStatus::BudgetExhausted &&
-                     resetting.checkpoint()->initialized_globals == 1 && messages.size() == before &&
+                     resetting.checkpoint()->initialized_globals == 2 &&
+                     resetting.checkpoint()->global_initialization_pending == true &&
+                     resetting.checkpoint()->global_initializer_cursor == std::size_t{1} &&
+                     resetting.checkpoint()->active_event &&
+                     resetting.checkpoint()->active_event->name == "state_entry" && messages.size() == before &&
                      resetting.run(100).status == LslRunStatus::Idle && messages.size() == before + 1 &&
-                     messages.back() == "1:2",
+                     messages.back() == "1:2" && resetting.checkpoint()->global_initialization_pending == false &&
+                     !resetting.checkpoint()->global_initializer_cursor,
                  "YEngine globals initialize once before the active or queued startup event");
         }
 
@@ -1392,8 +3355,7 @@ int main(int argc, char** argv) {
                 }
             }
         )lsl");
-        test(bool(discarded_queries) &&
-                 !compile_lsl("default { state_entry() { missingFunction(); } }"),
+        test(bool(discarded_queries) && !compile_lsl("default { state_entry() { missingFunction(); } }"),
              "discarded expressions accept known functions and reject unknown calls");
         size_host.ossl_enabled = true;
         size_host.ossl_permission_error = [](auto, auto, auto) { return std::string{}; };
@@ -1404,8 +3366,7 @@ int main(int argc, char** argv) {
             return function == "osGetScriptEngineName" ? std::string("permission denied") : std::string{};
         };
         LslInstance discard_denied(discarded_queries.program, size_context, size_host);
-        test(discard_denied.run(100).status == LslRunStatus::Faulted,
-             "discarded OSSL calls still enforce permissions");
+        test(discard_denied.run(100).status == LslRunStatus::Faulted, "discarded OSSL calls still enforce permissions");
         test(bool(listen_control), "listener control and removal compile");
         std::vector<std::optional<bool>> listener_actions;
         email_host.change_listener = [&](auto item, std::int32_t handle, std::optional<bool> active) {
@@ -1431,13 +3392,13 @@ int main(int argc, char** argv) {
         test(bool(regex_listener), "osListenRegex compiles with both flag constants");
         auto regex_host = host;
         std::vector<std::string> regex_messages;
-        regex_host.chat = [&](const auto& chat) { regex_messages.push_back(chat.text); };
+        regex_host.chat = [&](const auto &chat) { regex_messages.push_back(chat.text); };
         int regex_registrations = 0;
-        regex_host.add_listener = [&](auto item, auto part, int channel, std::string name,
-                                      auto sender, std::string message, int flags) {
+        regex_host.add_listener = [&](auto item, auto part, int channel, std::string name, auto sender,
+                                      std::string message, int flags) {
             ++regex_registrations;
-            test(item == email_context.item && part == email_context.object && channel == 19 &&
-                     name == "^Speaker$" && sender.is_zero() && message == "[0-9]+" && flags == 3,
+            test(item == email_context.item && part == email_context.object && channel == 19 && name == "^Speaker$" &&
+                     sender.is_zero() && message == "[0-9]+" && flags == 3,
                  "osListenRegex preserves listener filters and flags");
             return 42;
         };
@@ -1475,8 +3436,8 @@ int main(int argc, char** argv) {
         regex_messages.clear();
         LslInstance regex_match_script(regex_match.program, email_context, regex_host);
         test(regex_match_script.run(100).status == LslRunStatus::Sleeping &&
-                 regex_messages == std::vector<std::string>{
-                     "1", "0", "1", "Possible invalid regular expression detected."},
+                 regex_messages ==
+                     std::vector<std::string>{"1", "0", "1", "Possible invalid regular expression detected."},
              "osRegexIsMatch searches, handles empty input, and reports invalid patterns");
         regex_clock += 10000000;
         test(regex_match_script.run(100).status == LslRunStatus::Idle && regex_messages.back() == "0",
@@ -1507,9 +3468,8 @@ int main(int argc, char** argv) {
         regex_messages.clear();
         LslInstance regex_strings_script(regex_strings.program, email_context, regex_host);
         test(regex_strings_script.run(100).status == LslRunStatus::Idle &&
-                 regex_messages == std::vector<std::string>{
-                     "a2|5|a|5|2|6", "a|0|a|0", "|0||1", "0",
-                     "a1 a<2>", "ax ax", "-a-b-", "ab", "ab"},
+                 regex_messages == std::vector<std::string>{"a2|5|a|5|2|6", "a|0|a|0", "|0||1", "0", "a1 a<2>", "ax ax",
+                                                            "-a-b-", "ab", "ab"},
              "OSSL regex string operations preserve captures, UTF-16 offsets, zero-width matches, and counts");
 
         const auto remote_load = compile_lsl(R"lsl(
@@ -1530,8 +3490,8 @@ int main(int argc, char** argv) {
             pin_set = object == email_context.object && pin == -17;
         };
         int remote_attempts = 0;
-        remote_host.remote_load_script = [&](auto source, auto target, const auto& name, auto pin,
-                                             bool running, auto start_parameter) {
+        remote_host.remote_load_script = [&](auto source, auto target, const auto &name, auto pin, bool running,
+                                             auto start_parameter) {
             ++remote_attempts;
             test(source == email_context.object && target.str() == "01234567-89ab-cdef-0123-456789abcdef" &&
                      name == "Payload" && pin == -17 && !running && start_parameter == 42,
@@ -1553,14 +3513,17 @@ int main(int argc, char** argv) {
         test(bool(control_event_program), "typed control handler and control constants compile");
         LslInstance control_script(control_event_program.program, context(), host);
         test((control_script.event_mask() & (1ull << 7)) != 0 &&
-                 !control_script.post_event({"control", {query, std::int32_t{1}}, {}}) &&
-                 !control_script.post_event({"control", {std::int32_t{1}, std::int32_t{1}, std::int32_t{256}}, {}}) &&
+                 rejects_at_dispatch(control_event_program.program, {"control", {query, std::int32_t{1}}, {}},
+                                     context(), host) &&
+                 rejects_at_dispatch(control_event_program.program,
+                                     {"control", {std::int32_t{1}, std::int32_t{1}, std::int32_t{256}}, {}}, context(),
+                                     host) &&
                  control_script.post_event({"control", {query, std::int32_t{1}, std::int32_t{256}}, {}}),
              "control exposes its event bit and validates all three arguments");
         test(control_script.run(100).status == LslRunStatus::Idle && messages.back() == query + ":1:256",
              "control dispatch preserves the avatar key and both bitmasks");
-        auto cloud = compile_lsl(
-            "default{state_entry(){llSay(0,(string)(llCloud(<10,-20,30>)+llCloud(ZERO_VECTOR)));}}");
+        auto cloud =
+            compile_lsl("default{state_entry(){llSay(0,(string)(llCloud(<10,-20,30>)+llCloud(ZERO_VECTOR)));}}");
         test(bool(cloud), "cloud query compiles");
         LslInstance cloud_script(cloud.program, context(), host);
         test(cloud_script.run(100).status == LslRunStatus::Idle && messages.back() == "0.000000",
@@ -1591,8 +3554,8 @@ int main(int argc, char** argv) {
         const auto messages_before_ground = messages.size();
         test(ground_script.run(100).status == LslRunStatus::Idle &&
                  sampled == std::vector<std::pair<float, float>>{{21.5f, 28.f}, {20.f, 30.f}} &&
-                 messages.size() == messages_before_ground + 2 &&
-                 messages[messages_before_ground] == "49.500000" && messages.back() == "50.000000",
+                 messages.size() == messages_before_ground + 2 && messages[messages_before_ground] == "49.500000" &&
+                 messages.back() == "50.000000",
              "ground query samples object position plus XY offsets and ignores Z");
         const auto modify_land = compile_lsl(R"lsl(
             default {
@@ -1609,12 +3572,12 @@ int main(int argc, char** argv) {
         };
         LslInstance modify_land_script(modify_land.program, terrain_context, terrain_host);
         test(modify_land_script.run(100).status == LslRunStatus::Idle &&
-                 terrain_edits == decltype(terrain_edits){{terrain_context.object, 1, 1},
-                                                        {terrain_context.object, 5, 3}},
+                 terrain_edits ==
+                     decltype(terrain_edits){{terrain_context.object, 1, 1}, {terrain_context.object, 5, 3}},
              "terrain edits pass the host object and narrow action and brush to bytes");
-        auto targets = compile_lsl(
-            "default{state_entry(){integer id=llTarget(<10,20,30>,2);llTargetRemove(id);state next;}}"
-            "state next{state_entry(){}}");
+        auto targets =
+            compile_lsl("default{state_entry(){integer id=llTarget(<10,20,30>,2);llTargetRemove(id);state next;}}"
+                        "state next{state_entry(){}}");
         test(bool(targets), "position target calls compile");
         auto target_host = host;
         const auto waypoint_context = context();
@@ -1638,8 +3601,7 @@ int main(int argc, char** argv) {
              "position target calls pass script identity and state change clears registrations");
         waypoint_script.reset();
         test(target_clears == 2, "script reset clears target registrations");
-        auto wind = compile_lsl(
-            "default{state_entry(){llSay(0,(string)(llWind(<-1.75,2.75,999>) == <14,257,0>));}}");
+        auto wind = compile_lsl("default{state_entry(){llSay(0,(string)(llWind(<-1.75,2.75,999>) == <14,257,0>));}}");
         test(bool(wind), "wind query compiles");
         auto wind_host = host;
         wind_host.object_position = [](auto, bool, bool) {
@@ -1651,10 +3613,9 @@ int main(int argc, char** argv) {
         LslInstance wind_script(wind.program, terrain_context, wind_host);
         test(wind_script.run(100).status == LslRunStatus::Idle && messages.back() == "1",
              "wind query uses live world position, truncates XY, and ignores Z");
-        auto environment = compile_lsl(
-            "default{state_entry(){llSay(0,(string)(llGetDayLength() == 9000 && "
-            "llGetRegionMoonRotation() == <0,0,1,0> && "
-            "llGetSunDirection() == <1,0,0>));}}");
+        auto environment = compile_lsl("default{state_entry(){llSay(0,(string)(llGetDayLength() == 9000 && "
+                                       "llGetRegionMoonRotation() == <0,0,1,0> && "
+                                       "llGetSunDirection() == <1,0,0>));}}");
         test(bool(environment), "environment queries compile");
         auto environment_host = terrain_host;
         environment_host.environment_timing = [](framework::Vector3 position, bool region) {
@@ -1663,8 +3624,7 @@ int main(int argc, char** argv) {
         environment_host.environment_rotation = [](framework::Vector3 position, bool region, bool moon) {
             if (!region && !moon)
                 return std::optional{LslRotation{0, 0.0009, 0, 0}};
-            return std::optional{region && moon && position.z == 40.f
-                                     ? LslRotation{0, 0, 1, 0} : LslRotation{}};
+            return std::optional{region && moon && position.z == 40.f ? LslRotation{0, 0, 1, 0} : LslRotation{}};
         };
         LslInstance environment_script(environment.program, terrain_context, environment_host);
         test(environment_script.run(100).status == LslRunStatus::Idle && messages.back() == "1",
@@ -1696,37 +3656,51 @@ int main(int argc, char** argv) {
         test(bool(terrain_vectors), "terrain vector queries compile");
         LslInstance terrain_vectors_script(terrain_vectors.program, terrain_context, terrain_host);
         const auto terrain_vector_start = messages.size();
-        test(
-            terrain_vectors_script.run(200).status == LslRunStatus::Idle &&
-                std::vector<std::string>(messages.begin() + terrain_vector_start, messages.end()) ==
-                    std::vector<std::string>(6, "1"),
-            "terrain vectors use the prim base height, offset neighbors, flat edges, and source slope cutoff");
+        test(terrain_vectors_script.run(200).status == LslRunStatus::Idle &&
+                 std::vector<std::string>(messages.begin() + terrain_vector_start, messages.end()) ==
+                     std::vector<std::string>(6, "1"),
+             "terrain vectors use the prim base height, offset neighbors, flat edges, and source slope cutoff");
+        const auto unix_timestamps = compile_lsl(R"LSL(
+            default {
+                state_entry() {
+                    llSay(1, osUnixTimeToTimestamp(0));
+                    llSay(1, osUnixTimeToTimestamp(-1));
+                    llSay(1, osUnixTimeToTimestamp(0x80000000));
+                    llSay(1, osUnixTimeToTimestamp(2147483647));
+                }
+            }
+        )LSL");
+        test(bool(unix_timestamps), "OSSL Unix timestamp conversion compiles");
+        LslInstance timestamp_script(unix_timestamps.program, context(), host);
+        const auto timestamp_start = messages.size();
+        test(timestamp_script.run(100).status == LslRunStatus::Idle &&
+                 std::vector<std::string>(messages.begin() + timestamp_start, messages.end()) ==
+                     std::vector<std::string>{"1970-01-01T00:00:00.0000000Z", "1969-12-31T23:59:59.0000000Z",
+                                              "1901-12-13T20:45:52.0000000Z", "2038-01-19T03:14:07.0000000Z"},
+             "OSSL timestamp conversion preserves the signed Unix time range");
         auto unix_query = compile_lsl("default{state_entry(){llSay(0,(string)(llGetUnixTime()+1));}}");
         test(bool(unix_query), "Unix time query compiles");
         auto time_host = host;
-        time_host.unix_time = [] {
-            return std::int32_t{1700000000};
-        };
+        time_host.unix_time = [] { return std::int32_t{1700000000}; };
         LslInstance time_script(unix_query.program, context(), time_host);
         test(time_script.run(100).status == LslRunStatus::Idle && messages.back() == "1700000001",
              "Unix time query returns host epoch seconds as an LSL integer");
-        auto utc_query =
-            compile_lsl("default{state_entry(){llSay(0,llGetDate());llSay(0,llGetTimestamp());}}");
+        auto utc_query = compile_lsl("default{state_entry(){llSay(0,llGetDate());llSay(0,llGetTimestamp());}}");
         test(bool(utc_query), "UTC date and timestamp queries compile");
-        time_host.clock_ticks = [] {
-            return std::int64_t{621355967999999999LL};
-        };
+        time_host.clock_ticks = [] { return std::int64_t{621355967999999999LL}; };
         LslInstance utc_script(utc_query.program, context(), time_host);
         const auto utc_start = messages.size();
         test(utc_script.run(100).status == LslRunStatus::Idle && messages.size() == utc_start + 2 &&
                  messages[utc_start] == "1969-12-31" && messages.back() == "1969-12-31T23:59:59.9999999Z",
              "UTC date rolls over before the Unix epoch and retains seven fractional digits");
-        auto clock_query = compile_lsl(
-            "default{state_entry(){llSay(0,(string)llGetGMTclock());llSay(0,(string)(llGetWallclock()-llGetTimeOfDay()));}}");
+        auto clock_query = compile_lsl("default{"
+                                       "state_entry(){"
+                                       "llSay(0,(string)llGetGMTclock());"
+                                       "llSay(0,(string)(llGetWallclock()-llGetTimeOfDay()));"
+                                       "}"
+                                       "}");
         test(bool(clock_query), "GMT and local clock queries compile");
-        time_host.clock_ticks = [] {
-            return std::int64_t{621356831992500000LL};
-        };
+        time_host.clock_ticks = [] { return std::int64_t{621356831992500000LL}; };
         LslInstance clock_script(clock_query.program, context(), time_host);
         const auto clock_start = messages.size();
         test(clock_script.run(100).status == LslRunStatus::Idle && messages.size() == clock_start + 2 &&
@@ -1745,9 +3719,7 @@ int main(int argc, char** argv) {
         )");
         test(bool(elapsed_query), "elapsed time queries and reset compile");
         std::int64_t monotonic = 0;
-        time_host.monotonic_ticks = [&] {
-            return monotonic;
-        };
+        time_host.monotonic_ticks = [&] { return monotonic; };
         LslInstance elapsed_script(elapsed_query.program, context(), time_host);
         monotonic = 12500;
         const auto elapsed_start = messages.size();
@@ -1794,14 +3766,10 @@ int main(int argc, char** argv) {
         test(bool(camera_query), "camera position query compiles");
         LslHost camera_host;
         std::vector<LslChat> camera_chat;
-        camera_host.chat = [&](const LslChat& chat) {
-            camera_chat.push_back(chat);
-        };
+        camera_host.chat = [&](const LslChat &chat) { camera_chat.push_back(chat); };
         const auto granter = context().owner;
         std::pair<opensim::framework::Uuid, std::int32_t> camera_permissions;
-        camera_host.script_permissions = [&](auto, auto) {
-            return camera_permissions;
-        };
+        camera_host.script_permissions = [&](auto, auto) { return camera_permissions; };
         std::vector<opensim::framework::Uuid> camera_lookups;
         bool camera_present = true;
         camera_host.camera = [&](auto id) -> std::optional<LslCamera> {
@@ -1812,13 +3780,12 @@ int main(int argc, char** argv) {
         };
         const auto camera_messages = [&] {
             std::vector<std::string> result;
-            for (const auto& chat : camera_chat)
+            for (const auto &chat : camera_chat)
                 result.push_back(chat.text);
             return result;
         };
-        const std::vector<std::string> defaults{
-            "<0.000000, 0.000000, 0.000000>", "<0.000000, 0.000000, 0.000000, 1.000000>",
-            "0.000000", "1.000000"};
+        const std::vector<std::string> defaults{"<0.000000, 0.000000, 0.000000>",
+                                                "<0.000000, 0.000000, 0.000000, 1.000000>", "0.000000", "1.000000"};
         LslInstance no_granter(camera_query.program, context(), camera_host);
         no_granter.run(100);
         test(camera_messages() == defaults && camera_lookups.empty(),
@@ -1837,9 +3804,10 @@ int main(int argc, char** argv) {
         camera_permissions.second = 0x400;
         LslInstance granted(camera_query.program, context(), camera_host);
         granted.run(100);
-        test(camera_messages() == std::vector<std::string>{
-                 "<10.000000, 20.000000, 30.000000>", "<0.000000, 0.000000, 1.000000, 0.000000>",
-                 "1.250000", "1.500000"} && camera_lookups == std::vector(4, granter),
+        test(camera_messages() == std::vector<std::string>{"<10.000000, 20.000000, 30.000000>",
+                                                           "<0.000000, 0.000000, 1.000000, 0.000000>", "1.250000",
+                                                           "1.500000"} &&
+                 camera_lookups == std::vector(4, granter),
              "camera queries use the avatar that granted tracking permission");
 
         camera_chat.clear();
@@ -1886,8 +3854,7 @@ int main(int argc, char** argv) {
         hud_context.owner = granter;
         camera_host.camera = [&](auto id) -> std::optional<LslCamera> {
             test(id == hud_context.owner, "HUD projection looks up the owner");
-            return LslCamera{{10, 20, 30}, {}, 1.57079632679f, 1.5f,
-                             {1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+            return LslCamera{{10, 20, 30}, {}, 1.57079632679f, 1.5f, {1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
         };
         camera_chat.clear();
         LslInstance world_projection(hud_projection.program, hud_context, camera_host);
@@ -1899,8 +3866,8 @@ int main(int argc, char** argv) {
         camera_chat.clear();
         LslInstance hud_projection_granted(hud_projection.program, hud_context, camera_host);
         hud_projection_granted.run(100);
-        test(camera_messages() == std::vector<std::string>{
-                 "<1.000000, -0.570000, -0.410000>", "<-1.000000, 3.250000, 1.500000>"},
+        test(camera_messages() ==
+                 std::vector<std::string>{"<1.000000, -0.570000, -0.410000>", "<-1.000000, 3.250000, 1.500000>"},
              "HUD projection applies the top-left anchor and preserves behind-camera coordinates");
 
         const auto media_query = compile_lsl(R"(
@@ -1935,8 +3902,8 @@ int main(int argc, char** argv) {
         media_script.run(100);
         test(media_targets == std::vector<std::pair<int, int>>{{-4, 0}, {2, 1}, {1, 0}, {-4, -1}} &&
                  std::vector<std::string>(messages.begin() + media_start, messages.end()) ==
-                     std::vector<std::string>{"https://example.test|example.test%2Fa%20b, %2Aother.test|4",
-                                              "512", "1000", ""},
+                     std::vector<std::string>{"https://example.test|example.test%2Fa%20b, %2Aother.test|4", "512",
+                                              "1000", ""},
              "media queries resolve link selectors, escape whitelist entries and preserve result types");
         auto arithmetic = compile_lsl(R"LSL(
             default {
@@ -1952,8 +3919,7 @@ int main(int argc, char** argv) {
         LslInstance arithmetic_script(arithmetic.program, context(), host);
         const auto arithmetic_start = messages.size();
         const auto arithmetic_result = arithmetic_script.run(100);
-        test(arithmetic_result.status == LslRunStatus::Faulted &&
-                 arithmetic_result.error == "Division by Zero" &&
+        test(arithmetic_result.status == LslRunStatus::Faulted && arithmetic_result.error == "Division by Zero" &&
                  std::vector<std::string>(messages.begin() + arithmetic_start, messages.end()) ==
                      std::vector<std::string>{"13", "-2147483648", "-1.500000"},
              "multiplicative precedence, left associativity, integer wrapping, and floating faults");
@@ -2037,8 +4003,8 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + comparison_start, messages.end()) ==
                      std::vector<std::string>{"1", "1", "0.000000"},
              "comparisons promote numeric operands and produce integer truth values");
-        const auto ordinal_source = std::string("default{state_entry(){llSay(1,(string)(") +
-                                    quote("\xf0\x90\x80\x80") + "<" + quote("\xee\x80\x80") + "));}}";
+        const auto ordinal_source = std::string("default{state_entry(){llSay(1,(string)(") + quote("\xf0\x90\x80\x80") +
+                                    "<" + quote("\xee\x80\x80") + "));}}";
         auto ordinal = compile_lsl(ordinal_source);
         test(bool(ordinal), "ordinal string ordering compiles");
         LslInstance ordinal_script(ordinal.program, context(), host);
@@ -2063,15 +4029,31 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + logical_start, messages.end()) ==
                      std::vector<std::string>{"0", "1", "1", "0.000000"},
              "logical operators share precedence and evaluate both operands");
-        auto short_logic = compile_lsl(
-            "default{"
-                "state_entry(){"
-                    "llSay(1,(string)(1|||0&&&0));"
-                    "llSay(1,(string)(0&&&llGetAndResetTime()));"
-                    "llSay(1,(string)llGetTime());"
-                    "llSay(1,(string)(llGetAndResetTime()&&&llGetTime()));"
-                "}"
-            "}");
+        const auto long_logic = compile_lsl(R"LSL(default {
+            state_entry() {
+                integer value;
+                llSay(1, (string)(value == 3 && (value = 3) && value == 2 && (value = 2) &&
+                    value == 1 && (value = 1) && value == 0));
+                llSay(1, (string)value);
+                llSay(1, (string)((value = 7) || (value = 6) || (value = 5) || (value = 4) || 1));
+                llSay(1, (string)value);
+            }
+        })LSL");
+        test(bool(long_logic), "eager logical chains compile with side effects");
+        LslInstance long_logic_script(long_logic.program, context(), host);
+        const auto chain_start = messages.size();
+        test(long_logic_script.run(100).status == LslRunStatus::Idle &&
+                 std::vector<std::string>(messages.begin() + chain_start, messages.end()) ==
+                     std::vector<std::string>{"1", "3", "1", "7"},
+             "eager logical chains evaluate every operand in right-to-left order");
+        auto short_logic = compile_lsl("default{"
+                                       "state_entry(){"
+                                       "llSay(1,(string)(1|||0&&&0));"
+                                       "llSay(1,(string)(0&&&llGetAndResetTime()));"
+                                       "llSay(1,(string)llGetTime());"
+                                       "llSay(1,(string)(llGetAndResetTime()&&&llGetTime()));"
+                                       "}"
+                                       "}");
         test(bool(short_logic), "YEngine short-circuit expressions compile");
         monotonic = 0;
         LslInstance short_script(short_logic.program, context(), time_host);
@@ -2153,8 +4135,15 @@ int main(int argc, char** argv) {
         test(std::vector<std::string>(messages.begin() + variable_start, messages.end()) ==
                  std::vector<std::string>{"2.000000", "4", "2.000000", "2"},
              "local variables honor block scope and initialize on each event");
-        auto for_loop = compile_lsl(
-            "default{state_entry(){integer n;integer total;for(n=1,total=0;n<=3;n++) total=total+n;llSay(1,(string)total);for(;;) return;}}");
+        auto for_loop = compile_lsl("default{"
+                                    "state_entry(){"
+                                    "integer n;"
+                                    "integer total;"
+                                    "for(n=1,total=0;n<=3;n++) total=total+n;"
+                                    "llSay(1,(string)total);"
+                                    "for(;;) return;"
+                                    "}"
+                                    "}");
         test(bool(for_loop), "for loop assignment clauses and omitted clauses compile");
         LslInstance for_script(for_loop.program, context(), host);
         auto for_status = LslRunStatus::BudgetExhausted;
@@ -2180,13 +4169,20 @@ int main(int argc, char** argv) {
         test(bool(increments), "prefix and postfix updates compile");
         LslInstance increment_script(increments.program, context(), host);
         const auto increment_start = messages.size();
-        test(
-            increment_script.run(100).status == LslRunStatus::Idle &&
-                std::vector<std::string>(messages.begin() + increment_start, messages.end()) ==
-                    std::vector<std::string>{"2147483647", "-2147483648", "1.000000", "2.000000", "1.000000"},
-            "updates return the appropriate value and wrap integer overflow");
-        auto assignments = compile_lsl(
-            "default{state_entry(){integer a;integer b;float c;llSay(1,(string)(c=a=b=3));if(a=b-3) llSay(1,\"skipped\");llSay(1,(string)(a+b));}}");
+        test(increment_script.run(100).status == LslRunStatus::Idle &&
+                 std::vector<std::string>(messages.begin() + increment_start, messages.end()) ==
+                     std::vector<std::string>{"2147483647", "-2147483648", "1.000000", "2.000000", "1.000000"},
+             "updates return the appropriate value and wrap integer overflow");
+        auto assignments = compile_lsl("default{"
+                                       "state_entry(){"
+                                       "integer a;"
+                                       "integer b;"
+                                       "float c;"
+                                       "llSay(1,(string)(c=a=b=3));"
+                                       "if(a=b-3) llSay(1,\"skipped\");"
+                                       "llSay(1,(string)(a+b));"
+                                       "}"
+                                       "}");
         test(bool(assignments), "nested and chained assignments compile");
         LslInstance assignment_script(assignments.program, context(), host);
         const auto assignment_start = messages.size();
@@ -2217,8 +4213,17 @@ int main(int argc, char** argv) {
         LslInstance compound_script(compound.program, context(), host);
         test(compound_script.run(100).status == LslRunStatus::Idle && messages.back() == "31/ab/2.500000",
              "compound assignments combine arithmetic, bitwise, and string operations");
-        auto globals = compile_lsl(
-            "integer count=2;float start=count+1;default{state_entry(){llSay(1,(string)start);}touch_start(integer n){count+=n;llSay(1,(string)count);}}");
+        auto globals = compile_lsl("integer count=2;"
+                                   "float start=count+1;"
+                                   "default{"
+                                   "state_entry(){"
+                                   "llSay(1,(string)start);"
+                                   "}"
+                                   "touch_start(integer n){"
+                                   "count+=n;"
+                                   "llSay(1,(string)count);"
+                                   "}"
+                                   "}");
         test(bool(globals), "script globals compile");
         LslInstance global_script(globals.program, context(), host);
         const auto global_start = messages.size();
@@ -2250,17 +4255,12 @@ int main(int argc, char** argv) {
         std::int64_t explicit_sleep_clock = 0;
         std::vector<std::int32_t> explicit_delays;
         auto explicit_sleep_host = host;
-        explicit_sleep_host.clock_ticks = [&] {
-            return explicit_sleep_clock;
-        };
+        explicit_sleep_host.clock_ticks = [&] { return explicit_sleep_clock; };
         explicit_sleep_host.script_delay_factor = 0;
-        explicit_sleep_host.request_sleep = [&](auto delay) {
-            explicit_delays.push_back(delay);
-        };
+        explicit_sleep_host.request_sleep = [&](auto delay) { explicit_delays.push_back(delay); };
         LslInstance sleep_script(explicit_sleep_program.program, context(), explicit_sleep_host);
         const auto sleep_start = messages.size();
-        test(sleep_script.run(100).status == LslRunStatus::Sleeping &&
-                 explicit_delays == std::vector<std::int32_t>{25},
+        test(sleep_script.run(100).status == LslRunStatus::Sleeping && explicit_delays == std::vector<std::int32_t>{25},
              "explicit sleep truncates milliseconds and ignores the API delay factor");
         sleep_script.post_event({"touch_start", {std::int32_t(1)}, {}});
         explicit_sleep_clock = 249999;
@@ -2278,9 +4278,7 @@ int main(int argc, char** argv) {
         test(bool(timer_program), "timer handler and scheduling compile");
         std::int64_t timer_clock = 0;
         auto timer_host = host;
-        timer_host.clock_ticks = [&] {
-            return timer_clock;
-        };
+        timer_host.clock_ticks = [&] { return timer_clock; };
         LslInstance timer_script(timer_program.program, context(), timer_host);
         const auto timer_messages = messages.size();
         test(timer_script.run(100).status == LslRunStatus::Sleeping, "timer script goes to sleep");
@@ -2306,23 +4304,45 @@ int main(int argc, char** argv) {
         timer_clock = 2500000;
         configured_timer.run(100);
         test(configured_timer.queued_events() == 1, "the host timer minimum overrides the default");
-        auto event_delay = compile_lsl(
-            "default{state_entry(){llMinEventDelay(1);}touch(integer n){}touch_start(integer n){}changed(integer n){}timer(){}}");
+        auto event_delay = compile_lsl("default{"
+                                       "state_entry(){"
+                                       "llMinEventDelay(1);"
+                                       "}"
+                                       "touch(integer n){"
+                                       "}"
+                                       "touch_start(integer n){"
+                                       "}"
+                                       "changed(integer n){"
+                                       "}"
+                                       "timer(){"
+                                       "}"
+                                       "}");
         test(bool(event_delay), "minimum event delay compiles");
         monotonic = 0;
         LslInstance delayed_events(event_delay.program, context(), time_host);
         delayed_events.run(100);
-        const auto post_number = [&](const char* name, int n) {
+        const auto post_number = [&](const char *name, int n) {
             return delayed_events.post_event({name, {std::int32_t(n)}, {}});
         };
-        test(post_number("touch", 1) && !delayed_events.post_event({"timer", {}, {}}) &&
-                 !post_number("changed", 8) && post_number("changed", 1) && !post_number("changed", 0) &&
-                 post_number("touch_start", 1),
+        test(post_number("touch", 1) && !delayed_events.post_event({"timer", {}, {}}) && !post_number("changed", 8) &&
+                 post_number("changed", 1) && !post_number("changed", 0) && post_number("touch_start", 1),
              "timer, touch, and scale changes share the throttle while other events bypass it");
         monotonic = 10000000;
         test(delayed_events.post_event({"timer", {}, {}}), "timer admits an event at the shared deadline");
-        auto jump_program = compile_lsl(
-            "default{state_entry(){integer n; jump start;float skipped=2;@start;if(++n<3){jump start;} llSay(1,(string)n+\"/\"+(string)skipped);}}");
+        auto jump_program = compile_lsl(R"LSL(
+            default {
+                state_entry() {
+                    integer n;
+                    jump start;
+                    float skipped = 2;
+                    @start;
+                    if (++n < 3) {
+                        jump start;
+                    }
+                    llSay(1, (string)n + "/" + (string)skipped);
+                }
+            }
+        )LSL");
         test(bool(jump_program), "forward and backward jumps compile");
         LslInstance jump_script(jump_program.program, context(), host);
         auto jump_status = LslRunStatus::BudgetExhausted;
@@ -2332,8 +4352,17 @@ int main(int argc, char** argv) {
              "jumps yield, resolve outer labels, and preserve typed defaults for skipped locals");
         test(!compile_lsl("default{state_entry(){jump inside;{@inside;}}}"), "jumps into nested blocks fail");
         test(!compile_lsl("default{state_entry(){jump missing;}}"), "undefined labels fail");
-        auto reset_program = compile_lsl(
-            "integer n=2;default{state_entry(){llSay(1,(string)n);}touch_start(integer count){n=3;llResetScript();llSay(1,\"unreachable\");}}");
+        auto reset_program = compile_lsl("integer n=2;"
+                                         "default{"
+                                         "state_entry(){"
+                                         "llSay(1,(string)n);"
+                                         "}"
+                                         "touch_start(integer count){"
+                                         "n=3;"
+                                         "llResetScript();"
+                                         "llSay(1,\"unreachable\");"
+                                         "}"
+                                         "}");
         test(bool(reset_program), "llResetScript compiles");
         LslInstance reset_script(reset_program.program, context(), host);
         const auto reset_start = messages.size();
@@ -2351,25 +4380,20 @@ int main(int argc, char** argv) {
         auto entry_reset_host = host;
         int url_releases = 0;
         int permission_clears = 0;
-        entry_reset_host.release_script_urls = [&](auto) {
-            ++url_releases;
-        };
-        entry_reset_host.clear_script_permissions = [&](auto) {
-            ++permission_clears;
-        };
+        entry_reset_host.release_script_urls = [&](auto) { ++url_releases; };
+        entry_reset_host.clear_script_permissions = [&](auto) { ++permission_clears; };
         LslInstance entry_reset(entry_reset_program.program, context(), entry_reset_host);
         const auto entry_reset_start = messages.size();
         entry_reset.post_event({"touch_start", {std::int32_t(1)}, {}});
-        test(entry_reset.run(100).status == LslRunStatus::Idle && url_releases == 1 &&
-                 permission_clears == 0 &&
+        test(entry_reset.run(100).status == LslRunStatus::Idle && url_releases == 1 && permission_clears == 0 &&
                  std::vector<std::string>(messages.begin() + entry_reset_start, messages.end()) ==
                      std::vector<std::string>{"1", "queued"},
              "default state_entry self reset releases URLs and keeps executing with queued events");
-        auto controller_program = compile_lsl(
-            "default { state_entry() { llSay(1, (string)llGetScriptState(\"Target\"));"
-            "llSetScriptState(\"Target\", 0); llSay(1, (string)llGetScriptState(\"Target\"));"
-            "llResetOtherScript(\"Target\"); llSay(1, (string)llGetScriptState(\"Target\"));"
-            "llSetScriptState(\"Target\", -1); llSay(1, (string)llGetScriptState(\"Target\")); } }");
+        auto controller_program =
+            compile_lsl("default { state_entry() { llSay(1, (string)llGetScriptState(\"Target\"));"
+                        "llSetScriptState(\"Target\", 0); llSay(1, (string)llGetScriptState(\"Target\"));"
+                        "llResetOtherScript(\"Target\"); llSay(1, (string)llGetScriptState(\"Target\"));"
+                        "llSetScriptState(\"Target\", -1); llSay(1, (string)llGetScriptState(\"Target\")); } }");
         auto target_program = compile_lsl("default { state_entry() { llSay(1, \"target entry\"); } }");
         test(bool(controller_program) && bool(target_program), "named script controls compile");
         auto target_context = context();
@@ -2377,9 +4401,8 @@ int main(int argc, char** argv) {
         LslInstance target_script(target_program.program, target_context, host);
         target_script.run(100);
         auto controller_host = host;
-        controller_host.find_script = [&](auto object, const auto& name) {
-            return object == target_context.object && name == "Target" ? target_context.item
-                                                                       : framework::Uuid{};
+        controller_host.find_script = [&](auto object, const auto &name) {
+            return object == target_context.object && name == "Target" ? target_context.item : framework::Uuid{};
         };
         controller_host.script_running = [&](auto item) {
             return item == target_context.item && target_script.running();
@@ -2426,9 +4449,7 @@ int main(int argc, char** argv) {
         const auto state_context = context();
         auto state_host = host;
         std::vector<framework::Uuid> cancelled_scripts;
-        state_host.cancel_remote_data = [&](framework::Uuid item) {
-            cancelled_scripts.push_back(item);
-        };
+        state_host.cancel_remote_data = [&](framework::Uuid item) { cancelled_scripts.push_back(item); };
         LslInstance state_script(states.program, state_context, state_host);
         const auto state_start = messages.size();
         test(state_script.run(100).status == LslRunStatus::Idle && state_script.handles_event("touch_start"),
@@ -2439,32 +4460,30 @@ int main(int argc, char** argv) {
                  std::vector<std::string>{"exit", "1"},
              "exit precedes entry, globals survive, and same-state transitions exit the event");
         test(!compile_lsl("default{state_entry(){state missing;}}"), "undefined states fail");
-        auto timer_transition = compile_lsl(
-            "default{"
-                "state_entry(){"
-                    "llSetTimerEvent(1);"
-                    "llSleep(.75);"
-                    "state next;"
-                "}"
-                "timer(){"
-                    "llSay(1,\"old timer\");"
-                "}"
-            "}"
-            "state next{"
-                "state_entry(){"
-                    "llSay(1,\"entered\");"
-                "}"
-                "timer(){"
-                    "llSay(1,\"new timer\");"
-                    "llSetTimerEvent(0);"
-                "}"
-            "}");
+        auto timer_transition = compile_lsl("default{"
+                                            "state_entry(){"
+                                            "llSetTimerEvent(1);"
+                                            "llSleep(.75);"
+                                            "state next;"
+                                            "}"
+                                            "timer(){"
+                                            "llSay(1,\"old timer\");"
+                                            "}"
+                                            "}"
+                                            "state next{"
+                                            "state_entry(){"
+                                            "llSay(1,\"entered\");"
+                                            "}"
+                                            "timer(){"
+                                            "llSay(1,\"new timer\");"
+                                            "llSetTimerEvent(0);"
+                                            "}"
+                                            "}");
         test(bool(timer_transition), "timer transition script compiles");
         timer_clock = 0;
         LslInstance transitioning_timer(timer_transition.program, context(), timer_host);
         const auto transition_start = messages.size();
-        test(transitioning_timer.run(100).status == LslRunStatus::Sleeping,
-             "transition waits in the original state");
+        test(transitioning_timer.run(100).status == LslRunStatus::Sleeping, "transition waits in the original state");
         timer_clock = 7500000;
         test(transitioning_timer.run(100).status == LslRunStatus::Idle && messages.back() == "entered",
              "new state enters before the timer deadline");
@@ -2473,17 +4492,16 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + transition_start, messages.end()) ==
                      std::vector<std::string>{"entered", "new timer"},
              "state transition retains the timer deadline and routes it to the new handler");
-        auto identity = compile_lsl(
-            "default{"
-                "touch_start(integer n){"
-                    "key avatar=llDetectedKey(0);"
-                    "if(avatar==llGetOwner())llSay(1,(string)llGetKey());"
-                    "if(llDetectedKey(-1))llSay(1,\"invalid\");"
-                    "llSay(1,(string)llDetectedKey(n));"
-                    "llSay(1,(string)llDetectedTouchFace(0));"
-                    "llSay(1,(string)llDetectedTouchFace(n));"
-                "}"
-            "}");
+        auto identity = compile_lsl("default{"
+                                    "touch_start(integer n){"
+                                    "key avatar=llDetectedKey(0);"
+                                    "if(avatar==llGetOwner())llSay(1,(string)llGetKey());"
+                                    "if(llDetectedKey(-1))llSay(1,\"invalid\");"
+                                    "llSay(1,(string)llDetectedKey(n));"
+                                    "llSay(1,(string)llDetectedTouchFace(0));"
+                                    "llSay(1,(string)llDetectedTouchFace(n));"
+                                    "}"
+                                    "}");
         test(bool(identity), "object, owner, and detector keys compile");
         auto object_query_program = compile_lsl("default { state_entry() {"
                                                 "llSay(1, (string)llGetObjectPermMask(MASK_BASE));"
@@ -2500,9 +4518,7 @@ int main(int argc, char** argv) {
                 return 0x42000u;
             return std::nullopt;
         };
-        object_query_host.link_key = [](auto id, auto number) {
-            return number == -4 ? id : framework::Uuid{};
-        };
+        object_query_host.link_key = [](auto id, auto number) { return number == -4 ? id : framework::Uuid{}; };
         LslInstance object_query(object_query_program.program, context(), object_query_host);
         const auto query_start = messages.size();
         test(object_query.run(100).status == LslRunStatus::Idle &&
@@ -2522,17 +4538,14 @@ int main(int argc, char** argv) {
         };
         LslInstance sit_target_script(sit_target_program.program, context(), sit_target_host);
         test(sit_target_script.run(100).status == LslRunStatus::Idle &&
-                 sit_targets ==
-                     std::vector<SitCall>{{-4, {1, 2, 3}, {0, 0, 0, 1}}, {2, {4, 5, 6}, {0, .5, 0, .5}}},
+                 sit_targets == std::vector<SitCall>{{-4, {1, 2, 3}, {0, 0, 0, 1}}, {2, {4, 5, 6}, {0, .5, 0, .5}}},
              "sit targets select the calling or linked prim and normalize only an all-zero rotation");
         auto sit_flags_program =
             compile_lsl("default { state_entry() { integer value; llSetLinkSitFlags(++value, ++value);"
                         "llSay(1, (string)value); llSay(1, (string)llGetLinkSitFlags(LINK_THIS)); } }");
         test(bool(sit_flags_program), "sit flag functions compile");
         auto sit_flags_host = host;
-        sit_flags_host.sit_flags = [](auto, auto link) {
-            return link == -4 ? 0x33 : 0;
-        };
+        sit_flags_host.sit_flags = [](auto, auto link) { return link == -4 ? 0x33 : 0; };
         LslInstance sit_flags_script(sit_flags_program.program, context(), sit_flags_host);
         const auto flags_start = messages.size();
         test(sit_flags_script.run(100).status == LslRunStatus::Idle &&
@@ -2546,8 +4559,12 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + identity_start, messages.end()) ==
                      std::vector<std::string>{context().object.str(), "", "4", "-1"},
              "touch keys resolve the detector and out-of-range indices return an empty key");
-        auto surface_script = compile_lsl(
-            "default{touch_start(integer n){llSay(1,(string)llDetectedTouchPos(0));llSay(1,(string)llDetectedTouchUV(n));}}");
+        auto surface_script = compile_lsl("default{"
+                                          "touch_start(integer n){"
+                                          "llSay(1,(string)llDetectedTouchPos(0));"
+                                          "llSay(1,(string)llDetectedTouchUV(n));"
+                                          "}"
+                                          "}");
         test(bool(surface_script), "touch vector queries compile");
         LslInstance surface_instance(surface_script.program, context(), host);
         LslDetector hit{context().owner};
@@ -2556,19 +4573,18 @@ int main(int argc, char** argv) {
         surface_instance.post_event({"touch_start", {std::int32_t(1)}, {hit}});
         test(surface_instance.run(100).status == LslRunStatus::Idle &&
                  std::vector<std::string>(messages.begin() + surface_start, messages.end()) ==
-                     std::vector<std::string>{"<1.250000, 2.500000, 3.750000>",
-                                              "<-1.000000, -1.000000, 0.000000>"},
+                     std::vector<std::string>{"<1.250000, 2.500000, 3.750000>", "<-1.000000, -1.000000, 0.000000>"},
              "touch vectors retain packet values and return source defaults for missing detectors");
-        auto detector_program = compile_lsl(
-            "default { touch_start(integer n) {"
-            "llSay(1, llDetectedName(0) + \"|\" + (string)llDetectedOwner(0) + \"|\" +"
-            "(string)llDetectedType(0) + \"|\" + (string)llDetectedGroup(0) + \"|\" +"
-            "(string)llDetectedLinkNumber(0));"
-            "llSay(1, (string)llDetectedPos(0) + (string)llDetectedVel(0) + (string)llDetectedGrab(0));"
-            "llSay(1, (string)llDetectedRot(0) + (string)llDetectedRot(n));"
-            "llSay(1, llDetectedName(n) + (string)llDetectedOwner(n) +"
-            "(string)llDetectedGroup(n) + (string)llDetectedType(n) + (string)llDetectedLinkNumber(n));"
-            "} }");
+        auto detector_program =
+            compile_lsl("default { touch_start(integer n) {"
+                        "llSay(1, llDetectedName(0) + \"|\" + (string)llDetectedOwner(0) + \"|\" +"
+                        "(string)llDetectedType(0) + \"|\" + (string)llDetectedGroup(0) + \"|\" +"
+                        "(string)llDetectedLinkNumber(0));"
+                        "llSay(1, (string)llDetectedPos(0) + (string)llDetectedVel(0) + (string)llDetectedGrab(0));"
+                        "llSay(1, (string)llDetectedRot(0) + (string)llDetectedRot(n));"
+                        "llSay(1, llDetectedName(n) + (string)llDetectedOwner(n) +"
+                        "(string)llDetectedGroup(n) + (string)llDetectedType(n) + (string)llDetectedLinkNumber(n));"
+                        "} }");
         test(bool(detector_program), "detector metadata queries compile");
         hit.name = "Detected Avatar";
         hit.owner = context().owner;
@@ -2581,51 +4597,46 @@ int main(int argc, char** argv) {
         LslInstance detector_instance(detector_program.program, context(), host);
         const auto detector_start = messages.size();
         detector_instance.post_event({"touch_start", {std::int32_t(1)}, {hit}});
-        test(
-            detector_instance.run(100).status == LslRunStatus::Idle &&
-                std::vector<std::string>(messages.begin() + detector_start, messages.end()) ==
-                    std::vector<std::string>{
-                        "Detected Avatar|" + context().owner.str() + "|3|1|2",
-                        "<1.000000, 2.000000, 3.000000><4.000000, 5.000000, 6.000000><7.000000, 8.000000, 9.000000>",
-                        "<0.000000, 0.000000, 0.000000, 1.000000><0.000000, 0.000000, 0.000000, 0.000000>",
-                        "000"},
-            "detectors preserve metadata and return source defaults for missing indices");
-        auto vector_program = compile_lsl(
-            "vector initial=<16777217,2,3>;"
-            "default{"
-                "state_entry(){"
-                    "vector v;"
-                    "llSay(1,(string)v);"
-                    "v=initial;"
-                    "llSay(1,(string)v);"
-                "}"
-                "touch_start(integer n){"
-                    "vector p=llDetectedTouchPos(0);"
-                    "llSay(1,(string)p);"
-                "}"
-            "}");
+        test(detector_instance.run(100).status == LslRunStatus::Idle &&
+                 std::vector<std::string>(messages.begin() + detector_start, messages.end()) ==
+                     std::vector<std::string>{
+                         "Detected Avatar|" + context().owner.str() + "|3|1|2",
+                         "<1.000000, 2.000000, 3.000000><4.000000, 5.000000, 6.000000><7.000000, 8.000000, 9.000000>",
+                         "<0.000000, 0.000000, 0.000000, 1.000000><0.000000, 0.000000, 0.000000, 0.000000>", "000"},
+             "detectors preserve metadata and return source defaults for missing indices");
+        auto vector_program = compile_lsl("vector initial=<16777217,2,3>;"
+                                          "default{"
+                                          "state_entry(){"
+                                          "vector v;"
+                                          "llSay(1,(string)v);"
+                                          "v=initial;"
+                                          "llSay(1,(string)v);"
+                                          "}"
+                                          "touch_start(integer n){"
+                                          "vector p=llDetectedTouchPos(0);"
+                                          "llSay(1,(string)p);"
+                                          "}"
+                                          "}");
         test(bool(vector_program), "vector literals and variables compile");
         LslInstance vector_script(vector_program.program, context(), host);
         const auto vector_start = messages.size();
         vector_script.post_event({"touch_start", {std::int32_t(1)}, {hit}});
         test(vector_script.run(100).status == LslRunStatus::Idle &&
                  std::vector<std::string>(messages.begin() + vector_start, messages.end()) ==
-                     std::vector<std::string>{"<0.000000, 0.000000, 0.000000>",
-                                              "<16777217.000000, 2.000000, 3.000000>",
+                     std::vector<std::string>{"<0.000000, 0.000000, 0.000000>", "<16777217.000000, 2.000000, 3.000000>",
                                               "<1.250000, 2.500000, 3.750000>"},
              "vector declarations preserve literals, assignments and touch query values");
-        auto vector_ops = compile_lsl(
-            "default{"
-                "state_entry(){"
-                    "vector a=<1,0,0>;"
-                    "vector b=<0,1,0>;"
-                    "a+=b;"
-                    "llSay(1,(string)(a*b));"
-                    "llSay(1,(string)(a%b));"
-                    "llSay(1,(string)(-2*a/2));"
-                    "llSay(1,(string)(a==<1,1,0>));"
-                "}"
-            "}");
+        auto vector_ops = compile_lsl("default{"
+                                      "state_entry(){"
+                                      "vector a=<1,0,0>;"
+                                      "vector b=<0,1,0>;"
+                                      "a+=b;"
+                                      "llSay(1,(string)(a*b));"
+                                      "llSay(1,(string)(a%b));"
+                                      "llSay(1,(string)(-2*a/2));"
+                                      "llSay(1,(string)(a==<1,1,0>));"
+                                      "}"
+                                      "}");
         test(bool(vector_ops), "vector operators compile");
         LslInstance vector_arithmetic(vector_ops.program, context(), host);
         const auto vector_ops_start = messages.size();
@@ -2634,8 +4645,8 @@ int main(int argc, char** argv) {
                      std::vector<std::string>{"1.000000", "<0.000000, 0.000000, 1.000000>",
                                               "<-1.000000, -1.000000, -0.000000>", "1"},
              "vector dot and cross products, scaling, compound addition and equality");
-        auto components = compile_lsl(
-            "default{touch_start(integer n){vector v=<1,2,3>;llSay(1,(string)(v.x+v.y+v.z+llDetectedTouchPos(0).z));}}");
+        auto components = compile_lsl("default{touch_start(integer n){vector "
+                                      "v=<1,2,3>;llSay(1,(string)(v.x+v.y+v.z+llDetectedTouchPos(0).z));}}");
         test(bool(components), "vector component expressions compile");
         LslInstance component_script(components.program, context(), host);
         component_script.post_event({"touch_start", {std::int32_t(1)}, {hit}});
@@ -2652,8 +4663,9 @@ int main(int argc, char** argv) {
              "component writes preserve neighboring coordinates and return the stored value");
         test(!compile_lsl("default{state_entry(){llSay(1,(string)((<1,2,3>).x=4));}}"),
              "components of temporary vectors are not writable");
-        auto component_updates = compile_lsl(
-            "default{state_entry(){vector v=<1,2,3>;llSay(1,(string)v.x++);llSay(1,(string)--v.y);llSay(1,(string)v);}}");
+        auto component_updates =
+            compile_lsl("default{state_entry(){vector "
+                        "v=<1,2,3>;llSay(1,(string)v.x++);llSay(1,(string)--v.y);llSay(1,(string)v);}}");
         test(bool(component_updates), "vector component increments compile");
         LslInstance component_updater(component_updates.program, context(), host);
         const auto updates_start = messages.size();
@@ -2661,42 +4673,47 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + updates_start, messages.end()) ==
                      std::vector<std::string>{"1.000000", "1.000000", "<2.000000, 1.000000, 3.000000>"},
              "component updates return the correct old and new values");
-        auto geometry = compile_lsl(
-            "default{"
-                "state_entry(){"
-                    "vector v=<3,4,0>;"
-                    "llSay(1,(string)llVecMag(v));"
-                    "llSay(1,(string)llVecDist(v,<3,4,5>));"
-                    "llSay(1,(string)llVecNorm(v));"
-                    "llSay(1,(string)llVecNorm(<1e-24,0,0>));"
-                "}"
-            "}");
+        auto geometry = compile_lsl("default{"
+                                    "state_entry(){"
+                                    "vector v=<3,4,0>;"
+                                    "llSay(1,(string)llVecMag(v));"
+                                    "llSay(1,(string)llVecDist(v,<3,4,5>));"
+                                    "llSay(1,(string)llVecNorm(v));"
+                                    "llSay(1,(string)llVecNorm(<1.0e-24,0,0>));"
+                                    "llSay(1,(string)osVecMagSquare(v));"
+                                    "llSay(1,(string)osVecDistSquare(v,<3,4,5>));"
+                                    "llSay(1,(string)osAngleBetween(<1,0,0>,<0,2,0>));"
+                                    "llSay(1,(string)osAngleBetween(<1,0,0>,<-2,0,0>));"
+                                    "llSay(1,(string)osAngleBetween(ZERO_VECTOR,v));"
+                                    "}"
+                                    "}");
         test(bool(geometry), "vector geometry functions compile");
         LslInstance geometry_script(geometry.program, context(), host);
         const auto geometry_start = messages.size();
         test(geometry_script.run(100).status == LslRunStatus::Idle &&
                  std::vector<std::string>(messages.begin() + geometry_start, messages.end()) ==
                      std::vector<std::string>{"5.000000", "5.000000", "<0.600000, 0.800000, 0.000000>",
-                                              "<0.000000, 0.000000, 0.000000>"},
+                                              "<0.000000, 0.000000, 0.000000>", "25.000000", "25.000000", "1.570796",
+                                              "3.141593", "0.000000"},
              "vector magnitude, distance, and normalization match the source formulas");
-        auto colors = compile_lsl(
-            "default{state_entry(){llSay(1,(string)llLinear2sRGB(<-0.001,0.003,0.5>));llSay(1,(string)llsRGB2Linear(<-0.01,0.04,0.5>));}}");
+        auto colors = compile_lsl("default{"
+                                  "state_entry(){"
+                                  "llSay(1,(string)llLinear2sRGB(<-0.001,0.003,0.5>));"
+                                  "llSay(1,(string)llsRGB2Linear(<-0.01,0.04,0.5>));"
+                                  "}"
+                                  "}");
         test(bool(colors), "color conversions compile");
         LslInstance color_script(colors.program, context(), host);
         const auto color_start = messages.size();
         test(color_script.run(100).status == LslRunStatus::Idle &&
                  std::vector<std::string>(messages.begin() + color_start, messages.end()) ==
-                     std::vector<std::string>{"<-0.012920, 0.038760, 0.735357>",
-                                              "<-0.000774, 0.003096, 0.214041>"},
+                     std::vector<std::string>{"<-0.012920, 0.038760, 0.735357>", "<-0.000774, 0.003096, 0.214041>"},
              "color conversions apply the source formulas per channel without clamping");
-        auto modpow =
-            compile_lsl("default{state_entry(){integer result=llModPow(-3,3,5);llSay(1,(string)result);}}");
+        auto modpow = compile_lsl("default{state_entry(){integer result=llModPow(-3,3,5);llSay(1,(string)result);}}");
         test(bool(modpow), "modular power compiles");
         auto modpow_host = host;
         std::int64_t modpow_ticks = 100;
-        modpow_host.monotonic_ticks = [&] {
-            return modpow_ticks;
-        };
+        modpow_host.monotonic_ticks = [&] { return modpow_ticks; };
         modpow_host.clock_ticks = modpow_host.monotonic_ticks;
         LslInstance modpow_script(modpow.program, context(), modpow_host);
         const auto modpow_start = messages.size();
@@ -2742,8 +4759,7 @@ int main(int argc, char** argv) {
         auto mass_host = host;
         mass_host.object_mass = [](framework::Uuid) { return 1.5f; };
         LslInstance mass_script(object_mass.program, context(), mass_host);
-        test(mass_script.run(100).status == LslRunStatus::Idle &&
-                 messages.back() == "1.500000|0.000000|0.000000",
+        test(mass_script.run(100).status == LslRunStatus::Idle && messages.back() == "1.500000|0.000000|0.000000",
              "object mass queries the scene only for a valid nonzero key");
         const auto script_mass = compile_lsl(R"(
             default {
@@ -2753,12 +4769,9 @@ int main(int argc, char** argv) {
             }
         )");
         test(bool(script_mass), "script mass queries compile");
-        mass_host.script_mass = [](framework::Uuid part) {
-            return part == context().object ? 1.75f : 0.f;
-        };
+        mass_host.script_mass = [](framework::Uuid part) { return part == context().object ? 1.75f : 0.f; };
         LslInstance script_mass_instance(script_mass.program, context(), mass_host);
-        test(script_mass_instance.run(100).status == LslRunStatus::Idle &&
-                 messages.back() == "1.750000|175.000000",
+        test(script_mass_instance.run(100).status == LslRunStatus::Idle && messages.back() == "1.750000|175.000000",
              "script mass uses the hosting part and scales the MKS result by 100");
 
         const auto visual_params = compile_lsl(R"(
@@ -2778,8 +4791,7 @@ int main(int argc, char** argv) {
         visual_host.agent_visual_params = [visual_bytes](framework::Uuid) { return visual_bytes; };
         LslInstance visual_script(visual_params.program, context(), visual_host);
         const auto visual_start = messages.size();
-        test(visual_script.run(100).status == LslRunStatus::Idle &&
-                 messages.size() == visual_start + 2 &&
+        test(visual_script.run(100).status == LslRunStatus::Idle && messages.size() == visual_start + 2 &&
                  messages[visual_start] == "0.501961|0.501961|1|||0" && messages.back() == "0",
              "avatar visual parameters preserve selector aliases, string values, and missing results");
 
@@ -2800,14 +4812,13 @@ int main(int argc, char** argv) {
             return std::vector{child_a, child_b};
         };
         std::vector<framework::Uuid> edited_parts;
-        linked_host.set_texture_property =
-            [&](framework::Uuid source, framework::Uuid target, std::int32_t face,
-                LslTextureProperty property, const LslValue& value) {
-                test(source == source_part && face == -1 && property == LslTextureProperty::Alpha &&
-                         std::get<double>(value) == 0.25,
-                     "linked face setter preserves the hosting prim, face, and value");
-                edited_parts.push_back(target);
-            };
+        linked_host.set_texture_property = [&](framework::Uuid source, framework::Uuid target, std::int32_t face,
+                                               LslTextureProperty property, const LslValue &value) {
+            test(source == source_part && face == -1 && property == LslTextureProperty::Alpha &&
+                     std::get<double>(value) == 0.25,
+                 "linked face setter preserves the hosting prim, face, and value");
+            edited_parts.push_back(target);
+        };
         LslInstance linked_texture_script(linked_texture.program, context(), linked_host);
         test(linked_texture_script.run(100).status == LslRunStatus::Idle &&
                  edited_parts == std::vector{child_a, child_b},
@@ -2822,15 +4833,15 @@ int main(int argc, char** argv) {
         )");
         test(bool(texture_animation), "texture animation setters compile");
         std::vector<std::pair<framework::Uuid, std::vector<std::uint8_t>>> animations;
-        linked_host.set_texture_animation = [&](framework::Uuid target, const std::vector<std::uint8_t>& bytes) {
+        linked_host.set_texture_animation = [&](framework::Uuid target, const std::vector<std::uint8_t> &bytes) {
             animations.emplace_back(target, bytes);
         };
         LslInstance animation_script(texture_animation.program, context(), linked_host);
         const std::vector<std::uint8_t> expected_animation{3, 255, 4, 8, 0, 0, 160, 63, 0, 0, 32, 64, 0, 0, 64, 192};
         test(animation_script.run(100).status == LslRunStatus::Idle && animations.size() == 3 &&
                  animations[0] == std::pair{child_a, expected_animation} &&
-                 animations[1] == std::pair{child_b, expected_animation} &&
-                 animations[2].first == source_part && animations[2].second.empty(),
+                 animations[1] == std::pair{child_b, expected_animation} && animations[2].first == source_part &&
+                 animations[2].second.empty(),
              "texture animation packs the managed byte layout and clears on mode zero");
         const auto particle_program = compile_lsl(R"(
             default {
@@ -2857,7 +4868,7 @@ int main(int argc, char** argv) {
         test(bool(particle_program), "particle system setters compile");
         std::vector<std::pair<framework::Uuid, std::string>> particle_updates;
         std::vector<std::optional<float>> particle_ages;
-        linked_host.particle_inventory_asset = [&](auto part, const std::string& name) {
+        linked_host.particle_inventory_asset = [&](auto part, const std::string &name) {
             test(part == source_part && name == "Particle Texture", "particle texture resolves on the hosting prim");
             return framework::Uuid("00112233-4455-6677-8899-aabbccddeeff");
         };
@@ -2866,9 +4877,9 @@ int main(int argc, char** argv) {
             particle_ages.push_back(age);
         };
         LslInstance particle_script(particle_program.program, context(), linked_host);
-        const auto default_particles = unhex(
-            "010000000000000000000000000000190000000001000101008000800080008000800080000000000000000000000000"
-            "000000000000000000000000000000000000000000000000000AFFFFFFFFFFFFFFFF20202020");
+        const auto default_particles =
+            unhex("010000000000000000000000000000190000000001000101008000800080008000800080000000000000000000000000"
+                  "000000000000000000000000000000000000000000000000000AFFFFFFFFFFFFFFFF20202020");
         const auto extended_particles = unhex(
             "440000000100000002000000080000000028001900000000010001FF008000800080007F808140800011223344556677"
             "8899AABBCCDDEEFF102132435465768798A9BACBDCEDFE0F1600000003010300000A7F3FFFCCFFFFFFFFFE102020007F0009");
@@ -2878,8 +4889,7 @@ int main(int argc, char** argv) {
                  particle_updates[2] == std::pair{child_b, extended_particles} &&
                  particle_updates[3] == std::pair{source_part, std::string{}},
              "particle rules match bundled SDK legacy and extended bytes and clear on an empty list");
-        test(particle_updates[4].first == source_part &&
-                 particle_updates[5] == std::pair{child_a, default_particles} &&
+        test(particle_updates[4].first == source_part && particle_updates[5] == std::pair{child_a, default_particles} &&
                  particle_updates[6] == std::pair{child_b, default_particles} &&
                  particle_ages == std::vector<std::optional<float>>{{}, {}, {}, {}, .75f, 0.f, 0.f},
              "OSSL particle calls forward source ages for the host and each linked prim");
@@ -2900,8 +4910,8 @@ int main(int argc, char** argv) {
         auto diagnostic_host = linked_host;
         std::vector<LslChat> particle_chat, particle_listeners;
         std::vector<std::int32_t> particle_delays;
-        diagnostic_host.chat = [&](const auto& message) { particle_chat.push_back(message); };
-        diagnostic_host.listener = [&](const auto& message) { particle_listeners.push_back(message); };
+        diagnostic_host.chat = [&](const auto &message) { particle_chat.push_back(message); };
+        diagnostic_host.listener = [&](const auto &message) { particle_listeners.push_back(message); };
         diagnostic_host.request_sleep = [&](auto delay) { particle_delays.push_back(delay); };
         diagnostic_host.script_delay_factor = 1;
         const auto verify_particle_error = [&](std::string_view command, std::string_view expected) {
@@ -2916,15 +4926,19 @@ int main(int argc, char** argv) {
                      particle_chat[0].channel == INT32_MAX && particle_listeners.size() == 1 &&
                      particle_listeners[0].type == LslChatType::Shout && particle_listeners[0].text == expected &&
                      particle_delays == std::vector<std::int32_t>{1000} && particle_updates.size() == 7,
-                 "particle type errors use managed debug text, listener delivery and delay without replacing the emitter");
+                 "particle type errors use managed debug text, listener delivery and delay without replacing the "
+                 "emitter");
         };
         verify_particle_error("llParticleSystem([<1,2,3>,0])",
-            "llParticleSystem: Error running particle system params index #0: particle system parameter type must be integer");
-        verify_particle_error("osParticleSystem([PSYS_PART_FLAGS,0,PSYS_PART_END_COLOR,7])",
+                              "llParticleSystem: Error running particle system params index #0: particle system "
+                              "parameter type must be integer");
+        verify_particle_error(
+            "osParticleSystem([PSYS_PART_FLAGS,0,PSYS_PART_END_COLOR,7])",
             "osParticleSystem: Error running rule PSYS_PART_END_COLOR: arg #3 - parameter 1 must be vector");
-        verify_particle_error("llParticleSystem([PSYS_SRC_TEXTURE,7])",
+        verify_particle_error(
+            "llParticleSystem([PSYS_SRC_TEXTURE,7])",
             "llParticleSystem: Error running rule PSYS_SRC_TEXTURE: arg #1 - parameter 1 must be string or key");
-        for (const auto& [command, expected] : std::array{
+        for (const auto &[command, expected] : std::array{
                  std::pair{"llParticleSystem([PSYS_SRC_BURST_RATE])", "Index was outside the bounds of the array."},
                  std::pair{"llParticleSystem([PSYS_SRC_BURST_RATE,\"invalid\"])",
                            "The input string 'invalid' was not in a correct format."}}) {
@@ -2946,11 +4960,13 @@ int main(int argc, char** argv) {
         )");
         test(bool(link_messages), "link message event compiles");
         LslInstance link_receiver(link_messages.program, context(), host);
-        test(!link_receiver.post_event({"link_message", {1, std::string("wrong"), std::string("a"), std::string("b")}, {}}),
+        test(rejects_at_dispatch(link_messages.program,
+                                 {"link_message", {1, std::string("wrong"), std::string("a"), std::string("b")}, {}},
+                                 context(), host),
              "link message rejects invalid event argument types");
-        test(link_receiver.post_event({"link_message", {1, 42, std::string("message"), std::string("arbitrary id")}, {}}) &&
-                 link_receiver.run(100).status == LslRunStatus::Idle &&
-                 messages.back() == "1|42|message|arbitrary id",
+        test(link_receiver.post_event(
+                 {"link_message", {1, 42, std::string("message"), std::string("arbitrary id")}, {}}) &&
+                 link_receiver.run(100).status == LslRunStatus::Idle && messages.back() == "1|42|message|arbitrary id",
              "link message preserves integer and string payloads including non-UUID keys");
 
         auto position_program = compile_lsl(
@@ -2979,29 +4995,26 @@ int main(int argc, char** argv) {
         test(metadata_script.run(100).status == LslRunStatus::Idle &&
                  messages.back() == "Edited/Updated description/Script",
              "metadata queries read current scene values");
-        auto edit_metadata = compile_lsl(
-            "default{"
-                "state_entry(){"
-                    "llSetObjectName(\"New Name\");"
-                    "llSetObjectDesc(\"New Desc\");"
-                    "llSetObjectName(\"New Name\");"
-                    "llSay(1,llGetObjectName()+\"/\"+llGetObjectDesc());"
-                "}"
-            "}");
+        auto edit_metadata = compile_lsl("default{"
+                                         "state_entry(){"
+                                         "llSetObjectName(\"New Name\");"
+                                         "llSetObjectDesc(\"New Desc\");"
+                                         "llSetObjectName(\"New Name\");"
+                                         "llSay(1,llGetObjectName()+\"/\"+llGetObjectDesc());"
+                                         "}"
+                                         "}");
         test(bool(edit_metadata), "object metadata setters compile");
         auto metadata_host = host;
         std::vector<std::pair<bool, std::string>> metadata_changes;
-        metadata_host.set_object_text = [&](auto id, bool description, const std::string& text) {
+        metadata_host.set_object_text = [&](auto id, bool description, const std::string &text) {
             if (id != context().object)
                 return false;
             metadata_changes.emplace_back(description, text);
             return true;
         };
         LslInstance metadata_editor(edit_metadata.program, context(), metadata_host);
-        test(metadata_editor.run(100).status == LslRunStatus::Idle &&
-                 messages.back() == "New Name/New Desc" &&
-                 metadata_changes ==
-                     std::vector<std::pair<bool, std::string>>{{false, "New Name"}, {true, "New Desc"}},
+        test(metadata_editor.run(100).status == LslRunStatus::Idle && messages.back() == "New Name/New Desc" &&
+                 metadata_changes == std::vector<std::pair<bool, std::string>>{{false, "New Name"}, {true, "New Desc"}},
              "metadata changes reach the host and are immediately visible to the script");
         auto scale_program = compile_lsl("default{touch_start(integer n){llSay(1,(string)llGetScale());}}");
         test(bool(scale_program), "object scale query compiles");
@@ -3010,11 +5023,9 @@ int main(int argc, char** argv) {
         scaled_context.object_scale = {2.f, 4.f, 8.f};
         scale_script.set_context(scaled_context);
         scale_script.post_event({"touch_start", {std::int32_t(1)}, {}});
-        test(scale_script.run(100).status == LslRunStatus::Idle &&
-                 messages.back() == "<2.000000, 4.000000, 8.000000>",
+        test(scale_script.run(100).status == LslRunStatus::Idle && messages.back() == "<2.000000, 4.000000, 8.000000>",
              "object scale query reads the refreshed scene context");
-        auto resize =
-            compile_lsl("default{state_entry(){llSetScale(<1,2,99>);llSay(1,(string)llGetScale());}}");
+        auto resize = compile_lsl("default{state_entry(){llSetScale(<1,2,99>);llSay(1,(string)llGetScale());}}");
         test(bool(resize), "object scale setter compiles");
         auto resize_host = host;
         resize_host.set_object_scale = [](auto, auto requested) {
@@ -3022,11 +5033,15 @@ int main(int argc, char** argv) {
             return requested;
         };
         LslInstance resizing(resize.program, context(), resize_host);
-        test(resizing.run(100).status == LslRunStatus::Idle &&
-                 messages.back() == "<1.000000, 2.000000, 10.000000>",
+        test(resizing.run(100).status == LslRunStatus::Idle && messages.back() == "<1.000000, 2.000000, 10.000000>",
              "scale getter observes the applied scene size immediately");
-        auto click_action = compile_lsl(
-            "default{state_entry(){if(TRUE)llSetClickAction(256+CLICK_ACTION_BUY);if(FALSE)llSetClickAction(CLICK_ACTION_TOUCH);llSetClickAction(-1);}}");
+        auto click_action = compile_lsl("default{"
+                                        "state_entry(){"
+                                        "if(TRUE)llSetClickAction(256+CLICK_ACTION_BUY);"
+                                        "if(FALSE)llSetClickAction(CLICK_ACTION_TOUCH);"
+                                        "llSetClickAction(-1);"
+                                        "}"
+                                        "}");
         test(bool(click_action), "object click action setter compiles");
         auto click_host = host;
         std::vector<std::uint8_t> actions;
@@ -3037,15 +5052,18 @@ int main(int argc, char** argv) {
         LslInstance clicking(click_action.program, context(), click_host);
         test(clicking.run(100).status == LslRunStatus::Idle && actions == std::vector<std::uint8_t>{2, 255},
              "click actions use the source byte conversion and target the host object");
-        auto motion = compile_lsl(
-            "default{state_entry(){llTargetOmega(<0,0,1>,2,1);llSay(1,(string)(llGetVel()+llGetAccel()+llGetOmega()));}}");
+        auto motion = compile_lsl("default{"
+                                  "state_entry(){"
+                                  "llTargetOmega(<0,0,1>,2,1);"
+                                  "llSay(1,(string)(llGetVel()+llGetAccel()+llGetOmega()));"
+                                  "}"
+                                  "}");
         test(bool(motion), "object motion queries compile");
         auto motion_context = context();
         motion_context.velocity = {1, 2, 3};
         motion_context.acceleration = {4, 5, 6};
         auto motion_host = host;
-        motion_host.target_omega = [](auto, auto, bool) {
-        };
+        motion_host.target_omega = [](auto, auto, bool) {};
         LslInstance motion_script(motion.program, motion_context, motion_host);
         test(motion_script.run(100).status == LslRunStatus::Idle &&
                  messages.back() == "<5.000000, 7.000000, 11.000000>",
@@ -3055,22 +5073,24 @@ int main(int argc, char** argv) {
         auto created_context = context();
         created_context.creator = framework::Uuid("12345678-1234-1234-1234-123456789abc");
         LslInstance creator_script(creator_query.program, created_context, host);
-        test(creator_script.run(100).status == LslRunStatus::Idle &&
-                 messages.back() == created_context.creator.str(),
+        test(creator_script.run(100).status == LslRunStatus::Idle && messages.back() == created_context.creator.str(),
              "creator query returns the creator UUID independently of ownership");
-        auto dilation_query =
-            compile_lsl("default{state_entry(){llSay(1,(string)llGetRegionTimeDilation());}}");
+        auto dilation_query = compile_lsl("default{state_entry(){llSay(1,(string)llGetRegionTimeDilation());}}");
         test(bool(dilation_query), "region time dilation query compiles");
         auto dilation_context = context();
         dilation_context.time_dilation = .75f;
         LslInstance dilation_script(dilation_query.program, dilation_context, host);
         test(dilation_script.run(100).status == LslRunStatus::Idle && messages.back() == "0.750000",
              "region time dilation query uses the region context");
-        auto inventory_query = compile_lsl(
-            "default{state_entry(){llSay(1,(string)llGetInventoryType(\"Script\"));llSay(1,(string)llGetInventoryType(\"script\"));}}");
+        auto inventory_query = compile_lsl("default{"
+                                           "state_entry(){"
+                                           "llSay(1,(string)llGetInventoryType(\"Script\"));"
+                                           "llSay(1,(string)llGetInventoryType(\"script\"));"
+                                           "}"
+                                           "}");
         test(bool(inventory_query), "inventory type query compiles");
         auto inventory_host = host;
-        inventory_host.inventory_type = [&](auto id, const auto& name) {
+        inventory_host.inventory_type = [&](auto id, const auto &name) {
             return id == context().object && name == "Script" ? 10 : -1;
         };
         LslInstance inventory_script(inventory_query.program, context(), inventory_host);
@@ -3079,14 +5099,13 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + inventory_start, messages.end()) ==
                      std::vector<std::string>{"10", "-1"},
              "inventory type queries target the host object and preserve the missing-item result");
-        auto inventory_list = compile_lsl(
-            "default{"
-                "state_entry(){"
-                    "llSay(1,(string)llGetInventoryNumber(INVENTORY_ALL));"
-                    "llSay(1,llGetInventoryName(INVENTORY_SCRIPT,0));"
-                    "llSay(1,llGetInventoryName(INVENTORY_SCRIPT,2));"
-                "}"
-            "}");
+        auto inventory_list = compile_lsl("default{"
+                                          "state_entry(){"
+                                          "llSay(1,(string)llGetInventoryNumber(INVENTORY_ALL));"
+                                          "llSay(1,llGetInventoryName(INVENTORY_SCRIPT,0));"
+                                          "llSay(1,llGetInventoryName(INVENTORY_SCRIPT,2));"
+                                          "}"
+                                          "}");
         test(bool(inventory_list), "inventory enumeration compiles");
         inventory_host.inventory_names = [](auto, int type) {
             if (type == -1)
@@ -3099,10 +5118,14 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + names_start, messages.end()) ==
                      std::vector<std::string>{"3", "Alpha", ""},
              "inventory enumeration counts all types, sorts names and handles missing indices");
-        auto inventory_key = compile_lsl(
-            "default{state_entry(){llSay(1,(string)llGetInventoryKey(\"Allowed\"));llSay(1,(string)llGetInventoryKey(\"Missing\"));}}");
+        auto inventory_key = compile_lsl("default{"
+                                         "state_entry(){"
+                                         "llSay(1,(string)llGetInventoryKey(\"Allowed\"));"
+                                         "llSay(1,(string)llGetInventoryKey(\"Missing\"));"
+                                         "}"
+                                         "}");
         test(bool(inventory_key), "inventory key query compiles");
-        inventory_host.inventory_key = [&](auto id, const auto& name) {
+        inventory_host.inventory_key = [&](auto id, const auto &name) {
             return id == context().object && name == "Allowed" ? context().owner : framework::Uuid{};
         };
         LslInstance inventory_keys(inventory_key.program, context(), inventory_host);
@@ -3111,56 +5134,47 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + keys_start, messages.end()) ==
                      std::vector<std::string>{context().owner.str(), framework::Uuid{}.str()},
              "inventory key queries return the asset UUID or null key");
-        auto desc_program = compile_lsl(
-            "default{"
-                "state_entry(){"
-                    "llSay(1,llGetInventoryDesc(\"present\"));"
-                    "llSay(1,(string)llGetInventoryCreator(\"present\"));"
-                    "llSay(1,llGetInventoryAcquireTime(\"present\"));"
-                    "string missing=llGetInventoryDesc(\"missing\");"
-                    "llSay(1,\"[\"+missing+\"]\");"
-                "}"
-            "}");
+        auto desc_program = compile_lsl("default{"
+                                        "state_entry(){"
+                                        "llSay(1,llGetInventoryDesc(\"present\"));"
+                                        "llSay(1,(string)llGetInventoryCreator(\"present\"));"
+                                        "llSay(1,llGetInventoryAcquireTime(\"present\"));"
+                                        "string missing=llGetInventoryDesc(\"missing\");"
+                                        "llSay(1,\"[\"+missing+\"]\");"
+                                        "}"
+                                        "}");
         test(bool(desc_program), "inventory description queries compile");
         LslHost desc_host;
         std::int64_t desc_ticks = 0;
         std::vector<LslChat> desc_messages;
-        desc_host.clock_ticks = [&] {
-            return desc_ticks;
-        };
-        desc_host.chat = [&](const auto& chat) {
-            desc_messages.push_back(chat);
-        };
-        desc_host.inventory_metadata = [](auto, const auto& name) -> std::optional<LslInventoryMetadata> {
+        desc_host.clock_ticks = [&] { return desc_ticks; };
+        desc_host.chat = [&](const auto &chat) { desc_messages.push_back(chat); };
+        desc_host.inventory_metadata = [](auto, const auto &name) -> std::optional<LslInventoryMetadata> {
             if (name == "present")
-                return LslInventoryMetadata{"description",
-                                            opensim::framework::Uuid("12345678-1234-4234-8234-123456789abc"),
-                                            4294967295u};
+                return LslInventoryMetadata{
+                    "description", opensim::framework::Uuid("12345678-1234-4234-8234-123456789abc"), 4294967295u};
             return std::nullopt;
         };
         LslInstance desc_script(desc_program.program, context(), desc_host);
         test(desc_script.run(100).status == LslRunStatus::Sleeping && desc_messages.size() == 4 &&
                  desc_messages[0].text == "description" &&
                  desc_messages[1].text == "12345678-1234-4234-8234-123456789abc" &&
-                 desc_messages[2].text == "2106-02-07T06:28:15Z" &&
-                 desc_messages[3].type == LslChatType::Debug &&
+                 desc_messages[2].text == "2106-02-07T06:28:15Z" && desc_messages[3].type == LslChatType::Debug &&
                  desc_messages[3].text == "llGetInventoryDesc: Item missing not found",
              "inventory metadata preserves UUID and unsigned UTC time and reports missing items");
         desc_ticks += 10000000;
         test(desc_script.run(100).status == LslRunStatus::Idle && desc_messages.size() == 5 &&
                  desc_messages.back().text == "[]",
              "missing inventory description returns empty text");
-        auto permissions = compile_lsl(
-            "default{"
-                "state_entry(){"
-                    "llSay(1,(string)llGetInventoryPermMask(\"Item\",MASK_OWNER));"
-                    "llSay(1,(string)(llGetInventoryPermMask(\"Item\",MASK_NEXT)&PERM_COPY));"
-                    "llSay(1,(string)llGetInventoryPermMask(\"Missing\",MASK_BASE));"
-                "}"
-            "}");
+        auto permissions = compile_lsl("default{"
+                                       "state_entry(){"
+                                       "llSay(1,(string)llGetInventoryPermMask(\"Item\",MASK_OWNER));"
+                                       "llSay(1,(string)(llGetInventoryPermMask(\"Item\",MASK_NEXT)&PERM_COPY));"
+                                       "llSay(1,(string)llGetInventoryPermMask(\"Missing\",MASK_BASE));"
+                                       "}"
+                                       "}");
         test(bool(permissions), "inventory permission queries compile");
-        inventory_host.inventory_permission = [](auto, const auto& name,
-                                                 int selector) -> std::optional<std::uint32_t> {
+        inventory_host.inventory_permission = [](auto, const auto &name, int selector) -> std::optional<std::uint32_t> {
             if (name != "Item")
                 return {};
             return selector == 1 ? 0x9e000u : 0x18000u;
@@ -3190,27 +5204,25 @@ int main(int argc, char** argv) {
              "agent language reads preferences and falls back for null keys");
         auto memory = compile_lsl(
             "default{"
-                "state_entry(){"
-                    "integer n=0;"
-                    "llScriptProfiler(n++);"
-                    "integer result=llSetMemoryLimit(++n);"
-                    "llSay(1,llList2CSV([llGetFreeMemory(),llGetUsedMemory(),llGetMemoryLimit(),llGetSPMaxMemory(),result,n]));"
-                "}"
+            "state_entry(){"
+            "integer n=0;"
+            "llScriptProfiler(n++);"
+            "integer result=llSetMemoryLimit(++n);"
+            "llSay(1,llList2CSV([llGetFreeMemory(),llGetUsedMemory(),llGetMemoryLimit(),llGetSPMaxMemory(),result,n]));"
+            "}"
             "}");
         test(bool(memory), "memory and profiler calls compile");
         LslInstance memory_script(memory.program, context(), host);
-        test(memory_script.run(100).status == LslRunStatus::Idle &&
-                 messages.back() == "1048576, 0, 65536, 65536, 0, 2",
+        test(memory_script.run(100).status == LslRunStatus::Idle && messages.back() == "1048576, 0, 65536, 65536, 0, 2",
              "memory calls expose the YEngine heap while preserving compatibility API values");
-        auto allocated =
-            compile_lsl("integer count=1; string label=\"abc\"; list values=[1,\" \"];"
-                        "default{state_entry(){string local=\"test\";llSay(1,(string)llGetUsedMemory());"
-                        "llSay(1,(string)llGetFreeMemory());}}");
+        auto allocated = compile_lsl("integer count=1; string label=\"abc\"; list values=[1,\" \"];"
+                                     "default{state_entry(){string local=\"test\";llSay(1,(string)llGetUsedMemory());"
+                                     "llSay(1,(string)llGetFreeMemory());}}");
         test(bool(allocated), "script with tracked heap values compiles");
         auto heap_host = host;
         heap_host.heap_limit_bytes = 2048;
         LslInstance heap_script(allocated.program, context(), heap_host);
-        const auto pointer_bytes = static_cast<std::int32_t>(2 * sizeof(void*));
+        const auto pointer_bytes = static_cast<std::int32_t>(2 * sizeof(void *));
         test(heap_script.run(100).status == LslRunStatus::Idle &&
                  messages[messages.size() - 2] == std::to_string(24 + pointer_bytes) &&
                  messages.back() == std::to_string(2048 - 24 - pointer_bytes) &&
@@ -3221,15 +5233,12 @@ int main(int argc, char** argv) {
         auto limited_host = host;
         limited_host.heap_limit_bytes = 6;
         std::vector<LslChat> heap_messages;
-        limited_host.chat = [&](const LslChat& chat) {
-            heap_messages.push_back(chat);
-        };
+        limited_host.chat = [&](const LslChat &chat) { heap_messages.push_back(chat); };
         LslInstance limited(over_limit.program, context(), limited_host);
         const auto heap_fault = limited.run(100);
         test(heap_fault.status == LslRunStatus::Faulted &&
-                 heap_fault.error == "OutOfHeap: oldtotal=6, newtotal=8, limit=6" &&
-                 limited.heap_bytes_used() == 6 && heap_messages.size() == 1 &&
-                 heap_messages.front().type == LslChatType::Owner &&
+                 heap_fault.error == "OutOfHeap: oldtotal=6, newtotal=8, limit=6" && limited.heap_bytes_used() == 6 &&
+                 heap_messages.size() == 1 && heap_messages.front().type == LslChatType::Owner &&
                  heap_messages.front().text.find("Script must be Reset to re-enable.") != std::string::npos,
              "a growing assignment faults before replacing the value or sending chat");
         test(limited.run(100).status == LslRunStatus::Faulted && heap_messages.size() == 1,
@@ -3249,7 +5258,7 @@ int main(int argc, char** argv) {
         test(bool(key_heap), "key heap fixture compiles");
         LslInstance key_heap_script(key_heap.program, context(), host);
         test(key_heap_script.run(100).status == LslRunStatus::Idle &&
-                 messages.back() == std::to_string(12 + sizeof(void*)),
+                 messages.back() == std::to_string(12 + sizeof(void *)),
              "global and boxed list keys use string storage while local keys do not use tracked heap");
         const auto ossl_url = compile_lsl("default{state_entry(){osRequestSecureURL([\"allowXss\"]);}}");
         test(bool(ossl_url), "extended secure URL request compiles as a statement");
@@ -3260,12 +5269,9 @@ int main(int argc, char** argv) {
             return framework::Uuid::random();
         };
         LslInstance denied_url(ossl_url.program, context(), url_host);
-        test(denied_url.run(100).error == "OSSL Permission Error: osRequestSecureURL permission denied" &&
-                 !url_called,
+        test(denied_url.run(100).error == "OSSL Permission Error: osRequestSecureURL permission denied" && !url_called,
              "OSSL permission denial prevents allocation");
-        url_host.ossl_permission_error = [](auto, auto, std::string_view) {
-            return std::string{};
-        };
+        url_host.ossl_permission_error = [](auto, auto, std::string_view) { return std::string{}; };
         LslInstance allowed_url(ossl_url.program, context(), url_host);
         test(allowed_url.run(100).status == LslRunStatus::Idle && url_called,
              "authorized OSSL requests pass TLS and the case-sensitive CORS option to the host");
@@ -3283,9 +5289,7 @@ int main(int argc, char** argv) {
         auto seat_host = host;
         using SeatRequest = std::pair<framework::Uuid, framework::Uuid>;
         std::vector<SeatRequest> seat_requests;
-        seat_host.force_sit = [&](auto avatar, auto target) {
-            seat_requests.emplace_back(avatar, target);
-        };
+        seat_host.force_sit = [&](auto avatar, auto target) { seat_requests.emplace_back(avatar, target); };
         LslInstance denied_seat(force_sit.program, context(), seat_host);
         test(denied_seat.run(100).error == "OSSL Permission Error: osForceOtherSit permission denied" &&
                  seat_requests.empty(),
@@ -3297,12 +5301,11 @@ int main(int argc, char** argv) {
         LslInstance allowed_seat(force_sit.program, seat_context, seat_host);
         const framework::Uuid seated_avatar("12345678-1234-4234-8234-123456789abc");
         const framework::Uuid explicit_seat("87654321-4321-4321-8321-cba987654321");
-        test(allowed_seat.run(100).status == LslRunStatus::Idle &&
-                 seat_requests ==
-                     std::vector<SeatRequest>{
-                         {seated_avatar, seat_context.object},
-                         {seated_avatar, explicit_seat},
-                     },
+        test(allowed_seat.run(100).status == LslRunStatus::Idle && seat_requests ==
+                                                                       std::vector<SeatRequest>{
+                                                                           {seated_avatar, seat_context.object},
+                                                                           {seated_avatar, explicit_seat},
+                                                                       },
              "forced sit uses the host prim or explicit target and ignores malformed keys");
         const auto scripted_teleport = compile_lsl(R"LSL(
             default {
@@ -3321,7 +5324,7 @@ int main(int argc, char** argv) {
             teleport_permission_checks.emplace_back(function);
             return std::string{};
         };
-        teleport_host.teleport_agent = [&](auto, auto, auto agent, const LslTeleport& request) {
+        teleport_host.teleport_agent = [&](auto, auto, auto agent, const LslTeleport &request) {
             teleport_requests.emplace_back(agent, request);
             return 0;
         };
@@ -3349,32 +5352,31 @@ int main(int argc, char** argv) {
         test(bool(viewer_teleport), "both LSL viewer teleport calls compile");
         std::vector<LslViewerTeleport> viewer_teleport_requests;
         unsigned viewer_teleport_invocations = 0;
-        teleport_host.teleport_viewer = [&](auto, auto, auto agent, const LslViewerTeleport& request) {
+        teleport_host.teleport_viewer = [&](auto, auto, auto agent, const LslViewerTeleport &request) {
             ++viewer_teleport_invocations;
             if (agent == seated_avatar)
                 viewer_teleport_requests.push_back(request);
         };
         LslInstance viewer_teleport_script(viewer_teleport.program, teleport_context, teleport_host);
-        test(viewer_teleport_script.run(100).status == LslRunStatus::Idle &&
-                 viewer_teleport_invocations == 2 && viewer_teleport_requests.size() == 2 &&
+        test(viewer_teleport_script.run(100).status == LslRunStatus::Idle && viewer_teleport_invocations == 2 &&
+                 viewer_teleport_requests.size() == 2 &&
                  std::get<std::string>(viewer_teleport_requests[0].destination) == "Landmark" &&
                  std::get<framework::Vector3d>(viewer_teleport_requests[1].destination) ==
                      framework::Vector3d{1287, 778, 0} &&
                  viewer_teleport_requests[1].position == framework::Vector3d{27, 38, 45},
              "LSL viewer teleports dispatch their destination and ignore malformed avatar keys");
         constexpr auto landmark_handle = (std::uint64_t{256004} << 32) | 256008;
-        const std::string landmark_text =
-            " \tLandmark version 2\r\n"
-            "region_id 12345678-1234-4234-8234-123456789abc\r\n"
-            "local_pos 121.5 invalid 30\r\n"
-            "region_handle +" + std::to_string(landmark_handle) + "\r\n";
-        const auto landmark_bytes = std::make_shared<std::vector<std::uint8_t>>(
-            landmark_text.begin(), landmark_text.end());
+        const std::string landmark_text = " \tLandmark version 2\r\n"
+                                          "region_id 12345678-1234-4234-8234-123456789abc\r\n"
+                                          "local_pos 121.5 invalid 30\r\n"
+                                          "region_handle +" +
+                                          std::to_string(landmark_handle) + "\r\n";
+        const auto landmark_bytes =
+            std::make_shared<std::vector<std::uint8_t>>(landmark_text.begin(), landmark_text.end());
         const auto landmark = parse_landmark(landmark_bytes);
         test(landmark.region == seated_avatar && landmark.position == framework::Vector3{121.5f, 0, 30} &&
                  landmark.handle == landmark_handle &&
-                 landmark_position_relative_to(landmark_bytes, 256000, 256000) ==
-                     framework::Vector3d{125.5, 8, 30},
+                 landmark_position_relative_to(landmark_bytes, 256000, 256000) == framework::Vector3d{125.5, 8, 30},
              "landmarks accept signed handles and CRLF while invalid coordinates default to zero");
         const auto agent_ip = compile_lsl(R"LSL(
             default {
@@ -3391,8 +5393,7 @@ int main(int argc, char** argv) {
             return std::string{};
         };
         LslInstance denied_ip(agent_ip.program, context(), ip_host);
-        test(denied_ip.run(100).error == "OSSL Permission Error: osGetAgentIP permission denied" &&
-                 !ip_lookup_called,
+        test(denied_ip.run(100).error == "OSSL Permission Error: osGetAgentIP permission denied" && !ip_lookup_called,
              "OSSL permission denial precedes avatar key validation");
         const auto water_change = compile_lsl(R"LSL(
             default {
@@ -3406,20 +5407,14 @@ int main(int argc, char** argv) {
         test(bool(water_change), "water height setter accepts integer and float arguments");
         auto water_host = host;
         std::vector<float> water_updates;
-        water_host.set_region_water_height = [&](float height) {
-            water_updates.push_back(height);
-        };
+        water_host.set_region_water_height = [&](float height) { water_updates.push_back(height); };
         LslInstance denied_water(water_change.program, context(), water_host);
-        test(denied_water.run(100).error ==
-                     "OSSL Permission Error: osSetRegionWaterHeight permission denied" &&
+        test(denied_water.run(100).error == "OSSL Permission Error: osSetRegionWaterHeight permission denied" &&
                  water_updates.empty(),
              "OSSL permission denial prevents a water update");
-        water_host.ossl_permission_error = [](auto, auto, std::string_view) {
-            return std::string{};
-        };
+        water_host.ossl_permission_error = [](auto, auto, std::string_view) { return std::string{}; };
         LslInstance allowed_water(water_change.program, context(), water_host);
-        test(allowed_water.run(100).status == LslRunStatus::Idle &&
-                 water_updates == std::vector<float>{8001.f},
+        test(allowed_water.run(100).status == LslRunStatus::Idle && water_updates == std::vector<float>{8001.f},
              "script water changes allow heights above the estate viewer limit and ignore invalid heights");
         const auto sun_settings = compile_lsl(R"LSL(
             default {
@@ -3432,19 +5427,14 @@ int main(int argc, char** argv) {
         test(bool(sun_settings), "both legacy sun setters compile");
         auto sun_host = host;
         std::vector<bool> estate_sun_updates;
-        sun_host.set_region_sun_settings = [&](bool use_estate) {
-            estate_sun_updates.push_back(use_estate);
-        };
+        sun_host.set_region_sun_settings = [&](bool use_estate) { estate_sun_updates.push_back(use_estate); };
         LslInstance denied_sun(sun_settings.program, context(), sun_host);
         test(denied_sun.run(100).error == "OSSL Permission Error: osSetRegionSunSettings permission denied" &&
                  estate_sun_updates.empty(),
              "estate sun is a no-op and region sun requires OSSL permission");
-        sun_host.ossl_permission_error = [](auto, auto, std::string_view) {
-            return std::string{};
-        };
+        sun_host.ossl_permission_error = [](auto, auto, std::string_view) { return std::string{}; };
         LslInstance allowed_sun(sun_settings.program, context(), sun_host);
-        test(allowed_sun.run(100).status == LslRunStatus::Idle &&
-                 estate_sun_updates == std::vector<bool>{false},
+        test(allowed_sun.run(100).status == LslRunStatus::Idle && estate_sun_updates == std::vector<bool>{false},
              "region sun changes the estate-sun selection");
         const auto apparent_time = compile_lsl(R"LSL(
             default {
@@ -3462,9 +5452,7 @@ int main(int argc, char** argv) {
         auto apparent_time_host = host;
         apparent_time_host.ossl_enabled = true;
         std::vector<std::string> time_messages;
-        apparent_time_host.chat = [&](const LslChat& chat) {
-            time_messages.push_back(chat.text);
-        };
+        apparent_time_host.chat = [&](const LslChat &chat) { time_messages.push_back(chat.text); };
         LslInstance no_environment(apparent_time.program, context(), apparent_time_host);
         test(no_environment.run(100).status == LslRunStatus::Idle && time_messages ==
                                                                          std::vector<std::string>{
@@ -3477,9 +5465,7 @@ int main(int argc, char** argv) {
                                                                          },
              "apparent time and day length use source defaults with no environment module");
         time_messages.clear();
-        apparent_time_host.region_day_fraction = [] {
-            return 0.75f;
-        };
+        apparent_time_host.region_day_fraction = [] { return 0.75f; };
         apparent_time_host.object_position = [](auto, bool, bool) {
             return std::optional{framework::Vector3{200.f, 150.f, 40.f}};
         };
@@ -3526,9 +5512,7 @@ int main(int argc, char** argv) {
         test(bool(drawing), "drawing commands compile with all tested overloads");
         auto drawing_host = host;
         std::vector<std::string> drawing_messages;
-        drawing_host.chat = [&](const LslChat& chat) {
-            drawing_messages.push_back(chat.text);
-        };
+        drawing_host.chat = [&](const LslChat &chat) { drawing_messages.push_back(chat.text); };
         LslInstance denied_drawing(drawing.program, context(), drawing_host);
         test(denied_drawing.run(100).error ==
                  "OSSL Runtime Error: permission denied. All unsafe OSSL funtions disabled",
@@ -3553,32 +5537,44 @@ int main(int argc, char** argv) {
         test(bool(event_heap), "event heap fixture compiles");
         LslInstance event_heap_script(event_heap.program, context(), limited_host);
         const auto event = [](std::string data) {
-            return LslEvent{
-                "dataserver", {std::string("12345678-1234-4234-8234-123456789abc"), std::move(data)}, {}};
+            return LslEvent{"dataserver", {std::string("12345678-1234-4234-8234-123456789abc"), std::move(data)}, {}};
         };
-        test(event_heap_script.post_event(event("abc")) &&
-                 event_heap_script.run(100).status == LslRunStatus::Idle,
+        test(event_heap_script.post_event(event("abc")) && event_heap_script.run(100).status == LslRunStatus::Idle,
              "a dataserver string may fill the heap even with an untracked key parameter");
         test(event_heap_script.post_event(event("abcd")) &&
                  event_heap_script.run(100).error == "OutOfHeap: oldtotal=0, newtotal=8, limit=6" &&
                  heap_messages.back().text.find("event: dataserver") != std::string::npos,
              "a dataserver string exceeding the heap faults before the handler runs");
         auto changed_flags = compile_lsl(
-            "default{changed(integer flags){if(flags&(CHANGED_SCALE|CHANGED_POSITION))llSay(1,(string)(CHANGED_REGION_START==CHANGED_REGION_RESTART));}}");
+            "default{"
+            "changed(integer flags){"
+            "if(flags&(CHANGED_SCALE|CHANGED_POSITION))llSay(1,(string)(CHANGED_REGION_START==CHANGED_REGION_RESTART));"
+            "}"
+            "}");
         test(bool(changed_flags), "named change flags compile");
         LslInstance change_script(changed_flags.program, context(), host);
         change_script.post_event({"changed", {std::int32_t{32768}}, {}});
         test(change_script.run(100).status == LslRunStatus::Idle && messages.back() == "1",
              "named flags match event masks and preserve the region-start alias");
         auto math_constants = compile_lsl(
-            "default{state_entry(){if(!NULL_KEY&&PI*2==TWO_PI&&PI>3.1415927)llSay(1,(string)(PI_BY_TWO+DEG_TO_RAD+RAD_TO_DEG+SQRT2));}}");
+            "default{"
+            "state_entry(){"
+            "if(!NULL_KEY&&PI*2==TWO_PI&&PI>3.1415927)llSay(1,(string)(PI_BY_TWO+DEG_TO_RAD+RAD_TO_DEG+SQRT2));"
+            "}"
+            "}");
         test(bool(math_constants), "math and null key constants compile");
         LslInstance math_constant_script(math_constants.program, context(), host);
         const auto math_start = messages.size();
         test(math_constant_script.run(100).status == LslRunStatus::Idle && messages.size() == math_start + 1,
              "math constants preserve the source float rounding and null key is false");
-        auto rounding = compile_lsl(
-            "default{state_entry(){llSay(1,(string)llFloor(-2.1));llSay(1,(string)llCeil(-2.1));llSay(1,(string)llRound(-2.5));llSay(1,(string)llRound(2.5));}}");
+        auto rounding = compile_lsl("default{"
+                                    "state_entry(){"
+                                    "llSay(1,(string)llFloor(-2.1));"
+                                    "llSay(1,(string)llCeil(-2.1));"
+                                    "llSay(1,(string)llRound(-2.5));"
+                                    "llSay(1,(string)llRound(2.5));"
+                                    "}"
+                                    "}");
         test(bool(rounding), "rounding functions compile");
         LslInstance rounding_script(rounding.program, context(), host);
         const auto rounding_start = messages.size();
@@ -3586,8 +5582,81 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + rounding_start, messages.end()) ==
                      std::vector<std::string>{"-3", "-2", "-3", "3"},
              "rounding preserves signed floor, ceiling, and midpoint-away-from-zero results");
-        auto scalar_math = compile_lsl(
-            "default{state_entry(){llSay(1,(string)llAbs(0x80000000));llSay(1,(string)(llFabs(-.5)+llSqrt(9)+llPow(2,3)));}}");
+        const auto decimal_rounding = compile_lsl(R"LSL(
+            default {
+                state_entry() {
+                    llSay(1, (string)osRound(-1.125, 2));
+                    llSay(1, (string)osRound(1.125, 2));
+                    llSay(1, (string)osRound(-2.5, -4));
+                    llSay(1, (string)(osRound(1.2345678901234567, 100) == 1.234567890123457));
+                    llSay(1, (string)(osRound(1.0e16, 15) == 1.0e16));
+                }
+            }
+        )LSL");
+        test(bool(decimal_rounding), "OSSL decimal rounding compiles");
+        LslInstance decimal_script(decimal_rounding.program, context(), host);
+        const auto decimal_start = messages.size();
+        test(decimal_script.run(100).status == LslRunStatus::Idle &&
+                 std::vector<std::string>(messages.begin() + decimal_start, messages.end()) ==
+                     std::vector<std::string>{"-1.130000", "1.130000", "-3.000000", "1", "1"},
+             "osRound preserves midpoint, precision bounds, and large-number behavior");
+        const auto uuid_validation = compile_lsl(R"LSL(
+            default {
+                state_entry() {
+                    llSay(1, (string)osIsUUID(NULL_KEY));
+                    llSay(1, (string)osIsUUID(" 00000000-0000-4000-8000-000000000001 "));
+                    llSay(1, (string)osIsUUID("00000000000040008000000000000001"));
+                    llSay(1, (string)osIsUUID("00000000-0000-4000-8000-000000000001suffix"));
+                    llSay(1, (string)osIsUUID("{00000000-0000-4000-8000-000000000001}"));
+                    llSay(1, (string)osIsUUID(""));
+                }
+            }
+        )LSL");
+        test(bool(uuid_validation), "OSSL UUID validation compiles");
+        LslInstance uuid_script(uuid_validation.program, context(), host);
+        const auto uuid_start = messages.size();
+        test(uuid_script.run(100).status == LslRunStatus::Idle &&
+                 std::vector<std::string>(messages.begin() + uuid_start, messages.end()) ==
+                     std::vector<std::string>{"1", "1", "1", "0", "0", "0"},
+             "osIsUUID uses the original SDK TryParse rules");
+        auto scalar_math = compile_lsl("default{"
+                                       "state_entry(){"
+                                       "llSay(1,(string)llAbs(0x80000000));"
+                                       "llSay(1,(string)(llFabs(-.5)+llSqrt(9)+llPow(2,3)));"
+                                       "}"
+                                       "}");
+        const auto extrema = compile_lsl(R"LSL(
+            default {
+                state_entry() {
+                    llSay(1, (string)osMin(2, -3.5));
+                    llSay(1, (string)osMax(-3.5, 2));
+                    llSay(1, (string)(osMin(llSqrt(-1), 2) != osMin(llSqrt(-1), 2)));
+                    llSay(1, (string)(osMax(2, llSqrt(-1)) != osMax(2, llSqrt(-1))));
+                    llSay(1, (string)(llAtan2(osMin(0.0, -0.0), -1) < 0));
+                    llSay(1, (string)(llAtan2(osMax(-0.0, 0.0), -1) > 0));
+                    llSay(1, (string)osIsNotValidNumber(42));
+                    llSay(1, (string)osIsNotValidNumber(-0.0));
+                    llSay(1, (string)osIsNotValidNumber(llSqrt(-1)));
+                    llSay(1, (string)osIsNotValidNumber(llLog(0)));
+                    llSay(1, (string)osIsNotValidNumber(llPow(1.0e100, 10)));
+                    llSay(1, (string)osApproxEquals(0, 0.000001));
+                    llSay(1, (string)osApproxEquals(1, 1.125, -0.125));
+                    llSay(1, (string)osApproxEquals(<1,2,3>, <1,2,4>));
+                    llSay(1, (string)osApproxEquals(<1,2,3>, <1,2,4>, 1));
+                    llSay(1, (string)osApproxEquals(ZERO_ROTATION, <0,0,0,-1>));
+                    llSay(1, (string)osApproxEquals(ZERO_ROTATION, <0,0,0,-1>, 2));
+                    llSay(1, (string)osApproxEquals(llSqrt(-1), 1));
+                }
+            }
+        )LSL");
+        test(bool(extrema), "OSSL minimum and maximum compile");
+        LslInstance extrema_script(extrema.program, context(), host);
+        const auto extrema_start = messages.size();
+        test(extrema_script.run(100).status == LslRunStatus::Idle &&
+                 std::vector<std::string>(messages.begin() + extrema_start, messages.end()) ==
+                     std::vector<std::string>{"-3.500000", "2.000000", "1", "1", "1", "1", "0", "0", "1", "2", "3", "1",
+                                              "1", "0", "1", "0", "1", "1"},
+             "OSSL numeric functions preserve NaN, infinities, and signed zero");
         test(bool(scalar_math), "scalar math functions compile");
         LslInstance scalar_math_script(scalar_math.program, context(), host);
         const auto scalar_math_start = messages.size();
@@ -3595,8 +5664,13 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + scalar_math_start, messages.end()) ==
                      std::vector<std::string>{"-2147483648", "11.500000"},
              "scalar math preserves the minimum integer and floating point results");
-        auto trig = compile_lsl(
-            "default{state_entry(){llSay(1,(string)(llSin(0)+llCos(0)+llTan(0)+llAsin(0)+llAcos(1)+llLog(1)+llLog10(100)));llSay(1,(string)llAtan2(1,0));}}");
+        auto trig =
+            compile_lsl("default{"
+                        "state_entry(){"
+                        "llSay(1,(string)(llSin(0)+llCos(0)+llTan(0)+llAsin(0)+llAcos(1)+llLog(1)+llLog10(100)));"
+                        "llSay(1,(string)llAtan2(1,0));"
+                        "}"
+                        "}");
         test(bool(trig), "trigonometric and logarithmic functions compile");
         LslInstance trig_script(trig.program, context(), host);
         const auto trig_start = messages.size();
@@ -3604,8 +5678,13 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + trig_start, messages.end()) ==
                      std::vector<std::string>{"3.000000", "1.570796"},
              "trigonometric and logarithmic functions preserve radian units and atan2 argument order");
-        auto random = compile_lsl(
-            "default{state_entry(){float p=llFrand(2);float n=llFrand(-2);if(p>=0&&p<2&&n<=0&&n>-2&&llFrand(0)==0)llSay(1,\"range\");}}");
+        auto random = compile_lsl("default{"
+                                  "state_entry(){"
+                                  "float p=llFrand(2);"
+                                  "float n=llFrand(-2);"
+                                  "if(p>=0&&p<2&&n<=0&&n>-2&&llFrand(0)==0)llSay(1,\"range\");"
+                                  "}"
+                                  "}");
         test(bool(random), "random function compiles");
         LslInstance random_script(random.program, context(), host);
         const auto random_start = messages.size();
@@ -3631,8 +5710,7 @@ int main(int argc, char** argv) {
                      std::vector<std::string>{"4", "0"},
              "string length counts UTF-16 units and handles empty strings");
         auto substring_index = compile_lsl(
-            std::string("default{state_entry(){llSay(1,(string)llSubStringIndex(") +
-            quote("A\xf0\x90\x80\x80z") +
+            std::string("default{state_entry(){llSay(1,(string)llSubStringIndex(") + quote("A\xf0\x90\x80\x80z") +
             ",\"z\"));llSay(1,(string)llSubStringIndex(\"\",\"\"));llSay(1,(string)llSubStringIndex(\"z\",\"\"));}}");
         test(bool(substring_index), "substring search compiles");
         LslInstance index_script(substring_index.program, context(), host);
@@ -3641,15 +5719,14 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + index_start, messages.end()) ==
                      std::vector<std::string>{"3", "-1", "0"},
              "substring search returns UTF-16 offsets and preserves empty input rules");
-        auto ranges = compile_lsl(
-            "default{"
-                "state_entry(){"
-                    "llSay(1,llGetSubString(\"abcde\",-2,-1));"
-                    "llSay(1,llGetSubString(\"abcde\",3,1));"
-                    "llSay(1,llDeleteSubString(\"abcde\",3,1));"
-                    "llSay(1,llDeleteSubString(\"abcde\",3,0));"
-                "}"
-            "}");
+        auto ranges = compile_lsl("default{"
+                                  "state_entry(){"
+                                  "llSay(1,llGetSubString(\"abcde\",-2,-1));"
+                                  "llSay(1,llGetSubString(\"abcde\",3,1));"
+                                  "llSay(1,llDeleteSubString(\"abcde\",3,1));"
+                                  "llSay(1,llDeleteSubString(\"abcde\",3,0));"
+                                  "}"
+                                  "}");
         test(bool(ranges), "substring ranges compile");
         LslInstance range_script(ranges.program, context(), host);
         const auto ranges_start = messages.size();
@@ -3659,6 +5736,77 @@ int main(int argc, char** argv) {
              "substring ranges preserve negative indices and source inverted-range behavior");
         const auto emoji = std::string("\xf0\x90\x80\x80");
         const auto destination = quote("a" + emoji + "b");
+        const auto string_edits = compile_lsl(R"LSL(default {
+            state_entry() {
+                string face = llChar(128512);
+                llSay(1, osStringRemove("a" + face + "b", 1, 2));
+                llSay(1, osStringRemove("abc", -5, 1));
+                llSay(1, osStringRemove("abc", 1, 0));
+                llSay(1, "[" + osStringRemove("abc", 3, 1) + "]");
+                llSay(1, osStringReplace("a.a.", ".", "X"));
+                llSay(1, osStringReplace("aaa", "aa", ""));
+                llSay(1, "[" + osStringReplace("abc", "", "x") + "]");
+                llSay(1, osStringSubString("a" + face + "b", 3));
+                llSay(1, osStringSubString("a" + face + "b", 1, 2));
+                llSay(1, osStringSubString("abc", -2, 99));
+                llSay(1, "[" + osStringSubString("abc", 3) + "]");
+                llSay(1, "[" + osStringSubString("abc", 1, 0) + "]");
+            }
+        })LSL");
+        test(bool(string_edits), "OSSL string edits compile");
+        auto string_edit_host = host;
+        string_edit_host.ossl_enabled = true;
+        LslInstance string_edit_script(string_edits.program, context(), string_edit_host);
+        const auto string_edit_start = messages.size();
+        test(string_edit_script.run(100).status == LslRunStatus::Idle &&
+                 std::vector<std::string>(messages.begin() + string_edit_start, messages.end()) ==
+                     std::vector<std::string>{"ab", "bc", "a", "[]", "aXaX", "a", "[]", "b", "\xf0\x9f\x98\x80", "abc",
+                                              "[]", "[]"},
+             "OSSL string edits and substring overloads preserve UTF-16 offset rules");
+        const auto string_search = compile_lsl(R"LSL(default {
+            state_entry() {
+                string source = llChar(128512) + "aBaB";
+                llSay(1, (string)osStringIndexOf(source, "AB", 1));
+                llSay(1, (string)osStringIndexOf(source, "AB", 0));
+                llSay(1, (string)osStringIndexOf(source, "aB", 3, 0, 0));
+                llSay(1, (string)osStringIndexOf(source, "aB", -1, 3, 0));
+                llSay(1, (string)osStringLastIndexOf(source, "AB", 1));
+                llSay(1, (string)osStringLastIndexOf(source, "aB", 3, 2, 0));
+                llSay(1, (string)osStringLastIndexOf(source, "", 0));
+                string composed = llChar(233);
+                string decomposed = "e" + llChar(769);
+                llSay(1, (string)osStringStartsWith(composed + "x", decomposed, 0));
+                llSay(1, (string)osStringEndsWith("x" + decomposed, composed, 0));
+                llSay(1, (string)osStringStartsWith("Abc", "ab", 0));
+                llSay(1, (string)osStringStartsWith("Abc", "ab", 1));
+                llSay(1, (string)osStringEndsWith("abC", "bc", 0));
+                llSay(1, (string)osStringEndsWith("abC", "bc", -1));
+                llSay(1, (string)osStringStartsWith(source, "", 1));
+                llSay(1, (string)osStringEndsWith("", "a", 1));
+            }
+        })LSL");
+        test(bool(string_search), "OSSL string searches compile");
+        LslInstance string_search_script(string_search.program, context(), string_edit_host);
+        const auto string_search_start = messages.size();
+        test(string_search_script.run(100).status == LslRunStatus::Idle &&
+                 std::vector<std::string>(messages.begin() + string_search_start, messages.end()) ==
+                     std::vector<std::string>{"2", "-1", "4", "-1", "4", "2", "-1", "1", "1", "0", "1", "0", "1", "0",
+                                              "0"},
+             "OSSL string searches and affix checks preserve their comparison rules");
+        const auto invalid_search = compile_lsl(R"LSL(default {
+            state_entry() { llSay(1, (string)osStringLastIndexOf("abc", "a", 0, 0, 0)); }
+        })LSL");
+        test(bool(invalid_search), "OSSL invalid search window compiles");
+        LslInstance invalid_search_script(invalid_search.program, context(), string_edit_host);
+        const auto invalid_result = invalid_search_script.run(100);
+        test(invalid_result.status == LslRunStatus::Faulted &&
+                 invalid_result.error.find("Parameter 'count'") != std::string::npos,
+             "OSSL backwards search preserves the source exception for an invalid window");
+        auto disabled_search_host = string_edit_host;
+        disabled_search_host.ossl_enabled = false;
+        LslInstance disabled_search_script(string_search.program, context(), disabled_search_host);
+        test(disabled_search_script.run(100).status == LslRunStatus::Faulted,
+             "OSSL string searches require OSSL to be enabled");
         auto insertion = compile_lsl("default{state_entry(){llSay(1,llInsertString(" + destination +
                                      ",2,\"X\"));llSay(1,llInsertString(" + destination +
                                      ",-2,\"X\"));llSay(1,llInsertString(\"abc\",99,\"X\"));}}");
@@ -3669,9 +5817,13 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + insertion_start, messages.end()) ==
                      std::vector<std::string>{"a" + emoji + "Xb", "aX" + emoji + "b", "abcX"},
              "insertion preserves surrogate pairs and clamps out-of-range offsets");
-        auto trim = compile_lsl(
-            "default{state_entry(){string s=" + quote("\xc2\xa0x\xe3\x80\x80") +
-            ";llSay(1,llStringTrim(s,STRING_TRIM));llSay(1,llStringTrim(s,STRING_TRIM_HEAD));llSay(1,llStringTrim(s,STRING_TRIM_TAIL));llSay(1,llStringTrim(s,0));}}");
+        auto trim = compile_lsl("default{state_entry(){string s=" + quote("\xc2\xa0x\xe3\x80\x80") +
+                                ";"
+                                "llSay(1,llStringTrim(s,STRING_TRIM));"
+                                "llSay(1,llStringTrim(s,STRING_TRIM_HEAD));"
+                                "llSay(1,llStringTrim(s,STRING_TRIM_TAIL));"
+                                "llSay(1,llStringTrim(s,0));"
+                                "}}");
         test(bool(trim), "string trim compiles");
         LslInstance trim_script(trim.program, context(), host);
         const auto trim_start = messages.size();
@@ -3679,17 +5831,16 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + trim_start, messages.end()) ==
                      std::vector<std::string>{"x", "x\xe3\x80\x80", "\xc2\xa0x", "\xc2\xa0x\xe3\x80\x80"},
              "string trim recognizes Unicode whitespace and preserves unknown modes");
-        auto unicode = compile_lsl(
-            "default{"
-                "state_entry(){"
-                    "string s=llChar(128512);"
-                    "llSay(1,(string)llOrd(s,0));"
-                    "llSay(1,(string)llOrd(s,-1));"
-                    "llSay(1,(string)llOrd(s,2));"
-                    "llSay(1,llChar(55296));"
-                    "llSay(1,llChar(0));"
-                "}"
-            "}");
+        auto unicode = compile_lsl("default{"
+                                   "state_entry(){"
+                                   "string s=llChar(128512);"
+                                   "llSay(1,(string)llOrd(s,0));"
+                                   "llSay(1,(string)llOrd(s,-1));"
+                                   "llSay(1,(string)llOrd(s,2));"
+                                   "llSay(1,llChar(55296));"
+                                   "llSay(1,llChar(0));"
+                                   "}"
+                                   "}");
         test(bool(unicode), "Unicode code-point functions compile");
         LslInstance unicode_script(unicode.program, context(), host);
         const auto unicode_start = messages.size();
@@ -3697,8 +5848,12 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + unicode_start, messages.end()) ==
                      std::vector<std::string>{"128512", "128512", "0", "\xef\xbf\xbd", ""},
              "Unicode queries handle both halves of a surrogate pair and invalid inputs");
-        auto casing = compile_lsl(
-            "default{state_entry(){llSay(1,llToUpper(llChar(233)+llChar(66600)));llSay(1,llToLower(llChar(201)+llChar(66560)));}}");
+        auto casing = compile_lsl("default{"
+                                  "state_entry(){"
+                                  "llSay(1,llToUpper(llChar(233)+llChar(66600)));"
+                                  "llSay(1,llToLower(llChar(201)+llChar(66560)));"
+                                  "}"
+                                  "}");
         test(bool(casing), "Unicode case functions compile");
         LslInstance casing_script(casing.program, context(), host);
         const auto casing_start = messages.size();
@@ -3706,8 +5861,12 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + casing_start, messages.end()) ==
                      std::vector<std::string>{"\xc3\x89\xf0\x90\x90\x80", "\xc3\xa9\xf0\x90\x90\xa8"},
              "Unicode casing handles BMP and supplementary characters");
-        auto url = compile_lsl(
-            "default{state_entry(){llSay(1,llEscapeURL(\"a +/%%\"+llChar(233)));llSay(1,llUnescapeURL(\"a+%20%2F%C3%A9%ZZ\"));}}");
+        auto url = compile_lsl("default{"
+                               "state_entry(){"
+                               "llSay(1,llEscapeURL(\"a +/%%\"+llChar(233)));"
+                               "llSay(1,llUnescapeURL(\"a+%20%2F%C3%A9%ZZ\"));"
+                               "}"
+                               "}");
         test(bool(url), "URL text functions compile");
         LslInstance url_script(url.program, context(), host);
         const auto url_start = messages.size();
@@ -3715,8 +5874,8 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + url_start, messages.end()) ==
                      std::vector<std::string>{"a%20%2B%2F%25%25%C3%A9", "a+ /\xc3\xa9%ZZ"},
              "URL functions escape data and preserve plus signs and malformed escapes when decoding");
-        auto hashes = compile_lsl(
-            "default{state_entry(){llSay(1,llMD5String(\"abc\",-7));llSay(1,llSHA1String(\"abc\"));}}");
+        auto hashes =
+            compile_lsl("default{state_entry(){llSay(1,llMD5String(\"abc\",-7));llSay(1,llSHA1String(\"abc\"));}}");
         test(bool(hashes), "string hash functions compile");
         LslInstance hash_script(hashes.program, context(), host);
         const auto hash_start = messages.size();
@@ -3725,36 +5884,52 @@ int main(int argc, char** argv) {
                      std::vector<std::string>{"fbf65b7363e77693704b6156be30a0fe",
                                               "a9993e364706816aba3e25717850c26c9cd0d89d"},
              "string hashes preserve the nonce delimiter and lowercase hexadecimal output");
-        auto sha256 =
-            compile_lsl("default{state_entry(){llSay(1,llSHA256String(\"\"));llSay(1,llSHA256String(" +
-                        quote(std::string(120, 'a')) + "));}}");
+        auto sha256 = compile_lsl("default{state_entry(){llSay(1,llSHA256String(\"\"));llSay(1,llSHA256String(" +
+                                  quote(std::string(120, 'a')) + "));}}");
         test(bool(sha256), "SHA-256 string function compiles");
         LslInstance sha256_script(sha256.program, context(), host);
         const auto sha256_start = messages.size();
         test(sha256_script.run(100).status == LslRunStatus::Idle &&
                  std::vector<std::string>(messages.begin() + sha256_start, messages.end()) ==
-                     std::vector<std::string>{
-                         "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-                         "2f3d335432c70b580af0e8e1b3674a7c020d683aa5f73aaaedfdc55af904c21c"},
+                     std::vector<std::string>{"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                                              "2f3d335432c70b580af0e8e1b3674a7c020d683aa5f73aaaedfdc55af904c21c"},
              "SHA-256 matches empty and multi-block known digests");
-        auto base64 = compile_lsl(
-            "default{state_entry(){llSay(1,llStringToBase64(llChar(233)));llSay(1,llBase64ToString(\"w6k= \"));llSay(1,llBase64ToString(\"bad!\"));}}");
+        auto base64 = compile_lsl("default{"
+                                  "state_entry(){"
+                                  "llSay(1,llStringToBase64(llChar(233)));"
+                                  "llSay(1,llBase64ToString(\"w6k= \"));"
+                                  "llSay(1,llBase64ToString(\"bad!\"));"
+                                  "}"
+                                  "}");
         test(bool(base64), "Base64 string functions compile");
-        LslInstance base64_script(base64.program, context(), host);
+        auto base64_host = host;
+        std::int64_t base64_clock = 0;
+        std::vector<std::int32_t> base64_delays;
+        base64_host.clock_ticks = [&] { return base64_clock; };
+        base64_host.request_sleep = [&](auto delay) { base64_delays.push_back(delay); };
+        LslInstance base64_script(base64.program, context(), base64_host);
         const auto base64_start = messages.size();
-        test(base64_script.run(100).status == LslRunStatus::Idle &&
+        test(base64_script.run(100).status == LslRunStatus::Sleeping &&
+                 base64_delays == std::vector<std::int32_t>{1000} &&
                  std::vector<std::string>(messages.begin() + base64_start, messages.end()) ==
-                     std::vector<std::string>{"w6k=", "\xc3\xa9", ""},
-             "Base64 functions encode UTF-8, allow whitespace, and return empty for malformed data");
-        auto integer64 = compile_lsl(
-            "default{"
-                "state_entry(){"
-                    "llSay(1,llIntegerToBase64(-1));"
-                    "llSay(1,(string)llBase64ToInteger(\"/////w==\"));"
-                    "llSay(1,(string)llBase64ToInteger(\"AQ\"));"
-                    "llSay(1,(string)llBase64ToInteger(\"A!\"));"
-                "}"
-            "}");
+                     std::vector<std::string>{"w6k=", "\xc3\xa9", "llBase64ToString: Error decoding string", ""},
+             "Base64 functions encode UTF-8, allow whitespace, and report malformed data with the original delay");
+        base64_clock = 9999999;
+        test(base64_script.run(100).status == LslRunStatus::Sleeping,
+             "Base64 decoder errors retain the one-second delay");
+        base64_clock = 10000000;
+        const auto base64_message_count = messages.size();
+        test(base64_script.run(100).status == LslRunStatus::Idle && messages.size() == base64_message_count &&
+                 base64_delays == std::vector<std::int32_t>{1000},
+             "Base64 decoder error resumes without replaying the message or delay");
+        auto integer64 = compile_lsl("default{"
+                                     "state_entry(){"
+                                     "llSay(1,llIntegerToBase64(-1));"
+                                     "llSay(1,(string)llBase64ToInteger(\"/////w==\"));"
+                                     "llSay(1,(string)llBase64ToInteger(\"AQ\"));"
+                                     "llSay(1,(string)llBase64ToInteger(\"A!\"));"
+                                     "}"
+                                     "}");
         test(bool(integer64), "integer Base64 functions compile");
         LslInstance integer64_script(integer64.program, context(), host);
         const auto integer64_start = messages.size();
@@ -3762,14 +5937,13 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + integer64_start, messages.end()) ==
                      std::vector<std::string>{"/////w==", "-1", "16777216", "0"},
              "integer Base64 preserves signed bits, partial input, and invalid digit results");
-        auto replace = compile_lsl(
-            "default{"
-                "state_entry(){"
-                    "llSay(1,llReplaceSubString(\"ab ab\",\"(a)(b)\",\"$2$1\",0));"
-                    "llSay(1,llReplaceSubString(\"aa\",\"a\",\"b\",-1));"
-                    "llSay(1,llReplaceSubString(\"same\",\"[\",\"x\",0));"
-                "}"
-            "}");
+        auto replace = compile_lsl("default{"
+                                   "state_entry(){"
+                                   "llSay(1,llReplaceSubString(\"ab ab\",\"(a)(b)\",\"$2$1\",0));"
+                                   "llSay(1,llReplaceSubString(\"aa\",\"a\",\"b\",-1));"
+                                   "llSay(1,llReplaceSubString(\"same\",\"[\",\"x\",0));"
+                                   "}"
+                                   "}");
         test(bool(replace), "regex substring replacement compiles");
         LslInstance replace_script(replace.program, context(), host);
         const auto replace_start = messages.size();
@@ -3777,14 +5951,13 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + replace_start, messages.end()) ==
                      std::vector<std::string>{"ba ba", "ab", "same"},
              "substring replacement handles captures, right-to-left counts, and invalid patterns");
-        auto replacement_edges = compile_lsl(
-            "default{"
-                "state_entry(){"
-                    "llSay(1,llReplaceSubString(\"ab\",\"(?=.)\",\"-\",0));"
-                    "llSay(1,llReplaceSubString(\"ab ab\",\"(?<word>ab)\",\"[${word}]\",-1));"
-                    "llSay(1,llReplaceSubString(\"abc\",\"b\",\"$&$_\",1));"
-                "}"
-            "}");
+        auto replacement_edges = compile_lsl("default{"
+                                             "state_entry(){"
+                                             "llSay(1,llReplaceSubString(\"ab\",\"(?=.)\",\"-\",0));"
+                                             "llSay(1,llReplaceSubString(\"ab ab\",\"(?<word>ab)\",\"[${word}]\",-1));"
+                                             "llSay(1,llReplaceSubString(\"abc\",\"b\",\"$&$_\",1));"
+                                             "}"
+                                             "}");
         test(bool(replacement_edges), "regex replacement edge cases compile");
         LslInstance replacement_script(replacement_edges.program, context(), host);
         const auto replacement_start = messages.size();
@@ -3792,17 +5965,16 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + replacement_start, messages.end()) ==
                      std::vector<std::string>{"-a-b", "ab [ab]", "ababcc"},
              "zero-width matches advance and replacement supports named and special captures");
-        auto lists = compile_lsl(
-            "list data=[1,2.5,\"text\",ZERO_VECTOR];"
-            "default{"
-                "state_entry(){"
-                    "list empty;"
-                    "llSay(1,(string)llGetListLength(data));"
-                    "llSay(1,(string)llGetListLength(empty));"
-                    "empty=data;"
-                    "llSay(1,(string)llGetListLength(empty));"
-                "}"
-            "}");
+        auto lists = compile_lsl("list data=[1,2.5,\"text\",ZERO_VECTOR];"
+                                 "default{"
+                                 "state_entry(){"
+                                 "list empty;"
+                                 "llSay(1,(string)llGetListLength(data));"
+                                 "llSay(1,(string)llGetListLength(empty));"
+                                 "empty=data;"
+                                 "llSay(1,(string)llGetListLength(empty));"
+                                 "}"
+                                 "}");
         test(bool(lists), "heterogeneous list literals and variables compile");
         LslInstance list_script(lists.program, context(), host);
         const auto list_start = messages.size();
@@ -3810,16 +5982,15 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + list_start, messages.end()) ==
                      std::vector<std::string>{"4", "0", "4"},
              "list lengths reflect literals, defaults, and assignments");
-        auto list_access = compile_lsl(
-            "default{"
-                "state_entry(){"
-                    "list values=[3,2.5,NULL_KEY];"
-                    "llSay(1,llList2String(values,1));"
-                    "llSay(1,(string)llList2Key(values,-1));"
-                    "llSay(1,(string)llList2Key(values,0));"
-                    "llSay(1,llList2String(values,-4));"
-                "}"
-            "}");
+        auto list_access = compile_lsl("default{"
+                                       "state_entry(){"
+                                       "list values=[3,2.5,NULL_KEY];"
+                                       "llSay(1,llList2String(values,1));"
+                                       "llSay(1,(string)llList2Key(values,-1));"
+                                       "llSay(1,(string)llList2Key(values,0));"
+                                       "llSay(1,llList2String(values,-4));"
+                                       "}"
+                                       "}");
         test(bool(list_access), "list string and key access compile");
         LslInstance list_reader(list_access.program, context(), host);
         const auto list_access_start = messages.size();
@@ -3827,16 +5998,15 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + list_access_start, messages.end()) ==
                      std::vector<std::string>{"2.500000", framework::Uuid{}.str(), "", ""},
              "list access handles negative indices, type checks, and missing entries");
-        auto list_ranges = compile_lsl(
-            "default{"
-                "state_entry(){"
-                    "list a=[0,1,2,3,4];"
-                    "list b=llList2List(a,3,1);"
-                    "llSay(1,llList2String(b,-1));"
-                    "llSay(1,llList2String(llDeleteSubList(a,3,1),0));"
-                    "llSay(1,(string)llGetListLength(llDeleteSubList(a,-99,-98)));"
-                "}"
-            "}");
+        auto list_ranges = compile_lsl("default{"
+                                       "state_entry(){"
+                                       "list a=[0,1,2,3,4];"
+                                       "list b=llList2List(a,3,1);"
+                                       "llSay(1,llList2String(b,-1));"
+                                       "llSay(1,llList2String(llDeleteSubList(a,3,1),0));"
+                                       "llSay(1,(string)llGetListLength(llDeleteSubList(a,-99,-98)));"
+                                       "}"
+                                       "}");
         test(bool(list_ranges), "list ranges compile");
         LslInstance list_range_script(list_ranges.program, context(), host);
         const auto list_range_start = messages.size();
@@ -3844,16 +6014,15 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + list_range_start, messages.end()) ==
                      std::vector<std::string>{"4", "2", "4"},
              "list ranges wrap and apply the source deletion bounds");
-        auto concatenate = compile_lsl(
-            "default{"
-                "state_entry(){"
-                    "list original=[2];"
-                    "list joined=1+original+[3];"
-                    "joined+=4;"
-                    "llSay(1,llList2String(joined,0)+llList2String(joined,-1));"
-                    "llSay(1,(string)llGetListLength(original));"
-                "}"
-            "}");
+        auto concatenate = compile_lsl("default{"
+                                       "state_entry(){"
+                                       "list original=[2];"
+                                       "list joined=1+original+[3];"
+                                       "joined+=4;"
+                                       "llSay(1,llList2String(joined,0)+llList2String(joined,-1));"
+                                       "llSay(1,(string)llGetListLength(original));"
+                                       "}"
+                                       "}");
         test(bool(concatenate), "list concatenation compiles");
         LslInstance concatenate_script(concatenate.program, context(), host);
         const auto concatenate_start = messages.size();
@@ -3861,8 +6030,13 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + concatenate_start, messages.end()) ==
                      std::vector<std::string>{"14", "1"},
              "list addition preserves order and does not mutate the source list");
-        auto list_compare = compile_lsl(
-            "default{state_entry(){llSay(1,(string)([1]==[2]));llSay(1,(string)([1,2]!=[]));llSay(1,(string)([]!=[1,2]));}}");
+        auto list_compare = compile_lsl("default{"
+                                        "state_entry(){"
+                                        "llSay(1,(string)([1]==[2]));"
+                                        "llSay(1,(string)([1,2]!=[]));"
+                                        "llSay(1,(string)([]!=[1,2]));"
+                                        "}"
+                                        "}");
         test(bool(list_compare), "list comparison compiles");
         LslInstance list_compare_script(list_compare.program, context(), host);
         const auto list_compare_start = messages.size();
@@ -3870,8 +6044,13 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + list_compare_start, messages.end()) ==
                      std::vector<std::string>{"1", "2", "-2"},
              "list equality compares lengths and inequality returns the signed length difference");
-        auto dump = compile_lsl(
-            "default{state_entry(){llSay(1,llDumpList2String([\"\",2,3.5],\" | \"));llSay(1,llDumpList2String([],\"-\"));llSay(1,llDumpList2String([1,2],\"\"));}}");
+        auto dump = compile_lsl("default{"
+                                "state_entry(){"
+                                "llSay(1,llDumpList2String([\"\",2,3.5],\" | \"));"
+                                "llSay(1,llDumpList2String([],\"-\"));"
+                                "llSay(1,llDumpList2String([1,2],\"\"));"
+                                "}"
+                                "}");
         test(bool(dump), "list joining compiles");
         LslInstance dump_script(dump.program, context(), host);
         const auto dump_start = messages.size();
@@ -3879,15 +6058,14 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + dump_start, messages.end()) ==
                      std::vector<std::string>{" | 2 | 3.500000", "", "12"},
              "list joining preserves empty entries and uses separators only between items");
-        auto find_list = compile_lsl(
-            "default{"
-                "state_entry(){"
-                    "llSay(1,(string)llListFindList([1,1.0,\"x\",1,\"x\"],[1,\"x\"]));"
-                    "llSay(1,(string)llListFindList([1],[1.0]));"
-                    "llSay(1,(string)llListFindList([1],[]));"
-                    "llSay(1,(string)llListFindList([],[]));"
-                "}"
-            "}");
+        auto find_list = compile_lsl("default{"
+                                     "state_entry(){"
+                                     "llSay(1,(string)llListFindList([1,1.0,\"x\",1,\"x\"],[1,\"x\"]));"
+                                     "llSay(1,(string)llListFindList([1],[1.0]));"
+                                     "llSay(1,(string)llListFindList([1],[]));"
+                                     "llSay(1,(string)llListFindList([],[]));"
+                                     "}"
+                                     "}");
         test(bool(find_list), "list search compiles");
         LslInstance find_list_script(find_list.program, context(), host);
         const auto find_list_start = messages.size();
@@ -3895,15 +6073,14 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + find_list_start, messages.end()) ==
                      std::vector<std::string>{"3", "-1", "0", "-1"},
              "list search matches typed contiguous entries and handles empty lists");
-        auto list_replace = compile_lsl(
-            "default{"
-                "state_entry(){"
-                    "list a=[0,1,2,3,4];"
-                    "llSay(1,llDumpList2String(llListReplaceList(a,[9],1,2),\"\"));"
-                    "llSay(1,llDumpList2String(llListReplaceList(a,[9],3,1),\"\"));"
-                    "llSay(1,llDumpList2String(llListReplaceList(a,[9],-99,1),\"\"));"
-                "}"
-            "}");
+        auto list_replace = compile_lsl("default{"
+                                        "state_entry(){"
+                                        "list a=[0,1,2,3,4];"
+                                        "llSay(1,llDumpList2String(llListReplaceList(a,[9],1,2),\"\"));"
+                                        "llSay(1,llDumpList2String(llListReplaceList(a,[9],3,1),\"\"));"
+                                        "llSay(1,llDumpList2String(llListReplaceList(a,[9],-99,1),\"\"));"
+                                        "}"
+                                        "}");
         test(bool(list_replace), "list replacement compiles");
         LslInstance list_replace_script(list_replace.program, context(), host);
         const auto list_replace_start = messages.size();
@@ -3911,14 +6088,13 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + list_replace_start, messages.end()) ==
                      std::vector<std::string>{"0934", "29", "234"},
              "list replacement follows conventional, wrapped, and far-negative ranges");
-        auto list_insert = compile_lsl(
-            "default{"
-                "state_entry(){"
-                    "llSay(1,llDumpList2String(llListInsertList([1,2],[9],-1),\"\"));"
-                    "llSay(1,llDumpList2String(llListInsertList([1,2],[9],99),\"\"));"
-                    "llSay(1,llDumpList2String(llListInsertList([1,2],[9],-99),\"\"));"
-                "}"
-            "}");
+        auto list_insert = compile_lsl("default{"
+                                       "state_entry(){"
+                                       "llSay(1,llDumpList2String(llListInsertList([1,2],[9],-1),\"\"));"
+                                       "llSay(1,llDumpList2String(llListInsertList([1,2],[9],99),\"\"));"
+                                       "llSay(1,llDumpList2String(llListInsertList([1,2],[9],-99),\"\"));"
+                                       "}"
+                                       "}");
         test(bool(list_insert), "list insertion compiles");
         LslInstance list_insert_script(list_insert.program, context(), host);
         const auto list_insert_start = messages.size();
@@ -3926,15 +6102,14 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + list_insert_start, messages.end()) ==
                      std::vector<std::string>{"192", "129", "912"},
              "list insertion handles end-relative indices and clamping");
-        auto csv = compile_lsl(
-            "default{"
-                "state_entry(){"
-                    "llSay(1,llList2CSV([1,<2,3,4>,\"x\"]));"
-                    "list a=llCSV2List(\" a , <1, 2, 3>, \");"
-                    "llSay(1,llDumpList2String(a,\"|\"));"
-                    "llSay(1,(string)llGetListLength(llCSV2List(\"\")));"
-                "}"
-            "}");
+        auto csv = compile_lsl("default{"
+                               "state_entry(){"
+                               "llSay(1,llList2CSV([1,<2,3,4>,\"x\"]));"
+                               "list a=llCSV2List(\" a , <1, 2, 3>, \");"
+                               "llSay(1,llDumpList2String(a,\"|\"));"
+                               "llSay(1,(string)llGetListLength(llCSV2List(\"\")));"
+                               "}"
+                               "}");
         test(bool(csv), "list CSV functions compile");
         LslInstance csv_script(csv.program, context(), host);
         const auto csv_start = messages.size();
@@ -3964,8 +6139,8 @@ int main(int argc, char** argv) {
         const auto parse_start = messages.size();
         test(parse_strings_script.run(100).status == LslRunStatus::Idle &&
                  std::vector<std::string>(messages.begin() + parse_start, messages.end()) ==
-                     std::vector<std::string>{"a|b|+|c", "|a||b|+|c|", "a|b", "a|b", "a||b", "a|b|3.500000|c",
-                                              "0", "  x  ", "|+||+|", "a"},
+                     std::vector<std::string>{"a|b|+|c", "|a||b|+|c|", "a|b", "a|b", "a||b", "a|b|3.500000|c", "0",
+                                              "  x  ", "|+||+|", "a"},
              "string parsing handles null fields, delimiter precedence, retained spacers, and coercion");
         const framework::Uuid visitor("138f41bf-27ca-4f4b-948f-78746f891cd8");
         const framework::Uuid resident("e1521291-7f02-4a91-b655-fc96d3d5cb8b");
@@ -3992,35 +6167,33 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + avatar_name_query_start, messages.end()) ==
                      std::vector<std::string>{visitor.str(), framework::Uuid{}.str(), "jane"},
              "avatar names normalize Hypergrid spelling and preserve the Resident username rule");
-        auto entry_type = compile_lsl(
-            "default{"
-                "state_entry(){"
-                    "list a=[1,2.0,\"text\",(string)NULL_KEY,ZERO_VECTOR];"
-                    "if(llGetListEntryType(a,0)==TYPE_INTEGER&&"
-                    "llGetListEntryType(a,1)==TYPE_FLOAT&&"
-                    "llGetListEntryType(a,2)==TYPE_STRING&&"
-                    "llGetListEntryType(a,-2)==TYPE_KEY&&"
-                    "llGetListEntryType(a,-1)==TYPE_VECTOR&&"
-                    "llGetListEntryType(a,5)==TYPE_INVALID)llSay(1,\"typed\");"
-                "}"
-            "}");
+        auto entry_type = compile_lsl("default{"
+                                      "state_entry(){"
+                                      "list a=[1,2.0,\"text\",(string)NULL_KEY,ZERO_VECTOR];"
+                                      "if(llGetListEntryType(a,0)==TYPE_INTEGER&&"
+                                      "llGetListEntryType(a,1)==TYPE_FLOAT&&"
+                                      "llGetListEntryType(a,2)==TYPE_STRING&&"
+                                      "llGetListEntryType(a,-2)==TYPE_KEY&&"
+                                      "llGetListEntryType(a,-1)==TYPE_VECTOR&&"
+                                      "llGetListEntryType(a,5)==TYPE_INVALID)llSay(1,\"typed\");"
+                                      "}"
+                                      "}");
         test(bool(entry_type), "list entry type queries compile");
         LslInstance entry_type_script(entry_type.program, context(), host);
         const auto entry_type_start = messages.size();
-        test(entry_type_script.run(100).status == LslRunStatus::Idle &&
-                 messages.size() == entry_type_start + 1 && messages.back() == "typed",
+        test(entry_type_script.run(100).status == LslRunStatus::Idle && messages.size() == entry_type_start + 1 &&
+                 messages.back() == "typed",
              "list types include UUID-shaped text and invalid indices");
-        auto list_integers = compile_lsl(
-            "default{"
-                "state_entry(){"
-                    "list a=[\"  -12suffix\",\"0xffffffff\",\"2147483648\",-2.9,ZERO_VECTOR];"
-                    "llSay(1,(string)llList2Integer(a,0));"
-                    "llSay(1,(string)llList2Integer(a,1));"
-                    "llSay(1,(string)llList2Integer(a,2));"
-                    "llSay(1,(string)llList2Integer(a,-2));"
-                    "llSay(1,(string)llList2Integer(a,-1));"
-                "}"
-            "}");
+        auto list_integers = compile_lsl("default{"
+                                         "state_entry(){"
+                                         "list a=[\"  -12suffix\",\"0xffffffff\",\"2147483648\",-2.9,ZERO_VECTOR];"
+                                         "llSay(1,(string)llList2Integer(a,0));"
+                                         "llSay(1,(string)llList2Integer(a,1));"
+                                         "llSay(1,(string)llList2Integer(a,2));"
+                                         "llSay(1,(string)llList2Integer(a,-2));"
+                                         "llSay(1,(string)llList2Integer(a,-1));"
+                                         "}"
+                                         "}");
         test(bool(list_integers), "list integer access compiles");
         LslInstance list_integer_script(list_integers.program, context(), host);
         const auto list_integer_start = messages.size();
@@ -4028,16 +6201,15 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + list_integer_start, messages.end()) ==
                      std::vector<std::string>{"-12", "-1", "-1", "-2", "0"},
              "list integer conversion preserves prefixes, overflow, truncation and vector defaults");
-        auto list_floats = compile_lsl(
-            "default{"
-                "state_entry(){"
-                    "list a=[\" -12.5tail\",\"2e3\",\".5\",7,2.5,ZERO_VECTOR];"
-                    "llSay(1,(string)llList2Float(a,0));"
-                    "llSay(1,(string)llList2Float(a,1));"
-                    "llSay(1,(string)llList2Float(a,2));"
-                    "llSay(1,(string)(llList2Float(a,3)+llList2Float(a,-2)+llList2Float(a,-1)));"
-                "}"
-            "}");
+        auto list_floats = compile_lsl("default{"
+                                       "state_entry(){"
+                                       "list a=[\" -12.5tail\",\"2e3\",\".5\",7,2.5,ZERO_VECTOR];"
+                                       "llSay(1,(string)llList2Float(a,0));"
+                                       "llSay(1,(string)llList2Float(a,1));"
+                                       "llSay(1,(string)llList2Float(a,2));"
+                                       "llSay(1,(string)(llList2Float(a,3)+llList2Float(a,-2)+llList2Float(a,-1)));"
+                                       "}"
+                                       "}");
         test(bool(list_floats), "list float access compiles");
         LslInstance list_float_script(list_floats.program, context(), host);
         const auto list_float_start = messages.size();
@@ -4045,34 +6217,31 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + list_float_start, messages.end()) ==
                      std::vector<std::string>{"-12.500000", "2.000000", "0.000000", "9.500000"},
              "list float conversion preserves the source decimal prefix rules");
-        auto list_vectors = compile_lsl(
-            "default{"
-                "state_entry(){"
-                    "list a=[<1,2,3>,\"<4, 5, 6>\",\"<7, bad, 9>\"];"
-                    "llSay(1,(string)(llList2Vector(a,0)+llList2Vector(a,1)));"
-                    "llSay(1,(string)(llList2Vector(a,-1)+llList2Vector(a,9)));"
-                "}"
-            "}");
+        auto list_vectors = compile_lsl("default{"
+                                        "state_entry(){"
+                                        "list a=[<1,2,3>,\"<4, 5, 6>\",\"<7, bad, 9>\"];"
+                                        "llSay(1,(string)(llList2Vector(a,0)+llList2Vector(a,1)));"
+                                        "llSay(1,(string)(llList2Vector(a,-1)+llList2Vector(a,9)));"
+                                        "}"
+                                        "}");
         test(bool(list_vectors), "list vector access compiles");
         LslInstance list_vector_script(list_vectors.program, context(), host);
         const auto list_vector_start = messages.size();
         test(list_vector_script.run(100).status == LslRunStatus::Idle &&
                  std::vector<std::string>(messages.begin() + list_vector_start, messages.end()) ==
-                     std::vector<std::string>{"<5.000000, 7.000000, 9.000000>",
-                                              "<0.000000, 0.000000, 0.000000>"},
+                     std::vector<std::string>{"<5.000000, 7.000000, 9.000000>", "<0.000000, 0.000000, 0.000000>"},
              "list vector conversion handles typed, textual, malformed and missing entries");
-        auto rotations = compile_lsl(
-            "rotation initial;"
-            "default{"
-                "state_entry(){"
-                    "rotation r=initial;"
-                    "llSay(1,(string)r);"
-                    "r=<1,2,3,4>;"
-                    "r.s+=r.x;"
-                    "llSay(1,(string)r);"
-                    "llSay(1,(string)llGetListEntryType([ZERO_ROTATION],0));"
-                "}"
-            "}");
+        auto rotations = compile_lsl("rotation initial;"
+                                     "default{"
+                                     "state_entry(){"
+                                     "rotation r=initial;"
+                                     "llSay(1,(string)r);"
+                                     "r=<1,2,3,4>;"
+                                     "r.s+=r.x;"
+                                     "llSay(1,(string)r);"
+                                     "llSay(1,(string)llGetListEntryType([ZERO_ROTATION],0));"
+                                     "}"
+                                     "}");
         test(bool(rotations), "rotation declarations and literals compile");
         LslInstance rotation_script(rotations.program, context(), host);
         const auto rotation_start = messages.size();
@@ -4081,18 +6250,17 @@ int main(int argc, char** argv) {
                      std::vector<std::string>{"<0.000000, 0.000000, 0.000000, 1.000000>",
                                               "<1.000000, 2.000000, 3.000000, 5.000000>", "6"},
              "rotation defaults, component assignment, formatting and list entry type");
-        auto rotation_ops = compile_lsl(
-            "default{"
-                "state_entry(){"
-                    "rotation a=<1,0,0,0>;"
-                    "rotation b=<0,1,0,0>;"
-                    "llSay(1,(string)(a*b));"
-                    "llSay(1,(string)(a/b));"
-                    "a+=b;"
-                    "llSay(1,(string)(a-b==<1,0,0,0>));"
-                    "llSay(1,(string)(a!=b));"
-                "}"
-            "}");
+        auto rotation_ops = compile_lsl("default{"
+                                        "state_entry(){"
+                                        "rotation a=<1,0,0,0>;"
+                                        "rotation b=<0,1,0,0>;"
+                                        "llSay(1,(string)(a*b));"
+                                        "llSay(1,(string)(a/b));"
+                                        "a+=b;"
+                                        "llSay(1,(string)(a-b==<1,0,0,0>));"
+                                        "llSay(1,(string)(a!=b));"
+                                        "}"
+                                        "}");
         test(bool(rotation_ops), "rotation operators compile");
         LslInstance rotation_ops_script(rotation_ops.program, context(), host);
         const auto rotation_ops_start = messages.size();
@@ -4101,15 +6269,21 @@ int main(int argc, char** argv) {
                      std::vector<std::string>{"<0.000000, 0.000000, -1.000000, 0.000000>",
                                               "<0.000000, 0.000000, 1.000000, 0.000000>", "1", "1"},
              "rotation composition order, conjugate division, addition, subtraction and comparisons");
-        auto vector_rotation = compile_lsl(
-            "default{state_entry(){vector v=<1,0,0>;rotation r=<0,0,1,1>;llSay(1,(string)(v*r));v/=r;llSay(1,(string)v);}}");
+        auto vector_rotation = compile_lsl("default{"
+                                           "state_entry(){"
+                                           "vector v=<1,0,0>;"
+                                           "rotation r=<0,0,1,1>;"
+                                           "llSay(1,(string)(v*r));"
+                                           "v/=r;"
+                                           "llSay(1,(string)v);"
+                                           "}"
+                                           "}");
         test(bool(vector_rotation), "vector rotation operators compile");
         LslInstance vector_rotation_script(vector_rotation.program, context(), host);
         const auto vector_rotation_start = messages.size();
         test(vector_rotation_script.run(100).status == LslRunStatus::Idle &&
                  std::vector<std::string>(messages.begin() + vector_rotation_start, messages.end()) ==
-                     std::vector<std::string>{"<-1.000000, 2.000000, 0.000000>",
-                                              "<-1.000000, -2.000000, 0.000000>"},
+                     std::vector<std::string>{"<-1.000000, 2.000000, 0.000000>", "<-1.000000, -2.000000, 0.000000>"},
              "vector rotation and inverse rotation preserve non-unit quaternion behavior");
         auto list_rotations = compile_lsl(
             R"LSL(
@@ -4145,8 +6319,11 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + rotation_cast_start, messages.end()) ==
                      std::vector<std::string>{"4.000000", "1"},
              "rotation casts parse strings, preserve rotations and default malformed text");
-        auto vector_cast = compile_lsl(
-            R"LSL(default{state_entry(){vector v=(vector)"<1,2,3>";llSay(1,(string)((vector)v).z);llSay(1,(string)((vector)"invalid"==ZERO_VECTOR));}})LSL");
+        auto vector_cast = compile_lsl(R"LSL(default{state_entry(){)LSL"
+                                       R"LSL(vector v=(vector)"<1,2,3>";)LSL"
+                                       R"LSL(llSay(1,(string)((vector)v).z);)LSL"
+                                       R"LSL(llSay(1,(string)((vector)"invalid"==ZERO_VECTOR));)LSL"
+                                       R"LSL(}})LSL");
         test(bool(vector_cast), "vector casts compile");
         LslInstance vector_cast_script(vector_cast.program, context(), host);
         const auto vector_cast_start = messages.size();
@@ -4154,15 +6331,14 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + vector_cast_start, messages.end()) ==
                      std::vector<std::string>{"3.000000", "1"},
              "vector casts parse strings, preserve vectors and default malformed text");
-        auto axis_angle = compile_lsl(
-            "default{"
-                "state_entry(){"
-                    "rotation r=llAxisAngle2Rot(<0,0,2>,1);"
-                    "llSay(1,(string)llRot2Axis(r));"
-                    "llSay(1,(string)llRot2Angle(r));"
-                    "llSay(1,(string)llRot2Angle(<0,0,0,0>));"
-                "}"
-            "}");
+        auto axis_angle = compile_lsl("default{"
+                                      "state_entry(){"
+                                      "rotation r=llAxisAngle2Rot(<0,0,2>,1);"
+                                      "llSay(1,(string)llRot2Axis(r));"
+                                      "llSay(1,(string)llRot2Angle(r));"
+                                      "llSay(1,(string)llRot2Angle(<0,0,0,0>));"
+                                      "}"
+                                      "}");
         test(bool(axis_angle), "axis-angle functions compile");
         LslInstance axis_angle_script(axis_angle.program, context(), host);
         const auto axis_angle_start = messages.size();
@@ -4170,14 +6346,13 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + axis_angle_start, messages.end()) ==
                      std::vector<std::string>{"<0.000000, 0.000000, 1.000000>", "1.000000", "0.000000"},
              "axis-angle functions normalize their input and handle zero rotations");
-        auto angle_between = compile_lsl(
-            "default{"
-                "state_entry(){"
-                    "llSay(1,(string)llAngleBetween(ZERO_ROTATION,<0,0,2,2>));"
-                    "llSay(1,(string)llAngleBetween(ZERO_ROTATION,<0,0,0,-2>));"
-                    "llSay(1,(string)llAngleBetween(ZERO_ROTATION,<0,0,0,0>));"
-                "}"
-            "}");
+        auto angle_between = compile_lsl("default{"
+                                         "state_entry(){"
+                                         "llSay(1,(string)llAngleBetween(ZERO_ROTATION,<0,0,2,2>));"
+                                         "llSay(1,(string)llAngleBetween(ZERO_ROTATION,<0,0,0,-2>));"
+                                         "llSay(1,(string)llAngleBetween(ZERO_ROTATION,<0,0,0,0>));"
+                                         "}"
+                                         "}");
         test(bool(angle_between), "llAngleBetween compiles");
         LslInstance angle_between_script(angle_between.program, context(), host);
         const auto angle_between_start = messages.size();
@@ -4185,25 +6360,30 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + angle_between_start, messages.end()) ==
                      std::vector<std::string>{"1.570796", "0.000000", "0.000000"},
              "llAngleBetween handles scaled, opposite-sign and zero quaternions");
-        auto rotation_basis = compile_lsl(
-            "default{state_entry(){rotation r=<0,0,2,2>;llSay(1,(string)llRot2Fwd(r));llSay(1,(string)llRot2Left(r));llSay(1,(string)llRot2Up(r));}}");
+        auto rotation_basis = compile_lsl("default{"
+                                          "state_entry(){"
+                                          "rotation r=<0,0,2,2>;"
+                                          "llSay(1,(string)llRot2Fwd(r));"
+                                          "llSay(1,(string)llRot2Left(r));"
+                                          "llSay(1,(string)llRot2Up(r));"
+                                          "}"
+                                          "}");
         test(bool(rotation_basis), "rotation direction functions compile");
         LslInstance rotation_basis_script(rotation_basis.program, context(), host);
         const auto rotation_basis_start = messages.size();
         test(rotation_basis_script.run(100).status == LslRunStatus::Idle &&
                  std::vector<std::string>(messages.begin() + rotation_basis_start, messages.end()) ==
-                     std::vector<std::string>{"<0.000000, 1.000000, 0.000000>",
-                                              "<-1.000000, 0.000000, 0.000000>",
+                     std::vector<std::string>{"<0.000000, 1.000000, 0.000000>", "<-1.000000, 0.000000, 0.000000>",
                                               "<0.000000, 0.000000, 1.000000>"},
              "rotation direction functions normalize scaled quaternions");
-        auto rotation_between = compile_lsl(
-            "default{"
-                "state_entry(){"
-                    "llSay(1,(string)llRotBetween(<2,0,0>,<0,3,0>));"
-                    "llSay(1,(string)llRotBetween(<1,0,0>,<-1,0,0>));"
-                    "llSay(1,(string)(llRotBetween(ZERO_VECTOR,<1,0,0>)==ZERO_ROTATION&&llRotBetween(<1,0,0>,<2,0,0>)==ZERO_ROTATION));"
-                "}"
-            "}");
+        auto rotation_between = compile_lsl("default{"
+                                            "state_entry(){"
+                                            "llSay(1,(string)llRotBetween(<2,0,0>,<0,3,0>));"
+                                            "llSay(1,(string)llRotBetween(<1,0,0>,<-1,0,0>));"
+                                            "llSay(1,(string)(llRotBetween(ZERO_VECTOR,<1,0,0>)==ZERO_ROTATION&&"
+                                            "llRotBetween(<1,0,0>,<2,0,0>)==ZERO_ROTATION));"
+                                            "}"
+                                            "}");
         test(bool(rotation_between), "llRotBetween compiles");
         LslInstance rotation_between_script(rotation_between.program, context(), host);
         const auto rotation_between_start = messages.size();
@@ -4212,34 +6392,35 @@ int main(int argc, char** argv) {
                      std::vector<std::string>{"<0.000000, 0.000000, 0.707107, 0.707107>",
                                               "<0.000000, 0.000000, 1.000000, 0.000000>", "1"},
              "llRotBetween handles orthogonal, opposite, zero and parallel vectors");
-        auto euler_rotation = compile_lsl(
-            "default{state_entry(){llSay(1,(string)llRot2Euler(llEuler2Rot(<0.2,0.3,0.4>)));llSay(1,(string)llRot2Euler(<0,-2,0,2>));}}");
+        auto euler_rotation = compile_lsl("default{"
+                                          "state_entry(){"
+                                          "llSay(1,(string)llRot2Euler(llEuler2Rot(<0.2,0.3,0.4>)));"
+                                          "llSay(1,(string)llRot2Euler(<0,-2,0,2>));"
+                                          "}"
+                                          "}");
         test(bool(euler_rotation), "Euler rotation conversions compile");
         LslInstance euler_rotation_script(euler_rotation.program, context(), host);
         const auto euler_rotation_start = messages.size();
         test(euler_rotation_script.run(100).status == LslRunStatus::Idle &&
                  std::vector<std::string>(messages.begin() + euler_rotation_start, messages.end()) ==
-                     std::vector<std::string>{"<0.200000, 0.300000, 0.400000>",
-                                              "<0.000000, -1.570796, -0.000000>"},
+                     std::vector<std::string>{"<0.200000, 0.300000, 0.400000>", "<0.000000, -1.570796, -0.000000>"},
              "Euler conversion round trip and singularity handling");
-        auto axes_rotation = compile_lsl(
-            "default{"
-                "state_entry(){"
-                    "llSay(1,(string)llAxes2Rot(<1,0,0>,<0,1,0>,<0,0,1>));"
-                    "llSay(1,(string)llAxes2Rot(<1,0,0>,<0,-1,0>,<0,0,-1>));"
-                    "llSay(1,(string)llAxes2Rot(<-1,0,0>,<0,1,0>,<0,0,-1>));"
-                    "llSay(1,(string)llAxes2Rot(<-1,0,0>,<0,-1,0>,<0,0,1>));"
-                "}"
-            "}");
+        auto axes_rotation = compile_lsl("default{"
+                                         "state_entry(){"
+                                         "llSay(1,(string)llAxes2Rot(<1,0,0>,<0,1,0>,<0,0,1>));"
+                                         "llSay(1,(string)llAxes2Rot(<1,0,0>,<0,-1,0>,<0,0,-1>));"
+                                         "llSay(1,(string)llAxes2Rot(<-1,0,0>,<0,1,0>,<0,0,-1>));"
+                                         "llSay(1,(string)llAxes2Rot(<-1,0,0>,<0,-1,0>,<0,0,1>));"
+                                         "}"
+                                         "}");
         test(bool(axes_rotation), "llAxes2Rot compiles");
         LslInstance axes_rotation_script(axes_rotation.program, context(), host);
         const auto axes_rotation_start = messages.size();
         test(axes_rotation_script.run(100).status == LslRunStatus::Idle &&
                  std::vector<std::string>(messages.begin() + axes_rotation_start, messages.end()) ==
-                     std::vector<std::string>{"<0.000000, 0.000000, 0.000000, 1.000000>",
-                                              "<1.000000, 0.000000, 0.000000, 0.000000>",
-                                              "<0.000000, 1.000000, 0.000000, 0.000000>",
-                                              "<0.000000, 0.000000, 1.000000, 0.000000>"},
+                     std::vector<std::string>{
+                         "<0.000000, 0.000000, 0.000000, 1.000000>", "<1.000000, 0.000000, 0.000000, 0.000000>",
+                         "<0.000000, 1.000000, 0.000000, 0.000000>", "<0.000000, 0.000000, 1.000000, 0.000000>"},
              "llAxes2Rot handles identity and half-turns around each axis");
         auto strided = compile_lsl(
             R"LSL(
@@ -4330,16 +6511,15 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + shuffle_start, messages.end()) ==
                      std::vector<std::string>{"1, a, 2, b, 3, c", "3, 2, 1"},
              "list randomization preserves complete records and leaves incomplete strides alone");
-        auto find_next = compile_lsl(
-            "default{"
-                "state_entry(){"
-                    "list a=[1,1,1,2];"
-                    "llSay(1,(string)llListFindListNext(a,[1,1],1));"
-                    "llSay(1,(string)llListFindListNext(a,[1,1],-2));"
-                    "llSay(1,(string)llListFindListNext(a,[],-1));"
-                    "llSay(1,(string)llListFindListNext([],[],5));"
-                "}"
-            "}");
+        auto find_next = compile_lsl("default{"
+                                     "state_entry(){"
+                                     "list a=[1,1,1,2];"
+                                     "llSay(1,(string)llListFindListNext(a,[1,1],1));"
+                                     "llSay(1,(string)llListFindListNext(a,[1,1],-2));"
+                                     "llSay(1,(string)llListFindListNext(a,[],-1));"
+                                     "llSay(1,(string)llListFindListNext([],[],5));"
+                                     "}"
+                                     "}");
         test(bool(find_next), "list occurrence search compiles");
         LslInstance find_next_script(find_next.program, context(), host);
         const auto find_next_start = messages.size();
@@ -4364,6 +6544,35 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + find_strided_start, messages.end()) ==
                      std::vector<std::string>{"3", "-1"},
              "strided list search advances from the requested start");
+        check_task_inventory_queries(host, messages);
+        const auto ossl_lists = compile_lsl(R"LSL(default {
+            state_entry() {
+                list values = [3, 2.5, "text", <1,2,3>, <1,0,0,0>];
+                llSay(1, (string)osListAsInteger(values, 0));
+                llSay(1, (string)osListAsInteger(values, 1));
+                llSay(1, (string)osListAsFloat(values, 1));
+                llSay(1, (string)osListAsFloat(values, 0));
+                llSay(1, osListAsString(values, 2));
+                llSay(1, "[" + osListAsString(values, -3) + "]");
+                vector v = osListAsVector(values, 3);
+                rotation r = osListAsRotation(values, 4);
+                rotation fallback = osListAsRotation(values, 3);
+                llSay(1, (string)((v.z == 3.0) && (r.x == 1.0) && (fallback.s == 1.0)));
+                llSay(1, (string)osListFindListNext([1,1,1,1], [1,1], 1, -2, -1));
+                llSay(1, (string)osListFindListNext([1,1,1,1], [1,1], 1, 2, -1));
+                llSay(1, (string)osListFindListNext([1,1,1,1], [1,1], -3, -1, 1));
+                llSay(1, (string)osListFindListNext([1,1], [], 99, -99, -1));
+                llSay(1, (string)osListFindListNext([], [], 99, -99, 9));
+            }
+        })LSL");
+        test(bool(ossl_lists), "OSSL list functions compile");
+        LslInstance ossl_list_script(ossl_lists.program, context(), host);
+        const auto ossl_list_start = messages.size();
+        test(ossl_list_script.run(100).status == LslRunStatus::Idle &&
+                 std::vector<std::string>(messages.begin() + ossl_list_start, messages.end()) ==
+                     std::vector<std::string>{"3", "0", "2.500000", "0.000000", "text", "[]", "1", "1", "2", "2", "1",
+                                              "0"},
+             "OSSL list access is type-strict and range searches honor occurrence and end bounds");
         auto json_lists = compile_lsl(
             R"LSL(
                 default {
@@ -4438,8 +6647,11 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + json_set_start, messages.end()) ==
                      std::vector<std::string>{R"({"a":[2]})", R"({"a":[2,true]})", R"({"a":[true]})"},
              "JSON updates create nested containers, append values and delete array entries");
-        auto hash = compile_lsl(
-            R"(default{state_entry(){llSay(1,(string)llHash("abc"));llSay(1,(string)llHash(llChar(128512)));llSay(1,(string)llHash(""));}})");
+        auto hash = compile_lsl(R"(default{state_entry(){)"
+                                R"(llSay(1,(string)llHash("abc"));)"
+                                R"(llSay(1,(string)llHash(llChar(128512)));)"
+                                R"(llSay(1,(string)llHash(""));)"
+                                R"(}})");
         test(bool(hash), "llHash compiles");
         LslInstance lsl_hash_script(hash.program, context(), host);
         const auto lsl_hash_start = messages.size();
@@ -4449,6 +6661,7 @@ int main(int argc, char** argv) {
              "llHash wraps the accumulator and hashes supplementary characters as one code point");
         auto compute_hash = compile_lsl(
             R"LSL(
+                string unsupported;
                 default {
                     state_entry() {
                         llSay(1,llComputeHash("abc","md5"));
@@ -4458,50 +6671,60 @@ int main(int argc, char** argv) {
                         llSay(1,llComputeHash("abc","sha256"));
                         llSay(1,llComputeHash("abc","sha384"));
                         llSay(1,llComputeHash("abc","sha512"));
-                        llSay(1,llComputeHash("abc","SHA256"));
+                        unsupported = llComputeHash("abc","SHA256");
                     }
                 }
             )LSL");
         test(bool(compute_hash), "llComputeHash compiles");
         LslInstance compute_hash_script(compute_hash.program, context(), host);
         const auto compute_hash_start = messages.size();
+        const auto compute_hash_run = compute_hash_script.run(100);
+        const auto compute_hash_saved = compute_hash_script.checkpoint();
         test(
-            compute_hash_script.run(100).status == LslRunStatus::Idle &&
+            compute_hash_run.status == LslRunStatus::Idle && compute_hash_saved &&
+                compute_hash_saved->globals.size() == 1 &&
+                std::holds_alternative<LslNullString>(compute_hash_saved->globals[0]) &&
                 std::vector<std::string>(messages.begin() + compute_hash_start, messages.end()) ==
-                    std::vector<std::string>{
-                        "900150983cd24fb0d6963f7d28e17f72",
-                        "900150983cd24fb0d6963f7d28e17f72a9993e364706816aba3e25717850c26c9cd0d89d",
-                        "a9993e364706816aba3e25717850c26c9cd0d89d",
-                        "23097d223405d8228642a477bda255b32aadbce4bda0b3f7e36c9da7",
-                        "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
-                        "cb00753f45a35e8bb5a03d699ac65007272c32ab0eded1631a8b605a43ff5bed8086072ba1e7cc2358baeca134c825a7",
-                        "ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f",
-                        ""},
-            "llComputeHash matches known digests and rejects unsupported algorithm names");
-        for (
-            const auto& [key, message, algorithm, expected] :
-            std::vector<std::tuple<std::string, std::string, std::string, std::string>>{
-                {"key", "abc", "md5", "d2fe98063f876b03193afb49b4979591"},
-                {"key", "abc", "sha1", "4fd0b215276ef12f2b3e4c8ecac2811498b656fc"},
-                {"key", "abc", "sha224", "f524670b7e34f31467de0aa96593861cf65117d414fb2d86158d760e"},
-                {"key", "abc", "sha256", "9c196e32dc0175f86f4b1cb89289d6619de6bee699e4c378e68309ed97a1a6ab"},
-                {"key", "abc", "sha384",
-                 "30ddb9c8f347cffbfb44e519d814f074cf4047a55d6f563324f1c6a33920e5edfb2a34bac60bdc96cd33a95623d7d638"},
-                {"key", "abc", "sha512",
-                 "3926a207c8c42b0c41792cbd3e1a1aaaf5f7a25704f62dfc939c4987dd7ce060009c5bb1c2447355b3216f10b537e9afa7b64a4e5391b0d631172d07939e087a"},
-                {"kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk", "abc", "sha224",
-                 "d7c08f2894c969ffb6680dcda70d297ed9628ef6c480a727123ef73f"},
-                {"", "abc", "sha256", ""},
-                {"key", "abc", "md5_sha1", ""}}) {
-            const auto source = "default{state_entry(){llSay(1,llHMAC(\"" + key + "\",\"" + message +
-                                "\",\"" + algorithm + "\"));}}";
+                    std::vector<std::string>{"900150983cd24fb0d6963f7d28e17f72",
+                                             "900150983cd24fb0d6963f7d28e17f72a9993e364706816aba3e25717850c26c9cd0d89d",
+                                             "a9993e364706816aba3e25717850c26c9cd0d89d",
+                                             "23097d223405d8228642a477bda255b32aadbce4bda0b3f7e36c9da7",
+                                             "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+                                             "cb00753f45a35e8bb5a03d699ac65007272c32ab0eded1631a8b605a43ff5bed8086072ba"
+                                             "1e7cc2358baeca134c825a7",
+                                             "ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a2"
+                                             "74fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f"},
+            "llComputeHash matches known digests and preserves null for unsupported algorithm names");
+        for (const auto &[key, message, algorithm, expected] :
+             std::vector<std::tuple<std::string, std::string, std::string, std::optional<std::string>>>{
+                 {"key", "abc", "md5", "d2fe98063f876b03193afb49b4979591"},
+                 {"key", "abc", "sha1", "4fd0b215276ef12f2b3e4c8ecac2811498b656fc"},
+                 {"key", "abc", "sha224", "f524670b7e34f31467de0aa96593861cf65117d414fb2d86158d760e"},
+                 {"key", "abc", "sha256", "9c196e32dc0175f86f4b1cb89289d6619de6bee699e4c378e68309ed97a1a6ab"},
+                 {"key", "abc", "sha384",
+                  "30ddb9c8f347cffbfb44e519d814f074cf4047a55d6f563324f1c6a33920e5edfb2a34bac60bdc96cd33a95623d7d638"},
+                 {"key", "abc", "sha512",
+                  "3926a207c8c42b0c41792cbd3e1a1aaaf5f7a25704f62dfc939c4987dd7ce060009c5bb1c2447355b3216f10b537e9afa7b6"
+                  "4a4e5391b0d631172d07939e087a"},
+                 {"kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk", "abc", "sha224",
+                  "d7c08f2894c969ffb6680dcda70d297ed9628ef6c480a727123ef73f"},
+                 {"", "abc", "sha256", std::nullopt},
+                 {"key", "abc", "md5_sha1", std::nullopt}}) {
+            const auto source = "string result;default{state_entry(){result=llHMAC(\"" + key + "\",\"" + message +
+                                "\",\"" + algorithm + "\");}}";
             auto hmac_script = compile_lsl(source);
             test(bool(hmac_script), "llHMAC compiles");
             LslInstance instance(hmac_script.program, context(), host);
-            const auto start = messages.size();
-            test(instance.run(100).status == LslRunStatus::Idle && messages.size() == start + 1 &&
-                     messages.back() == expected,
-                 "llHMAC digest matches expected output");
+            const auto outcome = instance.run(100);
+            const auto saved = instance.checkpoint();
+            test(outcome.status == LslRunStatus::Idle && saved && saved->globals.size() == 1,
+                 "llHMAC scalar result completed");
+            if (expected) {
+                const auto actual = std::get_if<std::string>(&saved->globals[0]);
+                test(actual && *actual == *expected, "llHMAC digest matches expected output");
+            } else
+                test(std::holds_alternative<LslNullString>(saved->globals[0]),
+                     "llHMAC preserves null for an unsupported algorithm");
         }
         auto xor_base64 = compile_lsl(
             R"LSL(
@@ -4521,26 +6744,21 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + xor_base64_start, messages.end()) ==
                      std::vector<std::string>{"YGNi", "YWJj", "", "YGNi"},
              "Base64 XOR cycles the decoded mask and handles missing padding and invalid data");
-        auto legacy_xor = compile_lsl(
-            R"LSL(default{state_entry(){llSay(1,llXorBase64Strings("YWJj","AQ"));llSay(1,"awake");}})LSL");
+        auto legacy_xor =
+            compile_lsl(R"LSL(default{state_entry(){llSay(1,llXorBase64Strings("YWJj","AQ"));llSay(1,"awake");}})LSL");
         test(bool(legacy_xor), "legacy Base64 XOR compiles");
         std::int64_t legacy_xor_clock = 0;
         std::vector<std::int32_t> legacy_xor_delays;
         auto legacy_xor_host = host;
-        legacy_xor_host.clock_ticks = [&] {
-            return legacy_xor_clock;
-        };
+        legacy_xor_host.clock_ticks = [&] { return legacy_xor_clock; };
         legacy_xor_host.script_delay_factor = 0.5f;
-        legacy_xor_host.request_sleep = [&](auto delay) {
-            legacy_xor_delays.push_back(delay);
-        };
+        legacy_xor_host.request_sleep = [&](auto delay) { legacy_xor_delays.push_back(delay); };
         LslInstance legacy_xor_script(legacy_xor.program, context(), legacy_xor_host);
         test(legacy_xor_script.run(100).status == LslRunStatus::Sleeping && messages.back() == "YGJz" &&
                  legacy_xor_delays == std::vector<std::int32_t>{150},
              "legacy XOR uses sextets and applies the API delay factor");
         legacy_xor_clock = 1499999;
-        test(legacy_xor_script.run(100).status == LslRunStatus::Sleeping,
-             "legacy XOR waits until its deadline");
+        test(legacy_xor_script.run(100).status == LslRunStatus::Sleeping, "legacy XOR waits until its deadline");
         legacy_xor_clock = 1500000;
         test(legacy_xor_script.run(100).status == LslRunStatus::Idle && messages.back() == "awake",
              "legacy XOR resumes the handler");
@@ -4552,8 +6770,7 @@ int main(int argc, char** argv) {
  }})LSL");
         test(bool(owner_lookup), "owner lookup compiles");
         auto owner_lookup_host = host;
-        owner_lookup_host.object_owner =
-            [](opensim::framework::Uuid id) -> std::optional<opensim::framework::Uuid> {
+        owner_lookup_host.object_owner = [](opensim::framework::Uuid id) -> std::optional<opensim::framework::Uuid> {
             if (id == opensim::framework::Uuid("00000000-0000-4000-8000-000000000abc"))
                 return opensim::framework::Uuid("00000000-0000-4000-8000-000000000123");
             return {};
@@ -4565,7 +6782,7 @@ int main(int argc, char** argv) {
                      std::vector<std::string>{"1", "00000000-0000-4000-8000-000000000123",
                                               "00000000-0000-4000-8000-000000000DEF", "1"},
              "owner lookup resolves objects and preserves unmatched UUID spelling");
-        for (const auto& [file, expected] : std::vector<std::pair<std::string, std::string>>{
+        for (const auto &[file, expected] : std::vector<std::pair<std::string, std::string>>{
                  {"DefaultScript.lsl", "Script running"}, {"DefaultSayAndTouch.lsl", "I am Alive!"}}) {
             std::ifstream f(std::string(LSL_ASSET_DIR) + "/" + file);
             std::stringstream s;
@@ -4574,20 +6791,28 @@ int main(int argc, char** argv) {
             auto c = compile_lsl(s.str());
             test(bool(c), "actual default asset compile");
             LslInstance i(c.program, context(), host);
-            test(i.handles_event("touch_start") == (file == "DefaultSayAndTouch.lsl"),
-                 "actual handler presence");
+            test(i.handles_event("touch_start") == (file == "DefaultSayAndTouch.lsl"), "actual handler presence");
             auto r = i.run(100);
-            test(r.status == LslRunStatus::Idle && messages.back() == expected,
-                 "actual default asset execution");
+            test(r.status == LslRunStatus::Idle && messages.back() == expected, "actual default asset execution");
             if (file == "DefaultSayAndTouch.lsl") {
-                test(i.post_event({"touch_start", {std::int32_t(1)}, {{context().owner}}}),
-                     "real touch post");
+                test(i.post_event({"touch_start", {std::int32_t(1)}, {{context().owner}}}), "real touch post");
                 i.run(100);
                 test(messages.back() == "Touched.", "touch executes source handler");
             }
         }
-        auto compiled = compile_lsl(
-            "default { state_entry() { {llSay(1, \"x\\tY\\q\\n\" + (string)(2147483647 + 1));} llOwnerSay(\"last\"); } touch_start(integer n) { llSay(n-1, (string)(n + 2)); }}");
+        auto compiled = compile_lsl(R"LSL(
+            default {
+                state_entry() {
+                    {
+                        llSay(1, "x\tY\q\n" + (string)(2147483647 + 1));
+                    }
+                    llOwnerSay("last");
+                }
+                touch_start(integer n) {
+                    llSay(n - 1, (string)(n + 2));
+                }
+            }
+        )LSL");
         test(bool(compiled), "typed expressions compile");
         LslInstance i(compiled.program, context(), host);
         auto before = messages.size();
@@ -4597,25 +6822,40 @@ int main(int argc, char** argv) {
         test(i.run(1).status == LslRunStatus::Idle && messages.back() == "last", "resume no replay");
         bool detector = false;
         LslHost touches = host;
-        LslInstance* current = nullptr;
-        touches.chat = [&](const LslChat& x) {
+        LslInstance *current = nullptr;
+        touches.chat = [&](const LslChat &x) {
             detector = current->current_event()->detectors.at(0).key == context().owner;
             messages.push_back(x.text);
         };
-        LslInstance t(compile_lsl("default{touch_start(integer n){llSay(n-1,(string)(n+2));}}").program,
-                      context(), touches);
+        LslInstance t(compile_lsl("default{touch_start(integer n){llSay(n-1,(string)(n+2));}}").program, context(),
+                      touches);
         current = &t;
         t.run(100);
         test(t.post_event({"touch_start", {std::int32_t(4)}, {{context().owner}}}), "typed touch post");
         t.run(100);
         test(detector && messages.back() == "6", "parameter and actual detector retained");
-        for (const auto& source :
+        for (const auto &source :
              {"default{state_entry(){ llSay(0,\"oops\"); unknown(); }}", "default{timer(integer n){}}",
               "default{touch_start(string n){}}", "default{state_entry(){llSay(\"0\",\"x\");}}",
-              "default{state_entry(){llOwnerSay(1);}}", "default{state_entry(){integer n;integer n;}}",
-              "default{state_entry(){llSay(0,\"unterminated);}}", "default{} state default{}",
-              "default{state_entry(){}state_entry(){}}", "default{state_entry(){llSay(0,4294967296);}}"})
-            test(!compile_lsl(source), "unsupported program rejected before execution");
+              "default{state_entry(){integer n;integer n;}}", "default{state_entry(){llSay(0,\"unterminated);}}",
+              "default{} state default{}", "default{state_entry(){}state_entry(){}}",
+              "default{state_entry(){llSay(0,4294967296);}}"})
+            if (compile_lsl(source))
+                throw std::runtime_error(std::string("Unsupported program unexpectedly accepted: ") + source);
+        {
+            const auto implicit_owner = compile_lsl("default{state_entry(){llOwnerSay(1);}}");
+            test(bool(implicit_owner), "OwnerSay accepts the original implicit integer-to-string conversion");
+            std::vector<LslChat> owner_chats;
+            auto owner_host = host;
+            owner_host.chat = [&](const LslChat &chat) { owner_chats.push_back(chat); };
+            auto owner_context = context();
+            owner_context.group = framework::Uuid::random();
+            LslInstance owner_script(implicit_owner.program, owner_context, owner_host);
+            test(owner_script.run(100).status == LslRunStatus::Idle && owner_chats.size() == 1 &&
+                     owner_chats.front().type == LslChatType::Owner && owner_chats.front().channel == 0 &&
+                     owner_chats.front().text == "1",
+                 "OwnerSay receives exactly the original implicitly converted string boundary");
+        }
         auto queue_program = compile_lsl("default{touch_start(integer n){llOwnerSay((string)n);}}");
         LslInstance q(queue_program.program, context(), host);
         q.run(100);
@@ -4623,20 +6863,22 @@ int main(int argc, char** argv) {
             test(q.post_event({"touch_start", {std::int32_t(n)}, {}}), "per-event queue admission");
         test(!q.post_event({"touch_start", {std::int32_t(65)}, {}}), "queue cap64");
         test(q.post_event({"state_entry", {}, {}}), "independent event count");
-        test(q.run(1).status == LslRunStatus::BudgetExhausted && messages.back() == "0",
-             "priority empty state_entry");
+        test(q.run(1).status == LslRunStatus::BudgetExhausted && messages.back() == "0", "priority empty state_entry");
         q.reset();
-        test(q.queued_events() == 1 && q.run(100).status == LslRunStatus::Idle,
-             "reset clears pending events");
-        const auto omega_program = compile_lsl(
-            "default{state_entry(){vector axis=<0,-1,2>;llTargetOmega(axis+<0,.5,0>,1+.5,1);llTargetOmega(<0,-.5,2>,1.5,1e-7);}}");
+        test(q.queued_events() == 1 && q.run(100).status == LslRunStatus::Idle, "reset clears pending events");
+        const auto omega_program = compile_lsl("default{"
+                                               "state_entry(){"
+                                               "vector axis=<0,-1,2>;"
+                                               "llTargetOmega(axis+<0,.5,0>,1+.5,1);"
+                                               "llTargetOmega(<0,-.5,2>,1.5,1.0e-7);"
+                                               "}"
+                                               "}");
         test(bool(omega_program), "target omega compiles");
         std::vector<opensim::framework::Vector3> angular_velocities;
         LslHost omega_host;
         omega_host.target_omega = [&](auto id, auto velocity, bool full_refresh) {
             test(id == context().object, "target omega affects the script host");
-            test(full_refresh == (velocity == opensim::framework::Vector3{}),
-                 "zero gain requests full refresh");
+            test(full_refresh == (velocity == opensim::framework::Vector3{}), "zero gain requests full refresh");
             angular_velocities.push_back(velocity);
         };
         LslInstance omega(omega_program.program, context(), omega_host);
@@ -4646,13 +6888,18 @@ int main(int argc, char** argv) {
         LslHost missing;
         LslInstance fault(compile_lsl("default{state_entry(){llSay(0,\"x\");}}").program, context(), missing);
         test(fault.run(1).status == LslRunStatus::Faulted, "missing host explicit fault");
-        auto control_program = compile_lsl(
-            "default{state_entry(){llOwnerSay(\"one\");llOwnerSay(\"two\");}touch_start(integer n){llOwnerSay(\"touch\");}}");
+        auto control_program = compile_lsl("default{"
+                                           "state_entry(){"
+                                           "llOwnerSay(\"one\");"
+                                           "llOwnerSay(\"two\");"
+                                           "}"
+                                           "touch_start(integer n){"
+                                           "llOwnerSay(\"touch\");"
+                                           "}"
+                                           "}");
         std::vector<std::string> control_messages;
         LslHost control_host = host;
-        control_host.chat = [&](const LslChat& chat) {
-            control_messages.push_back(chat.text);
-        };
+        control_host.chat = [&](const LslChat &chat) { control_messages.push_back(chat.text); };
         LslInstance controlled(control_program.program, context(), control_host);
         test(controlled.running() && controlled.run(1).status == LslRunStatus::BudgetExhausted &&
                  control_messages == std::vector<std::string>{"one"},
@@ -4664,8 +6911,8 @@ int main(int argc, char** argv) {
              "stop clears pending without executing active continuation");
         test(controlled.current_event() && controlled.current_event()->name == "state_entry",
              "stop preserves active event context");
-        test(controlled.post_event({"touch_start", {std::int32_t(1)}, {}}) &&
-                 controlled.queued_events() == 0 && !controlled.post_event({"missing", {}, {}}),
+        test(controlled.post_event({"touch_start", {std::int32_t(1)}, {}}) && controlled.queued_events() == 0 &&
+                 !controlled.post_event({"missing", {}, {}}),
              "stopped known events ignored; unknown events rejected");
         controlled.running(true);
         test(controlled.run(100).status == LslRunStatus::Idle &&
@@ -4692,12 +6939,8 @@ int main(int argc, char** argv) {
         std::int64_t sleep_clock = 0;
         std::vector<std::string> sleep_messages;
         LslHost sleep_host;
-        sleep_host.clock_ticks = [&] {
-            return sleep_clock;
-        };
-        sleep_host.chat = [&](const LslChat& chat) {
-            sleep_messages.push_back(chat.text);
-        };
+        sleep_host.clock_ticks = [&] { return sleep_clock; };
+        sleep_host.chat = [&](const LslChat &chat) { sleep_messages.push_back(chat.text); };
         std::string sleep_source = "default{state_entry(){";
         for (int n = 0; n < 12; ++n)
             sleep_source += "llSay(0,\"sleep\");";
@@ -4721,12 +6964,12 @@ int main(int argc, char** argv) {
         test(touch_mask.event_mask() == (1ull << 21),
              "implicit runtime state entry is not a declared event registration");
         LslInstance entry_mask(
-            compile_lsl("default { state_entry() {} touch(integer n) {} touch_end(integer n) {} }").program,
-            context(), {});
+            compile_lsl("default { state_entry() {} touch(integer n) {} touch_end(integer n) {} }").program, context(),
+            {});
         test(entry_mask.event_mask() == ((1ull << 30) | (1ull << 3) | (1ull << 29)),
              "declared state/touch event flags match source enum");
         std::cout << "PASS: " << checks << " native LSL subset/asset/queue/budget checks\n";
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << "\n";
         return 1;
     }

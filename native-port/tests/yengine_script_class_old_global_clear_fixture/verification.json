@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "nativeParityVerified": false,
+  "fullParityVerified": false,
+  "scope": "Actual original source-populated List and stale Object[] old global ledgers across fresh allocated versus same-instance MigrateIn plus three repeated same-instance imports; no fabricated fields or backend instrumentation.180 restore checks Win/Linux x64.",
+  "generatorSha256": "d98b77057fe6bad808fe1a14c3d988e44e303e4a742514274a529420217e1ede",
+  "generatorAssemblySha256": "72434404ee9326003ddad54b2b84469cc3665ec190b0a71315c889867fc2825a",
+  "verifierSha256": "d917eda2f30c1bea11d79c133e5fdf239a7b29280f3d3cce18653076f7dc3252",
+  "originalBackendAssemblySha256": {
+    "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+    "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+    "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a"
+  },
+  "originalSourceSha256": {
+    "XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+    "XMRSDTypeClObj.cs": "526bcaa0bac500bdce6bc0ada35eb22f1bef5d4f645f71f73ea0113ed8e9811c",
+    "XMRHeapTracker.cs": "c04982ce71c32699438ad3e9aa5821a7262fe8ba65e6684db02171dec0489ef3"
+  },
+  "platforms": {
+    "windows": {
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "cases": [
+        {
+          "name": "list_residual",
+          "sourceSha256": "1594106e4a50bcf7df5a360d5857d7c0c3ea9f75d38912651c73a7ff1574ed23",
+          "objectSha256": "28ee4f3e2dd2cd2b099778c8fa8ee679fda5366a949981ccb813c7c040d6bfad",
+          "snapshotSha256": "51722ab21fb9835840ce67440885725901ef292cdffc1664ab60cbd14e9821f7",
+          "metadataSha256": "0206ef60a2fc89e2517507cb6461232ba55890ca6146a5982718064e08b98d62",
+          "observationsSha256": "92d2e8687178853587ee964aa59416a57a55ff65d5b809d24d307d0bf7632e73",
+          "checks": 45
+        },
+        {
+          "name": "stale_object_residual",
+          "sourceSha256": "f9de0227831d9d90745d74f928d45aca6656be6a1006875f77fe0bbf6aa7ccc4",
+          "objectSha256": "b3b90b32e254795f7fbdf60d3647dd424ba8c95c27e45adb365d4a45c2aae2f0",
+          "snapshotSha256": "5cf3b45913f51a8790e8f2cff3fa1aab17c22eee399ca23a494cd0f423bfa464",
+          "metadataSha256": "7aa7cb2b6a792737323549f7591183f5e56d6164635f6491ad3d7af8a2698729",
+          "observationsSha256": "a819008090a5cde54f2957fb27f81e51298608289d3b1637edcbad689ef3150d",
+          "checks": 45
+        }
+      ]
+    },
+    "linux": {
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "cases": [
+        {
+          "name": "list_residual",
+          "sourceSha256": "1594106e4a50bcf7df5a360d5857d7c0c3ea9f75d38912651c73a7ff1574ed23",
+          "objectSha256": "28ee4f3e2dd2cd2b099778c8fa8ee679fda5366a949981ccb813c7c040d6bfad",
+          "snapshotSha256": "51722ab21fb9835840ce67440885725901ef292cdffc1664ab60cbd14e9821f7",
+          "metadataSha256": "a996b0f846bd7ec6f87b2f2a281aeaac28d7b7e339a256eba85c699f83c42fc6",
+          "observationsSha256": "98842cddd2d4b1e2f545ab71860e405d1f65b902acd5a60e6f79dfcc22eb1030",
+          "checks": 45
+        },
+        {
+          "name": "stale_object_residual",
+          "sourceSha256": "f9de0227831d9d90745d74f928d45aca6656be6a1006875f77fe0bbf6aa7ccc4",
+          "objectSha256": "b3b90b32e254795f7fbdf60d3647dd424ba8c95c27e45adb365d4a45c2aae2f0",
+          "snapshotSha256": "5cf3b45913f51a8790e8f2cff3fa1aab17c22eee399ca23a494cd0f423bfa464",
+          "metadataSha256": "6567770399a2c96777b94abf6fd29695fdce4a917a6c61f0896250edcd0e8f7b",
+          "observationsSha256": "1eba92665d6c861c6c8207417da983512b045a085fdc366f50f9d8d23c749cea",
+          "checks": 45
+        }
+      ]
+    }
+  },
+  "findings": [
+    "Source List[SDKString x] costs10 plusint4 =>oldglobal14. ClearOldArrays addsList.Size andsubtractsint4 =>residual20. Clear check14+20=34; classrestore20+own16=36; finalglobalcheck20+rebuilt34=54; accepted finalledger34.",
+    "List sameinstance repeat atgenerouslimit growsglobal14->34->54->74; classown remains16, List.Size10.",
+    "Source Object[] mutation leavesoldledger4 butcurrentObject.Size6; clearresidual-6. Sameinstance classrestore total10 requireslimit10; accepted finalledger4. Freshallocatedtarget requireslimit16 and rebuilds10.",
+    "Allpostfailure globalinteger/List/Object/classlanes observed: clearfail clearsalllanes butretainsoldledger; classfail leavesreconstructedint/List/Objectbutclasslanenull; finalcheckfailure classalreadyinstalledbutledgerstillresidual."
+  ],
+  "pending": [
+    "Native same-instance oldglobal residual parity not exercised.",
+    "Unattached failing inner class partialfields not inspected.",
+    "No macOS/ARM64 scope."
+  ]
+}

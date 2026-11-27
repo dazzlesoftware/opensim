@@ -11,12 +11,15 @@ class ConfigHttpCredentialCache final : public ConfigHttpOriginCredentials {
 
     void add(ConfigUriObjectPtr prefix, std::u16string scheme, Credential credential);
     void add(std::u16string host, int port, std::u16string scheme, Credential credential);
-    void remove(const ConfigUriObjectPtr& prefix, std::u16string_view scheme);
+    void remove(const ConfigUriObjectPtr &prefix, std::u16string_view scheme);
     void remove(std::u16string_view host, int port, std::u16string_view scheme);
-    Credential get_credential(const ConfigUriObjectPtr& uri, std::u16string_view scheme) const;
+    Credential get_credential(const ConfigUriObjectPtr &uri, std::u16string_view scheme) const;
     Credential get_credential(std::u16string_view host, int port, std::u16string_view scheme) const;
-    Credential get_credential(const std::shared_ptr<ConfigXmlUri>& uri, std::string_view scheme) const override;
-    bool allows_redirect_lookup() const override { return true; }
+    Credential get_credential(const std::shared_ptr<ConfigXmlUri> &uri, std::string_view scheme) const override;
+
+    bool allows_redirect_lookup() const override {
+        return true;
+    }
 
   private:
     struct UriEntry {
@@ -24,15 +27,17 @@ class ConfigHttpCredentialCache final : public ConfigHttpOriginCredentials {
         std::u16string scheme;
         Credential credential;
     };
+
     struct HostEntry {
         std::u16string host;
         int port;
         std::u16string scheme;
         Credential credential;
     };
+
     ConfigXmlUriObjects objects_;
     mutable std::mutex mutex_;
     std::vector<UriEntry> uris_;
     std::vector<HostEntry> hosts_;
 };
-}
+} // namespace opensim::framework

@@ -4,32 +4,39 @@
 #include "opensim/network/osd_value.hpp"
 #include <set>
 #include <stdexcept>
+
 namespace opensim::services {
 namespace {
 using framework::Uuid;
 constexpr auto empty = "<llsd><map><key>folders</key><array /></map></llsd>";
+
 struct Request {
     Uuid id, owner;
     int sort = 0;
     bool folders = false, items = false;
 };
+
 struct Collection {
     InventoryCollection value;
     int descendants = 0;
 };
+
 void key(std::string &out, std::string_view name) {
     out += "<key>";
     out += name;
     out += "</key>";
 }
+
 void number(std::string &out, std::string_view name, int n) {
     key(out, name);
     out += n ? "<integer>" + std::to_string(n) + "</integer>" : "<integer />";
 }
+
 void uuid(std::string &out, std::string_view name, Uuid id) {
     key(out, name);
     out += id.is_zero() ? "<uuid />" : "<uuid>" + id.str() + "</uuid>";
 }
+
 std::string escaped(std::string_view s) {
     std::string out;
     for (char c : s)
@@ -54,13 +61,14 @@ std::string escaped(std::string_view s) {
         }
     return out;
 }
+
 void bad_xml(std::string &out, const std::vector<Uuid> &bad) {
     out += "<map><key>bad_folders</key><array>";
     for (auto id : bad)
-        out += "<map><key>folder_id</key><uuid>" + id.str() +
-               "</uuid><key>error</key><string>Unknown</string></map>";
+        out += "<map><key>folder_id</key><uuid>" + id.str() + "</uuid><key>error</key><string>Unknown</string></map>";
     out += "</array></map>";
 }
+
 void collection_xml(std::string &out, const Collection &collection) {
     const auto &c = collection.value;
     out += "<map>";
@@ -97,15 +105,16 @@ void collection_xml(std::string &out, const Collection &collection) {
     }
     out += "</map>";
 }
-}
+} // namespace
+
 FetchInventoryDescendentsCore::FetchInventoryDescendentsCore(InventoryDescendentsBackend backend)
     : backend_(std::move(backend)) {
-    if (!backend_.multiple_content || !backend_.folder || !backend_.multiple_items ||
-        !backend_.deserialize_xml)
+    if (!backend_.multiple_content || !backend_.folder || !backend_.multiple_items || !backend_.deserialize_xml)
         throw std::invalid_argument("Null inventory descendents backend");
     if (backend_.library_owner && !backend_.library_content)
         throw std::invalid_argument("Missing inventory library backend");
 }
+
 network::HttpResponse FetchInventoryDescendentsCore::handle(const network::HttpRequest &incoming,
                                                             InventoryBadRequests *cache) const {
     network::HttpResponse response;
@@ -297,8 +306,8 @@ network::HttpResponse FetchInventoryDescendentsCore::handle(const network::HttpR
         for (auto id : bad)
             cache->add(id);
         bad_xml(response.body, bad);
-        std::string warning = "[WEB FETCH INV DESC HANDLER]: Unable to fetch folders owned by " +
-                              requests.front().owner.str() + " :";
+        std::string warning =
+            "[WEB FETCH INV DESC HANDLER]: Unable to fetch folders owned by " + requests.front().owner.str() + " :";
         int limit = 9;
         for (auto id : bad) {
             warning += ' ';
@@ -313,4 +322,4 @@ network::HttpResponse FetchInventoryDescendentsCore::handle(const network::HttpR
     response.body += "</llsd>";
     return response;
 }
-}
+} // namespace opensim::services

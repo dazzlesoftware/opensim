@@ -4,21 +4,22 @@
 #include <iostream>
 #include <stdexcept>
 using namespace opensim::framework;
+
 namespace {
-std::u16string decode(const std::string& hex) {
+std::u16string decode(const std::string &hex) {
     if (hex == ".")
         return {};
     if (hex.size() % 4)
         throw std::runtime_error("Invalid UTF16 fixture");
     std::u16string result;
     for (std::size_t i = 0; i < hex.size(); i += 4) {
-        auto lo = std::stoul(hex.substr(i, 2), nullptr, 16),
-             hi = std::stoul(hex.substr(i + 2, 2), nullptr, 16);
+        auto lo = std::stoul(hex.substr(i, 2), nullptr, 16), hi = std::stoul(hex.substr(i + 2, 2), nullptr, 16);
         result.push_back(static_cast<char16_t>(lo | (hi << 8)));
     }
     return result;
 }
-std::string encode(const std::u16string& value) {
+
+std::string encode(const std::u16string &value) {
     std::string out;
     for (auto c : value) {
         for (unsigned byte : {unsigned(c) & 255, unsigned(c) >> 8}) {
@@ -28,7 +29,8 @@ std::string encode(const std::u16string& value) {
     }
     return out;
 }
-std::string probe(const std::string& text) {
+
+std::string probe(const std::string &text) {
     try {
         std::u16string units;
         std::optional<std::u16string_view> value;
@@ -38,19 +40,21 @@ std::string probe(const std::string& text) {
         }
         auto parsed = parse_console_command(value);
         std::string output = std::to_string(parsed.size());
-        for (auto& token : parsed)
+        for (auto &token : parsed)
             output += '|' + encode(token);
         return output;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         return std::string("EX:") + e.what();
     }
 }
+
 void expect(std::u16string_view text, std::vector<std::u16string> expected) {
     if (parse_console_command(text) != expected)
         throw std::runtime_error("Original console parser behavior");
 }
-}
-int main(int argc, char** argv) {
+} // namespace
+
+int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string_view(argv[1]) == "--probe") {
             std::string text;
@@ -71,7 +75,7 @@ int main(int argc, char** argv) {
             throw std::runtime_error("Null console input");
         std::cout << "PASS: console parser quote/option/Unicode/null behavior\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

@@ -1,0 +1,1 @@
+rotation before;rotation after;integer calls;default{state_entry(){calls++;before=llDetectedRot(0);llSleep(1.0);after=llDetectedRot(0);}touch_start(integer n){}}

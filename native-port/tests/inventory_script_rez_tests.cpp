@@ -5,21 +5,24 @@
 #include <bit>
 using namespace opensim;
 using namespace scene;
+
 namespace {
 framework::Uuid id(int n) {
     auto tail = std::to_string(n);
     return framework::Uuid("11223344-5566-7788-99aa-" + std::string(12 - tail.size(), '0') + tail);
 }
+
 std::string task(const InventoryScriptTask &t) {
     auto &i = t.item;
-    return i.item.str() + ":" + i.asset.str() + ":" + i.owner.str() + ":" + i.creator.str() + ":" +
-           i.last_owner.str() + ":" + i.group.str() + ":" + std::to_string(i.base_permissions) + ":" +
+    return i.item.str() + ":" + i.asset.str() + ":" + i.owner.str() + ":" + i.creator.str() + ":" + i.last_owner.str() +
+           ":" + i.group.str() + ":" + std::to_string(i.base_permissions) + ":" +
            std::to_string(i.current_permissions) + ":" + std::to_string(i.everyone_permissions) + ":" +
            std::to_string(i.group_permissions) + ":" + std::to_string(i.next_permissions) + ":" +
-           std::to_string(i.flags) + ":" + std::to_string(i.creation_date) + ":" + std::to_string(i.type) +
-           ":" + std::to_string(i.inventory_type) + ":" + i.name + ":" + i.description + ":" +
-           t.parent.str() + ":" + t.parent_part.str() + ":" + (t.running ? "1" : "0");
+           std::to_string(i.flags) + ":" + std::to_string(i.creation_date) + ":" + std::to_string(i.type) + ":" +
+           std::to_string(i.inventory_type) + ":" + i.name + ":" + i.description + ":" + t.parent.str() + ":" +
+           t.parent_part.str() + ":" + (t.running ? "1" : "0");
 }
+
 std::string probe(int kind, int mode, int failure) {
     std::string trace;
     auto step = [&](int p, std::string s) {
@@ -97,12 +100,10 @@ std::string probe(int kind, int mode, int failure) {
     };
     b.invalidate_deep_permissions = [&](auto) { step(11, "INVALIDATE"); };
     b.compile = [&](auto p, auto item, int start, bool post, const auto &engine, int state) {
-        step(12, "COMPILE:" + p.id.str() + ":" + item.str() + ":" + std::to_string(start) + ":" +
-                     (post ? "1" : "0") + ":" + engine + ":" + std::to_string(state));
+        step(12, "COMPILE:" + p.id.str() + ":" + item.str() + ":" + std::to_string(start) + ":" + (post ? "1" : "0") +
+                     ":" + engine + ":" + std::to_string(state));
     };
-    b.new_script = [&](auto a, auto p, auto i) {
-        step(13, "EVENT:" + a.str() + ":" + p.id.str() + ":" + i.str());
-    };
+    b.new_script = [&](auto a, auto p, auto i) { step(13, "EVENT:" + a.str() + ":" + p.id.str() + ":" + i.str()); };
     b.resume = [&](auto) { step(14, "RESUME"); };
     b.properties = [&](auto p, auto a) { step(15, "PROPS:" + p.id.str() + ":" + a.str()); };
     b.rez_new = [&](auto a, const auto &row) -> std::optional<InventoryScriptPart> {
@@ -123,8 +124,8 @@ std::string probe(int kind, int mode, int failure) {
         } else if (kind == 1)
             status = controller.rez_existing(id(1), id(2), 123) ? "YES" : "NO";
         else
-            status = controller.add_to_group(id(1), part, 123, source,
-                                             (mode & 1024) ? framework::Uuid{} : id(3), !(mode & 256))
+            status = controller.add_to_group(id(1), part, 123, source, (mode & 1024) ? framework::Uuid{} : id(3),
+                                             !(mode & 256))
                          ? "YES"
                          : "NO";
     } catch (...) {
@@ -132,7 +133,8 @@ std::string probe(int kind, int mode, int failure) {
     }
     return status + trace;
 }
-}
+} // namespace
+
 int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string_view(argv[1]) == "--probe") {

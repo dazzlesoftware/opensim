@@ -19,29 +19,31 @@
 using namespace opensim::framework;
 ConfigXmlUriObjects objects;
 ConfigUriObjectBackend uris = *native_config_uri_object_backend();
+
 class ScopedBasicCredentials final : public ConfigHttpOriginCredentials {
     mutable unsigned basic_lookups_ = 0;
 
   public:
-    std::shared_ptr<ConfigHttpNetworkCredential>
-    get_credential(const std::shared_ptr<ConfigXmlUri>& uri, std::string_view scheme) const override {
+    std::shared_ptr<ConfigHttpNetworkCredential> get_credential(const std::shared_ptr<ConfigXmlUri> &uri,
+                                                                std::string_view scheme) const override {
         const auto address = objects.get(uri)->http_components();
         std::cerr << "CREDENTIAL " << utf8(*address->absolute_path()) << ' ' << scheme << '\n';
         if (scheme != "Basic" || !address || !address->absolute_path()->starts_with(u"/auth-scoped/"))
             return {};
-        const bool first_stateful_lookup = *address->absolute_path() == u"/auth-scoped/stateful" &&
-                                           basic_lookups_++ == 0;
+        const bool first_stateful_lookup =
+            *address->absolute_path() == u"/auth-scoped/stateful" && basic_lookups_++ == 0;
         return std::make_shared<ConfigHttpNetworkCredential>(
             nini_writer_text(u"fixture"), nini_writer_text(first_stateful_lookup ? u"unused" : u"secret"),
             nini_writer_text(u""));
     }
 };
+
 std::shared_ptr<ConfigXmlUri> uri(ConfigXmlHttpAddress a) {
-    auto text =
-        std::string(a.tls ? "https://" : "http://") + a.host + ":" + std::to_string(a.port) + a.target;
+    auto text = std::string(a.tls ? "https://" : "http://") + a.host + ":" + std::to_string(a.port) + a.target;
     return objects.wrap(
         uris.create(std::make_shared<const std::u16string>(utf16(text)), ConfigUriObjectKind::Absolute));
 }
+
 std::string hextext(std::u16string_view text) {
     if (text.empty())
         return "-";
@@ -51,20 +53,23 @@ std::string hextext(std::u16string_view text) {
         out << std::setw(4) << unsigned(c);
     return out.str();
 }
-std::string error(const ConfigHttpHeaderError& e) {
+
+std::string error(const ConfigHttpHeaderError &e) {
     std::ostringstream out;
     out << e.source_type << ':' << std::hex << e.hresult << ':' << hextext(e.message) << ':' << std::dec
         << e.request_error << ":~:" << (e.retry_on_connection_failure ? "1" : "0") << ':'
         << (e.inner ? error(*e.inner) : "~");
     return out.str();
 }
-std::string error(const ConfigXmlHttpError& e) {
+
+std::string error(const ConfigXmlHttpError &e) {
     std::ostringstream out;
     out << e.source_type << ':' << std::hex << e.hresult << ':' << hextext(e.message)
         << ":0:" << (e.status ? std::to_string(*e.status) : "~") << ":0:~";
     return out.str();
 }
-std::string read_error(const ConfigHttpReadError& e) {
+
+std::string read_error(const ConfigHttpReadError &e) {
     if (e.source_type == "System.Net.Http.HttpRequestException")
         std::cerr << "RETRY:NoRetry\n";
     std::ostringstream out;
@@ -72,17 +77,17 @@ std::string read_error(const ConfigHttpReadError& e) {
         << e.request_error << ":~:0:";
     try {
         std::rethrow_exception(e.inner);
-    } catch (const ConfigHttpReadError& inner) {
+    } catch (const ConfigHttpReadError &inner) {
         out << read_error(inner);
-    } catch (const ConfigHttpSocketError& inner) {
-        std::cerr << "SOCKET:" << inner.native_error << ":" << inner.socket_error << ":" << inner.native_error
-                  << ":" << static_cast<std::int32_t>(inner.hresult) << '\n';
-        out << inner.source_type << ':' << std::hex << inner.hresult << ':' << hextext(inner.message)
-            << ":-1:~:0:~";
+    } catch (const ConfigHttpSocketError &inner) {
+        std::cerr << "SOCKET:" << inner.native_error << ":" << inner.socket_error << ":" << inner.native_error << ":"
+                  << static_cast<std::int32_t>(inner.hresult) << '\n';
+        out << inner.source_type << ':' << std::hex << inner.hresult << ':' << hextext(inner.message) << ":-1:~:0:~";
     }
     return out.str();
 }
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     if (argc == 2 && std::string_view(argv[1]) == "--credential-cache-host") {
         ConfigHttpCredentialCache cache(objects);
         auto credential = std::make_shared<ConfigHttpNetworkCredential>(
@@ -147,8 +152,8 @@ int main(int argc, char** argv) {
             for (std::size_t i = 0; legacy && i < separator; ++i)
                 legacy = row[i] >= '0' && row[i] <= '9';
             if (!legacy)
-                address = objects.wrap(uris.create(std::make_shared<const std::u16string>(utf16(row)),
-                                                   ConfigUriObjectKind::Absolute));
+                address = objects.wrap(
+                    uris.create(std::make_shared<const std::u16string>(utf16(row)), ConfigUriObjectKind::Absolute));
             else {
                 int port;
                 std::string path;
@@ -162,9 +167,9 @@ int main(int argc, char** argv) {
                 auto cache = std::make_shared<ConfigHttpCredentialCache>(objects);
                 const auto add = [&](std::u16string path, std::u16string password) {
                     cache->add(uris.combine_string(origin, nini_writer_text(std::move(path))), u"bAsIc",
-                               std::make_shared<ConfigHttpNetworkCredential>(
-                                   nini_writer_text(u"fixture"), nini_writer_text(std::move(password)),
-                                   nini_writer_text(u"")));
+                               std::make_shared<ConfigHttpNetworkCredential>(nini_writer_text(u"fixture"),
+                                                                             nini_writer_text(std::move(password)),
+                                                                             nini_writer_text(u"")));
                 };
                 add(u"/", u"wrong");
                 add(u"/AUTH-SCOPED/file", u"secret");
@@ -172,14 +177,14 @@ int main(int argc, char** argv) {
                 cache->remove(uris.combine_string(origin, nini_writer_text(u"/AUTH-SCOPED/a-longer-file#fragment")),
                               u"BASIC");
                 credentials = std::move(cache);
-            }
-            else if (row.find("/auth-scoped") != row.npos)
+            } else if (row.find("/auth-scoped") != row.npos)
                 credentials = std::make_shared<ScopedBasicCredentials>();
             else if (row.ends_with("/auth-default"))
                 credentials = config_http_default_network_credentials();
             else if (row.ends_with("/auth-kerberos"))
-                credentials = std::make_shared<ConfigHttpNetworkCredential>(
-                    nini_writer_text(u"fixture"), nini_writer_text(u"fixture-password"), nini_writer_text(u"OPENSIM.TEST"));
+                credentials = std::make_shared<ConfigHttpNetworkCredential>(nini_writer_text(u"fixture"),
+                                                                            nini_writer_text(u"fixture-password"),
+                                                                            nini_writer_text(u"OPENSIM.TEST"));
             else if (row.find("/auth-ntlm") != row.npos)
                 credentials = std::make_shared<ConfigHttpNetworkCredential>(
                     nini_writer_text(u"f\u00efxture"), nini_writer_text(u"p\u00e4ss"), nini_writer_text(u""));
@@ -187,38 +192,39 @@ int main(int argc, char** argv) {
                 credentials = std::make_shared<ConfigHttpNetworkCredential>(
                     nini_writer_text(u"fixture"), nini_writer_text(u"secret"), nini_writer_text(u""));
             auto stream = config_xml_download(
-                address, config_xml_native_http_backend(config_xml_bind_typed_http(s, objects, uris, []() {
-                    return native_invariant_config_http_cookies_backend();
-                })), credentials);
+                address,
+                config_xml_native_http_backend(config_xml_bind_typed_http(
+                    s, objects, uris, []() { return native_invariant_config_http_cookies_backend(); })),
+                credentials);
             auto bytes = stream->copy_to_memory();
             static constexpr char h[] = "0123456789abcdef";
             std::cout << "ok:";
             for (auto b : bytes)
                 std::cout << h[b >> 4] << h[b & 15];
             std::cout << '\n';
-        } catch (const ConfigHttpReadError& e) {
+        } catch (const ConfigHttpReadError &e) {
             std::cout << read_error(e) << "\n";
-        } catch (const ConfigHttpConnectionError& e) {
+        } catch (const ConfigHttpConnectionError &e) {
             std::cerr << "RETRY:" << (e.retry_on_next_proxy ? "RetryOnNextProxy" : "NoRetry") << "\n";
-            std::cout << e.source_type << ':' << std::hex << e.hresult << ':' << hextext(e.message) << ":"
-                      << std::dec << e.request_error << ":~:0:";
+            std::cout << e.source_type << ':' << std::hex << e.hresult << ':' << hextext(e.message) << ":" << std::dec
+                      << e.request_error << ":~:0:";
             try {
                 std::rethrow_exception(e.inner);
-            } catch (const ConfigHttpSocketError& inner) {
+            } catch (const ConfigHttpSocketError &inner) {
                 std::cerr << std::dec << "SOCKET:" << inner.native_error << ":" << inner.socket_error << ":"
                           << inner.native_error << ":" << static_cast<std::int32_t>(inner.hresult) << '\n';
-                std::cout << inner.source_type << ':' << std::hex << inner.hresult << ':'
-                          << hextext(inner.message) << ":-1:~:0:~" << std::dec;
+                std::cout << inner.source_type << ':' << std::hex << inner.hresult << ':' << hextext(inner.message)
+                          << ":-1:~:0:~" << std::dec;
             }
             std::cout << '\n';
-        } catch (const ConfigUriComponentsError& e) {
-            std::cout << e.source_type << ':' << std::hex << e.hresult << ':' << hextext(e.message)
-                      << ":-1:~:0:~" << std::dec << '\n';
-        } catch (const ConfigXmlHttpError& e) {
+        } catch (const ConfigUriComponentsError &e) {
+            std::cout << e.source_type << ':' << std::hex << e.hresult << ':' << hextext(e.message) << ":-1:~:0:~"
+                      << std::dec << '\n';
+        } catch (const ConfigXmlHttpError &e) {
             std::cout << error(e) << '\n';
-        } catch (const ConfigHttpHeaderError& e) {
+        } catch (const ConfigHttpHeaderError &e) {
             std::cout << error(e) << '\n';
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
             std::cout << "NATIVE:" << e.what() << '\n';
         }
     }

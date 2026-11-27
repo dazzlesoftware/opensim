@@ -9,8 +9,9 @@
 #include <stdexcept>
 using namespace opensim;
 using namespace services;
+
 namespace {
-std::string hex(const std::string& s) {
+std::string hex(const std::string &s) {
     std::string out;
     for (unsigned char c : s) {
         out += "0123456789abcdef"[c >> 4];
@@ -18,7 +19,8 @@ std::string hex(const std::string& s) {
     }
     return out;
 }
-std::optional<std::string> decode(const std::string& s) {
+
+std::optional<std::string> decode(const std::string &s) {
     if (s == "~")
         return {};
     std::string out;
@@ -26,37 +28,43 @@ std::optional<std::string> decode(const std::string& s) {
         out += static_cast<char>(std::stoi(s.substr(i, 2), nullptr, 16));
     return out;
 }
-std::string show(const std::optional<std::string>& s) {
+
+std::string show(const std::optional<std::string> &s) {
     return s ? hex(*s) : "~";
 }
-std::string exception(const std::exception& error) {
-    auto domain = dynamic_cast<const FlotsamConsoleError*>(&error);
+
+std::string exception(const std::exception &error) {
+    auto domain = dynamic_cast<const FlotsamConsoleError *>(&error);
     std::ostringstream code;
     code << std::hex << std::uppercase << std::setw(8) << std::setfill('0')
          << (domain ? domain->hresult() : 0x80131500u);
-    return std::string("EX:") + (domain ? domain->source_type() : "System.Exception") + ":" + code.str() +
-           ":" + (domain ? show(domain->parameter) : "~") + ":" +
-           (domain && domain->actual_value ? std::to_string(*domain->actual_value) : "~") + ":" +
-           hex(error.what());
+    return std::string("EX:") + (domain ? domain->source_type() : "System.Exception") + ":" + code.str() + ":" +
+           (domain ? show(domain->parameter) : "~") + ":" +
+           (domain && domain->actual_value ? std::to_string(*domain->actual_value) : "~") + ":" + hex(error.what());
 }
 struct Probe;
+
 struct Output : FlotsamConsoleOutput {
-    Probe& p;
-    explicit Output(Probe& p) : p(p) {
-    }
-    void output(const std::string&) override;
+    Probe &p;
+
+    explicit Output(Probe &p) : p(p) {}
+
+    void output(const std::string &) override;
 };
+
 struct Timer : FlotsamCleanupTimer {
-    Probe& p;
-    explicit Timer(Probe& p) : p(p) {
-    }
-    void subscribe(std::function<void()>) override {
-    }
+    Probe &p;
+
+    explicit Timer(Probe &p) : p(p) {}
+
+    void subscribe(std::function<void()>) override {}
+
     void start() override;
     void stop() override;
-    void close() override {
-    }
+
+    void close() override {}
 };
+
 struct Probe {
     int point = 0, nth = 1, seen = 0, mut_point = 0, mut_nth = 1, mut_seen = 0, mutation = 0, lower_at = 0,
         lower_seen = 0;
@@ -70,9 +78,11 @@ struct Probe {
     std::shared_ptr<FlotsamInstanceConfig> config;
     std::shared_ptr<FlotsamCacheLifecycle> life;
     std::shared_ptr<FlotsamCacheConsole> controller;
-    void log(const std::string& s) {
+
+    void log(const std::string &s) {
         trace.push_back(s);
     }
+
     void hook(int p) {
         if (p == mut_point && ++mut_seen == mut_nth) {
             switch (mutation) {
@@ -101,6 +111,7 @@ struct Probe {
         if (p == point && ++seen == nth)
             throw std::runtime_error("fault");
     }
+
     void lower_hook() {
         if (!lower_at)
             return;
@@ -110,11 +121,13 @@ struct Probe {
             (*current_args)[3] = lower_later;
         }
     }
+
     void flags(int value) {
         config->memory = (value & 1) != 0;
         config->file = (value & 2) != 0;
         config->negative = (value & 4) != 0;
     }
+
     std::vector<std::optional<std::string>> paths() {
         switch (file_mode) {
         case 1:
@@ -131,6 +144,7 @@ struct Probe {
             return {"cache/RegionStatus_uuid.fac", "cache/no-marker", "cache/a.fac"};
         }
     }
+
     void reset(int value, int timer, int cleanup) {
         jobs.clear();
         current_args.reset();
@@ -157,7 +171,7 @@ struct Probe {
             hook(1);
             return null_console ? std::shared_ptr<FlotsamConsoleOutput>{} : std::make_shared<Output>(*this);
         };
-        b->post = [this](auto callback, const auto& name) {
+        b->post = [this](auto callback, const auto &name) {
             log("POST:" + name + ":0");
             hook(3);
             if (dispatch)
@@ -170,7 +184,7 @@ struct Probe {
             hook(4);
             return memory;
         };
-        b->file_count = [this](auto& path) {
+        b->file_count = [this](auto &path) {
             log("COUNT:" + show(path));
             hook(5);
             return files;
@@ -180,17 +194,17 @@ struct Probe {
             hook(6);
             return std::vector<std::string>{"hit one", "hit two"};
         };
-        b->status_files = [this](auto& path, auto& pattern) {
+        b->status_files = [this](auto &path, auto &pattern) {
             log("FILES:" + show(path) + ":" + pattern);
             hook(7);
             return paths();
         };
-        b->last_write = [this](auto& path) {
+        b->last_write = [this](auto &path) {
             log("WRITE:" + show(path));
             hook(8);
             return framework::AssetDateTime(638658908550000000ll, 2);
         };
-        b->format_date = [this](auto date, auto& format) {
+        b->format_date = [this](auto date, auto &format) {
             log("FORMAT:" + std::to_string(date.ticks()) + ":" + format);
             hook(9);
             return std::string("10/30/2024 01:14:15");
@@ -234,7 +248,7 @@ struct Probe {
             hook(17);
             return framework::AssetDateTime(now, 2);
         };
-        b->try_parse = [this](auto& value, auto& date) {
+        b->try_parse = [this](auto &value, auto &date) {
             log("PARSE:" + show(value));
             hook(18);
             if (value == "2024-01-01") {
@@ -257,16 +271,16 @@ struct Probe {
         };
         b->lower = [this](std::string value) {
             lower_hook();
-            for (auto& c : value)
+            for (auto &c : value)
                 if (c >= 'A' && c <= 'Z')
                     c += ('a' - 'A');
             return value;
         };
-        b->equals_now = [](const auto& value) {
+        b->equals_now = [](const auto &value) {
             if (!value)
                 return false;
             auto s = *value;
-            for (auto& c : s)
+            for (auto &c : s)
                 if (c >= 'A' && c <= 'Z')
                     c += ('a' - 'A');
             return s == "now";
@@ -283,7 +297,8 @@ struct Probe {
         };
         controller = std::make_shared<FlotsamCacheConsole>(config, life, b);
     }
-    std::string run(const std::string& line) {
+
+    std::string run(const std::string &line) {
         trace.clear();
         std::istringstream in(line);
         std::string op, result;
@@ -361,39 +376,42 @@ struct Probe {
                 result = "drain";
             } else
                 throw std::runtime_error("Unknown operation");
-        } catch (const std::exception& error) {
+        } catch (const std::exception &error) {
             result = exception(error);
         }
         std::string events;
-        for (auto& s : trace) {
+        for (auto &s : trace) {
             if (!events.empty())
                 events += ';';
             events += s;
         }
         return result + "|" + hex(events) + "|" + (config->memory ? "1" : "0") + (config->file ? "1" : "0") +
                (config->negative ? "1" : "0") + "," + (life->timer_running ? "1" : "0") +
-               (life->cleanup_running ? "1" : "0") + "," + (active ? "1" : "0") + "," +
-               (life->timer ? "1" : "0") + "," + std::to_string(memory) + "," + std::to_string(negative) +
-               "," + std::to_string(files) + "," + std::to_string(file_mode) + "," +
-               std::to_string(jobs.size()) + "," + show(config->directory);
+               (life->cleanup_running ? "1" : "0") + "," + (active ? "1" : "0") + "," + (life->timer ? "1" : "0") +
+               "," + std::to_string(memory) + "," + std::to_string(negative) + "," + std::to_string(files) + "," +
+               std::to_string(file_mode) + "," + std::to_string(jobs.size()) + "," + show(config->directory);
     }
 };
-void Output::output(const std::string& s) {
+
+void Output::output(const std::string &s) {
     p.log("O:" + s);
     p.hook(2);
 }
+
 void Timer::start() {
     p.log("START");
     p.hook(22);
     p.active = true;
 }
+
 void Timer::stop() {
     p.log("STOP");
     p.hook(21);
     p.active = false;
 }
-}
-int main(int argc, char** argv) {
+} // namespace
+
+int main(int argc, char **argv) {
     try {
         Probe p;
         p.reset(7, 1, 0);
@@ -430,7 +448,7 @@ int main(int argc, char** argv) {
             throw std::runtime_error("Completed console task retained owner dependencies");
         std::cout << "PASS: Flotsam console deferred tasks and source timer/gate semantics\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

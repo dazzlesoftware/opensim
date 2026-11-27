@@ -1,0 +1,1 @@
+string result;integer after;default{state_entry(){result=xmrVector2String(<xmrString2Float("NaN"),xmrString2Float("Infinity"),xmrString2Float("-Infinity")>,"G");after=1;}}

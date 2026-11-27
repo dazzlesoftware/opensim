@@ -1,0 +1,1 @@
+string result;integer after;string echo(string value){return value;}default{state_entry(){result=echo(llComputeHash("payload","unsupported"));after=1;}}

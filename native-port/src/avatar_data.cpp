@@ -8,13 +8,15 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+
 namespace opensim::services {
 namespace {
-const std::string& required(const std::optional<std::string>& s) {
+const std::string &required(const std::optional<std::string> &s) {
     if (!s)
         throw std::invalid_argument("Null avatar value");
     return *s;
 }
+
 std::vector<std::string> split(std::string_view s, char separator) {
     std::vector<std::string> result;
     std::size_t start = 0;
@@ -28,7 +30,8 @@ std::vector<std::string> split(std::string_view s, char separator) {
         start = end + 1;
     }
 }
-framework::Uuid parsed_uuid(const std::string& s) {
+
+framework::Uuid parsed_uuid(const std::string &s) {
     std::string_view text = s;
     while (text.starts_with(' '))
         text.remove_prefix(1);
@@ -39,20 +42,20 @@ framework::Uuid parsed_uuid(const std::string& s) {
         throw std::invalid_argument("Short avatar UUID");
     return framework::Uuid(text.substr(0, count));
 }
+
 bool prefix(std::u16string_view text, std::u16string_view value) {
     std::size_t matched = 0;
     for (std::size_t i = 0; i < text.size(); ++i) {
         char32_t point = text[i];
-        if (point >= 0xd800 && point <= 0xdbff && i + 1 < text.size() && text[i + 1] >= 0xdc00 &&
-            text[i + 1] <= 0xdfff)
+        if (point >= 0xd800 && point <= 0xdbff && i + 1 < text.size() && text[i + 1] >= 0xdc00 && text[i + 1] <= 0xdfff)
             point = 0x10000 + ((point - 0xd800) << 10) + (text[++i] - 0xdc00);
-        auto& ranges = network::detail::boolean_ignorables;
+        auto &ranges = network::detail::boolean_ignorables;
         auto ignored = std::lower_bound(ranges.begin(), ranges.end(), point,
                                         [](auto range, char32_t n) { return range.second < n; });
         if (ignored != ranges.end() && ignored->first <= point)
             continue;
         if (matched == value.size()) {
-            auto& blocked = detail::service_prefix_boundaries;
+            auto &blocked = detail::service_prefix_boundaries;
             auto at = std::lower_bound(blocked.begin(), blocked.end(), point,
                                        [](auto range, char32_t n) { return range.second < n; });
             return at == blocked.end() || at->first > point;
@@ -63,22 +66,24 @@ bool prefix(std::u16string_view text, std::u16string_view value) {
     }
     return matched == value.size();
 }
-}
+} // namespace
+
 std::string avatar_float_string(float value) {
     return framework::service_url_object_text(std::any(value));
 }
-bool parse_avatar_float(const std::optional<std::string>& input, float& value) {
+
+bool parse_avatar_float(const std::optional<std::string> &input, float &value) {
     value = 0;
     if (!input)
         return false;
     auto text = *input;
     auto special = framework::trim_utf8(text);
-    for (auto& c : special)
+    for (auto &c : special)
         if (c >= 'A' && c <= 'Z')
             c += 32;
     if (special == "infinity" || special == "+infinity" || special == "-infinity") {
-        value = special.front() == '-' ? -std::numeric_limits<float>::infinity()
-                                       : std::numeric_limits<float>::infinity();
+        value =
+            special.front() == '-' ? -std::numeric_limits<float>::infinity() : std::numeric_limits<float>::infinity();
         return true;
     }
     if (special == "nan" || special == "+nan" || special == "-nan") {
@@ -86,8 +91,7 @@ bool parse_avatar_float(const std::optional<std::string>& input, float& value) {
         return true;
     }
     if (auto zero = text.find('\0'); zero != std::string::npos) {
-        if (!std::all_of(text.begin() + static_cast<std::ptrdiff_t>(zero), text.end(),
-                         [](char c) { return c == 0; }))
+        if (!std::all_of(text.begin() + static_cast<std::ptrdiff_t>(zero), text.end(), [](char c) { return c == 0; }))
             return false;
         text.resize(zero);
     }
@@ -117,7 +121,8 @@ bool parse_avatar_float(const std::optional<std::string>& input, float& value) {
             return false;
     return framework::parse_invariant_float(numeric, value);
 }
-AvatarData::AvatarData(const AccountValues& values) : data(std::make_shared<Fields>()) {
+
+AvatarData::AvatarData(const AccountValues &values) : data(std::make_shared<Fields>()) {
     if (auto i = values.find("AvatarType"); i != values.end()) {
         if (!i->second.has_value() || i->second.type() == typeid(std::nullptr_t))
             throw std::invalid_argument("Null avatar type");
@@ -127,6 +132,7 @@ AvatarData::AvatarData(const AccountValues& values) : data(std::make_shared<Fiel
         if (value.has_value() && value.type() != typeid(std::nullptr_t))
             (*data)[key] = framework::service_url_object_text(value);
 }
+
 std::shared_ptr<AccountValues> AvatarData::to_key_value_pairs() const {
     auto result = std::make_shared<AccountValues>();
     (*result)["AvatarType"] = std::to_string(avatar_type);
@@ -138,7 +144,8 @@ std::shared_ptr<AccountValues> AvatarData::to_key_value_pairs() const {
             (*result)[key] = *value;
     return result;
 }
-AvatarData::AvatarData(const framework::AvatarAppearance* appearance)
+
+AvatarData::AvatarData(const framework::AvatarAppearance *appearance)
     : avatar_type(1), data(std::make_shared<Fields>()) {
     if (!appearance)
         throw std::invalid_argument("Null avatar appearance");
@@ -168,17 +175,17 @@ AvatarData::AvatarData(const framework::AvatarAppearance* appearance)
     std::vector<std::pair<int, std::vector<std::string>>> attachments;
     for (auto a : appearance->attachments())
         if (!a.item.is_zero()) {
-            auto i = std::find_if(attachments.begin(), attachments.end(),
-                                  [&](auto& pair) { return pair.first == a.point; });
+            auto i =
+                std::find_if(attachments.begin(), attachments.end(), [&](auto &pair) { return pair.first == a.point; });
             if (i == attachments.end()) {
                 attachments.push_back({a.point, {}});
                 i = attachments.end() - 1;
             }
             i->second.push_back(a.item.str());
         }
-    for (auto& [point, ids] : attachments) {
+    for (auto &[point, ids] : attachments) {
         std::string value;
-        for (auto& id : ids) {
+        for (auto &id : ids) {
             if (!value.empty())
                 value += ',';
             value += id;
@@ -186,6 +193,7 @@ AvatarData::AvatarData(const framework::AvatarAppearance* appearance)
         (*data)["_ap_" + std::to_string(point)] = value;
     }
 }
+
 std::shared_ptr<framework::AvatarAppearance> AvatarData::to_appearance() const {
     auto appearance = std::make_shared<framework::AvatarAppearance>();
     if (!data)
@@ -205,19 +213,18 @@ std::shared_ptr<framework::AvatarAppearance> AvatarData::to_appearance() const {
                 height = 1.9f;
             appearance->set_size({.45f, .6f, height});
         }
-        const char* legacy[] = {"Body",  "Skin",   "Hair",   "Eyes",       "Shirt",      "Pants", "Shoes",
+        const char *legacy[] = {"Body",  "Skin",   "Hair",   "Eyes",       "Shirt",      "Pants", "Shoes",
                                 "Socks", "Jacket", "Gloves", "UnderShirt", "UnderPants", "Skirt"};
         for (int i = 0; i < 13; ++i) {
             auto key = std::string(legacy[i]) + "Item";
             if (fields->contains(key))
-                appearance->wearables->at(i)->wear(
-                    parsed_uuid(required(fields->at(key))),
-                    parsed_uuid(required(fields->at(std::string(legacy[i]) + "Asset"))));
+                appearance->wearables->at(i)->wear(parsed_uuid(required(fields->at(key))),
+                                                   parsed_uuid(required(fields->at(std::string(legacy[i]) + "Asset"))));
         }
         if (fields->contains("VisualParams")) {
             auto parts = split(required(fields->at("VisualParams")), ',');
             auto bytes = std::make_shared<std::vector<std::uint8_t>>();
-            for (auto& s : parts)
+            for (auto &s : parts)
                 bytes->push_back(static_cast<std::uint8_t>(account_integer(s)));
             appearance->visual_params = bytes;
         }
@@ -248,7 +255,7 @@ std::shared_ptr<framework::AvatarAppearance> AvatarData::to_appearance() const {
                 if (parse_account_integer(framework::utf8(std::u16string_view(units).substr(4)), point)) {
                     auto ids = split(required(value), ',');
                     appearance->set_attachment(point, {}, {});
-                    for (auto& s : ids) {
+                    for (auto &s : ids) {
                         framework::Uuid id;
                         if (framework::try_parse_sdk_uuid(s, id))
                             appearance->set_attachment(point | 0x80, id, {});
@@ -262,9 +269,9 @@ std::shared_ptr<framework::AvatarAppearance> AvatarData::to_appearance() const {
         for (int i = 0; i < 4; ++i)
             if (appearance->wearables->at(i)->count() == 0)
                 appearance->wearables->at(i)->wear(defaults.at(i)->at(0));
-    } catch (const std::exception&) {
+    } catch (const std::exception &) {
         return {};
     }
     return appearance;
 }
-}
+} // namespace opensim::services

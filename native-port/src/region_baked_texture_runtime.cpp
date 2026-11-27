@@ -6,31 +6,37 @@
 #include <thread>
 #include <map>
 #include <chrono>
+
 namespace opensim::services {
 struct RegionBakedTextureRuntime::State : std::enable_shared_from_this<State> {
     using Clock = std::chrono::steady_clock;
+
     struct Pending {
         std::shared_ptr<BakedTextureUpload> upload;
         std::weak_ptr<CapabilityRuntimeListener> listener;
         std::optional<Clock::time_point> deadline;
     };
+
     std::shared_ptr<SceneCapabilityEvents> events;
     std::shared_ptr<framework::IAssetCache> cache;
     std::string url;
-    std::function<void(const std::string&)> log;
+    std::function<void(const std::string &)> log;
     mutable std::mutex mutex;
     std::condition_variable changed;
     std::map<std::string, Pending> pending;
     bool stopped = false, subscribed = false;
     std::thread timer_thread;
+
     SceneDelegateIdentity identity() const {
         return {this, "UploadBakedTexture.RegisterCaps"};
     }
+
     bool accepting() const {
         std::lock_guard lock(mutex);
         return !stopped;
     }
-    void arm(const std::string& path, int milliseconds, std::weak_ptr<CapabilityRuntimeListener> listener) {
+
+    void arm(const std::string &path, int milliseconds, std::weak_ptr<CapabilityRuntimeListener> listener) {
         std::lock_guard lock(mutex);
         if (stopped)
             return;
@@ -39,13 +45,14 @@ struct RegionBakedTextureRuntime::State : std::enable_shared_from_this<State> {
             if (it != pending.end())
                 it->second.deadline.reset();
         } else {
-            auto& entry = pending[path];
+            auto &entry = pending[path];
             entry.listener = std::move(listener);
             entry.deadline = Clock::now() + std::chrono::milliseconds(milliseconds);
         }
         changed.notify_all();
     }
-    void remove(const std::string& path) {
+
+    void remove(const std::string &path) {
         std::shared_ptr<CapabilityRuntimeListener> listener;
         std::shared_ptr<BakedTextureUpload> retained;
         {
@@ -61,6 +68,7 @@ struct RegionBakedTextureRuntime::State : std::enable_shared_from_this<State> {
         if (listener)
             listener->remove_simple(path);
     }
+
     void add(std::shared_ptr<BakedTextureUpload> upload, std::weak_ptr<CapabilityRuntimeListener> listener) {
         if (!upload || !upload->path())
             throw std::invalid_argument("Null baked texture upload route");
@@ -73,7 +81,7 @@ struct RegionBakedTextureRuntime::State : std::enable_shared_from_this<State> {
             std::lock_guard lock(mutex);
             if (stopped)
                 throw std::runtime_error("Baked texture runtime stopped");
-            auto& entry = pending[path];
+            auto &entry = pending[path];
             entry.listener = listener;
             entry.upload = upload;
             expired = entry.deadline && *entry.deadline <= Clock::now();
@@ -83,7 +91,8 @@ struct RegionBakedTextureRuntime::State : std::enable_shared_from_this<State> {
         if (expired)
             upload->expire();
     }
-    void register_caps(framework::Uuid agent, const std::shared_ptr<Caps>& caps) {
+
+    void register_caps(framework::Uuid agent, const std::shared_ptr<Caps> &caps) {
         if (!accepting())
             return;
         if (!caps)
@@ -103,28 +112,29 @@ struct RegionBakedTextureRuntime::State : std::enable_shared_from_this<State> {
                 throw std::runtime_error("Baked texture runtime expired");
             state->add(std::move(upload), listener);
         };
-        backend.remove_upload = [weak](const auto& path) {
+        backend.remove_upload = [weak](const auto &path) {
             if (auto state = weak.lock())
                 state->remove(path);
         };
-        backend.timer = [weak, listener](const auto& path, int delay) {
+        backend.timer = [weak, listener](const auto &path, int delay) {
             if (auto state = weak.lock())
                 state->arm(path, delay, listener);
         };
         // Removal retires this route's timer entry; source Dispose is then idempotent.
-        backend.dispose_timer = [](const auto&) {};
+        backend.dispose_timer = [](const auto &) {};
         backend.log = log;
-        auto origin = std::string(caps->ssl_caps() ? "https://" : "http://") +
-                      caps->host_name().value_or("") + ":" + std::to_string(caps->port());
+        auto origin = std::string(caps->ssl_caps() ? "https://" : "http://") + caps->host_name().value_or("") + ":" +
+                      std::to_string(caps->port());
         caps->register_simple("UploadBakedTexture",
-                              std::make_shared<BakedTextureCaps>("/" + framework::Uuid::random().str(), agent,
-                                                                 origin, std::move(backend)));
+                              std::make_shared<BakedTextureCaps>("/" + framework::Uuid::random().str(), agent, origin,
+                                                                 std::move(backend)));
     }
+
     void timer_loop() {
         std::unique_lock lock(mutex);
         while (!stopped) {
             std::optional<Clock::time_point> next;
-            for (const auto& [path, entry] : pending)
+            for (const auto &[path, entry] : pending)
                 if (entry.upload && entry.deadline && (!next || *entry.deadline < *next))
                     next = entry.deadline;
             if (!next) {
@@ -137,13 +147,13 @@ struct RegionBakedTextureRuntime::State : std::enable_shared_from_this<State> {
             }
             std::vector<std::shared_ptr<BakedTextureUpload>> expired;
             auto now = Clock::now();
-            for (auto& [path, entry] : pending)
+            for (auto &[path, entry] : pending)
                 if (entry.upload && entry.deadline && *entry.deadline <= now) {
                     entry.deadline.reset();
                     expired.push_back(entry.upload);
                 }
             lock.unlock();
-            for (const auto& upload : expired)
+            for (const auto &upload : expired)
                 try {
                     upload->expire();
                 } catch (...) {
@@ -151,6 +161,7 @@ struct RegionBakedTextureRuntime::State : std::enable_shared_from_this<State> {
             lock.lock();
         }
     }
+
     void stop() {
         std::vector<std::shared_ptr<BakedTextureUpload>> uploads;
         {
@@ -158,7 +169,7 @@ struct RegionBakedTextureRuntime::State : std::enable_shared_from_this<State> {
             if (stopped)
                 return;
             stopped = true;
-            for (const auto& [path, entry] : pending)
+            for (const auto &[path, entry] : pending)
                 if (entry.upload)
                     uploads.push_back(entry.upload);
             changed.notify_all();
@@ -169,16 +180,16 @@ struct RegionBakedTextureRuntime::State : std::enable_shared_from_this<State> {
         }
         if (timer_thread.joinable())
             timer_thread.join();
-        for (const auto& upload : uploads)
+        for (const auto &upload : uploads)
             upload->expire();
         std::lock_guard lock(mutex);
         pending.clear();
     }
 };
+
 RegionBakedTextureRuntime::RegionBakedTextureRuntime(std::shared_ptr<SceneCapabilityEvents> events,
-                                                     std::shared_ptr<framework::IAssetCache> cache,
-                                                     std::string url,
-                                                     std::function<void(const std::string&)> log)
+                                                     std::shared_ptr<framework::IAssetCache> cache, std::string url,
+                                                     std::function<void(const std::string &)> log)
     : state_(std::make_shared<State>()) {
     if (!events)
         throw std::invalid_argument("Null baked texture scene events");
@@ -203,21 +214,24 @@ RegionBakedTextureRuntime::RegionBakedTextureRuntime(std::shared_ptr<SceneCapabi
         throw;
     }
 }
+
 RegionBakedTextureRuntime::~RegionBakedTextureRuntime() {
     try {
         stop();
     } catch (...) {
     }
 }
+
 void RegionBakedTextureRuntime::stop() {
     state_->stop();
 }
+
 std::size_t RegionBakedTextureRuntime::pending_uploads() const {
     std::lock_guard lock(state_->mutex);
     std::size_t count = 0;
-    for (const auto& [path, entry] : state_->pending)
+    for (const auto &[path, entry] : state_->pending)
         if (entry.upload)
             ++count;
     return count;
 }
-}
+} // namespace opensim::services

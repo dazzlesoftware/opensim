@@ -1,0 +1,1 @@
+YOption arrays;object input="notnumber";integer result;integer after;default{state_entry(){result=(integer)input;after=1;}}

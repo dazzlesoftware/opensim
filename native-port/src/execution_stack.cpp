@@ -29,7 +29,7 @@ bool sufficient_execution_stack() noexcept {
     pthread_attr_t attributes;
     if (pthread_getattr_np(pthread_self(), &attributes) != 0)
         return false;
-    void* base = nullptr;
+    void *base = nullptr;
     std::size_t size = 0;
     const auto result = pthread_attr_getstack(&attributes, &base, &size);
     pthread_attr_destroy(&attributes);
@@ -40,7 +40,7 @@ bool sufficient_execution_stack() noexcept {
 #else
 #error Unsupported execution stack platform
 #endif
-    constexpr std::uintptr_t reserve = sizeof(void*) == 8 ? 128 * 1024 : 64 * 1024;
+    constexpr std::uintptr_t reserve = sizeof(void *) == 8 ? 128 * 1024 : 64 * 1024;
     return low < current && current <= high && current - low > reserve;
 }
-}
+} // namespace opensim::framework

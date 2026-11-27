@@ -16,7 +16,7 @@ namespace {
 
 std::vector<unsigned char> map_label_font() {
 #ifdef _WIN32
-    const auto* windows = std::getenv("WINDIR");
+    const auto *windows = std::getenv("WINDIR");
     const std::filesystem::path candidates[]{
         std::filesystem::path(windows ? windows : "C:/Windows") / "Fonts/arial.ttf",
     };
@@ -35,7 +35,7 @@ std::vector<unsigned char> map_label_font() {
         "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
     };
 #endif
-    for (const auto& path : candidates) {
+    for (const auto &path : candidates) {
         std::ifstream font(path, std::ios::binary);
         if (font)
             return {std::istreambuf_iterator<char>(font), {}};
@@ -57,8 +57,7 @@ struct LabelFont {
 
 } // namespace
 
-void draw_map_label(MapBitmap& canvas, std::string_view text, std::int64_t x, std::int64_t y,
-                    bool bottom_aligned) {
+void draw_map_label(MapBitmap &canvas, std::string_view text, std::int64_t x, std::int64_t y, bool bottom_aligned) {
     if (text.empty())
         return;
     static const auto bytes = map_label_font();
@@ -69,7 +68,7 @@ void draw_map_label(MapBitmap& canvas, std::string_view text, std::int64_t x, st
         throw std::runtime_error("Could not initialize the world map label font");
 
     const auto unicode = framework::utf16_replacing(text);
-    const auto& metrics = font.face->size->metrics;
+    const auto &metrics = font.face->size->metrics;
     const auto top = bottom_aligned ? y - metrics.height / 64 : y;
     const auto baseline = top + metrics.ascender / 64;
     FT_UInt previous = 0;
@@ -91,8 +90,8 @@ void draw_map_label(MapBitmap& canvas, std::string_view text, std::int64_t x, st
         }
         if (FT_Load_Glyph(font.face, glyph_index, FT_LOAD_RENDER))
             continue;
-        const auto* glyph = font.face->glyph;
-        const auto& bitmap = glyph->bitmap;
+        const auto *glyph = font.face->glyph;
+        const auto &bitmap = glyph->bitmap;
         const auto left = x + pen / 64 + glyph->bitmap_left;
         const auto glyph_top = baseline - glyph->bitmap_top;
         if (bitmap.pixel_mode == FT_PIXEL_MODE_GRAY) {
@@ -100,7 +99,7 @@ void draw_map_label(MapBitmap& canvas, std::string_view text, std::int64_t x, st
                 const auto target_y = glyph_top + row;
                 if (target_y < 0 || target_y >= canvas.height)
                     continue;
-                const auto* coverage = bitmap.buffer + std::ptrdiff_t(row) * bitmap.pitch;
+                const auto *coverage = bitmap.buffer + std::ptrdiff_t(row) * bitmap.pitch;
                 for (unsigned column = 0; column < bitmap.width; ++column) {
                     const auto target_x = left + column;
                     if (target_x < 0 || target_x >= canvas.width)
@@ -108,7 +107,7 @@ void draw_map_label(MapBitmap& canvas, std::string_view text, std::int64_t x, st
                     const auto offset = (std::size_t(target_y) * canvas.width + std::size_t(target_x)) * 3;
                     const unsigned alpha = coverage[column];
                     for (std::size_t channel = 0; channel < 3; ++channel) {
-                        auto& pixel = canvas.pixels[offset + channel];
+                        auto &pixel = canvas.pixels[offset + channel];
                         pixel = static_cast<std::uint8_t>((255 * alpha + pixel * (255 - alpha) + 127) / 255);
                     }
                 }

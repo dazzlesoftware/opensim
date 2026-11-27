@@ -1,0 +1,1 @@
+string result;integer after;default{state_entry(){result=llDumpList2String(7,9);after=1;}}

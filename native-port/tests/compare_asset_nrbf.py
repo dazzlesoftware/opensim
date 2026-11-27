@@ -67,6 +67,7 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument('--native', required=True)
     p.add_argument('--dotnet', required=True)
+    p.add_argument('--reference', type=Path)
     p.add_argument('--work', required=True, type=Path)
     a = p.parse_args()
     w = a.work.resolve()
@@ -105,13 +106,14 @@ def main():
     ET.SubElement(ref, 'HintPath').text = str(ROOT / 'bin/OpenMetaverseTypes.dll')
     cs = w / 'AssetNrbfReference.csproj'
     ET.ElementTree(proj).write(cs, encoding='utf-8', xml_declaration=True)
-    r = subprocess.run(
-        [a.dotnet, 'build', str(cs), '-o', str(w / 'app'), '--nologo', '-v', 'quiet'],
-        capture_output=True,
-        text=True,
-    )
-    assert r.returncode == 0, r.stdout + r.stderr
-    managed = [a.dotnet, str(w / 'app/OpenSim.Framework.dll')]
+    if not a.reference:
+        r = subprocess.run(
+            [a.dotnet, 'build', str(cs), '-o', str(w / 'app'), '--nologo', '-v', 'quiet'],
+            capture_output=True,
+            text=True,
+        )
+        assert r.returncode == 0, r.stdout + r.stderr
+    managed = [a.dotnet, str(a.reference.resolve() if a.reference else w / 'app/OpenSim.Framework.dll')]
     native = [a.native, '--probe']
     profiles = 1024
     emitted = call(managed, [f'emit {n}' for n in range(profiles)])

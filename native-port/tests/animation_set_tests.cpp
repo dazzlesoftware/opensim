@@ -3,12 +3,14 @@
 #include "opensim/framework/animation_set.hpp"
 #include <iostream>
 using namespace opensim::framework;
+
 namespace {
 Uuid id(int n) {
     auto s = std::to_string(n);
     return Uuid("11223344-5566-7788-99aa-" + std::string(12 - s.size(), '0') + s);
 }
-std::string hex(const std::optional<std::string>& s) {
+
+std::string hex(const std::optional<std::string> &s) {
     if (!s)
         return "NULL";
     std::string out;
@@ -18,7 +20,8 @@ std::string hex(const std::optional<std::string>& s) {
     }
     return out;
 }
-std::string dump(AnimationSet* model) {
+
+std::string dump(AnimationSet *model) {
     if (!model)
         return "NULL";
     auto bytes = model->to_bytes();
@@ -29,6 +32,7 @@ std::string dump(AnimationSet* model) {
         s += ":" + model->animation(key).str() + ":" + hex(model->animation_name(key));
     return s;
 }
+
 std::string probe(int mode, int seed, int failure) {
     auto bit = [&](int n) { return (mode & n) != 0; };
     std::string trace, status = "OK";
@@ -43,7 +47,7 @@ std::string probe(int mode, int seed, int failure) {
             std::string text = "version 1\ncount 1\na " + id(1).str() + " Name\n";
             data->assign(text.begin(), text.end());
         }
-        model = std::make_unique<AnimationSet>(bit(128) ? AssetBytes{} : data, [&](const auto& s) {
+        model = std::make_unique<AnimationSet>(bit(128) ? AssetBytes{} : data, [&](const auto &s) {
             trace += "|LINE:" + hex(s);
             if (++line == failure)
                 throw std::runtime_error("injected");
@@ -53,11 +57,7 @@ std::string probe(int mode, int seed, int failure) {
             AnimationSet::zero_count_bytes->at(0) = '!';
         if (!bit(512)) {
             std::string a = bit(1024) ? "脚 😃" : "a";
-            model->set_animation(a,
-                                 bit(65536)  ? std::string("é\0😃", 7)
-                                 : bit(1024) ? "説明 😃"
-                                             : "A",
-                                 id(1));
+            model->set_animation(a, bit(65536) ? std::string("é\0😃", 7) : bit(1024) ? "説明 😃" : "A", id(1));
             model->set_animation("b", bit(2048) ? std::optional<std::string>{} : "B", id(2));
             model->set_animation(a, "Updated", id(3));
             if (seed & 1)
@@ -101,8 +101,9 @@ std::string probe(int mode, int seed, int failure) {
     AnimationSet::zero_count_bytes->at(0) = saved;
     return result;
 }
-}
-int main(int argc, char** argv) {
+} // namespace
+
+int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string_view(argv[1]) == "--probe") {
             int m, s, f;
@@ -111,7 +112,7 @@ int main(int argc, char** argv) {
             return 0;
         }
         int n = 0;
-        auto check = [&](bool b, const char* s) {
+        auto check = [&](bool b, const char *s) {
             ++n;
             if (!b)
                 throw std::runtime_error(s);
@@ -124,7 +125,7 @@ int main(int argc, char** argv) {
         check(probe(4, 0, 0).starts_with("OK:"), "removing during validation is allowed");
         std::cout << "PASS: " << n << " animation set checks\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

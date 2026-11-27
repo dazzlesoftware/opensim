@@ -1,0 +1,1 @@
+char value;integer result;default{state_entry(){value='A';}}

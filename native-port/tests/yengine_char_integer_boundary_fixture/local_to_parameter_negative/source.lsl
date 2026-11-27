@@ -1,0 +1,1 @@
+YOption chars;integer input=-1;integer result;integer after;integer echo(integer value){return value;}default{state_entry(){char local=(char)input;result=echo(local);after=1;}}

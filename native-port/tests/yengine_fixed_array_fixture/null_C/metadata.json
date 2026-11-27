@@ -1,0 +1,32 @@
+{
+  "accepted": true,
+  "executed": true,
+  "globals": {
+    "a": {
+      "type": "null"
+    },
+    "result": {
+      "type": "integer",
+      "clr": "System.Int32",
+      "value": 0
+    }
+  },
+  "errors": [],
+  "exception": "Object reference not set to an instance of an object.",
+  "exceptionType": "System.NullReferenceException",
+  "stackSize": 1000000,
+  "stackLimit": 1024,
+  "finalStackLeft": 1000000,
+  "stackSamples": [],
+  "name": "null_C",
+  "source": "YOption arrays;YOption chars;object a;integer result;default{state_entry(){xmrFixedArrayGetC(a,0);}}",
+  "methodology": "Actual original CodeGen/CallSEH; scheduler CheckRunWork no-op. Separate process per case. No migration claim.",
+  "sha256": {
+    "original.il.txt": "ae615d6b1c8ab024a525a720f8a1f78e3388164ce274319de660ebc9f46239cb",
+    "original.yobj": "66b03f6f11f72c5fc11e327bf01edab7eaa70446c0ea352e54bb936cfa7d9f51",
+    "source.lsl": "b3730b4ad5147dd2721787b9deb6984db1c9e98d21ea1d2f7c81963e65880183",
+    "source_hash.txt": "d3adfc36fa47ca7d292935efc58f127dbf9ef9dbe0aed3b3a061559b905440dc",
+    "generator_source": "d86517a13d8f4094e933279614d487a0e69d44a49f2296c4af7562bf7386d651",
+    "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056"
+  }
+}

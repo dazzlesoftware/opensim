@@ -2,6 +2,7 @@
 #pragma once
 #include <array>
 #include <string_view>
+
 namespace opensim::framework {
 inline constexpr std::array<std::u16string_view, 13> config_file_uri_error_messages = {
     u"",

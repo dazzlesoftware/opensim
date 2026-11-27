@@ -3,53 +3,64 @@
 #include <iostream>
 using namespace opensim;
 using namespace services;
+
 namespace {
 int count = 0;
-void check(bool value, const char* text) {
+
+void check(bool value, const char *text) {
     ++count;
     if (!value)
         throw std::runtime_error(text);
 }
+
 struct Backend : SceneCapabilityBackend {
     std::shared_ptr<server::RegistryCapabilityListener> registry, main;
     int commands = 0, errors = 0;
-    explicit Backend(std::shared_ptr<server::RegistryCapabilityListener> r)
-        : registry(std::move(r)), main(registry) {
-    }
+
+    explicit Backend(std::shared_ptr<server::RegistryCapabilityListener> r) : registry(std::move(r)), main(registry) {}
+
     std::string scene_name() const override {
         return "Scene";
     }
+
     std::optional<std::string> region_name() const override {
         return "Region";
     }
+
     std::optional<std::string> external_host() const override {
         return "127.0.0.1";
     }
+
     std::shared_ptr<CapabilityRuntimeListener> listener() const override {
         return registry;
     }
+
     std::shared_ptr<CapabilityRuntimeListener> main_server() const override {
         return main;
     }
-    bool check_client(framework::Uuid, const network::HttpRequest&) override {
+
+    bool check_client(framework::Uuid, const network::HttpRequest &) override {
         return true;
     }
-    void debug(const std::string&) override {
-    }
-    void warn(const std::string&) override {
-    }
-    void error(const std::string&) override {
+
+    void debug(const std::string &) override {}
+
+    void warn(const std::string &) override {}
+
+    void error(const std::string &) override {
         ++errors;
     }
-    void console(const std::string&) override {
-    }
+
+    void console(const std::string &) override {}
+
     void add_command(CapabilityCommand) override {
         ++commands;
     }
 };
+
 void run() {
-    auto registry = std::make_shared<server::RegistryCapabilityListener>(
-        server::CapabilityListenerInfo{false, 9000, 0, {}});
+    auto registry =
+        std::make_shared<server::RegistryCapabilityListener>(server::CapabilityListenerInfo{false, 9000, 0, {}});
     auto backend = std::make_shared<Backend>(registry);
     std::weak_ptr<Backend> weak_backend = backend;
     std::weak_ptr<Caps> weak_caps;
@@ -86,8 +97,8 @@ void run() {
         stale.circuit_code = 123;
         stale.caps_path = "previous-seed";
         runtime.capabilities().remove_circuit_caps(stale, false);
-        check(runtime.capabilities().get_caps_for_user(123) == saved &&
-                  registry->routes.simple_keys().size() == 1 && registry->routes.poll_keys().size() == 1,
+        check(runtime.capabilities().get_caps_for_user(123) == saved && registry->routes.simple_keys().size() == 1 &&
+                  registry->routes.poll_keys().size() == 1,
               "stale cleanup preserves routes for replacement capability");
         runtime.capabilities().activate_caps(123);
         network::HttpRequest request;
@@ -112,13 +123,12 @@ void run() {
         bool threw = false;
         try {
             seed->handle(request);
-        } catch (const std::exception&) {
+        } catch (const std::exception &) {
             threw = true;
         }
         check(threw, "selected seed observes disposed Caps activation");
     }
-    check(!weak_caps.expired() && !weak_queue.expired(),
-          "selected handlers retain actors after owner destruction");
+    check(!weak_caps.expired() && !weak_queue.expired(), "selected handlers retain actors after owner destruction");
     backend.reset();
     check(!weak_backend.expired(), "selected handlers retain backend lifetime");
     check(!queue->enqueue(nullptr, framework::Uuid{}), "retained queue safely reports missing scene");
@@ -131,12 +141,12 @@ void run() {
     bool bad = false;
     try {
         SceneCapabilities invalid(nullptr);
-    } catch (const std::invalid_argument&) {
+    } catch (const std::invalid_argument &) {
         bad = true;
     }
     check(bad, "null owner dependency rejected");
-    auto other = std::make_shared<server::RegistryCapabilityListener>(
-        server::CapabilityListenerInfo{false, 9001, 0, {}});
+    auto other =
+        std::make_shared<server::RegistryCapabilityListener>(server::CapabilityListenerInfo{false, 9001, 0, {}});
     auto separate = std::make_shared<Backend>(registry);
     separate->main = other;
     {
@@ -154,13 +164,14 @@ void run() {
     check(other->routes.simple_keys().empty() && other->routes.poll_keys().empty(),
           "separate MainServer owner routes released");
 }
-}
+} // namespace
+
 int main() {
     try {
         run();
         std::cout << "PASS: " << count << " scene capability lifetime checks\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << "FAIL: " << e.what() << '\n';
         return 1;
     }

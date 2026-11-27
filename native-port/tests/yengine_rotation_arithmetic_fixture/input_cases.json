@@ -1,0 +1,22 @@
+[
+  {
+    "name": "subtract_nonunit",
+    "source": "rotation q=<1,2,3,4>;rotation item;integer truth;integer negated;list boxed;default{state_entry(){item=q-q;truth=xmrRotationToBool(item);negated=!item;boxed=[item,xmrRotationToBool(item)];}}"
+  },
+  {
+    "name": "add_inverse_nonunit",
+    "source": "rotation q=<1,2,3,4>;rotation item;integer truth;integer negated;list boxed;default{state_entry(){item=q+<-1,-2,-3,-4>;truth=xmrRotationToBool(item);negated=!item;boxed=[item,xmrRotationToBool(item)];}}"
+  },
+  {
+    "name": "add_raw_zero",
+    "source": "rotation r=(rotation)\"<0,0,0,0>\";rotation item;integer truth;integer negated;list boxed;default{state_entry(){item=r+r;truth=xmrRotationToBool(item);negated=!item;boxed=[item,xmrRotationToBool(item)];}}"
+  },
+  {
+    "name": "multiply_raw_zero",
+    "source": "rotation r=(rotation)\"<0,0,0,0>\";rotation item;integer truth;integer negated;list boxed;default{state_entry(){item=r*r;truth=xmrRotationToBool(item);negated=!item;boxed=[item,xmrRotationToBool(item)];}}"
+  },
+  {
+    "name": "divide_raw_zero",
+    "source": "rotation r=(rotation)\"<0,0,0,0>\";rotation item;integer truth;integer negated;list boxed;default{state_entry(){item=r/<0,0,0,1>;truth=xmrRotationToBool(item);negated=!item;boxed=[item,xmrRotationToBool(item)];}}"
+  }
+]

@@ -7,24 +7,26 @@
 #include <sstream>
 #include <iomanip>
 using namespace opensim::framework;
-std::string hex(const std::string& value) {
+
+std::string hex(const std::string &value) {
     std::ostringstream out;
     out << std::hex << std::setfill('0');
     for (auto c : utf16(value))
         out << std::setw(4) << static_cast<unsigned>(c);
     return out.str();
 }
-int main(int argc, char**) {
+
+int main(int argc, char **) {
     ConsoleCommandResolver resolver;
     std::size_t registration = 0;
     const std::vector<std::string> modules = {"General", "Users", "Assets", "café", "CAFÉ", "İ", "I"};
-    for (const auto* command : {"login level", "login reset", "login text", "show", "show users", "show user",
+    for (const auto *command : {"login level", "login reset", "login text", "show", "show users", "show user",
                                 "shutdown", "quit", "fcache clear", "fcache clearnegatives", "fcache status",
                                 "café test", "café other", "x-y", "x-z", "soft­hyphen tail"}) {
         auto i = registration++;
-        resolver.add(ConsoleCommandDescription{
-            modules[i % modules.size()], command, std::string(command) + " <value>",
-            "Description " + std::to_string(i), i % 3 == 0 ? "Details\nLine" : "", i % 2 == 0});
+        resolver.add(ConsoleCommandDescription{modules[i % modules.size()], command, std::string(command) + " <value>",
+                                               "Description " + std::to_string(i), i % 3 == 0 ? "Details\nLine" : "",
+                                               i % 2 == 0});
     }
     if (argc > 1)
         for (int extra = 0; extra < 40; ++extra) {
@@ -53,13 +55,13 @@ int main(int argc, char**) {
                 if (mode == "H")
                     values = resolver.help(words);
                 else
-                    for (const auto& value : resolver.next_options(words, mode == "N1"))
+                    for (const auto &value : resolver.next_options(words, mode == "N1"))
                         values.emplace_back(value);
                 std::cout << "L";
-                for (const auto& value : values)
+                for (const auto &value : values)
                     std::cout << '|' << (value ? hex(*value) : "-");
                 std::cout << '\n';
-            } catch (const std::exception&) {
+            } catch (const std::exception &) {
                 std::cout << "EX\n";
             }
             continue;
@@ -67,11 +69,11 @@ int main(int argc, char**) {
 
         try {
             status = resolver.resolve(words) ? "1" : "0";
-        } catch (const std::exception&) {
+        } catch (const std::exception &) {
             status = "EX";
         }
         std::cout << status;
-        for (const auto& word : words)
+        for (const auto &word : words)
             std::cout << '|' << hex(word);
         std::cout << '\n';
     }

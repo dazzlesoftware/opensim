@@ -1,0 +1,1 @@
+integer result;integer leaf(integer n){while(n>0){n--;}return 7;}integer mid(integer n){return leaf(n)+1;}default{state_entry(){result=mid(2);}}

@@ -5,58 +5,68 @@
 #include <algorithm>
 #include <bit>
 #include <limits>
+
 namespace opensim::framework {
 namespace {
 using T = NiniWriterText;
+
 T txt(std::u16string v) {
     return v.empty() ? runtime_empty_text() : std::make_shared<const std::u16string>(std::move(v));
 }
-std::u16string val(const T& p) {
+
+std::u16string val(const T &p) {
     return p ? *p : u"";
 }
-bool same(const T& a, const T& b) {
+
+bool same(const T &a, const T &b) {
     return (!a && !b) || (a && b && *a == *b);
 }
+
 [[noreturn]] void fail(NiniConfigError::Kind k, std::u16string s, std::optional<std::u16string> p = {}) {
     throw NiniConfigError(k, std::move(s), std::move(p));
 }
+
 [[noreturn]] void nullref() {
     fail(NiniConfigError::Kind::NullReference, u"Object reference not set to an instance of an object.");
 }
-void key(const T& k) {
+
+void key(const T &k) {
     if (!k)
         fail(NiniConfigError::Kind::ArgumentNull, u"Value cannot be null. (Parameter 'key')", u"key");
 }
+
 void index_error() {
-    fail(
-        NiniConfigError::Kind::OutOfRange,
-        u"Index was out of range. Must be non-negative and less than the size of the collection. (Parameter 'index')",
-        u"index");
+    fail(NiniConfigError::Kind::OutOfRange,
+         u"Index was out of range. Must be non-negative and less than the size of the collection. (Parameter 'index')",
+         u"index");
 }
+
 void changed() {
-    fail(NiniConfigError::Kind::InvalidOperation,
-         u"Collection was modified; enumeration operation may not execute.");
+    fail(NiniConfigError::Kind::InvalidOperation, u"Collection was modified; enumeration operation may not execute.");
 }
+
 std::int32_t increment(std::int32_t v) {
     return std::bit_cast<std::int32_t>(std::uint32_t(v) + 1);
 }
-NiniConfig* config_cast(NiniConfigObject* object) {
+
+NiniConfig *config_cast(NiniConfigObject *object) {
     if (!object)
         return nullptr;
-    if (auto p = dynamic_cast<NiniConfig*>(object))
+    if (auto p = dynamic_cast<NiniConfig *>(object))
         return p;
-    fail(NiniConfigError::Kind::InvalidCast, u"Unable to cast object of type '" +
-                                                 val(object->managed_type()) +
-                                                 u"' to type 'Nini.Config.IConfig'.");
+    fail(NiniConfigError::Kind::InvalidCast,
+         u"Unable to cast object of type '" + val(object->managed_type()) + u"' to type 'Nini.Config.IConfig'.");
 }
-template <class X> std::shared_ptr<X> handle(X* p) {
+
+template <class X> std::shared_ptr<X> handle(X *p) {
     return p ? p->arena()->handle(p) : nullptr;
 }
-}
+} // namespace
+
 NiniConfigError::NiniConfigError(Kind k, std::u16string s, std::optional<std::u16string> p)
-    : std::runtime_error(utf8(s)), kind(k), message(std::move(s)), parameter(std::move(p)) {
-}
-const char* NiniConfigError::source_type() const noexcept {
+    : std::runtime_error(utf8(s)), kind(k), message(std::move(s)), parameter(std::move(p)) {}
+
+const char *NiniConfigError::source_type() const noexcept {
     switch (kind) {
     case Kind::Argument:
         return "System.ArgumentException";
@@ -81,6 +91,7 @@ const char* NiniConfigError::source_type() const noexcept {
     }
     return "System.Exception";
 }
+
 std::uint32_t NiniConfigError::hresult() const noexcept {
     switch (kind) {
     case Kind::Argument:
@@ -105,28 +116,35 @@ std::uint32_t NiniConfigError::hresult() const noexcept {
     }
     return 0x80131500u;
 }
+
 NiniWriterText NiniConfigObject::to_string() {
     return managed_type();
 }
+
 struct NiniConfigArena::State {
     std::shared_ptr<NiniConfigBackend> backend;
     std::vector<std::unique_ptr<NiniConfigObject>> objects;
     std::vector<std::shared_ptr<NiniConfigObject>> foreign;
 };
+
 NiniConfigArena::NiniConfigArena(std::shared_ptr<NiniConfigBackend> b) : state_(new State) {
     if (!b || !b->capture_number_format || !b->insensitive_table || !b->lower_current || !b->index_of_current)
         throw std::invalid_argument(
             "Nini configuration requires culture capture, alias comparer, casing and substring-search providers");
     state_->backend = std::move(b);
 }
+
 NiniConfigArena::~NiniConfigArena() = default;
+
 std::shared_ptr<NiniConfigBackend> NiniConfigArena::backend() const {
     return state_->backend;
 }
-void NiniConfigArena::retain(const std::shared_ptr<NiniConfigObject>& object) {
+
+void NiniConfigArena::retain(const std::shared_ptr<NiniConfigObject> &object) {
     if (object && object->arena() != this)
         state_->foreign.push_back(object);
 }
+
 std::shared_ptr<NiniConfigObject> NiniConfigArena::adopt(std::unique_ptr<NiniConfigObject> object) {
     if (!object || object->arena() != this)
         throw std::invalid_argument("Nini arena adoption requires a nonnull node owned by this arena");
@@ -134,58 +152,66 @@ std::shared_ptr<NiniConfigObject> NiniConfigArena::adopt(std::unique_ptr<NiniCon
     state_->objects.emplace_back(std::move(object));
     return handle(pointer);
 }
+
 namespace {
 class ConfigValue final : public NiniConfigObject {
     T type_;
     std::function<T()> string_;
-    std::function<bool(const NiniConfigObject*)> equal_;
+    std::function<bool(const NiniConfigObject *)> equal_;
 
   public:
-    ConfigValue(NiniConfigArena* a, T t, std::function<T()> f, std::function<bool(const NiniConfigObject*)> e)
-        : NiniConfigObject(a), type_(std::move(t)), string_(std::move(f)), equal_(std::move(e)) {
-    }
+    ConfigValue(NiniConfigArena *a, T t, std::function<T()> f, std::function<bool(const NiniConfigObject *)> e)
+        : NiniConfigObject(a), type_(std::move(t)), string_(std::move(f)), equal_(std::move(e)) {}
+
     T managed_type() const override {
         return type_;
     }
+
     T to_string() override {
         return string_ ? string_() : type_;
     }
-    bool equals(const NiniConfigObject* p) const override {
+
+    bool equals(const NiniConfigObject *p) const override {
         return equal_ ? equal_(p) : this == p;
     }
 };
-}
-std::shared_ptr<NiniConfigObject>
-NiniConfigArena::object(T type, std::function<T()> string,
-                        std::function<bool(const NiniConfigObject*)> equal) {
+} // namespace
+
+std::shared_ptr<NiniConfigObject> NiniConfigArena::object(T type, std::function<T()> string,
+                                                          std::function<bool(const NiniConfigObject *)> equal) {
     auto p = new ConfigValue(this, std::move(type), std::move(string), std::move(equal));
     state_->objects.emplace_back(p);
     return handle(p);
 }
+
 std::shared_ptr<NiniConfigObject> NiniConfigArena::text_object(T value) {
     if (!value)
         return {};
     return object(txt(u"System.String"), [value] { return value; });
 }
+
 struct NiniAliasText::State {
     struct IntTable {
         T key;
         std::shared_ptr<NiniInsensitiveTable> compare;
         std::vector<std::pair<T, std::int32_t>> values;
     };
+
     std::shared_ptr<NiniConfigBackend> backend;
     std::shared_ptr<NiniInsensitiveTable> ints, booleans;
     std::vector<IntTable> integer;
     std::vector<std::pair<T, bool>> boolean;
 };
+
 namespace {
-std::shared_ptr<NiniInsensitiveTable> capture_table(const std::shared_ptr<NiniConfigBackend>& b) {
+std::shared_ptr<NiniInsensitiveTable> capture_table(const std::shared_ptr<NiniConfigBackend> &b) {
     auto t = b->insensitive_table();
     if (!t || !t->equal)
         throw std::invalid_argument("Nini alias table requires captured CurrentCulture comparer");
     return t;
 }
-}
+} // namespace
+
 NiniAliasText::NiniAliasText(std::shared_ptr<NiniConfigBackend> b) : state_(new State) {
     state_->backend = std::move(b);
     state_->ints = capture_table(state_->backend);
@@ -193,12 +219,13 @@ NiniAliasText::NiniAliasText(std::shared_ptr<NiniConfigBackend> b) : state_(new 
     add_alias(txt(u"true"), true);
     add_alias(txt(u"false"), false);
 }
+
 void NiniAliasText::add_alias(T k, T alias, std::int32_t v) {
     key(k);
-    for (auto& t : state_->integer)
+    for (auto &t : state_->integer)
         if (state_->ints->equal(t.key, k)) {
             key(alias);
-            for (auto& item : t.values)
+            for (auto &item : t.values)
                 if (t.compare->equal(item.first, alias)) {
                     item.second = v;
                     return;
@@ -211,21 +238,22 @@ void NiniAliasText::add_alias(T k, T alias, std::int32_t v) {
     t.values.emplace_back(std::move(alias), v);
     state_->integer.push_back(std::move(t));
 }
+
 void NiniAliasText::add_alias(T alias, bool value) {
     key(alias);
-    for (auto& item : state_->boolean)
+    for (auto &item : state_->boolean)
         if (state_->booleans->equal(item.first, alias)) {
             item.second = value;
             return;
         }
     state_->boolean.emplace_back(std::move(alias), value);
 }
-void NiniAliasText::add_alias(T k, const std::shared_ptr<NiniEnumReflection>& e) {
+
+void NiniAliasText::add_alias(T k, const std::shared_ptr<NiniEnumReflection> &e) {
     if (!e)
         nullref();
     if (!e->names || !e->int_values)
-        throw std::invalid_argument(
-            "Nini enum aliases require actual enum names and int-array reflection providers");
+        throw std::invalid_argument("Nini enum aliases require actual enum names and int-array reflection providers");
     auto names = e->names();
     auto values = e->int_values();
     for (std::size_t i = 0; i < names.size(); ++i) {
@@ -234,62 +262,69 @@ void NiniAliasText::add_alias(T k, const std::shared_ptr<NiniEnumReflection>& e)
         add_alias(k, names[i], values[i]);
     }
 }
-bool NiniAliasText::contains_boolean(const T& k) const {
+
+bool NiniAliasText::contains_boolean(const T &k) const {
     key(k);
-    for (auto& v : state_->boolean)
+    for (auto &v : state_->boolean)
         if (state_->booleans->equal(v.first, k))
             return true;
     return false;
 }
-bool NiniAliasText::contains_int(const T& k, const T& a) const {
+
+bool NiniAliasText::contains_int(const T &k, const T &a) const {
     key(k);
-    for (auto& t : state_->integer)
+    for (auto &t : state_->integer)
         if (state_->ints->equal(t.key, k)) {
             key(a);
-            for (auto& v : t.values)
+            for (auto &v : t.values)
                 if (t.compare->equal(v.first, a))
                     return true;
             return false;
         }
     return false;
 }
-bool NiniAliasText::get_boolean(const T& k) const {
+
+bool NiniAliasText::get_boolean(const T &k) const {
     if (!contains_boolean(k))
         fail(NiniConfigError::Kind::Argument, u"Alias does not exist for text");
-    for (auto& v : state_->boolean)
+    for (auto &v : state_->boolean)
         if (state_->booleans->equal(v.first, k))
             return v.second;
     return false;
 }
-std::int32_t NiniAliasText::get_int(const T& k, const T& a) const {
+
+std::int32_t NiniAliasText::get_int(const T &k, const T &a) const {
     key(k);
-    for (auto& t : state_->integer)
+    for (auto &t : state_->integer)
         if (state_->ints->equal(t.key, k)) {
             key(a);
-            for (auto& v : t.values)
+            for (auto &v : t.values)
                 if (t.compare->equal(v.first, a))
                     return v.second;
             fail(NiniConfigError::Kind::Argument, u"Config value does not match a supplied alias");
         }
     fail(NiniConfigError::Kind::Argument, u"Alias does not exist for key");
 }
+
 struct NiniConfigCollection::State {
-    NiniConfigSourceBase* owner;
-    std::shared_ptr<std::vector<NiniConfigObject*>> items =
-        std::make_shared<std::vector<NiniConfigObject*>>();
+    NiniConfigSourceBase *owner;
+    std::shared_ptr<std::vector<NiniConfigObject *>> items = std::make_shared<std::vector<NiniConfigObject *>>();
     std::int32_t size = 0, version = 0;
+
     void grow() {
         if (size == static_cast<std::int32_t>(items->size())) {
-            auto next = std::make_shared<std::vector<NiniConfigObject*>>(size ? std::size_t(size) * 2 : 4);
+            auto next = std::make_shared<std::vector<NiniConfigObject *>>(size ? std::size_t(size) * 2 : 4);
             std::copy_n(items->begin(), size, next->begin());
             items = std::move(next);
         }
     }
-    void append(NiniConfigObject* p) {
+
+    void append(NiniConfigObject *p) {
         grow();
         (*items)[size++] = p;
         version = increment(version);
     }
+
     void erase(std::int32_t i) {
         if (i < 0 || i >= size)
             index_error();
@@ -300,32 +335,39 @@ struct NiniConfigCollection::State {
         version = increment(version);
     }
 };
-NiniConfigCollection::NiniConfigCollection(NiniConfigSourceBase* o) : state_(new State) {
+
+NiniConfigCollection::NiniConfigCollection(NiniConfigSourceBase *o) : state_(new State) {
     state_->owner = o;
 }
+
 std::int32_t NiniConfigCollection::count() const {
     return state_->size;
 }
+
 std::shared_ptr<const void> NiniConfigCollection::sync_root() const {
     return std::shared_ptr<const void>(state_->owner->arena()->shared_from_this(), this);
 }
+
 std::shared_ptr<NiniConfigObject> NiniConfigCollection::list_at(std::int32_t i) const {
     if (i < 0 || i >= count())
         index_error();
     return handle((*state_->items)[i]);
 }
+
 std::shared_ptr<NiniConfig> NiniConfigCollection::at(std::int32_t i) const {
     return handle(config_cast(list_at(i).get()));
 }
+
 struct NiniConfigCollection::Enumerator::Cursor {
     std::shared_ptr<State> state;
     std::shared_ptr<NiniConfigArena> owner;
     std::int32_t version, index = -1;
-    NiniConfigObject* current = nullptr;
+    NiniConfigObject *current = nullptr;
     bool valid = false;
 };
-NiniConfigCollection::Enumerator::Enumerator(std::shared_ptr<Cursor> c) : cursor_(std::move(c)) {
-}
+
+NiniConfigCollection::Enumerator::Enumerator(std::shared_ptr<Cursor> c) : cursor_(std::move(c)) {}
+
 NiniConfigCollection::Enumerator NiniConfigCollection::get_enumerator() const {
     auto c = std::make_shared<Enumerator::Cursor>();
     c->state = state_;
@@ -333,8 +375,9 @@ NiniConfigCollection::Enumerator NiniConfigCollection::get_enumerator() const {
     c->version = state_->version;
     return Enumerator(c);
 }
+
 bool NiniConfigCollection::Enumerator::move_next() {
-    auto& c = *cursor_;
+    auto &c = *cursor_;
     if (c.version != c.state->version)
         changed();
     if (c.index < c.state->size - 1) {
@@ -347,22 +390,24 @@ bool NiniConfigCollection::Enumerator::move_next() {
     c.valid = false;
     return false;
 }
+
 void NiniConfigCollection::Enumerator::reset() {
-    auto& c = *cursor_;
+    auto &c = *cursor_;
     if (c.version != c.state->version)
         changed();
     c.index = -1;
     c.current = nullptr;
     c.valid = false;
 }
+
 std::shared_ptr<NiniConfigObject> NiniConfigCollection::Enumerator::current() const {
     if (!cursor_->valid)
-        fail(NiniConfigError::Kind::InvalidOperation, cursor_->index < 0
-                                                          ? u"Enumeration has not started. Call MoveNext."
-                                                          : u"Enumeration already finished.");
+        fail(NiniConfigError::Kind::InvalidOperation,
+             cursor_->index < 0 ? u"Enumeration has not started. Call MoveNext." : u"Enumeration already finished.");
     return handle(cursor_->current);
 }
-std::shared_ptr<NiniConfig> NiniConfigCollection::at(const T& name) const {
+
+std::shared_ptr<NiniConfig> NiniConfigCollection::at(const T &name) const {
     auto e = get_enumerator();
     while (e.move_next()) {
         auto config = config_cast(e.current().get());
@@ -373,7 +418,8 @@ std::shared_ptr<NiniConfig> NiniConfigCollection::at(const T& name) const {
     }
     return {};
 }
-std::int32_t NiniConfigCollection::index_of(const std::shared_ptr<NiniConfigObject>& obj) const {
+
+std::int32_t NiniConfigCollection::index_of(const std::shared_ptr<NiniConfigObject> &obj) const {
     auto items = state_->items;
     auto size = state_->size;
     for (std::int32_t i = 0; i < size; ++i) {
@@ -386,9 +432,11 @@ std::int32_t NiniConfigCollection::index_of(const std::shared_ptr<NiniConfigObje
     }
     return -1;
 }
-bool NiniConfigCollection::contains(const std::shared_ptr<NiniConfigObject>& obj) const {
+
+bool NiniConfigCollection::contains(const std::shared_ptr<NiniConfigObject> &obj) const {
     return index_of(obj) >= 0;
 }
+
 void NiniConfigCollection::add(std::shared_ptr<NiniConfig> config) {
     if (contains(config))
         fail(NiniConfigError::Kind::Argument, u"IConfig already exists");
@@ -397,7 +445,7 @@ void NiniConfigCollection::add(std::shared_ptr<NiniConfig> config) {
     auto existing = at(config->name());
     if (existing) {
         auto keys = config->get_keys();
-        for (auto& k : keys)
+        for (auto &k : keys)
             existing->set_text(k, config->get(k));
     } else {
         state_->owner->arena()->retain(config);
@@ -405,13 +453,15 @@ void NiniConfigCollection::add(std::shared_ptr<NiniConfig> config) {
         config_added.invoke(*this, std::make_shared<NiniConfigArgs>(NiniConfigArgs{config}));
     }
 }
+
 std::int32_t NiniConfigCollection::list_add(std::shared_ptr<NiniConfigObject> obj) {
-    auto config = dynamic_cast<NiniConfig*>(obj.get());
+    auto config = dynamic_cast<NiniConfig *>(obj.get());
     if (!config)
         fail(NiniConfigError::Kind::Exception, u"Must be an IConfig");
     add(handle(config));
     return index_of(obj);
 }
+
 std::shared_ptr<NiniConfig> NiniConfigCollection::add(T name) {
     if (at(name))
         fail(NiniConfigError::Kind::Argument, u"An IConfig of that name already exists");
@@ -420,12 +470,14 @@ std::shared_ptr<NiniConfig> NiniConfigCollection::add(T name) {
     config_added.invoke(*this, std::make_shared<NiniConfigArgs>(NiniConfigArgs{config}));
     return config;
 }
+
 void NiniConfigCollection::remove(std::shared_ptr<NiniConfig> obj) {
     auto at = index_of(obj);
     if (at >= 0)
         state_->erase(at);
     config_removed.invoke(*this, std::make_shared<NiniConfigArgs>(NiniConfigArgs{obj}));
 }
+
 void NiniConfigCollection::remove_object(std::shared_ptr<NiniConfigObject> obj) {
     auto at = index_of(obj);
     if (at >= 0)
@@ -433,22 +485,25 @@ void NiniConfigCollection::remove_object(std::shared_ptr<NiniConfigObject> obj) 
     auto p = config_cast(obj.get());
     config_removed.invoke(*this, std::make_shared<NiniConfigArgs>(NiniConfigArgs{handle(p)}));
 }
+
 void NiniConfigCollection::remove_at(std::int32_t i) {
     auto obj = at(i);
     state_->erase(i);
     config_removed.invoke(*this, std::make_shared<NiniConfigArgs>(NiniConfigArgs{obj}));
 }
+
 void NiniConfigCollection::clear() {
     std::fill_n(state_->items->begin(), state_->size, nullptr);
     state_->size = 0;
     state_->version = increment(state_->version);
 }
+
 void NiniConfigCollection::insert(std::int32_t i, std::shared_ptr<NiniConfigObject> obj) {
     if (i < 0 || i > count())
-        fail(
-            NiniConfigError::Kind::OutOfRange,
-            u"Insertion index was out of range. Must be non-negative and less than or equal to size. (Parameter 'index')",
-            u"index");
+        fail(NiniConfigError::Kind::OutOfRange,
+             u"Insertion index was out of range. Must be non-negative and less than or equal to size. (Parameter "
+             u"'index')",
+             u"index");
     state_->owner->arena()->retain(obj);
     state_->grow();
     for (auto n = count(); n > i; --n)
@@ -457,7 +512,8 @@ void NiniConfigCollection::insert(std::int32_t i, std::shared_ptr<NiniConfigObje
     ++state_->size;
     state_->version = increment(state_->version);
 }
-void NiniConfigCollection::copy_to(const std::shared_ptr<NiniConfigArray>& array, std::int32_t i) const {
+
+void NiniConfigCollection::copy_to(const std::shared_ptr<NiniConfigArray> &array, std::int32_t i) const {
     if (!array)
         fail(NiniConfigError::Kind::ArgumentNull, u"Value cannot be null. (Parameter 'destinationArray')",
              u"destinationArray");
@@ -466,40 +522,44 @@ void NiniConfigCollection::copy_to(const std::shared_ptr<NiniConfigArray>& array
         values.push_back(handle((*state_->items)[n]));
     array->copy_from(values, i);
 }
+
 struct NiniConfig::State {
     T name;
-    NiniConfigSourceBase* source = nullptr;
-    NiniIniConfigSource* ini = nullptr;
+    NiniConfigSourceBase *source = nullptr;
+    NiniIniConfigSource *ini = nullptr;
     bool ini_type = false;
     std::shared_ptr<NiniNumberFormat> format;
     std::unique_ptr<NiniAliasText> alias;
     std::vector<std::pair<T, T>> ordered;
     std::vector<std::pair<T, T>> current;
 };
-NiniConfig::NiniConfig(NiniConfigArena* a, T name, NiniConfigSourceBase* source, bool ini)
+
+NiniConfig::NiniConfig(NiniConfigArena *a, T name, NiniConfigSourceBase *source, bool ini)
     : NiniConfigObject(a), state_(new State) {
     state_->format = a->backend()->capture_number_format();
-    if (!state_->format || !state_->format->to_int32 || !state_->format->to_int64 ||
-        !state_->format->to_single || !state_->format->to_double)
+    if (!state_->format || !state_->format->to_int32 || !state_->format->to_int64 || !state_->format->to_single ||
+        !state_->format->to_double)
         throw std::invalid_argument("Nini config requires captured NumberFormatInfo conversion providers");
     state_->name = std::move(name);
     state_->source = source;
     state_->alias = std::make_unique<NiniAliasText>(a->backend());
     state_->ini_type = ini;
     if (ini) {
-        state_->ini = dynamic_cast<NiniIniConfigSource*>(source);
+        state_->ini = dynamic_cast<NiniIniConfigSource *>(source);
         if (source && !state_->ini)
-            fail(NiniConfigError::Kind::InvalidCast, u"Unable to cast object of type '" +
-                                                         val(source->managed_type()) +
+            fail(NiniConfigError::Kind::InvalidCast, u"Unable to cast object of type '" + val(source->managed_type()) +
                                                          u"' to type 'Nini.Config.IniConfigSource'.");
     }
 }
+
 T NiniConfig::managed_type() const {
     return txt(state_->ini_type ? u"Nini.Config.IniConfig" : u"Nini.Config.ConfigBase");
 }
+
 T NiniConfig::name() const {
     return state_->name;
 }
+
 void NiniConfig::name(T value) {
     if (!same(state_->name, value)) {
         auto source = config_source();
@@ -511,12 +571,15 @@ void NiniConfig::name(T value) {
         source->configs()->add(handle(this));
     }
 }
+
 std::shared_ptr<NiniConfigSourceBase> NiniConfig::config_source() const {
     return handle(state_->source);
 }
+
 std::shared_ptr<NiniAliasText> NiniConfig::alias() const {
     return arena_->handle(state_->alias.get());
 }
+
 T NiniConfig::insensitive_key(T k) const {
     if (!k)
         nullref();
@@ -530,6 +593,7 @@ T NiniConfig::insensitive_key(T k) const {
     }
     return k;
 }
+
 T NiniConfig::get(T k) {
     if (state_->ini_type) {
         if (!state_->ini)
@@ -538,7 +602,7 @@ T NiniConfig::get(T k) {
             k = insensitive_key(k);
     }
     key(k);
-    for (const auto& item : state_->current)
+    for (const auto &item : state_->current)
         if (same(item.first, k)) {
             if (!item.second)
                 nullref();
@@ -546,43 +610,51 @@ T NiniConfig::get(T k) {
         }
     return {};
 }
-bool NiniConfig::contains(const T& k) {
+
+bool NiniConfig::contains(const T &k) {
     return bool(get(k));
 }
-T NiniConfig::get(const T& k, T fallback) {
+
+T NiniConfig::get(const T &k, T fallback) {
     auto value = get(k);
     return value ? value : fallback;
 }
-T NiniConfig::get_expanded(const T& k) {
+
+T NiniConfig::get_expanded(const T &k) {
     auto source = config_source();
     if (!source)
         nullref();
     return source->get_expanded(handle(this), k);
 }
+
 std::vector<T> NiniConfig::get_keys() const {
     std::vector<T> out;
-    for (const auto& item : state_->ordered)
+    for (const auto &item : state_->ordered)
         out.push_back(item.first);
     return out;
 }
+
 std::vector<T> NiniConfig::get_values() const {
     std::vector<T> out;
-    for (const auto& item : state_->ordered)
+    for (const auto &item : state_->ordered)
         out.push_back(item.second);
     return out;
 }
+
 void NiniConfig::add(T k, T value) {
     key(k);
-    for (const auto& item : state_->current)
+    for (const auto &item : state_->current)
         if (same(item.first, k))
-            fail(NiniConfigError::Kind::Argument, u"Item has already been added. Key in dictionary: '" +
-                                                      val(k) + u"'  Key being added: '" + val(k) + u"'");
+            fail(NiniConfigError::Kind::Argument, u"Item has already been added. Key in dictionary: '" + val(k) +
+                                                      u"'  Key being added: '" + val(k) + u"'");
     state_->current.emplace_back(k, value);
     state_->ordered.emplace_back(std::move(k), std::move(value));
 }
+
 void NiniConfig::set_text(T k, T value) {
     set(std::move(k), arena_->text_object(std::move(value)));
 }
+
 void NiniConfig::set(T k, std::shared_ptr<NiniConfigObject> value) {
     if (state_->ini_type) {
         if (!state_->ini)
@@ -598,7 +670,7 @@ void NiniConfig::set(T k, std::shared_ptr<NiniConfigObject> value) {
     else {
         auto text = value->to_string();
         bool found = false;
-        for (auto& item : state_->current)
+        for (auto &item : state_->current)
             if (same(item.first, k)) {
                 item.second = text;
                 found = true;
@@ -615,6 +687,7 @@ void NiniConfig::set(T k, std::shared_ptr<NiniConfigObject> value) {
     auto args = std::make_shared<NiniConfigKeyArgs>(NiniConfigKeyArgs{k, value->to_string()});
     key_set.invoke(*this, std::move(args));
 }
+
 void NiniConfig::remove(T k) {
     if (state_->ini_type) {
         if (!state_->ini)
@@ -629,34 +702,38 @@ void NiniConfig::remove(T k) {
         T value;
         if (!key_set.empty())
             value = get(k);
-        auto p = std::find_if(state_->current.begin(), state_->current.end(),
-                              [&](auto& v) { return same(v.first, k); });
+        auto p =
+            std::find_if(state_->current.begin(), state_->current.end(), [&](auto &v) { return same(v.first, k); });
         if (p != state_->current.end())
             state_->current.erase(p);
-        auto ordered = std::find_if(state_->ordered.begin(), state_->ordered.end(),
-                                    [&](auto& v) { return same(v.first, k); });
+        auto ordered =
+            std::find_if(state_->ordered.begin(), state_->ordered.end(), [&](auto &v) { return same(v.first, k); });
         if (ordered == state_->ordered.end())
             index_error();
         state_->ordered.erase(ordered);
         key_removed.invoke(*this, std::make_shared<NiniConfigKeyArgs>(NiniConfigKeyArgs{k, value}));
     }
 }
+
 namespace {
-T required_value(NiniConfig& config, const T& k) {
+T required_value(NiniConfig &config, const T &k) {
     auto v = config.get(k);
     if (!v)
         fail(NiniConfigError::Kind::Argument, u"Value not found: " + val(k));
     return v;
 }
-}
-std::int32_t NiniConfig::get_int(const T& k) {
+} // namespace
+
+std::int32_t NiniConfig::get_int(const T &k) {
     return state_->format->to_int32(required_value(*this, k));
 }
-std::int32_t NiniConfig::get_int(const T& k, std::int32_t fallback) {
+
+std::int32_t NiniConfig::get_int(const T &k, std::int32_t fallback) {
     auto v = get(k);
     return v ? state_->format->to_int32(v) : fallback;
 }
-std::int32_t NiniConfig::get_int(const T& k, bool from_alias) {
+
+std::int32_t NiniConfig::get_int(const T &k, bool from_alias) {
     if (!from_alias)
         return get_int(k);
     auto v = required_value(*this, k);
@@ -667,7 +744,8 @@ std::int32_t NiniConfig::get_int(const T& k, bool from_alias) {
         nullref();
     return source->alias()->get_int(k, v);
 }
-std::int32_t NiniConfig::get_int(const T& k, std::int32_t fallback, bool from_alias) {
+
+std::int32_t NiniConfig::get_int(const T &k, std::int32_t fallback, bool from_alias) {
     if (!from_alias)
         return get_int(k, fallback);
     auto v = get(k);
@@ -680,14 +758,17 @@ std::int32_t NiniConfig::get_int(const T& k, std::int32_t fallback, bool from_al
         nullref();
     return source->alias()->get_int(k, v);
 }
-std::int64_t NiniConfig::get_long(const T& k) {
+
+std::int64_t NiniConfig::get_long(const T &k) {
     return state_->format->to_int64(required_value(*this, k));
 }
-std::int64_t NiniConfig::get_long(const T& k, std::int64_t fallback) {
+
+std::int64_t NiniConfig::get_long(const T &k, std::int64_t fallback) {
     auto v = get(k);
     return v ? state_->format->to_int64(v) : fallback;
 }
-bool NiniConfig::get_boolean(const T& k) {
+
+bool NiniConfig::get_boolean(const T &k) {
     auto v = required_value(*this, k);
     if (alias()->contains_boolean(v))
         return alias()->get_boolean(v);
@@ -696,10 +777,10 @@ bool NiniConfig::get_boolean(const T& k) {
         nullref();
     if (source->alias()->contains_boolean(v))
         return source->alias()->get_boolean(v);
-    fail(NiniConfigError::Kind::Argument,
-         u"Alias value not found: " + val(v) + u". Add it to the Alias property.");
+    fail(NiniConfigError::Kind::Argument, u"Alias value not found: " + val(v) + u". Add it to the Alias property.");
 }
-bool NiniConfig::get_boolean(const T& k, bool fallback) {
+
+bool NiniConfig::get_boolean(const T &k, bool fallback) {
     auto v = get(k);
     if (!v)
         return fallback;
@@ -710,20 +791,23 @@ bool NiniConfig::get_boolean(const T& k, bool fallback) {
         nullref();
     if (source->alias()->contains_boolean(v))
         return source->alias()->get_boolean(v);
-    fail(NiniConfigError::Kind::Argument,
-         u"Alias value not found: " + val(v) + u". Add it to the Alias property.");
+    fail(NiniConfigError::Kind::Argument, u"Alias value not found: " + val(v) + u". Add it to the Alias property.");
 }
-float NiniConfig::get_float(const T& k) {
+
+float NiniConfig::get_float(const T &k) {
     return state_->format->to_single(required_value(*this, k));
 }
-float NiniConfig::get_float(const T& k, float f) {
+
+float NiniConfig::get_float(const T &k, float f) {
     auto v = get(k);
     return v ? state_->format->to_single(v) : f;
 }
-double NiniConfig::get_double(const T& k) {
+
+double NiniConfig::get_double(const T &k) {
     return state_->format->to_double(required_value(*this, k));
 }
-double NiniConfig::get_double(const T& k, double f) {
+
+double NiniConfig::get_double(const T &k, double f) {
     auto v = get(k);
     return v ? state_->format->to_double(v) : f;
 }
@@ -733,44 +817,55 @@ struct NiniConfigSourceBase::State {
     bool auto_save = false;
     std::unique_ptr<NiniConfigCollection> configs;
     std::unique_ptr<NiniAliasText> alias;
-    std::vector<NiniConfigSourceBase*> sources;
+    std::vector<NiniConfigSourceBase *> sources;
 };
-NiniConfigSourceBase::NiniConfigSourceBase(NiniConfigArena* a, T type)
-    : NiniConfigObject(a), state_(new State) {
+
+NiniConfigSourceBase::NiniConfigSourceBase(NiniConfigArena *a, T type) : NiniConfigObject(a), state_(new State) {
     state_->alias = std::make_unique<NiniAliasText>(a->backend());
     state_->type = std::move(type);
     state_->configs.reset(new NiniConfigCollection(this));
 }
+
 T NiniConfigSourceBase::managed_type() const {
     return state_->type;
 }
+
 std::shared_ptr<NiniConfigCollection> NiniConfigSourceBase::configs() const {
     return arena_->handle(state_->configs.get());
 }
+
 bool NiniConfigSourceBase::auto_save() const {
     return state_->auto_save;
 }
+
 void NiniConfigSourceBase::auto_save(bool v) {
     state_->auto_save = v;
 }
+
 std::shared_ptr<NiniAliasText> NiniConfigSourceBase::alias() const {
     return arena_->handle(state_->alias.get());
 }
+
 void NiniConfigSourceBase::on_saved() {
     saved.invoke(*this, std::make_shared<NiniConfigEventArgs>());
 }
+
 void NiniConfigSourceBase::on_reloaded() {
     reloaded.invoke(*this, std::make_shared<NiniConfigEventArgs>());
 }
+
 void NiniConfigSourceBase::save() {
     on_saved();
 }
+
 void NiniConfigSourceBase::reload() {
     on_reloaded();
 }
+
 std::shared_ptr<NiniConfig> NiniConfigSourceBase::add_config(T name) {
     return configs()->add(std::move(name));
 }
+
 void NiniConfigSourceBase::merge(std::shared_ptr<NiniConfigSourceBase> source) {
     bool found = false;
     for (auto old : state_->sources) {
@@ -794,16 +889,17 @@ void NiniConfigSourceBase::merge(std::shared_ptr<NiniConfigSourceBase> source) {
     while (e.move_next())
         configs()->add(handle(config_cast(e.current().get())));
 }
+
 struct NiniConfigSourceBase::Expansion::State {
     std::shared_ptr<NiniConfigSourceBase> source;
     std::shared_ptr<NiniConfig> config;
     T key, text;
     bool set = false, started = false, done = false;
 };
-NiniConfigSourceBase::Expansion::Expansion(std::shared_ptr<State> p) : state_(std::move(p)) {
-}
-NiniConfigSourceBase::Expansion NiniConfigSourceBase::expansion(std::shared_ptr<NiniConfig> config, T k,
-                                                                bool set) {
+
+NiniConfigSourceBase::Expansion::Expansion(std::shared_ptr<State> p) : state_(std::move(p)) {}
+
+NiniConfigSourceBase::Expansion NiniConfigSourceBase::expansion(std::shared_ptr<NiniConfig> config, T k, bool set) {
     auto p = std::make_shared<Expansion::State>();
     p->source = handle(this);
     p->config = std::move(config);
@@ -811,8 +907,9 @@ NiniConfigSourceBase::Expansion NiniConfigSourceBase::expansion(std::shared_ptr<
     p->set = set;
     return Expansion(p);
 }
+
 bool NiniConfigSourceBase::Expansion::step() {
-    auto& s = *state_;
+    auto &s = *state_;
     if (s.done)
         return true;
     if (!s.started) {
@@ -876,15 +973,18 @@ bool NiniConfigSourceBase::Expansion::step() {
     }
     return false;
 }
+
 T NiniConfigSourceBase::Expansion::result() const {
     return state_->text;
 }
+
 T NiniConfigSourceBase::get_expanded(std::shared_ptr<NiniConfig> config, T k) {
     auto current = expansion(std::move(config), std::move(k));
     while (!current.step()) {
     }
     return current.result();
 }
+
 void NiniConfigSourceBase::expand_key_values() {
     auto e = configs()->get_enumerator();
     while (e.move_next()) {
@@ -892,34 +992,41 @@ void NiniConfigSourceBase::expand_key_values() {
         if (!config)
             nullref();
         auto keys = config->get_keys();
-        for (auto& k : keys) {
+        for (auto &k : keys) {
             auto current = expansion(handle(config), k, true);
             while (!current.step()) {
             }
         }
     }
 }
+
 struct NiniIniConfigSource::IniState {
     std::shared_ptr<NiniDocument> document;
     T save_path;
     bool case_sensitive = true;
 };
-NiniIniConfigSource::NiniIniConfigSource(NiniConfigArena* a)
+
+NiniIniConfigSource::NiniIniConfigSource(NiniConfigArena *a)
     : NiniConfigSourceBase(a, txt(u"Nini.Config.IniConfigSource")), ini_(new IniState) {
     ini_->document = std::make_shared<NiniDocument>();
 }
+
 bool NiniIniConfigSource::case_sensitive() const {
     return ini_->case_sensitive;
 }
+
 void NiniIniConfigSource::case_sensitive(bool v) {
     ini_->case_sensitive = v;
 }
+
 T NiniIniConfigSource::save_path() const {
     return ini_->save_path;
 }
+
 std::shared_ptr<NiniDocument> NiniIniConfigSource::document() const {
     return ini_->document;
 }
+
 void NiniIniConfigSource::load(T path) {
     auto f = arena_->backend()->file_reader;
     if (!f)
@@ -927,22 +1034,26 @@ void NiniIniConfigSource::load(T path) {
     load(f(path));
     ini_->save_path = std::move(path);
 }
+
 void NiniIniConfigSource::load(std::shared_ptr<NiniWriterStream> stream) {
     auto f = arena_->backend()->stream_reader;
     if (!f)
         throw std::invalid_argument("IniConfigSource.Load(stream) requires actual StreamReader provider");
     load(f(std::move(stream)));
 }
+
 void NiniIniConfigSource::load(std::shared_ptr<NiniTextReader> reader) {
     auto document = std::make_shared<NiniDocument>(std::move(reader));
     load(std::move(document));
 }
+
 void NiniIniConfigSource::load(std::shared_ptr<NiniDocument> document) {
     configs()->clear();
     merge(handle(this));
     ini_->document = std::move(document);
     load_document();
 }
+
 void NiniIniConfigSource::load_document() {
     if (!ini_->document)
         nullref();
@@ -961,6 +1072,7 @@ void NiniIniConfigSource::load_document() {
         configs()->add(config);
     }
 }
+
 void NiniIniConfigSource::merge_configs_into_document() {
     if (!ini_->document)
         nullref();
@@ -984,7 +1096,7 @@ void NiniIniConfigSource::merge_configs_into_document() {
         auto section = ini_->document->sections().at(config->name());
         if (section) {
             auto old = section->get_keys();
-            for (auto& k : old) {
+            for (auto &k : old) {
                 auto live = configs()->at(config->name());
                 if (!live)
                     nullref();
@@ -992,7 +1104,7 @@ void NiniIniConfigSource::merge_configs_into_document() {
                     section->remove(k);
             }
         }
-        for (auto& k : keys) {
+        for (auto &k : keys) {
             if (!ini_->document)
                 nullref();
             auto target = ini_->document->sections().at(config->name());
@@ -1003,6 +1115,7 @@ void NiniIniConfigSource::merge_configs_into_document() {
         }
     }
 }
+
 void NiniIniConfigSource::save() {
     if (!ini_->save_path)
         fail(NiniConfigError::Kind::Argument, u"Source cannot be saved in this state");
@@ -1012,10 +1125,12 @@ void NiniIniConfigSource::save() {
     ini_->document->save(ini_->save_path, arena_->backend()->document);
     NiniConfigSourceBase::save();
 }
+
 void NiniIniConfigSource::save(T path) {
     ini_->save_path = std::move(path);
     save();
 }
+
 void NiniIniConfigSource::save(std::shared_ptr<NiniTextWriter> writer) {
     merge_configs_into_document();
     if (!ini_->document)
@@ -1024,6 +1139,7 @@ void NiniIniConfigSource::save(std::shared_ptr<NiniTextWriter> writer) {
     ini_->save_path.reset();
     on_saved();
 }
+
 void NiniIniConfigSource::save(std::shared_ptr<NiniWriterStream> stream) {
     merge_configs_into_document();
     if (!ini_->document)
@@ -1032,6 +1148,7 @@ void NiniIniConfigSource::save(std::shared_ptr<NiniWriterStream> stream) {
     ini_->save_path.reset();
     on_saved();
 }
+
 T NiniIniConfigSource::to_string() {
     merge_configs_into_document();
     auto writer = std::make_shared<NiniStringWriter>();
@@ -1040,14 +1157,15 @@ T NiniIniConfigSource::to_string() {
     ini_->document->save(writer);
     return writer->to_string();
 }
+
 void NiniIniConfigSource::reload() {
     if (!ini_->save_path)
-        fail(NiniConfigError::Kind::Argument,
-             u"Error reloading: You must have the loaded the source from a file");
+        fail(NiniConfigError::Kind::Argument, u"Error reloading: You must have the loaded the source from a file");
     ini_->document = std::make_shared<NiniDocument>(ini_->save_path, arena_->backend()->document);
     merge_document_into_configs();
     NiniConfigSourceBase::reload();
 }
+
 void NiniIniConfigSource::merge_document_into_configs() {
     for (std::int32_t i = configs()->count() - 1; i >= 0; --i) {
         auto config = configs()->at(i);
@@ -1071,7 +1189,7 @@ void NiniIniConfigSource::merge_document_into_configs() {
         if (!current)
             nullref();
         auto keys = config->get_keys();
-        for (auto& k : keys)
+        for (auto &k : keys)
             if (!current->contains(k))
                 config->remove(k);
         auto after = current->get_keys();
@@ -1083,6 +1201,7 @@ void NiniIniConfigSource::merge_document_into_configs() {
         }
     }
 }
+
 std::shared_ptr<NiniConfigSourceBase> NiniConfigArena::create_source(T type) {
     if (!type)
         type = txt(u"BaseSource");
@@ -1090,41 +1209,44 @@ std::shared_ptr<NiniConfigSourceBase> NiniConfigArena::create_source(T type) {
     state_->objects.emplace_back(p);
     return handle(p);
 }
+
 std::shared_ptr<NiniIniConfigSource> NiniConfigArena::create_ini_source() {
     auto p = new NiniIniConfigSource(this);
     state_->objects.emplace_back(p);
     return handle(p);
 }
-std::shared_ptr<NiniConfig>
-NiniConfigArena::create_config(T name, std::shared_ptr<NiniConfigSourceBase> source, bool ini) {
+
+std::shared_ptr<NiniConfig> NiniConfigArena::create_config(T name, std::shared_ptr<NiniConfigSourceBase> source,
+                                                           bool ini) {
     retain(source);
-    NiniConfig* p = ini ? static_cast<NiniConfig*>(new NiniIniConfig(this, std::move(name), source.get()))
+    NiniConfig *p = ini ? static_cast<NiniConfig *>(new NiniIniConfig(this, std::move(name), source.get()))
                         : new NiniConfig(this, std::move(name), source.get(), false);
     state_->objects.emplace_back(p);
     return handle(p);
 }
+
 std::shared_ptr<NiniIniConfigSource> NiniConfigArena::create_ini_source(T path) {
     auto source = create_ini_source();
     source->load(std::move(path));
     return source;
 }
-std::shared_ptr<NiniIniConfigSource>
-NiniConfigArena::create_ini_source(std::shared_ptr<NiniTextReader> reader) {
+
+std::shared_ptr<NiniIniConfigSource> NiniConfigArena::create_ini_source(std::shared_ptr<NiniTextReader> reader) {
     auto source = create_ini_source();
     source->load(std::move(reader));
     return source;
 }
-std::shared_ptr<NiniIniConfigSource>
-NiniConfigArena::create_ini_source(std::shared_ptr<NiniDocument> document) {
+
+std::shared_ptr<NiniIniConfigSource> NiniConfigArena::create_ini_source(std::shared_ptr<NiniDocument> document) {
     auto source = create_ini_source();
     source->load(std::move(document));
     return source;
 }
-std::shared_ptr<NiniIniConfigSource>
-NiniConfigArena::create_ini_source(std::shared_ptr<NiniWriterStream> stream) {
+
+std::shared_ptr<NiniIniConfigSource> NiniConfigArena::create_ini_source(std::shared_ptr<NiniWriterStream> stream) {
     auto source = create_ini_source();
     source->load(std::move(stream));
     return source;
 }
 
-}
+} // namespace opensim::framework

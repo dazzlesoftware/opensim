@@ -3,6 +3,7 @@
 #pragma once
 #include <string_view>
 #include <utility>
+
 namespace opensim::framework {
 namespace {
 constexpr std::pair<std::string_view, std::u16string_view> dtd_resources[] = {
@@ -13,8 +14,10 @@ constexpr std::pair<std::string_view, std::u16string_view> dtd_resources[] = {
     {"Sch_DupNotation", u"The notation '{0}' has already been declared."},
     {"Sch_DupNotationAttribute", u"No element type can have more than one NOTATION attribute specified."},
     {"Sch_IdAttrDeclared", u"The attribute of type ID is already declared on the '{0}' element."},
-    {"Sch_NotationAttributeOnEmptyElement", u"An attribute of type NOTATION must not be declared on an element declared EMPTY."},
-    {"Sch_ParEntityRefNesting", u"The parameter entity replacement text must nest properly within markup declarations."},
+    {"Sch_NotationAttributeOnEmptyElement",
+     u"An attribute of type NOTATION must not be declared on an element declared EMPTY."},
+    {"Sch_ParEntityRefNesting",
+     u"The parameter entity replacement text must nest properly within markup declarations."},
     {"Sch_UndeclaredNotation", u"The '{0}' notation is not declared."},
     {"Xml_AttlistDuplEnumValue", u"'{0}' is a duplicate enumeration value."},
     {"Xml_AttlistDuplNotationValue", u"'{0}' is a duplicate notation value."},

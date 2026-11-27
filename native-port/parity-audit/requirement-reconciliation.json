@@ -1,0 +1,1570 @@
+[
+  {
+    "id": "01-01",
+    "scope": "Offline instant messaging",
+    "original": "Verify macOS runtime and SQL client discovery",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "01-02",
+    "scope": "Offline instant messaging",
+    "original": "Verify legacy provider migrations and connection-string options",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "01-03",
+    "scope": "Offline instant messaging",
+    "original": "Verify task inventory offer creation, cross-grid forwarding, and acceptance or decline in a real viewer",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "02-01",
+    "scope": "Successful viewer login",
+    "original": "Inventory root/skeleton/library and gestures",
+    "status": "preview_subset_superseded_full_scope_open",
+    "reason": "Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json."
+  },
+  {
+    "id": "02-02",
+    "scope": "Successful viewer login",
+    "original": "Grid-user and presence state with rollback",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "02-03",
+    "scope": "Successful viewer login",
+    "original": "Destination-selector integration into admission, home-info synthesis and launch retry lifecycle",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "02-04",
+    "scope": "Successful viewer login",
+    "original": "Agent circuit creation and simulator admission",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "02-05",
+    "scope": "Successful viewer login",
+    "original": "macOS timezone execution, remaining TimeZoneInfo/calendar edge cases and DNS/IDNA/socket compatibility; production response/capability integration and complete managed-model compatibility",
+    "status": "excluded_macos_only",
+    "reason": "macOS excluded by user"
+  },
+  {
+    "id": "02-06",
+    "scope": "Successful viewer login",
+    "original": "Duplicate-presence recovery and region launch failure cleanup",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "02-07",
+    "scope": "Successful viewer login",
+    "original": "Hypergrid/gatekeeper/user-agent routing",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "02-08",
+    "scope": "Successful viewer login",
+    "original": "MakeAgent appearance cloning/defaults, capability path and account service-URL persistence",
+    "status": "preview_subset_superseded_full_scope_open",
+    "reason": "Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json."
+  },
+  {
+    "id": "03-01",
+    "scope": "Viewer networking",
+    "original": "Scene and viewer handler integration",
+    "status": "preview_subset_superseded_full_scope_open",
+    "reason": "Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json."
+  },
+  {
+    "id": "03-02",
+    "scope": "Viewer networking",
+    "original": "Complete agent circuit serialization and appearance",
+    "status": "preview_subset_superseded_full_scope_open",
+    "reason": "Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json."
+  },
+  {
+    "id": "03-03",
+    "scope": "Viewer networking",
+    "original": "Agent movement, appearance, object and terrain updates",
+    "status": "preview_subset_superseded_full_scope_open",
+    "reason": "Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json."
+  },
+  {
+    "id": "03-04",
+    "scope": "Viewer networking",
+    "original": "Capabilities seed, event queues and asset/inventory transfer",
+    "status": "preview_subset_superseded_full_scope_open",
+    "reason": "Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json."
+  },
+  {
+    "id": "03-05",
+    "scope": "Viewer networking",
+    "original": "Cross-platform execution evidence for UDP and viewer sessions",
+    "status": "preview_subset_superseded_full_scope_open",
+    "reason": "Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json."
+  },
+  {
+    "id": "04-01",
+    "scope": "HTTP server parity",
+    "original": "Original full handler registration and matching behavior",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "04-02",
+    "scope": "HTTP server parity",
+    "original": "Trusted proxy/CIDR/XFF configuration",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "04-03",
+    "scope": "HTTP server parity",
+    "original": "X-Content-Encoding alias",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "04-04",
+    "scope": "HTTP server parity",
+    "original": "JSON-RPC and all LLSD representations",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "04-05",
+    "scope": "HTTP server parity",
+    "original": "HTTP streaming/range/long-poll handlers and keep-alive parity",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "04-06",
+    "scope": "HTTP server parity",
+    "original": "WebSockets",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "04-07",
+    "scope": "HTTP server parity",
+    "original": "Grid statistics",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "04-08",
+    "scope": "HTTP server parity",
+    "original": "TLS/gzip verification on all three platforms",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "04-09",
+    "scope": "HTTP server parity",
+    "original": "JSON-RPC/SDK reader arbitrary depth, culture, options, managed interfaces/exception categories and general stream/header/disposal/concurrent delegate/host semantics; default native lexer/reader diagnostics now have direct source coverage. Outgoing JsonRpcRequestManager core and eight DTO bindings now have source/socket coverage; generic member/reflection/cache model, production module integration and full WebUtil transport semantics remain required.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "05-01",
+    "scope": "Account and authentication parity",
+    "original": "Password impersonation",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "05-02",
+    "scope": "Account and authentication parity",
+    "original": "Generic GetAuthInfo/SetAuthInfo and remaining authentication administration",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "05-03",
+    "scope": "Account and authentication parity",
+    "original": "Remaining account lookup/search/update APIs and complete service/console lifecycle",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "05-04",
+    "scope": "Account and authentication parity",
+    "original": "Original authentication migrations and remaining provider schema versions",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "05-05",
+    "scope": "Account and authentication parity",
+    "original": "MySQL/PostgreSQL/null and remote providers",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "05-06",
+    "scope": "Account and authentication parity",
+    "original": "Full .NET regex and Unicode behavior",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "05-07",
+    "scope": "Account and authentication parity",
+    "original": "Original plugin/config loading",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "05-08",
+    "scope": "Account and authentication parity",
+    "original": "Remaining avatar providers, original plugin/migration lifecycle and optional CreateUser services",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "06-01",
+    "scope": "Remaining simulator and grid services",
+    "original": "Scene graph and lifecycle",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "06-02",
+    "scope": "Remaining simulator and grid services",
+    "original": "Physics and terrain simulation",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "06-03",
+    "scope": "Remaining simulator and grid services",
+    "original": "Assets, inventory, estates and land",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "06-04",
+    "scope": "Remaining simulator and grid services",
+    "original": "LSL/OSSL compilation/runtime and persistence",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "06-05",
+    "scope": "Remaining simulator and grid services",
+    "original": "Avatar animation, attachments, physics and appearance",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "06-06",
+    "scope": "Remaining simulator and grid services",
+    "original": "Messaging, friends, groups, profiles and economy integrations",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "06-07",
+    "scope": "Remaining simulator and grid services",
+    "original": "Teleport/crossing and multi-region operation",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "06-08",
+    "scope": "Remaining simulator and grid services",
+    "original": "Region backups, archives, save/load and settings",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "06-09",
+    "scope": "Remaining simulator and grid services",
+    "original": "Hypergrid federation including remaining HomeAgent operations, interoperability and platform verification",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "06-10",
+    "scope": "Remaining simulator and grid services",
+    "original": "Native/module and existing managed plugin compatibility",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "06-11",
+    "scope": "Remaining simulator and grid services",
+    "original": "All optional modules, tools and tests from the baseline",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "08-01",
+    "scope": "Inventory services",
+    "original": "Remaining native inventory transfer/update/upload/task/legacy UDP handlers and service endpoints",
+    "status": "preview_subset_superseded_full_scope_open",
+    "reason": "Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json."
+  },
+  {
+    "id": "08-02",
+    "scope": "Inventory services",
+    "original": "Original migration/import execution and alternate providers",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "08-03",
+    "scope": "Inventory services",
+    "original": "Remaining item/model interfaces, parser notation/binary/encoding/culture coverage, nullable collection members and provider failure/lifecycle paths",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "08-04",
+    "scope": "Inventory services",
+    "original": "Full inventory login/scene integration, permissions/assets/script/persistence lifecycle beyond scoped fetch paths",
+    "status": "preview_subset_superseded_full_scope_open",
+    "reason": "Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json."
+  },
+  {
+    "id": "08-05",
+    "scope": "Inventory services",
+    "original": "Complete shared Nini configuration behavior",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "09-01",
+    "scope": "Presence services",
+    "original": "Linux/macOS runtime verification and broader legacy SQL schema and realm compatibility",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "09-02",
+    "scope": "Presence services",
+    "original": "Complete service/module registration and additional managed-grid deployment configurations",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "09-03",
+    "scope": "Presence services",
+    "original": "Full presence model wire serialization and provider/config loading",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "09-04",
+    "scope": "Presence services",
+    "original": "Login rollback and simulator admission integration",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "10-01",
+    "scope": "Grid-user services",
+    "original": "Oracle MySQL, Linux/macOS and broader legacy schema verification",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "10-02",
+    "scope": "Grid-user services",
+    "original": "Complete service registration and full DateTime model representation",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "10-03",
+    "scope": "Grid-user services",
+    "original": "Console/configuration registration and remaining scene integration, including end-to-end viewer-to-physics water-relative hover coverage, broader variable-region coverage and cross-platform verification",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "11-01",
+    "scope": "Grid registry and region model",
+    "original": "Full System.Uri and Unicode/culture host semantics, DNS cache/host-name classification edge cases and actual outbound Hypergrid linking",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "11-02",
+    "scope": "Grid registry and region model",
+    "original": "Complete original grid routing/stream handling, remote connectors and login/scene integration",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "11-03",
+    "scope": "Grid registry and region model",
+    "original": "Original service/module/console/configuration loading, shared root semantics and complete Unicode host/culture normalization",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "11-04",
+    "scope": "Grid registry and region model",
+    "original": "Original MySQL/PostgreSQL region providers and GridStore migrations; full provider-specific types/failures and collation",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "11-05",
+    "scope": "Grid registry and region model",
+    "original": "Full .NET Unicode/culture name comparison and equal-distance sort ordering for large result sets",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "11-06",
+    "scope": "Grid registry and region model",
+    "original": "Full model constructors, endpoint resolution and generic object-valued provider compatibility",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "11-07",
+    "scope": "Grid registry and region model",
+    "original": "Concurrency and cross-platform execution verification",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "12-01",
+    "scope": "Avatar appearance and structured-data compatibility",
+    "original": "Complete AvatarAppearance, texture entries, visual parameters, wearable cache and baked texture behavior",
+    "status": "preview_subset_superseded_full_scope_open",
+    "reason": "Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json."
+  },
+  {
+    "id": "12-02",
+    "scope": "Avatar appearance and structured-data compatibility",
+    "original": "Avatar persistence/providers and MakeAgent clone/default construction",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "12-03",
+    "scope": "Avatar appearance and structured-data compatibility",
+    "original": "Generic structured-data JSON/LLSD/date parsing and complete SDK conversions",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "12-04",
+    "scope": "Avatar appearance and structured-data compatibility",
+    "original": "Resolve/document source unsafe short-binary integer-read compatibility",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "12-05",
+    "scope": "Avatar appearance and structured-data compatibility",
+    "original": "Windows/Linux/macOS execution, including architecture-specific numeric boundaries",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "12-06",
+    "scope": "Avatar appearance and structured-data compatibility",
+    "original": "Asset NRBF decode, asset XML serialization and complete SLUtil notecard/attachment-name helpers",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "12-07",
+    "scope": "Avatar appearance and structured-data compatibility",
+    "original": "Native asset-cache backend/providers, asset persistence/services/loaders",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "13-01",
+    "scope": "Friends services",
+    "original": "FriendsServiceBase and server connector plugin/configuration lifecycle",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "13-02",
+    "scope": "Friends services",
+    "original": "Remaining HGFriendsService behavior, including cache lifecycle, live managed offer and status delivery, and session-bound creation originating from a managed simulator",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "13-03",
+    "scope": "Friends services",
+    "original": "General managed DTO/object/runtime semantics and generic storage API parity",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "13-04",
+    "scope": "Friends services",
+    "original": "macOS execution and interactive viewer verification",
+    "status": "excluded_macos_only",
+    "reason": "macOS excluded by user"
+  },
+  {
+    "id": "13-05",
+    "scope": "Friends services",
+    "original": "Full remote transport redirect/compression/timeout/platform semantics and general XMLReader/form-helper edge compatibility",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "14-01",
+    "scope": "Inbound simulator agent handlers",
+    "original": "Full AgentSimpleHandler ProcessRequest differential, remaining routing, host/auth/header/error semantics and stream disposal",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "14-02",
+    "scope": "Inbound simulator agent handlers",
+    "original": "Full ProcessRequest/HTTP/URI host semantics, full Util dispatch policy/metrics, old AgentPostHandler and HG variations",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "14-03",
+    "scope": "Inbound simulator agent handlers",
+    "original": "Native scene-backed QueryAccess and CreateAgent service binding",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "14-04",
+    "scope": "Inbound simulator agent handlers",
+    "original": "Agent updates, crossings, removal and actual viewer sessions",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "14-05",
+    "scope": "Inbound simulator agent handlers",
+    "original": "Full platform/runtime/culture/model coverage and Linux/macOS execution",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "14-06",
+    "scope": "Inbound simulator agent handlers",
+    "original": "Concrete object serializer/script restore/physics admission and actual inter-region object crossing; complete outgoing transport deadline/TLS/runtime/platform semantics",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "14-07",
+    "scope": "Inbound simulator agent handlers",
+    "original": "Concrete Caps integration with production listener/poll scheduler, GC finalization/concurrent disposal semantics, seed capability endpoint and all capability registrations; integrate with real scene/event/module/console lifecycles",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "15-01",
+    "scope": "Native asset persistence, migrations and connection compatibility",
+    "original": "Remaining legacy asset codecs and hypergrid/remote asset providers; complete world/scene/service wiring",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "15-02",
+    "scope": "Native asset persistence, migrations and connection compatibility",
+    "original": "Additional Hypergrid asset backends and object XML edge-case comparison",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "15-03",
+    "scope": "Native asset persistence, migrations and connection compatibility",
+    "original": "Verify native and original Robust filesystem service interoperability on Linux and macOS",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "15-04",
+    "scope": "Native asset persistence, migrations and connection compatibility",
+    "original": "Other store resource migrations and original generic provider/static connection lifecycle",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "15-05",
+    "scope": "Native asset persistence, migrations and connection compatibility",
+    "original": "General ADO/custom provider lifecycle, resource IO, regex dialect/culture, arbitrary concurrency, GC and invalid UTF16 semantics",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "15-06",
+    "scope": "Native asset persistence, migrations and connection compatibility",
+    "original": "FullUri/open flags, pooling, remaining connection options, optional parser/environment settings and native plugin ABI/assembly compatibility",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "15-07",
+    "scope": "Native asset persistence, migrations and connection compatibility",
+    "original": "General HTTPS login network verification currently fails with observed AVG replacement certificate; preserve certificate verification",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "15-08",
+    "scope": "Native asset persistence, migrations and connection compatibility",
+    "original": "Actual Linux/macOS execution and complete application feature parity",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "16-01",
+    "scope": "Generic SQLite table APIs and avatar startup",
+    "original": "Remaining providers integrated with shared generic handler and their source-compatible lifecycle",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "16-02",
+    "scope": "Generic SQLite table APIs and avatar startup",
+    "original": "Arbitrary DTO/reflection and initialization/runtime exception behavior, declared DateTime/Decimal/GUID values, custom type/connection mappings and flags",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "16-03",
+    "scope": "Generic SQLite table APIs and avatar startup",
+    "original": "Managed reader/GC/finalization and exact concurrent connection/command lock boundaries",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "16-04",
+    "scope": "Generic SQLite table APIs and avatar startup",
+    "original": "Complete native assembly/plugin/configuration lifecycle and actual Linux/macOS execution",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "17-01",
+    "scope": "Grid-user provider startup and reference data model",
+    "original": "Remaining service constructors/configuration, console and assembly/plugin lifecycle and alternate providers",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "17-02",
+    "scope": "Grid-user provider startup and reference data model",
+    "original": "Full GridUserInfo nullable/date/runtime projection and general managed DTO/concurrency/GC behavior",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "17-03",
+    "scope": "Grid-user provider startup and reference data model",
+    "original": "Other declared generic provider types and connection flags/options, full ADO reader lifetime/locking/concurrency",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "17-04",
+    "scope": "Grid-user provider startup and reference data model",
+    "original": "Actual Linux/macOS execution and complete simulator/world integration",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "18-01",
+    "scope": "User-account provider and executable bootstrap",
+    "original": "Complete original user-account service constructor/root/configuration/module/console lifecycle and native/managed plugin compatibility",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "18-02",
+    "scope": "User-account provider and executable bootstrap",
+    "original": "Complete independent provider/static connection lifecycle; current executable account/auth bootstrap shares a scoped connection facade",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "18-03",
+    "scope": "User-account provider and executable bootstrap",
+    "original": "Remaining database providers and full CLR/ADO reflection/value/locking/reader/GC/concurrency/provider-option behavior",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "18-04",
+    "scope": "User-account provider and executable bootstrap",
+    "original": "Actual Linux/macOS execution and full world/simulator integration",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "19-01",
+    "scope": "SQLite authentication provider and executable integration",
+    "original": "Complete service constructor/root/configuration/assembly/plugin/console lifecycle",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "19-02",
+    "scope": "SQLite authentication provider and executable integration",
+    "original": "General CLR object/ADO date/GUID/decimal, exact diagnostic/exception text, reflection, reader/GC scheduling and concurrency parity",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "19-03",
+    "scope": "SQLite authentication provider and executable integration",
+    "original": "Alternate database providers, remaining authentication service variants and runtime integration",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "19-04",
+    "scope": "SQLite authentication provider and executable integration",
+    "original": "Actual Linux/macOS execution and full simulator/world integration",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "20-01",
+    "scope": "Authentication service administration and HTTP handlers",
+    "original": "Complete dynamic connector/service/root/configuration/plugin lifecycle and generic substitutable service surface",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "20-02",
+    "scope": "Authentication service administration and HTTP handlers",
+    "original": "Complete remote connector/runtime lifecycle, OpenID, authorization and remaining service variants/providers",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "20-03",
+    "scope": "Authentication service administration and HTTP handlers",
+    "original": "Exact logging/counters/full stream/HTTP dispatch/runtime/concurrency behavior and actual Linux/macOS execution",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "20-04",
+    "scope": "Authentication service administration and HTTP handlers",
+    "original": "Complete simulator/world integration and whole-application feature parity",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "21-01",
+    "scope": "Remote authentication connector and executable service selection",
+    "original": "Complete original connector/service/plugin/root/configuration lifecycle and generic native polymorphic service interface",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "21-02",
+    "scope": "Remote authentication connector and executable service selection",
+    "original": "Full managed/global HTTP client configuration, adaptive timeout/cancellation, auth/logger/URI/stream/concurrency and error-text semantics",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "21-03",
+    "scope": "Remote authentication connector and executable service selection",
+    "original": "Remaining authentication variants, OpenID/authorization, other providers and full simulator/world integration",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "21-04",
+    "scope": "Remote authentication connector and executable service selection",
+    "original": "Actual Linux/macOS execution and whole application feature/behavior parity",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "22-01",
+    "scope": "REST form response headers and body lifetime",
+    "original": "Complete original global factory lifecycle, connect/header/body timeout separation, proxy/TLS/pool behavior and remaining settings",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "22-02",
+    "scope": "REST form response headers and body lifetime",
+    "original": "Original adaptive receive timeout/cancellation and streaming after ResponseHeadersRead rather than current fixed total deadline",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "22-03",
+    "scope": "REST form response headers and body lifetime",
+    "original": "Remaining requester verbs/overloads, exact logging/error text, full header/parser/runtime/concurrency semantics and actual Unix execution",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "22-04",
+    "scope": "REST form response headers and body lifetime",
+    "original": "Whole simulator/world/module feature parity",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "22-05",
+    "scope": "REST form response headers and body lifetime",
+    "original": "Audit manual send(Request) callers such as OSD/simulation for deadline origin and header/body timeout separation",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "23-01",
+    "scope": "Form requester compression and redirect defaults",
+    "original": "Complete global factory/client/pool/proxy/TLS lifecycle and settings, adaptive cancellation and remaining timeout/header/URI/parser/error semantics",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "23-02",
+    "scope": "Form requester compression and redirect defaults",
+    "original": "Complete requester verbs/overloads and other transport users, general concurrency/runtime and actual Linux/macOS execution",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "23-03",
+    "scope": "Form requester compression and redirect defaults",
+    "original": "Full simulator/world/module/provider feature and behavior parity",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "24-01",
+    "scope": "Connected native world and first script execution",
+    "original": "Resolve the intermittent Windows connected-region startup failure where login and UseCircuitCode receipt acknowledgment succeed but the first RegionHandshake is missing. Earlier circuit traces show a handshake sent without a send error to one viewer endpoint, followed by the same agent from a second endpoint. Windows UDP ownership identified two viewer_session_probe.exe processes with the same fixture parent; the extra launch remains unexplained. The first regression after implementing source-compatible replacement still fails in 47.08 seconds (failure-server-32276-threads.txt), so the replacement change is not a demonstrated fix. Verify the complete original scene/circuit/capability/presence lifecycle, including failed replacement and protected child agents, rather than accepting a second endpoint by bypassing teardown. Continue using preserved image/map and thread captures. Process tracing can be controlled independently: OPENSIM_TRACE_PROCESS_LAUNCHES=1 enables it without circuit tracing, and =0 disables it even when OPENSIM_TRACE_CIRCUITS=1. Windows repetition passes do not establish resolution; Linux/macOS runtime and actual viewer verification remain required.",
+    "status": "preview_subset_superseded_full_scope_open",
+    "reason": "Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json."
+  },
+  {
+    "id": "24-02",
+    "scope": "Connected native world and first script execution",
+    "original": "Real viewer rendering/interaction verification and actual Windows/Linux/macOS platform execution; full authoritative physics including avatar/prim/mesh contacts, rays, hover/buoyancy and source scheduler/settings.",
+    "status": "preview_subset_superseded_full_scope_open",
+    "reason": "Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json."
+  },
+  {
+    "id": "24-03",
+    "scope": "Connected native world and first script execution",
+    "original": "Complete scene/entity/linked-part/object properties, selection, packet handlers, geometry raycasts, permission/estate/parcel/group/preference modules, persistence and region lifecycle.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "24-04",
+    "scope": "Connected native world and first script execution",
+    "original": "Complete all primitive-parameter setters and fully verify the bound getter APIs. Verify attachment, mouselook and seated-avatar transforms against original source, complete module/permission and concurrent scene/object lifetime behavior, full boxed-key/culture/UTF16 conversion fidelity and actual viewer execution on all three platforms. Preserve unquantized shape fields from script edits and archive XML rather than reconstructing every value only from quantized extra-parameter wire bytes; verify missing-wearer attachment group-position fallback and retained deleted-object state.",
+    "status": "preview_subset_superseded_full_scope_open",
+    "reason": "Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json."
+  },
+  {
+    "id": "24-05",
+    "scope": "Connected native world and first script execution",
+    "original": "Preserve key versus string and other boxed CLR list-value distinctions required by source list conversions, with culture, invalid UTF16 and concurrent mutation verification.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "24-06",
+    "scope": "Connected native world and first script execution",
+    "original": "Complete task/user/library inventory, xfer/script uploads/editing/permissions, source-compatible YEngine lexer/parser/typed semantics/backend, all LSL APIs/events/detection/scheduler/state save/restart. Source-backed inventory item/folder cores are partial; runtime integration and full viewer browsing remain pending.",
+    "status": "preview_subset_superseded_full_scope_open",
+    "reason": "Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json."
+  },
+  {
+    "id": "24-07",
+    "scope": "Connected native world and first script execution",
+    "original": "AvatarFactory baking/cache/save, full animation sets/overrides/events, wearables/appearance input handling, attachments/culling and complete client state.",
+    "status": "preview_subset_superseded_full_scope_open",
+    "reason": "Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json."
+  },
+  {
+    "id": "24-08",
+    "scope": "Connected native world and first script execution",
+    "original": "Crossings/teleports/HG, optional modules/providers and complete migration parity; retain full original inventory until proven complete.",
+    "status": "preview_subset_superseded_full_scope_open",
+    "reason": "Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json."
+  },
+  {
+    "id": "24-09",
+    "scope": "Connected native world and first script execution",
+    "original": "Full YEngine language/runtime and exact compiler diagnostics; source-backed start/stop/reset core still needs native engine/protocol binding. Complete task inventory mutation/types/permissions/persistence and property queue batching remain pending.",
+    "status": "preview_subset_superseded_full_scope_open",
+    "reason": "Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json."
+  },
+  {
+    "id": "24-10",
+    "scope": "Connected native world and first script execution",
+    "original": "Complete root/linkset script-event physics aggregation, pass-touch/surface data, the email module and LSL events, full script-state transitions and concurrent CLR-equivalent scheduling. Verify target event ordering across scripts and linksets, target cleanup on live reset and linkset changes, and macOS runtime behavior.",
+    "status": "preview_subset_superseded_full_scope_open",
+    "reason": "Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json."
+  },
+  {
+    "id": "24-11",
+    "scope": "Connected native world and first script execution",
+    "original": "Finish admission lifecycle verification. Production RegionRuntime now configures a background admission lane by default; Startup async_call_method None/RegressionTest retains inline execution. Queue FIFO/error recovery, queued-work cancellation, active-work shutdown, worker self-close/destruction, viewer ownership release and continued packet ACK reception during blocked admission pass focused Windows tests. Runtime stop/restart generation checks are implemented but need dedicated verification. The large connected fixture still intermittently loses its first handshake; the isolated fresh preview fixture passes raw and native viewer handshakes. Moving an existing session to another UDP endpoint reproduces teardown removing its circuit before re-admission; keep this diagnostic distinct from ordinary fresh login. Prioritize preview-acceptance.json. Full source scheduling policies, protected child-agent close refusal, capability/presence cleanup races, exhaustive exception/concurrency/clock behavior, real viewers and Windows/Linux/macOS runtime parity remain incomplete.",
+    "status": "preview_subset_superseded_full_scope_open",
+    "reason": "Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json."
+  },
+  {
+    "id": "25-01",
+    "scope": "Baked texture uploads and asset cache",
+    "original": "Complete cache initializer/configuration/console, full protected-scene asset graph gathering, production heap provider and timed cleanup integration/default-asset commands, file-backed production hosting and all module-manager/provider/platform behavior",
+    "status": "preview_subset_superseded_full_scope_open",
+    "reason": "Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json."
+  },
+  {
+    "id": "25-02",
+    "scope": "Baked texture uploads and asset cache",
+    "original": "Original shared upload module configuration, registration/removal and cache lifetime",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "25-03",
+    "scope": "Baked texture uploads and asset cache",
+    "original": "Bind actual production HTTP uploads and asset retrieval without inventory/service persistence of local temporary bakes",
+    "status": "preview_subset_superseded_full_scope_open",
+    "reason": "Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json."
+  },
+  {
+    "id": "25-04",
+    "scope": "Baked texture uploads and asset cache",
+    "original": "Real30-second expiry, shutdown ownership, retained handlers, concurrent requests and all three platforms",
+    "status": "preview_subset_superseded_full_scope_open",
+    "reason": "Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json."
+  },
+  {
+    "id": "25-05",
+    "scope": "Baked texture uploads and asset cache",
+    "original": "Complete UuidGatherer live scene traversal and remaining corrupt/unsafe serialized-object behavior; integrate fully protected gathering into file-cache cleanup; HG gatherer and all platform/runtime behavior",
+    "status": "preview_subset_superseded_full_scope_open",
+    "reason": "Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json."
+  },
+  {
+    "id": "25-06",
+    "scope": "Baked texture uploads and asset cache",
+    "original": "Bind live asset-gather scene/part/geometry/environment/enumerator providers and status-file I/O to complete production world hosting; implement touch/count/config/console/heap cleanup integration and HG gathering on all platforms",
+    "status": "preview_subset_superseded_full_scope_open",
+    "reason": "Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json."
+  },
+  {
+    "id": "25-07",
+    "scope": "Baked texture uploads and asset cache",
+    "original": "Compose maintenance/status/touch/count with production scene providers, initializer and console, shared file-cache lifecycle and native heap cleanup integration on all three platforms",
+    "status": "preview_subset_superseded_full_scope_open",
+    "reason": "Preview verifies bounded user flows on Windows/Linux. The broad historical item retains additional API/lifecycle coverage; do not close it wholesale. See preview-evidence.json."
+  },
+  {
+    "id": "26-01",
+    "scope": "Console parsing and command manager",
+    "original": "Full console registration, resolution, help, completion and Local/Remote/Mock console behavior",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "26-02",
+    "scope": "Console parsing and command manager",
+    "original": "General input encoding and Windows/Linux/macOS execution",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "26-03",
+    "scope": "Console parsing and command manager",
+    "original": "Remote composite-format Output overloads, complete logging integration, native console client, and observed macOS execution",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "26-04",
+    "scope": "Console parsing and command manager",
+    "original": "Complete log4net layout/filter/threshold/ANSI lifecycle, exception stack rendering and category-only inventory log message formatting",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "27-01",
+    "scope": "Native runtime utility and configuration compatibility",
+    "original": "Remaining Nini document/includes/expansion/merge/events and other caller cultures",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "27-02",
+    "scope": "Native runtime utility and configuration compatibility",
+    "original": "Complete native container/registration/date/culture/provider binding for Flotsam production hosting",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "27-03",
+    "scope": "Native runtime utility and configuration compatibility",
+    "original": "Execute corrected Unix path/getcwd and file API code on actual Linux/macOS; preserve unverified localized/HRESULT/inner-error cases",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "28-01",
+    "scope": "Configuration stream encoding and Unicode diagnostics",
+    "original": "Complete default native file/byte-stream text adapters, including buffering/encoding/locks/errors",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "28-02",
+    "scope": "Configuration stream encoding and Unicode diagnostics",
+    "original": "Complete Nini configuration includes/expansion/merge/events and original host lifecycle",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "28-03",
+    "scope": "Configuration stream encoding and Unicode diagnostics",
+    "original": "Execute reader/document/file I/O on actual Linux/macOS and preserve remaining OS/error differences",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "29-01",
+    "scope": "User profiles JSON-RPC service",
+    "original": "Complete managed reflection/identity/null/diagnostic behavior and macOS execution",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "29-02",
+    "scope": "User profiles JSON-RPC service",
+    "original": "HTTP listener persistence/timeout/header behavior remains partial: observed backend100-request closure differs from original20-request context policy; profile fixture intentionally reconnects every50 requests, and does not verify this limit",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "29-03",
+    "scope": "User profiles JSON-RPC service",
+    "original": "Port MySQL/PGSQL profile providers and complete generic native plugin registry/resolution",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "29-04",
+    "scope": "User profiles JSON-RPC service",
+    "original": "Port source avatar profile modules, cache, client/viewer requests and remote paths; source local-region service connector and native SQLite HTTP binding are now implemented",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "29-05",
+    "scope": "User profiles JSON-RPC service",
+    "original": "Complete ADO field casts/error/connection/culture/concurrency and GC/lifetime/logging behavior; native host reader collection ticks do not reproduce arbitrary CLR collection timing",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "29-06",
+    "scope": "User profiles JSON-RPC service",
+    "original": "Verify profile behavior on macOS and complete simulator feature parity",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "29-07",
+    "scope": "User profiles JSON-RPC service",
+    "original": "Complete advanced UserProfileModule, UserProfileCacheEntry, groups, HG/local queues, profile edits/interests/picks/classified viewer flows; basic fallback request/reply path is now implemented",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "30-01",
+    "scope": "Advanced profile viewer packet projection",
+    "original": "Wire advanced UserProfileModule handlers, caches, asynchronous local/HG requests and all update/read workflows to admitted clients and actual profile service.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "30-02",
+    "scope": "Advanced profile viewer packet projection",
+    "original": "Bind advanced profile callbacks to scene/client, routing, caches, remote/local/HG services and EventQueue.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "30-03",
+    "scope": "Advanced profile viewer packet projection",
+    "original": "Run macOS and full viewer feature parity.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "31-01",
+    "scope": "Advanced profile module lifecycle",
+    "original": "Implement concrete advanced client handler subscriptions, profile caches, local/HG queues, owner routing and all profile read/update operations.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "31-02",
+    "scope": "Advanced profile module lifecycle",
+    "original": "Install full controller in actual scene/runtime admission/teardown and wire real storage/HTTP/UDP/EventQueue workflows.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "31-03",
+    "scope": "Advanced profile module lifecycle",
+    "original": "Verify macOS/full simulator parity.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "32-01",
+    "scope": "Advanced notes/preferences controller",
+    "original": "Wire controller to actual admitted viewer generic/notes/preferences callbacks through the complete advanced module.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "32-02",
+    "scope": "Advanced notes/preferences controller",
+    "original": "Complete all remaining advanced profile caches, asynchronous queues, properties, interests, picks and classifieds operations and module lifecycles.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "32-03",
+    "scope": "Advanced notes/preferences controller",
+    "original": "Verify full viewer/application/macOS parity.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "33-01",
+    "scope": "ExpiringCacheOS",
+    "original": "Bind full UserProfileCacheEntry and canonical group model into actual advanced module.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "33-02",
+    "scope": "ExpiringCacheOS",
+    "original": "Verify arbitrary custom key/comparer callbacks, adversarial concurrent disposal/scheduling and managed lifetime boundaries.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "33-03",
+    "scope": "ExpiringCacheOS",
+    "original": "Execute macOS parity.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "34-01",
+    "scope": "Cached profile picks workflows",
+    "original": "Complete remaining profile classifieds/pick detail/update/delete, interests/properties, groups and asynchronous local/HG operations.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "34-02",
+    "scope": "Cached profile picks workflows",
+    "original": "Wire all source client events/generic handlers and real scene services through complete advanced module to admitted sessions.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "34-03",
+    "scope": "Cached profile picks workflows",
+    "original": "Verify custom managed equality/GC/race boundaries and macOS/full application parity.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "35-01",
+    "scope": "Cached profile classified lists",
+    "original": "Implement ClassifiedInfoRequest interest consumption, detail/foreign asset handling, classified updates/deletes and remaining profile operations.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "35-02",
+    "scope": "Cached profile classified lists",
+    "original": "Complete source waiting-client HashSet ordering, full advanced module subscriptions/scene services and admitted viewer dispatch.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "35-03",
+    "scope": "Cached profile classified lists",
+    "original": "Verify whole application/macOS parity.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "36-01",
+    "scope": "Classified details and deletion controller",
+    "original": "ClassifiedInfoUpdate including scene/parcel/money behavior; full advanced scene/client runtime binding and all remaining profile operations.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "36-02",
+    "scope": "Classified details and deletion controller",
+    "original": "Execute and verify on macOS; demonstrate full application parity.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "37-01",
+    "scope": "Classified update controller",
+    "original": "Wire scene/land/money/client adapters into the complete advanced module runtime; complete other advanced profile handlers, queues, groups, permissions and world integration.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "37-02",
+    "scope": "Classified update controller",
+    "original": "Execute on macOS and verify the complete simulator.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "38-01",
+    "scope": "Pick deletion controller",
+    "original": "Wire the implemented pick detail/update/delete controllers into complete advanced scene/client/event handling.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "38-02",
+    "scope": "Pick deletion controller",
+    "original": "Full advanced profile module subscriptions and scene/client callbacks; full application/macOS verification.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "39-01",
+    "scope": "Pick detail vector and parcel prerequisites",
+    "original": "Wire implemented pick proxy/grid/scene and client callbacks into the complete advanced region module.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "39-02",
+    "scope": "Pick detail vector and parcel prerequisites",
+    "original": "Complete advanced scene/grid/client callbacks and full simulator/macOS verification.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "40-01",
+    "scope": "Pick detail controller and Hypergrid proxy mapping",
+    "original": "full concrete advanced module scene/grid/client adapters, events, properties, groups, async queues and cache waiting-client semantics.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "40-02",
+    "scope": "Pick detail controller and Hypergrid proxy mapping",
+    "original": "Full simulator and macOS execution/verification.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "41-01",
+    "scope": "Pick creation and editing controller",
+    "original": "Avatar properties/interests/account/profile/group/friend helpers and async request processing.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "41-02",
+    "scope": "Pick creation and editing controller",
+    "original": "Integrate the source-verified waiting-client reference set into async broadcasting and full advanced scene/client/event adapters.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "41-03",
+    "scope": "Pick creation and editing controller",
+    "original": "Full simulator and macOS execution/verification.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "42-01",
+    "scope": "Waiting profile client collection",
+    "original": "Use the collection in completed asynchronous profile request queues/broadcasts; full advanced module runtime.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "42-02",
+    "scope": "Waiting profile client collection",
+    "original": "Arbitrary managed equality/comparers, GC timing, unused HashSet APIs and complete simulator/macOS remain unverified.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "43-01",
+    "scope": "Advanced profile asynchronous requests and updates",
+    "original": "Actual user-agent and legacy OpenProfile transports.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "43-02",
+    "scope": "Advanced profile asynchronous requests and updates",
+    "original": "Bind concrete advanced scene/client/account/friends/groups adapters, lifecycle and events into production host.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "43-03",
+    "scope": "Advanced profile asynchronous requests and updates",
+    "original": "Complete simulator feature parity and native macOS execution.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "44-01",
+    "scope": "Legacy OpenProfile client",
+    "original": "Port XMLRPCRequester and bundled Nwc.XmlRpc serialization/parser/HTTP semantics with source and wire comparisons.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "44-02",
+    "scope": "Legacy OpenProfile client",
+    "original": "Bind real legacy fallback and user-agent transport into advanced profile host adapters.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "44-03",
+    "scope": "Legacy OpenProfile client",
+    "original": "Complete native macOS execution and full simulator feature parity.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "45-01",
+    "scope": "Bundled Nwc XML-RPC response codec",
+    "original": "Exact Nwc request and response serializers and XMLRPCRequester HTTP/log/timing behavior.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "45-02",
+    "scope": "Bundled Nwc XML-RPC response codec",
+    "original": "Bind remote legacy/user-agent and full advanced host service/client adapters.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "45-03",
+    "scope": "Bundled Nwc XML-RPC response codec",
+    "original": "Full simulator Windows/Linux/macOS parity remains unverified.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "46-01",
+    "scope": "Bundled Nwc XML-RPC wire serialization",
+    "original": "Real Nwc Request.Send and XMLRPCRequester HTTP/log/timing, then user-agent and full advanced host wiring.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "46-02",
+    "scope": "Bundled Nwc XML-RPC wire serialization",
+    "original": "Remaining general object/collection/culture/Hashtable behavior and Windows/Linux/macOS simulator feature parity.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "47-01",
+    "scope": "Live XML-RPC text response bridge",
+    "original": "Actual Nwc HTTP POST/response-stream client, XMLRPCRequester global handler/logging/timing and full legacy/user-agent/native advanced-module wiring.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "47-02",
+    "scope": "Live XML-RPC text response bridge",
+    "original": "Full simulator parity across Windows/Linux/macOS remains unproved.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "48-01",
+    "scope": "Native Nwc HTTP POST and legacy network flow",
+    "original": "Complete global WebUtil/XMLRPCRequester client pooling, TLS/proxy/credentials, logging/timing/counter/disposal behavior and production advanced binding.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "48-02",
+    "scope": "Native Nwc HTTP POST and legacy network flow",
+    "original": "Full simulator Windows/Linux/macOS feature parity remains unverified.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "49-01",
+    "scope": "Native outgoing HTTP shared handlers",
+    "original": "Complete source global SetupHTTPClients/GetNewGlobalHttpClient/GetGlobalNoRedirHttpClient ownership, replacement and separate noRedirect handler lifecycle",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "49-02",
+    "scope": "Native outgoing HTTP shared handlers",
+    "original": "TLS protocol, certificate-chain and hostname policies with native platform trust; Windows/Linux/macOS execution",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "49-03",
+    "scope": "Native outgoing HTTP shared handlers",
+    "original": "Proxy/credentials pooling, connection keys, CONNECT/SOCKS/TLS/authorization transports and source provider lifecycle",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "49-04",
+    "scope": "Native outgoing HTTP shared handlers",
+    "original": "Complete connect/write/headers/queue/total-request cancellation and cross-platform exception translation",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "49-05",
+    "scope": "Native outgoing HTTP shared handlers",
+    "original": "General concurrent stream disposal/drain boundaries and full BCL property/argument semantics",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "49-06",
+    "scope": "Native outgoing HTTP shared handlers",
+    "original": "Replace legacy default OSD sender only after production policy/factory behavior is verified",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "49-07",
+    "scope": "Native outgoing HTTP shared handlers",
+    "original": "Full simulator/service/module installation and macOS end-to-end parity",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "49-08",
+    "scope": "Native outgoing HTTP shared handlers",
+    "original": "Install the shared factory in actual host startup with original program-specific defaults, bind all callers and replace the legacy default OSD sender only after production trust/proxy/error policies are verified",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "49-09",
+    "scope": "Native outgoing HTTP shared handlers",
+    "original": "Verify controlled Windows TLS in an environment preserving the fixture certificate; AVG replacement makes this matrix unavailable here",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "49-10",
+    "scope": "Native outgoing HTTP shared handlers",
+    "original": "TLS1.0/1.1 negotiation, platform default trust/revocation/inner error semantics and TLS Host/SNI overrides",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "49-11",
+    "scope": "Native outgoing HTTP shared handlers",
+    "original": "TLS and proxy connection reuse/limits/expiration, TLS pending application/control records, credentials and session lifecycle",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "49-12",
+    "scope": "Native outgoing HTTP shared handlers",
+    "original": "Cancel connect, write and TLS handshakes; complete generic buffered/content/header and client mutation APIs",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "49-13",
+    "scope": "Native outgoing HTTP shared handlers",
+    "original": "Complete proxy/credential pooling, TLS Host/SNI and nonstandard control/renegotiation/client-certificate behavior; native platform trust and host/global default sender installation; controlled Windows TLS and macOS execution remain unverified.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "49-14",
+    "scope": "Native outgoing HTTP shared handlers",
+    "original": "Complete intermediate CONNECT response body drain/cookies and nested ProxyConnect socket reuse, challenge authentication/default identities, TLS proxies/SOCKS, TLS Host/SNI override and native trust/error/general cancellation semantics. Actual default OSD sender/main factory installation and full macOS/simulator parity remain required.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "49-15",
+    "scope": "Native outgoing HTTP shared handlers",
+    "original": "Complete native platform chain/revocation/inner-error policy and actual Windows/macOS TLS verification; Host/SNI core and Windows name policy are now source-backed, but cipher/session/renegotiation/cancellation/client-cert and general HTTP/header lifecycle remain incomplete. Install verified shared factory into main and replace legacy default OSD sender; complete nested CONNECT/auth/SOCKS/TLS-proxy and simulator integration.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "49-16",
+    "scope": "Native outgoing HTTP shared handlers",
+    "original": "Finish Linux/macOS native default chain stores/AIA/application policy and runtime error details, actual main/global factory/OSD sender installation, Windows controlled live trust and revocation/session/cancellation/client-certificate behavior; the Windows offline NoCheck/chain/name core is now source-backed.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "49-17",
+    "scope": "Native outgoing HTTP shared handlers",
+    "original": "Bind the new native CertificatePolicyChain into the Linux native chain processor after actual path construction, with peer/PAL extension extraction and source-compatible system/user roots, intermediates, caches/AIA and error/inner-error policy; it is not yet installed in TLS.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "49-18",
+    "scope": "Native outgoing HTTP shared handlers",
+    "original": "Bind the new NoCheck Linux chain evaluator to actual source-compatible root/CA/My store loading/classification/caching and AIA download orchestration, status/inner-error messages and native TLS provider, then real main/global factory/default OSD sender installation; currently it consumes explicit snapshots only.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  },
+  {
+    "id": "49-19",
+    "scope": "Native outgoing HTTP shared handlers",
+    "original": "Install and verify the native Linux NoCheck chain path in default live TLS and shared sender; preserve WebUtil flag masking, error/callback ordering and independent AIA proxy/client settings. Implement source revocation modes wherever consumed, and preserve AUX through any remaining store boundaries.",
+    "status": "open_requires_scope_reconciliation",
+    "reason": "Mixed historical requirements are not proof of an absent feature; reconcile at method/acceptance level."
+  }
+]

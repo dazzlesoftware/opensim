@@ -16,12 +16,14 @@
 #include <stdexcept>
 #include <vector>
 #include <tuple>
+
 namespace opensim::framework {
 namespace {
 constexpr std::int64_t maximum_ticks = 3155378975999999999ll;
 constexpr std::int64_t day_ticks = 864000000000ll, second_ticks = 10000000ll;
+
 bool letter(char16_t c) {
-    for (const auto& range : viewer_unicode::letters) {
+    for (const auto &range : viewer_unicode::letters) {
         if (c < range[0])
             return false;
         if (c <= range[1])
@@ -29,58 +31,70 @@ bool letter(char16_t c) {
     }
     return false;
 }
+
 char16_t lower(char16_t c) {
-    auto& pairs = viewer_unicode::lower;
+    auto &pairs = viewer_unicode::lower;
     auto it = std::lower_bound(pairs.begin(), pairs.end(), static_cast<std::uint32_t>(c),
-                               [](const auto& pair, auto value) { return pair[0] < value; });
+                               [](const auto &pair, auto value) { return pair[0] < value; });
     return it != pairs.end() && (*it)[0] == c ? static_cast<char16_t>((*it)[1]) : c;
 }
+
 struct Text {
     std::u16string_view value;
     int Length = 0;
     constexpr Text() = default;
-    constexpr Text(std::u16string_view v) : value(v), Length(static_cast<int>(v.size())) {
-    }
-    template <std::size_t N> constexpr Text(const char16_t (&v)[N]) : Text(std::u16string_view(v, N - 1)) {
-    }
+
+    constexpr Text(std::u16string_view v) : value(v), Length(static_cast<int>(v.size())) {}
+
+    template <std::size_t N> constexpr Text(const char16_t (&v)[N]) : Text(std::u16string_view(v, N - 1)) {}
+
     char16_t operator[](int i) const {
         return value.at(static_cast<std::size_t>(i));
     }
+
     Text Slice(int start) const {
         return Text(value.substr(static_cast<std::size_t>(start)));
     }
+
     Text Slice(int start, int length) const {
         return Text(value.substr(static_cast<std::size_t>(start), static_cast<std::size_t>(length)));
     }
+
     bool StartsWith(Text other) const {
         return value.starts_with(other.value);
     }
-    constexpr Text(const char16_t* v) : Text(std::u16string_view(v)) {
-    }
+
+    constexpr Text(const char16_t *v) : Text(std::u16string_view(v)) {}
+
     bool ContainsAnyExcept(char16_t c) const {
         return std::any_of(value.begin(), value.end(), [c](auto v) { return v != c; });
     }
+
     bool Equals(Text other, int = 0) const {
         return value == other.value;
     }
 };
+
 bool operator==(Text a, Text b) {
     return a.value == b.value;
 }
+
 namespace DK {
 constexpr int Unspecified = 0, Utc = 1, Local = 2;
 }
+
 struct DateTime {
     std::int64_t Ticks = 0;
     int Kind = 0;
     bool ambiguous = false;
     DateTime() = default;
-    DateTime(std::int64_t ticks, int kind = 0, bool dst = false) : Ticks(ticks), Kind(kind), ambiguous(dst) {
-    }
-    explicit DateTime(const AssetDateTime& date)
-        : Ticks(date.ticks()), Kind(date.kind()), ambiguous((date.serialized_data() >> 62) == 3) {
-    }
-    bool TryAddTicks(std::int64_t ticks, DateTime& result) const {
+
+    DateTime(std::int64_t ticks, int kind = 0, bool dst = false) : Ticks(ticks), Kind(kind), ambiguous(dst) {}
+
+    explicit DateTime(const AssetDateTime &date)
+        : Ticks(date.ticks()), Kind(date.kind()), ambiguous((date.serialized_data() >> 62) == 3) {}
+
+    bool TryAddTicks(std::int64_t ticks, DateTime &result) const {
         if (ticks > maximum_ticks - Ticks || ticks < -Ticks) {
             result = {};
             return false;
@@ -89,45 +103,52 @@ struct DateTime {
         return true;
     }
 };
+
 struct TimeSpan {
     std::int64_t Ticks = 0;
     TimeSpan() = default;
-    TimeSpan(int h, int m, int s)
-        : Ticks((std::int64_t(h) * 3600 + std::int64_t(m) * 60 + s) * second_ticks) {
-    }
-    explicit TimeSpan(std::int64_t ticks) : Ticks(ticks) {
-    }
+
+    TimeSpan(int h, int m, int s) : Ticks((std::int64_t(h) * 3600 + std::int64_t(m) * 60 + s) * second_ticks) {}
+
+    explicit TimeSpan(std::int64_t ticks) : Ticks(ticks) {}
+
     TimeSpan Negate() const {
         return TimeSpan(-Ticks);
     }
 };
+
 struct Gregorian {
-    const InvariantDateTimeParseContext& ctx;
+    const InvariantDateTimeParseContext &ctx;
     int ID = 1;
     static constexpr std::int64_t TicksPerSecond = second_ticks;
+
     bool leap(int year) const {
         return year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
     }
+
     int days_in_month(int year, int month) const {
         static constexpr int days[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
         return month == 2 && leap(year) ? 29 : days[month - 1];
     }
+
     bool IsValidDay(int year, int month, int day, int era) const {
         return (era == 0 || era == 1) && year >= 1 && year <= 9999 && month >= 1 && month <= 12 && day >= 1 &&
                day <= days_in_month(year, month);
     }
+
     std::int64_t date_ticks(int year, int month, int day) const {
         static constexpr int before[] = {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334};
         auto y = std::int64_t(year - 1);
-        return (y * 365 + y / 4 - y / 100 + y / 400 + before[month - 1] +
-                ((month > 2 && leap(year)) ? 1 : 0) + day - 1) *
+        return (y * 365 + y / 4 - y / 100 + y / 400 + before[month - 1] + ((month > 2 && leap(year)) ? 1 : 0) + day -
+                1) *
                day_ticks;
     }
+
     bool TryToDateTime(int year, int month, int day, int hour, int minute, int second, int ms, int era,
-                       DateTime& output) const {
+                       DateTime &output) const {
         output = {};
-        if (!IsValidDay(year, month, day, era) || hour < 0 || hour >= 24 || minute < 0 || minute >= 60 ||
-            second < 0 || second > 60 || ms < 0 || ms >= 1000)
+        if (!IsValidDay(year, month, day, era) || hour < 0 || hour >= 24 || minute < 0 || minute >= 60 || second < 0 ||
+            second > 60 || ms < 0 || ms >= 1000)
             return false;
         if (second == 60) {
             if (!ctx.valid_leap_second(year, month, day, hour, minute))
@@ -139,9 +160,11 @@ struct Gregorian {
                           (std::int64_t(hour) * 3600 + minute * 60 + second) * second_ticks + ms * 10000ll);
         return true;
     }
-    bool TryCreate(int y, int m, int d, int h, int minute, int sec, int ms, DateTime& result) const {
+
+    bool TryCreate(int y, int m, int d, int h, int minute, int sec, int ms, DateTime &result) const {
         return TryToDateTime(y, m, d, h, minute, sec, ms, 0, result);
     }
+
     int ToFourDigitYear(int year) const {
         if (year < 0 || year > 9999)
             throw std::out_of_range("Gregorian year");
@@ -151,6 +174,7 @@ struct Gregorian {
         }
         return year;
     }
+
     std::array<int, 3> parts(DateTime date) const {
         auto days = date.Ticks / day_ticks;
         int year = static_cast<int>(days / 366) + 1;
@@ -164,19 +188,24 @@ struct Gregorian {
         }
         return {year, month, static_cast<int>(current) + 1};
     }
+
     int GetYear(DateTime d) const {
         return parts(d)[0];
     }
+
     int GetMonth(DateTime d) const {
         return parts(d)[1];
     }
+
     int GetDayOfMonth(DateTime d) const {
         return parts(d)[2];
     }
+
     int GetDayOfWeek(DateTime d) const {
         return static_cast<int>((d.Ticks / day_ticks + 1) % 7);
     }
 };
+
 std::int64_t round_even(double value) {
     auto whole = std::floor(value);
     auto fraction = value - whole;
@@ -262,6 +291,7 @@ enum class DS : int {
     TX_TS = 37,
     DX_NNY = 38,
 };
+
 namespace TK {
 enum Values : int {
 
@@ -301,6 +331,7 @@ enum Values : int {
     SeparatorTokenMask = 0xff00,
 };
 }
+
 namespace PF {
 enum Values : int {
     HaveYear = 0x00000001,
@@ -320,9 +351,11 @@ enum Values : int {
     UtcSortPattern = 0x00004000,
 };
 }
+
 using TokenType = int;
 using ParseFlags = int;
 using DateTimeStyles = int;
+
 namespace ST {
 enum Values : int {
     None = 0,
@@ -336,6 +369,7 @@ enum Values : int {
     RoundtripKind = 128
 };
 }
+
 static constexpr DS s_dateParsingStates[20][18] = {
 
     {DS::BEGIN, DS::ERROR, DS::TX_N, DS::N, DS::D_Nd, DS::T_Nt, DS::ERROR, DS::D_M, DS::D_M, DS::D_S, DS::T_S,
@@ -344,59 +378,59 @@ static constexpr DS s_dateParsingStates[20][18] = {
     {DS::ERROR, DS::DX_NN, DS::TX_NN, DS::NN, DS::D_NNd, DS::ERROR, DS::DX_NM, DS::D_NM, DS::D_MNd, DS::D_NDS,
      DS::ERROR, DS::N, DS::D_YN, DS::D_YNd, DS::DX_YN, DS::N, DS::N, DS::ERROR},
 
-    {DS::DX_NN, DS::DX_NNN, DS::TX_NNN, DS::DX_NNN, DS::ERROR, DS::T_Nt, DS::DX_MNN, DS::DX_MNN, DS::ERROR,
-     DS::ERROR, DS::T_S, DS::NN, DS::DX_NNY, DS::ERROR, DS::DX_NNY, DS::NN, DS::NN, DS::ERROR},
+    {DS::DX_NN, DS::DX_NNN, DS::TX_NNN, DS::DX_NNN, DS::ERROR, DS::T_Nt, DS::DX_MNN, DS::DX_MNN, DS::ERROR, DS::ERROR,
+     DS::T_S, DS::NN, DS::DX_NNY, DS::ERROR, DS::DX_NNY, DS::NN, DS::NN, DS::ERROR},
 
-    {DS::ERROR, DS::DX_NN, DS::ERROR, DS::D_NN, DS::D_NNd, DS::ERROR, DS::DX_NM, DS::D_MN, DS::D_MNd,
-     DS::ERROR, DS::ERROR, DS::D_Nd, DS::D_YN, DS::D_YNd, DS::DX_YN, DS::ERROR, DS::D_Nd, DS::ERROR},
+    {DS::ERROR, DS::DX_NN, DS::ERROR, DS::D_NN, DS::D_NNd, DS::ERROR, DS::DX_NM, DS::D_MN, DS::D_MNd, DS::ERROR,
+     DS::ERROR, DS::D_Nd, DS::D_YN, DS::D_YNd, DS::DX_YN, DS::ERROR, DS::D_Nd, DS::ERROR},
 
-    {DS::DX_NN, DS::DX_NNN, DS::TX_N, DS::DX_NNN, DS::ERROR, DS::T_Nt, DS::DX_MNN, DS::DX_MNN, DS::ERROR,
-     DS::DX_DS, DS::T_S, DS::D_NN, DS::DX_NNY, DS::ERROR, DS::DX_NNY, DS::ERROR, DS::D_NN, DS::ERROR},
+    {DS::DX_NN, DS::DX_NNN, DS::TX_N, DS::DX_NNN, DS::ERROR, DS::T_Nt, DS::DX_MNN, DS::DX_MNN, DS::ERROR, DS::DX_DS,
+     DS::T_S, DS::D_NN, DS::DX_NNY, DS::ERROR, DS::DX_NNY, DS::ERROR, DS::D_NN, DS::ERROR},
 
-    {DS::ERROR, DS::DX_NNN, DS::DX_NNN, DS::DX_NNN, DS::ERROR, DS::ERROR, DS::DX_MNN, DS::DX_MNN, DS::ERROR,
-     DS::DX_DS, DS::ERROR, DS::D_NNd, DS::DX_NNY, DS::ERROR, DS::DX_NNY, DS::ERROR, DS::D_NNd, DS::ERROR},
+    {DS::ERROR, DS::DX_NNN, DS::DX_NNN, DS::DX_NNN, DS::ERROR, DS::ERROR, DS::DX_MNN, DS::DX_MNN, DS::ERROR, DS::DX_DS,
+     DS::ERROR, DS::D_NNd, DS::DX_NNY, DS::ERROR, DS::DX_NNY, DS::ERROR, DS::D_NNd, DS::ERROR},
 
-    {DS::ERROR, DS::DX_MN, DS::ERROR, DS::D_MN, DS::D_MNd, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR,
-     DS::ERROR, DS::ERROR, DS::D_M, DS::D_YM, DS::D_YMd, DS::DX_YM, DS::ERROR, DS::D_M, DS::ERROR},
+    {DS::ERROR, DS::DX_MN, DS::ERROR, DS::D_MN, DS::D_MNd, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR,
+     DS::ERROR, DS::D_M, DS::D_YM, DS::D_YMd, DS::DX_YM, DS::ERROR, DS::D_M, DS::ERROR},
 
-    {DS::DX_MN, DS::DX_MNN, DS::DX_MNN, DS::DX_MNN, DS::ERROR, DS::T_Nt, DS::ERROR, DS::ERROR, DS::ERROR,
-     DS::DX_DS, DS::T_S, DS::D_MN, DS::DX_YMN, DS::ERROR, DS::DX_YMN, DS::ERROR, DS::D_MN, DS::ERROR},
+    {DS::DX_MN, DS::DX_MNN, DS::DX_MNN, DS::DX_MNN, DS::ERROR, DS::T_Nt, DS::ERROR, DS::ERROR, DS::ERROR, DS::DX_DS,
+     DS::T_S, DS::D_MN, DS::DX_YMN, DS::ERROR, DS::DX_YMN, DS::ERROR, DS::D_MN, DS::ERROR},
 
-    {DS::DX_NM, DS::DX_MNN, DS::DX_MNN, DS::DX_MNN, DS::ERROR, DS::T_Nt, DS::ERROR, DS::ERROR, DS::ERROR,
-     DS::DX_DS, DS::T_S, DS::D_NM, DS::DX_YMN, DS::ERROR, DS::DX_YMN, DS::ERROR, DS::D_NM, DS::ERROR},
+    {DS::DX_NM, DS::DX_MNN, DS::DX_MNN, DS::DX_MNN, DS::ERROR, DS::T_Nt, DS::ERROR, DS::ERROR, DS::ERROR, DS::DX_DS,
+     DS::T_S, DS::D_NM, DS::DX_YMN, DS::ERROR, DS::DX_YMN, DS::ERROR, DS::D_NM, DS::ERROR},
 
-    {DS::ERROR, DS::DX_MNN, DS::ERROR, DS::DX_MNN, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR,
-     DS::ERROR, DS::ERROR, DS::D_MNd, DS::DX_YMN, DS::ERROR, DS::DX_YMN, DS::ERROR, DS::D_MNd, DS::ERROR},
+    {DS::ERROR, DS::DX_MNN, DS::ERROR, DS::DX_MNN, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR,
+     DS::ERROR, DS::D_MNd, DS::DX_YMN, DS::ERROR, DS::DX_YMN, DS::ERROR, DS::D_MNd, DS::ERROR},
 
-    {DS::DX_NDS, DS::DX_NNDS, DS::DX_NNDS, DS::DX_NNDS, DS::ERROR, DS::T_Nt, DS::ERROR, DS::ERROR, DS::ERROR,
-     DS::D_NDS, DS::T_S, DS::D_NDS, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR, DS::D_NDS, DS::ERROR},
+    {DS::DX_NDS, DS::DX_NNDS, DS::DX_NNDS, DS::DX_NNDS, DS::ERROR, DS::T_Nt, DS::ERROR, DS::ERROR, DS::ERROR, DS::D_NDS,
+     DS::T_S, DS::D_NDS, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR, DS::D_NDS, DS::ERROR},
 
-    {DS::ERROR, DS::DX_YN, DS::ERROR, DS::D_YN, DS::D_YNd, DS::ERROR, DS::DX_YM, DS::D_YM, DS::D_YMd,
-     DS::D_YM, DS::ERROR, DS::D_Y, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR, DS::D_Y, DS::ERROR},
+    {DS::ERROR, DS::DX_YN, DS::ERROR, DS::D_YN, DS::D_YNd, DS::ERROR, DS::DX_YM, DS::D_YM, DS::D_YMd, DS::D_YM,
+     DS::ERROR, DS::D_Y, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR, DS::D_Y, DS::ERROR},
 
-    {DS::DX_YN, DS::DX_YNN, DS::DX_YNN, DS::DX_YNN, DS::ERROR, DS::ERROR, DS::DX_YMN, DS::DX_YMN, DS::ERROR,
-     DS::ERROR, DS::ERROR, DS::D_YN, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR, DS::D_YN, DS::ERROR},
+    {DS::DX_YN, DS::DX_YNN, DS::DX_YNN, DS::DX_YNN, DS::ERROR, DS::ERROR, DS::DX_YMN, DS::DX_YMN, DS::ERROR, DS::ERROR,
+     DS::ERROR, DS::D_YN, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR, DS::D_YN, DS::ERROR},
 
-    {DS::ERROR, DS::DX_YNN, DS::DX_YNN, DS::DX_YNN, DS::ERROR, DS::ERROR, DS::DX_YMN, DS::DX_YMN, DS::ERROR,
-     DS::ERROR, DS::ERROR, DS::D_YN, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR, DS::D_YN, DS::ERROR},
+    {DS::ERROR, DS::DX_YNN, DS::DX_YNN, DS::DX_YNN, DS::ERROR, DS::ERROR, DS::DX_YMN, DS::DX_YMN, DS::ERROR, DS::ERROR,
+     DS::ERROR, DS::D_YN, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR, DS::D_YN, DS::ERROR},
 
-    {DS::DX_YM, DS::DX_YMN, DS::DX_YMN, DS::DX_YMN, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR,
-     DS::ERROR, DS::ERROR, DS::D_YM, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR, DS::D_YM, DS::ERROR},
+    {DS::DX_YM, DS::DX_YMN, DS::DX_YMN, DS::DX_YMN, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR,
+     DS::ERROR, DS::D_YM, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR, DS::D_YM, DS::ERROR},
 
-    {DS::ERROR, DS::DX_YMN, DS::DX_YMN, DS::DX_YMN, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR,
-     DS::ERROR, DS::ERROR, DS::D_YM, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR, DS::D_YM, DS::ERROR},
+    {DS::ERROR, DS::DX_YMN, DS::DX_YMN, DS::DX_YMN, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR,
+     DS::ERROR, DS::D_YM, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR, DS::D_YM, DS::ERROR},
 
-    {DS::DX_DS, DS::DX_DSN, DS::TX_N, DS::T_Nt, DS::ERROR, DS::T_Nt, DS::ERROR, DS::ERROR, DS::ERROR, DS::D_S,
-     DS::T_S, DS::D_S, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR, DS::D_S, DS::ERROR},
+    {DS::DX_DS, DS::DX_DSN, DS::TX_N, DS::T_Nt, DS::ERROR, DS::T_Nt, DS::ERROR, DS::ERROR, DS::ERROR, DS::D_S, DS::T_S,
+     DS::D_S, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR, DS::D_S, DS::ERROR},
 
-    {DS::TX_TS, DS::TX_TS, DS::TX_TS, DS::T_Nt, DS::D_Nd, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR, DS::D_S,
-     DS::T_S, DS::T_S, DS::ERROR, DS::ERROR, DS::ERROR, DS::T_S, DS::T_S, DS::ERROR},
+    {DS::TX_TS, DS::TX_TS, DS::TX_TS, DS::T_Nt, DS::D_Nd, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR, DS::D_S, DS::T_S,
+     DS::T_S, DS::ERROR, DS::ERROR, DS::ERROR, DS::T_S, DS::T_S, DS::ERROR},
 
-    {DS::ERROR, DS::TX_NN, DS::TX_NN, DS::TX_NN, DS::ERROR, DS::T_NNt, DS::DX_NM, DS::D_NM, DS::ERROR,
-     DS::ERROR, DS::T_S, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR, DS::T_Nt, DS::T_Nt, DS::TX_NN},
+    {DS::ERROR, DS::TX_NN, DS::TX_NN, DS::TX_NN, DS::ERROR, DS::T_NNt, DS::DX_NM, DS::D_NM, DS::ERROR, DS::ERROR,
+     DS::T_S, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR, DS::T_Nt, DS::T_Nt, DS::TX_NN},
 
-    {DS::ERROR, DS::TX_NNN, DS::TX_NNN, DS::TX_NNN, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR,
-     DS::ERROR, DS::T_S, DS::T_NNt, DS::ERROR, DS::ERROR, DS::ERROR, DS::T_NNt, DS::T_NNt, DS::TX_NNN},
+    {DS::ERROR, DS::TX_NNN, DS::TX_NNN, DS::TX_NNN, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR, DS::ERROR,
+     DS::T_S, DS::T_NNt, DS::ERROR, DS::ERROR, DS::ERROR, DS::T_NNt, DS::T_NNt, DS::TX_NNN},
 };
 constexpr int ORDER_YMD = 0;
 constexpr int ORDER_MDY = 1;
@@ -406,52 +440,63 @@ constexpr int ORDER_YM = 4;
 constexpr int ORDER_MY = 5;
 constexpr int ORDER_MD = 6;
 constexpr int ORDER_DM = 7;
+
 struct DateTimeResult {
     int Year = -1, Month = -1, Day = -1, Hour = 0, Minute = 0, Second = 0, era = 0;
     int flags = 0;
     bool failure = false;
-    Gregorian* calendar = nullptr;
+    Gregorian *calendar = nullptr;
     DateTime parsedDate;
     TimeSpan timeZoneOffset;
+
     void SetDate(int y, int m, int d) {
         Year = y;
         Month = m;
         Day = d;
     }
-    template <class... Args> void SetFailure(Args&&...) {
+
+    template <class... Args> void SetFailure(Args &&...) {
         failure = true;
     }
+
     void SetBadDateTimeFailure() {
         failure = true;
     }
 };
+
 struct DateTimeRawInfo {
     std::array<int, 3> numbers{};
     int numCount = 0, month = -1, year = -1, dayOfWeek = -1, era = -1;
     TM timeMark = TM::NotSet;
     double fraction = -1;
     bool hasSameDateAndTimeSeparators = false;
+
     void AddNumber(int value) {
         if (numCount < 3)
             numbers[static_cast<std::size_t>(numCount++)] = value;
     }
+
     int GetNumber(int index) const {
         return numbers[static_cast<std::size_t>(index)];
     }
 };
+
 struct DateTimeToken {
     DTT dtt = DTT::End;
     int suffix = TK::SEP_Unk, num = 0;
 };
 enum class DTSubStringType { Unknown, Invalid, Number, End, Other };
+
 struct DTSubString {
     Text s;
     int index = 0, length = 0, value = 0;
     DTSubStringType type = DTSubStringType::Unknown;
+
     char16_t operator[](int relative) const {
         return s[index + relative];
     }
 };
+
 namespace HB {
 enum class HebrewToken : int {
     Invalid = -1,
@@ -487,10 +532,12 @@ enum class HS : int {
     S9_DQ = 16,
     END = 100,
 };
+
 struct Value {
     HebrewToken token;
     int value;
 };
+
 static constexpr Value values[] = {
     {HebrewToken::Digit1, 1},         {HebrewToken::Digit1, 2},         {HebrewToken::Digit1, 3},
     {HebrewToken::Digit1, 4},         {HebrewToken::Digit1, 5},         {HebrewToken::Digit6_7, 6},
@@ -554,14 +601,17 @@ static constexpr HS transitions[] = {
     HS::_err,     HS::_err,     HS::_err,         HS::_err,        HS::_err,
     HS::END,      HS::END,      HS::_err,         HS::_err,        HS::_err};
 enum class Status { Invalid, NotDigit, End, Continue };
+
 struct Context {
     HS state = HS::Start;
     int result = 0;
 };
+
 bool digit(char16_t c) {
     return (c >= 0x5d0 && c <= 0x5ea && values[c - 0x5d0].value >= 0) || c == u'\'' || c == u'"';
 }
-Status parse(char16_t c, Context& context) {
+
+Status parse(char16_t c, Context &context) {
     HebrewToken token;
     if (c == u'\'')
         token = HebrewToken::SingleQuote;
@@ -583,48 +633,56 @@ Status parse(char16_t c, Context& context) {
         return Status::End;
     return Status::Continue;
 }
-}
+} // namespace HB
+
 struct CompareInfo {
     bool mode = false;
+
     bool equals(Text a, Text b) const {
         return mode ? ordinal_equals_ignore_case(utf8(a.value), utf8(b.value))
                     : invariant_equals_ignore_case(utf8(a.value), utf8(b.value));
     }
+
     int Compare(Text a, Text b, int = 0) const {
         return equals(a, b) ? 0 : 1;
     }
 };
 struct DTString;
+
 struct DateTimeFormatInfo {
-    const InvariantDateTimeParseContext& ctx;
-    Gregorian* Calendar;
+    const InvariantDateTimeParseContext &ctx;
+    Gregorian *Calendar;
     CompareInfo CompareInfoValue;
-    Text DateSeparator = u"/", TimeSeparator = u":", ShortDatePattern = u"MM/dd/yyyy",
-         YearMonthPattern = u"yyyy MMMM", MonthDayPattern = u"MMMM dd", AMDesignator = u"AM",
-         PMDesignator = u"PM";
+    Text DateSeparator = u"/", TimeSeparator = u":", ShortDatePattern = u"MM/dd/yyyy", YearMonthPattern = u"yyyy MMMM",
+         MonthDayPattern = u"MMMM dd", AMDesignator = u"AM", PMDesignator = u"PM";
     int FormatFlags = 0;
     bool HasYearMonthAdjustment = false;
-    bool YearMonthAdjustment(int&, int&, bool) const {
+
+    bool YearMonthAdjustment(int &, int &, bool) const {
         return true;
     }
+
     struct Token {
         std::u16string text;
         int type = 0, value = 0;
     };
+
     std::array<Token, 199> table;
-    DateTimeFormatInfo(const InvariantDateTimeParseContext&, Gregorian*);
-    bool Tokenize(int mask, int& token, int& value, DTString&);
+    DateTimeFormatInfo(const InvariantDateTimeParseContext &, Gregorian *);
+    bool Tokenize(int mask, int &token, int &value, DTString &);
     void insert(Text, int, int);
     void insert_at(Text, char16_t, int, int, int, int, int);
 };
+
 struct DTString {
     Text Value;
     int Index = -1, Length = 0;
     char16_t m_current = 0;
     CompareInfo CompareInfoValue;
-    DTString(Text value, DateTimeFormatInfo& format)
-        : Value(value), Length(value.Length), CompareInfoValue(format.CompareInfoValue) {
-    }
+
+    DTString(Text value, DateTimeFormatInfo &format)
+        : Value(value), Length(value.Length), CompareInfoValue(format.CompareInfoValue) {}
+
     bool GetNext() {
         if (++Index < Length) {
             m_current = Value[Index];
@@ -632,9 +690,11 @@ struct DTString {
         }
         return false;
     }
+
     bool AtEnd() const {
         return Index >= Length;
     }
+
     bool Advance(int count) {
         Index += count;
         if (Index < Length) {
@@ -643,7 +703,8 @@ struct DTString {
         }
         return false;
     }
-    void GetRegularToken(int& token, int& value, DateTimeFormatInfo& format) {
+
+    void GetRegularToken(int &token, int &value, DateTimeFormatInfo &format) {
         value = 0;
         if (Index >= Length) {
             token = TK::EndOfString;
@@ -684,6 +745,7 @@ struct DTString {
             return;
         }
     }
+
     bool SkipWhiteSpaceAndRtlMarkCurrent() {
         if (Index >= Length)
             return false;
@@ -694,7 +756,8 @@ struct DTString {
         }
         return true;
     }
-    int GetSeparatorToken(DateTimeFormatInfo& format, int& before, char16_t& character) {
+
+    int GetSeparatorToken(DateTimeFormatInfo &format, int &before, char16_t &character) {
         before = Index;
         character = m_current;
         if (!SkipWhiteSpaceAndRtlMarkCurrent())
@@ -704,32 +767,37 @@ struct DTString {
             return format.Tokenize(TK::SeparatorTokenMask, token, value, *this) ? token : TK::SEP_Space;
         return TK::SEP_Space;
     }
+
     bool Match(char16_t character) {
         if (++Index >= Length)
             return false;
-        if (Value[Index] == character ||
-            (character == u' ' && (Value[Index] == 0xa0 || Value[Index] == 0x202f))) {
+        if (Value[Index] == character || (character == u' ' && (Value[Index] == 0xa0 || Value[Index] == 0x202f))) {
             m_current = character;
             return true;
         }
         --Index;
         return false;
     }
+
     bool GetNextDigit() {
         return ++Index < Length && Value[Index] >= u'0' && Value[Index] <= u'9';
     }
+
     int GetDigit() const {
         return Value[Index] - u'0';
     }
+
     char16_t GetChar() const {
         return Value[Index];
     }
+
     void SkipWhiteSpaces() {
         int i = Index + 1;
         while (i < Length && unicode_whitespace(Value[i]))
             ++i;
         Index = i - 1;
     }
+
     DTSubString GetSubString() {
         DTSubString result;
         result.index = Index;
@@ -755,14 +823,15 @@ struct DTString {
             result.type = DTSubStringType::End;
         return result;
     }
-    void ConsumeSubString(const DTSubString& value) {
+
+    void ConsumeSubString(const DTSubString &value) {
         Index = value.index + value.length;
         if (Index < Length)
             m_current = Value[Index];
     }
 };
-void DateTimeFormatInfo::insert_at(Text text, char16_t ch, int type, int value, int pos, int hash,
-                                   int probe) {
+
+void DateTimeFormatInfo::insert_at(Text text, char16_t ch, int type, int value, int pos, int hash, int probe) {
     auto previous = table[hash];
     table[hash] = {std::u16string(text.value), type, value};
     while (++pos < 199) {
@@ -778,6 +847,7 @@ void DateTimeFormatInfo::insert_at(Text text, char16_t ch, int type, int value, 
         previous = std::move(next);
     }
 }
+
 void DateTimeFormatInfo::insert(Text text, int type, int value) {
     while (text.Length && unicode_whitespace(text[0]))
         text = text.Slice(1);
@@ -788,7 +858,7 @@ void DateTimeFormatInfo::insert(Text text, int type, int value) {
     auto ch = lower(text[0]);
     int hash = ch % 199, probe = 1 + ch % 197;
     for (int pos = 0; pos < 199; ++pos) {
-        auto& current = table[hash];
+        auto &current = table[hash];
         if (current.text.empty()) {
             current = {std::u16string(text.value), type, value};
             return;
@@ -812,7 +882,8 @@ void DateTimeFormatInfo::insert(Text text, int type, int value) {
             hash -= 199;
     }
 }
-DateTimeFormatInfo::DateTimeFormatInfo(const InvariantDateTimeParseContext& context, Gregorian* calendar)
+
+DateTimeFormatInfo::DateTimeFormatInfo(const InvariantDateTimeParseContext &context, Gregorian *calendar)
     : ctx(context), Calendar(calendar), CompareInfoValue{context.globalization_invariant_mode} {
     insert(u",", TK::IgnorableSymbol, 0);
     insert(u".", TK::IgnorableSymbol, 0);
@@ -831,9 +902,8 @@ DateTimeFormatInfo::DateTimeFormatInfo(const InvariantDateTimeParseContext& cont
     insert(u"\u79d2", TK::SEP_SecondSuff, 0);
     insert(u"-", TK::SEP_DateOrOffset, 0);
     insert(u"/", TK::SEP_Date, 0);
-    static constexpr Text months[] = {u"January",   u"February", u"March",    u"April",
-                                      u"May",       u"June",     u"July",     u"August",
-                                      u"September", u"October",  u"November", u"December"};
+    static constexpr Text months[] = {u"January", u"February", u"March",     u"April",   u"May",      u"June",
+                                      u"July",    u"August",   u"September", u"October", u"November", u"December"};
     static constexpr Text abbreviated[] = {u"Jan", u"Feb", u"Mar", u"Apr", u"May", u"Jun",
                                            u"Jul", u"Aug", u"Sep", u"Oct", u"Nov", u"Dec"};
     for (int i = 0; i < 12; ++i) {
@@ -857,7 +927,8 @@ DateTimeFormatInfo::DateTimeFormatInfo(const InvariantDateTimeParseContext& cont
     insert(u"/", TK::SEP_Date, 0);
     insert(u":", TK::SEP_Time, 0);
 }
-bool DateTimeFormatInfo::Tokenize(int mask, int& token, int& value, DTString& str) {
+
+bool DateTimeFormatInfo::Tokenize(int mask, int &token, int &value, DTString &str) {
     token = TK::UnknownToken;
     value = 0;
     auto ch = str.m_current;
@@ -885,7 +956,7 @@ bool DateTimeFormatInfo::Tokenize(int mask, int& token, int& value, DTString& st
     }
     int hash = ch % 199, probe = 1 + ch % 197, remaining = str.Length - str.Index;
     for (int i = 0; i < 199; ++i) {
-        auto& current = table[hash];
+        auto &current = table[hash];
         if (current.text.empty())
             break;
         int length = static_cast<int>(current.text.size());
@@ -893,9 +964,8 @@ bool DateTimeFormatInfo::Tokenize(int mask, int& token, int& value, DTString& st
             bool compare = true;
             if (is_letter && str.Index + length < str.Length)
                 compare = !letter(str.Value[str.Index + length]);
-            if (compare &&
-                ((length == 1 && str.Value[str.Index] == current.text[0]) ||
-                 CompareInfoValue.equals(str.Value.Slice(str.Index, length), Text(current.text)))) {
+            if (compare && ((length == 1 && str.Value[str.Index] == current.text[0]) ||
+                            CompareInfoValue.equals(str.Value.Slice(str.Index, length), Text(current.text)))) {
                 token = current.type & mask;
                 value = current.value;
                 str.Advance(length);
@@ -908,23 +978,28 @@ bool DateTimeFormatInfo::Tokenize(int mask, int& token, int& value, DTString& st
     }
     return false;
 }
+
 namespace SC {
 constexpr int Ordinal = 0;
 }
+
 namespace DF {
 constexpr int UseHebrewRule = 8;
 }
+
 bool ascii_digit(char16_t c) {
     return c >= u'0' && c <= u'9';
 }
+
 class Parser {
-    const InvariantDateTimeParseContext& ctx;
+    const InvariantDateTimeParseContext &ctx;
     Gregorian cal;
     DateTimeFormatInfo format;
     static constexpr char16_t TimeDelimiter = u':';
     static constexpr char16_t TimeFractionDelimiterDot = u'.', TimeFractionDelimiterComma = u',';
     static constexpr Text GMTName = u"GMT", ZuluName = u"Z";
-    bool MatchWord(DTString& str, Text target) {
+
+    bool MatchWord(DTString &str, Text target) {
 
         if (target.Length > (str.Value.Length - str.Index)) {
             return false;
@@ -949,7 +1024,8 @@ class Parser {
 
         return true;
     }
-    bool GetTimeZoneName(DTString& str) {
+
+    bool GetTimeZoneName(DTString &str) {
 
         if (MatchWord(str, GMTName)) {
             return true;
@@ -961,7 +1037,8 @@ class Parser {
 
         return false;
     }
-    bool ParseFraction(DTString& str, double& result) {
+
+    bool ParseFraction(DTString &str, double &result) {
 
         result = 0;
         double decimalBase = 0.1;
@@ -974,7 +1051,8 @@ class Parser {
         }
         return digits > 0;
     }
-    bool ParseTimeZone(DTString& str, TimeSpan& result) {
+
+    bool ParseTimeZone(DTString &str, TimeSpan &result) {
 
         int hourOffset;
         int minuteOffset = 0;
@@ -1031,7 +1109,8 @@ class Parser {
         }
         return true;
     }
-    bool HandleTimeZone(DTString& str, DateTimeResult& result) {
+
+    bool HandleTimeZone(DTString &str, DateTimeResult &result) {
 
         if (str.Index < str.Length - 1) {
             char16_t nextCh = str.Value[str.Index];
@@ -1057,8 +1136,9 @@ class Parser {
         }
         return true;
     }
-    bool Lex(DS dps, DTString& str, DateTimeToken& dtok, DateTimeRawInfo& raw, DateTimeResult& result,
-             DateTimeFormatInfo& dtfi, DateTimeStyles styles) {
+
+    bool Lex(DS dps, DTString &str, DateTimeToken &dtok, DateTimeRawInfo &raw, DateTimeResult &result,
+             DateTimeFormatInfo &dtfi, DateTimeStyles styles) {
         TokenType tokenType{};
         int tokenValue{};
 
@@ -1218,8 +1298,7 @@ class Parser {
                 break;
             case TK::SEP_Time:
                 if (raw.hasSameDateAndTimeSeparators &&
-                    (dps == DS::D_Y || dps == DS::D_YN || dps == DS::D_YNd || dps == DS::D_YM ||
-                     dps == DS::D_YMd)) {
+                    (dps == DS::D_Y || dps == DS::D_YN || dps == DS::D_YNd || dps == DS::D_YM || dps == DS::D_YMd)) {
 
                     dtok.dtt = DTT::NumDatesep;
                     raw.AddNumber(dtok.num);
@@ -1231,7 +1310,7 @@ class Parser {
             case TK::SEP_YearSuff:
                 try {
                     dtok.num = dtfi.Calendar->ToFourDigitYear(tokenValue);
-                } catch (const std::out_of_range&) {
+                } catch (const std::out_of_range &) {
                     result.SetBadDateTimeFailure();
 
                     return false;
@@ -1437,8 +1516,7 @@ class Parser {
                 return false;
             }
 
-            if ((str.m_current == u'-' || str.m_current == u'+') &&
-                ((result.flags & PF::TimeZoneUsed) == 0)) {
+            if ((str.m_current == u'-' || str.m_current == u'+') && ((result.flags & PF::TimeZoneUsed) == 0)) {
                 int originalIndex = str.Index;
                 if (ParseTimeZone(str, result.timeZoneOffset)) {
                     result.flags |= PF::TimeZoneUsed;
@@ -1462,7 +1540,8 @@ class Parser {
 
         return true;
     }
-    bool VerifyValidPunctuation(DTString& str) {
+
+    bool VerifyValidPunctuation(DTString &str) {
 
         char16_t ch = str.Value[str.Index];
         if (ch == u'#') {
@@ -1511,7 +1590,8 @@ class Parser {
         }
         return false;
     }
-    bool GetYearMonthDayOrder(Text datePattern, int& order) {
+
+    bool GetYearMonthDayOrder(Text datePattern, int &order) {
 
         int yearOrder = -1;
         int monthOrder = -1;
@@ -1575,7 +1655,8 @@ class Parser {
         order = -1;
         return false;
     }
-    bool GetYearMonthOrder(Text pattern, int& order) {
+
+    bool GetYearMonthOrder(Text pattern, int &order) {
 
         int yearOrder = -1;
         int monthOrder = -1;
@@ -1619,7 +1700,8 @@ class Parser {
         order = -1;
         return false;
     }
-    bool GetMonthDayOrder(Text pattern, int& order) {
+
+    bool GetMonthDayOrder(Text pattern, int &order) {
 
         int monthOrder = -1;
         int dayOrder = -1;
@@ -1668,13 +1750,14 @@ class Parser {
         order = -1;
         return false;
     }
-    bool TryAdjustYear(DateTimeResult& result, int year, int& adjustedYear) {
+
+    bool TryAdjustYear(DateTimeResult &result, int year, int &adjustedYear) {
 
         if (year < 100) {
             try {
 
                 year = result.calendar->ToFourDigitYear(year);
-            } catch (const std::out_of_range&) {
+            } catch (const std::out_of_range &) {
                 adjustedYear = -1;
                 return false;
             }
@@ -1682,7 +1765,8 @@ class Parser {
         adjustedYear = year;
         return true;
     }
-    bool SetDateYMD(DateTimeResult& result, int year, int month, int day) {
+
+    bool SetDateYMD(DateTimeResult &result, int year, int month, int day) {
 
         if (result.calendar->IsValidDay(year, month, day, result.era)) {
             result.SetDate(year, month, day);
@@ -1690,25 +1774,29 @@ class Parser {
         }
         return false;
     }
-    bool SetDateMDY(DateTimeResult& result, int month, int day, int year) {
+
+    bool SetDateMDY(DateTimeResult &result, int month, int day, int year) {
 
         return SetDateYMD(result, year, month, day);
     }
-    bool SetDateDMY(DateTimeResult& result, int day, int month, int year) {
+
+    bool SetDateDMY(DateTimeResult &result, int day, int month, int year) {
 
         return SetDateYMD(result, year, month, day);
     }
-    bool SetDateYDM(DateTimeResult& result, int year, int day, int month) {
+
+    bool SetDateYDM(DateTimeResult &result, int year, int day, int month) {
 
         return SetDateYMD(result, year, month, day);
     }
-    void GetDefaultYear(DateTimeResult& result, DateTimeStyles& styles) {
+
+    void GetDefaultYear(DateTimeResult &result, DateTimeStyles &styles) {
 
         result.Year = result.calendar->GetYear(GetDateTimeNow(result, styles));
         result.flags |= PF::YearDefault;
     }
-    bool GetDayOfNN(DateTimeResult& result, DateTimeStyles& styles, DateTimeRawInfo& raw,
-                    DateTimeFormatInfo& dtfi) {
+
+    bool GetDayOfNN(DateTimeResult &result, DateTimeStyles &styles, DateTimeRawInfo &raw, DateTimeFormatInfo &dtfi) {
         int order{};
 
         if ((result.flags & PF::HaveDate) != 0) {
@@ -1742,7 +1830,8 @@ class Parser {
         result.SetBadDateTimeFailure();
         return false;
     }
-    bool GetDayOfNNN(DateTimeResult& result, DateTimeRawInfo& raw, DateTimeFormatInfo& dtfi) {
+
+    bool GetDayOfNNN(DateTimeResult &result, DateTimeRawInfo &raw, DateTimeFormatInfo &dtfi) {
         int order{};
 
         if ((result.flags & PF::HaveDate) != 0) {
@@ -1785,8 +1874,8 @@ class Parser {
         result.SetBadDateTimeFailure();
         return false;
     }
-    bool GetDayOfMN(DateTimeResult& result, DateTimeStyles& styles, DateTimeRawInfo& raw,
-                    DateTimeFormatInfo& dtfi) {
+
+    bool GetDayOfMN(DateTimeResult &result, DateTimeStyles &styles, DateTimeRawInfo &raw, DateTimeFormatInfo &dtfi) {
         int monthDayOrder{};
         int yearMonthOrder{};
         int year{};
@@ -1807,8 +1896,7 @@ class Parser {
                 return false;
             }
             if (yearMonthOrder == ORDER_MY) {
-                if (!TryAdjustYear(result, raw.GetNumber(0), year) ||
-                    !SetDateYMD(result, year, raw.month, 1)) {
+                if (!TryAdjustYear(result, raw.GetNumber(0), year) || !SetDateYMD(result, year, raw.month, 1)) {
                     result.SetBadDateTimeFailure();
                     return false;
                 }
@@ -1823,7 +1911,8 @@ class Parser {
         }
         return true;
     }
-    bool GetHebrewDayOfNM(DateTimeResult& result, DateTimeRawInfo& raw, DateTimeFormatInfo& dtfi) {
+
+    bool GetHebrewDayOfNM(DateTimeResult &result, DateTimeRawInfo &raw, DateTimeFormatInfo &dtfi) {
         int monthDayOrder{};
 
         if (!GetMonthDayOrder(dtfi.MonthDayPattern, monthDayOrder)) {
@@ -1840,8 +1929,8 @@ class Parser {
         result.SetBadDateTimeFailure();
         return false;
     }
-    bool GetDayOfNM(DateTimeResult& result, DateTimeStyles& styles, DateTimeRawInfo& raw,
-                    DateTimeFormatInfo& dtfi) {
+
+    bool GetDayOfNM(DateTimeResult &result, DateTimeStyles &styles, DateTimeRawInfo &raw, DateTimeFormatInfo &dtfi) {
         int monthDayOrder{};
         int yearMonthOrder{};
         int year{};
@@ -1862,8 +1951,7 @@ class Parser {
                 return false;
             }
             if (yearMonthOrder == ORDER_YM) {
-                if (!TryAdjustYear(result, raw.GetNumber(0), year) ||
-                    !SetDateYMD(result, year, raw.month, 1)) {
+                if (!TryAdjustYear(result, raw.GetNumber(0), year) || !SetDateYMD(result, year, raw.month, 1)) {
                     result.SetBadDateTimeFailure();
                     return false;
                 }
@@ -1878,7 +1966,8 @@ class Parser {
         }
         return true;
     }
-    bool GetDayOfMNN(DateTimeResult& result, DateTimeRawInfo& raw, DateTimeFormatInfo& dtfi) {
+
+    bool GetDayOfMNN(DateTimeResult &result, DateTimeRawInfo &raw, DateTimeFormatInfo &dtfi) {
         int order{};
 
         if ((result.flags & PF::HaveDate) != 0) {
@@ -1897,8 +1986,7 @@ class Parser {
         int year;
 
         if (order == ORDER_MDY) {
-            if (TryAdjustYear(result, n2, year) &&
-                result.calendar->IsValidDay(year, raw.month, n1, result.era)) {
+            if (TryAdjustYear(result, n2, year) && result.calendar->IsValidDay(year, raw.month, n1, result.era)) {
                 result.SetDate(year, raw.month, n1);
                 result.flags |= PF::HaveDate;
                 return true;
@@ -1909,8 +1997,7 @@ class Parser {
                 return true;
             }
         } else if (order == ORDER_YMD) {
-            if (TryAdjustYear(result, n1, year) &&
-                result.calendar->IsValidDay(year, raw.month, n2, result.era)) {
+            if (TryAdjustYear(result, n1, year) && result.calendar->IsValidDay(year, raw.month, n2, result.era)) {
                 result.SetDate(year, raw.month, n2);
                 result.flags |= PF::HaveDate;
                 return true;
@@ -1921,8 +2008,7 @@ class Parser {
                 return true;
             }
         } else if (order == ORDER_DMY) {
-            if (TryAdjustYear(result, n2, year) &&
-                result.calendar->IsValidDay(year, raw.month, n1, result.era)) {
+            if (TryAdjustYear(result, n2, year) && result.calendar->IsValidDay(year, raw.month, n1, result.era)) {
                 result.SetDate(year, raw.month, n1);
                 result.flags |= PF::HaveDate;
                 return true;
@@ -1937,7 +2023,8 @@ class Parser {
         result.SetBadDateTimeFailure();
         return false;
     }
-    bool GetDayOfYNN(DateTimeResult& result, DateTimeRawInfo& raw, DateTimeFormatInfo& dtfi) {
+
+    bool GetDayOfYNN(DateTimeResult &result, DateTimeRawInfo &raw, DateTimeFormatInfo &dtfi) {
         int order{};
 
         if ((result.flags & PF::HaveDate) != 0) {
@@ -1964,7 +2051,8 @@ class Parser {
         result.SetBadDateTimeFailure();
         return false;
     }
-    bool GetDayOfNNY(DateTimeResult& result, DateTimeRawInfo& raw, DateTimeFormatInfo& dtfi) {
+
+    bool GetDayOfNNY(DateTimeResult &result, DateTimeRawInfo &raw, DateTimeFormatInfo &dtfi) {
         int order{};
 
         if ((result.flags & PF::HaveDate) != 0) {
@@ -2008,7 +2096,8 @@ class Parser {
         result.SetBadDateTimeFailure();
         return false;
     }
-    bool GetDayOfYMN(DateTimeResult& result, DateTimeRawInfo& raw) {
+
+    bool GetDayOfYMN(DateTimeResult &result, DateTimeRawInfo &raw) {
 
         if ((result.flags & PF::HaveDate) != 0) {
 
@@ -2023,7 +2112,8 @@ class Parser {
         result.SetBadDateTimeFailure();
         return false;
     }
-    bool GetDayOfYN(DateTimeResult& result, DateTimeRawInfo& raw) {
+
+    bool GetDayOfYN(DateTimeResult &result, DateTimeRawInfo &raw) {
 
         if ((result.flags & PF::HaveDate) != 0) {
 
@@ -2038,7 +2128,8 @@ class Parser {
         result.SetBadDateTimeFailure();
         return false;
     }
-    bool GetDayOfYM(DateTimeResult& result, DateTimeRawInfo& raw) {
+
+    bool GetDayOfYM(DateTimeResult &result, DateTimeRawInfo &raw) {
 
         if ((result.flags & PF::HaveDate) != 0) {
 
@@ -2053,7 +2144,8 @@ class Parser {
         result.SetBadDateTimeFailure();
         return false;
     }
-    void AdjustTimeMark(DateTimeFormatInfo& dtfi, DateTimeRawInfo& raw) {
+
+    void AdjustTimeMark(DateTimeFormatInfo &dtfi, DateTimeRawInfo &raw) {
 
         if (raw.timeMark == TM::NotSet) {
             if (true) // invariant designators are non-null
@@ -2067,7 +2159,8 @@ class Parser {
             }
         }
     }
-    bool AdjustHour(int& hour, TM timeMark) {
+
+    bool AdjustHour(int &hour, TM timeMark) {
 
         if (timeMark != TM::NotSet) {
             if (timeMark == TM::AM) {
@@ -2086,7 +2179,8 @@ class Parser {
         }
         return true;
     }
-    bool GetTimeOfN(DateTimeResult& result, DateTimeRawInfo& raw) {
+
+    bool GetTimeOfN(DateTimeResult &result, DateTimeRawInfo &raw) {
 
         if ((result.flags & PF::HaveTime) != 0) {
 
@@ -2102,7 +2196,8 @@ class Parser {
         result.flags |= PF::HaveTime;
         return true;
     }
-    bool GetTimeOfNN(DateTimeResult& result, DateTimeRawInfo& raw) {
+
+    bool GetTimeOfNN(DateTimeResult &result, DateTimeRawInfo &raw) {
 
         if ((result.flags & PF::HaveTime) != 0) {
 
@@ -2115,7 +2210,8 @@ class Parser {
         result.flags |= PF::HaveTime;
         return true;
     }
-    bool GetTimeOfNNN(DateTimeResult& result, DateTimeRawInfo& raw) {
+
+    bool GetTimeOfNNN(DateTimeResult &result, DateTimeRawInfo &raw) {
 
         if ((result.flags & PF::HaveTime) != 0) {
 
@@ -2129,7 +2225,8 @@ class Parser {
         result.flags |= PF::HaveTime;
         return true;
     }
-    bool GetDateOfDSN(DateTimeResult& result, DateTimeRawInfo& raw) {
+
+    bool GetDateOfDSN(DateTimeResult &result, DateTimeRawInfo &raw) {
 
         if (raw.numCount != 1 || result.Day != -1) {
             result.SetBadDateTimeFailure();
@@ -2138,7 +2235,8 @@ class Parser {
         result.Day = raw.GetNumber(0);
         return true;
     }
-    bool GetDateOfNDS(DateTimeResult& result, DateTimeRawInfo& raw) {
+
+    bool GetDateOfNDS(DateTimeResult &result, DateTimeRawInfo &raw) {
 
         if (result.Month == -1) {
 
@@ -2158,7 +2256,8 @@ class Parser {
         result.Day = 1;
         return true;
     }
-    bool GetDateOfNNDS(DateTimeResult& result, DateTimeRawInfo& raw, DateTimeFormatInfo& dtfi) {
+
+    bool GetDateOfNNDS(DateTimeResult &result, DateTimeRawInfo &raw, DateTimeFormatInfo &dtfi) {
         int order{};
 
         if ((result.flags & PF::HaveYear) != 0) {
@@ -2191,7 +2290,8 @@ class Parser {
         result.SetBadDateTimeFailure();
         return false;
     }
-    bool ProcessDateTimeSuffix(DateTimeResult& result, DateTimeRawInfo& raw, DateTimeToken& dtok) {
+
+    bool ProcessDateTimeSuffix(DateTimeResult &result, DateTimeRawInfo &raw, DateTimeToken &dtok) {
 
         switch (dtok.suffix) {
         case TK::SEP_YearSuff:
@@ -2239,8 +2339,9 @@ class Parser {
         }
         return true;
     }
-    bool ProcessTerminalState(DS dps, DateTimeResult& result, DateTimeStyles& styles, DateTimeRawInfo& raw,
-                              DateTimeFormatInfo& dtfi) {
+
+    bool ProcessTerminalState(DS dps, DateTimeResult &result, DateTimeStyles &styles, DateTimeRawInfo &raw,
+                              DateTimeFormatInfo &dtfi) {
 
         bool passed = true;
         switch (dps) {
@@ -2312,7 +2413,8 @@ class Parser {
         }
         return true;
     }
-    bool ParseISO8601(DateTimeRawInfo& raw, DTString& str, DateTimeStyles styles, DateTimeResult& result) {
+
+    bool ParseISO8601(DateTimeRawInfo &raw, DTString &str, DateTimeStyles styles, DateTimeResult &result) {
         int hour{};
         int minute{};
         DateTime time{};
@@ -2389,9 +2491,9 @@ class Parser {
             }
         }
 
-        Gregorian* calendar = &cal;
-        if (!calendar->TryToDateTime(raw.year, raw.GetNumber(0), raw.GetNumber(1), hour, minute, second, 0,
-                                     result.era, time)) {
+        Gregorian *calendar = &cal;
+        if (!calendar->TryToDateTime(raw.year, raw.GetNumber(0), raw.GetNumber(1), hour, minute, second, 0, result.era,
+                                     time)) {
             result.failure = true;
             return false;
         }
@@ -2404,7 +2506,8 @@ class Parser {
         result.parsedDate = time;
         return DetermineTimeZoneAdjustments(result, styles, false);
     }
-    bool TryParse(Text s, DateTimeFormatInfo& dtfi, DateTimeStyles styles, DateTimeResult& result) {
+
+    bool TryParse(Text s, DateTimeFormatInfo &dtfi, DateTimeStyles styles, DateTimeResult &result) {
         DateTime time{};
 
         if (s.Length == 0) {
@@ -2459,8 +2562,7 @@ class Parser {
                 }
 
                 if (raw.hasSameDateAndTimeSeparators) {
-                    if (dtok.dtt == DTT::YearEnd || dtok.dtt == DTT::YearSpace ||
-                        dtok.dtt == DTT::YearDateSep) {
+                    if (dtok.dtt == DTT::YearEnd || dtok.dtt == DTT::YearSpace || dtok.dtt == DTT::YearDateSep) {
 
                         if (dps == DS::T_Nt) {
                             dps = DS::D_Nd;
@@ -2569,10 +2671,11 @@ class Parser {
         return true;
     }
 
-    DateTime GetDateTimeNow(DateTimeResult&, DateTimeStyles&) {
+    DateTime GetDateTimeNow(DateTimeResult &, DateTimeStyles &) {
         return DateTime(ctx.now());
     }
-    bool CheckDefaultDateTime(DateTimeResult& result, Gregorian*& calendar, DateTimeStyles) {
+
+    bool CheckDefaultDateTime(DateTimeResult &result, Gregorian *&calendar, DateTimeStyles) {
         if (result.Year == -1 || result.Month == -1 || result.Day == -1) {
             auto now = DateTime(ctx.now());
             if (result.Month == -1 && result.Day == -1) {
@@ -2603,7 +2706,8 @@ class Parser {
             result.era = 0;
         return true;
     }
-    bool DetermineTimeZoneAdjustments(DateTimeResult& result, DateTimeStyles styles, bool time_only) {
+
+    bool DetermineTimeZoneAdjustments(DateTimeResult &result, DateTimeStyles styles, bool time_only) {
         if (result.timeZoneOffset.Ticks < -504000000000ll || result.timeZoneOffset.Ticks > 504000000000ll) {
             result.failure = true;
             return false;
@@ -2623,7 +2727,8 @@ class Parser {
         }
         return AdjustTimeZoneToLocal(result, time_only);
     }
-    bool AdjustTimeZoneToLocal(DateTimeResult& result, bool time_only) {
+
+    bool AdjustTimeZoneToLocal(DateTimeResult &result, bool time_only) {
         auto ticks = result.parsedDate.Ticks;
         bool ambiguous = false;
         if (ticks < day_ticks) {
@@ -2635,8 +2740,7 @@ class Parser {
         } else {
             ticks -= result.timeZoneOffset.Ticks;
             if (ticks < 0 || ticks > maximum_ticks)
-                ticks +=
-                    ctx.local_offset_no_throw(AssetDateTime(result.parsedDate.Ticks, result.parsedDate.Kind));
+                ticks += ctx.local_offset_no_throw(AssetDateTime(result.parsedDate.Ticks, result.parsedDate.Kind));
             else {
                 auto offset = ctx.utc_offset(ticks);
                 ticks += offset.ticks;
@@ -2651,7 +2755,8 @@ class Parser {
         result.parsedDate = DateTime(ticks, DK::Local, ambiguous);
         return true;
     }
-    bool ParseDigits(DTString& str, int min, int max, int& result) {
+
+    bool ParseDigits(DTString &str, int min, int max, int &result) {
         int local = 0, start = str.Index, length = 0;
         while (length < max) {
             if (!str.GetNextDigit()) {
@@ -2668,30 +2773,30 @@ class Parser {
         }
         return true;
     }
-    bool ParseDigits(DTString& str, int digits, int& result) {
+
+    bool ParseDigits(DTString &str, int digits, int &result) {
         return digits == 1 ? ParseDigits(str, 1, 2, result) : ParseDigits(str, digits, digits, result);
     }
-    bool ProcessHebrewTerminalState(DS, DateTimeResult&, DateTimeStyles&, DateTimeRawInfo&,
-                                    DateTimeFormatInfo&) {
+
+    bool ProcessHebrewTerminalState(DS, DateTimeResult &, DateTimeStyles &, DateTimeRawInfo &, DateTimeFormatInfo &) {
         return false;
     } // unreachable: invariant Gregorian FormatFlags==0
   public:
-    explicit Parser(const InvariantDateTimeParseContext& context)
-        : ctx(context), cal{context}, format(context, &cal) {
-    }
-    bool parse(Text text, AssetDateTime& output, int styles = 0) {
+    explicit Parser(const InvariantDateTimeParseContext &context) : ctx(context), cal{context}, format(context, &cal) {}
+
+    bool parse(Text text, AssetDateTime &output, int styles = 0) {
         DateTimeResult result;
         bool valid = TryParse(text, format, styles, result);
         if (!valid)
             return false;
-        auto bits =
-            static_cast<std::uint64_t>(result.parsedDate.Ticks) |
-            (static_cast<std::uint64_t>(result.parsedDate.ambiguous ? 3 : result.parsedDate.Kind) << 62);
+        auto bits = static_cast<std::uint64_t>(result.parsedDate.Ticks) |
+                    (static_cast<std::uint64_t>(result.parsedDate.ambiguous ? 3 : result.parsedDate.Kind) << 62);
         output = AssetDateTime::from_serialized(bits);
         return true;
     }
 };
-}
+} // namespace
+
 namespace invariant_datetime_test {
 std::vector<std::tuple<std::u16string, int, int>> token_profile(bool mode) {
     InvariantDateTimeParseContext ctx;
@@ -2699,39 +2804,41 @@ std::vector<std::tuple<std::u16string, int, int>> token_profile(bool mode) {
     Gregorian calendar{ctx};
     DateTimeFormatInfo format(ctx, &calendar);
     std::vector<std::tuple<std::u16string, int, int>> out;
-    for (const auto& token : format.table)
+    for (const auto &token : format.table)
         out.emplace_back(token.text, token.type, token.value);
     return out;
 }
-}
-bool try_parse_invariant_datetime(std::optional<std::u16string_view> text, AssetDateTime& output,
-                                  const InvariantDateTimeParseContext& context) {
+} // namespace invariant_datetime_test
+
+bool try_parse_invariant_datetime(std::optional<std::u16string_view> text, AssetDateTime &output,
+                                  const InvariantDateTimeParseContext &context) {
     output = {};
     if (!text || text->empty())
         return false;
-    if (!context.now || !context.two_digit_year_max || !context.local_offset_no_throw ||
-        !context.utc_offset || !context.valid_leap_second)
+    if (!context.now || !context.two_digit_year_max || !context.local_offset_no_throw || !context.utc_offset ||
+        !context.valid_leap_second)
         throw std::invalid_argument("Incomplete invariant DateTime parser context");
     Parser parser(context);
     return parser.parse(Text(*text), output);
 }
-bool try_parse_invariant_datetime_cookie_expiry(std::optional<std::u16string_view> text,
-                                                AssetDateTime& output,
-                                                const InvariantDateTimeParseContext& context) {
+
+bool try_parse_invariant_datetime_cookie_expiry(std::optional<std::u16string_view> text, AssetDateTime &output,
+                                                const InvariantDateTimeParseContext &context) {
     output = {};
     if (!text || text->empty())
         return false;
-    if (!context.now || !context.two_digit_year_max || !context.local_offset_no_throw ||
-        !context.utc_offset || !context.valid_leap_second)
+    if (!context.now || !context.two_digit_year_max || !context.local_offset_no_throw || !context.utc_offset ||
+        !context.valid_leap_second)
         throw std::invalid_argument("Incomplete invariant DateTime parser context");
     Parser parser(context);
     return parser.parse(Text(*text), output, 23);
 }
-bool try_parse_invariant_datetime_utf8(const std::optional<std::string>& text, AssetDateTime& output,
-                                       const InvariantDateTimeParseContext& context) {
+
+bool try_parse_invariant_datetime_utf8(const std::optional<std::string> &text, AssetDateTime &output,
+                                       const InvariantDateTimeParseContext &context) {
     if (!text)
         return try_parse_invariant_datetime(std::nullopt, output, context);
     auto units = utf16_replacing(*text);
     return try_parse_invariant_datetime(std::u16string_view(units), output, context);
 }
-}
+} // namespace opensim::framework

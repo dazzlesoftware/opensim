@@ -1,0 +1,1 @@
+YOption arrays;string text="same";object input;object alias;integer result;integer value_equal;default{state_entry(){input=text;alias=llToLower(text);result=(input==alias);value_equal=((string)input==(string)alias);}}

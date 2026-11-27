@@ -5,6 +5,7 @@
 #include <iomanip>
 using namespace opensim::framework;
 using Text = NiniWriterText;
+
 Text dec(std::string s) {
     if (s == "~")
         return {};
@@ -14,6 +15,7 @@ Text dec(std::string s) {
             r.push_back(static_cast<char16_t>(std::stoul(s.substr(i, 4), nullptr, 16)));
     return nini_writer_text(r);
 }
+
 std::string hex(Text s) {
     if (!s)
         return "~";
@@ -25,7 +27,8 @@ std::string hex(Text s) {
         r << std::setw(4) << static_cast<unsigned>(c);
     return r.str();
 }
-int main(int argc, char**) {
+
+int main(int argc, char **) {
     if (argc == 1) {
         auto b = native_nini_argv_dotnet8_backend();
         auto a = std::make_shared<NiniArgvArgumentArray>(std::vector<Text>{dec("002d002d0078003d0031")});
@@ -49,14 +52,14 @@ int main(int argc, char**) {
         try {
             source->save();
             return 6;
-        } catch (const NiniConfigError& e) {
+        } catch (const NiniConfigError &e) {
             if (e.kind != NiniConfigError::Kind::Argument)
                 return 7;
         }
         try {
             (*clone)[1];
             return 8;
-        } catch (const NiniConfigError& e) {
+        } catch (const NiniConfigError &e) {
             if (e.kind != NiniConfigError::Kind::IndexOutOfRange)
                 return 9;
         }
@@ -83,8 +86,7 @@ int main(int argc, char**) {
                 if (cmd == "U") {
                     auto c = (*text())[0];
                     auto b = native_nini_argv_dotnet8_backend();
-                    out.push_back(std::string(b->regex_word(c) ? "1" : "0") +
-                                  (b->regex_space(c) ? "1" : "0"));
+                    out.push_back(std::string(b->regex_word(c) ? "1" : "0") + (b->regex_space(c) ? "1" : "0"));
                 } else if (cmd == "P" || cmd == "S") {
                     std::string s;
                     in >> s;
@@ -100,8 +102,7 @@ int main(int argc, char**) {
                     if (cmd == "P")
                         parser = std::make_unique<NiniArgvParser>(args, native_nini_argv_dotnet8_backend());
                     else
-                        source =
-                            NiniArgvConfigSource::create(arena, args, native_nini_argv_dotnet8_backend());
+                        source = NiniArgvConfigSource::create(arena, args, native_nini_argv_dotnet8_backend());
                 } else if (cmd == "C")
                     parser = std::make_unique<NiniArgvParser>(text(), native_nini_argv_dotnet8_backend());
                 else if (cmd == "G")
@@ -126,7 +127,7 @@ int main(int argc, char**) {
                 else if (cmd == "EV") {
                     int mode;
                     in >> mode;
-                    source->configs()->config_added.add(1, [&, mode](auto&, auto) {
+                    source->configs()->config_added.add(1, [&, mode](auto &, auto) {
                         out.push_back("added");
                         if (mode == 1)
                             throw NiniConfigError(NiniConfigError::Kind::InvalidOperation, u"event-fault");
@@ -139,13 +140,12 @@ int main(int argc, char**) {
                     auto name = text(), key = text();
                     std::size_t index;
                     in >> index;
-                    out.push_back(source->configs()->at(name)->get(key) == (*args)[index] ? "same"
-                                                                                          : "different");
+                    out.push_back(source->configs()->at(name)->get(key) == (*args)[index] ? "same" : "different");
                 } else if (cmd == "ARGS") {
                     std::string v;
                     bool first = true;
                     auto values = source->get_arguments();
-                    for (auto& a : *values) {
+                    for (auto &a : *values) {
                         if (!first)
                             v += ',';
                         first = false;
@@ -157,14 +157,14 @@ int main(int argc, char**) {
                     for (int i = 0; i < source->configs()->count(); ++i) {
                         auto c = source->configs()->at(i);
                         v += hex(c->name()) + '[';
-                        for (auto& k : c->get_keys())
+                        for (auto &k : c->get_keys())
                             v += hex(k) + '=' + hex(c->get(k)) + ',';
                         v += ']';
                     }
                     out.push_back(v);
                 }
                 out.push_back("ok");
-            } catch (const NiniConfigError& e) {
+            } catch (const NiniConfigError &e) {
                 std::ostringstream h;
                 h << std::hex << std::setfill('0') << std::setw(8) << e.hresult();
                 out.push_back(std::string(e.source_type()) + ":" + hex(nini_writer_text(e.message)) + ":" +

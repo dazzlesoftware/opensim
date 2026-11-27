@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <sstream>
 using namespace opensim::framework;
+
 int main() {
     TextureEntry entry(TextureEntry::white_texture);
     std::string line;
@@ -91,7 +92,7 @@ int main() {
             std::cout << ';' << std::hex << decoded.dirty_flags(45, false) << ';';
         }
         std::cout << std::hex << entry.dirty_flags(index, (bits & 1) != 0) << ';';
-        for (auto& f : entry.faces)
+        for (auto &f : entry.faces)
             std::cout << (f ? '1' : '0');
         std::cout << ';' << std::hex << entry.dirty_flags(45, false) << '\n';
     }

@@ -1,0 +1,1 @@
+list output;default{state_entry(){key k=llGetOwner();output=[k];}}

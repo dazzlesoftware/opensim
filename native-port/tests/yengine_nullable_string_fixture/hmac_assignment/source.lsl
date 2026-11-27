@@ -1,0 +1,1 @@
+string value;string result;integer after;default{state_entry(){value=llComputeHash("payload","unsupported");result=llHMAC("key","message","unsupported");after=1;}}

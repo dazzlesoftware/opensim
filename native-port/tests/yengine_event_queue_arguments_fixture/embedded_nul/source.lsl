@@ -1,0 +1,1 @@
+YOption chars;integer input;list result;default{state_entry(){xmrEventEnqueue([21,"a"+(string)(char)input+"b"]);llSleep(0.1);result=xmrEventDequeue(0.0,2097152,0,0,0);}touch_start(integer n){}}

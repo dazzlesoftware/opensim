@@ -8,7 +8,8 @@
 namespace opensim::services {
 namespace {
 using framework::AssetType;
-std::bitset<256> denied_types(const std::string& list, const AssetExchangePermissions::Log& log) {
+
+std::bitset<256> denied_types(const std::string &list, const AssetExchangePermissions::Log &log) {
     std::bitset<256> result;
     std::istringstream input(list);
     for (std::string entry; std::getline(input, entry, ',');) {
@@ -37,7 +38,7 @@ std::string sanitize_xml(std::string xml) {
     return xml;
 }
 
-std::string object_xml(const framework::AssetBytes& data) {
+std::string object_xml(const framework::AssetBytes &data) {
     return sanitize_xml(framework::utf8(framework::sdk_bytes_to_string(*data)));
 }
 
@@ -47,14 +48,13 @@ framework::AssetBytes object_bytes(std::string_view xml) {
         bytes->push_back(0);
     return bytes;
 }
-}
+} // namespace
 
-framework::AssetBytes sanitize_object_asset(const framework::AssetBytes& data) {
+framework::AssetBytes sanitize_object_asset(const framework::AssetBytes &data) {
     return object_bytes(object_xml(data));
 }
 
-AssetExchangePermissions::AssetExchangePermissions(const server::IniConfig& config,
-                                                   const std::string& section, Log log)
+AssetExchangePermissions::AssetExchangePermissions(const server::IniConfig &config, const std::string &section, Log log)
     : blocked_import_(denied_types(config.get(section, "DisallowImport"), log)),
       blocked_export_(denied_types(config.get(section, "DisallowExport"), log)) {}
 
@@ -66,8 +66,8 @@ bool AssetExchangePermissions::allows_export(std::int8_t type) const {
     return !blocked_export_.test(static_cast<std::uint8_t>(type));
 }
 
-HgAssetService::HgAssetService(std::shared_ptr<AssetService> backing, std::string home,
-                               AccountName account_name, AssetExchangePermissions permissions)
+HgAssetService::HgAssetService(std::shared_ptr<AssetService> backing, std::string home, AccountName account_name,
+                               AssetExchangePermissions permissions)
     : backing_(std::move(backing)), home_(std::move(home)), account_name_(std::move(account_name)),
       permissions_(std::move(permissions)) {}
 
@@ -84,21 +84,20 @@ std::optional<std::string> HgAssetService::creator_name(std::string_view id) {
     return name;
 }
 
-void HgAssetService::adjust_creator(framework::AssetMetadata& metadata) {
+void HgAssetService::adjust_creator(framework::AssetMetadata &metadata) {
     if (metadata.creator_id) {
         if (const auto name = creator_name(*metadata.creator_id))
             *metadata.creator_id += ";" + home_ + "/" + *name;
     }
 }
 
-framework::AssetBytes HgAssetService::rewrite_object(const framework::AssetBytes& data) {
+framework::AssetBytes HgAssetService::rewrite_object(const framework::AssetBytes &data) {
     const auto xml = object_xml(data);
     if (xml.empty())
         return object_bytes(xml);
     pugi::xml_document document;
     constexpr auto options = pugi::parse_default | pugi::parse_fragment | pugi::parse_comments | pugi::parse_pi;
-    if (framework::utf16_replacing(xml).size() > 10000000 ||
-        !document.load_buffer(xml.data(), xml.size(), options))
+    if (framework::utf16_replacing(xml).size() > 10000000 || !document.load_buffer(xml.data(), xml.size(), options))
         throw std::invalid_argument("Invalid Hypergrid object asset XML");
 
     // Walk the document without interpreting or dropping unrelated object fields.
@@ -109,8 +108,7 @@ framework::AssetBytes HgAssetService::rewrite_object(const framework::AssetBytes
         if (tag.substr(colon == std::string_view::npos ? 0 : colon + 1) == "SceneObjectPart") {
             auto creator = node.child("CreatorID").first_child();
             const std::string_view creator_tag = creator.name();
-            if ((creator_tag == "Guid" || creator_tag == "UUID") &&
-                creator.first_child().type() == pugi::node_pcdata) {
+            if ((creator_tag == "Guid" || creator_tag == "UUID") && creator.first_child().type() == pugi::node_pcdata) {
                 creator.set_name("UUID");
                 const auto existing = node.child("CreatorData").first_child();
                 if (existing.type() != pugi::node_pcdata) {
@@ -145,22 +143,22 @@ AssetService::Asset HgAssetService::prepare_export(Asset asset) {
     return asset;
 }
 
-AssetService::Asset HgAssetService::get_asset(const std::string& id) {
+AssetService::Asset HgAssetService::get_asset(const std::string &id) {
     return prepare_export(backing_->get_asset(id));
 }
 
-AssetService::Asset HgAssetService::get_cached(const std::string& id) {
+AssetService::Asset HgAssetService::get_cached(const std::string &id) {
     return prepare_export(backing_->get_cached(id));
 }
 
-std::shared_ptr<framework::AssetMetadata> HgAssetService::get_metadata(const std::string& id) {
+std::shared_ptr<framework::AssetMetadata> HgAssetService::get_metadata(const std::string &id) {
     auto metadata = backing_->get_metadata(id);
     if (metadata)
         adjust_creator(*metadata);
     return metadata;
 }
 
-framework::AssetBytes HgAssetService::get_data(const std::string& id) {
+framework::AssetBytes HgAssetService::get_data(const std::string &id) {
     const auto asset = get_asset(id);
     if (!asset)
         return nullptr;
@@ -169,14 +167,14 @@ framework::AssetBytes HgAssetService::get_data(const std::string& id) {
     return asset->data;
 }
 
-bool HgAssetService::get_async(const std::string& id, std::any sender, Retrieved callback) {
+bool HgAssetService::get_async(const std::string &id, std::any sender, Retrieved callback) {
     auto asset = get_asset(id);
     if (callback)
         callback(id, std::move(sender), std::move(asset));
     return true;
 }
 
-std::vector<bool> HgAssetService::assets_exist(const std::vector<std::string>& ids) {
+std::vector<bool> HgAssetService::assets_exist(const std::vector<std::string> &ids) {
     return backing_->assets_exist(ids);
 }
 
@@ -187,4 +185,4 @@ std::optional<std::string> HgAssetService::store(Asset asset) {
         asset->data = object_bytes(object_xml(asset->data));
     return backing_->store(std::move(asset));
 }
-}
+} // namespace opensim::services

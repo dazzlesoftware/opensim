@@ -1,0 +1,1 @@
+YOption chars;YOption arrays;string result;integer after;default{state_entry(){result=llGetSubString("ABCDE",(char)1,(char)2);after=1;}}

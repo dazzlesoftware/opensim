@@ -1,0 +1,27 @@
+{
+  "containerClr": "System.String[]",
+  "inputAliases": [
+    false,
+    false
+  ],
+  "globalUsage": 12,
+  "ownUsage": 16,
+  "values": [
+    {
+      "type": "string",
+      "clr": "System.String",
+      "value": "text",
+      "utf16": [
+        116,
+        101,
+        120,
+        116
+      ]
+    },
+    {
+      "type": "null",
+      "clr": null,
+      "value": null
+    }
+  ]
+}

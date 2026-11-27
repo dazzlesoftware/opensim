@@ -1,0 +1,21 @@
+{
+  "accepted": false,
+  "executed": false,
+  "globals": {},
+  "errors": [
+    "value used by previous case"
+  ],
+  "exception": null,
+  "exceptionType": null,
+  "stackSize": 1000000,
+  "stackLimit": 1024,
+  "finalStackLeft": null,
+  "stackSamples": [],
+  "name": "range_overlap",
+  "source": "YOption advflowctl;YOption chars;integer result;integer calls;default{state_entry(){switch(2){case 1 ... 3:result=7;break;case 3 ... 5:result=9;}}}",
+  "sha256": {
+    "source.lsl": "dc7c9c267b95ef9da7c0665bb0909c579665590d71be2e287eb6f4030e878ecd",
+    "source_hash.txt": "ed20d5657799ca3f93f5531a983047dd3e4da086b4b4350491a11d8375594524",
+    "generator_source": "d1260b1abe5e19cb0096c5307db13fbfd7fbb6bf32198a30a348ebfb0c515a67"
+  }
+}

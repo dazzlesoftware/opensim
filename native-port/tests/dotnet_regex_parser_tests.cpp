@@ -9,6 +9,7 @@
 #include <iostream>
 #include <sstream>
 using namespace opensim::framework;
+
 DotnetRegexNodeText dec(std::string s) {
     if (s == "-")
         return {};
@@ -18,6 +19,7 @@ DotnetRegexNodeText dec(std::string s) {
             value.push_back(static_cast<char16_t>(std::stoul(s.substr(i, 4), nullptr, 16)));
     return value.empty() ? runtime_empty_text() : std::make_shared<const std::u16string>(value);
 }
+
 std::string hex(std::u16string_view s) {
     if (s.empty())
         return ".";
@@ -26,12 +28,14 @@ std::string hex(std::u16string_view s) {
         out << std::hex << std::setfill('0') << std::setw(4) << unsigned(c);
     return out.str();
 }
-std::string hex(const DotnetRegexNodeText& s) {
+
+std::string hex(const DotnetRegexNodeText &s) {
     return s ? hex(std::u16string_view(*s)) : "-";
 }
-std::string graph(DotnetRegexNode* root) {
-    std::vector<DotnetRegexNode*> nodes;
-    auto id = [&](DotnetRegexNode* n) {
+
+std::string graph(DotnetRegexNode *root) {
+    std::vector<DotnetRegexNode *> nodes;
+    auto id = [&](DotnetRegexNode *n) {
         if (!n)
             return std::string("-");
         auto it = std::find(nodes.begin(), nodes.end(), n);
@@ -65,23 +69,23 @@ std::string graph(DotnetRegexNode* root) {
     }
     return result;
 }
-std::string fixed_sets(const std::optional<std::vector<DotnetRegexFixedDistanceSet>>& sets) {
+
+std::string fixed_sets(const std::optional<std::vector<DotnetRegexFixedDistanceSet>> &sets) {
     if (!sets)
         return "-";
     std::string result;
-    for (auto& item : *sets) {
+    for (auto &item : *sets) {
         std::u16string chars;
         if (item.chars)
             chars.assign(item.chars->begin(), item.chars->end());
-        result +=
-            hex(item.set) + ":" + std::to_string(item.distance) + ":" + std::to_string(item.negated) + ":" +
-            (item.chars ? hex(std::u16string_view(chars)) : "-") + ":" +
-            (item.range ? std::to_string(item.range->first) + "," + std::to_string(item.range->last) : "-") +
-            ";";
+        result += hex(item.set) + ":" + std::to_string(item.distance) + ":" + std::to_string(item.negated) + ":" +
+                  (item.chars ? hex(std::u16string_view(chars)) : "-") + ":" +
+                  (item.range ? std::to_string(item.range->first) + "," + std::to_string(item.range->last) : "-") + ";";
     }
     return result;
 }
-std::string prefix_data(DotnetRegexNode* root) {
+
+std::string prefix_data(DotnetRegexNode *root) {
     auto stack = [] { return true; };
     auto first = dotnet_regex_find_prefix(root, stack);
     auto ordinal = dotnet_regex_find_ordinal_case_insensitive_prefix(root);
@@ -101,10 +105,11 @@ std::string prefix_data(DotnetRegexNode* root) {
     std::u16string chars;
     if (literal->chars)
         chars.assign(literal->chars->begin(), literal->chars->end());
-    return result + graph(literal->loop) + ":" + std::to_string(literal->character) + ":" +
-           hex(literal->string) + ":" + (literal->chars ? hex(std::u16string_view(chars)) : "-");
+    return result + graph(literal->loop) + ":" + std::to_string(literal->character) + ":" + hex(literal->string) + ":" +
+           (literal->chars ? hex(std::u16string_view(chars)) : "-");
 }
-std::string caches(const DotnetRegexFindOptimizations& find) {
+
+std::string caches(const DotnetRegexFindOptimizations &find) {
     if (!find.ascii_lookup_count())
         return "-";
     std::string result;
@@ -113,23 +118,23 @@ std::string caches(const DotnetRegexFindOptimizations& find) {
         if (!value)
             result += "-";
         else
-            for (auto& word : *value)
+            for (auto &word : *value)
                 result += std::to_string(word.load()) + ",";
         result += ';';
     }
     return result;
 }
-std::string find_data(const DotnetRegexFindOptimizations& find) {
-    auto& d = find.data();
-    std::string result =
-        std::to_string(static_cast<int>(d.mode)) + ":" + std::to_string(find.is_useful()) + ":" +
-        std::to_string(unsigned(d.leading_anchor)) + ":" + std::to_string(unsigned(d.trailing_anchor)) + ":" +
-        std::to_string(d.minimum_length) + ":" +
-        (d.maximum_length ? std::to_string(*d.maximum_length) : "-") + ":" + hex(d.leading_prefix) + ":" +
-        std::to_string(d.fixed_literal.character) + "," + hex(d.fixed_literal.string) + "," +
-        std::to_string(d.fixed_literal.distance) + ":" + fixed_sets(d.fixed_sets) + ":";
+
+std::string find_data(const DotnetRegexFindOptimizations &find) {
+    auto &d = find.data();
+    std::string result = std::to_string(static_cast<int>(d.mode)) + ":" + std::to_string(find.is_useful()) + ":" +
+                         std::to_string(unsigned(d.leading_anchor)) + ":" +
+                         std::to_string(unsigned(d.trailing_anchor)) + ":" + std::to_string(d.minimum_length) + ":" +
+                         (d.maximum_length ? std::to_string(*d.maximum_length) : "-") + ":" + hex(d.leading_prefix) +
+                         ":" + std::to_string(d.fixed_literal.character) + "," + hex(d.fixed_literal.string) + "," +
+                         std::to_string(d.fixed_literal.distance) + ":" + fixed_sets(d.fixed_sets) + ":";
     if (d.literal_after_loop) {
-        auto& item = *d.literal_after_loop;
+        auto &item = *d.literal_after_loop;
         std::u16string chars;
         if (item.chars)
             chars.assign(item.chars->begin(), item.chars->end());
@@ -139,6 +144,7 @@ std::string find_data(const DotnetRegexFindOptimizations& find) {
         result += "-";
     return result + ":" + caches(find);
 }
+
 int main() {
     for (std::string line; std::getline(std::cin, line);) {
         try {
@@ -202,20 +208,19 @@ int main() {
                         list = std::vector<std::u16string>{u"zero", u"one", u"two"};
                     if (context == 8)
                         size = -1;
-                    std::cout << hex(std::u16string_view(dotnet_regex_group_name_from_number(
-                                     caps, list, size, std::stoi(utf8(*pattern)))))
+                    std::cout << hex(std::u16string_view(
+                                     dotnet_regex_group_name_from_number(caps, list, size, std::stoi(utf8(*pattern)))))
                               << '\n';
                     continue;
                 }
                 auto result = dotnet_regex_parse_replacement(
-                    pattern, options, caps, size, names, [] { return std::u16string{}; },
-                    [] { return true; });
+                    pattern, options, caps, size, names, [] { return std::u16string{}; }, [] { return true; });
                 std::cout << hex(result.pattern) << ":" << (pattern == result.pattern) << ":"
                           << result.has_backreferences << ":";
                 for (auto value : result.rules)
                     std::cout << value << ",";
                 std::cout << ":";
-                for (auto& value : result.strings)
+                for (auto &value : result.strings)
                     std::cout << hex(value) << ",";
                 std::cout << '\n';
                 continue;
@@ -241,14 +246,12 @@ int main() {
                     char direction;
                     in >> body >> pos >> start >> direction;
                     auto input = dec(body);
-                    bool success =
-                        direction == 'r'
-                            ? find.try_find_right_to_left(
-                                  input ? std::u16string_view(*input) : std::u16string_view{}, pos, start)
-                            : find.try_find_left_to_right(
-                                  input ? std::u16string_view(*input) : std::u16string_view{}, pos, start);
-                    findOutput +=
-                        "|" + std::to_string(success) + ":" + std::to_string(pos) + ":" + caches(find);
+                    bool success = direction == 'r'
+                                       ? find.try_find_right_to_left(
+                                             input ? std::u16string_view(*input) : std::u16string_view{}, pos, start)
+                                       : find.try_find_left_to_right(
+                                             input ? std::u16string_view(*input) : std::u16string_view{}, pos, start);
+                    findOutput += "|" + std::to_string(success) + ":" + std::to_string(pos) + ":" + caches(find);
                 }
                 std::cout << findOutput << '\n';
                 continue;
@@ -263,7 +266,7 @@ int main() {
                 for (auto code : bytecode.codes)
                     std::cout << code << ",";
                 std::cout << ":";
-                for (auto& value : bytecode.strings)
+                for (auto &value : bytecode.strings)
                     std::cout << hex(value) << ",";
                 std::cout << ":";
                 for (std::size_t i = 0; i < bytecode.strings.size(); ++i)
@@ -274,31 +277,30 @@ int main() {
             std::cout << reads << ":" << result.options << ":" << result.capture_count << ":"
                       << bool(result.backreference_culture) << ":";
             if (result.capture_names) {
-                for (auto& s : *result.capture_names)
+                for (auto &s : *result.capture_names)
                     std::cout << hex(std::u16string_view(s)) << ",";
             } else
                 std::cout << "-";
             std::cout << ":";
             if (result.capture_name_to_number) {
-                for (auto& [key, value] : *result.capture_name_to_number)
+                for (auto &[key, value] : *result.capture_name_to_number)
                     std::cout << hex(std::u16string_view(key)) << "=" << value << ",";
             } else
                 std::cout << "-";
             std::cout << ":";
             if (result.capture_number_sparse_mapping) {
-                for (auto& [key, value] : *result.capture_number_sparse_mapping)
+                for (auto &[key, value] : *result.capture_number_sparse_mapping)
                     std::cout << key << "=" << value << ",";
             } else
                 std::cout << "-";
             std::cout << ":" << graph(result.root) << '\n';
-        } catch (const DotnetRegexParseException& e) {
-            std::cout << "P:" << e.error << ":" << e.offset << ":" << hex(std::u16string_view(e.message))
-                      << '\n';
-        } catch (const DotnetRegexClassError& e) {
+        } catch (const DotnetRegexParseException &e) {
+            std::cout << "P:" << e.error << ":" << e.offset << ":" << hex(std::u16string_view(e.message)) << '\n';
+        } catch (const DotnetRegexClassError &e) {
             std::ostringstream h;
             h << std::hex << e.hresult;
-            std::cout << "E:" << e.source_type << ":" << h.str() << ":"
-                      << hex(std::u16string_view(utf16(e.what()))) << '\n';
+            std::cout << "E:" << e.source_type << ":" << h.str() << ":" << hex(std::u16string_view(utf16(e.what())))
+                      << '\n';
         }
     }
     return 0;

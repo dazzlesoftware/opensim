@@ -1,0 +1,1 @@
+rotation r=<0,0,0,1>;rotation copied;integer truth;integer negated;integer casted;list boxed;default{state_entry(){r.s=0;copied=r*<0,0,0,1>;truth=xmrRotationToBool(r);negated=!r;casted=(integer)xmrRotationToBool(r);boxed=[r,xmrRotationToBool(r)];}}

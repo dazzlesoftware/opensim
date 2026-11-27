@@ -4,11 +4,13 @@
 #include <iostream>
 using namespace opensim;
 using namespace scene;
+
 namespace {
 framework::Uuid id(int n) {
     auto t = std::to_string(n);
     return framework::Uuid("11223344-5566-7788-99aa-" + std::string(12 - t.size(), '0') + t);
 }
+
 std::string probe(int mode, int failure) {
     std::string trace;
     bool present = true;
@@ -61,9 +63,7 @@ std::string probe(int mode, int failure) {
     };
     b.warn = [&](auto key, const auto &msg) { step(6, "WARN:" + key.str() + ":" + msg.value_or("NULL")); };
     b.remove_script_events = [&](auto p, auto key) { step(8, "EVENTS:" + p.id.str() + ":" + key.str()); };
-    b.active_script_count = [&](auto p, int count) {
-        step(9, "ACTIVE:" + p.id.str() + ":" + std::to_string(count));
-    };
+    b.active_script_count = [&](auto p, int count) { step(9, "ACTIVE:" + p.id.str() + ":" + std::to_string(count)); };
     b.group_remove = [&](auto p, auto local, auto key) {
         step(10, "REMOVE:" + p.id.str() + ":" + std::to_string(local) + ":" + key.str());
         present = false;
@@ -83,7 +83,8 @@ std::string probe(int mode, int failure) {
     }
     return result + ":" + (present ? "1" : "0") + ":" + std::to_string(serial) + trace;
 }
-}
+} // namespace
+
 int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string_view(argv[1]) == "--probe") {
@@ -100,8 +101,7 @@ int main(int argc, char **argv) {
         };
         check(probe(0, 0).starts_with("OK:0:1"), "copyable move thenremove");
         check(probe(64, 0).starts_with("OK:0:0"), "movealreadyremoved skipouterremove");
-        check(probe(32, 0).find("|WARN:") != std::string::npos &&
-                  probe(32, 0).find("PROPS:") == std::string::npos,
+        check(probe(32, 0).find("|WARN:") != std::string::npos && probe(32, 0).find("PROPS:") == std::string::npos,
               "failure alerts withoutdelete/properties");
         check(probe(16, 0).starts_with("THROW:1:0"), "missingtrash throws");
         check(probe(128, 0).find("|EVENTS:") == std::string::npos, "typeusesAssetType");

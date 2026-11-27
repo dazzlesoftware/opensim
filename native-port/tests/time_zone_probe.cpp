@@ -2,6 +2,7 @@
 #include "opensim/framework/text.hpp"
 #include <iostream>
 #include <sstream>
+
 int main() {
     opensim::framework::TimeZoneDatabase db;
     std::string line;
@@ -20,7 +21,7 @@ int main() {
             }
             auto zone = name == "local" ? db.local() : db.find(id);
             std::cout << (zone->daylight_at(stamp) ? "Y" : "N") << "\n";
-        } catch (const std::exception&) {
+        } catch (const std::exception &) {
             std::cout << "E\n";
         }
     }

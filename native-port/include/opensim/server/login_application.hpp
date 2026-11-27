@@ -38,99 +38,114 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "opensim/server/friends_endpoint.hpp"
 #include "opensim/server/offline_im_endpoint.hpp"
 #include <mutex>
+
 namespace opensim::server {
 class LoginApplication {
   public:
-    LoginApplication(services::ILoginService& login, const IniConfig& config);
-    network::HttpResponse handle(const network::HttpRequest& request, bool allow_gatekeeper = true,
+    LoginApplication(services::ILoginService &login, const IniConfig &config);
+    network::HttpResponse handle(const network::HttpRequest &request, bool allow_gatekeeper = true,
                                  bool allow_grid_discovery = true, bool allow_home_agent = true);
-    std::optional<network::HttpResponse> handle_home_agent(const network::HttpRequest& request);
-    std::optional<network::HttpResponse> handle_grid_discovery(const network::HttpRequest& request,
-                                                              bool include_xml_rpc);
-    network::HttpResponse handle_gatekeeper(const network::HttpRequest& request);
-    void set_default_login_uri(const std::string& uri);
-    void set_presence_endpoint(PresenceEndpoint* endpoint) {
+    std::optional<network::HttpResponse> handle_home_agent(const network::HttpRequest &request);
+    std::optional<network::HttpResponse> handle_grid_discovery(const network::HttpRequest &request,
+                                                               bool include_xml_rpc);
+    network::HttpResponse handle_gatekeeper(const network::HttpRequest &request);
+    void set_default_login_uri(const std::string &uri);
+
+    void set_presence_endpoint(PresenceEndpoint *endpoint) {
         presence_ = endpoint;
     }
-    void set_grid_user_endpoint(GridUserEndpoint* endpoint) {
+
+    void set_grid_user_endpoint(GridUserEndpoint *endpoint) {
         grid_user_ = endpoint;
     }
-    void set_grid_endpoint(GridEndpoint* endpoint) {
+
+    void set_grid_endpoint(GridEndpoint *endpoint) {
         grid_ = endpoint;
     }
-    void set_grid_statistics(services::GridService* grid, services::GridUserStore* users) {
+
+    void set_grid_statistics(services::GridService *grid, services::GridUserStore *users) {
         statistics_grid_ = grid;
         statistics_users_ = users;
     }
-    void set_friends_endpoint(FriendsEndpoint* endpoint) {
+
+    void set_friends_endpoint(FriendsEndpoint *endpoint) {
         friends_ = endpoint;
     }
-    void set_offline_im_endpoint(OfflineImEndpoint* endpoint) {
+
+    void set_offline_im_endpoint(OfflineImEndpoint *endpoint) {
         offline_im_ = endpoint;
     }
-    void set_avatar_endpoint(AvatarEndpoint* endpoint) {
+
+    void set_avatar_endpoint(AvatarEndpoint *endpoint) {
         avatar_ = endpoint;
     }
-    void set_account_endpoint(AccountEndpoint* endpoint) {
+
+    void set_account_endpoint(AccountEndpoint *endpoint) {
         accounts_ = endpoint;
     }
-    void set_authentication_endpoint(AuthenticationEndpoint* endpoint) {
+
+    void set_authentication_endpoint(AuthenticationEndpoint *endpoint) {
         authentication_ = endpoint;
     }
-    JsonRpcDispatcher& json_rpc() {
+
+    JsonRpcDispatcher &json_rpc() {
         return json_rpc_;
     }
-    void set_grid_message_handler(std::function<bool(const network::Value&)> handler) {
+
+    void set_grid_message_handler(std::function<bool(const network::Value &)> handler) {
         grid_message_ = std::move(handler);
     }
-    void
-    set_gatekeeper_handler(std::function<network::Value(std::string_view, const network::Value&)> handler) {
+
+    void set_gatekeeper_handler(std::function<network::Value(std::string_view, const network::Value &)> handler) {
         gatekeeper_ = std::move(handler);
     }
-    void set_home_agent_verifier(std::function<bool(std::string_view, const network::Value&)> verifier) {
+
+    void set_home_agent_verifier(std::function<bool(std::string_view, const network::Value &)> verifier) {
         home_agent_verifier_ = std::move(verifier);
     }
-    void set_home_region_lookup(std::function<network::Value(const network::Value&)> lookup) {
+
+    void set_home_region_lookup(std::function<network::Value(const network::Value &)> lookup) {
         home_region_lookup_ = std::move(lookup);
     }
-    void set_land_data_lookup(std::function<network::Value(const network::Value&)> lookup) {
+
+    void set_land_data_lookup(std::function<network::Value(const network::Value &)> lookup) {
         land_data_lookup_ = std::move(lookup);
     }
+
     void set_home_user_lookup(
-        std::function<network::Value(std::string_view, const network::Value&, std::string_view)> lookup) {
+        std::function<network::Value(std::string_view, const network::Value &, std::string_view)> lookup) {
         home_user_lookup_ = std::move(lookup);
     }
 
   private:
-    network::Value gatekeeper_rpc(std::string_view method, const network::Value& data);
-    std::optional<network::Value> home_agent_rpc(std::string_view method, const network::Value& data,
+    network::Value gatekeeper_rpc(std::string_view method, const network::Value &data);
+    std::optional<network::Value> home_agent_rpc(std::string_view method, const network::Value &data,
                                                  std::string_view caller);
-    network::HttpResponse handle_grid_statistics(const network::HttpRequest& request);
+    network::HttpResponse handle_grid_statistics(const network::HttpRequest &request);
     std::string grid_discovery_rpc_response() const;
     bool grid_statistics_disabled_;
-    services::GridService* statistics_grid_ = nullptr;
-    services::GridUserStore* statistics_users_ = nullptr;
+    services::GridService *statistics_grid_ = nullptr;
+    services::GridUserStore *statistics_users_ = nullptr;
     std::mutex grid_statistics_mutex_;
     std::int64_t grid_statistics_updated_ = 0;
     std::string grid_statistics_xml_;
     JsonRpcDispatcher json_rpc_;
-    std::function<bool(const network::Value&)> grid_message_;
-    std::function<network::Value(std::string_view, const network::Value&)> gatekeeper_;
-    std::function<bool(std::string_view, const network::Value&)> home_agent_verifier_;
-    std::function<network::Value(const network::Value&)> home_region_lookup_;
-    std::function<network::Value(const network::Value&)> land_data_lookup_;
-    std::function<network::Value(std::string_view, const network::Value&, std::string_view)>
-        home_user_lookup_;
+    std::function<bool(const network::Value &)> grid_message_;
+    std::function<network::Value(std::string_view, const network::Value &)> gatekeeper_;
+    std::function<bool(std::string_view, const network::Value &)> home_agent_verifier_;
+    std::function<network::Value(const network::Value &)> home_region_lookup_;
+    std::function<network::Value(const network::Value &)> land_data_lookup_;
+    std::function<network::Value(std::string_view, const network::Value &, std::string_view)> home_user_lookup_;
     services::LoginHandlers handlers_;
     mutable std::mutex grid_info_mutex_;
     std::map<std::string, std::string> grid_info_;
-    PresenceEndpoint* presence_ = nullptr;
-    GridUserEndpoint* grid_user_ = nullptr;
-    GridEndpoint* grid_ = nullptr;
-    AccountEndpoint* accounts_ = nullptr;
-    AuthenticationEndpoint* authentication_ = nullptr;
-    AvatarEndpoint* avatar_ = nullptr;
-    FriendsEndpoint* friends_ = nullptr;
-    OfflineImEndpoint* offline_im_ = nullptr;
+    PresenceEndpoint *presence_ = nullptr;
+    GridUserEndpoint *grid_user_ = nullptr;
+    GridEndpoint *grid_ = nullptr;
+    AccountEndpoint *accounts_ = nullptr;
+    AuthenticationEndpoint *authentication_ = nullptr;
+    AvatarEndpoint *avatar_ = nullptr;
+    FriendsEndpoint *friends_ = nullptr;
+    OfflineImEndpoint *offline_im_ = nullptr;
 };
-}
+} // namespace opensim::server

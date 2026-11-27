@@ -1,0 +1,1 @@
+YOption chars;integer result;integer read(char c){return (integer)c;}default{state_entry(){result=read((char)65536);}}

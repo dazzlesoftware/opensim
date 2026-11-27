@@ -4,9 +4,10 @@
 #include <limits>
 using namespace opensim;
 using namespace server;
+
 namespace {
-std::string hex(const std::string& s) {
-    const char* h = "0123456789abcdef";
+std::string hex(const std::string &s) {
+    const char *h = "0123456789abcdef";
     std::string r;
     for (unsigned char c : s) {
         r += h[c >> 4];
@@ -14,100 +15,125 @@ std::string hex(const std::string& s) {
     }
     return r;
 }
-std::string unhex(const std::string& s) {
+
+std::string unhex(const std::string &s) {
     std::string r;
     for (size_t i = 0; i < s.size(); i += 2)
         r += char(std::stoi(s.substr(i, 2), nullptr, 16));
     return r;
 }
+
 struct State {
     std::string trace, fail;
+
     void event(std::string s) {
         trace += s + ";";
         if (s == fail)
             throw std::runtime_error("injected");
     }
 };
+
 struct Body : PollBody {
-    State& s;
-    Body(State& x) : s(x) {
-    }
+    State &s;
+
+    Body(State &x) : s(x) {}
+
     bool can_read() const override {
         s.event("read");
         return true;
     }
+
     void dispose() override {
         s.event("dispose");
     }
 };
+
 struct Incoming : PollIncomingRequest {
-    State& s;
+    State &s;
     std::shared_ptr<Body> b;
-    Incoming(State& x) : s(x), b(std::make_shared<Body>(x)) {
-    }
+
+    Incoming(State &x) : s(x), b(std::make_shared<Body>(x)) {}
+
     std::shared_ptr<PollBody> body() const override {
         s.event("body");
         return b;
     }
+
     std::shared_ptr<PollContext> context() const override {
         return {};
     }
 };
+
 struct Response : PollResponse {
-    State& s;
-    Response(State& x) : s(x) {
-    }
+    State &s;
+
+    Response(State &x) : s(x) {}
+
     void status_code(int32_t v) override {
         s.event("status:" + std::to_string(v));
     }
+
     void content_length(int64_t v) override {
         s.event("length:" + std::to_string(v));
     }
+
     void utf8_encoding() override {
         s.event("utf8");
     }
+
     void keep_alive(bool v) override {
         s.event(v ? "keep:1" : "keep:0");
     }
+
     void keep_alive_timeout(int32_t v) override {
         s.event("timeout:" + std::to_string(v));
     }
-    void protocol_version(PollName) override {
-    }
-    void status_description(PollName) override {
-    }
-    void add_header(const std::string& k, PollName v) override {
+
+    void protocol_version(PollName) override {}
+
+    void status_description(PollName) override {}
+
+    void add_header(const std::string &k, PollName v) override {
         s.event("header:" + k + ":" + (v ? hex(*v) : "N"));
     }
+
     void redirect(PollName v, int32_t) override {
         s.event("redirect:" + (v ? hex(*v) : "N"));
     }
+
     void buffer_start(int32_t v) override {
         s.event("start:" + std::to_string(v));
     }
+
     void buffer_length(int32_t v) override {
         s.event("count:" + std::to_string(v));
     }
+
     void buffer(PollBytes v) override {
         s.event("buffer:" + hex(std::string(v->begin(), v->end())));
     }
+
     void send() override {
         s.event("send");
     }
 };
+
 struct Backend : PollRequestBackend {
-    State& s;
-    Backend(State& x) : s(x) {
-    }
-    PollResponsePtr make_response(const std::shared_ptr<PollIncomingRequest>&) override {
+    State &s;
+
+    Backend(State &x) : s(x) {}
+
+    PollResponsePtr make_response(const std::shared_ptr<PollIncomingRequest> &) override {
         s.event("factory");
         return std::make_shared<Response>(s);
     }
-    void warn(const std::string&, const std::exception&) override {
+
+    void warn(const std::string &, const std::exception &) override {
         s.event("warn");
     }
 };
-}
+} // namespace
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -131,8 +157,7 @@ int main() {
         if (a[8] == "long")
             data->set("int_response_code", std::int64_t(200));
         if (a[0] == "binary") {
-            auto bytes = std::make_shared<std::vector<uint8_t>>(
-                std::initializer_list<uint8_t>{0, 1, 2, 253, 254, 255});
+            auto bytes = std::make_shared<std::vector<uint8_t>>(std::initializer_list<uint8_t>{0, 1, 2, 253, 254, 255});
             data->set("bin_response_data", bytes);
             data->set("bin_start", std::int32_t(std::stoi(a[3])));
             data->set("int_bytes", std::int32_t(std::stoi(a[4])));
@@ -154,7 +179,6 @@ int main() {
             error = true;
         }
         std::cout << s.trace << "error:" << error << ";handled:" << std::int32_t(args->requests_handled)
-                  << ";consumed:" << (a[0] == "binary" && poll_object_null(data->get("bin_response_data")))
-                  << '\n';
+                  << ";consumed:" << (a[0] == "binary" && poll_object_null(data->get("bin_response_data"))) << '\n';
     }
 }

@@ -3,6 +3,7 @@
 #include "opensim/framework/text.hpp"
 #include <bit>
 #include <limits>
+
 namespace opensim::framework {
 namespace {
 std::u16string line() {
@@ -12,15 +13,17 @@ std::u16string line() {
     return u"\n";
 #endif
 }
+
 [[noreturn]] void fail(std::string type, unsigned code, std::u16string message,
                        std::optional<std::u16string> param = {}, std::optional<int> actual = {}) {
-    throw NiniStreamWriterError(std::move(type), std::bit_cast<int>(code), std::move(message),
-                                std::move(param), actual);
+    throw NiniStreamWriterError(std::move(type), std::bit_cast<int>(code), std::move(message), std::move(param),
+                                actual);
 }
+
 [[noreturn]] void nullref() {
-    fail("System.NullReferenceException", 0x80004003,
-         u"Object reference not set to an instance of an object.");
+    fail("System.NullReferenceException", 0x80004003, u"Object reference not set to an instance of an object.");
 }
+
 [[noreturn]] void negative(int value, std::u16string param, bool zero = false) {
     auto t = std::to_string(value);
     std::u16string n(t.begin(), t.end());
@@ -29,13 +32,16 @@ std::u16string line() {
              u" value. (Parameter '" + param + u"')" + line() + u"Actual value was " + n + u".",
          param, value);
 }
-char16_t& at(std::vector<char16_t>& a, int i) {
+
+char16_t &at(std::vector<char16_t> &a, int i) {
     if (i < 0 || static_cast<std::size_t>(i) >= a.size())
         fail("System.IndexOutOfRangeException", 0x80131508, u"Index was outside the bounds of the array.");
     return a[i];
 }
+
 struct Utf8State {
     char16_t pending = 0;
+
     [[noreturn]] void bad(char16_t ch, int index) {
         pending = 0;
         auto original = ch;
@@ -52,6 +58,7 @@ struct Utf8State {
         e.unknown_character = original;
         throw e;
     }
+
     int encode(std::span<const char16_t> input, std::span<std::uint8_t> output, bool flush) {
         std::u16string valid;
         auto held = pending;
@@ -91,7 +98,8 @@ struct Utf8State {
         return static_cast<int>(bytes.size());
     }
 };
-}
+} // namespace
+
 std::shared_ptr<XmlStreamEncoding> native_xml_utf8_no_bom() {
     static auto value = [] {
         auto e = std::make_shared<XmlStreamEncoding>();
@@ -100,9 +108,7 @@ std::shared_ptr<XmlStreamEncoding> native_xml_utf8_no_bom() {
         e->get_encoder = [] {
             auto state = std::make_shared<Utf8State>();
             auto encoder = std::make_shared<XmlStreamEncoder>();
-            encoder->get_bytes = [state](auto in, auto out, bool flush) {
-                return state->encode(in, out, flush);
-            };
+            encoder->get_bytes = [state](auto in, auto out, bool flush) { return state->encode(in, out, flush); };
             return encoder;
         };
         e->preamble = [] { return std::vector<std::uint8_t>{}; };
@@ -110,16 +116,17 @@ std::shared_ptr<XmlStreamEncoding> native_xml_utf8_no_bom() {
             if (n < 0)
                 negative(n, u"charCount");
             if (n > 715827881)
-                fail(
-                    "System.ArgumentOutOfRangeException", 0x80131502,
-                    u"Too many characters. The resulting number of bytes is larger than what can be returned as an int. (Parameter 'charCount')",
-                    u"charCount");
+                fail("System.ArgumentOutOfRangeException", 0x80131502,
+                     u"Too many characters. The resulting number of bytes is larger than what can be returned as an "
+                     u"int. (Parameter 'charCount')",
+                     u"charCount");
             return (n + 1) * 3;
         };
         return e;
     }();
     return value;
 }
+
 struct NativeXmlStreamWriter::State {
     std::shared_ptr<NiniByteStream> stream;
     std::shared_ptr<XmlStreamEncoding> encoding;
@@ -129,11 +136,11 @@ struct NativeXmlStreamWriter::State {
     int pos = 0, len = 0;
     bool automatic = false, preamble_written = false, closable = true, disposed = false;
     NiniWriterText newline = nini_writer_text(line());
+
     State(std::shared_ptr<NiniByteStream> s, std::shared_ptr<XmlStreamEncoding> e, int size, bool leave)
         : stream(std::move(s)) {
         if (!stream)
-            fail("System.ArgumentNullException", 0x80004003, u"Value cannot be null. (Parameter 'stream')",
-                 u"stream");
+            fail("System.ArgumentNullException", 0x80004003, u"Value cannot be null. (Parameter 'stream')", u"stream");
         if (!stream->can_write())
             fail("System.ArgumentException", 0x80070057, u"Stream was not writable.");
         if (size == -1)
@@ -149,11 +156,13 @@ struct NativeXmlStreamWriter::State {
             preamble_written = true;
         closable = !leave;
     }
+
     void check() {
         if (disposed)
             fail("System.ObjectDisposedException", 0x80131622,
                  u"Cannot write to a closed TextWriter." + line() + u"Object name: 'StreamWriter'.");
     }
+
     void flush(bool flush_stream, bool flush_encoder) {
         check();
         if (pos == 0 && !flush_stream && !flush_encoder)
@@ -174,8 +183,7 @@ struct NativeXmlStreamWriter::State {
             if (max > 1024) {
                 auto capacity = encoding->max_byte_count(static_cast<int>(chars.size()));
                 if (capacity < 0)
-                    fail("System.OverflowException", 0x80131516,
-                         u"Arithmetic operation resulted in an overflow.");
+                    fail("System.OverflowException", 0x80131516, u"Arithmetic operation resulted in an overflow.");
                 owner = std::make_shared<std::vector<std::uint8_t>>(capacity);
                 bytes = owner;
                 destination = *owner;
@@ -198,6 +206,7 @@ struct NativeXmlStreamWriter::State {
         if (flush_stream)
             stream->flush();
     }
+
     void write_span(std::u16string_view input, bool append_line = false) {
         auto count = static_cast<int>(input.size());
         if (count <= 4 && count <= len - pos) {
@@ -213,11 +222,9 @@ struct NativeXmlStreamWriter::State {
                 }
                 auto n = std::min(static_cast<int>(chars.size()) - target, remaining);
                 if (n < 0)
-                    fail("System.OverflowException", 0x80131516,
-                         u"Arithmetic operation resulted in an overflow.");
+                    fail("System.OverflowException", 0x80131516, u"Arithmetic operation resulted in an overflow.");
                 if (target < 0)
-                    fail("System.IndexOutOfRangeException", 0x80131508,
-                         u"Index was outside the bounds of the array.");
+                    fail("System.IndexOutOfRangeException", 0x80131508, u"Index was outside the bounds of the array.");
                 std::copy_n(input.data() + source, n, chars.data() + target);
                 pos += n;
                 target += n;
@@ -237,6 +244,7 @@ struct NativeXmlStreamWriter::State {
         if (automatic)
             flush(true, false);
     }
+
     void character(char16_t c) {
         if (pos == len)
             flush(false, false);
@@ -245,6 +253,7 @@ struct NativeXmlStreamWriter::State {
         if (automatic)
             flush(true, false);
     }
+
     void close() {
         std::exception_ptr error;
         try {
@@ -266,76 +275,90 @@ struct NativeXmlStreamWriter::State {
             std::rethrow_exception(error);
     }
 };
-NativeXmlStreamWriter::NativeXmlStreamWriter(std::shared_ptr<NiniByteStream> s,
-                                             std::shared_ptr<XmlStreamEncoding> e, int size, bool leave)
-    : NiniStreamWriter(s), state_(std::make_shared<State>(std::move(s), std::move(e), size, leave)) {
-}
-void NativeXmlStreamWriter::write(const NiniWriterText& text) {
+
+NativeXmlStreamWriter::NativeXmlStreamWriter(std::shared_ptr<NiniByteStream> s, std::shared_ptr<XmlStreamEncoding> e,
+                                             int size, bool leave)
+    : NiniStreamWriter(s), state_(std::make_shared<State>(std::move(s), std::move(e), size, leave)) {}
+
+void NativeXmlStreamWriter::write(const NiniWriterText &text) {
     auto s = state_;
     s->write_span(text ? std::u16string_view(*text) : std::u16string_view{});
 }
+
 void NativeXmlStreamWriter::write_span(std::u16string_view text) {
     auto s = state_;
     s->write_span(text);
 }
+
 void NativeXmlStreamWriter::write_char(char16_t c) {
     auto s = state_;
     s->character(c);
 }
+
 void NativeXmlStreamWriter::flush() {
     auto s = state_;
     s->flush(true, true);
 }
+
 void NativeXmlStreamWriter::close() {
     auto s = state_;
     s->close();
 }
+
 NiniWriterText NativeXmlStreamWriter::to_string() {
     static const auto name = nini_writer_text(u"System.IO.StreamWriter");
     return name;
 }
+
 void NativeXmlStreamWriter::write_array(XmlWriterCharArrayHandle a, int index, int count) {
     auto s = state_;
     if (!a)
-        fail("System.ArgumentNullException", 0x80004003, u"Value cannot be null. (Parameter 'buffer')",
-             u"buffer");
+        fail("System.ArgumentNullException", 0x80004003, u"Value cannot be null. (Parameter 'buffer')", u"buffer");
     if (index < 0)
         negative(index, u"index");
     if (count < 0)
         negative(count, u"count");
     if (static_cast<std::int64_t>(a->size()) - index < count)
-        fail(
-            "System.ArgumentException", 0x80070057,
-            u"Offset and length were out of bounds for the array or count is greater than the number of elements from index to the end of the source collection.");
+        fail("System.ArgumentException", 0x80070057,
+             u"Offset and length were out of bounds for the array or count is greater than the number of elements from "
+             u"index to the end of the source collection.");
     s->write_span(a->view().substr(index, count));
 }
+
 void NativeXmlStreamWriter::write_array(XmlWriterCharArrayHandle a) {
     auto s = state_;
     s->write_span(a ? a->view() : std::u16string_view{});
 }
+
 void NativeXmlStreamWriter::write_line() {
     auto s = state_;
     auto held = s->newline;
     s->write_span(*held);
 }
+
 bool NativeXmlStreamWriter::auto_flush() const {
     return state_->automatic;
 }
+
 void NativeXmlStreamWriter::auto_flush(bool value) {
     auto s = state_;
     s->automatic = value;
     if (value)
         s->flush(true, false);
 }
+
 void NativeXmlStreamWriter::new_line(NiniWriterText text) {
     state_->newline = text ? std::move(text) : nini_writer_text(line());
 }
+
 NiniWriterText NativeXmlStreamWriter::new_line() const {
     return state_->newline;
 }
+
 std::shared_ptr<XmlStreamEncoding> NativeXmlStreamWriter::encoding() const {
     return state_->encoding;
 }
+
 XmlTextWriterIo native_xml_stream_text_io(std::shared_ptr<NativeXmlStreamWriter> writer) {
     XmlTextWriterIo io;
     auto require = [writer] {
@@ -377,6 +400,7 @@ XmlTextWriterIo native_xml_stream_text_io(std::shared_ptr<NativeXmlStreamWriter>
     };
     return io;
 }
+
 XmlTextWriterIo native_xml_stream_io(std::shared_ptr<NiniByteStream> stream,
                                      std::shared_ptr<XmlStreamEncoding> encoding) {
     auto declared = encoding ? encoding->xml_encoding : nullptr;
@@ -385,4 +409,4 @@ XmlTextWriterIo native_xml_stream_io(std::shared_ptr<NiniByteStream> stream,
     io.encoding = [declared] { return declared; };
     return io;
 }
-}
+} // namespace opensim::framework

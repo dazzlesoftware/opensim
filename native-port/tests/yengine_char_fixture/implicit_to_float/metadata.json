@@ -1,0 +1,21 @@
+{
+  "accepted": false,
+  "executed": false,
+  "globals": {},
+  "errors": [
+    "illegal to cast from char to float"
+  ],
+  "exception": null,
+  "exceptionType": null,
+  "stackSize": 1000000,
+  "stackLimit": 1024,
+  "finalStackLeft": null,
+  "stackSamples": [],
+  "name": "implicit_to_float",
+  "source": "YOption chars;char value;float result;default{state_entry(){value='A';result=value;}}",
+  "sha256": {
+    "source.lsl": "156094590ef50fec425e55bb4293b1961cd8b352dfa3cdfee6c069d0697e22ae",
+    "source_hash.txt": "1efcd9229d77477fe21979fedc0c8a46a9d3e69ed27d7c11a9abfda36fb41a8a",
+    "generator_source": "d86517a13d8f4094e933279614d487a0e69d44a49f2296c4af7562bf7386d651"
+  }
+}

@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <sstream>
 using namespace opensim::framework;
+
 std::u16string decode(std::string s) {
     std::u16string v;
     if (s != "-")
@@ -10,6 +11,7 @@ std::u16string decode(std::string s) {
             v += static_cast<char16_t>(std::stoul(s.substr(i, 4), nullptr, 16));
     return v;
 }
+
 std::string encode(std::u16string_view s) {
     if (s.empty())
         return "-";
@@ -20,11 +22,12 @@ std::string encode(std::u16string_view s) {
             out += h[(c >> b) & 15];
     return out;
 }
+
 std::string shape(std::shared_ptr<NiniXmlDomNode> node) {
-    std::string out = std::to_string(node->node_type()) + ":" + encode(*node->name()) + ":" +
-                      encode(*node->prefix()) + ":" + encode(*node->local_name()) + ":" +
-                      encode(*node->namespace_uri()) + ":" + (node->value() ? encode(*node->value()) : "~") +
-                      ":" + (node->is_empty_element() ? "1" : "0") + "[";
+    std::string out = std::to_string(node->node_type()) + ":" + encode(*node->name()) + ":" + encode(*node->prefix()) +
+                      ":" + encode(*node->local_name()) + ":" + encode(*node->namespace_uri()) + ":" +
+                      (node->value() ? encode(*node->value()) : "~") + ":" + (node->is_empty_element() ? "1" : "0") +
+                      "[";
     auto e = node->children();
     while (e->move_next())
         out += shape(std::dynamic_pointer_cast<NiniXmlDomNode>(e->current())) + ",";
@@ -33,10 +36,10 @@ std::string shape(std::shared_ptr<NiniXmlDomNode> node) {
         out += shape(a) + ",";
     return out + "}";
 }
-std::string summary(NiniXmlDom& document) {
+
+std::string summary(NiniXmlDom &document) {
     auto collection = document.defer_collection();
-    std::vector<std::pair<std::shared_ptr<NiniXmlDomNode>, std::size_t>> pending{
-        {document.document_node(), 0}};
+    std::vector<std::pair<std::shared_ptr<NiniXmlDomNode>, std::size_t>> pending{{document.document_node(), 0}};
     std::uint64_t nodes = 0, attrs = 0, maximum = 0, units = 0, hash = 14695981039346656037ull;
     auto number = [&](std::uint64_t value) { hash = (hash ^ value) * 1099511628211ull; };
     auto text = [&](NiniWriterText value) {
@@ -79,12 +82,12 @@ std::string summary(NiniXmlDom& document) {
     return std::to_string(nodes) + "," + std::to_string(attrs) + "," + std::to_string(maximum) + "," +
            std::to_string(units) + "," + std::to_string(hash);
 }
-void navigation(std::ostringstream& out, const std::shared_ptr<NativeNiniXmlReader>& r,
-                bool resolve = false) {
+
+void navigation(std::ostringstream &out, const std::shared_ptr<NativeNiniXmlReader> &r, bool resolve = false) {
     auto snapshot = [&]() {
-        auto& t = r->token();
-        out << t.node_type << ':' << t.depth << ':' << t.line_number << ':' << t.line_position << ':'
-            << encode(t.name) << ':' << encode(t.value) << ',';
+        auto &t = r->token();
+        out << t.node_type << ':' << t.depth << ':' << t.line_number << ':' << t.line_position << ':' << encode(t.name)
+            << ':' << encode(t.value) << ',';
     };
     out << "NAV[";
     if (r->move_to_first_attribute()) {
@@ -105,6 +108,7 @@ void navigation(std::ostringstream& out, const std::shared_ptr<NativeNiniXmlRead
     }
     out << "]";
 }
+
 class TracingInput final : public NativeNiniXmlByteInput {
   public:
     std::vector<std::uint8_t> bytes;
@@ -112,9 +116,11 @@ class TracingInput final : public NativeNiniXmlByteInput {
     bool seekable = true;
     int chunk = 3;
     std::string trace;
+
     std::optional<std::int64_t> length_hint() const override {
         return seekable ? std::optional<std::int64_t>(bytes.size()) : std::nullopt;
     }
+
     std::int32_t read(std::span<std::uint8_t> target) override {
         trace += "R" + std::to_string(target.size()) + ",";
         auto count = std::min({target.size(), bytes.size() - position, static_cast<std::size_t>(chunk)});
@@ -122,34 +128,35 @@ class TracingInput final : public NativeNiniXmlByteInput {
         position += count;
         return static_cast<std::int32_t>(count);
     }
+
     void close() override {
         trace += "C,";
     }
 };
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     if (argc == 1) {
         NiniXmlReaderSettings options;
         options.dtd_processing = NiniXmlDtdProcessing::Ignore;
         auto r = NativeNiniXmlReader::from_text(nini_writer_text(u"<Nini/>"), options);
-        if (!r->read() || r->token().node_type != 1 || r->token().name != u"Nini" ||
-            !r->token().is_empty_element || r->read() || !r->eof())
+        if (!r->read() || r->token().node_type != 1 || r->token().name != u"Nini" || !r->token().is_empty_element ||
+            r->read() || !r->eof())
             throw std::runtime_error("Native XML reader unit failed");
-        auto attributes = NativeNiniXmlReader::from_text(
-            nini_writer_text(u"<?xml version='1.0'?><a x='v'>text</a>"), options);
-        if (!attributes->read() || !attributes->move_to_first_attribute() ||
-            attributes->token().name != u"version" || !attributes->read_attribute_value() ||
-            attributes->token().line_position != 16 || attributes->read_attribute_value() ||
-            !attributes->move_to_element() || !attributes->read() || !attributes->move_to_first_attribute() ||
-            attributes->token().value != u"v" || !attributes->read() || attributes->token().node_type != 3 ||
-            attributes->move_to_first_attribute())
+        auto attributes =
+            NativeNiniXmlReader::from_text(nini_writer_text(u"<?xml version='1.0'?><a x='v'>text</a>"), options);
+        if (!attributes->read() || !attributes->move_to_first_attribute() || attributes->token().name != u"version" ||
+            !attributes->read_attribute_value() || attributes->token().line_position != 16 ||
+            attributes->read_attribute_value() || !attributes->move_to_element() || !attributes->read() ||
+            !attributes->move_to_first_attribute() || attributes->token().value != u"v" || !attributes->read() ||
+            attributes->token().node_type != 3 || attributes->move_to_first_attribute())
             throw std::runtime_error("Native XML attribute navigation/lifetime unit failed");
         return 0;
     }
     int stream_chunk = 3;
     std::int64_t doc_limit = 0, entity_limit = -1;
-    bool normalize = false, resolve = false, load = false, byte_mode = false, legacy = false,
-         standalone = false, nav = false, prohibit = false, stream_mode = false, nonseek = false,
-         close_stream = false, capture_state = false, start_attribute = false, summarize = false;
+    bool normalize = false, resolve = false, load = false, byte_mode = false, legacy = false, standalone = false,
+         nav = false, prohibit = false, stream_mode = false, nonseek = false, close_stream = false,
+         capture_state = false, start_attribute = false, summarize = false;
     for (int i = 1; i < argc; ++i) {
         if (std::string(argv[i]) == "--normalize")
             normalize = true;
@@ -189,8 +196,7 @@ int main(int argc, char** argv) {
     std::string line;
     while (std::getline(std::cin, line)) {
         std::ostringstream out;
-        NiniXmlReaderSettings settings =
-            legacy ? NiniXmlReaderSettings::legacy_document() : NiniXmlReaderSettings{};
+        NiniXmlReaderSettings settings = legacy ? NiniXmlReaderSettings::legacy_document() : NiniXmlReaderSettings{};
         if (standalone)
             settings.validating_reader_compatibility = false;
         if (!legacy)
@@ -209,8 +215,7 @@ int main(int argc, char** argv) {
                 std::vector<std::uint8_t> bytes;
                 if (line != "-")
                     for (std::size_t i = 0; i < line.size(); i += 2)
-                        bytes.push_back(
-                            static_cast<std::uint8_t>(std::stoul(line.substr(i, 2), nullptr, 16)));
+                        bytes.push_back(static_cast<std::uint8_t>(std::stoul(line.substr(i, 2), nullptr, 16)));
                 if (stream_mode) {
                     stream = std::make_shared<TracingInput>();
                     stream->bytes = std::move(bytes);
@@ -230,12 +235,11 @@ int main(int argc, char** argv) {
                 out << "OK";
             } else {
                 while (r->read()) {
-                    auto& t = r->token();
-                    out << t.node_type << ':' << t.depth << ':' << t.line_number << ':' << t.line_position
-                        << ':' << (t.is_empty_element ? 1 : 0) << ':' << encode(t.name) << ':'
-                        << encode(t.prefix) << ':' << encode(t.local_name) << ':' << encode(t.namespace_uri)
-                        << ':' << encode(t.value) << '[';
-                    for (auto& a : t.attributes)
+                    auto &t = r->token();
+                    out << t.node_type << ':' << t.depth << ':' << t.line_number << ':' << t.line_position << ':'
+                        << (t.is_empty_element ? 1 : 0) << ':' << encode(t.name) << ':' << encode(t.prefix) << ':'
+                        << encode(t.local_name) << ':' << encode(t.namespace_uri) << ':' << encode(t.value) << '[';
+                    for (auto &a : t.attributes)
                         out << encode(a.name) << ':' << encode(a.prefix) << ':' << encode(a.local_name) << ':'
                             << encode(a.namespace_uri) << ':' << encode(a.value) << ',';
                     out << "]|";
@@ -246,7 +250,7 @@ int main(int argc, char** argv) {
                 }
                 out << "END";
             }
-        } catch (const NiniXmlProviderError& e) {
+        } catch (const NiniXmlProviderError &e) {
             out << "E:" << e.source_type << ':' << e.hresult << ':' << encode(e.message) << ':'
                 << (e.line_number ? std::to_string(*e.line_number) : "~") << ':'
                 << (e.line_position ? std::to_string(*e.line_position) : "~");

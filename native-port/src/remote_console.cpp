@@ -16,8 +16,10 @@
 #include <iostream>
 #include <thread>
 #include <unordered_map>
+
 namespace opensim::server {
 using namespace framework;
+
 namespace {
 int hex(char16_t c) {
     return c >= u'0' && c <= u'9'   ? c - u'0'
@@ -25,6 +27,7 @@ int hex(char16_t c) {
            : c >= u'A' && c <= u'F' ? c - u'A' + 10
                                     : -1;
 }
+
 std::u16string decode(std::u16string_view text) {
     std::u16string result;
     std::string bytes;
@@ -37,8 +40,8 @@ std::u16string decode(std::u16string_view text) {
         if (c == u'+')
             c = u' ';
         else if (c == u'%') {
-            if (i + 5 < text.size() && text[i + 1] == u'u' && hex(text[i + 2]) >= 0 &&
-                hex(text[i + 3]) >= 0 && hex(text[i + 4]) >= 0 && hex(text[i + 5]) >= 0) {
+            if (i + 5 < text.size() && text[i + 1] == u'u' && hex(text[i + 2]) >= 0 && hex(text[i + 3]) >= 0 &&
+                hex(text[i + 4]) >= 0 && hex(text[i + 5]) >= 0) {
                 flush();
                 result.push_back(static_cast<char16_t>((hex(text[i + 2]) << 12) | (hex(text[i + 3]) << 8) |
                                                        (hex(text[i + 4]) << 4) | hex(text[i + 5])));
@@ -61,33 +64,39 @@ std::u16string decode(std::u16string_view text) {
     flush();
     return utf16(utf8(result));
 }
+
 std::int32_t difference(std::int32_t a, std::int32_t b) {
     return std::bit_cast<std::int32_t>(std::uint32_t(a) - std::uint32_t(b));
 }
+
 std::u16string number(std::int64_t n) {
     return utf16(std::to_string(n));
 }
+
 struct Document {
     NiniXmlDom dom;
     NiniXmlDomCollectionScope lifetime;
     std::shared_ptr<NiniXmlDomNode> root;
+
     Document() : lifetime(dom.defer_collection()) {
         dom.document_node()->append_child(
             dom.create_declaration(nini_writer_text(u"1.0"), nini_writer_text(u""), nini_writer_text(u"")));
         root = dom.create_element(nini_writer_text(u"ConsoleSession"));
     }
-    std::shared_ptr<NiniXmlDomNode> element(const std::u16string& name,
-                                            const std::optional<std::u16string>& text) {
+
+    std::shared_ptr<NiniXmlDomNode> element(const std::u16string &name, const std::optional<std::u16string> &text) {
         auto element = dom.create_element(nini_writer_text(name));
         element->append_child(dom.create_text(nini_writer_text(text)));
         return element;
     }
-    void attribute(const std::shared_ptr<NiniXmlDomNode>& node, const std::u16string& name,
-                   const std::u16string& value) {
+
+    void attribute(const std::shared_ptr<NiniXmlDomNode> &node, const std::u16string &name,
+                   const std::u16string &value) {
         auto attribute = dom.create_attribute(nini_writer_text(name));
         attribute->value(nini_writer_text(value));
         node->append_attribute(attribute);
     }
+
     std::u16string finish() {
         dom.document_node()->append_child(root);
         auto sink = std::make_shared<NiniStringWriter>();
@@ -97,6 +106,7 @@ struct Document {
         return *sink->to_string();
     }
 };
+
 PollTablePtr table(RemoteConsoleReply reply) {
     auto value = std::make_shared<PollTable>();
     value->set("str_response_string", utf8(reply.body));
@@ -108,7 +118,8 @@ PollTablePtr table(RemoteConsoleReply reply) {
         value->set("access_control_allow_origin", utf8(*reply.allowed_origin));
     return value;
 }
-}
+} // namespace
+
 std::map<std::u16string, std::u16string> RemoteConsole::decode_post(std::u16string_view data) {
     std::map<std::u16string, std::u16string> result;
     std::size_t start = 0;
@@ -129,6 +140,7 @@ std::map<std::u16string, std::u16string> RemoteConsole::decode_post(std::u16stri
     }
     return result;
 }
+
 struct RemoteConsole::Impl : std::enable_shared_from_this<Impl> {
     struct Connection {
         Uuid id;
@@ -136,12 +148,14 @@ struct RemoteConsole::Impl : std::enable_shared_from_this<Impl> {
         std::int64_t seen = 0;
         bool fresh = true;
     };
+
     struct Line {
         std::int64_t number;
         std::optional<std::u16string> text;
         std::u16string level;
         bool prompt, command, input;
     };
+
     RemoteConsoleOptions options;
     mutable std::recursive_mutex mutex;
     std::recursive_mutex commands_mutex;
@@ -156,6 +170,7 @@ struct RemoteConsole::Impl : std::enable_shared_from_this<Impl> {
     std::int64_t line = 0;
     bool expecting_input = false, expecting_command = true;
     std::u16string last_prompt;
+
     explicit Impl(RemoteConsoleOptions value) : options(std::move(value)), last_prompt(options.prompt) {
         if (!options.tick_count)
             options.tick_count = []() {
@@ -167,8 +182,9 @@ struct RemoteConsole::Impl : std::enable_shared_from_this<Impl> {
         if (!options.random_uuid)
             options.random_uuid = Uuid::random;
         if (!options.debug)
-            options.debug = [](const auto& text) { std::cout << utf8(text) << '\n'; };
+            options.debug = [](const auto &text) { std::cout << utf8(text) << '\n'; };
     }
+
     void launch_timer() {
         if (options.expiration_timer)
             timer = std::thread([this] {
@@ -180,6 +196,7 @@ struct RemoteConsole::Impl : std::enable_shared_from_this<Impl> {
                 }
             });
     }
+
     void stop() {
         std::unique_lock lock(mutex);
         stopped = true;
@@ -189,10 +206,12 @@ struct RemoteConsole::Impl : std::enable_shared_from_this<Impl> {
         if (timer.joinable())
             timer.join();
     }
+
     std::shared_ptr<Connection> find(Uuid id) {
         auto it = sessions.find(id);
         return it == sessions.end() ? nullptr : slots[it->second];
     }
+
     void insert(std::shared_ptr<Connection> value) {
         auto old = sessions.find(value->id);
         if (old != sessions.end()) {
@@ -208,6 +227,7 @@ struct RemoteConsole::Impl : std::enable_shared_from_this<Impl> {
             slots.push_back(value);
         sessions[value->id] = index;
     }
+
     void erase(Uuid id) {
         auto it = sessions.find(id);
         if (it == sessions.end())
@@ -216,17 +236,20 @@ struct RemoteConsole::Impl : std::enable_shared_from_this<Impl> {
         free.push_back(it->second);
         sessions.erase(it);
     }
+
     RemoteConsoleReply origin(RemoteConsoleReply result) {
         std::lock_guard lock(mutex);
         if (!options.allowed_origin.empty())
             result.allowed_origin = options.allowed_origin;
         return result;
     }
+
     RemoteConsoleReply ok() {
         Document doc;
         doc.root->append_child(doc.element(u"Result", u"OK"));
         return origin({200, u"text/xml", doc.finish(), {}, {}});
     }
+
     void close_connection(Uuid id) {
         try {
             if (!options.remove_poll)
@@ -235,10 +258,11 @@ struct RemoteConsole::Impl : std::enable_shared_from_this<Impl> {
         } catch (...) {
         }
     }
+
     void expire() {
         std::lock_guard lock(mutex);
         std::vector<Uuid> expired;
-        for (const auto& connection : slots)
+        for (const auto &connection : slots)
             if (connection && difference(options.tick_count(), connection->last) > 500000)
                 expired.push_back(connection->id);
         for (auto id : expired) {
@@ -246,6 +270,7 @@ struct RemoteConsole::Impl : std::enable_shared_from_this<Impl> {
             close_connection(id);
         }
     }
+
     RemoteConsoleReply start(std::u16string_view body) {
         auto post = decode_post(body);
         std::shared_ptr<Connection> connection;
@@ -291,6 +316,7 @@ struct RemoteConsole::Impl : std::enable_shared_from_this<Impl> {
         }
         return origin({200, u"text/xml", doc.finish(), {}, {}});
     }
+
     RemoteConsoleReply close(std::u16string_view body) {
         std::lock_guard lock(mutex);
         auto post = decode_post(body);
@@ -303,6 +329,7 @@ struct RemoteConsole::Impl : std::enable_shared_from_this<Impl> {
         }
         return ok();
     }
+
     RemoteConsoleReply command(std::u16string_view body) {
         std::lock_guard lock(mutex);
         auto post = decode_post(body);
@@ -314,8 +341,9 @@ struct RemoteConsole::Impl : std::enable_shared_from_this<Impl> {
         data_event.notify_all();
         return ok();
     }
-    void output(std::optional<std::u16string> text, std::optional<std::u16string> level, bool prompt,
-                bool command, bool is_input) {
+
+    void output(std::optional<std::u16string> text, std::optional<std::u16string> level, bool prompt, bool command,
+                bool is_input) {
         {
             std::lock_guard lock(mutex);
             line = std::bit_cast<std::int64_t>(std::uint64_t(line) + 1);
@@ -335,6 +363,7 @@ struct RemoteConsole::Impl : std::enable_shared_from_this<Impl> {
             options.on_output(value);
         options.debug(value);
     }
+
     bool has_events(Uuid id) {
         std::lock_guard lock(mutex);
         auto connection = find(id);
@@ -343,11 +372,13 @@ struct RemoteConsole::Impl : std::enable_shared_from_this<Impl> {
         connection->last = options.tick_count();
         return connection->seen < line;
     }
+
     RemoteConsoleReply no_events() {
         std::lock_guard lock(mutex);
         Document doc;
         return origin({200, u"text/xml", doc.finish(), false, {}});
     }
+
     RemoteConsoleReply get_events(Uuid id) {
         std::lock_guard lock(mutex);
         auto connection = find(id);
@@ -360,11 +391,11 @@ struct RemoteConsole::Impl : std::enable_shared_from_this<Impl> {
         auto start = line - static_cast<std::int64_t>(scrollback.size());
         auto first = std::max(start, connection->seen);
         for (auto i = first; i < line; ++i) {
-            auto& entry = scrollback.at(static_cast<std::size_t>(i - start));
+            auto &entry = scrollback.at(static_cast<std::size_t>(i - start));
             auto element = doc.dom.create_element(nini_writer_text(u"Line"));
             doc.attribute(element, u"Number", number(entry.number));
             doc.attribute(element, u"Level", entry.level);
-            auto flag = [&](const std::u16string& name, bool value) {
+            auto flag = [&](const std::u16string &name, bool value) {
                 doc.attribute(element, name, value ? u"true" : u"false");
             };
             if (!connection->fresh) {
@@ -384,6 +415,7 @@ struct RemoteConsole::Impl : std::enable_shared_from_this<Impl> {
         connection->fresh = false;
         return origin({200, u"application/xml", doc.finish(), false, {}});
     }
+
     std::u16string read_line(std::u16string prompt, bool is_command, bool) {
         {
             std::lock_guard lock(mutex);
@@ -416,7 +448,7 @@ struct RemoteConsole::Impl : std::enable_shared_from_this<Impl> {
             std::lock_guard lock(commands_mutex);
             auto result = options.commands->invoke(words);
             if (result && !words.empty()) {
-                for (auto& word : words)
+                for (auto &word : words)
                     if (word.find(' ') != std::string::npos)
                         word = '"' + word + '"';
                 return u"";
@@ -425,23 +457,26 @@ struct RemoteConsole::Impl : std::enable_shared_from_this<Impl> {
         return value;
     }
 };
-RemoteConsole::RemoteConsole(RemoteConsoleOptions options)
-    : impl_(std::make_shared<Impl>(std::move(options))) {
+
+RemoteConsole::RemoteConsole(RemoteConsoleOptions options) : impl_(std::make_shared<Impl>(std::move(options))) {
     impl_->launch_timer();
 }
+
 RemoteConsole::~RemoteConsole() {
     impl_->stop();
 }
+
 void RemoteConsole::stop() {
     impl_->stop();
 }
-void RemoteConsole::set_server(const HttpRegistrar& add_http) {
+
+void RemoteConsole::set_server(const HttpRegistrar &add_http) {
     if (!add_http)
         throw std::invalid_argument("Remote console HTTP registrar unavailable");
-    const char* paths[] = {"/StartSession", "/CloseSession", "/SessionCommand"};
+    const char *paths[] = {"/StartSession", "/CloseSession", "/SessionCommand"};
     for (int index = 0; index < 3; ++index) {
         std::weak_ptr<Impl> weak = impl_;
-        add_http(paths[index], [weak, index](const network::HttpRequest& request) {
+        add_http(paths[index], [weak, index](const network::HttpRequest &request) {
             network::HttpResponse response;
             auto core = weak.lock();
             if (!core) {
@@ -449,18 +484,15 @@ void RemoteConsole::set_server(const HttpRegistrar& add_http) {
                 return response;
             }
             auto body = decode_stream_reader_text(
-                            {reinterpret_cast<const std::uint8_t*>(request.body.data()), request.body.size()})
+                            {reinterpret_cast<const std::uint8_t *>(request.body.data()), request.body.size()})
                             .text;
-            auto reply = index == 0   ? core->start(body)
-                         : index == 1 ? core->close(body)
-                                      : core->command(body);
+            auto reply = index == 0 ? core->start(body) : index == 1 ? core->close(body) : core->command(body);
             response.status = reply.status;
             response.content_type = utf8(reply.content_type);
             response.body = utf8(reply.body);
             bool keep_alive = true;
-            for (const auto& [name, value] : request.headers)
-                if (ordinal_equals_ignore_case(name, "Connection") &&
-                    invariant_equals_ignore_case(value, "close"))
+            for (const auto &[name, value] : request.headers)
+                if (ordinal_equals_ignore_case(name, "Connection") && invariant_equals_ignore_case(value, "close"))
                     keep_alive = false;
             response.keep_alive = reply.keep_alive.value_or(keep_alive);
             if (reply.allowed_origin)
@@ -470,7 +502,7 @@ void RemoteConsole::set_server(const HttpRegistrar& add_http) {
     }
 }
 
-void RemoteConsole::read_config(const IniConfig& config) {
+void RemoteConsole::read_config(const IniConfig &config) {
     std::lock_guard lock(impl_->mutex);
     if (!config.has_section("Network"))
         return;
@@ -478,26 +510,32 @@ void RemoteConsole::read_config(const IniConfig& config) {
     impl_->options.password = utf16(config.get("Network", "ConsolePass"));
     impl_->options.allowed_origin = utf16(config.get("Network", "ConsoleAllowedOrigin"));
 }
+
 RemoteConsoleReply RemoteConsole::start_session(std::u16string_view body) {
     return impl_->start(body);
 }
+
 RemoteConsoleReply RemoteConsole::close_session(std::u16string_view body) {
     return impl_->close(body);
 }
+
 RemoteConsoleReply RemoteConsole::session_command(std::u16string_view body) {
     return impl_->command(body);
 }
-void RemoteConsole::output(std::optional<std::u16string> text, std::optional<std::u16string> level,
-                           bool prompt, bool command, bool input) {
+
+void RemoteConsole::output(std::optional<std::u16string> text, std::optional<std::u16string> level, bool prompt,
+                           bool command, bool input) {
     impl_->output(std::move(text), std::move(level), prompt, command, input);
 }
+
 std::u16string RemoteConsole::read_line(std::u16string prompt, bool command, bool echo) {
     return impl_->read_line(std::move(prompt), command, echo);
 }
+
 ConsolePrompts RemoteConsole::prompts(ConsolePrompts::Diagnostic diagnostic) const {
     std::weak_ptr<Impl> weak = impl_;
     return ConsolePrompts(
-        [weak](const auto& prompt, bool command, bool echo) -> ConsolePrompts::Text {
+        [weak](const auto &prompt, bool command, bool echo) -> ConsolePrompts::Text {
             auto core = weak.lock();
             if (!core)
                 throw std::runtime_error("Remote console unavailable");
@@ -505,21 +543,27 @@ ConsolePrompts RemoteConsole::prompts(ConsolePrompts::Diagnostic diagnostic) con
         },
         std::move(diagnostic));
 }
+
 bool RemoteConsole::has_events(Uuid id) {
     return impl_->has_events(id);
 }
+
 RemoteConsoleReply RemoteConsole::get_events(Uuid id) {
     return impl_->get_events(id);
 }
+
 RemoteConsoleReply RemoteConsole::no_events() {
     return impl_->no_events();
 }
+
 void RemoteConsole::expire() {
     impl_->expire();
 }
+
 void RemoteConsole::close_connection(Uuid id) {
     impl_->close_connection(id);
 }
+
 RemoteConsoleState RemoteConsole::state() const {
     std::lock_guard lock(impl_->mutex);
     return {impl_->line,
@@ -530,12 +574,12 @@ RemoteConsoleState RemoteConsole::state() const {
             impl_->expecting_command,
             impl_->last_prompt};
 }
-RemoteConsoleHttpRoutes::RemoteConsoleHttpRoutes(RemoteConsole& console) {
-    console.set_server(
-        [&](const auto& path, auto handler) { routes_.emplace_back(path, std::move(handler)); });
+
+RemoteConsoleHttpRoutes::RemoteConsoleHttpRoutes(RemoteConsole &console) {
+    console.set_server([&](const auto &path, auto handler) { routes_.emplace_back(path, std::move(handler)); });
 }
-std::optional<network::HttpResponse>
-RemoteConsoleHttpRoutes::handle(const network::HttpRequest& request) const {
+
+std::optional<network::HttpResponse> RemoteConsoleHttpRoutes::handle(const network::HttpRequest &request) const {
     auto path = trim_utf8(request.raw_target.empty() ? request.path : request.raw_target);
     while (!path.empty() && path.back() == '/')
         path.pop_back();
@@ -543,10 +587,10 @@ RemoteConsoleHttpRoutes::handle(const network::HttpRequest& request) const {
         return {};
     if (path.front() != '/')
         path = '/' + path;
-    for (const auto& [prefix, handler] : routes_)
+    for (const auto &[prefix, handler] : routes_)
         if (invariant_starts_with_ignore_case(path, prefix))
             return handler(request);
     return {};
 }
 
-}
+} // namespace opensim::server

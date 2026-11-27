@@ -4,7 +4,8 @@
 #include <iostream>
 #include <bit>
 #include <iomanip>
-std::u16string Text(const std::string& s) {
+
+std::u16string Text(const std::string &s) {
     std::u16string out;
     if (s == "-" || s == ".")
         return out;
@@ -13,6 +14,7 @@ std::u16string Text(const std::string& s) {
                                      (std::stoi(s.substr(i + 2, 2), nullptr, 16) << 8));
     return out;
 }
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -24,7 +26,7 @@ int main() {
                 std::cout << ":" << std::hex << std::setw(8) << std::setfill('0')
                           << std::bit_cast<std::uint32_t>(number) << std::dec;
             std::cout << "\n";
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
             std::cout << "EX:" << e.what() << "\n";
         }
     }

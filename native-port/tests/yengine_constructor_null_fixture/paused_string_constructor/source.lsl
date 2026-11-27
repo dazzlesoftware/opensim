@@ -1,0 +1,1 @@
+integer calls;string early=pause();string later;integer after;string result;string pause(){string local=later;calls++;llSleep(3.0);result=local;return local;}default{state_entry(){after=1;}}

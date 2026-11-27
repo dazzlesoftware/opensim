@@ -1,0 +1,1 @@
+list item=[1,1.25,<1,2,3>,<0,0,0,1>,"a",(key)"bad",[1.25]];string result;string dumped;string csv;string first;default{state_entry(){result=(string)item;dumped=llDumpList2String(item,"|");csv=llList2CSV(item);first=llList2String(item,0);}}

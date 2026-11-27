@@ -1,0 +1,1 @@
+YOption chars;YOption advflowctl;char value;integer result;default{state_entry(){switch('A'){case 'A':result=1;break;}}}

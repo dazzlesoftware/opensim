@@ -1,0 +1,26 @@
+{
+  "name": "raw_single",
+  "input": {
+    "clr": "System.Single",
+    "value": 1.2345679,
+    "bits": "3f9e0652"
+  },
+  "append_exception": null,
+  "outer_xml_exception": null,
+  "load_xml_exception": null,
+  "restore_event_queue_exception": null,
+  "restored": {
+    "clr": "System.Single",
+    "value": 1.2345679,
+    "bits": "3f9e0652"
+  },
+  "strict_xml_reader_control_exception": null,
+  "strict_xml_reader_control_restored": {
+    "clr": "System.Single",
+    "value": 1.2345679,
+    "bits": "3f9e0652"
+  },
+  "sha256": {
+    "serialized.xml": "27893f550db5668471cf60f5f0fd2fec7e5c766df7a8729f351bfb4a124c7c31"
+  }
+}

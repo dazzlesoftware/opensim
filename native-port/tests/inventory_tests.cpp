@@ -33,14 +33,17 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sqlite3.h>
 using namespace opensim::services;
 using opensim::framework::Uuid;
+
 namespace {
 int failures = 0;
+
 void check(bool value, const char *name) {
     if (!value) {
         ++failures;
         std::cerr << "FAIL: " << name << '\n';
     }
 }
+
 void tests(const std::string &path) {
     const auto owner = Uuid::random();
     Uuid root_id;
@@ -54,14 +57,13 @@ void tests(const std::string &path) {
         root_id = root->id;
         check(root->name == "My Inventory" && root->type == 8 && root->version == 19,
               "root data and direct child version increments");
-        check(service.skeleton(owner)->size() == 21,
-              "all default folders and calling-card descendants created");
+        check(service.skeleton(owner)->size() == 21, "all default folders and calling-card descendants created");
         check(!service.create_user_inventory(owner) && service.skeleton(owner)->size() == 22,
               "repair returns false and preserves source duplicate Textures behavior");
         check(service.for_type(owner, 0) && service.for_type(owner, 57) && !service.for_type(owner, 49),
               "folder type lookups preserve source default set");
         check(!service.skeleton(Uuid::random()), "inventory owner separation");
-        sqlite3* connection = nullptr;
+        sqlite3 *connection = nullptr;
         const auto opened = sqlite3_open_v2(path.c_str(), &connection, SQLITE_OPEN_READWRITE, nullptr);
         const std::unique_ptr<sqlite3, decltype(&sqlite3_close)> fixture(connection, sqlite3_close);
         if (opened != SQLITE_OK ||
@@ -77,8 +79,7 @@ void tests(const std::string &path) {
               "ignored folder write reports failure and preserves the parent version");
         auto folder = InventoryFolder{std::string(70, 'x'), -1, 1, Uuid::random(), owner, root_id};
         store.store(folder);
-        check(folder.name.size() == 64 &&
-                  store.folders({{"folderID", folder.id.str()}}).front().name == folder.name,
+        check(folder.name.size() == 64 && store.folders({{"folderID", folder.id.str()}}).front().name == folder.name,
               "folder store truncates and mutates long names");
         auto unicode =
             InventoryFolder{std::string(63, 'a') + "\xf0\x9f\x98\x80", -1, 1, Uuid::random(), owner, root_id};
@@ -89,8 +90,8 @@ void tests(const std::string &path) {
         unicode.version = 65537;
         store.store(unicode);
         const auto skeleton = *service.skeleton(owner);
-        const auto converted = std::find_if(skeleton.begin(), skeleton.end(),
-                                            [&](const auto &value) { return value.id == unicode.id; });
+        const auto converted =
+            std::find_if(skeleton.begin(), skeleton.end(), [&](const auto &value) { return value.id == unicode.id; });
         check(converted != skeleton.end() && converted->type == -25536 && converted->version == 1,
               "service narrows provider folder type and version like managed casts");
         auto destination = *service.for_type(owner, 6);
@@ -102,8 +103,7 @@ void tests(const std::string &path) {
                   store.folders({{"folderID", destination.id.str()}}).front().version == before + 3,
               "same-parent move increments source and destination");
         check(!store.move(Uuid::random(), root_id), "missing move returns false");
-        check(store.erase({{"folderID", folder.id.str()}}) &&
-                  store.folders({{"folderID", folder.id.str()}}).empty(),
+        check(store.erase({{"folderID", folder.id.str()}}) && store.folders({{"folderID", folder.id.str()}}).empty(),
               "folder delete persists");
         bool bad = false;
         try {
@@ -112,9 +112,7 @@ void tests(const std::string &path) {
             bad = true;
         }
         check(bad, "query identifiers validated");
-        auto version = [&](const Uuid &id) {
-            return store.folders({{"folderID", id.str()}}).front().version;
-        };
+        auto version = [&](const Uuid &id) { return store.folders({{"folderID", id.str()}}).front().version; };
         InventoryItem item;
         item.asset_id = Uuid::random();
         item.asset_type = 21;
@@ -169,8 +167,7 @@ void tests(const std::string &path) {
         check(store.erase_items({{"avatarID", owner.str()}, {"assetID", item.asset_id.str()}}) &&
                   version(destination.id) == delete_version + 1,
               "bulk item delete increments each distinct parent once");
-        check(!store.erase_items({{"inventoryID", item.id.str()}}) &&
-                  !store.move_item(Uuid::random(), root_id),
+        check(!store.erase_items({{"inventoryID", item.id.str()}}) && !store.move_item(Uuid::random(), root_id),
               "missing item delete and move return false");
         saved = item;
         saved.id = Uuid::random();
@@ -187,6 +184,7 @@ void tests(const std::string &path) {
               "inventory item survives database reopen");
     }
 }
+
 void service_tests() {
     InventoryFolderStore store(":memory:", true);
     InventoryService service(store), restricted(store, false);
@@ -233,11 +231,10 @@ void service_tests() {
     item.name = "Updated";
     const auto new_asset = Uuid::random();
     item.asset_id = new_asset;
-    check(service.update_item(item) && item.owner == owner && item.parent == plain.id &&
-              item.asset_type == 6 && item.inventory_type == 6 && item.creator_id == stored.creator_id,
+    check(service.update_item(item) && item.owner == owner && item.parent == plain.id && item.asset_type == 6 &&
+              item.inventory_type == 6 && item.creator_id == stored.creator_id,
           "update restores caller item invariants");
-    check(service.item(owner, item.id)->asset_id == new_asset &&
-              service.item(owner, item.id)->name == "Updated",
+    check(service.item(owner, item.id)->asset_id == new_asset && service.item(owner, item.id)->name == "Updated",
           "update permits mutable asset ID and name");
     auto blank_description = item;
     blank_description.id = Uuid::random();
@@ -257,9 +254,8 @@ void service_tests() {
     blank_description.creator_id = "stored-creator";
     check(store.store(blank_description), "seed an item with a plain creator ID");
     blank_description.creator_id = "caller-creator;https://example.test/;Creator Name";
-    check(service.update_item(blank_description) &&
-              service.item(owner, blank_description.id)->creator_id ==
-                  "stored-creator;https://example.test/;Creator Name",
+    check(service.update_item(blank_description) && service.item(owner, blank_description.id)->creator_id ==
+                                                        "stored-creator;https://example.test/;Creator Name",
           "restoring a plain creator ID preserves creator data on the caller item");
     blank_description.creator_id.clear();
     check(store.store(blank_description), "seed an item with an empty creator ID");
@@ -268,15 +264,15 @@ void service_tests() {
               service.item(owner, blank_description.id)->creator_id == "caller-creator",
           "restoring an empty creator identification clears data and preserves the caller ID");
     check(store.erase_items({{"inventoryID", blank_description.id.str()}}), "remove metadata test item");
-    auto content = service.content(other, plain.id);
+    auto content = service.content(other, plain.id).value();
     check(content.owner == owner && content.folder == plain.id && content.items.size() == 1,
           "folder content resolves owner by folder ID");
     const auto missing = Uuid::random();
-    const auto multiple = service.multiple_items(owner, {item.id, missing, item.id});
+    const auto multiple = service.multiple_items(owner, {item.id, missing, item.id}).value();
     check(multiple.size() == 3 && multiple[0] && !multiple[1] && multiple[2],
           "multiple item fetch preserves missing slots and input order");
-    check(service.multiple_content(owner, {plain.id, missing}).size() == 2 &&
-              service.content(other, missing).owner == other,
+    check(service.multiple_content(owner, {plain.id, missing})->size() == 2 &&
+              service.content(other, missing).value().owner == other,
           "multiple folder results and missing-folder owner fallback");
     auto link = item;
     link.id = Uuid::random();
@@ -295,8 +291,8 @@ void service_tests() {
     check(service.move_items(other, {item}), "service item move ignores principal as baseline");
     check(!restricted.purge_folder(trash.id) && !service.purge_folder(plain.id),
           "purge respects AllowDelete and trash ancestry");
-    check(service.purge_folder(trash.id) && !service.folder(owner, child.id) &&
-              !service.folder(owner, grandchild.id) && !service.item(owner, item.id),
+    check(service.purge_folder(trash.id) && !service.folder(owner, child.id) && !service.folder(owner, grandchild.id) &&
+              !service.item(owner, item.id),
           "recursive trash purge removes descendants and items");
     check(service.folder(owner, trash.id).has_value(), "purge preserves target folder");
     auto lost = *service.for_type(owner, 16);
@@ -308,14 +304,13 @@ void service_tests() {
           "ordinary folder deletion skipped outside trash");
     check(service.delete_folders(owner, {child.id}, false) && !service.folder(owner, child.id),
           "explicit unrestricted folder deletion");
-    check(!service.has_inventory_for_user(owner),
-          "unused HasInventoryForUser preserves constant false behavior");
+    check(!service.has_inventory_for_user(owner), "unused HasInventoryForUser preserves constant false behavior");
 }
-}
+} // namespace
+
 int main() {
     const auto path =
-        (std::filesystem::temp_directory_path() / ("opensim-inventory-" + Uuid::random().str() + ".db"))
-            .string();
+        (std::filesystem::temp_directory_path() / ("opensim-inventory-" + Uuid::random().str() + ".db")).string();
     try {
         tests(path);
         service_tests();

@@ -1,0 +1,1 @@
+YOption arrays;object nil;integer baseline;integer observed;integer observed2;integer inside;integer result;integer finished;integer after;integer consume(object a,integer h){observed=h;inside=xmrHeapUsed();return 7;}object make(){return xmrFixedArrayAllocI(8);}default{state_entry(){baseline=xmrHeapUsed();result=consume(make(),xmrHeapUsed());finished=xmrHeapUsed();after=1;}}

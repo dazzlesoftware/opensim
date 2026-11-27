@@ -2,33 +2,40 @@
 #include "opensim/framework/config_uri_components.hpp"
 #include "opensim/framework/nini_writer.hpp"
 #include <algorithm>
+
 namespace opensim::framework {
 namespace {
 using Text = ConfigUriText;
 using Object = ConfigUriObjectPtr;
 using Backend = std::shared_ptr<ConfigHttpEnvironmentProxyBackend>;
 using Credential = std::shared_ptr<ConfigXmlCredentials>;
+
 Text t(std::u16string value) {
     return nini_writer_text(std::move(value));
 }
+
 [[noreturn]] void nr() {
     throw ConfigUriComponentsError("System.NullReferenceException",
                                    u"Object reference not set to an instance of an object.", 0x80004003);
 }
-void require(const Backend& b) {
-    if (!b || !b->environment || !b->new_builder || !b->absolute_uri || !b->unescape_data ||
-        !b->escape_data || !b->user_info || !b->host || !b->uri_equal || !b->ordinal_equal ||
-        !b->ordinal_ends_with || !b->white_space || !b->is_digit)
+
+void require(const Backend &b) {
+    if (!b || !b->environment || !b->new_builder || !b->absolute_uri || !b->unescape_data || !b->escape_data ||
+        !b->user_info || !b->host || !b->uri_equal || !b->ordinal_equal || !b->ordinal_ends_with || !b->white_space ||
+        !b->is_digit)
         throw ConfigHttpProxyProviderError(
             "HTTP environment proxy requires complete environment, URI, data encoding and character providers");
 }
-bool empty(const Text& text) {
+
+bool empty(const Text &text) {
     return !text || text->empty();
 }
-bool starts(std::u16string_view value, std::u16string_view prefix, const Backend& b) {
+
+bool starts(std::u16string_view value, std::u16string_view prefix, const Backend &b) {
     return value.size() >= prefix.size() && b->ordinal_equal(value.substr(0, prefix.size()), prefix);
 }
-Credential parse_credential(Text value, const Backend& b) {
+
+Credential parse_credential(Text value, const Backend &b) {
     if (empty(value) || std::all_of(value->begin(), value->end(), b->white_space))
         return {};
     if (*value == u":") {
@@ -60,7 +67,8 @@ Credential parse_credential(Text value, const Backend& b) {
         throw ConfigHttpProxyProviderError("NetworkCredential constructor provider returned null");
     return result;
 }
-}
+} // namespace
+
 ConfigUriObjectPtr config_http_environment_proxy_uri(Text input, Backend b) {
     require(b);
     if (empty(input))
@@ -93,7 +101,7 @@ ConfigUriObjectPtr config_http_environment_proxy_uri(Text input, Backend b) {
         auto info = t(value.substr(0, at));
         try {
             info = b->unescape_data(info);
-        } catch (const ConfigHttpProxyProviderError&) {
+        } catch (const ConfigHttpProxyProviderError &) {
             throw;
         } catch (...) {
         }
@@ -150,21 +158,21 @@ ConfigUriObjectPtr config_http_environment_proxy_uri(Text input, Backend b) {
             }
         }
         return uri;
-    } catch (const ConfigHttpProxyProviderError&) {
+    } catch (const ConfigHttpProxyProviderError &) {
         throw;
     } catch (...) {
     }
     return {};
 }
-ConfigHttpEnvironmentProxyCredentials::ConfigHttpEnvironmentProxyCredentials(Object http, Credential hc,
-                                                                             Object https, Credential sc,
-                                                                             Backend b)
+
+ConfigHttpEnvironmentProxyCredentials::ConfigHttpEnvironmentProxyCredentials(Object http, Credential hc, Object https,
+                                                                             Credential sc, Backend b)
     : http_(std::move(http)), https_(std::move(https)), http_credential_(std::move(hc)),
       https_credential_(std::move(sc)), backend_(std::move(b)) {
     require(backend_);
 }
-std::shared_ptr<ConfigXmlCredentials> ConfigHttpEnvironmentProxyCredentials::get_credential(Object uri,
-                                                                                            Text) const {
+
+std::shared_ptr<ConfigXmlCredentials> ConfigHttpEnvironmentProxyCredentials::get_credential(Object uri, Text) const {
     if (!uri)
         return {};
     if (backend_->uri_equal(uri, http_))
@@ -173,6 +181,7 @@ std::shared_ptr<ConfigXmlCredentials> ConfigHttpEnvironmentProxyCredentials::get
         return https_credential_;
     return {};
 }
+
 std::shared_ptr<ConfigHttpEnvironmentProxyCredentials>
 ConfigHttpEnvironmentProxyCredentials::try_create(Object http, Object https, Backend b) {
     require(b);
@@ -185,6 +194,7 @@ ConfigHttpEnvironmentProxyCredentials::try_create(Object http, Object https, Bac
         return {};
     return std::make_shared<ConfigHttpEnvironmentProxyCredentials>(http, hc, https, sc, b);
 }
+
 ConfigHttpEnvironmentProxy::ConfigHttpEnvironmentProxy(Object http, Object https, Text bypass, Backend b)
     : http_(std::move(http)), https_(std::move(https)), backend_(std::move(b)) {
     credentials_.store(ConfigHttpEnvironmentProxyCredentials::try_create(http_, https_, backend_));
@@ -207,12 +217,13 @@ ConfigHttpEnvironmentProxy::ConfigHttpEnvironmentProxy(Object http, Object https
         }
     }
 }
+
 std::shared_ptr<ConfigHttpEnvironmentProxy>
 ConfigHttpEnvironmentProxy::try_create(Backend b, ConfigHttpEnvironmentProxyPlatform platform) {
     require(b);
     Object http, https;
-    auto env = [&](const char16_t* name) { return b->environment(t(name)); };
-    auto parse = [&](const char16_t* name) { return config_http_environment_proxy_uri(env(name), b); };
+    auto env = [&](const char16_t *name) { return b->environment(t(name)); };
+    auto parse = [&](const char16_t *name) { return config_http_environment_proxy_uri(env(name), b); };
     if (platform == ConfigHttpEnvironmentProxyPlatform::Unix) {
         http = parse(u"http_proxy");
         if (!http && !env(u"GATEWAY_INTERFACE"))
@@ -243,9 +254,9 @@ ConfigHttpEnvironmentProxy::try_create(Backend b, ConfigHttpEnvironmentProxyPlat
         bypass = env(u"no_proxy");
     if (!bypass)
         bypass = env(u"NO_PROXY");
-    return std::shared_ptr<ConfigHttpEnvironmentProxy>(
-        new ConfigHttpEnvironmentProxy(http, https, bypass, b));
+    return std::shared_ptr<ConfigHttpEnvironmentProxy>(new ConfigHttpEnvironmentProxy(http, https, bypass, b));
 }
+
 ConfigUriObjectPtr ConfigHttpEnvironmentProxy::get_proxy(Object uri) const {
     if (!uri)
         nr();
@@ -254,6 +265,7 @@ ConfigUriObjectPtr ConfigHttpEnvironmentProxy::get_proxy(Object uri) const {
         return http_;
     return https_;
 }
+
 bool ConfigHttpEnvironmentProxy::is_bypassed(Object uri) const {
     if (!get_proxy(uri))
         return true;
@@ -274,4 +286,4 @@ bool ConfigHttpEnvironmentProxy::is_bypassed(Object uri) const {
         }
     return false;
 }
-}
+} // namespace opensim::framework

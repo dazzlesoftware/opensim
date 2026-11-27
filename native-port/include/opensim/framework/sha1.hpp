@@ -5,7 +5,8 @@
 #include <cstdint>
 #include <span>
 #include <string>
+
 namespace opensim::framework {
-std::array<std::uint8_t,20> sha1(std::span<const std::uint8_t> input);
+std::array<std::uint8_t, 20> sha1(std::span<const std::uint8_t> input);
 std::string sha1_hex(std::span<const std::uint8_t> input);
-}
+} // namespace opensim::framework

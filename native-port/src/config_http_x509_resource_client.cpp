@@ -14,14 +14,17 @@
 #include <condition_variable>
 #include <mutex>
 #include <thread>
+
 namespace opensim::framework {
 namespace {
 using Clock = std::chrono::steady_clock;
+
 struct BufferGate {
     std::atomic<bool> enabled = false, disposed = false;
     std::atomic<std::uint64_t> remaining = 0;
     bool chunked = false, framed = false;
     Clock::time_point deadline;
+
     bool interrupt() const {
         if (!enabled.load() || Clock::now() < deadline)
             return false;
@@ -31,11 +34,13 @@ struct BufferGate {
                Clock::now() >= deadline + std::chrono::seconds(2);
     }
 };
+
 struct BufferCancellation {
     std::shared_ptr<BufferGate> gate;
     std::mutex mutex;
     std::condition_variable_any changed;
     std::jthread worker;
+
     BufferCancellation(std::shared_ptr<BufferGate> value, std::shared_ptr<ConfigXmlStream> stream)
         : gate(std::move(value)) {
         gate->enabled.store(true);
@@ -49,6 +54,7 @@ struct BufferCancellation {
             stream->cancel_buffered_copy();
         });
     }
+
     void stop() {
         worker.request_stop();
         changed.notify_all();
@@ -56,11 +62,13 @@ struct BufferCancellation {
             worker.join();
         gate->enabled.store(false);
     }
+
     ~BufferCancellation() {
         stop();
     }
 };
-}
+} // namespace
+
 struct ConfigHttpX509ResourceClient::State {
     ConfigXmlNativeHttpServices services;
     std::shared_ptr<ConfigUriObjectBackend> uris;
@@ -68,34 +76,36 @@ struct ConfigHttpX509ResourceClient::State {
     ConfigXmlHttpRequester sender;
     std::once_flag started;
     std::int64_t maximum;
+
     explicit State(ConfigXmlNativeHttpServices policy, std::int64_t limit)
         : services(std::move(policy)), maximum(limit) {
         if (limit > 0 && limit <= INT_MAX)
             uris = native_config_uri_object_backend();
     }
+
     void start() {
         std::call_once(started, [this] {
             services.connection_pool =
-                ConfigXmlHttpPoolSettings{INT_MAX, std::chrono::milliseconds(15000),
-                                          std::chrono::milliseconds(-1), std::chrono::milliseconds(-1)};
+                ConfigXmlHttpPoolSettings{INT_MAX, std::chrono::milliseconds(15000), std::chrono::milliseconds(-1),
+                                          std::chrono::milliseconds(-1)};
             if (!services.proxy && !services.proxy_plan && !services.proxy_provider)
                 services = config_xml_bind_native_proxy(std::move(services), objects);
-            auto bound = config_xml_bind_typed_http(
-                services, objects, *uris, [] { return native_invariant_config_http_cookies_backend(); });
+            auto bound = config_xml_bind_typed_http(services, objects, *uris,
+                                                    [] { return native_invariant_config_http_cookies_backend(); });
             sender = config_xml_native_http_requester(std::move(bound), true);
         });
     }
 };
-ConfigHttpX509ResourceClient::ConfigHttpX509ResourceClient(ConfigXmlNativeHttpServices services,
-                                                           std::int64_t maximum) {
+
+ConfigHttpX509ResourceClient::ConfigHttpX509ResourceClient(ConfigXmlNativeHttpServices services, std::int64_t maximum) {
     try {
         state_ = std::make_shared<State>(std::move(services), maximum);
     } catch (...) {
     }
 }
+
 std::optional<std::vector<std::uint8_t>>
-ConfigHttpX509ResourceClient::download_asset(std::optional<std::u16string_view> text,
-                                             std::int64_t ticks) const {
+ConfigHttpX509ResourceClient::download_asset(std::optional<std::u16string_view> text, std::int64_t ticks) const {
     if (!state_ || !state_->uris || ticks <= 0)
         return {};
     using Clock = std::chrono::steady_clock;
@@ -111,9 +121,8 @@ ConfigHttpX509ResourceClient::download_asset(std::optional<std::u16string_view> 
             zero_timer = std::jthread([zero_cancel] { zero_cancel->store(true); });
         if (!text)
             return {};
-        auto& state = *state_;
-        auto uri =
-            state.uris->create(std::make_shared<const std::u16string>(*text), ConfigUriObjectKind::Absolute);
+        auto &state = *state_;
+        auto uri = state.uris->create(std::make_shared<const std::u16string>(*text), ConfigUriObjectKind::Absolute);
         if (*uri->scheme() != u"http")
             return {};
         state.start();
@@ -135,16 +144,17 @@ ConfigHttpX509ResourceClient::download_asset(std::optional<std::u16string_view> 
             operation.body_interrupted = [gate] { return gate->interrupt(); };
             if (milliseconds > 0 && asset_deadline) {
                 auto remaining =
-                    std::chrono::duration_cast<std::chrono::milliseconds>(*asset_deadline - Clock::now())
-                        .count();
+                    std::chrono::duration_cast<std::chrono::milliseconds>(*asset_deadline - Clock::now()).count();
                 operation.timeout_milliseconds =
                     static_cast<std::int32_t>(std::clamp<std::int64_t>(remaining, 1, 100000));
             }
             ConfigHttpResponseHead head;
-            operation.response_headers = [&head](const auto& value) { head = value; };
+            operation.response_headers = [&head](const auto &value) { head = value; };
             auto stream = state.sender(state.objects.wrap(uri), operation);
+
             struct Close {
                 std::shared_ptr<ConfigXmlStream> stream;
+
                 ~Close() {
                     try {
                         stream->close();
@@ -152,11 +162,12 @@ ConfigHttpX509ResourceClient::download_asset(std::optional<std::u16string_view> 
                     }
                 }
             } close{stream};
+
             std::vector<std::u16string> lengths, encodings;
             std::vector<ConfigUriText> redirect_values;
-            for (const auto& header : head.headers) {
+            for (const auto &header : head.headers) {
                 auto name = header.name;
-                for (auto& c : name)
+                for (auto &c : name)
                     if (c >= 'A' && c <= 'Z')
                         c = static_cast<char>(c + 32);
                 if (name == "content-length")
@@ -178,8 +189,7 @@ ConfigHttpX509ResourceClient::download_asset(std::optional<std::u16string_view> 
             while (auto count = stream->read(buffer)) {
                 if (count < 0 || static_cast<std::size_t>(count) > buffer.size())
                     throw std::logic_error("Invalid native HTTP read count");
-                if (static_cast<std::uint64_t>(count) >
-                    static_cast<std::uint64_t>(state.maximum) - result.size())
+                if (static_cast<std::uint64_t>(count) > static_cast<std::uint64_t>(state.maximum) - result.size())
                     return {};
                 result.insert(result.end(), buffer.begin(), buffer.begin() + count);
                 if (length)
@@ -203,4 +213,4 @@ ConfigHttpX509ResourceClient::download_asset(std::optional<std::u16string_view> 
         return {};
     }
 }
-}
+} // namespace opensim::framework

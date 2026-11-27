@@ -3,39 +3,45 @@
 #include "opensim/framework/avatar_appearance.hpp"
 #include "opensim/network/osd_value.hpp"
 #include <stdexcept>
+
 namespace opensim::framework {
 namespace {
 using network::Value;
+
 Value real(float value) {
     Value v;
     v.kind = Value::Kind::Real;
     v.real = value;
     return v;
 }
-Value uuid(const Uuid& id) {
+
+Value uuid(const Uuid &id) {
     Value v(id.str());
     v.kind = Value::Kind::Uuid;
     return v;
 }
+
 Value array() {
     Value v;
     v.kind = Value::Kind::Array;
     return v;
 }
-template <class T> T& required(const std::shared_ptr<T>& p) {
+
+template <class T> T &required(const std::shared_ptr<T> &p) {
     if (!p)
         throw std::invalid_argument("Null appearance component");
     return *p;
 }
-}
-network::Value AvatarAppearance::pack(const EntityTransferContext* context) {
+} // namespace
+
+network::Value AvatarAppearance::pack(const EntityTransferContext *context) {
     auto result = Value::object({});
     result.set("serial", Value(serial));
     result.set("height", real(avatar_height));
     result.set("aphz", real(hover_z));
     if (!texture)
         return result;
-    auto& w = required(wearables);
+    auto &w = required(wearables);
     bool pv8 = false;
     std::size_t count = 15;
     if (context) {
@@ -57,8 +63,8 @@ network::Value AvatarAppearance::pack(const EntityTransferContext* context) {
         wears.array.push_back(required(w[i]).pack());
     result.set("wearables", wears);
     if (pv8)
-        result.set("te8", network::osd_from_binary(
-                              std::make_shared<std::vector<std::uint8_t>>(texture->bakes_bytes())));
+        result.set("te8",
+                   network::osd_from_binary(std::make_shared<std::vector<std::uint8_t>>(texture->bakes_bytes())));
     else {
         auto textures = array();
         for (unsigned i = 0; i < 29; ++i)
@@ -74,11 +80,12 @@ network::Value AvatarAppearance::pack(const EntityTransferContext* context) {
     result.set("visualparams", network::osd_from_binary(visual_params));
     std::lock_guard lock(mutex_);
     auto attachs = array();
-    for (auto& a : attachments())
+    for (auto &a : attachments())
         attachs.array.push_back(a.pack());
     result.set("attachments", attachs);
     return result;
 }
+
 network::Value AvatarAppearance::pack_for_notecard(bool no_huds) {
     auto result = Value::object({});
     result.set("serial", Value(serial));
@@ -100,12 +107,12 @@ network::Value AvatarAppearance::pack_for_notecard(bool no_huds) {
             extra = true;
     }
     if (extra)
-        result.set("te8", network::osd_from_binary(
-                              std::make_shared<std::vector<std::uint8_t>>(texture->bakes_bytes())));
+        result.set("te8",
+                   network::osd_from_binary(std::make_shared<std::vector<std::uint8_t>>(texture->bakes_bytes())));
     result.set("visualparams", network::osd_from_binary(visual_params));
     std::lock_guard lock(mutex_);
     auto attachs = array();
-    for (auto& a : attachments()) {
+    for (auto &a : attachments()) {
         if (no_huds && a.point >= 31 && a.point <= 38)
             continue;
         attachs.array.push_back(a.pack());
@@ -113,7 +120,8 @@ network::Value AvatarAppearance::pack_for_notecard(bool no_huds) {
     result.set("attachments", attachs);
     return result;
 }
-void AvatarAppearance::unpack(const network::Value* data) {
+
+void AvatarAppearance::unpack(const network::Value *data) {
     default_wearables();
     reset_baked_textures();
     default_params();
@@ -129,12 +137,12 @@ void AvatarAppearance::unpack(const network::Value* data) {
     if (data->contains("height"))
         set_size({.45f, .6f, static_cast<float>(network::osd_real(data->get("height")))});
     try {
-        auto& extra = data->get("wrbls8");
+        auto &extra = data->get("wrbls8");
         std::size_t extra_count = extra.kind == Value::Kind::Array ? extra.array.size() : 0;
-        auto& wears = data->get("wearables");
+        auto &wears = data->get("wearables");
         if (wears.kind == Value::Kind::Array && wears.array.size() + extra_count > 0) {
             wearables = std::make_shared<Wearables>(wears.array.size() + extra_count);
-            auto load = [&](const Value& item) {
+            auto load = [&](const Value &item) {
                 if (item.kind != Value::Kind::Array)
                     throw std::invalid_argument("Wearable requires an OSD array");
                 return std::make_shared<AvatarWearable>(item);
@@ -147,20 +155,20 @@ void AvatarAppearance::unpack(const network::Value* data) {
         if (data->contains("te8")) {
             auto bytes = network::osd_binary(data->get("te8"));
             texture = std::make_shared<TextureEntry>(*bytes);
-        } else if (auto& textures = data->get("textures"); textures.kind == Value::Kind::Array) {
+        } else if (auto &textures = data->get("textures"); textures.kind == Value::Kind::Array) {
             for (unsigned i = 0; i < textures.array.size() && i < 29; ++i)
                 texture->create_face(i)->texture_id(network::osd_uuid(textures.array[i]));
         }
-        auto& baked = data->get("bakedcache");
+        auto &baked = data->get("bakedcache");
         if (baked.kind == Value::Kind::Array) {
             cache_items = std::make_shared<WearableCacheItems>(WearableCacheItem::defaults());
             auto load = [&]() {
-                for (auto& item : baked.array)
+                for (auto &item : baked.array)
                     if (item.kind == Value::Kind::Map) {
                         auto index = network::osd_integer(item.get("textureindex"));
                         if (index < 0 || static_cast<std::size_t>(index) >= cache_items->size())
                             continue;
-                        auto& c = (*cache_items)[index];
+                        auto &c = (*cache_items)[index];
                         c->cache_id = network::osd_uuid(item.get("cacheid"));
                         c->texture_id = network::osd_uuid(item.get("textureid"));
                         c->texture_asset.reset();
@@ -171,14 +179,14 @@ void AvatarAppearance::unpack(const network::Value* data) {
             if (data->get("bc8").kind == Value::Kind::Array)
                 load();
         }
-        if (auto& params = data->get("visualparams");
+        if (auto &params = data->get("visualparams");
             params.kind == Value::Kind::Binary || params.kind == Value::Kind::Array)
             visual_params = network::osd_binary(params);
-        if (auto& attachs = data->get("attachments"); attachs.kind == Value::Kind::Array)
-            for (auto& a : attachs.array)
+        if (auto &attachs = data->get("attachments"); attachs.kind == Value::Kind::Array)
+            for (auto &a : attachs.array)
                 append_attachment(std::make_shared<AvatarAttachment>(a));
-    } catch (const std::exception&) {
+    } catch (const std::exception &) {
         // Source logs and retains every mutation made before the failure.
     }
 }
-}
+} // namespace opensim::framework

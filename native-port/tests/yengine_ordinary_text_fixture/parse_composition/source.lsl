@@ -1,0 +1,1 @@
+string result;default{state_entry(){result=(string)llParseString2List("a b",[" "],[]);}}

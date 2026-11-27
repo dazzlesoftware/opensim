@@ -10,6 +10,7 @@
 #include <cmath>
 #include <mutex>
 #include <unordered_set>
+
 namespace opensim::services {
 namespace {
 template <class T> T &required(const std::shared_ptr<T> &value) {
@@ -17,9 +18,11 @@ template <class T> T &required(const std::shared_ptr<T> &value) {
         throw std::invalid_argument("Null asset data reference");
     return *value;
 }
+
 class Statement {
     sqlite3 *db_;
     sqlite3_stmt *value_ = nullptr;
+
     void check(int result) {
         if (result != SQLITE_OK)
             throw std::runtime_error(sqlite3_errmsg(db_));
@@ -36,32 +39,36 @@ class Statement {
             throw std::runtime_error(error);
         }
     }
+
     ~Statement() {
         sqlite3_finalize(value_);
     }
+
     void bind(int index, const std::optional<std::string> &text) {
-        check(text ? sqlite3_bind_text(value_, index, text->data(), static_cast<int>(text->size()),
-                                       SQLITE_TRANSIENT)
+        check(text ? sqlite3_bind_text(value_, index, text->data(), static_cast<int>(text->size()), SQLITE_TRANSIENT)
                    : sqlite3_bind_null(value_, index));
     }
+
     void integer(int index, std::int64_t value) {
         check(sqlite3_bind_int64(value_, index, value));
     }
+
     void blob(int index, const framework::AssetBytes &value) {
         if (!value)
             check(sqlite3_bind_null(value_, index));
         else if (value->empty())
             check(sqlite3_bind_zeroblob(value_, index, 0));
         else
-            check(sqlite3_bind_blob(value_, index, value->data(), static_cast<int>(value->size()),
-                                    SQLITE_TRANSIENT));
+            check(sqlite3_bind_blob(value_, index, value->data(), static_cast<int>(value->size()), SQLITE_TRANSIENT));
     }
+
     int column(const std::string &name) const {
         for (int i = 0; i < sqlite3_column_count(value_); ++i)
             if (framework::ordinal_equals_ignore_case(sqlite3_column_name(value_, i), name))
                 return i;
         throw std::out_of_range("Missing asset column: " + name);
     }
+
     bool row() {
         int result = sqlite3_step(value_);
         if (result == SQLITE_ROW)
@@ -70,6 +77,7 @@ class Statement {
             return false;
         throw std::runtime_error(sqlite3_errmsg(db_));
     }
+
     std::string text(int col, bool null_empty = false) const {
         if (sqlite3_column_type(value_, col) == SQLITE_NULL) {
             if (null_empty)
@@ -81,6 +89,7 @@ class Statement {
         auto text = sqlite3_column_text(value_, col);
         return {reinterpret_cast<const char *>(text), static_cast<size_t>(sqlite3_column_bytes(value_, col))};
     }
+
     std::int32_t number(int col) const {
         int type = sqlite3_column_type(value_, col);
         const char *declared = sqlite3_column_decltype(value_, col);
@@ -101,9 +110,8 @@ class Statement {
                 throw std::invalid_argument("Invalid asset database integer");
             return value;
         }
-        long double value = type == SQLITE_FLOAT
-                                ? std::nearbyint(sqlite3_column_double(value_, col))
-                                : static_cast<long double>(sqlite3_column_int64(value_, col));
+        long double value = type == SQLITE_FLOAT ? std::nearbyint(sqlite3_column_double(value_, col))
+                                                 : static_cast<long double>(sqlite3_column_int64(value_, col));
         if (!std::isfinite(value) || value < INT32_MIN || value > INT32_MAX)
             throw std::out_of_range("Asset database integer overflow");
         return static_cast<int32_t>(value);
@@ -115,6 +123,7 @@ class Statement {
             throw std::out_of_range("Asset database type overflow");
         return static_cast<int8_t>(value);
     }
+
     bool boolean(int col) const {
         if (sqlite3_column_type(value_, col) == SQLITE_TEXT) {
             auto value = framework::trim_utf8(text(col));
@@ -127,11 +136,11 @@ class Statement {
                 return false;
             throw std::invalid_argument("Invalid asset database boolean");
         }
-        if (sqlite3_column_type(value_, col) == SQLITE_NULL ||
-            sqlite3_column_type(value_, col) == SQLITE_BLOB)
+        if (sqlite3_column_type(value_, col) == SQLITE_NULL || sqlite3_column_type(value_, col) == SQLITE_BLOB)
             throw std::invalid_argument("Invalid asset database boolean");
         return sqlite3_column_double(value_, col) != 0;
     }
+
     framework::AssetBytes bytes(int col) const {
         if (sqlite3_column_type(value_, col) != SQLITE_BLOB)
             throw std::invalid_argument("Asset database value is not binary");
@@ -144,20 +153,25 @@ class Statement {
         return result;
     }
 };
+
 framework::Uuid uuid(const std::string &value) {
     return framework::parse_sdk_uuid(value);
 }
-}
+} // namespace
+
 struct SqliteAssetStore::State {
     sqlite3 *db = nullptr;
     std::recursive_mutex mutex;
+
     ~State() {
         if (db)
             sqlite3_close(db);
     }
 };
+
 SqliteAssetStore::SqliteAssetStore(Warn warn) : state_(std::make_unique<State>()), warn_(std::move(warn)) {}
-void SqliteAssetStore::open(const std::string &path, bool create) {
+
+void SqliteAssetStore::open(const std::string &path, bool create, bool read_only, bool uri) {
     std::lock_guard lock(state_->mutex);
     if (path.empty())
         throw std::invalid_argument("Empty asset database path");
@@ -166,33 +180,40 @@ void SqliteAssetStore::open(const std::string &path, bool create) {
             throw std::runtime_error(sqlite3_errmsg(state_->db));
         state_->db = nullptr;
     }
-    if (sqlite3_open_v2(path.c_str(), &state_->db,
-                        SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX | (create ? SQLITE_OPEN_CREATE : 0),
-                        nullptr) != SQLITE_OK)
+    int flags = SQLITE_OPEN_FULLMUTEX;
+    if (uri)
+        flags |= SQLITE_OPEN_URI;
+    if (read_only)
+        flags |= SQLITE_OPEN_READONLY;
+    else
+        flags |= SQLITE_OPEN_READWRITE | (create ? SQLITE_OPEN_CREATE : 0);
+    if (sqlite3_open_v2(path.c_str(), &state_->db, flags, nullptr) != SQLITE_OK)
         throw std::runtime_error(state_->db ? sqlite3_errmsg(state_->db) : "SQLite allocation failed");
     sqlite3_busy_timeout(state_->db, 30000);
 }
+
 void SqliteAssetStore::migrate(std::shared_ptr<MigrationResources> resources, const MigrationLog &log) {
     std::lock_guard lock(state_->mutex);
-    Migration migration(sqlite_migration_database(state_->db), std::move(resources),
-                        std::string("AssetStore"), log);
+    Migration migration(sqlite_migration_database(state_->db), std::move(resources), std::string("AssetStore"), log);
     migration.update();
 }
+
 SqliteAssetStore::SqliteAssetStore(const std::string &path, bool initialize, Warn warn)
     : SqliteAssetStore(std::move(warn)) {
     open(path, initialize);
     if (initialize) {
-        Statement command(
-            state_->db,
-            "CREATE TABLE IF NOT EXISTS assets(UUID NOT NULL PRIMARY KEY,Name,Description,Type,Local,Temporary,asset_flags INTEGER NOT NULL DEFAULT 0,CreatorID varchar(128) default '',Data)");
+        Statement command(state_->db, "CREATE TABLE IF NOT EXISTS assets(UUID NOT NULL PRIMARY KEY,"
+                                      "Name,Description,Type,Local,Temporary,asset_flags INTEGER NOT NULL DEFAULT 0,"
+                                      "CreatorID varchar(128) default '',Data)");
         command.row();
     }
-    Statement check(
-        state_->db,
-        "SELECT UUID,Name,Description,Type,Local,Temporary,asset_flags,CreatorID,Data FROM assets LIMIT 0");
+    Statement check(state_->db,
+                    "SELECT UUID,Name,Description,Type,Local,Temporary,asset_flags,CreatorID,Data FROM assets LIMIT 0");
     check.row();
 }
+
 SqliteAssetStore::~SqliteAssetStore() = default;
+
 void SqliteAssetStore::dispose() {
     std::lock_guard lock(state_->mutex);
     if (state_->db) {
@@ -201,6 +222,7 @@ void SqliteAssetStore::dispose() {
         state_->db = nullptr;
     }
 }
+
 AssetService::Asset SqliteAssetStore::get(framework::Uuid id) {
     std::lock_guard lock(state_->mutex);
     Statement query(state_->db, "select * from assets where UUID=?");
@@ -243,28 +265,26 @@ std::vector<bool> SqliteAssetStore::exists(const std::vector<framework::Uuid> &i
         result.push_back(found.contains(id));
     return result;
 }
+
 bool SqliteAssetStore::store(AssetService::Asset asset) {
     auto asset_name = required(asset).name();
     auto name_units = framework::utf16_replacing(required(asset).name().value());
     if (name_units.size() > framework::AssetBase::MaxAssetName) {
-        asset_name =
-            framework::utf8(std::u16string_view(name_units).substr(0, framework::AssetBase::MaxAssetName));
+        asset_name = framework::utf8(std::u16string_view(name_units).substr(0, framework::AssetBase::MaxAssetName));
         if (warn_)
-            warn_("[ASSET DB]: Name '" + asset->name().value() + "' for asset " + asset->id() +
-                  " truncated from " +
+            warn_("[ASSET DB]: Name '" + asset->name().value() + "' for asset " + asset->id() + " truncated from " +
                   std::to_string(framework::utf16_replacing(asset->name().value()).size()) + " to " +
                   std::to_string(framework::AssetBase::MaxAssetName) + " characters on add");
     }
     auto description = asset->description();
     auto desc_units = framework::utf16_replacing(asset->description().value());
     if (desc_units.size() > framework::AssetBase::MaxAssetDescription) {
-        description = framework::utf8(
-            std::u16string_view(desc_units).substr(0, framework::AssetBase::MaxAssetDescription));
+        description =
+            framework::utf8(std::u16string_view(desc_units).substr(0, framework::AssetBase::MaxAssetDescription));
         if (warn_)
             warn_("[ASSET DB]: Description '" + asset->description().value() + "' for asset " + asset->id() +
-                  " truncated from " +
-                  std::to_string(framework::utf16_replacing(asset->description().value()).size()) + " to " +
-                  std::to_string(framework::AssetBase::MaxAssetDescription) + " characters on add");
+                  " truncated from " + std::to_string(framework::utf16_replacing(asset->description().value()).size()) +
+                  " to " + std::to_string(framework::AssetBase::MaxAssetDescription) + " characters on add");
     }
     auto found = exists({asset->full_id()});
     bool update = !found.empty() && found[0];
@@ -272,8 +292,10 @@ bool SqliteAssetStore::store(AssetService::Asset asset) {
     Statement command(
         state_->db,
         update
-            ? "UPDATE assets SET Name=?2,Description=?3,Type=?4,Local=?5,Temporary=?6,asset_flags=?7,CreatorID=?8,Data=?9 WHERE UUID=?1"
-            : "INSERT INTO assets(UUID,Name,Description,Type,Local,Temporary,asset_flags,CreatorID,Data) VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9)");
+            ? "UPDATE assets SET "
+              "Name=?2,Description=?3,Type=?4,Local=?5,Temporary=?6,asset_flags=?7,CreatorID=?8,Data=?9 WHERE UUID=?1"
+            : "INSERT INTO assets(UUID,Name,Description,Type,Local,Temporary,asset_flags,CreatorID,Data) "
+              "VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9)");
     command.bind(1, asset->full_id().str());
     command.bind(2, asset_name);
     command.bind(3, description);
@@ -286,6 +308,7 @@ bool SqliteAssetStore::store(AssetService::Asset asset) {
     command.row();
     return true;
 }
+
 std::vector<std::shared_ptr<framework::AssetMetadata>> SqliteAssetStore::metadata_set(std::int32_t start,
                                                                                       std::int32_t count) {
     if (count < 0)
@@ -293,9 +316,8 @@ std::vector<std::shared_ptr<framework::AssetMetadata>> SqliteAssetStore::metadat
     std::vector<std::shared_ptr<framework::AssetMetadata>> result;
     result.reserve(static_cast<size_t>(count));
     std::lock_guard lock(state_->mutex);
-    Statement query(
-        state_->db,
-        "SELECT Name,Description,Type,Temporary,asset_flags,UUID,CreatorID FROM assets LIMIT ?1,?2");
+    Statement query(state_->db,
+                    "SELECT Name,Description,Type,Temporary,asset_flags,UUID,CreatorID FROM assets LIMIT ?1,?2");
     query.integer(1, start);
     query.integer(2, count);
     while (query.row()) {
@@ -312,6 +334,7 @@ std::vector<std::shared_ptr<framework::AssetMetadata>> SqliteAssetStore::metadat
     }
     return result;
 }
+
 bool SqliteAssetStore::erase_asset(framework::Uuid id) {
     std::lock_guard lock(state_->mutex);
     Statement command(state_->db, "DELETE FROM assets WHERE UUID=?");
@@ -319,10 +342,11 @@ bool SqliteAssetStore::erase_asset(framework::Uuid id) {
     command.row();
     return true;
 }
+
 bool SqliteAssetStore::erase(const std::string &id) {
     framework::Uuid parsed;
     if (!framework::try_parse_sdk_uuid(id, parsed))
         return false;
     return erase_asset(parsed);
 }
-}
+} // namespace opensim::services

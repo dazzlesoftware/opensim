@@ -1,0 +1,1 @@
+integer order;integer after;string result;string nil(){order=order*10+1;return llComputeHash("payload","unsupported");}default{state_entry(){result=llHMAC("key",nil(),"sha256");after=1;}}

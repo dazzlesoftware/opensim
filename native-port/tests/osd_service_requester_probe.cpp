@@ -9,7 +9,8 @@
 using namespace opensim;
 using namespace network;
 using Text = std::u16string;
-std::string H(const std::optional<Text>& t) {
+
+std::string H(const std::optional<Text> &t) {
     if (!t)
         return "-";
     if (t->empty())
@@ -22,6 +23,7 @@ std::string H(const std::optional<Text>& t) {
         }
     return out;
 }
+
 std::string Hex(std::string_view s) {
     std::string out;
     for (unsigned char c : s) {
@@ -30,10 +32,12 @@ std::string Hex(std::string_view s) {
     }
     return out;
 }
+
 Text N(int n) {
     return framework::utf16(std::to_string(n));
 }
 struct Timer;
+
 struct Host {
     int level, number, ticks, flags, mode;
     std::optional<std::int64_t> length;
@@ -42,7 +46,8 @@ struct Host {
     Text events;
     std::optional<Text> wire;
     std::shared_ptr<Timer> current;
-    void hit(const Text& text) {
+
+    void hit(const Text &text) {
         if (!events.empty())
             events += u'\n';
         events += text;
@@ -66,6 +71,7 @@ struct Host {
                                                : "System.InvalidOperationException",
                                   framework::utf16(fail), (flags & 16) ? code : std::optional<int>{});
     }
+
     Text reply() {
         switch ((mode >> 8) % 7) {
         case 1:
@@ -85,52 +91,63 @@ struct Host {
         }
     }
 };
+
 struct Request : OsdServiceHttpRequest {
-    Host& h;
-    Request(Host& x) : h(x) {
-    }
+    Host &h;
+
+    Request(Host &x) : h(x) {}
+
     void close() override {
         h.hit(u"request-close");
     }
 };
+
 struct Stream : OsdServiceStream {
-    Host& h;
-    Stream(Host& x) : h(x) {
-    }
+    Host &h;
+
+    Stream(Host &x) : h(x) {}
+
     void close() override {
         h.hit(u"stream-close");
     }
 };
+
 struct Response : OsdServiceResponse {
-    Host& h;
+    Host &h;
     std::shared_ptr<Stream> stored;
-    Response(Host& x) : h(x) {
-    }
+
+    Response(Host &x) : h(x) {}
+
     void ensure_success() override {
         h.hit(u"ensure");
     }
+
     std::shared_ptr<OsdServiceStream> stream() override {
         h.hit(u"stream");
         return stored = (h.mode & 1) ? nullptr : std::make_shared<Stream>(h);
     }
+
     std::optional<std::int64_t> content_length() override {
         h.hit(u"length");
         return h.length;
     }
+
     void close() override {
         h.hit(u"response-close");
         if (stored)
             stored->close();
     }
 };
+
 struct Client : OsdServiceHttpClient {
-    Host& h;
-    Client(Host& x) : h(x) {
-    }
-    std::shared_ptr<OsdServiceResponse> send(const std::shared_ptr<OsdServiceHttpRequest>& r) override {
+    Host &h;
+
+    Client(Host &x) : h(x) {}
+
+    std::shared_ptr<OsdServiceResponse> send(const std::shared_ptr<OsdServiceHttpRequest> &r) override {
         h.hit(u"send");
         std::map<std::string, Text> headers;
-        for (auto& [k, v] : r->headers) {
+        for (auto &[k, v] : r->headers) {
             auto key = k;
             std::transform(key.begin(), key.end(), key.begin(),
                            [](char c) { return c >= 'A' && c <= 'Z' ? char(c + 32) : c; });
@@ -138,44 +155,52 @@ struct Client : OsdServiceHttpClient {
         }
         Text wire = r->method.value_or(u"") + u"\n" + r->url.value_or(u"") + u"\n" +
                     framework::utf16(r->body ? Hex(*r->body) : "-");
-        for (auto& [k, v] : headers)
+        for (auto &[k, v] : headers)
             wire += u"\n" + framework::utf16(k) + u":" + v;
         h.wire = wire;
         return std::make_shared<Response>(h);
     }
+
     void close() override {
         h.hit(u"client-close");
     }
 };
+
 struct Timer : OsdServiceCancellation {
-    Host& h;
+    Host &h;
     std::function<void()> callback;
-    Timer(Host& x) : h(x) {
-    }
+
+    Timer(Host &x) : h(x) {}
+
     void on_cancel(std::function<void()> f) override {
         h.hit(u"register");
         callback = std::move(f);
     }
+
     void close() override {
         h.hit(u"timer-close");
     }
 };
+
 struct Reader : OsdServiceReader {
-    Host& h;
+    Host &h;
     std::shared_ptr<OsdServiceStream> stream;
-    Reader(Host& x, std::shared_ptr<OsdServiceStream> s) : h(x), stream(std::move(s)) {
-    }
+
+    Reader(Host &x, std::shared_ptr<OsdServiceStream> s) : h(x), stream(std::move(s)) {}
+
     Text read_to_end() override {
         h.hit(u"read");
         if (h.mode & 2)
             h.current->callback();
         return h.reply();
     }
+
     void close() override {
         h.hit(u"reader-close");
         stream->close();
     }
 };
+
 Value Data() {
     auto d = Value::object({});
     Value name(framework::utf8(u"\u00e9\U0001f600\r\n<&>"));
@@ -188,6 +213,7 @@ Value Data() {
     d.set("nested", array);
     return d;
 }
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -220,20 +246,20 @@ int main() {
             h.hit(u"elapsed:" + N(n));
             return h.ticks;
         };
-        s.debug = [&](const auto& t) { h.hit(u"debug:" + t); };
-        s.info = [&](const auto& t) { h.hit(u"info:" + t); };
+        s.debug = [&](const auto &t) { h.hit(u"debug:" + t); };
+        s.info = [&](const auto &t) { h.hit(u"info:" + t); };
         s.client = [&](int n) {
             h.hit(u"factory:" + N(n));
             return std::make_shared<Client>(h);
         };
-        s.request = [&](const auto& method, const auto& url) {
+        s.request = [&](const auto &method, const auto &url) {
             h.hit(u"request");
             auto r = std::make_shared<Request>(h);
             r->method = method;
             r->url = url;
             return r;
         };
-        s.reader = [&](const auto& stream) {
+        s.reader = [&](const auto &stream) {
             h.hit(u"reader");
             return std::make_shared<Reader>(h, stream);
         };
@@ -245,27 +271,27 @@ int main() {
                     u"Specified argument was out of the range of valid values. (Parameter 'millisecondsDelay')");
             return h.current = std::make_shared<Timer>(h);
         };
-        s.outgoing_detail = [&](const auto& method, int n, const auto& text) {
+        s.outgoing_detail = [&](const auto &method, int n, const auto &text) {
             h.hit(u"detail-out:" + method.value_or(u"") + u":" + N(n) + u":" + text);
             if (h.mode & 8) {
                 h.level = 0;
                 h.number = 700;
             }
         };
-        s.response_detail = [&](int n, const auto& text) { h.hit(u"detail-response:" + N(n) + u":" + text); };
-        s.serialize_text = [&](const auto& d) {
+        s.response_detail = [&](int n, const auto &text) { h.hit(u"detail-response:" + N(n) + u":" + text); };
+        s.serialize_text = [&](const auto &d) {
             h.hit(u"serialize-text");
             return (h.mode & 4) ? Text{} : framework::utf16_replacing(osd_json(d));
         };
-        s.serialize_bytes = [&](const auto& d) {
+        s.serialize_bytes = [&](const auto &d) {
             h.hit(u"serialize-bytes");
             return (h.mode & 4) ? std::string{} : osd_json(d);
         };
-        s.utf8_bytes = [&](const auto& t) {
+        s.utf8_bytes = [&](const auto &t) {
             h.hit(u"utf8");
             return framework::utf8(t);
         };
-        s.canonicalize = [&](const auto& t) {
+        s.canonicalize = [&](const auto &t) {
             h.hit(u"canonical");
             return canonical_osd_response_utf16(t);
         };
@@ -273,12 +299,11 @@ int main() {
         std::optional<Value> result;
         std::string status = "O";
         try {
-            result = OsdServiceRequester(s).send(u"http://example.test/path", (h.flags & 1) ? nullptr : &data,
-                                                 u"POST", 1234, (h.flags & 2) != 0, (h.flags & 4) != 0,
-                                                 (h.flags & 8) != 0);
-        } catch (const OsdServiceError& e) {
+            result = OsdServiceRequester(s).send(u"http://example.test/path", (h.flags & 1) ? nullptr : &data, u"POST",
+                                                 1234, (h.flags & 2) != 0, (h.flags & 4) != 0, (h.flags & 8) != 0);
+        } catch (const OsdServiceError &e) {
             status = "E:" + e.source_type + ":" + H(e.message);
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
             status = "UNEXPECTED:" + std::string(e.what());
         }
         std::cout << status << '|' << h.number << '|' << h.level << '|' << H(h.events) << '|'

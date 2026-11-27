@@ -6,6 +6,7 @@
 using namespace opensim;
 using namespace services;
 using network::Value;
+
 std::string hex(std::string_view s) {
     constexpr char d[] = "0123456789abcdef";
     std::string r;
@@ -15,8 +16,9 @@ std::string hex(std::string_view s) {
     }
     return r;
 }
-std::string view(const Value& input) {
-    const auto& v = input.view();
+
+std::string view(const Value &input) {
+    const auto &v = input.view();
     switch (v.kind) {
     case Value::Kind::Undefined:
         return "u";
@@ -30,7 +32,7 @@ std::string view(const Value& input) {
         return "q" + v.text;
     case Value::Kind::Array: {
         std::string s = "[";
-        for (const auto& x : v.array) {
+        for (const auto &x : v.array) {
             if (s.size() > 1)
                 s += ',';
             s += view(x);
@@ -39,7 +41,7 @@ std::string view(const Value& input) {
     }
     case Value::Kind::Map: {
         std::string s = "{";
-        for (const auto& [key, x] : v.map) {
+        for (const auto &[key, x] : v.map) {
             if (s.size() > 1)
                 s += ',';
             s += hex(key) + "=" + view(x);
@@ -50,30 +52,35 @@ std::string view(const Value& input) {
         throw std::runtime_error("view");
     }
 }
+
 LoginResponse::Text text(std::string s) {
     if (s == "-")
         return {};
     return s == "." ? std::string{} : fixture::unhex(s);
 }
+
 Value array() {
     Value v;
     v.kind = Value::Kind::Array;
     return v;
 }
+
 LoginResponse::Node list(int mode) {
     if (!mode)
         return {};
     auto v = std::make_shared<Value>(array());
     if (mode == 2)
-        v->array.push_back(Value::object(
-            {{"name", ""}, {"null", Value{}}, {"i", Value(std::int32_t{1})}, {"bool", Value(false)}}));
+        v->array.push_back(
+            Value::object({{"name", ""}, {"null", Value{}}, {"i", Value(std::int32_t{1})}, {"bool", Value(false)}}));
     if (mode == 3)
         v->array.emplace_back("wrong");
     if (mode == 4)
         v->array.push_back(Value::object({{"map", Value::object({})}, {"array", array()}}));
     return v;
 }
+
 #include "login_response_assembly_fixture.hpp"
+
 int main() {
     std::unique_ptr<LoginResponse> current;
     std::vector<Value> held;
@@ -95,8 +102,7 @@ int main() {
                 current = std::make_unique<LoginResponse>(
                     [&] {
                         std::ostringstream s;
-                        s << "00000000-0000-0000-0000-" << std::hex << std::setw(12) << std::setfill('0')
-                          << ++random;
+                        s << "00000000-0000-0000-0000-" << std::hex << std::setw(12) << std::setfill('0') << ++random;
                         return framework::Uuid(s.str());
                     },
                     [&] {
@@ -113,7 +119,7 @@ int main() {
             else if (command == "held")
                 output = view(held.at(std::stoul(key)));
             else if (command == "set") {
-                std::map<std::string, LoginResponse::Text*> fields = {
+                std::map<std::string, LoginResponse::Text *> fields = {
                     {"Login", &current->login},
                     {"DST", &current->dst},
                     {"StipendSinceLogin", &current->stipend_since_login},
@@ -140,25 +146,22 @@ int main() {
                     {"DestinationsURL", &current->destinations_url},
                     {"AvatarsURL", &current->avatars_url}};
                 if (key == "SunTexture" || key == "CloudTexture" || key == "MoonTexture")
-                    LoginResponse::texture(key == "SunTexture"     ? 0
-                                           : key == "CloudTexture" ? 1
-                                                                   : 2,
-                                           text(value));
+                    LoginResponse::texture(key == "SunTexture" ? 0 : key == "CloudTexture" ? 1 : 2, text(value));
                 else
                     *fields.at(key) = text(value);
             } else if (command == "num") {
-                std::map<std::string, std::uint32_t*> u = {{"SimPort", &current->sim_port},
-                                                           {"SimHttpPort", &current->sim_http_port},
-                                                           {"RegionX", &current->region_x},
-                                                           {"RegionY", &current->region_y}};
-                std::map<std::string, std::int32_t*> i = {{"CircuitCode", &current->circuit_code},
-                                                          {"MaxAgentGroups", &current->max_agent_groups}};
+                std::map<std::string, std::uint32_t *> u = {{"SimPort", &current->sim_port},
+                                                            {"SimHttpPort", &current->sim_http_port},
+                                                            {"RegionX", &current->region_x},
+                                                            {"RegionY", &current->region_y}};
+                std::map<std::string, std::int32_t *> i = {{"CircuitCode", &current->circuit_code},
+                                                           {"MaxAgentGroups", &current->max_agent_groups}};
                 if (u.contains(key))
                     *u.at(key) = static_cast<std::uint32_t>(std::stoull(value));
                 else
                     *i.at(key) = std::stoi(value);
             } else if (command == "list") {
-                std::map<std::string, LoginResponse::Node*> nodes = {
+                std::map<std::string, LoginResponse::Node *> nodes = {
                     {"InventoryRoot", &current->inventory_root},
                     {"InventorySkeleton", &current->inventory_skeleton},
                     {"InventoryLibrary", &current->inventory_library},

@@ -1,0 +1,1 @@
+YOption arrays;YOption chars;object input;integer after;default{state_entry(){input=xmrFixedArrayAllocF(1);xmrFixedArraySetC(input,0,65);after=1;}}

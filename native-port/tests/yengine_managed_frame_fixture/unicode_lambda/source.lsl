@@ -1,0 +1,1 @@
+string banner="λ";integer result;integer count;integer inner(){count++;return llAbs(-7);}default{state_entry(){result=inner();}}

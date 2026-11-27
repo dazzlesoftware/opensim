@@ -26,6 +26,7 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "opensim/services/inventory_login.hpp"
+
 namespace opensim::services {
 namespace {
 network::Value array() {
@@ -33,6 +34,7 @@ network::Value array() {
     result.kind = network::Value::Kind::Array;
     return result;
 }
+
 network::Value folder_value(const InventoryFolder &folder) {
     return network::Value::object(
         {{"name", folder.name},
@@ -41,7 +43,8 @@ network::Value folder_value(const InventoryFolder &folder) {
          {"type_default", network::Value(static_cast<std::int32_t>(static_cast<std::int16_t>(folder.type)))},
          {"folder_id", folder.id.str()}});
 }
-}
+} // namespace
+
 network::Value inventory_login_fields(const std::optional<std::vector<InventoryFolder>> &skeleton,
                                       const LibraryService *library,
                                       const std::optional<std::vector<InventoryItem>> &gestures) {
@@ -75,4 +78,4 @@ network::Value inventory_login_fields(const std::optional<std::vector<InventoryF
                 network::Value::object({{"item_id", item.id.str()}, {"asset_id", item.asset_id.str()}}));
     return result;
 }
-}
+} // namespace opensim::services

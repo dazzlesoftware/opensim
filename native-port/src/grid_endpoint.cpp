@@ -29,44 +29,49 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "opensim/framework/text.hpp"
 #include <stdexcept>
 #include "opensim/framework/http_host.hpp"
+
 namespace opensim::server {
 using namespace network;
+
 namespace {
-std::string text(const FormValue& value) {
-    if (const auto* scalar = std::get_if<std::string>(&value))
+std::string text(const FormValue &value) {
+    if (const auto *scalar = std::get_if<std::string>(&value))
         return *scalar;
     return "System.Collections.Generic.List`1[System.String]";
 }
-std::string value(const Form& fields, const std::string& name) {
+
+std::string value(const Form &fields, const std::string &name) {
     const auto found = fields.find(name);
     return found == fields.end() ? "" : text(found->second);
 }
-framework::Uuid uuid(const Form& fields, const std::string& name) {
-    try {
-        return framework::Uuid(value(fields, name));
-    } catch (...) {
-        return {};
-    }
+
+framework::Uuid uuid(const Form &fields, const std::string &name) {
+    framework::Uuid id;
+    framework::try_parse_sdk_uuid(value(fields, name), id);
+    return id;
 }
-int integer(const Form& fields, const std::string& name) {
+
+int integer(const Form &fields, const std::string &name) {
     try {
         return services::parse_region_integer(value(fields, name));
     } catch (...) {
         return 0;
     }
 }
-ServiceXmlValue info(const services::GridRegion& region) {
+
+ServiceXmlValue info(const services::GridRegion &region) {
     auto result = ServiceXmlValue::object({});
-    for (const auto& [key, value] : region.fields())
+    for (const auto &[key, value] : region.fields())
         if (value)
             result.fields.push_back({key, *value});
     return result;
 }
-std::string single(const std::optional<services::GridRegion>& region) {
-    return service_xml(
-        ServiceXmlValue::object({{"result", region ? info(*region) : ServiceXmlValue("null")}}));
+
+std::string single(const std::optional<services::GridRegion> &region) {
+    return service_xml(ServiceXmlValue::object({{"result", region ? info(*region) : ServiceXmlValue("null")}}));
 }
-std::string list(const std::vector<services::GridRegion>& regions) {
+
+std::string list(const std::vector<services::GridRegion> &regions) {
     auto result = ServiceXmlValue::object({});
     if (regions.empty())
         result.fields.push_back({"result", "null"});
@@ -75,7 +80,8 @@ std::string list(const std::vector<services::GridRegion>& regions) {
             result.fields.push_back({"region" + std::to_string(i), info(regions[i])});
     return service_xml(result);
 }
-std::string result(bool success, const std::string& message = "") {
+
+std::string result(bool success, const std::string &message = "") {
     auto xml = service_result(success);
     const auto first = xml.find("<result>");
     xml.replace(first, 8, "<Result>");
@@ -109,13 +115,14 @@ std::string result(bool success, const std::string& message = "") {
     }
     return xml;
 }
-}
-ServiceXmlValue grid_extra_features(const IniConfig& config) {
+} // namespace
+
+ServiceXmlValue grid_extra_features(const IniConfig &config) {
     auto result = ServiceXmlValue::object({});
-    if (config.boolean("GridService", "SuppressConsoleCommands", false) ||
-        !config.has_section("GridService") || !config.has_section("LoginService"))
+    if (config.boolean("GridService", "SuppressConsoleCommands", false) || !config.has_section("GridService") ||
+        !config.has_section("LoginService"))
         return result;
-    const auto add = [&](const std::string& key, const std::string& value) {
+    const auto add = [&](const std::string &key, const std::string &value) {
         if (!value.empty())
             result.fields.push_back({key, value});
     };
@@ -128,9 +135,9 @@ ServiceXmlValue grid_extra_features(const IniConfig& config) {
         add("map-server-url", map);
     }
     add("destination-guide-url", config.get("LoginService", "DestinationGuide"));
-    const auto sections = [&](const std::string& key, std::initializer_list<const char*> names) {
+    const auto sections = [&](const std::string &key, std::initializer_list<const char *> names) {
         std::string value;
-        for (const auto* section : names)
+        for (const auto *section : names)
             value = config.get(section, key, value);
         return value;
     };
@@ -167,7 +174,8 @@ ServiceXmlValue grid_extra_features(const IniConfig& config) {
     }
     return result;
 }
-HttpResponse GridEndpoint::handle(const HttpRequest& request) {
+
+HttpResponse GridEndpoint::handle(const HttpRequest &request) {
     HttpResponse response;
     response.content_type = "application/xml";
     response.headers["Cache-Control"] = "no-store";
@@ -190,7 +198,7 @@ HttpResponse GridEndpoint::handle(const HttpRequest& request) {
             std::optional<services::GridRegion> region;
             try {
                 services::RegionFields data;
-                for (const auto& [key, item] : fields)
+                for (const auto &[key, item] : fields)
                     data[key] = text(item);
                 region = services::GridRegion::from_fields(data);
             } catch (...) {
@@ -210,7 +218,7 @@ HttpResponse GridEndpoint::handle(const HttpRequest& request) {
             std::optional<services::GridRegion> region;
             const auto found = fields.find("NAME");
             if (found != fields.end())
-                if (const auto* name = std::get_if<std::string>(&found->second))
+                if (const auto *name = std::get_if<std::string>(&found->second))
                     region = method == "get_region_by_name" ? service_.by_name(scope, *name)
                                                             : service_.local_by_name(scope, *name);
             response.body = single(region);
@@ -227,9 +235,8 @@ HttpResponse GridEndpoint::handle(const HttpRequest& request) {
             response.body = list(service_.fallback(scope, integer(fields, "X"), integer(fields, "Y")));
         else if (method == "get_online_regions") {
             const auto max = integer(fields, "MC");
-            response.body =
-                list(max > 0 ? service_.online(scope, integer(fields, "X"), integer(fields, "Y"), max)
-                             : std::vector<services::GridRegion>{});
+            response.body = list(max > 0 ? service_.online(scope, integer(fields, "X"), integer(fields, "Y"), max)
+                                         : std::vector<services::GridRegion>{});
         } else if (method == "get_hyperlinks")
             response.body = list(service_.hyperlinks(scope));
         else if (method == "get_region_flags")
@@ -242,4 +249,4 @@ HttpResponse GridEndpoint::handle(const HttpRequest& request) {
     }
     return response;
 }
-}
+} // namespace opensim::server

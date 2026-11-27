@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <sstream>
 using namespace opensim::framework;
+
 std::string hex(std::u16string_view s) {
     if (s.empty())
         return "-";
@@ -13,20 +14,22 @@ std::string hex(std::u16string_view s) {
         out << std::setw(4) << unsigned(c);
     return out.str();
 }
-std::string error(const ConfigHttpHeaderError& e) {
+
+std::string error(const ConfigHttpHeaderError &e) {
     std::ostringstream out;
-    out << e.source_type << ':' << std::hex << e.hresult << ':' << hex(e.message) << ':' << std::dec
-        << e.request_error << ':' << (e.inner ? error(*e.inner) : "~");
+    out << e.source_type << ':' << std::hex << e.hresult << ':' << hex(e.message) << ':' << std::dec << e.request_error
+        << ':' << (e.inner ? error(*e.inner) : "~");
     return out.str();
 }
-std::string full_error(const ConfigHttpHeaderError& e) {
+
+std::string full_error(const ConfigHttpHeaderError &e) {
     std::ostringstream out;
-    out << e.source_type << ':' << std::hex << e.hresult << ':' << hex(e.message) << ':' << std::dec
-        << e.request_error << ':' << (e.retry_on_connection_failure ? "1" : "0") << ':'
-        << (e.inner ? full_error(*e.inner) : "~");
+    out << e.source_type << ':' << std::hex << e.hresult << ':' << hex(e.message) << ':' << std::dec << e.request_error
+        << ':' << (e.retry_on_connection_failure ? "1" : "0") << ':' << (e.inner ? full_error(*e.inner) : "~");
     return out.str();
 }
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     if (argc == 1) {
         auto bytes = config_http_encode_request_header(u"hello");
         if (bytes.size() != 5 || config_http_decode_response_header({bytes}) != u"hello")
@@ -34,7 +37,7 @@ int main(int argc, char** argv) {
         try {
             config_http_encode_request_header(u"\u0080");
             return 2;
-        } catch (const ConfigHttpHeaderError& e) {
+        } catch (const ConfigHttpHeaderError &e) {
             if (e.source_type != "System.Net.Http.HttpRequestException")
                 return 3;
         }
@@ -44,7 +47,7 @@ int main(int argc, char** argv) {
         for (std::string row; std::getline(std::cin, row);) {
             try {
                 config_http_response_headers_ended(row == "1");
-            } catch (const ConfigHttpHeaderError& e) {
+            } catch (const ConfigHttpHeaderError &e) {
                 std::cout << full_error(e) << '\n';
             }
         }
@@ -62,14 +65,14 @@ int main(int argc, char** argv) {
             auto decoder = [encoding](std::span<const std::uint8_t> value) {
                 if (encoding == "U")
                     return utf16_replacing(
-                        std::string_view(reinterpret_cast<const char*>(value.data()), value.size()));
+                        std::string_view(reinterpret_cast<const char *>(value.data()), value.size()));
                 std::u16string text;
                 for (auto b : value)
                     text += encoding == "A" && b > 127 ? u'?' : char16_t(b);
                 return text;
             };
-            std::cout << hex(config_http_decode_named_response_header(name == "L" ? "Location" : "Set-Cookie",
-                                                                      bytes, decoder))
+            std::cout << hex(config_http_decode_named_response_header(name == "L" ? "Location" : "Set-Cookie", bytes,
+                                                                      decoder))
                       << '\n';
         }
         return 0;
@@ -113,7 +116,7 @@ int main(int argc, char** argv) {
             try {
                 config_http_encode_request_header(text);
                 std::cout << "ok\n";
-            } catch (const ConfigHttpHeaderError& e) {
+            } catch (const ConfigHttpHeaderError &e) {
                 std::cout << error(e) << '\n';
             }
         }
@@ -130,12 +133,12 @@ int main(int argc, char** argv) {
                 continue;
             }
             std::cout << "ok:" << head->status << ":1." << head->minor_version << ':' << hex(head->reason);
-            for (auto& h : head->headers) {
+            for (auto &h : head->headers) {
                 std::u16string name(h.name.begin(), h.name.end());
                 std::cout << "/H:" << hex(name) << ':' << hex(h.value);
             }
             std::cout << '\n';
-        } catch (const ConfigHttpHeaderError& e) {
+        } catch (const ConfigHttpHeaderError &e) {
             std::cout << error(e) << '\n';
         }
     }

@@ -4,7 +4,8 @@
 #include "opensim/framework/avatar_appearance.hpp"
 #include <iostream>
 using namespace opensim;
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     try {
         services::GridRegion destination;
         destination.id = framework::Uuid("00000000-0000-0000-0000-000000000001");
@@ -41,7 +42,7 @@ int main(int argc, char** argv) {
         result.set("context", context.pack());
         std::cout << network::osd_json(result, true);
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what();
         return 1;
     }

@@ -16,8 +16,9 @@
 #endif
 using namespace opensim;
 using namespace services;
+
 namespace {
-std::string hex(const std::string& text) {
+std::string hex(const std::string &text) {
     std::string out;
     for (unsigned char c : text) {
         out += "0123456789abcdef"[c >> 4];
@@ -25,7 +26,8 @@ std::string hex(const std::string& text) {
     }
     return out;
 }
-std::optional<std::string> decode(const std::string& text) {
+
+std::optional<std::string> decode(const std::string &text) {
     if (text == "~")
         return {};
     std::string out;
@@ -33,13 +35,15 @@ std::optional<std::string> decode(const std::string& text) {
         out += static_cast<char>(std::stoi(text.substr(i, 2), nullptr, 16));
     return out;
 }
-std::string error(const FlotsamConsoleFilesError& e) {
+
+std::string error(const FlotsamConsoleFilesError &e) {
     std::ostringstream hr;
     hr << std::hex << std::uppercase << std::setw(8) << std::setfill('0') << e.hresult();
-    return std::string("EX|") + e.source_type() + "|" + hr.str() + "|" +
-           (e.parameter ? hex(*e.parameter) : "~") + "|" + hex(e.message);
+    return std::string("EX|") + e.source_type() + "|" + hr.str() + "|" + (e.parameter ? hex(*e.parameter) : "~") + "|" +
+           hex(e.message);
 }
-std::string run(const std::string& line) {
+
+std::string run(const std::string &line) {
     std::istringstream in(line);
     std::string op, input;
     in >> op >> input;
@@ -51,8 +55,8 @@ std::string run(const std::string& line) {
 #ifdef _WIN32
         if (op == "enum-lock" || op == "time-lock") {
             auto name = framework::utf16_replacing(path.value_or(""));
-            blocker = CreateFileW(reinterpret_cast<const wchar_t*>(name.c_str()), 0, 0, nullptr,
-                                  OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, nullptr);
+            blocker = CreateFileW(reinterpret_cast<const wchar_t *>(name.c_str()), 0, 0, nullptr, OPEN_EXISTING,
+                                  FILE_FLAG_BACKUP_SEMANTICS, nullptr);
             if (blocker == INVALID_HANDLE_VALUE)
                 throw std::runtime_error("Test lock failed");
         }
@@ -76,13 +80,13 @@ std::string run(const std::string& line) {
             CloseHandle(blocker);
 #endif
         return result;
-    } catch (const FlotsamConsoleFilesError& e) {
+    } catch (const FlotsamConsoleFilesError &e) {
 #ifdef _WIN32
         if (blocker != INVALID_HANDLE_VALUE)
             CloseHandle(blocker);
 #endif
         return error(e);
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
 #ifdef _WIN32
         if (blocker != INVALID_HANDLE_VALUE)
             CloseHandle(blocker);
@@ -90,8 +94,9 @@ std::string run(const std::string& line) {
         return std::string("OTHER|") + hex(e.what());
     }
 }
-}
-int main(int argc, char** argv) {
+} // namespace
+
+int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string(argv[1]) == "--probe") {
             std::string line;
@@ -113,7 +118,7 @@ int main(int argc, char** argv) {
         }
         std::filesystem::create_directory(root / "directory.fac");
         auto utf = root.u8string();
-        std::string path(reinterpret_cast<const char*>(utf.data()), utf.size());
+        std::string path(reinterpret_cast<const char *>(utf.data()), utf.size());
         auto files = native_flotsam_status_files(path);
 #if defined(_WIN32) || defined(__APPLE__)
         constexpr std::size_t expected = 2;
@@ -123,13 +128,12 @@ int main(int argc, char** argv) {
         if (files.size() != expected || native_flotsam_last_write(path).kind() != 2)
             throw std::runtime_error("Native status file filtering/date kind");
         auto verified = std::filesystem::weakly_canonical(root);
-        if (verified.parent_path() != parent ||
-            !verified.filename().string().starts_with("opensim-console-files-"))
+        if (verified.parent_path() != parent || !verified.filename().string().starts_with("opensim-console-files-"))
             throw std::runtime_error("Unexpected cleanup target");
         std::filesystem::remove_all(verified);
         std::cout << "PASS: native status enumeration and local timestamps\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

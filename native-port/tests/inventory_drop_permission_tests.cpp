@@ -4,11 +4,13 @@
 #include <iostream>
 using namespace opensim;
 using namespace scene;
+
 namespace {
 framework::Uuid id(int n) {
     auto s = std::to_string(n);
     return framework::Uuid("11223344-5566-7788-99aa-" + std::string(12 - s.size(), '0') + s);
 }
+
 std::string probe(int mode, int failure) {
     auto bit = [&](int n) { return (mode & n) != 0; };
     std::string trace;
@@ -21,8 +23,7 @@ std::string probe(int mode, int failure) {
     item.inventory_type = bit(1024) ? 10 : 7;
     item.owner = id(bit(2048) ? 9 : 1);
     item.current_permissions = bit(4096) ? 0 : 0x2000;
-    std::optional<InventoryDropPresence> presence =
-        InventoryDropPresence{id(bit(512) ? 9 : 1), bit(2), bit(128)};
+    std::optional<InventoryDropPresence> presence = InventoryDropPresence{id(bit(512) ? 9 : 1), bit(2), bit(128)};
     std::optional<InventoryDropPart> part =
         InventoryDropPart{id(3), id(1), !bit(16), bit(32), bit(256) ? 0u : 0x80000u};
     if (bit(1))
@@ -53,7 +54,8 @@ std::string probe(int mode, int failure) {
     }
     return result + trace;
 }
-}
+} // namespace
+
 int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string_view(argv[1]) == "--probe") {

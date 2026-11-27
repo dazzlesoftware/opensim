@@ -1,12 +1,13 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/scene/avatar_packets.hpp"
+
 namespace opensim::scene {
 network::lludp::Packet avatar_wearables(framework::Uuid agent, framework::Uuid session,
-                                        const framework::AvatarAppearance::Wearables& wearables, int serial) {
+                                        const framework::AvatarAppearance::Wearables &wearables, int serial) {
     using namespace network;
     auto p = lludp::make_packet("AgentWearablesUpdate");
-    auto& a = p.block("AgentData");
+    auto &a = p.block("AgentData");
     a["AgentID"] = agent;
     a["SessionID"] = session;
     a["SerialNum"] = std::uint64_t(static_cast<std::uint32_t>(serial));
@@ -24,6 +25,7 @@ network::lludp::Packet avatar_wearables(framework::Uuid agent, framework::Uuid s
     }
     return p;
 }
+
 network::lludp::Packet avatar_appearance(framework::Uuid target, std::span<const std::uint8_t> visual,
                                          std::span<const std::uint8_t> texture, float hover) {
     using namespace network;
@@ -40,6 +42,7 @@ network::lludp::Packet avatar_appearance(framework::Uuid target, std::span<const
     p.blocks["AppearanceHover"].push_back(std::move(b));
     return p;
 }
+
 network::lludp::Packet avatar_animations(framework::Uuid source, framework::Uuid recipient,
                                          std::span<const AvatarAnimationEntry> animations) {
     using namespace network;
@@ -49,33 +52,33 @@ network::lludp::Packet avatar_animations(framework::Uuid source, framework::Uuid
     // Preserve that method's capacity boundary, in addition to the wire count.
     std::size_t objects = 0;
     if (source == recipient)
-        for (const auto& a : animations)
+        for (const auto &a : animations)
             if (!a.object.is_zero() && a.object != source)
                 ++objects;
     if (26 + 20 * animations.size() + 16 * objects > 4096)
         throw std::length_error("Avatar animation source UDP buffer capacity");
     auto p = lludp::make_packet("AvatarAnimation");
     p.block("Sender")["ID"] = source;
-    auto add = [&](const AvatarAnimationEntry& a) {
+    auto add = [&](const AvatarAnimationEntry &a) {
         auto b = lludp::make_block(p.spec->blocks.at(1));
         b["AnimID"] = a.animation;
         b["AnimSequenceID"] = std::int64_t(a.sequence);
         p.blocks["AnimationList"].push_back(std::move(b));
     };
     if (source == recipient) {
-        for (auto& a : animations)
+        for (auto &a : animations)
             if (!a.object.is_zero() && a.object != source) {
                 add(a);
                 auto b = lludp::make_block(p.spec->blocks.at(2));
                 b["ObjectID"] = a.object;
                 p.blocks["AnimationSourceList"].push_back(std::move(b));
             }
-        for (auto& a : animations)
+        for (auto &a : animations)
             if (a.object.is_zero() || a.object == source)
                 add(a);
     } else
-        for (auto& a : animations)
+        for (auto &a : animations)
             add(a);
     return p;
 }
-}
+} // namespace opensim::scene

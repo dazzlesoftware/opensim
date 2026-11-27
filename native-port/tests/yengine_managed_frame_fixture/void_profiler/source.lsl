@@ -1,0 +1,1 @@
+integer result;integer count;integer input(){count++;return 1;}integer inner(){llScriptProfiler(input());count+=10;return count;}default{state_entry(){result=inner();}}

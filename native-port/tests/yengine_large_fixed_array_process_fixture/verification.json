@@ -1,0 +1,28 @@
+{
+  "status": "PASS",
+  "scope": "Original exact-source 100000-cell ordinary restart proof",
+  "datasets": {
+    "windows": {
+      "metadata_sha256": "6536338f52ee3be9713bb2a3f0d890e93e9c4d7f41f9e97b2994f340a0f1871c",
+      "source_sha256": "e0170c1d9452e73929f6edc837cb4f28764e61fbf1d5e0c74985b8aaf28ecb77",
+      "captured": true,
+      "migrated": true
+    },
+    "linux": {
+      "metadata_sha256": "36bffbf2f218ef816b7d8fe0100e75cc0fd9633f05fd5e80a7d725b3a5ad5191",
+      "source_sha256": "e0170c1d9452e73929f6edc837cb4f28764e61fbf1d5e0c74985b8aaf28ecb77",
+      "captured": true,
+      "migrated": true
+    },
+    "freshImport": {
+      "metadata_sha256": "d247c6a196ad76ff5777551fc6ad662a76e52bb31a535ecf2898417cf4fdffa0",
+      "source_sha256": "e0170c1d9452e73929f6edc837cb4f28764e61fbf1d5e0c74985b8aaf28ecb77",
+      "captured": false,
+      "migrated": false
+    }
+  },
+  "source_sha256": "e0170c1d9452e73929f6edc837cb4f28764e61fbf1d5e0c74985b8aaf28ecb77",
+  "generator_sha256": "0bd0be8bb1520c711aec6fd806dc634ec77467aa12de6602c309b97cb03e7b24",
+  "driver_sha256": "4b6db5bab28efbd9bc977f5991077a6b3bff43e3688540b00bf9105c24d2e670",
+  "liveTypeCacheObservation": "Original large-observer runs returned type_cache_equal0 without binary reload; native LIVE equivalence under cache/GC pressure is not claimed."
+}

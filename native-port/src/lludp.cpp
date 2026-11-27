@@ -32,10 +32,12 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <limits>
 #include <stdexcept>
 #include <unordered_map>
+
 namespace opensim::network::lludp {
 namespace {
 #include "lludp_schema.inc"
 constexpr std::size_t MaxEncoded = 16 * 1024 * 1024;
+
 std::size_t ack_start(std::span<const std::uint8_t> data, bool preserve) {
     if (data.size() < 6)
         throw std::invalid_argument("LLUDP packet header is truncated");
@@ -46,9 +48,11 @@ std::size_t ack_start(std::span<const std::uint8_t> data, bool preserve) {
         throw std::invalid_argument("LLUDP appended ACK list is truncated");
     return data.size() - length;
 }
+
 struct Reader {
     std::span<const std::uint8_t> bytes;
     std::size_t position = 0;
+
     std::span<const std::uint8_t> take(std::size_t count) {
         if (position > bytes.size() || count > bytes.size() - position)
             throw std::invalid_argument("Truncated LLUDP field");
@@ -56,6 +60,7 @@ struct Reader {
         position += count;
         return result;
     }
+
     std::uint64_t integer(std::size_t count, bool big = false) {
         auto data = take(count);
         std::uint64_t value = 0;
@@ -63,33 +68,41 @@ struct Reader {
             value |= static_cast<std::uint64_t>(data[i]) << ((big ? count - 1 - i : i) * 8);
         return value;
     }
+
     float f32() {
         return std::bit_cast<float>(static_cast<std::uint32_t>(integer(4)));
     }
+
     double f64() {
         return std::bit_cast<double>(integer(8));
     }
 };
+
 struct Writer {
     std::vector<std::uint8_t> bytes;
+
     void append(std::span<const std::uint8_t> data) {
         if (data.size() > MaxEncoded - bytes.size())
             throw std::length_error("LLUDP packet exceeds codec capacity");
         bytes.insert(bytes.end(), data.begin(), data.end());
     }
+
     void integer(std::uint64_t value, std::size_t count, bool big = false) {
         if (count > MaxEncoded - bytes.size())
             throw std::length_error("LLUDP packet exceeds codec capacity");
         for (std::size_t i = 0; i < count; ++i)
             bytes.push_back(static_cast<std::uint8_t>(value >> ((big ? count - 1 - i : i) * 8)));
     }
+
     void f32(float value) {
         integer(std::bit_cast<std::uint32_t>(value), 4);
     }
+
     void f64(double value) {
         integer(std::bit_cast<std::uint64_t>(value), 8);
     }
 };
+
 std::size_t width(FieldType type) {
     switch (type) {
     case FieldType::U8:
@@ -113,17 +126,15 @@ std::size_t width(FieldType type) {
         return 0;
     }
 }
-FieldValue decode_field(Reader& reader, const FieldSpec& field) {
+
+FieldValue decode_field(Reader &reader, const FieldSpec &field) {
     switch (field.type) {
     case FieldType::S8:
-        return static_cast<std::int64_t>(
-            std::bit_cast<std::int8_t>(static_cast<std::uint8_t>(reader.integer(1))));
+        return static_cast<std::int64_t>(std::bit_cast<std::int8_t>(static_cast<std::uint8_t>(reader.integer(1))));
     case FieldType::S16:
-        return static_cast<std::int64_t>(
-            std::bit_cast<std::int16_t>(static_cast<std::uint16_t>(reader.integer(2))));
+        return static_cast<std::int64_t>(std::bit_cast<std::int16_t>(static_cast<std::uint16_t>(reader.integer(2))));
     case FieldType::S32:
-        return static_cast<std::int64_t>(
-            std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(reader.integer(4))));
+        return static_cast<std::int64_t>(std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(reader.integer(4))));
     case FieldType::S64:
         return std::bit_cast<std::int64_t>(reader.integer(8));
     case FieldType::U8:
@@ -155,18 +166,18 @@ FieldValue decode_field(Reader& reader, const FieldSpec& field) {
     }
     case FieldType::Variable:
     case FieldType::Fixed: {
-        const auto length = field.type == FieldType::Fixed
-                                ? field.size
-                                : static_cast<std::size_t>(reader.integer(field.size));
+        const auto length =
+            field.type == FieldType::Fixed ? field.size : static_cast<std::size_t>(reader.integer(field.size));
         auto data = reader.take(length);
         return std::vector<std::uint8_t>(data.begin(), data.end());
     }
     }
     throw std::invalid_argument("Unknown LLUDP field type");
 }
+
 // The SDK profile packet classes cast their variable byte counts to the prefix
 // width while copying the complete payload, including overlong charter/interest/email data.
-bool profile_prefix_wrap(const Packet& packet, const FieldSpec& field) {
+bool profile_prefix_wrap(const Packet &packet, const FieldSpec &field) {
     return (packet.spec->name == "AvatarPropertiesReply" && field.name == "CharterMember") ||
            packet.spec->name == "AvatarInterestsReply" ||
            (packet.spec->name == "UserInfoReply" && field.name == "EMail") ||
@@ -174,7 +185,8 @@ bool profile_prefix_wrap(const Packet& packet, const FieldSpec& field) {
            packet.spec->name == "ClassifiedInfoReply" ||
            (packet.spec->name == "PickInfoReply" && field.name == "SimName");
 }
-void encode_field(Writer& writer, const FieldSpec& field, const FieldValue& value, bool prefix_wrap) {
+
+void encode_field(Writer &writer, const FieldSpec &field, const FieldValue &value, bool prefix_wrap) {
     switch (field.type) {
     case FieldType::S8:
     case FieldType::S16:
@@ -219,9 +231,8 @@ void encode_field(Writer& writer, const FieldSpec& field, const FieldValue& valu
     case FieldType::LLVector3d:
     case FieldType::LLVector4:
     case FieldType::LLQuaternion: {
-        const auto& vector = std::get<std::vector<double>>(value);
-        const std::size_t count =
-            (field.type == FieldType::LLVector4 || field.type == FieldType::LLQuaternion) ? 4 : 3;
+        const auto &vector = std::get<std::vector<double>>(value);
+        const std::size_t count = (field.type == FieldType::LLVector4 || field.type == FieldType::LLQuaternion) ? 4 : 3;
         if (vector.size() != count)
             throw std::invalid_argument("LLUDP vector component count");
         if (field.type == FieldType::LLQuaternion) {
@@ -248,7 +259,7 @@ void encode_field(Writer& writer, const FieldSpec& field, const FieldValue& valu
     }
     case FieldType::Fixed:
     case FieldType::Variable: {
-        const auto& data = std::get<std::vector<std::uint8_t>>(value);
+        const auto &data = std::get<std::vector<std::uint8_t>>(value);
         if (field.type == FieldType::Fixed) {
             if (data.size() != field.size)
                 throw std::invalid_argument("LLUDP fixed byte field length");
@@ -263,14 +274,16 @@ void encode_field(Writer& writer, const FieldSpec& field, const FieldValue& valu
     }
     }
 }
-}
+} // namespace
+
 std::span<const PacketSpec> packet_catalog() {
     return schemas;
 }
-const PacketSpec& packet_spec(std::string_view name) {
+
+const PacketSpec &packet_spec(std::string_view name) {
     static const auto index = [] {
-        std::unordered_map<std::string_view, const PacketSpec*> result;
-        for (const auto& spec : schemas)
+        std::unordered_map<std::string_view, const PacketSpec *> result;
+        for (const auto &spec : schemas)
             result[spec.name] = &spec;
         return result;
     }();
@@ -279,10 +292,11 @@ const PacketSpec& packet_spec(std::string_view name) {
         throw std::invalid_argument("Unknown LLUDP message");
     return *found->second;
 }
-const PacketSpec& packet_spec(Frequency frequency, std::uint16_t id) {
+
+const PacketSpec &packet_spec(Frequency frequency, std::uint16_t id) {
     static const auto index = [] {
-        std::unordered_map<std::uint32_t, const PacketSpec*> result;
-        for (const auto& spec : schemas)
+        std::unordered_map<std::uint32_t, const PacketSpec *> result;
+        for (const auto &spec : schemas)
             result[(static_cast<std::uint32_t>(spec.frequency) << 16) | spec.id] = &spec;
         return result;
     }();
@@ -291,9 +305,10 @@ const PacketSpec& packet_spec(Frequency frequency, std::uint16_t id) {
         throw std::invalid_argument("Unknown LLUDP message identifier");
     return *found->second;
 }
-Block make_block(const BlockSpec& schema) {
+
+Block make_block(const BlockSpec &schema) {
     Block result;
-    for (const auto& field : schema.fields) {
+    for (const auto &field : schema.fields) {
         FieldValue value = std::uint64_t{0};
         switch (field.type) {
         case FieldType::S8:
@@ -333,35 +348,40 @@ Block make_block(const BlockSpec& schema) {
     }
     return result;
 }
+
 Packet make_packet(std::string_view name) {
     Packet packet;
     packet.spec = &packet_spec(name);
     packet.reliable = packet.spec->reliable;
     packet.zerocoded = packet.spec->zerocoded;
-    for (const auto& block : packet.spec->blocks) {
-        auto& values = packet.blocks[block.name];
+    for (const auto &block : packet.spec->blocks) {
+        auto &values = packet.blocks[block.name];
         for (std::size_t i = 0; i < block.count; ++i)
             values.push_back(make_block(block));
     }
     return packet;
 }
-Block& Packet::block(std::string_view name, std::size_t index) {
+
+Block &Packet::block(std::string_view name, std::size_t index) {
     return blocks.at(std::string(name)).at(index);
 }
-const Block& Packet::block(std::string_view name, std::size_t index) const {
+
+const Block &Packet::block(std::string_view name, std::size_t index) const {
     return blocks.at(std::string(name)).at(index);
 }
-bool Packet::valid_ids(const framework::Uuid& session, const framework::Uuid& agent) const {
+
+bool Packet::valid_ids(const framework::Uuid &session, const framework::Uuid &agent) const {
     if (!spec || !spec->validate_ids)
         return true;
     try {
-        const auto& data = block("AgentData");
+        const auto &data = block("AgentData");
         return std::get<framework::Uuid>(data.at("SessionID")) == session &&
                std::get<framework::Uuid>(data.at("AgentID")) == agent;
-    } catch (const std::exception&) {
+    } catch (const std::exception &) {
         return false;
     }
 }
+
 std::vector<std::uint8_t> zero_encode(std::span<const std::uint8_t> input, bool preserve_acks) {
     const auto end = ack_start(input, preserve_acks);
     Writer writer;
@@ -391,8 +411,8 @@ std::vector<std::uint8_t> zero_encode(std::span<const std::uint8_t> input, bool 
     writer.append(input.subspan(end));
     return writer.bytes;
 }
-std::vector<std::uint8_t> zero_decode(std::span<const std::uint8_t> input, std::size_t limit,
-                                      bool preserve_acks) {
+
+std::vector<std::uint8_t> zero_decode(std::span<const std::uint8_t> input, std::size_t limit, bool preserve_acks) {
     const auto end = ack_start(input, preserve_acks);
     if (limit < 6)
         throw std::length_error("LLUDP decode limit smaller than header");
@@ -415,14 +435,15 @@ std::vector<std::uint8_t> zero_decode(std::span<const std::uint8_t> input, std::
     output.insert(output.end(), input.begin() + end, input.end());
     return output;
 }
-std::vector<std::uint8_t> encode_packet(const Packet& packet) {
+
+std::vector<std::uint8_t> encode_packet(const Packet &packet) {
     if (!packet.spec)
         throw std::invalid_argument("LLUDP packet has no schema");
     if (packet.extra_header.size() > 255 || packet.acknowledgements.size() > 255)
         throw std::out_of_range("LLUDP header collection limit");
     Writer writer;
-    const auto flags = (packet.reliable ? 0x40 : 0) | (packet.resent ? 0x20 : 0) |
-                       (packet.zerocoded ? 0x80 : 0) | (packet.appended_acks ? 0x10 : 0);
+    const auto flags = (packet.reliable ? 0x40 : 0) | (packet.resent ? 0x20 : 0) | (packet.zerocoded ? 0x80 : 0) |
+                       (packet.appended_acks ? 0x10 : 0);
     writer.integer(flags, 1);
     writer.integer(packet.sequence, 4, true);
     writer.integer(packet.extra_header.size(), 1);
@@ -436,14 +457,14 @@ std::vector<std::uint8_t> encode_packet(const Packet& packet) {
         writer.integer(65535, 2);
         writer.integer(packet.spec->id, 2, true);
     }
-    for (const auto& block : packet.spec->blocks) {
-        const auto& values = packet.blocks.at(block.name);
+    for (const auto &block : packet.spec->blocks) {
+        const auto &values = packet.blocks.at(block.name);
         if (block.variable) {
             writer.integer(static_cast<std::uint8_t>(values.size()), 1);
         } else if (values.size() != block.count)
             throw std::invalid_argument("LLUDP fixed block count");
-        for (const auto& value : values)
-            for (const auto& field : block.fields)
+        for (const auto &value : values)
+            for (const auto &field : block.fields)
                 encode_field(writer, field, value.at(field.name), profile_prefix_wrap(packet, field));
     }
     if (!packet.acknowledgements.empty()) {
@@ -453,30 +474,33 @@ std::vector<std::uint8_t> encode_packet(const Packet& packet) {
     }
     return writer.bytes;
 }
-std::vector<std::uint8_t> encode_datagram(const Packet& packet) {
+
+std::vector<std::uint8_t> encode_datagram(const Packet &packet) {
     auto bytes = encode_packet(packet);
     return packet.zerocoded ? zero_encode(bytes) : bytes;
 }
-std::size_t packet_length(const Packet& packet) {
+
+std::size_t packet_length(const Packet &packet) {
     if (!packet.spec)
         throw std::invalid_argument("LLUDP packet has no schema");
     std::size_t result = (packet.spec->frequency == Frequency::High     ? 7
                           : packet.spec->frequency == Frequency::Medium ? 8
                                                                         : 10) +
                          packet.extra_header.size();
-    for (const auto& block : packet.spec->blocks) {
+    for (const auto &block : packet.spec->blocks) {
         if (block.variable)
             ++result;
-        for (const auto& value : packet.blocks.at(block.name)) {
+        for (const auto &value : packet.blocks.at(block.name)) {
             Writer row;
-            for (const auto& field : block.fields)
+            for (const auto &field : block.fields)
                 encode_field(row, field, value.at(field.name), profile_prefix_wrap(packet, field));
             result += row.bytes.size();
         }
     }
     return result;
 }
-std::vector<std::vector<std::uint8_t>> encode_packets(Packet& packet, std::size_t mtu) {
+
+std::vector<std::vector<std::uint8_t>> encode_packets(Packet &packet, std::size_t mtu) {
     if (!packet.spec)
         throw std::invalid_argument("LLUDP packet has no schema");
     // These hand-written baseline overrides deliberately bypass generated
@@ -485,7 +509,7 @@ std::vector<std::vector<std::uint8_t>> encode_packets(Packet& packet, std::size_
         packet.spec->name == "AvatarGroupsReply" || packet.spec->name == "CoarseLocationUpdate")
         return {encode_packet(packet)};
     if (std::none_of(packet.spec->blocks.begin(), packet.spec->blocks.end(),
-                     [](const auto& block) { return block.variable; }))
+                     [](const auto &block) { return block.variable; }))
         return {encode_packet(packet)};
     if (packet.extra_header.size() > 255 || packet.acknowledgements.size() > 255)
         throw std::out_of_range("LLUDP header collection limit");
@@ -498,8 +522,8 @@ std::vector<std::vector<std::uint8_t>> encode_packets(Packet& packet, std::size_
     fixed.blocks.clear();
     PacketSpec fixed_spec = *packet.spec;
     fixed_spec.blocks.clear();
-    std::vector<const BlockSpec*> variable;
-    for (const auto& block : packet.spec->blocks) {
+    std::vector<const BlockSpec *> variable;
+    for (const auto &block : packet.spec->blocks) {
         if (block.variable)
             variable.push_back(&block);
         else {
@@ -510,11 +534,11 @@ std::vector<std::vector<std::uint8_t>> encode_packets(Packet& packet, std::size_
     fixed.spec = &fixed_spec;
     const auto prefix = encode_packet(fixed);
     std::vector<std::vector<std::vector<std::uint8_t>>> groups;
-    for (const auto* block : variable) {
-        auto& rows = groups.emplace_back();
-        for (const auto& value : packet.blocks.at(block->name)) {
+    for (const auto *block : variable) {
+        auto &rows = groups.emplace_back();
+        for (const auto &value : packet.blocks.at(block->name)) {
             Writer row;
-            for (const auto& field : block->fields)
+            for (const auto &field : block->fields)
                 encode_field(row, field, value.at(field.name), profile_prefix_wrap(packet, field));
             rows.push_back(std::move(row.bytes));
         }
@@ -532,8 +556,8 @@ std::vector<std::vector<std::uint8_t>> encode_packets(Packet& packet, std::size_
         std::vector<std::size_t> counts(groups.size());
         std::size_t variable_length = 0, progress = 0;
         for (std::size_t g = 0; g < groups.size(); ++g) {
-            for (auto i = starts[g];
-                 fixed_length + variable_length + ack.bytes.size() < mtu && i < groups[g].size(); ++i) {
+            for (auto i = starts[g]; fixed_length + variable_length + ack.bytes.size() < mtu && i < groups[g].size();
+                 ++i) {
                 const auto size = groups[g][i].size();
                 if (fixed_length + variable_length + size + ack.bytes.size() <= mtu || i == starts[g]) {
                     variable_length += size;
@@ -564,6 +588,7 @@ std::vector<std::vector<std::uint8_t>> encode_packets(Packet& packet, std::size_
     } while (remaining);
     return result;
 }
+
 Packet decode_datagram(std::span<const std::uint8_t> input, std::size_t limit, bool baseline_quirks) {
     if (input.size() > limit)
         throw std::length_error("LLUDP datagram length limit");
@@ -596,7 +621,7 @@ Packet decode_datagram(std::span<const std::uint8_t> input, std::size_t limit, b
     }
     packet.spec = &packet_spec(frequency, static_cast<std::uint16_t>(id));
     if (baseline_quirks && std::any_of(packet.spec->blocks.begin(), packet.spec->blocks.end(),
-                                       [](const auto& block) { return !block.variable && block.count > 1; }))
+                                       [](const auto &block) { return !block.variable && block.count > 1; }))
         throw BaselineDecodeError();
     if (packet.appended_acks) {
         Reader acks{input.subspan(end, input.size() - end - 1)};
@@ -605,17 +630,17 @@ Packet decode_datagram(std::span<const std::uint8_t> input, std::size_t limit, b
         // Header.BuildHeader in the baseline reads trailers backwards.
         std::reverse(packet.acknowledgements.begin(), packet.acknowledgements.end());
     }
-    for (const auto& block : packet.spec->blocks) {
+    for (const auto &block : packet.spec->blocks) {
         const auto count = block.variable ? static_cast<std::size_t>(reader.integer(1)) : block.count;
-        auto& values = packet.blocks[block.name];
+        auto &values = packet.blocks[block.name];
         values.reserve(count);
         for (std::size_t i = 0; i < count; ++i) {
             Block value;
-            for (const auto& field : block.fields)
+            for (const auto &field : block.fields)
                 value[field.name] = decode_field(reader, field);
             values.push_back(std::move(value));
         }
     }
     return packet;
 }
-}
+} // namespace opensim::network::lludp

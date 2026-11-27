@@ -1,0 +1,1 @@
+string result;integer after;default{state_entry(){result=llDeleteSubString(<0,0,0,1>,0,0);after=1;}}

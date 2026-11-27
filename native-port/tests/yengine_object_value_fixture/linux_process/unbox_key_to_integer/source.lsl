@@ -1,0 +1,1 @@
+YOption arrays;YOption chars;object input=(object)(key)"11111111-2222-3333-4444-555555555555";integer result;integer after;default{state_entry(){result=(integer)input;after=1;}}

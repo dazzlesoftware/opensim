@@ -1,0 +1,1 @@
+rotation input=(rotation)"<0,0,0,0>";integer result;integer after;default{state_entry(){result=xmrHashCode(input);after=1;}}

@@ -16,11 +16,10 @@ class ConfigHttpLinuxUserStore {
   public:
     using Snapshot = std::shared_ptr<const std::vector<CertificateDer>>;
     using Clock = std::function<std::chrono::steady_clock::time_point()>;
-    explicit ConfigHttpLinuxUserStore(std::filesystem::path directory,
-                                      Clock clock = std::chrono::steady_clock::now);
+    explicit ConfigHttpLinuxUserStore(std::filesystem::path directory, Clock clock = std::chrono::steady_clock::now);
     ~ConfigHttpLinuxUserStore();
     Snapshot collection();
     void refresh();
 };
 #endif
-}
+} // namespace opensim::framework

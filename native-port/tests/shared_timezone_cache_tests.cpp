@@ -8,8 +8,9 @@
 #include <map>
 #include <sstream>
 using namespace opensim::framework;
+
 namespace {
-RuntimeEnvironmentText dec(const std::string& x) {
+RuntimeEnvironmentText dec(const std::string &x) {
     if (x == "-")
         return {};
     std::u16string v;
@@ -19,6 +20,7 @@ RuntimeEnvironmentText dec(const std::string& x) {
                                        (std::stoul(x.substr(i + 2, 2), nullptr, 16) << 8));
     return std::make_shared<const std::u16string>(std::move(v));
 }
+
 std::vector<std::string> split(std::string_view s, char c) {
     std::vector<std::string> out;
     std::size_t at = 0;
@@ -30,23 +32,26 @@ std::vector<std::string> split(std::string_view s, char c) {
         at = i + 1;
     }
 }
+
 struct Slot {
     std::shared_ptr<TimeZone> zone;
     std::shared_ptr<const InvariantTimeZoneRules> rules;
 };
-std::string query(const std::shared_ptr<const InvariantTimeZoneRules>& rules, std::int64_t ticks) {
+
+std::string query(const std::shared_ptr<const InvariantTimeZoneRules> &rules, std::int64_t ticks) {
     auto o = rules->utc_offset(ticks);
     auto d = rules->utc_is_daylight(ticks);
-    return "Q:" + std::to_string(o.ticks) + ":" + (d ? "1" : "0") + ":" + (o.ambiguous_daylight ? "1" : "0") +
-           ":" + (d ? "1" : "0");
+    return "Q:" + std::to_string(o.ticks) + ":" + (d ? "1" : "0") + ":" + (o.ambiguous_daylight ? "1" : "0") + ":" +
+           (d ? "1" : "0");
 }
+
 std::string run(std::string row) {
     std::map<int, std::shared_ptr<NativeInvariantDateTimeContext>> owners;
     std::map<int, std::unique_ptr<TimeZoneDatabase>> dbs;
     std::map<int, Slot> zones;
     std::vector<std::shared_ptr<TimeZone>> identities;
     auto owner = [&](int n) { return n < 0 ? shared_native_invariant_datetime_context() : owners.at(n); };
-    auto db = [&](int n) -> TimeZoneDatabase& {
+    auto db = [&](int n) -> TimeZoneDatabase & {
         if (n < 0)
             return time_zones();
         if (!dbs.contains(n))
@@ -62,7 +67,7 @@ std::string run(std::string row) {
         return static_cast<std::size_t>(i - identities.begin());
     };
     std::string out;
-    for (auto& token : split(row, ',')) {
+    for (auto &token : split(row, ',')) {
         auto a = split(token, ':');
         auto result = a[0];
         try {
@@ -87,8 +92,7 @@ std::string run(std::string row) {
                 auto value = utf16_replacing(zones.at(std::stoi(a.at(1))).zone->id());
                 std::string h;
                 for (auto c : value)
-                    for (unsigned char b :
-                         {static_cast<unsigned char>(c), static_cast<unsigned char>(c >> 8)}) {
+                    for (unsigned char b : {static_cast<unsigned char>(c), static_cast<unsigned char>(c >> 8)}) {
                         h += "0123456789abcdef"[b >> 4];
                         h += "0123456789abcdef"[b & 15];
                     }
@@ -105,7 +109,7 @@ std::string run(std::string row) {
                          (zones.at(std::stoi(a.at(1))).zone->daylight_at(std::stoll(a.at(2))) ? "1" : "0");
             else
                 throw std::runtime_error("operation");
-        } catch (const std::exception&) {
+        } catch (const std::exception &) {
             result = "EX";
         }
         if (!out.empty())
@@ -114,11 +118,13 @@ std::string run(std::string row) {
     }
     return out;
 }
-}
-void require(bool value, const char* message) {
+} // namespace
+
+void require(bool value, const char *message) {
     if (!value)
         throw std::runtime_error(message);
 }
+
 void units() {
     auto process = shared_native_invariant_datetime_context();
     auto baseline = process->local_rule_snapshot();
@@ -162,13 +168,13 @@ void units() {
     auto a = reentrant.find(std::string("America/New_York"));
     auto b = reentrant.find(std::string("America/New_York"));
     auto c = reentrant.find(std::string("America/New_York"));
-    require(calls == 2 && a != b && b == c,
-            "Clear inside converter must keep old lease and use new epoch next call");
+    require(calls == 2 && a != b && b == c, "Clear inside converter must keep old lease and use new epoch next call");
     require(!identity_weak.expired(), "Provider closure identity survives Clear");
     require(!a->daylight_at(1719792000), "Use caller-provided converter instead of default converter");
 #endif
 }
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     try {
         if (argc == 1) {
             units();
@@ -182,7 +188,7 @@ int main(int argc, char** argv) {
         } else
             std::cout << run(argv[1]) << '\n';
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

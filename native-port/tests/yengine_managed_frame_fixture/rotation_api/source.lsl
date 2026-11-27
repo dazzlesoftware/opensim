@@ -1,0 +1,1 @@
+rotation result;integer count;rotation inner(){count++;return llRotBetween(<1,0,0>,<0,1,0>);}default{state_entry(){result=inner();}}

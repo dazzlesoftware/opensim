@@ -1,0 +1,1 @@
+float left=1.25;key right=(key)"bad";list result;default{state_entry(){result=[left==right];}}

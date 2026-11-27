@@ -1,0 +1,258 @@
+  state[0] = default
+  numGblArrays       0
+  numGblChars        0
+  numGblFloats       0
+  numGblIntegers     5
+  numGblLists        2
+  numGblObjects      0
+  numGblRotations    0
+  numGblStrings      0
+  numGblVectors      0
+  numGblSDTClObjs    0
+  numGblSDTIntfObjs  0
+  input = iarLists[0]
+  alias = iarLists[1]
+  before_hash = iarIntegers[0]
+  result = iarIntegers[1]
+  repeat_hash = iarIntegers[2]
+  entries = iarIntegers[3]
+  after = iarIntegers[4]
+  delegate void $anondel$void()();
+
+Void $globalvarinit() (EventHelpersInstance)
+{
+          lsllist     tmp$1$0
+          lsllist     tmp$2$1
+  0000    ldc.i4.2    
+  0001    newarr      Object   (type)
+  0006    dup         
+  0007    ldc.i4.0    
+  0008    ldc.i4.1    
+  0009    newobj      LSLInteger:(Int32)
+  000E    box         LSLInteger   (type)
+  0013    stelem      Object   (type)
+  0018    dup         
+  0019    ldc.i4.1    
+  001A    ldc.i4.2    
+  001B    newobj      LSLInteger:(Int32)
+  0020    box         LSLInteger   (type)
+  0025    stelem      Object   (type)
+  002A    newobj      list:(Object[])
+  002F    stloc       tmp$1$0   (local)
+  0030    ldarg.0     
+  0031    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0036    ldc.i4.0    
+  0037    ldloc       tmp$1$0   (local)
+  0038    call        XMRInstArrays:PopList(Int32,list) -> Void
+  003D    ldarg.0     
+  003E    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0043    ldfld       XMRInstArrays:iarLists -> list[]   (field)
+  0048    ldc.i4.0    
+  0049    ldelem      list   (type)
+  004E    stloc       tmp$2$1   (local)
+  004F    ldarg.0     
+  0050    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0055    ldc.i4.1    
+  0056    ldloc       tmp$2$1   (local)
+  0057    call        XMRInstArrays:PopList(Int32,list) -> Void
+  005C    ldarg.0     
+  005D    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0062    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  0067    ldc.i4.0    
+  0068    ldc.i4.0    
+  0069    stelem.i4   
+  006A    ldarg.0     
+  006B    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0070    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  0075    ldc.i4.1    
+  0076    ldc.i4.0    
+  0077    stelem.i4   
+  0078    ldarg.0     
+  0079    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  007E    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  0083    ldc.i4.2    
+  0084    ldc.i4.0    
+  0085    stelem.i4   
+  0086    ldarg.0     
+  0087    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  008C    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  0091    ldc.i4.3    
+  0092    ldc.i4.0    
+  0093    stelem.i4   
+  0094    ldarg.0     
+  0095    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  009A    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  009F    ldc.i4.4    
+  00A0    ldc.i4.0    
+  00A1    stelem.i4   
+  00A2    leave       __retlbl$0   (label)
+  00A7  __retlbl$0:
+  00A7    ret         
+}
+
+Void default state_entry (XMRInstAbstract)
+{
+          xmrsuper    __xmrinst$0
+  0000    ldarg.0     
+  0001    castclass   EventHelpersInstance   (type)
+  0006    stloc       __xmrinst$0   (local)
+  0007    ldloc       __xmrinst$0   (local)
+  0008    ldfld       XMRInstAbstract:m_localsHeapUsed -> Int32   (field)
+          int         __curHeap$1
+  000D    stloc       __curHeap$1   (local)
+          int         __mainCallNo$2
+  000E    ldc.i4.m1   
+  000F    stloc       __mainCallNo$2   (local)
+  0010    ldloc       __xmrinst$0   (local)
+  0011    dup         
+  0012    ldfld       XMRInstAbstract:m_StackLeft -> Int32   (field)
+  0017    ldc.i4.s    64   (int)
+  0019    sub         
+  001A    stfld       XMRInstAbstract:m_StackLeft -> Int32   (field)
+  001F   BeginExceptionBlock
+  001F    ldloc       __xmrinst$0   (local)
+  0020    ldfld       XMRInstAbstract:callMode -> Int32   (field)
+  0025    ldc.i4.0    
+  0026    bne.un      __cmRestore$1   (label)
+          int         tmp$5$5
+          int         tmp$7$7
+          int         tmp$9$9
+  002B    ldloc       __xmrinst$0   (local)
+  002C    ldfld       XMRInstAbstract:doGblInit -> Boolean   (field)
+  0031    brfalse     __skipGblInit$2   (label)
+  0036    ldloc       __xmrinst$0   (local)
+  0037    call        $globalvarinit()(EventHelpersInstance) -> Void
+  003C    ldloc       __xmrinst$0   (local)
+  003D    ldc.i4.0    
+  003E    stfld       XMRInstAbstract:doGblInit -> Boolean   (field)
+  0043  __skipGblInit$2:
+  0043    ldc.i4.0    
+  0044    stloc       __mainCallNo$2   (local)
+  0045  __call_0_0$3:
+  0045    ldloc       __xmrinst$0   (local)
+  0046    call        XMRInstAbstract:CheckRunStack() -> Void
+  004B    ldloc       __xmrinst$0   (local)
+  004C    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0051    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  0056    ldc.i4.3    
+  0057    ldloc       __xmrinst$0   (local)
+  0058    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  005D    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  0062    ldc.i4.3    
+  0063    ldelem.i4   
+  0064    ldc.i4.1    
+  0065    add         
+  0066    stelem.i4   
+  0067    ldloc       __xmrinst$0   (local)
+  0068    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  006D    ldfld       XMRInstArrays:iarLists -> list[]   (field)
+  0072    ldc.i4.0    
+  0073    ldelem      list   (type)
+  0078    call        XMRInstAbstract:xmrHashCode(Object) -> Int32
+  007D    stloc       tmp$5$5   (local)
+  007E    ldloc       __xmrinst$0   (local)
+  007F    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  0084    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  0089    ldc.i4.0    
+  008A    ldloc       tmp$5$5   (local)
+  008B    stelem.i4   
+  008C    ldloc       __xmrinst$0   (local)
+  008D    ldc.r8      0.1   (double)
+  0096    call        ScriptBaseClass:llSleep(Double) -> Void
+  009B    ldc.i4.1    
+  009C    stloc       __mainCallNo$2   (local)
+  009D  __call_1_1$4:
+  009D    ldloc       __xmrinst$0   (local)
+  009E    call        XMRInstAbstract:CheckRunQuick() -> Void
+  00A3    ldloc       __xmrinst$0   (local)
+  00A4    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  00A9    ldfld       XMRInstArrays:iarLists -> list[]   (field)
+  00AE    ldc.i4.0    
+  00AF    ldelem      list   (type)
+  00B4    call        XMRInstAbstract:xmrHashCode(Object) -> Int32
+  00B9    stloc       tmp$7$7   (local)
+  00BB    ldloc       __xmrinst$0   (local)
+  00BC    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  00C1    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  00C6    ldc.i4.1    
+  00C7    ldloc       tmp$7$7   (local)
+  00C9    stelem.i4   
+  00CA    ldloc       __xmrinst$0   (local)
+  00CB    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  00D0    ldfld       XMRInstArrays:iarLists -> list[]   (field)
+  00D5    ldc.i4.0    
+  00D6    ldelem      list   (type)
+  00DB    call        XMRInstAbstract:xmrHashCode(Object) -> Int32
+  00E0    stloc       tmp$9$9   (local)
+  00E2    ldloc       __xmrinst$0   (local)
+  00E3    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  00E8    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  00ED    ldc.i4.2    
+  00EE    ldloc       tmp$9$9   (local)
+  00F0    stelem.i4   
+  00F1    ldloc       __xmrinst$0   (local)
+  00F2    ldfld       XMRInstAbstract:glblVars -> XMRInstArrays   (field)
+  00F7    ldfld       XMRInstArrays:iarIntegers -> Int32[]   (field)
+  00FC    ldc.i4.4    
+  00FD    ldc.i4.1    
+  00FE    stelem.i4   
+  00FF    leave       __retlbl$0   (label)
+  0104  __cmRestore$1:
+          object[]    __restObjArray$10
+  0104    ldloc       __xmrinst$0   (local)
+  0105    ldstr       "default state_entry"   (string)
+  010A    ldloca      __mainCallNo$2   (local)
+  010C    call        XMRInstAbstract:RestoreStackFrame(String,Int32&) -> Object[]
+  0111    stloc       __restObjArray$10   (local)
+  0113    ldloc       __restObjArray$10   (local)
+  0115    ldc.i4.0    
+  0116    ldelem.ref  
+  0117    castclass   EventHelpersInstance   (type)
+  011C    stloc       __xmrinst$0   (local)
+  011D    ldloc       __restObjArray$10   (local)
+  011F    ldc.i4.1    
+  0120    ldelem.ref  
+  0121    unbox.any   Int32   (type)
+  0126    stloc       __curHeap$1   (local)
+  0127    ldloc       __mainCallNo$2   (local)
+  0128    switch      __call_0_0$3
+                     ,__call_1_1$4
+  0135    ldloc       __mainCallNo$2   (local)
+  0136    newobj      ScriptBadCallNoException:(Int32)
+  013B    throw       
+  013C   BeginFinallyBlock
+  0141    ldloc       __xmrinst$0   (local)
+  0142    dup         
+  0143    ldfld       XMRInstAbstract:m_StackLeft -> Int32   (field)
+  0148    ldc.i4.s    64   (int)
+  014A    add         
+  014B    stfld       XMRInstAbstract:m_StackLeft -> Int32   (field)
+  0150    ldloc       __xmrinst$0   (local)
+  0151    ldfld       XMRInstAbstract:callMode -> Int32   (field)
+  0156    ldc.i4.1    
+  0157    bne.un      __endFin$5   (label)
+  015C    ldloc       __xmrinst$0   (local)
+  015D    ldstr       "default state_entry"   (string)
+  0162    ldloc       __mainCallNo$2   (local)
+  0163    ldc.i4.2    
+  0164    call        XMRInstAbstract:CaptureStackFrame(String,Int32,Int32) -> Object[]
+  0169    dup         
+  016A    ldc.i4.0    
+  016B    ldloc       __xmrinst$0   (local)
+  016C    stelem.ref  
+  016D    dup         
+  016E    ldc.i4.1    
+  016F    ldloc       __curHeap$1   (local)
+  0170    box         Int32   (type)
+  0175    stelem.ref  
+  0176    pop         
+  0177  __endFin$5:
+  0177    endfinally  
+  0178   EndExceptionBlock
+  0179  __retlbl$0:
+  0179    ldloc       __xmrinst$0   (local)
+  017A    ldloc       __curHeap$1   (local)
+  017B    stfld       XMRInstAbstract:m_localsHeapUsed -> Int32   (field)
+  0180    ret         
+}
+TheEnd.

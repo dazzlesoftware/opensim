@@ -1,9 +1,10 @@
 // Source .NET8.0.31 Uri.PrivateParseMinimal file syntax; MIT .NET license.
 #include "opensim/framework/config_file_uri_minimal.hpp"
+
 namespace opensim::framework {
 ConfigFileUriMinimalResult config_file_uri_parse_minimal(std::u16string text, std::u16string_view original,
                                                          std::uint64_t flags, bool windows, bool unix_syntax,
-                                                         const ConfigUriUnicodeBackend& unicode) {
+                                                         const ConfigUriUnicodeBackend &unicode) {
     ConfigFileUriMinimalResult r;
     r.flags = flags;
     r.parse_string = std::move(text);
@@ -66,12 +67,12 @@ ConfigFileUriMinimalResult config_file_uri_parse_minimal(std::u16string text, st
         r.error = host.error;
         return r;
     }
-    if (num < length && !windows && input[num] == u'/' && (r.flags & 0x20000000ull) == 0 &&
-        (r.flags & 0x10000000ull) && !r.unix_file_syntax)
+    if (num < length && !windows && input[num] == u'/' && (r.flags & 0x20000000ull) == 0 && (r.flags & 0x10000000ull) &&
+        !r.unix_file_syntax)
         r.unix_file_syntax = true;
     r.flags |= num;
     if ((flags & 0x200000000ull) && host.rewritten_prefix)
         r.parse_string = *host.rewritten_prefix;
     return r;
 }
-}
+} // namespace opensim::framework

@@ -1,0 +1,1429 @@
+{
+  "passed": true,
+  "generator_sha256": "d9c1e6737fee58cb92e97915e5a0fb6db18a731db5110312ff6e026111e7fcf4",
+  "processes": [
+    {
+      "directory": "process_a",
+      "metadata_sha256": "7927f83151d67704c53b29d2f416908c3b9d2ec8acf86e37e468a814696a5ab5",
+      "accepted": 80,
+      "captures": 7,
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64"
+    },
+    {
+      "directory": "linux_process",
+      "metadata_sha256": "aad503e83bdb3435f371fd98779c244a43e75c5cf61eb60743bbb3ffa4faa363",
+      "accepted": 80,
+      "captures": 7,
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64"
+    }
+  ],
+  "observations": {
+    "bool_false": {
+      "first_utf16": [
+        48
+      ],
+      "repeated": 1,
+      "literal_match": 1,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "bool_true": {
+      "first_utf16": [
+        49
+      ],
+      "repeated": 1,
+      "literal_match": 1,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "char_ascii": {
+      "first_utf16": [
+        65
+      ],
+      "repeated": 0,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "char_bmp": {
+      "first_utf16": [
+        955
+      ],
+      "repeated": 0,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "char_high": {
+      "first_utf16": [
+        55296
+      ],
+      "repeated": 0,
+      "literal_match": 0,
+      "same_text": 0,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "char_low": {
+      "first_utf16": [
+        56320
+      ],
+      "repeated": 0,
+      "literal_match": 0,
+      "same_text": 0,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "char_zero": {
+      "first_utf16": [
+        0
+      ],
+      "repeated": 0,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "float_finite": {
+      "first_utf16": [
+        49,
+        46,
+        50,
+        53,
+        48,
+        48,
+        48,
+        48
+      ],
+      "repeated": 0,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "float_integer42": {
+      "first_utf16": [
+        52,
+        50,
+        46,
+        48,
+        48,
+        48,
+        48,
+        48,
+        48
+      ],
+      "repeated": 0,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "float_nan": {
+      "first_utf16": [
+        78,
+        97,
+        78
+      ],
+      "repeated": 1,
+      "literal_match": 1,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "float_negative_infinity": {
+      "first_utf16": [
+        45,
+        73,
+        110,
+        102,
+        105,
+        110,
+        105,
+        116,
+        121
+      ],
+      "repeated": 1,
+      "literal_match": 1,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "float_negative_zero": {
+      "first_utf16": [
+        45,
+        48,
+        46,
+        48,
+        48,
+        48,
+        48,
+        48,
+        48
+      ],
+      "repeated": 0,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "float_one": {
+      "first_utf16": [
+        49,
+        46,
+        48,
+        48,
+        48,
+        48,
+        48,
+        48
+      ],
+      "repeated": 0,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "float_positive_infinity": {
+      "first_utf16": [
+        73,
+        110,
+        102,
+        105,
+        110,
+        105,
+        116,
+        121
+      ],
+      "repeated": 1,
+      "literal_match": 1,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "float_zero": {
+      "first_utf16": [
+        48,
+        46,
+        48,
+        48,
+        48,
+        48,
+        48,
+        48
+      ],
+      "repeated": 0,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "integer_-1": {
+      "first_utf16": [
+        45,
+        49
+      ],
+      "repeated": 0,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "integer_0": {
+      "first_utf16": [
+        48
+      ],
+      "repeated": 1,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "integer_1": {
+      "first_utf16": [
+        49
+      ],
+      "repeated": 1,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "integer_299": {
+      "first_utf16": [
+        50,
+        57,
+        57
+      ],
+      "repeated": 1,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "integer_300": {
+      "first_utf16": [
+        51,
+        48,
+        48
+      ],
+      "repeated": 0,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "integer_42": {
+      "first_utf16": [
+        52,
+        50
+      ],
+      "repeated": 1,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "integer_concat_empty": {
+      "first_utf16": [
+        52,
+        50
+      ],
+      "repeated": 1,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "null_object_string": {
+      "first_utf16": null,
+      "repeated": 1,
+      "literal_match": 0,
+      "same_text": 0,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "object_bool_false": {
+      "first_utf16": [
+        70,
+        97,
+        108,
+        115,
+        101
+      ],
+      "repeated": 1,
+      "literal_match": 1,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "object_bool_true": {
+      "first_utf16": [
+        84,
+        114,
+        117,
+        101
+      ],
+      "repeated": 1,
+      "literal_match": 1,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "object_char_ascii": {
+      "first_utf16": [
+        65
+      ],
+      "repeated": 0,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "object_char_bmp": {
+      "first_utf16": [
+        955
+      ],
+      "repeated": 0,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "object_char_high": {
+      "first_utf16": [
+        55296
+      ],
+      "repeated": 0,
+      "literal_match": 0,
+      "same_text": 0,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "object_char_low": {
+      "first_utf16": [
+        56320
+      ],
+      "repeated": 0,
+      "literal_match": 0,
+      "same_text": 0,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "object_char_zero": {
+      "first_utf16": [
+        0
+      ],
+      "repeated": 0,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "object_float_finite": {
+      "first_utf16": [
+        49,
+        46,
+        50,
+        53
+      ],
+      "repeated": 0,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "object_float_integer42": {
+      "first_utf16": [
+        52,
+        50
+      ],
+      "repeated": 0,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "object_float_nan": {
+      "first_utf16": [
+        78,
+        97,
+        78
+      ],
+      "repeated": 1,
+      "literal_match": 1,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "object_float_negative_infinity": {
+      "first_utf16": [
+        45,
+        73,
+        110,
+        102,
+        105,
+        110,
+        105,
+        116,
+        121
+      ],
+      "repeated": 1,
+      "literal_match": 1,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "object_float_negative_zero": {
+      "first_utf16": [
+        45,
+        48
+      ],
+      "repeated": 0,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "object_float_one": {
+      "first_utf16": [
+        49
+      ],
+      "repeated": 0,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "object_float_positive_infinity": {
+      "first_utf16": [
+        73,
+        110,
+        102,
+        105,
+        110,
+        105,
+        116,
+        121
+      ],
+      "repeated": 1,
+      "literal_match": 1,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "object_float_zero": {
+      "first_utf16": [
+        48
+      ],
+      "repeated": 0,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "object_integer_-1": {
+      "first_utf16": [
+        45,
+        49
+      ],
+      "repeated": 0,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "object_integer_0": {
+      "first_utf16": [
+        48
+      ],
+      "repeated": 1,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "object_integer_1": {
+      "first_utf16": [
+        49
+      ],
+      "repeated": 1,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "object_integer_299": {
+      "first_utf16": [
+        50,
+        57,
+        57
+      ],
+      "repeated": 1,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "object_integer_300": {
+      "first_utf16": [
+        51,
+        48,
+        48
+      ],
+      "repeated": 0,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "object_integer_42": {
+      "first_utf16": [
+        52,
+        50
+      ],
+      "repeated": 1,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "sleep_float_nan": {
+      "first_utf16": [
+        78,
+        97,
+        78
+      ],
+      "repeated": 1,
+      "literal_match": 1,
+      "same_text": 1,
+      "live_after_pair": 1,
+      "migrated_after_pair": 1,
+      "live_generated_match": 1,
+      "migrated_generated_match": 0
+    },
+    "sleep_integer_-1": {
+      "first_utf16": [
+        45,
+        49
+      ],
+      "repeated": 0,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": 0,
+      "migrated_after_pair": 1,
+      "live_generated_match": 0,
+      "migrated_generated_match": 0
+    },
+    "sleep_integer_0": {
+      "first_utf16": [
+        48
+      ],
+      "repeated": 1,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": 1,
+      "migrated_after_pair": 1,
+      "live_generated_match": 1,
+      "migrated_generated_match": 0
+    },
+    "sleep_integer_299": {
+      "first_utf16": [
+        50,
+        57,
+        57
+      ],
+      "repeated": 1,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": 1,
+      "migrated_after_pair": 1,
+      "live_generated_match": 1,
+      "migrated_generated_match": 0
+    },
+    "sleep_integer_300": {
+      "first_utf16": [
+        51,
+        48,
+        48
+      ],
+      "repeated": 0,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": 0,
+      "migrated_after_pair": 1,
+      "live_generated_match": 0,
+      "migrated_generated_match": 0
+    },
+    "sleep_integer_42": {
+      "first_utf16": [
+        52,
+        50
+      ],
+      "repeated": 1,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": 1,
+      "migrated_after_pair": 1,
+      "live_generated_match": 1,
+      "migrated_generated_match": 0
+    },
+    "sleep_typename": {
+      "first_utf16": [
+        105,
+        110,
+        116,
+        101,
+        103,
+        101,
+        114
+      ],
+      "repeated": 1,
+      "literal_match": 1,
+      "same_text": 1,
+      "live_after_pair": 1,
+      "migrated_after_pair": 1,
+      "live_generated_match": 1,
+      "migrated_generated_match": 0
+    },
+    "typename_bool": {
+      "first_utf16": [
+        98,
+        111,
+        111,
+        108
+      ],
+      "repeated": 1,
+      "literal_match": 1,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "typename_char": {
+      "first_utf16": [
+        99,
+        104,
+        97,
+        114
+      ],
+      "repeated": 1,
+      "literal_match": 1,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "typename_float": {
+      "first_utf16": [
+        102,
+        108,
+        111,
+        97,
+        116
+      ],
+      "repeated": 1,
+      "literal_match": 1,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "typename_integer": {
+      "first_utf16": [
+        105,
+        110,
+        116,
+        101,
+        103,
+        101,
+        114
+      ],
+      "repeated": 1,
+      "literal_match": 1,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "typename_key": {
+      "first_utf16": [
+        115,
+        116,
+        114,
+        105,
+        110,
+        103
+      ],
+      "repeated": 1,
+      "literal_match": 1,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "typename_list": {
+      "first_utf16": [
+        108,
+        105,
+        115,
+        116
+      ],
+      "repeated": 1,
+      "literal_match": 1,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "typename_rotation": {
+      "first_utf16": [
+        114,
+        111,
+        116,
+        97,
+        116,
+        105,
+        111,
+        110
+      ],
+      "repeated": 1,
+      "literal_match": 1,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "typename_string": {
+      "first_utf16": [
+        115,
+        116,
+        114,
+        105,
+        110,
+        103
+      ],
+      "repeated": 1,
+      "literal_match": 1,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "typename_vector": {
+      "first_utf16": [
+        118,
+        101,
+        99,
+        116,
+        111,
+        114
+      ],
+      "repeated": 1,
+      "literal_match": 1,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "vector_zero": {
+      "first_utf16": [
+        60,
+        48,
+        46,
+        48,
+        48,
+        48,
+        48,
+        48,
+        48,
+        44,
+        32,
+        48,
+        46,
+        48,
+        48,
+        48,
+        48,
+        48,
+        48,
+        44,
+        32,
+        48,
+        46,
+        48,
+        48,
+        48,
+        48,
+        48,
+        48,
+        62
+      ],
+      "repeated": 0,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "object_vector_zero": {
+      "first_utf16": [
+        60,
+        48,
+        46,
+        48,
+        48,
+        48,
+        48,
+        48,
+        48,
+        44,
+        32,
+        48,
+        46,
+        48,
+        48,
+        48,
+        48,
+        48,
+        48,
+        44,
+        32,
+        48,
+        46,
+        48,
+        48,
+        48,
+        48,
+        48,
+        48,
+        62
+      ],
+      "repeated": 0,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "vector_finite": {
+      "first_utf16": [
+        60,
+        49,
+        46,
+        50,
+        53,
+        48,
+        48,
+        48,
+        48,
+        44,
+        32,
+        45,
+        50,
+        46,
+        53,
+        48,
+        48,
+        48,
+        48,
+        48,
+        44,
+        32,
+        51,
+        46,
+        55,
+        53,
+        48,
+        48,
+        48,
+        48,
+        62
+      ],
+      "repeated": 0,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "object_vector_finite": {
+      "first_utf16": [
+        60,
+        49,
+        46,
+        50,
+        53,
+        48,
+        48,
+        48,
+        48,
+        44,
+        32,
+        45,
+        50,
+        46,
+        53,
+        48,
+        48,
+        48,
+        48,
+        48,
+        44,
+        32,
+        51,
+        46,
+        55,
+        53,
+        48,
+        48,
+        48,
+        48,
+        62
+      ],
+      "repeated": 0,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "rotation_identity": {
+      "first_utf16": [
+        60,
+        48,
+        46,
+        48,
+        48,
+        48,
+        48,
+        48,
+        48,
+        44,
+        32,
+        48,
+        46,
+        48,
+        48,
+        48,
+        48,
+        48,
+        48,
+        44,
+        32,
+        48,
+        46,
+        48,
+        48,
+        48,
+        48,
+        48,
+        48,
+        44,
+        32,
+        49,
+        46,
+        48,
+        48,
+        48,
+        48,
+        48,
+        48,
+        62
+      ],
+      "repeated": 0,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "object_rotation_identity": {
+      "first_utf16": [
+        60,
+        48,
+        46,
+        48,
+        48,
+        48,
+        48,
+        48,
+        48,
+        44,
+        32,
+        48,
+        46,
+        48,
+        48,
+        48,
+        48,
+        48,
+        48,
+        44,
+        32,
+        48,
+        46,
+        48,
+        48,
+        48,
+        48,
+        48,
+        48,
+        44,
+        32,
+        49,
+        46,
+        48,
+        48,
+        48,
+        48,
+        48,
+        48,
+        62
+      ],
+      "repeated": 0,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "rotation_zero": {
+      "first_utf16": [
+        60,
+        48,
+        46,
+        48,
+        48,
+        48,
+        48,
+        48,
+        48,
+        44,
+        32,
+        48,
+        46,
+        48,
+        48,
+        48,
+        48,
+        48,
+        48,
+        44,
+        32,
+        48,
+        46,
+        48,
+        48,
+        48,
+        48,
+        48,
+        48,
+        44,
+        32,
+        48,
+        46,
+        48,
+        48,
+        48,
+        48,
+        48,
+        48,
+        62
+      ],
+      "repeated": 0,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "object_rotation_zero": {
+      "first_utf16": [
+        60,
+        48,
+        46,
+        48,
+        48,
+        48,
+        48,
+        48,
+        48,
+        44,
+        32,
+        48,
+        46,
+        48,
+        48,
+        48,
+        48,
+        48,
+        48,
+        44,
+        32,
+        48,
+        46,
+        48,
+        48,
+        48,
+        48,
+        48,
+        48,
+        44,
+        32,
+        48,
+        46,
+        48,
+        48,
+        48,
+        48,
+        48,
+        48,
+        62
+      ],
+      "repeated": 0,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "list_empty": {
+      "first_utf16": [],
+      "repeated": 1,
+      "literal_match": 1,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "object_list_empty": {
+      "first_utf16": [],
+      "repeated": 1,
+      "literal_match": 1,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "list_string": {
+      "first_utf16": [
+        115,
+        97,
+        109,
+        101
+      ],
+      "repeated": 0,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "object_list_string": {
+      "first_utf16": [
+        115,
+        97,
+        109,
+        101
+      ],
+      "repeated": 0,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "list_integer": {
+      "first_utf16": [
+        55
+      ],
+      "repeated": 0,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "object_list_integer": {
+      "first_utf16": [
+        55
+      ],
+      "repeated": 0,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "string_literal": {
+      "first_utf16": [
+        115,
+        97,
+        109,
+        101
+      ],
+      "repeated": 1,
+      "literal_match": 1,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "object_string_literal": {
+      "first_utf16": [
+        115,
+        97,
+        109,
+        101
+      ],
+      "repeated": 1,
+      "literal_match": 1,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "string_dynamic": {
+      "first_utf16": [
+        115,
+        97,
+        109,
+        101
+      ],
+      "repeated": 1,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "object_string_dynamic": {
+      "first_utf16": [
+        115,
+        97,
+        109,
+        101
+      ],
+      "repeated": 1,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "key_dynamic": {
+      "first_utf16": [
+        115,
+        97,
+        109,
+        101
+      ],
+      "repeated": 1,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    },
+    "object_key_dynamic": {
+      "first_utf16": [
+        115,
+        97,
+        109,
+        101
+      ],
+      "repeated": 1,
+      "literal_match": 0,
+      "same_text": 1,
+      "live_after_pair": null,
+      "migrated_after_pair": null,
+      "live_generated_match": null,
+      "migrated_generated_match": null
+    }
+  },
+  "scope": "Actual original primitive/Object ToString and xmrTypeName source identity. Sampled Integer0/1/42/299 provider caches are not literal interning; -1/300 are fresh; finite numeric/char/vector/rotation/listSoup formatting allocates fresh (emptyList yieldsEmpty); Boolean and NaN/infinity/typeName symbols are literal refs; rawString/Key casts preserveinput. Dynamic lonechar retainsunits; its portable literal comparison is UFFFD and deliberately not same text. ActualSleep distinguishes live from productionbinary dedup and freshlygenerated provider refs. No oldfixtures/native inputs changed.",
+  "full_parity_claim": false
+}

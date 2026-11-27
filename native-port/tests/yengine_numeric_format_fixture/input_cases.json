@@ -1,0 +1,4673 @@
+[
+  {
+    "name": "integer_0",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "0",
+    "format": "",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"0\"),\"\");after=1;}}"
+  },
+  {
+    "name": "integer_1",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "0",
+    "format": "G",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"0\"),\"G\");after=1;}}"
+  },
+  {
+    "name": "integer_2",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "0",
+    "format": "D",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"0\"),\"D\");after=1;}}"
+  },
+  {
+    "name": "integer_3",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "0",
+    "format": "D8",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"0\"),\"D8\");after=1;}}"
+  },
+  {
+    "name": "integer_4",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "0",
+    "format": "X",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"0\"),\"X\");after=1;}}"
+  },
+  {
+    "name": "integer_5",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "0",
+    "format": "x8",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"0\"),\"x8\");after=1;}}"
+  },
+  {
+    "name": "integer_6",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "0",
+    "format": "B",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"0\"),\"B\");after=1;}}"
+  },
+  {
+    "name": "integer_7",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "0",
+    "format": "b16",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"0\"),\"b16\");after=1;}}"
+  },
+  {
+    "name": "integer_8",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "0",
+    "format": "N2",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"0\"),\"N2\");after=1;}}"
+  },
+  {
+    "name": "integer_9",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "0",
+    "format": "F2",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"0\"),\"F2\");after=1;}}"
+  },
+  {
+    "name": "integer_10",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "0",
+    "format": "E3",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"0\"),\"E3\");after=1;}}"
+  },
+  {
+    "name": "integer_11",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "0",
+    "format": "e3",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"0\"),\"e3\");after=1;}}"
+  },
+  {
+    "name": "integer_12",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "0",
+    "format": "C2",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"0\"),\"C2\");after=1;}}"
+  },
+  {
+    "name": "integer_13",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "0",
+    "format": "P1",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"0\"),\"P1\");after=1;}}"
+  },
+  {
+    "name": "integer_14",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "0",
+    "format": "R",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"0\"),\"R\");after=1;}}"
+  },
+  {
+    "name": "integer_15",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "0",
+    "format": "Q",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"0\"),\"Q\");after=1;}}"
+  },
+  {
+    "name": "integer_16",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "0",
+    "format": "G0",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"0\"),\"G0\");after=1;}}"
+  },
+  {
+    "name": "integer_17",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "0",
+    "format": "D0",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"0\"),\"D0\");after=1;}}"
+  },
+  {
+    "name": "integer_18",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "0",
+    "format": "X0",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"0\"),\"X0\");after=1;}}"
+  },
+  {
+    "name": "integer_19",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1",
+    "format": "",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1\"),\"\");after=1;}}"
+  },
+  {
+    "name": "integer_20",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1",
+    "format": "G",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1\"),\"G\");after=1;}}"
+  },
+  {
+    "name": "integer_21",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1",
+    "format": "D",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1\"),\"D\");after=1;}}"
+  },
+  {
+    "name": "integer_22",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1",
+    "format": "D8",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1\"),\"D8\");after=1;}}"
+  },
+  {
+    "name": "integer_23",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1",
+    "format": "X",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1\"),\"X\");after=1;}}"
+  },
+  {
+    "name": "integer_24",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1",
+    "format": "x8",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1\"),\"x8\");after=1;}}"
+  },
+  {
+    "name": "integer_25",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1",
+    "format": "B",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1\"),\"B\");after=1;}}"
+  },
+  {
+    "name": "integer_26",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1",
+    "format": "b16",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1\"),\"b16\");after=1;}}"
+  },
+  {
+    "name": "integer_27",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1",
+    "format": "N2",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1\"),\"N2\");after=1;}}"
+  },
+  {
+    "name": "integer_28",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1",
+    "format": "F2",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1\"),\"F2\");after=1;}}"
+  },
+  {
+    "name": "integer_29",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1",
+    "format": "E3",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1\"),\"E3\");after=1;}}"
+  },
+  {
+    "name": "integer_30",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1",
+    "format": "e3",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1\"),\"e3\");after=1;}}"
+  },
+  {
+    "name": "integer_31",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1",
+    "format": "C2",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1\"),\"C2\");after=1;}}"
+  },
+  {
+    "name": "integer_32",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1",
+    "format": "P1",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1\"),\"P1\");after=1;}}"
+  },
+  {
+    "name": "integer_33",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1",
+    "format": "R",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1\"),\"R\");after=1;}}"
+  },
+  {
+    "name": "integer_34",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1",
+    "format": "Q",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1\"),\"Q\");after=1;}}"
+  },
+  {
+    "name": "integer_35",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1",
+    "format": "G0",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1\"),\"G0\");after=1;}}"
+  },
+  {
+    "name": "integer_36",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1",
+    "format": "D0",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1\"),\"D0\");after=1;}}"
+  },
+  {
+    "name": "integer_37",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1",
+    "format": "X0",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1\"),\"X0\");after=1;}}"
+  },
+  {
+    "name": "integer_38",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-1",
+    "format": "",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-1\"),\"\");after=1;}}"
+  },
+  {
+    "name": "integer_39",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-1",
+    "format": "G",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-1\"),\"G\");after=1;}}"
+  },
+  {
+    "name": "integer_40",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-1",
+    "format": "D",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-1\"),\"D\");after=1;}}"
+  },
+  {
+    "name": "integer_41",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-1",
+    "format": "D8",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-1\"),\"D8\");after=1;}}"
+  },
+  {
+    "name": "integer_42",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-1",
+    "format": "X",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-1\"),\"X\");after=1;}}"
+  },
+  {
+    "name": "integer_43",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-1",
+    "format": "x8",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-1\"),\"x8\");after=1;}}"
+  },
+  {
+    "name": "integer_44",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-1",
+    "format": "B",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-1\"),\"B\");after=1;}}"
+  },
+  {
+    "name": "integer_45",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-1",
+    "format": "b16",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-1\"),\"b16\");after=1;}}"
+  },
+  {
+    "name": "integer_46",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-1",
+    "format": "N2",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-1\"),\"N2\");after=1;}}"
+  },
+  {
+    "name": "integer_47",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-1",
+    "format": "F2",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-1\"),\"F2\");after=1;}}"
+  },
+  {
+    "name": "integer_48",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-1",
+    "format": "E3",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-1\"),\"E3\");after=1;}}"
+  },
+  {
+    "name": "integer_49",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-1",
+    "format": "e3",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-1\"),\"e3\");after=1;}}"
+  },
+  {
+    "name": "integer_50",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-1",
+    "format": "C2",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-1\"),\"C2\");after=1;}}"
+  },
+  {
+    "name": "integer_51",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-1",
+    "format": "P1",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-1\"),\"P1\");after=1;}}"
+  },
+  {
+    "name": "integer_52",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-1",
+    "format": "R",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-1\"),\"R\");after=1;}}"
+  },
+  {
+    "name": "integer_53",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-1",
+    "format": "Q",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-1\"),\"Q\");after=1;}}"
+  },
+  {
+    "name": "integer_54",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-1",
+    "format": "G0",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-1\"),\"G0\");after=1;}}"
+  },
+  {
+    "name": "integer_55",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-1",
+    "format": "D0",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-1\"),\"D0\");after=1;}}"
+  },
+  {
+    "name": "integer_56",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-1",
+    "format": "X0",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-1\"),\"X0\");after=1;}}"
+  },
+  {
+    "name": "integer_57",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "2147483647",
+    "format": "",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"2147483647\"),\"\");after=1;}}"
+  },
+  {
+    "name": "integer_58",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "2147483647",
+    "format": "G",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"2147483647\"),\"G\");after=1;}}"
+  },
+  {
+    "name": "integer_59",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "2147483647",
+    "format": "D",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"2147483647\"),\"D\");after=1;}}"
+  },
+  {
+    "name": "integer_60",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "2147483647",
+    "format": "D8",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"2147483647\"),\"D8\");after=1;}}"
+  },
+  {
+    "name": "integer_61",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "2147483647",
+    "format": "X",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"2147483647\"),\"X\");after=1;}}"
+  },
+  {
+    "name": "integer_62",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "2147483647",
+    "format": "x8",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"2147483647\"),\"x8\");after=1;}}"
+  },
+  {
+    "name": "integer_63",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "2147483647",
+    "format": "B",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"2147483647\"),\"B\");after=1;}}"
+  },
+  {
+    "name": "integer_64",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "2147483647",
+    "format": "b16",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"2147483647\"),\"b16\");after=1;}}"
+  },
+  {
+    "name": "integer_65",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "2147483647",
+    "format": "N2",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"2147483647\"),\"N2\");after=1;}}"
+  },
+  {
+    "name": "integer_66",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "2147483647",
+    "format": "F2",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"2147483647\"),\"F2\");after=1;}}"
+  },
+  {
+    "name": "integer_67",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "2147483647",
+    "format": "E3",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"2147483647\"),\"E3\");after=1;}}"
+  },
+  {
+    "name": "integer_68",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "2147483647",
+    "format": "e3",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"2147483647\"),\"e3\");after=1;}}"
+  },
+  {
+    "name": "integer_69",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "2147483647",
+    "format": "C2",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"2147483647\"),\"C2\");after=1;}}"
+  },
+  {
+    "name": "integer_70",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "2147483647",
+    "format": "P1",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"2147483647\"),\"P1\");after=1;}}"
+  },
+  {
+    "name": "integer_71",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "2147483647",
+    "format": "R",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"2147483647\"),\"R\");after=1;}}"
+  },
+  {
+    "name": "integer_72",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "2147483647",
+    "format": "Q",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"2147483647\"),\"Q\");after=1;}}"
+  },
+  {
+    "name": "integer_73",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "2147483647",
+    "format": "G0",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"2147483647\"),\"G0\");after=1;}}"
+  },
+  {
+    "name": "integer_74",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "2147483647",
+    "format": "D0",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"2147483647\"),\"D0\");after=1;}}"
+  },
+  {
+    "name": "integer_75",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "2147483647",
+    "format": "X0",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"2147483647\"),\"X0\");after=1;}}"
+  },
+  {
+    "name": "integer_76",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-2147483648",
+    "format": "",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-2147483648\"),\"\");after=1;}}"
+  },
+  {
+    "name": "integer_77",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-2147483648",
+    "format": "G",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-2147483648\"),\"G\");after=1;}}"
+  },
+  {
+    "name": "integer_78",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-2147483648",
+    "format": "D",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-2147483648\"),\"D\");after=1;}}"
+  },
+  {
+    "name": "integer_79",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-2147483648",
+    "format": "D8",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-2147483648\"),\"D8\");after=1;}}"
+  },
+  {
+    "name": "integer_80",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-2147483648",
+    "format": "X",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-2147483648\"),\"X\");after=1;}}"
+  },
+  {
+    "name": "integer_81",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-2147483648",
+    "format": "x8",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-2147483648\"),\"x8\");after=1;}}"
+  },
+  {
+    "name": "integer_82",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-2147483648",
+    "format": "B",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-2147483648\"),\"B\");after=1;}}"
+  },
+  {
+    "name": "integer_83",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-2147483648",
+    "format": "b16",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-2147483648\"),\"b16\");after=1;}}"
+  },
+  {
+    "name": "integer_84",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-2147483648",
+    "format": "N2",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-2147483648\"),\"N2\");after=1;}}"
+  },
+  {
+    "name": "integer_85",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-2147483648",
+    "format": "F2",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-2147483648\"),\"F2\");after=1;}}"
+  },
+  {
+    "name": "integer_86",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-2147483648",
+    "format": "E3",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-2147483648\"),\"E3\");after=1;}}"
+  },
+  {
+    "name": "integer_87",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-2147483648",
+    "format": "e3",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-2147483648\"),\"e3\");after=1;}}"
+  },
+  {
+    "name": "integer_88",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-2147483648",
+    "format": "C2",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-2147483648\"),\"C2\");after=1;}}"
+  },
+  {
+    "name": "integer_89",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-2147483648",
+    "format": "P1",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-2147483648\"),\"P1\");after=1;}}"
+  },
+  {
+    "name": "integer_90",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-2147483648",
+    "format": "R",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-2147483648\"),\"R\");after=1;}}"
+  },
+  {
+    "name": "integer_91",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-2147483648",
+    "format": "Q",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-2147483648\"),\"Q\");after=1;}}"
+  },
+  {
+    "name": "integer_92",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-2147483648",
+    "format": "G0",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-2147483648\"),\"G0\");after=1;}}"
+  },
+  {
+    "name": "integer_93",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-2147483648",
+    "format": "D0",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-2147483648\"),\"D0\");after=1;}}"
+  },
+  {
+    "name": "integer_94",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-2147483648",
+    "format": "X0",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-2147483648\"),\"X0\");after=1;}}"
+  },
+  {
+    "name": "integer_95",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1234567",
+    "format": "",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1234567\"),\"\");after=1;}}"
+  },
+  {
+    "name": "integer_96",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1234567",
+    "format": "G",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1234567\"),\"G\");after=1;}}"
+  },
+  {
+    "name": "integer_97",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1234567",
+    "format": "D",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1234567\"),\"D\");after=1;}}"
+  },
+  {
+    "name": "integer_98",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1234567",
+    "format": "D8",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1234567\"),\"D8\");after=1;}}"
+  },
+  {
+    "name": "integer_99",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1234567",
+    "format": "X",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1234567\"),\"X\");after=1;}}"
+  },
+  {
+    "name": "integer_100",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1234567",
+    "format": "x8",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1234567\"),\"x8\");after=1;}}"
+  },
+  {
+    "name": "integer_101",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1234567",
+    "format": "B",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1234567\"),\"B\");after=1;}}"
+  },
+  {
+    "name": "integer_102",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1234567",
+    "format": "b16",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1234567\"),\"b16\");after=1;}}"
+  },
+  {
+    "name": "integer_103",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1234567",
+    "format": "N2",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1234567\"),\"N2\");after=1;}}"
+  },
+  {
+    "name": "integer_104",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1234567",
+    "format": "F2",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1234567\"),\"F2\");after=1;}}"
+  },
+  {
+    "name": "integer_105",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1234567",
+    "format": "E3",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1234567\"),\"E3\");after=1;}}"
+  },
+  {
+    "name": "integer_106",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1234567",
+    "format": "e3",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1234567\"),\"e3\");after=1;}}"
+  },
+  {
+    "name": "integer_107",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1234567",
+    "format": "C2",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1234567\"),\"C2\");after=1;}}"
+  },
+  {
+    "name": "integer_108",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1234567",
+    "format": "P1",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1234567\"),\"P1\");after=1;}}"
+  },
+  {
+    "name": "integer_109",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1234567",
+    "format": "R",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1234567\"),\"R\");after=1;}}"
+  },
+  {
+    "name": "integer_110",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1234567",
+    "format": "Q",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1234567\"),\"Q\");after=1;}}"
+  },
+  {
+    "name": "integer_111",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1234567",
+    "format": "G0",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1234567\"),\"G0\");after=1;}}"
+  },
+  {
+    "name": "integer_112",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1234567",
+    "format": "D0",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1234567\"),\"D0\");after=1;}}"
+  },
+  {
+    "name": "integer_113",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1234567",
+    "format": "X0",
+    "coverage_group": "integer_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1234567\"),\"X0\");after=1;}}"
+  },
+  {
+    "name": "float_0",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0",
+    "format": "",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0\"),\"\");after=1;}}"
+  },
+  {
+    "name": "float_1",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0",
+    "format": "G",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0\"),\"G\");after=1;}}"
+  },
+  {
+    "name": "float_2",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0",
+    "format": "G17",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0\"),\"G17\");after=1;}}"
+  },
+  {
+    "name": "float_3",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0",
+    "format": "R",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0\"),\"R\");after=1;}}"
+  },
+  {
+    "name": "float_4",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0",
+    "format": "F2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0\"),\"F2\");after=1;}}"
+  },
+  {
+    "name": "float_5",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0",
+    "format": "N2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0\"),\"N2\");after=1;}}"
+  },
+  {
+    "name": "float_6",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0",
+    "format": "E3",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0\"),\"E3\");after=1;}}"
+  },
+  {
+    "name": "float_7",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0",
+    "format": "e3",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0\"),\"e3\");after=1;}}"
+  },
+  {
+    "name": "float_8",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0",
+    "format": "C2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0\"),\"C2\");after=1;}}"
+  },
+  {
+    "name": "float_9",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0",
+    "format": "P1",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0\"),\"P1\");after=1;}}"
+  },
+  {
+    "name": "float_10",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-0",
+    "format": "",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-0\"),\"\");after=1;}}"
+  },
+  {
+    "name": "float_11",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-0",
+    "format": "G",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-0\"),\"G\");after=1;}}"
+  },
+  {
+    "name": "float_12",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-0",
+    "format": "G17",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-0\"),\"G17\");after=1;}}"
+  },
+  {
+    "name": "float_13",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-0",
+    "format": "R",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-0\"),\"R\");after=1;}}"
+  },
+  {
+    "name": "float_14",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-0",
+    "format": "F2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-0\"),\"F2\");after=1;}}"
+  },
+  {
+    "name": "float_15",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-0",
+    "format": "N2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-0\"),\"N2\");after=1;}}"
+  },
+  {
+    "name": "float_16",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-0",
+    "format": "E3",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-0\"),\"E3\");after=1;}}"
+  },
+  {
+    "name": "float_17",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-0",
+    "format": "e3",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-0\"),\"e3\");after=1;}}"
+  },
+  {
+    "name": "float_18",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-0",
+    "format": "C2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-0\"),\"C2\");after=1;}}"
+  },
+  {
+    "name": "float_19",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-0",
+    "format": "P1",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-0\"),\"P1\");after=1;}}"
+  },
+  {
+    "name": "float_20",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.2345678901234567",
+    "format": "",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.2345678901234567\"),\"\");after=1;}}"
+  },
+  {
+    "name": "float_21",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.2345678901234567",
+    "format": "G",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.2345678901234567\"),\"G\");after=1;}}"
+  },
+  {
+    "name": "float_22",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.2345678901234567",
+    "format": "G17",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.2345678901234567\"),\"G17\");after=1;}}"
+  },
+  {
+    "name": "float_23",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.2345678901234567",
+    "format": "R",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.2345678901234567\"),\"R\");after=1;}}"
+  },
+  {
+    "name": "float_24",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.2345678901234567",
+    "format": "F2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.2345678901234567\"),\"F2\");after=1;}}"
+  },
+  {
+    "name": "float_25",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.2345678901234567",
+    "format": "N2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.2345678901234567\"),\"N2\");after=1;}}"
+  },
+  {
+    "name": "float_26",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.2345678901234567",
+    "format": "E3",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.2345678901234567\"),\"E3\");after=1;}}"
+  },
+  {
+    "name": "float_27",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.2345678901234567",
+    "format": "e3",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.2345678901234567\"),\"e3\");after=1;}}"
+  },
+  {
+    "name": "float_28",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.2345678901234567",
+    "format": "C2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.2345678901234567\"),\"C2\");after=1;}}"
+  },
+  {
+    "name": "float_29",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.2345678901234567",
+    "format": "P1",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.2345678901234567\"),\"P1\");after=1;}}"
+  },
+  {
+    "name": "float_30",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "2.675",
+    "format": "",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"2.675\"),\"\");after=1;}}"
+  },
+  {
+    "name": "float_31",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "2.675",
+    "format": "G",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"2.675\"),\"G\");after=1;}}"
+  },
+  {
+    "name": "float_32",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "2.675",
+    "format": "G17",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"2.675\"),\"G17\");after=1;}}"
+  },
+  {
+    "name": "float_33",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "2.675",
+    "format": "R",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"2.675\"),\"R\");after=1;}}"
+  },
+  {
+    "name": "float_34",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "2.675",
+    "format": "F2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"2.675\"),\"F2\");after=1;}}"
+  },
+  {
+    "name": "float_35",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "2.675",
+    "format": "N2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"2.675\"),\"N2\");after=1;}}"
+  },
+  {
+    "name": "float_36",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "2.675",
+    "format": "E3",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"2.675\"),\"E3\");after=1;}}"
+  },
+  {
+    "name": "float_37",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "2.675",
+    "format": "e3",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"2.675\"),\"e3\");after=1;}}"
+  },
+  {
+    "name": "float_38",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "2.675",
+    "format": "C2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"2.675\"),\"C2\");after=1;}}"
+  },
+  {
+    "name": "float_39",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "2.675",
+    "format": "P1",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"2.675\"),\"P1\");after=1;}}"
+  },
+  {
+    "name": "float_40",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.005",
+    "format": "",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.005\"),\"\");after=1;}}"
+  },
+  {
+    "name": "float_41",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.005",
+    "format": "G",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.005\"),\"G\");after=1;}}"
+  },
+  {
+    "name": "float_42",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.005",
+    "format": "G17",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.005\"),\"G17\");after=1;}}"
+  },
+  {
+    "name": "float_43",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.005",
+    "format": "R",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.005\"),\"R\");after=1;}}"
+  },
+  {
+    "name": "float_44",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.005",
+    "format": "F2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.005\"),\"F2\");after=1;}}"
+  },
+  {
+    "name": "float_45",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.005",
+    "format": "N2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.005\"),\"N2\");after=1;}}"
+  },
+  {
+    "name": "float_46",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.005",
+    "format": "E3",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.005\"),\"E3\");after=1;}}"
+  },
+  {
+    "name": "float_47",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.005",
+    "format": "e3",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.005\"),\"e3\");after=1;}}"
+  },
+  {
+    "name": "float_48",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.005",
+    "format": "C2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.005\"),\"C2\");after=1;}}"
+  },
+  {
+    "name": "float_49",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.005",
+    "format": "P1",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.005\"),\"P1\");after=1;}}"
+  },
+  {
+    "name": "float_50",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-2.5",
+    "format": "",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-2.5\"),\"\");after=1;}}"
+  },
+  {
+    "name": "float_51",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-2.5",
+    "format": "G",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-2.5\"),\"G\");after=1;}}"
+  },
+  {
+    "name": "float_52",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-2.5",
+    "format": "G17",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-2.5\"),\"G17\");after=1;}}"
+  },
+  {
+    "name": "float_53",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-2.5",
+    "format": "R",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-2.5\"),\"R\");after=1;}}"
+  },
+  {
+    "name": "float_54",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-2.5",
+    "format": "F2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-2.5\"),\"F2\");after=1;}}"
+  },
+  {
+    "name": "float_55",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-2.5",
+    "format": "N2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-2.5\"),\"N2\");after=1;}}"
+  },
+  {
+    "name": "float_56",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-2.5",
+    "format": "E3",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-2.5\"),\"E3\");after=1;}}"
+  },
+  {
+    "name": "float_57",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-2.5",
+    "format": "e3",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-2.5\"),\"e3\");after=1;}}"
+  },
+  {
+    "name": "float_58",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-2.5",
+    "format": "C2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-2.5\"),\"C2\");after=1;}}"
+  },
+  {
+    "name": "float_59",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-2.5",
+    "format": "P1",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-2.5\"),\"P1\");after=1;}}"
+  },
+  {
+    "name": "float_60",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1234567.89",
+    "format": "",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1234567.89\"),\"\");after=1;}}"
+  },
+  {
+    "name": "float_61",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1234567.89",
+    "format": "G",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1234567.89\"),\"G\");after=1;}}"
+  },
+  {
+    "name": "float_62",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1234567.89",
+    "format": "G17",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1234567.89\"),\"G17\");after=1;}}"
+  },
+  {
+    "name": "float_63",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1234567.89",
+    "format": "R",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1234567.89\"),\"R\");after=1;}}"
+  },
+  {
+    "name": "float_64",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1234567.89",
+    "format": "F2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1234567.89\"),\"F2\");after=1;}}"
+  },
+  {
+    "name": "float_65",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1234567.89",
+    "format": "N2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1234567.89\"),\"N2\");after=1;}}"
+  },
+  {
+    "name": "float_66",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1234567.89",
+    "format": "E3",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1234567.89\"),\"E3\");after=1;}}"
+  },
+  {
+    "name": "float_67",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1234567.89",
+    "format": "e3",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1234567.89\"),\"e3\");after=1;}}"
+  },
+  {
+    "name": "float_68",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1234567.89",
+    "format": "C2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1234567.89\"),\"C2\");after=1;}}"
+  },
+  {
+    "name": "float_69",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1234567.89",
+    "format": "P1",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1234567.89\"),\"P1\");after=1;}}"
+  },
+  {
+    "name": "float_70",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1e-08",
+    "format": "",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1e-08\"),\"\");after=1;}}"
+  },
+  {
+    "name": "float_71",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1e-08",
+    "format": "G",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1e-08\"),\"G\");after=1;}}"
+  },
+  {
+    "name": "float_72",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1e-08",
+    "format": "G17",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1e-08\"),\"G17\");after=1;}}"
+  },
+  {
+    "name": "float_73",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1e-08",
+    "format": "R",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1e-08\"),\"R\");after=1;}}"
+  },
+  {
+    "name": "float_74",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1e-08",
+    "format": "F2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1e-08\"),\"F2\");after=1;}}"
+  },
+  {
+    "name": "float_75",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1e-08",
+    "format": "N2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1e-08\"),\"N2\");after=1;}}"
+  },
+  {
+    "name": "float_76",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1e-08",
+    "format": "E3",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1e-08\"),\"E3\");after=1;}}"
+  },
+  {
+    "name": "float_77",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1e-08",
+    "format": "e3",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1e-08\"),\"e3\");after=1;}}"
+  },
+  {
+    "name": "float_78",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1e-08",
+    "format": "C2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1e-08\"),\"C2\");after=1;}}"
+  },
+  {
+    "name": "float_79",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1e-08",
+    "format": "P1",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1e-08\"),\"P1\");after=1;}}"
+  },
+  {
+    "name": "float_80",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1e20",
+    "format": "",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1e20\"),\"\");after=1;}}"
+  },
+  {
+    "name": "float_81",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1e20",
+    "format": "G",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1e20\"),\"G\");after=1;}}"
+  },
+  {
+    "name": "float_82",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1e20",
+    "format": "G17",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1e20\"),\"G17\");after=1;}}"
+  },
+  {
+    "name": "float_83",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1e20",
+    "format": "R",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1e20\"),\"R\");after=1;}}"
+  },
+  {
+    "name": "float_84",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1e20",
+    "format": "F2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1e20\"),\"F2\");after=1;}}"
+  },
+  {
+    "name": "float_85",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1e20",
+    "format": "N2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1e20\"),\"N2\");after=1;}}"
+  },
+  {
+    "name": "float_86",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1e20",
+    "format": "E3",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1e20\"),\"E3\");after=1;}}"
+  },
+  {
+    "name": "float_87",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1e20",
+    "format": "e3",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1e20\"),\"e3\");after=1;}}"
+  },
+  {
+    "name": "float_88",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1e20",
+    "format": "C2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1e20\"),\"C2\");after=1;}}"
+  },
+  {
+    "name": "float_89",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1e20",
+    "format": "P1",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1e20\"),\"P1\");after=1;}}"
+  },
+  {
+    "name": "float_90",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1e-300",
+    "format": "",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1e-300\"),\"\");after=1;}}"
+  },
+  {
+    "name": "float_91",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1e-300",
+    "format": "G",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1e-300\"),\"G\");after=1;}}"
+  },
+  {
+    "name": "float_92",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1e-300",
+    "format": "G17",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1e-300\"),\"G17\");after=1;}}"
+  },
+  {
+    "name": "float_93",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1e-300",
+    "format": "R",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1e-300\"),\"R\");after=1;}}"
+  },
+  {
+    "name": "float_94",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1e-300",
+    "format": "F2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1e-300\"),\"F2\");after=1;}}"
+  },
+  {
+    "name": "float_95",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1e-300",
+    "format": "N2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1e-300\"),\"N2\");after=1;}}"
+  },
+  {
+    "name": "float_96",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1e-300",
+    "format": "E3",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1e-300\"),\"E3\");after=1;}}"
+  },
+  {
+    "name": "float_97",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1e-300",
+    "format": "e3",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1e-300\"),\"e3\");after=1;}}"
+  },
+  {
+    "name": "float_98",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1e-300",
+    "format": "C2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1e-300\"),\"C2\");after=1;}}"
+  },
+  {
+    "name": "float_99",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1e-300",
+    "format": "P1",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1e-300\"),\"P1\");after=1;}}"
+  },
+  {
+    "name": "float_100",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "5e-324",
+    "format": "",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"5e-324\"),\"\");after=1;}}"
+  },
+  {
+    "name": "float_101",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "5e-324",
+    "format": "G",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"5e-324\"),\"G\");after=1;}}"
+  },
+  {
+    "name": "float_102",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "5e-324",
+    "format": "G17",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"5e-324\"),\"G17\");after=1;}}"
+  },
+  {
+    "name": "float_103",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "5e-324",
+    "format": "R",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"5e-324\"),\"R\");after=1;}}"
+  },
+  {
+    "name": "float_104",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "5e-324",
+    "format": "F2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"5e-324\"),\"F2\");after=1;}}"
+  },
+  {
+    "name": "float_105",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "5e-324",
+    "format": "N2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"5e-324\"),\"N2\");after=1;}}"
+  },
+  {
+    "name": "float_106",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "5e-324",
+    "format": "E3",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"5e-324\"),\"E3\");after=1;}}"
+  },
+  {
+    "name": "float_107",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "5e-324",
+    "format": "e3",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"5e-324\"),\"e3\");after=1;}}"
+  },
+  {
+    "name": "float_108",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "5e-324",
+    "format": "C2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"5e-324\"),\"C2\");after=1;}}"
+  },
+  {
+    "name": "float_109",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "5e-324",
+    "format": "P1",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"5e-324\"),\"P1\");after=1;}}"
+  },
+  {
+    "name": "float_110",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.7976931348623157E+308",
+    "format": "",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.7976931348623157E+308\"),\"\");after=1;}}"
+  },
+  {
+    "name": "float_111",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.7976931348623157E+308",
+    "format": "G",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.7976931348623157E+308\"),\"G\");after=1;}}"
+  },
+  {
+    "name": "float_112",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.7976931348623157E+308",
+    "format": "G17",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.7976931348623157E+308\"),\"G17\");after=1;}}"
+  },
+  {
+    "name": "float_113",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.7976931348623157E+308",
+    "format": "R",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.7976931348623157E+308\"),\"R\");after=1;}}"
+  },
+  {
+    "name": "float_114",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.7976931348623157E+308",
+    "format": "F2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.7976931348623157E+308\"),\"F2\");after=1;}}"
+  },
+  {
+    "name": "float_115",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.7976931348623157E+308",
+    "format": "N2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.7976931348623157E+308\"),\"N2\");after=1;}}"
+  },
+  {
+    "name": "float_116",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.7976931348623157E+308",
+    "format": "E3",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.7976931348623157E+308\"),\"E3\");after=1;}}"
+  },
+  {
+    "name": "float_117",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.7976931348623157E+308",
+    "format": "e3",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.7976931348623157E+308\"),\"e3\");after=1;}}"
+  },
+  {
+    "name": "float_118",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.7976931348623157E+308",
+    "format": "C2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.7976931348623157E+308\"),\"C2\");after=1;}}"
+  },
+  {
+    "name": "float_119",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.7976931348623157E+308",
+    "format": "P1",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.7976931348623157E+308\"),\"P1\");after=1;}}"
+  },
+  {
+    "name": "float_120",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "NaN",
+    "format": "",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"NaN\"),\"\");after=1;}}"
+  },
+  {
+    "name": "float_121",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "NaN",
+    "format": "G",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"NaN\"),\"G\");after=1;}}"
+  },
+  {
+    "name": "float_122",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "NaN",
+    "format": "G17",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"NaN\"),\"G17\");after=1;}}"
+  },
+  {
+    "name": "float_123",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "NaN",
+    "format": "R",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"NaN\"),\"R\");after=1;}}"
+  },
+  {
+    "name": "float_124",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "NaN",
+    "format": "F2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"NaN\"),\"F2\");after=1;}}"
+  },
+  {
+    "name": "float_125",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "NaN",
+    "format": "N2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"NaN\"),\"N2\");after=1;}}"
+  },
+  {
+    "name": "float_126",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "NaN",
+    "format": "E3",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"NaN\"),\"E3\");after=1;}}"
+  },
+  {
+    "name": "float_127",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "NaN",
+    "format": "e3",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"NaN\"),\"e3\");after=1;}}"
+  },
+  {
+    "name": "float_128",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "NaN",
+    "format": "C2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"NaN\"),\"C2\");after=1;}}"
+  },
+  {
+    "name": "float_129",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "NaN",
+    "format": "P1",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"NaN\"),\"P1\");after=1;}}"
+  },
+  {
+    "name": "float_130",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "Infinity",
+    "format": "",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"Infinity\"),\"\");after=1;}}"
+  },
+  {
+    "name": "float_131",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "Infinity",
+    "format": "G",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"Infinity\"),\"G\");after=1;}}"
+  },
+  {
+    "name": "float_132",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "Infinity",
+    "format": "G17",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"Infinity\"),\"G17\");after=1;}}"
+  },
+  {
+    "name": "float_133",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "Infinity",
+    "format": "R",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"Infinity\"),\"R\");after=1;}}"
+  },
+  {
+    "name": "float_134",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "Infinity",
+    "format": "F2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"Infinity\"),\"F2\");after=1;}}"
+  },
+  {
+    "name": "float_135",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "Infinity",
+    "format": "N2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"Infinity\"),\"N2\");after=1;}}"
+  },
+  {
+    "name": "float_136",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "Infinity",
+    "format": "E3",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"Infinity\"),\"E3\");after=1;}}"
+  },
+  {
+    "name": "float_137",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "Infinity",
+    "format": "e3",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"Infinity\"),\"e3\");after=1;}}"
+  },
+  {
+    "name": "float_138",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "Infinity",
+    "format": "C2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"Infinity\"),\"C2\");after=1;}}"
+  },
+  {
+    "name": "float_139",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "Infinity",
+    "format": "P1",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"Infinity\"),\"P1\");after=1;}}"
+  },
+  {
+    "name": "float_140",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-Infinity",
+    "format": "",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-Infinity\"),\"\");after=1;}}"
+  },
+  {
+    "name": "float_141",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-Infinity",
+    "format": "G",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-Infinity\"),\"G\");after=1;}}"
+  },
+  {
+    "name": "float_142",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-Infinity",
+    "format": "G17",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-Infinity\"),\"G17\");after=1;}}"
+  },
+  {
+    "name": "float_143",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-Infinity",
+    "format": "R",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-Infinity\"),\"R\");after=1;}}"
+  },
+  {
+    "name": "float_144",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-Infinity",
+    "format": "F2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-Infinity\"),\"F2\");after=1;}}"
+  },
+  {
+    "name": "float_145",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-Infinity",
+    "format": "N2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-Infinity\"),\"N2\");after=1;}}"
+  },
+  {
+    "name": "float_146",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-Infinity",
+    "format": "E3",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-Infinity\"),\"E3\");after=1;}}"
+  },
+  {
+    "name": "float_147",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-Infinity",
+    "format": "e3",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-Infinity\"),\"e3\");after=1;}}"
+  },
+  {
+    "name": "float_148",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-Infinity",
+    "format": "C2",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-Infinity\"),\"C2\");after=1;}}"
+  },
+  {
+    "name": "float_149",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-Infinity",
+    "format": "P1",
+    "coverage_group": "float_standard",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-Infinity\"),\"P1\");after=1;}}"
+  },
+  {
+    "name": "float_150",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.5",
+    "format": "D",
+    "coverage_group": "type_invalid_and_special",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.5\"),\"D\");after=1;}}"
+  },
+  {
+    "name": "float_151",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.5",
+    "format": "X",
+    "coverage_group": "type_invalid_and_special",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.5\"),\"X\");after=1;}}"
+  },
+  {
+    "name": "float_152",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.5",
+    "format": "B",
+    "coverage_group": "type_invalid_and_special",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.5\"),\"B\");after=1;}}"
+  },
+  {
+    "name": "float_153",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.5",
+    "format": "Q",
+    "coverage_group": "type_invalid_and_special",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.5\"),\"Q\");after=1;}}"
+  },
+  {
+    "name": "float_154",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "NaN",
+    "format": "D",
+    "coverage_group": "type_invalid_and_special",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"NaN\"),\"D\");after=1;}}"
+  },
+  {
+    "name": "float_155",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "NaN",
+    "format": "X",
+    "coverage_group": "type_invalid_and_special",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"NaN\"),\"X\");after=1;}}"
+  },
+  {
+    "name": "float_156",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "NaN",
+    "format": "B",
+    "coverage_group": "type_invalid_and_special",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"NaN\"),\"B\");after=1;}}"
+  },
+  {
+    "name": "float_157",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "NaN",
+    "format": "Q",
+    "coverage_group": "type_invalid_and_special",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"NaN\"),\"Q\");after=1;}}"
+  },
+  {
+    "name": "float_158",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "Infinity",
+    "format": "D",
+    "coverage_group": "type_invalid_and_special",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"Infinity\"),\"D\");after=1;}}"
+  },
+  {
+    "name": "float_159",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "Infinity",
+    "format": "X",
+    "coverage_group": "type_invalid_and_special",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"Infinity\"),\"X\");after=1;}}"
+  },
+  {
+    "name": "float_160",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "Infinity",
+    "format": "B",
+    "coverage_group": "type_invalid_and_special",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"Infinity\"),\"B\");after=1;}}"
+  },
+  {
+    "name": "float_161",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "Infinity",
+    "format": "Q",
+    "coverage_group": "type_invalid_and_special",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"Infinity\"),\"Q\");after=1;}}"
+  },
+  {
+    "name": "float_162",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-Infinity",
+    "format": "D",
+    "coverage_group": "type_invalid_and_special",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-Infinity\"),\"D\");after=1;}}"
+  },
+  {
+    "name": "float_163",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-Infinity",
+    "format": "X",
+    "coverage_group": "type_invalid_and_special",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-Infinity\"),\"X\");after=1;}}"
+  },
+  {
+    "name": "float_164",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-Infinity",
+    "format": "B",
+    "coverage_group": "type_invalid_and_special",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-Infinity\"),\"B\");after=1;}}"
+  },
+  {
+    "name": "float_165",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-Infinity",
+    "format": "Q",
+    "coverage_group": "type_invalid_and_special",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-Infinity\"),\"Q\");after=1;}}"
+  },
+  {
+    "name": "float_166",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1234.567",
+    "format": "0.00",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1234.567\"),\"0.00\");after=1;}}"
+  },
+  {
+    "name": "float_167",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1234.567",
+    "format": "#.##",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1234.567\"),\"#.##\");after=1;}}"
+  },
+  {
+    "name": "float_168",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1234.567",
+    "format": "0.00;(0.00);'zero'",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1234.567\"),\"0.00;(0.00);'zero'\");after=1;}}"
+  },
+  {
+    "name": "float_169",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1234.567",
+    "format": "+#,##0.0;-#,##0.0;ZERO",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1234.567\"),\"+#,##0.0;-#,##0.0;ZERO\");after=1;}}"
+  },
+  {
+    "name": "float_170",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1234.567",
+    "format": "0,",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1234.567\"),\"0,\");after=1;}}"
+  },
+  {
+    "name": "float_171",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1234.567",
+    "format": "0,,",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1234.567\"),\"0,,\");after=1;}}"
+  },
+  {
+    "name": "float_172",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1234.567",
+    "format": "#,##0.##",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1234.567\"),\"#,##0.##\");after=1;}}"
+  },
+  {
+    "name": "float_173",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1234.567",
+    "format": "0.0%",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1234.567\"),\"0.0%\");after=1;}}"
+  },
+  {
+    "name": "float_174",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1234.567",
+    "format": "0.0\u2030",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1234.567\"),\"0.0\u2030\");after=1;}}"
+  },
+  {
+    "name": "float_175",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1234.567",
+    "format": "0.00E+00",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1234.567\"),\"0.00E+00\");after=1;}}"
+  },
+  {
+    "name": "float_176",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1234.567",
+    "format": "0.00E-00",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1234.567\"),\"0.00E-00\");after=1;}}"
+  },
+  {
+    "name": "float_177",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1234.567",
+    "format": "0.00e+0",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1234.567\"),\"0.00e+0\");after=1;}}"
+  },
+  {
+    "name": "float_178",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1234.567",
+    "format": "'value='0.0",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1234.567\"),\"'value='0.0\");after=1;}}"
+  },
+  {
+    "name": "float_179",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1234.567",
+    "format": "0.0' units'",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1234.567\"),\"0.0' units'\");after=1;}}"
+  },
+  {
+    "name": "float_180",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1234.567",
+    "format": "\\#0",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1234.567\"),\"\\\\#0\");after=1;}}"
+  },
+  {
+    "name": "float_181",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1234.567",
+    "format": "0.00;[0.00];'zero'",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1234.567\"),\"0.00;[0.00];'zero'\");after=1;}}"
+  },
+  {
+    "name": "float_182",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1234.567",
+    "format": "00000",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1234.567\"),\"00000\");after=1;}}"
+  },
+  {
+    "name": "float_183",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1234.567",
+    "format": "0.##\u0000ignored",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1234.567\"),\"0.##\u0000ignored\");after=1;}}"
+  },
+  {
+    "name": "float_184",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-1234.567",
+    "format": "0.00",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-1234.567\"),\"0.00\");after=1;}}"
+  },
+  {
+    "name": "float_185",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-1234.567",
+    "format": "#.##",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-1234.567\"),\"#.##\");after=1;}}"
+  },
+  {
+    "name": "float_186",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-1234.567",
+    "format": "0.00;(0.00);'zero'",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-1234.567\"),\"0.00;(0.00);'zero'\");after=1;}}"
+  },
+  {
+    "name": "float_187",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-1234.567",
+    "format": "+#,##0.0;-#,##0.0;ZERO",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-1234.567\"),\"+#,##0.0;-#,##0.0;ZERO\");after=1;}}"
+  },
+  {
+    "name": "float_188",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-1234.567",
+    "format": "0,",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-1234.567\"),\"0,\");after=1;}}"
+  },
+  {
+    "name": "float_189",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-1234.567",
+    "format": "0,,",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-1234.567\"),\"0,,\");after=1;}}"
+  },
+  {
+    "name": "float_190",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-1234.567",
+    "format": "#,##0.##",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-1234.567\"),\"#,##0.##\");after=1;}}"
+  },
+  {
+    "name": "float_191",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-1234.567",
+    "format": "0.0%",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-1234.567\"),\"0.0%\");after=1;}}"
+  },
+  {
+    "name": "float_192",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-1234.567",
+    "format": "0.0\u2030",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-1234.567\"),\"0.0\u2030\");after=1;}}"
+  },
+  {
+    "name": "float_193",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-1234.567",
+    "format": "0.00E+00",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-1234.567\"),\"0.00E+00\");after=1;}}"
+  },
+  {
+    "name": "float_194",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-1234.567",
+    "format": "0.00E-00",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-1234.567\"),\"0.00E-00\");after=1;}}"
+  },
+  {
+    "name": "float_195",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-1234.567",
+    "format": "0.00e+0",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-1234.567\"),\"0.00e+0\");after=1;}}"
+  },
+  {
+    "name": "float_196",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-1234.567",
+    "format": "'value='0.0",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-1234.567\"),\"'value='0.0\");after=1;}}"
+  },
+  {
+    "name": "float_197",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-1234.567",
+    "format": "0.0' units'",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-1234.567\"),\"0.0' units'\");after=1;}}"
+  },
+  {
+    "name": "float_198",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-1234.567",
+    "format": "\\#0",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-1234.567\"),\"\\\\#0\");after=1;}}"
+  },
+  {
+    "name": "float_199",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-1234.567",
+    "format": "0.00;[0.00];'zero'",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-1234.567\"),\"0.00;[0.00];'zero'\");after=1;}}"
+  },
+  {
+    "name": "float_200",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-1234.567",
+    "format": "00000",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-1234.567\"),\"00000\");after=1;}}"
+  },
+  {
+    "name": "float_201",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-1234.567",
+    "format": "0.##\u0000ignored",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-1234.567\"),\"0.##\u0000ignored\");after=1;}}"
+  },
+  {
+    "name": "float_202",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0",
+    "format": "0.00",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0\"),\"0.00\");after=1;}}"
+  },
+  {
+    "name": "float_203",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0",
+    "format": "#.##",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0\"),\"#.##\");after=1;}}"
+  },
+  {
+    "name": "float_204",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0",
+    "format": "0.00;(0.00);'zero'",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0\"),\"0.00;(0.00);'zero'\");after=1;}}"
+  },
+  {
+    "name": "float_205",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0",
+    "format": "+#,##0.0;-#,##0.0;ZERO",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0\"),\"+#,##0.0;-#,##0.0;ZERO\");after=1;}}"
+  },
+  {
+    "name": "float_206",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0",
+    "format": "0,",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0\"),\"0,\");after=1;}}"
+  },
+  {
+    "name": "float_207",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0",
+    "format": "0,,",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0\"),\"0,,\");after=1;}}"
+  },
+  {
+    "name": "float_208",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0",
+    "format": "#,##0.##",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0\"),\"#,##0.##\");after=1;}}"
+  },
+  {
+    "name": "float_209",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0",
+    "format": "0.0%",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0\"),\"0.0%\");after=1;}}"
+  },
+  {
+    "name": "float_210",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0",
+    "format": "0.0\u2030",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0\"),\"0.0\u2030\");after=1;}}"
+  },
+  {
+    "name": "float_211",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0",
+    "format": "0.00E+00",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0\"),\"0.00E+00\");after=1;}}"
+  },
+  {
+    "name": "float_212",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0",
+    "format": "0.00E-00",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0\"),\"0.00E-00\");after=1;}}"
+  },
+  {
+    "name": "float_213",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0",
+    "format": "0.00e+0",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0\"),\"0.00e+0\");after=1;}}"
+  },
+  {
+    "name": "float_214",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0",
+    "format": "'value='0.0",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0\"),\"'value='0.0\");after=1;}}"
+  },
+  {
+    "name": "float_215",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0",
+    "format": "0.0' units'",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0\"),\"0.0' units'\");after=1;}}"
+  },
+  {
+    "name": "float_216",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0",
+    "format": "\\#0",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0\"),\"\\\\#0\");after=1;}}"
+  },
+  {
+    "name": "float_217",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0",
+    "format": "0.00;[0.00];'zero'",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0\"),\"0.00;[0.00];'zero'\");after=1;}}"
+  },
+  {
+    "name": "float_218",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0",
+    "format": "00000",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0\"),\"00000\");after=1;}}"
+  },
+  {
+    "name": "float_219",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0",
+    "format": "0.##\u0000ignored",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0\"),\"0.##\u0000ignored\");after=1;}}"
+  },
+  {
+    "name": "float_220",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-0",
+    "format": "0.00",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-0\"),\"0.00\");after=1;}}"
+  },
+  {
+    "name": "float_221",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-0",
+    "format": "#.##",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-0\"),\"#.##\");after=1;}}"
+  },
+  {
+    "name": "float_222",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-0",
+    "format": "0.00;(0.00);'zero'",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-0\"),\"0.00;(0.00);'zero'\");after=1;}}"
+  },
+  {
+    "name": "float_223",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-0",
+    "format": "+#,##0.0;-#,##0.0;ZERO",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-0\"),\"+#,##0.0;-#,##0.0;ZERO\");after=1;}}"
+  },
+  {
+    "name": "float_224",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-0",
+    "format": "0,",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-0\"),\"0,\");after=1;}}"
+  },
+  {
+    "name": "float_225",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-0",
+    "format": "0,,",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-0\"),\"0,,\");after=1;}}"
+  },
+  {
+    "name": "float_226",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-0",
+    "format": "#,##0.##",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-0\"),\"#,##0.##\");after=1;}}"
+  },
+  {
+    "name": "float_227",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-0",
+    "format": "0.0%",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-0\"),\"0.0%\");after=1;}}"
+  },
+  {
+    "name": "float_228",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-0",
+    "format": "0.0\u2030",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-0\"),\"0.0\u2030\");after=1;}}"
+  },
+  {
+    "name": "float_229",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-0",
+    "format": "0.00E+00",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-0\"),\"0.00E+00\");after=1;}}"
+  },
+  {
+    "name": "float_230",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-0",
+    "format": "0.00E-00",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-0\"),\"0.00E-00\");after=1;}}"
+  },
+  {
+    "name": "float_231",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-0",
+    "format": "0.00e+0",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-0\"),\"0.00e+0\");after=1;}}"
+  },
+  {
+    "name": "float_232",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-0",
+    "format": "'value='0.0",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-0\"),\"'value='0.0\");after=1;}}"
+  },
+  {
+    "name": "float_233",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-0",
+    "format": "0.0' units'",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-0\"),\"0.0' units'\");after=1;}}"
+  },
+  {
+    "name": "float_234",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-0",
+    "format": "\\#0",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-0\"),\"\\\\#0\");after=1;}}"
+  },
+  {
+    "name": "float_235",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-0",
+    "format": "0.00;[0.00];'zero'",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-0\"),\"0.00;[0.00];'zero'\");after=1;}}"
+  },
+  {
+    "name": "float_236",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-0",
+    "format": "00000",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-0\"),\"00000\");after=1;}}"
+  },
+  {
+    "name": "float_237",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "-0",
+    "format": "0.##\u0000ignored",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"-0\"),\"0.##\u0000ignored\");after=1;}}"
+  },
+  {
+    "name": "float_238",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0.125",
+    "format": "0.00",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0.125\"),\"0.00\");after=1;}}"
+  },
+  {
+    "name": "float_239",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0.125",
+    "format": "#.##",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0.125\"),\"#.##\");after=1;}}"
+  },
+  {
+    "name": "float_240",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0.125",
+    "format": "0.00;(0.00);'zero'",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0.125\"),\"0.00;(0.00);'zero'\");after=1;}}"
+  },
+  {
+    "name": "float_241",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0.125",
+    "format": "+#,##0.0;-#,##0.0;ZERO",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0.125\"),\"+#,##0.0;-#,##0.0;ZERO\");after=1;}}"
+  },
+  {
+    "name": "float_242",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0.125",
+    "format": "0,",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0.125\"),\"0,\");after=1;}}"
+  },
+  {
+    "name": "float_243",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0.125",
+    "format": "0,,",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0.125\"),\"0,,\");after=1;}}"
+  },
+  {
+    "name": "float_244",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0.125",
+    "format": "#,##0.##",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0.125\"),\"#,##0.##\");after=1;}}"
+  },
+  {
+    "name": "float_245",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0.125",
+    "format": "0.0%",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0.125\"),\"0.0%\");after=1;}}"
+  },
+  {
+    "name": "float_246",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0.125",
+    "format": "0.0\u2030",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0.125\"),\"0.0\u2030\");after=1;}}"
+  },
+  {
+    "name": "float_247",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0.125",
+    "format": "0.00E+00",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0.125\"),\"0.00E+00\");after=1;}}"
+  },
+  {
+    "name": "float_248",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0.125",
+    "format": "0.00E-00",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0.125\"),\"0.00E-00\");after=1;}}"
+  },
+  {
+    "name": "float_249",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0.125",
+    "format": "0.00e+0",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0.125\"),\"0.00e+0\");after=1;}}"
+  },
+  {
+    "name": "float_250",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0.125",
+    "format": "'value='0.0",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0.125\"),\"'value='0.0\");after=1;}}"
+  },
+  {
+    "name": "float_251",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0.125",
+    "format": "0.0' units'",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0.125\"),\"0.0' units'\");after=1;}}"
+  },
+  {
+    "name": "float_252",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0.125",
+    "format": "\\#0",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0.125\"),\"\\\\#0\");after=1;}}"
+  },
+  {
+    "name": "float_253",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0.125",
+    "format": "0.00;[0.00];'zero'",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0.125\"),\"0.00;[0.00];'zero'\");after=1;}}"
+  },
+  {
+    "name": "float_254",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0.125",
+    "format": "00000",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0.125\"),\"00000\");after=1;}}"
+  },
+  {
+    "name": "float_255",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "0.125",
+    "format": "0.##\u0000ignored",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"0.125\"),\"0.##\u0000ignored\");after=1;}}"
+  },
+  {
+    "name": "float_256",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "2.675",
+    "format": "0.00",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"2.675\"),\"0.00\");after=1;}}"
+  },
+  {
+    "name": "float_257",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "2.675",
+    "format": "#.##",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"2.675\"),\"#.##\");after=1;}}"
+  },
+  {
+    "name": "float_258",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "2.675",
+    "format": "0.00;(0.00);'zero'",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"2.675\"),\"0.00;(0.00);'zero'\");after=1;}}"
+  },
+  {
+    "name": "float_259",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "2.675",
+    "format": "+#,##0.0;-#,##0.0;ZERO",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"2.675\"),\"+#,##0.0;-#,##0.0;ZERO\");after=1;}}"
+  },
+  {
+    "name": "float_260",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "2.675",
+    "format": "0,",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"2.675\"),\"0,\");after=1;}}"
+  },
+  {
+    "name": "float_261",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "2.675",
+    "format": "0,,",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"2.675\"),\"0,,\");after=1;}}"
+  },
+  {
+    "name": "float_262",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "2.675",
+    "format": "#,##0.##",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"2.675\"),\"#,##0.##\");after=1;}}"
+  },
+  {
+    "name": "float_263",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "2.675",
+    "format": "0.0%",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"2.675\"),\"0.0%\");after=1;}}"
+  },
+  {
+    "name": "float_264",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "2.675",
+    "format": "0.0\u2030",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"2.675\"),\"0.0\u2030\");after=1;}}"
+  },
+  {
+    "name": "float_265",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "2.675",
+    "format": "0.00E+00",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"2.675\"),\"0.00E+00\");after=1;}}"
+  },
+  {
+    "name": "float_266",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "2.675",
+    "format": "0.00E-00",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"2.675\"),\"0.00E-00\");after=1;}}"
+  },
+  {
+    "name": "float_267",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "2.675",
+    "format": "0.00e+0",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"2.675\"),\"0.00e+0\");after=1;}}"
+  },
+  {
+    "name": "float_268",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "2.675",
+    "format": "'value='0.0",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"2.675\"),\"'value='0.0\");after=1;}}"
+  },
+  {
+    "name": "float_269",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "2.675",
+    "format": "0.0' units'",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"2.675\"),\"0.0' units'\");after=1;}}"
+  },
+  {
+    "name": "float_270",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "2.675",
+    "format": "\\#0",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"2.675\"),\"\\\\#0\");after=1;}}"
+  },
+  {
+    "name": "float_271",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "2.675",
+    "format": "0.00;[0.00];'zero'",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"2.675\"),\"0.00;[0.00];'zero'\");after=1;}}"
+  },
+  {
+    "name": "float_272",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "2.675",
+    "format": "00000",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"2.675\"),\"00000\");after=1;}}"
+  },
+  {
+    "name": "float_273",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "2.675",
+    "format": "0.##\u0000ignored",
+    "coverage_group": "float_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"2.675\"),\"0.##\u0000ignored\");after=1;}}"
+  },
+  {
+    "name": "integer_114",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1234567",
+    "format": "0.00",
+    "coverage_group": "integer_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1234567\"),\"0.00\");after=1;}}"
+  },
+  {
+    "name": "integer_115",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1234567",
+    "format": "#.##",
+    "coverage_group": "integer_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1234567\"),\"#.##\");after=1;}}"
+  },
+  {
+    "name": "integer_116",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1234567",
+    "format": "0.00;(0.00);'zero'",
+    "coverage_group": "integer_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1234567\"),\"0.00;(0.00);'zero'\");after=1;}}"
+  },
+  {
+    "name": "integer_117",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1234567",
+    "format": "+#,##0.0;-#,##0.0;ZERO",
+    "coverage_group": "integer_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1234567\"),\"+#,##0.0;-#,##0.0;ZERO\");after=1;}}"
+  },
+  {
+    "name": "integer_118",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1234567",
+    "format": "0,",
+    "coverage_group": "integer_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1234567\"),\"0,\");after=1;}}"
+  },
+  {
+    "name": "integer_119",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1234567",
+    "format": "0,,",
+    "coverage_group": "integer_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1234567\"),\"0,,\");after=1;}}"
+  },
+  {
+    "name": "integer_120",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1234567",
+    "format": "#,##0.##",
+    "coverage_group": "integer_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1234567\"),\"#,##0.##\");after=1;}}"
+  },
+  {
+    "name": "integer_121",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "1234567",
+    "format": "0.0%",
+    "coverage_group": "integer_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"1234567\"),\"0.0%\");after=1;}}"
+  },
+  {
+    "name": "integer_122",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-1234567",
+    "format": "0.00",
+    "coverage_group": "integer_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-1234567\"),\"0.00\");after=1;}}"
+  },
+  {
+    "name": "integer_123",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-1234567",
+    "format": "#.##",
+    "coverage_group": "integer_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-1234567\"),\"#.##\");after=1;}}"
+  },
+  {
+    "name": "integer_124",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-1234567",
+    "format": "0.00;(0.00);'zero'",
+    "coverage_group": "integer_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-1234567\"),\"0.00;(0.00);'zero'\");after=1;}}"
+  },
+  {
+    "name": "integer_125",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-1234567",
+    "format": "+#,##0.0;-#,##0.0;ZERO",
+    "coverage_group": "integer_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-1234567\"),\"+#,##0.0;-#,##0.0;ZERO\");after=1;}}"
+  },
+  {
+    "name": "integer_126",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-1234567",
+    "format": "0,",
+    "coverage_group": "integer_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-1234567\"),\"0,\");after=1;}}"
+  },
+  {
+    "name": "integer_127",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-1234567",
+    "format": "0,,",
+    "coverage_group": "integer_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-1234567\"),\"0,,\");after=1;}}"
+  },
+  {
+    "name": "integer_128",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-1234567",
+    "format": "#,##0.##",
+    "coverage_group": "integer_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-1234567\"),\"#,##0.##\");after=1;}}"
+  },
+  {
+    "name": "integer_129",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "-1234567",
+    "format": "0.0%",
+    "coverage_group": "integer_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"-1234567\"),\"0.0%\");after=1;}}"
+  },
+  {
+    "name": "integer_130",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "0",
+    "format": "0.00",
+    "coverage_group": "integer_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"0\"),\"0.00\");after=1;}}"
+  },
+  {
+    "name": "integer_131",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "0",
+    "format": "#.##",
+    "coverage_group": "integer_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"0\"),\"#.##\");after=1;}}"
+  },
+  {
+    "name": "integer_132",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "0",
+    "format": "0.00;(0.00);'zero'",
+    "coverage_group": "integer_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"0\"),\"0.00;(0.00);'zero'\");after=1;}}"
+  },
+  {
+    "name": "integer_133",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "0",
+    "format": "+#,##0.0;-#,##0.0;ZERO",
+    "coverage_group": "integer_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"0\"),\"+#,##0.0;-#,##0.0;ZERO\");after=1;}}"
+  },
+  {
+    "name": "integer_134",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "0",
+    "format": "0,",
+    "coverage_group": "integer_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"0\"),\"0,\");after=1;}}"
+  },
+  {
+    "name": "integer_135",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "0",
+    "format": "0,,",
+    "coverage_group": "integer_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"0\"),\"0,,\");after=1;}}"
+  },
+  {
+    "name": "integer_136",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "0",
+    "format": "#,##0.##",
+    "coverage_group": "integer_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"0\"),\"#,##0.##\");after=1;}}"
+  },
+  {
+    "name": "integer_137",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "0",
+    "format": "0.0%",
+    "coverage_group": "integer_custom",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"0\"),\"0.0%\");after=1;}}"
+  },
+  {
+    "name": "float_274",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.25",
+    "format": "F0",
+    "coverage_group": "precision_boundary_bounded",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.25\"),\"F0\");after=1;}}"
+  },
+  {
+    "name": "float_275",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.25",
+    "format": "F99",
+    "coverage_group": "precision_boundary_bounded",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.25\"),\"F99\");after=1;}}"
+  },
+  {
+    "name": "float_276",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.25",
+    "format": "F100",
+    "coverage_group": "precision_boundary_bounded",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.25\"),\"F100\");after=1;}}"
+  },
+  {
+    "name": "float_277",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.25",
+    "format": "F1000",
+    "coverage_group": "precision_boundary_bounded",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.25\"),\"F1000\");after=1;}}"
+  },
+  {
+    "name": "float_278",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.25",
+    "format": "G100",
+    "coverage_group": "precision_boundary_bounded",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.25\"),\"G100\");after=1;}}"
+  },
+  {
+    "name": "float_279",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.25",
+    "format": "E100",
+    "coverage_group": "precision_boundary_bounded",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.25\"),\"E100\");after=1;}}"
+  },
+  {
+    "name": "float_280",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.25",
+    "format": "F1000000000",
+    "coverage_group": "precision_boundary_bounded",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.25\"),\"F1000000000\");after=1;}}"
+  },
+  {
+    "name": "float_281",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.25",
+    "format": "F2147483647",
+    "coverage_group": "precision_boundary_bounded",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.25\"),\"F2147483647\");after=1;}}"
+  },
+  {
+    "name": "float_282",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.25",
+    "format": "F-1",
+    "coverage_group": "precision_boundary_bounded",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.25\"),\"F-1\");after=1;}}"
+  },
+  {
+    "name": "float_283",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.25",
+    "format": "F2\u0000Q",
+    "coverage_group": "precision_boundary_bounded",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.25\"),\"F2\u0000Q\");after=1;}}"
+  },
+  {
+    "name": "integer_138",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "123",
+    "format": "'\u00e9='0.0",
+    "coverage_group": "quoted_unicode",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"123\"),\"'\u00e9='0.0\");after=1;}}"
+  },
+  {
+    "name": "float_284",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.25",
+    "format": "'\u00e9='0.0",
+    "coverage_group": "quoted_unicode",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.25\"),\"'\u00e9='0.0\");after=1;}}"
+  },
+  {
+    "name": "integer_139",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "123",
+    "format": "'\ud83d\ude00'0.0",
+    "coverage_group": "quoted_unicode",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"123\"),\"'\ud83d\ude00'0.0\");after=1;}}"
+  },
+  {
+    "name": "float_285",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.25",
+    "format": "'\ud83d\ude00'0.0",
+    "coverage_group": "quoted_unicode",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.25\"),\"'\ud83d\ude00'0.0\");after=1;}}"
+  },
+  {
+    "name": "integer_140",
+    "kind": "Integer",
+    "method": "xmrInteger2String",
+    "value": "123",
+    "format": "0.0'\u2103'",
+    "coverage_group": "quoted_unicode",
+    "source": "string result;integer after;default{state_entry(){result=xmrInteger2String(xmrString2Integer(\"123\"),\"0.0'\u2103'\");after=1;}}"
+  },
+  {
+    "name": "float_286",
+    "kind": "Float",
+    "method": "xmrFloat2String",
+    "value": "1.25",
+    "format": "0.0'\u2103'",
+    "coverage_group": "quoted_unicode",
+    "source": "string result;integer after;default{state_entry(){result=xmrFloat2String(xmrString2Float(\"1.25\"),\"0.0'\u2103'\");after=1;}}"
+  },
+  {
+    "name": "vector_0",
+    "kind": "Vector",
+    "method": "xmrVector2String",
+    "value": [
+      "1.25",
+      "-0",
+      "1234.567"
+    ],
+    "format": "",
+    "coverage_group": "vector_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrVector2String(<xmrString2Float(\"1.25\"),xmrString2Float(\"-0\"),xmrString2Float(\"1234.567\")>,\"\");after=1;}}"
+  },
+  {
+    "name": "vector_1",
+    "kind": "Vector",
+    "method": "xmrVector2String",
+    "value": [
+      "1.25",
+      "-0",
+      "1234.567"
+    ],
+    "format": "G",
+    "coverage_group": "vector_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrVector2String(<xmrString2Float(\"1.25\"),xmrString2Float(\"-0\"),xmrString2Float(\"1234.567\")>,\"G\");after=1;}}"
+  },
+  {
+    "name": "vector_2",
+    "kind": "Vector",
+    "method": "xmrVector2String",
+    "value": [
+      "1.25",
+      "-0",
+      "1234.567"
+    ],
+    "format": "G17",
+    "coverage_group": "vector_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrVector2String(<xmrString2Float(\"1.25\"),xmrString2Float(\"-0\"),xmrString2Float(\"1234.567\")>,\"G17\");after=1;}}"
+  },
+  {
+    "name": "vector_3",
+    "kind": "Vector",
+    "method": "xmrVector2String",
+    "value": [
+      "1.25",
+      "-0",
+      "1234.567"
+    ],
+    "format": "R",
+    "coverage_group": "vector_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrVector2String(<xmrString2Float(\"1.25\"),xmrString2Float(\"-0\"),xmrString2Float(\"1234.567\")>,\"R\");after=1;}}"
+  },
+  {
+    "name": "vector_4",
+    "kind": "Vector",
+    "method": "xmrVector2String",
+    "value": [
+      "1.25",
+      "-0",
+      "1234.567"
+    ],
+    "format": "F2",
+    "coverage_group": "vector_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrVector2String(<xmrString2Float(\"1.25\"),xmrString2Float(\"-0\"),xmrString2Float(\"1234.567\")>,\"F2\");after=1;}}"
+  },
+  {
+    "name": "vector_5",
+    "kind": "Vector",
+    "method": "xmrVector2String",
+    "value": [
+      "1.25",
+      "-0",
+      "1234.567"
+    ],
+    "format": "N2",
+    "coverage_group": "vector_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrVector2String(<xmrString2Float(\"1.25\"),xmrString2Float(\"-0\"),xmrString2Float(\"1234.567\")>,\"N2\");after=1;}}"
+  },
+  {
+    "name": "vector_6",
+    "kind": "Vector",
+    "method": "xmrVector2String",
+    "value": [
+      "1.25",
+      "-0",
+      "1234.567"
+    ],
+    "format": "E3",
+    "coverage_group": "vector_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrVector2String(<xmrString2Float(\"1.25\"),xmrString2Float(\"-0\"),xmrString2Float(\"1234.567\")>,\"E3\");after=1;}}"
+  },
+  {
+    "name": "vector_7",
+    "kind": "Vector",
+    "method": "xmrVector2String",
+    "value": [
+      "1.25",
+      "-0",
+      "1234.567"
+    ],
+    "format": "0.00;[0.00];'zero'",
+    "coverage_group": "vector_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrVector2String(<xmrString2Float(\"1.25\"),xmrString2Float(\"-0\"),xmrString2Float(\"1234.567\")>,\"0.00;[0.00];'zero'\");after=1;}}"
+  },
+  {
+    "name": "vector_8",
+    "kind": "Vector",
+    "method": "xmrVector2String",
+    "value": [
+      "1.25",
+      "-0",
+      "1234.567"
+    ],
+    "format": "0.0%",
+    "coverage_group": "vector_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrVector2String(<xmrString2Float(\"1.25\"),xmrString2Float(\"-0\"),xmrString2Float(\"1234.567\")>,\"0.0%\");after=1;}}"
+  },
+  {
+    "name": "vector_9",
+    "kind": "Vector",
+    "method": "xmrVector2String",
+    "value": [
+      "1.25",
+      "-0",
+      "1234.567"
+    ],
+    "format": "Q",
+    "coverage_group": "vector_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrVector2String(<xmrString2Float(\"1.25\"),xmrString2Float(\"-0\"),xmrString2Float(\"1234.567\")>,\"Q\");after=1;}}"
+  },
+  {
+    "name": "vector_10",
+    "kind": "Vector",
+    "method": "xmrVector2String",
+    "value": [
+      "NaN",
+      "Infinity",
+      "-Infinity"
+    ],
+    "format": "",
+    "coverage_group": "vector_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrVector2String(<xmrString2Float(\"NaN\"),xmrString2Float(\"Infinity\"),xmrString2Float(\"-Infinity\")>,\"\");after=1;}}"
+  },
+  {
+    "name": "vector_11",
+    "kind": "Vector",
+    "method": "xmrVector2String",
+    "value": [
+      "NaN",
+      "Infinity",
+      "-Infinity"
+    ],
+    "format": "G",
+    "coverage_group": "vector_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrVector2String(<xmrString2Float(\"NaN\"),xmrString2Float(\"Infinity\"),xmrString2Float(\"-Infinity\")>,\"G\");after=1;}}"
+  },
+  {
+    "name": "vector_12",
+    "kind": "Vector",
+    "method": "xmrVector2String",
+    "value": [
+      "NaN",
+      "Infinity",
+      "-Infinity"
+    ],
+    "format": "G17",
+    "coverage_group": "vector_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrVector2String(<xmrString2Float(\"NaN\"),xmrString2Float(\"Infinity\"),xmrString2Float(\"-Infinity\")>,\"G17\");after=1;}}"
+  },
+  {
+    "name": "vector_13",
+    "kind": "Vector",
+    "method": "xmrVector2String",
+    "value": [
+      "NaN",
+      "Infinity",
+      "-Infinity"
+    ],
+    "format": "R",
+    "coverage_group": "vector_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrVector2String(<xmrString2Float(\"NaN\"),xmrString2Float(\"Infinity\"),xmrString2Float(\"-Infinity\")>,\"R\");after=1;}}"
+  },
+  {
+    "name": "vector_14",
+    "kind": "Vector",
+    "method": "xmrVector2String",
+    "value": [
+      "NaN",
+      "Infinity",
+      "-Infinity"
+    ],
+    "format": "F2",
+    "coverage_group": "vector_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrVector2String(<xmrString2Float(\"NaN\"),xmrString2Float(\"Infinity\"),xmrString2Float(\"-Infinity\")>,\"F2\");after=1;}}"
+  },
+  {
+    "name": "vector_15",
+    "kind": "Vector",
+    "method": "xmrVector2String",
+    "value": [
+      "NaN",
+      "Infinity",
+      "-Infinity"
+    ],
+    "format": "N2",
+    "coverage_group": "vector_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrVector2String(<xmrString2Float(\"NaN\"),xmrString2Float(\"Infinity\"),xmrString2Float(\"-Infinity\")>,\"N2\");after=1;}}"
+  },
+  {
+    "name": "vector_16",
+    "kind": "Vector",
+    "method": "xmrVector2String",
+    "value": [
+      "NaN",
+      "Infinity",
+      "-Infinity"
+    ],
+    "format": "E3",
+    "coverage_group": "vector_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrVector2String(<xmrString2Float(\"NaN\"),xmrString2Float(\"Infinity\"),xmrString2Float(\"-Infinity\")>,\"E3\");after=1;}}"
+  },
+  {
+    "name": "vector_17",
+    "kind": "Vector",
+    "method": "xmrVector2String",
+    "value": [
+      "NaN",
+      "Infinity",
+      "-Infinity"
+    ],
+    "format": "0.00;[0.00];'zero'",
+    "coverage_group": "vector_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrVector2String(<xmrString2Float(\"NaN\"),xmrString2Float(\"Infinity\"),xmrString2Float(\"-Infinity\")>,\"0.00;[0.00];'zero'\");after=1;}}"
+  },
+  {
+    "name": "vector_18",
+    "kind": "Vector",
+    "method": "xmrVector2String",
+    "value": [
+      "NaN",
+      "Infinity",
+      "-Infinity"
+    ],
+    "format": "0.0%",
+    "coverage_group": "vector_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrVector2String(<xmrString2Float(\"NaN\"),xmrString2Float(\"Infinity\"),xmrString2Float(\"-Infinity\")>,\"0.0%\");after=1;}}"
+  },
+  {
+    "name": "vector_19",
+    "kind": "Vector",
+    "method": "xmrVector2String",
+    "value": [
+      "NaN",
+      "Infinity",
+      "-Infinity"
+    ],
+    "format": "Q",
+    "coverage_group": "vector_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrVector2String(<xmrString2Float(\"NaN\"),xmrString2Float(\"Infinity\"),xmrString2Float(\"-Infinity\")>,\"Q\");after=1;}}"
+  },
+  {
+    "name": "vector_20",
+    "kind": "Vector",
+    "method": "xmrVector2String",
+    "value": [
+      "5e-324",
+      "1.7976931348623157E+308",
+      "2.675"
+    ],
+    "format": "",
+    "coverage_group": "vector_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrVector2String(<xmrString2Float(\"5e-324\"),xmrString2Float(\"1.7976931348623157E+308\"),xmrString2Float(\"2.675\")>,\"\");after=1;}}"
+  },
+  {
+    "name": "vector_21",
+    "kind": "Vector",
+    "method": "xmrVector2String",
+    "value": [
+      "5e-324",
+      "1.7976931348623157E+308",
+      "2.675"
+    ],
+    "format": "G",
+    "coverage_group": "vector_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrVector2String(<xmrString2Float(\"5e-324\"),xmrString2Float(\"1.7976931348623157E+308\"),xmrString2Float(\"2.675\")>,\"G\");after=1;}}"
+  },
+  {
+    "name": "vector_22",
+    "kind": "Vector",
+    "method": "xmrVector2String",
+    "value": [
+      "5e-324",
+      "1.7976931348623157E+308",
+      "2.675"
+    ],
+    "format": "G17",
+    "coverage_group": "vector_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrVector2String(<xmrString2Float(\"5e-324\"),xmrString2Float(\"1.7976931348623157E+308\"),xmrString2Float(\"2.675\")>,\"G17\");after=1;}}"
+  },
+  {
+    "name": "vector_23",
+    "kind": "Vector",
+    "method": "xmrVector2String",
+    "value": [
+      "5e-324",
+      "1.7976931348623157E+308",
+      "2.675"
+    ],
+    "format": "R",
+    "coverage_group": "vector_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrVector2String(<xmrString2Float(\"5e-324\"),xmrString2Float(\"1.7976931348623157E+308\"),xmrString2Float(\"2.675\")>,\"R\");after=1;}}"
+  },
+  {
+    "name": "vector_24",
+    "kind": "Vector",
+    "method": "xmrVector2String",
+    "value": [
+      "5e-324",
+      "1.7976931348623157E+308",
+      "2.675"
+    ],
+    "format": "F2",
+    "coverage_group": "vector_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrVector2String(<xmrString2Float(\"5e-324\"),xmrString2Float(\"1.7976931348623157E+308\"),xmrString2Float(\"2.675\")>,\"F2\");after=1;}}"
+  },
+  {
+    "name": "vector_25",
+    "kind": "Vector",
+    "method": "xmrVector2String",
+    "value": [
+      "5e-324",
+      "1.7976931348623157E+308",
+      "2.675"
+    ],
+    "format": "N2",
+    "coverage_group": "vector_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrVector2String(<xmrString2Float(\"5e-324\"),xmrString2Float(\"1.7976931348623157E+308\"),xmrString2Float(\"2.675\")>,\"N2\");after=1;}}"
+  },
+  {
+    "name": "vector_26",
+    "kind": "Vector",
+    "method": "xmrVector2String",
+    "value": [
+      "5e-324",
+      "1.7976931348623157E+308",
+      "2.675"
+    ],
+    "format": "E3",
+    "coverage_group": "vector_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrVector2String(<xmrString2Float(\"5e-324\"),xmrString2Float(\"1.7976931348623157E+308\"),xmrString2Float(\"2.675\")>,\"E3\");after=1;}}"
+  },
+  {
+    "name": "vector_27",
+    "kind": "Vector",
+    "method": "xmrVector2String",
+    "value": [
+      "5e-324",
+      "1.7976931348623157E+308",
+      "2.675"
+    ],
+    "format": "0.00;[0.00];'zero'",
+    "coverage_group": "vector_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrVector2String(<xmrString2Float(\"5e-324\"),xmrString2Float(\"1.7976931348623157E+308\"),xmrString2Float(\"2.675\")>,\"0.00;[0.00];'zero'\");after=1;}}"
+  },
+  {
+    "name": "vector_28",
+    "kind": "Vector",
+    "method": "xmrVector2String",
+    "value": [
+      "5e-324",
+      "1.7976931348623157E+308",
+      "2.675"
+    ],
+    "format": "0.0%",
+    "coverage_group": "vector_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrVector2String(<xmrString2Float(\"5e-324\"),xmrString2Float(\"1.7976931348623157E+308\"),xmrString2Float(\"2.675\")>,\"0.0%\");after=1;}}"
+  },
+  {
+    "name": "vector_29",
+    "kind": "Vector",
+    "method": "xmrVector2String",
+    "value": [
+      "5e-324",
+      "1.7976931348623157E+308",
+      "2.675"
+    ],
+    "format": "Q",
+    "coverage_group": "vector_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrVector2String(<xmrString2Float(\"5e-324\"),xmrString2Float(\"1.7976931348623157E+308\"),xmrString2Float(\"2.675\")>,\"Q\");after=1;}}"
+  },
+  {
+    "name": "rotation_0",
+    "kind": "Rotation",
+    "method": "xmrRotation2String",
+    "value": [
+      "0",
+      "0",
+      "0",
+      "1"
+    ],
+    "format": "",
+    "coverage_group": "rotation_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrRotation2String(<xmrString2Float(\"0\"),xmrString2Float(\"0\"),xmrString2Float(\"0\"),xmrString2Float(\"1\")>,\"\");after=1;}}"
+  },
+  {
+    "name": "rotation_1",
+    "kind": "Rotation",
+    "method": "xmrRotation2String",
+    "value": [
+      "0",
+      "0",
+      "0",
+      "1"
+    ],
+    "format": "G",
+    "coverage_group": "rotation_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrRotation2String(<xmrString2Float(\"0\"),xmrString2Float(\"0\"),xmrString2Float(\"0\"),xmrString2Float(\"1\")>,\"G\");after=1;}}"
+  },
+  {
+    "name": "rotation_2",
+    "kind": "Rotation",
+    "method": "xmrRotation2String",
+    "value": [
+      "0",
+      "0",
+      "0",
+      "1"
+    ],
+    "format": "G17",
+    "coverage_group": "rotation_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrRotation2String(<xmrString2Float(\"0\"),xmrString2Float(\"0\"),xmrString2Float(\"0\"),xmrString2Float(\"1\")>,\"G17\");after=1;}}"
+  },
+  {
+    "name": "rotation_3",
+    "kind": "Rotation",
+    "method": "xmrRotation2String",
+    "value": [
+      "0",
+      "0",
+      "0",
+      "1"
+    ],
+    "format": "R",
+    "coverage_group": "rotation_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrRotation2String(<xmrString2Float(\"0\"),xmrString2Float(\"0\"),xmrString2Float(\"0\"),xmrString2Float(\"1\")>,\"R\");after=1;}}"
+  },
+  {
+    "name": "rotation_4",
+    "kind": "Rotation",
+    "method": "xmrRotation2String",
+    "value": [
+      "0",
+      "0",
+      "0",
+      "1"
+    ],
+    "format": "F2",
+    "coverage_group": "rotation_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrRotation2String(<xmrString2Float(\"0\"),xmrString2Float(\"0\"),xmrString2Float(\"0\"),xmrString2Float(\"1\")>,\"F2\");after=1;}}"
+  },
+  {
+    "name": "rotation_5",
+    "kind": "Rotation",
+    "method": "xmrRotation2String",
+    "value": [
+      "0",
+      "0",
+      "0",
+      "1"
+    ],
+    "format": "N2",
+    "coverage_group": "rotation_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrRotation2String(<xmrString2Float(\"0\"),xmrString2Float(\"0\"),xmrString2Float(\"0\"),xmrString2Float(\"1\")>,\"N2\");after=1;}}"
+  },
+  {
+    "name": "rotation_6",
+    "kind": "Rotation",
+    "method": "xmrRotation2String",
+    "value": [
+      "0",
+      "0",
+      "0",
+      "1"
+    ],
+    "format": "E3",
+    "coverage_group": "rotation_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrRotation2String(<xmrString2Float(\"0\"),xmrString2Float(\"0\"),xmrString2Float(\"0\"),xmrString2Float(\"1\")>,\"E3\");after=1;}}"
+  },
+  {
+    "name": "rotation_7",
+    "kind": "Rotation",
+    "method": "xmrRotation2String",
+    "value": [
+      "0",
+      "0",
+      "0",
+      "1"
+    ],
+    "format": "0.00;[0.00];'zero'",
+    "coverage_group": "rotation_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrRotation2String(<xmrString2Float(\"0\"),xmrString2Float(\"0\"),xmrString2Float(\"0\"),xmrString2Float(\"1\")>,\"0.00;[0.00];'zero'\");after=1;}}"
+  },
+  {
+    "name": "rotation_8",
+    "kind": "Rotation",
+    "method": "xmrRotation2String",
+    "value": [
+      "0",
+      "0",
+      "0",
+      "1"
+    ],
+    "format": "0.0%",
+    "coverage_group": "rotation_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrRotation2String(<xmrString2Float(\"0\"),xmrString2Float(\"0\"),xmrString2Float(\"0\"),xmrString2Float(\"1\")>,\"0.0%\");after=1;}}"
+  },
+  {
+    "name": "rotation_9",
+    "kind": "Rotation",
+    "method": "xmrRotation2String",
+    "value": [
+      "0",
+      "0",
+      "0",
+      "1"
+    ],
+    "format": "Q",
+    "coverage_group": "rotation_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrRotation2String(<xmrString2Float(\"0\"),xmrString2Float(\"0\"),xmrString2Float(\"0\"),xmrString2Float(\"1\")>,\"Q\");after=1;}}"
+  },
+  {
+    "name": "rotation_10",
+    "kind": "Rotation",
+    "method": "xmrRotation2String",
+    "value": [
+      "-0",
+      "1.005",
+      "2.675",
+      "1234"
+    ],
+    "format": "",
+    "coverage_group": "rotation_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrRotation2String(<xmrString2Float(\"-0\"),xmrString2Float(\"1.005\"),xmrString2Float(\"2.675\"),xmrString2Float(\"1234\")>,\"\");after=1;}}"
+  },
+  {
+    "name": "rotation_11",
+    "kind": "Rotation",
+    "method": "xmrRotation2String",
+    "value": [
+      "-0",
+      "1.005",
+      "2.675",
+      "1234"
+    ],
+    "format": "G",
+    "coverage_group": "rotation_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrRotation2String(<xmrString2Float(\"-0\"),xmrString2Float(\"1.005\"),xmrString2Float(\"2.675\"),xmrString2Float(\"1234\")>,\"G\");after=1;}}"
+  },
+  {
+    "name": "rotation_12",
+    "kind": "Rotation",
+    "method": "xmrRotation2String",
+    "value": [
+      "-0",
+      "1.005",
+      "2.675",
+      "1234"
+    ],
+    "format": "G17",
+    "coverage_group": "rotation_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrRotation2String(<xmrString2Float(\"-0\"),xmrString2Float(\"1.005\"),xmrString2Float(\"2.675\"),xmrString2Float(\"1234\")>,\"G17\");after=1;}}"
+  },
+  {
+    "name": "rotation_13",
+    "kind": "Rotation",
+    "method": "xmrRotation2String",
+    "value": [
+      "-0",
+      "1.005",
+      "2.675",
+      "1234"
+    ],
+    "format": "R",
+    "coverage_group": "rotation_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrRotation2String(<xmrString2Float(\"-0\"),xmrString2Float(\"1.005\"),xmrString2Float(\"2.675\"),xmrString2Float(\"1234\")>,\"R\");after=1;}}"
+  },
+  {
+    "name": "rotation_14",
+    "kind": "Rotation",
+    "method": "xmrRotation2String",
+    "value": [
+      "-0",
+      "1.005",
+      "2.675",
+      "1234"
+    ],
+    "format": "F2",
+    "coverage_group": "rotation_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrRotation2String(<xmrString2Float(\"-0\"),xmrString2Float(\"1.005\"),xmrString2Float(\"2.675\"),xmrString2Float(\"1234\")>,\"F2\");after=1;}}"
+  },
+  {
+    "name": "rotation_15",
+    "kind": "Rotation",
+    "method": "xmrRotation2String",
+    "value": [
+      "-0",
+      "1.005",
+      "2.675",
+      "1234"
+    ],
+    "format": "N2",
+    "coverage_group": "rotation_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrRotation2String(<xmrString2Float(\"-0\"),xmrString2Float(\"1.005\"),xmrString2Float(\"2.675\"),xmrString2Float(\"1234\")>,\"N2\");after=1;}}"
+  },
+  {
+    "name": "rotation_16",
+    "kind": "Rotation",
+    "method": "xmrRotation2String",
+    "value": [
+      "-0",
+      "1.005",
+      "2.675",
+      "1234"
+    ],
+    "format": "E3",
+    "coverage_group": "rotation_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrRotation2String(<xmrString2Float(\"-0\"),xmrString2Float(\"1.005\"),xmrString2Float(\"2.675\"),xmrString2Float(\"1234\")>,\"E3\");after=1;}}"
+  },
+  {
+    "name": "rotation_17",
+    "kind": "Rotation",
+    "method": "xmrRotation2String",
+    "value": [
+      "-0",
+      "1.005",
+      "2.675",
+      "1234"
+    ],
+    "format": "0.00;[0.00];'zero'",
+    "coverage_group": "rotation_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrRotation2String(<xmrString2Float(\"-0\"),xmrString2Float(\"1.005\"),xmrString2Float(\"2.675\"),xmrString2Float(\"1234\")>,\"0.00;[0.00];'zero'\");after=1;}}"
+  },
+  {
+    "name": "rotation_18",
+    "kind": "Rotation",
+    "method": "xmrRotation2String",
+    "value": [
+      "-0",
+      "1.005",
+      "2.675",
+      "1234"
+    ],
+    "format": "0.0%",
+    "coverage_group": "rotation_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrRotation2String(<xmrString2Float(\"-0\"),xmrString2Float(\"1.005\"),xmrString2Float(\"2.675\"),xmrString2Float(\"1234\")>,\"0.0%\");after=1;}}"
+  },
+  {
+    "name": "rotation_19",
+    "kind": "Rotation",
+    "method": "xmrRotation2String",
+    "value": [
+      "-0",
+      "1.005",
+      "2.675",
+      "1234"
+    ],
+    "format": "Q",
+    "coverage_group": "rotation_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrRotation2String(<xmrString2Float(\"-0\"),xmrString2Float(\"1.005\"),xmrString2Float(\"2.675\"),xmrString2Float(\"1234\")>,\"Q\");after=1;}}"
+  },
+  {
+    "name": "rotation_20",
+    "kind": "Rotation",
+    "method": "xmrRotation2String",
+    "value": [
+      "NaN",
+      "Infinity",
+      "-Infinity",
+      "5e-324"
+    ],
+    "format": "",
+    "coverage_group": "rotation_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrRotation2String(<xmrString2Float(\"NaN\"),xmrString2Float(\"Infinity\"),xmrString2Float(\"-Infinity\"),xmrString2Float(\"5e-324\")>,\"\");after=1;}}"
+  },
+  {
+    "name": "rotation_21",
+    "kind": "Rotation",
+    "method": "xmrRotation2String",
+    "value": [
+      "NaN",
+      "Infinity",
+      "-Infinity",
+      "5e-324"
+    ],
+    "format": "G",
+    "coverage_group": "rotation_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrRotation2String(<xmrString2Float(\"NaN\"),xmrString2Float(\"Infinity\"),xmrString2Float(\"-Infinity\"),xmrString2Float(\"5e-324\")>,\"G\");after=1;}}"
+  },
+  {
+    "name": "rotation_22",
+    "kind": "Rotation",
+    "method": "xmrRotation2String",
+    "value": [
+      "NaN",
+      "Infinity",
+      "-Infinity",
+      "5e-324"
+    ],
+    "format": "G17",
+    "coverage_group": "rotation_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrRotation2String(<xmrString2Float(\"NaN\"),xmrString2Float(\"Infinity\"),xmrString2Float(\"-Infinity\"),xmrString2Float(\"5e-324\")>,\"G17\");after=1;}}"
+  },
+  {
+    "name": "rotation_23",
+    "kind": "Rotation",
+    "method": "xmrRotation2String",
+    "value": [
+      "NaN",
+      "Infinity",
+      "-Infinity",
+      "5e-324"
+    ],
+    "format": "R",
+    "coverage_group": "rotation_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrRotation2String(<xmrString2Float(\"NaN\"),xmrString2Float(\"Infinity\"),xmrString2Float(\"-Infinity\"),xmrString2Float(\"5e-324\")>,\"R\");after=1;}}"
+  },
+  {
+    "name": "rotation_24",
+    "kind": "Rotation",
+    "method": "xmrRotation2String",
+    "value": [
+      "NaN",
+      "Infinity",
+      "-Infinity",
+      "5e-324"
+    ],
+    "format": "F2",
+    "coverage_group": "rotation_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrRotation2String(<xmrString2Float(\"NaN\"),xmrString2Float(\"Infinity\"),xmrString2Float(\"-Infinity\"),xmrString2Float(\"5e-324\")>,\"F2\");after=1;}}"
+  },
+  {
+    "name": "rotation_25",
+    "kind": "Rotation",
+    "method": "xmrRotation2String",
+    "value": [
+      "NaN",
+      "Infinity",
+      "-Infinity",
+      "5e-324"
+    ],
+    "format": "N2",
+    "coverage_group": "rotation_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrRotation2String(<xmrString2Float(\"NaN\"),xmrString2Float(\"Infinity\"),xmrString2Float(\"-Infinity\"),xmrString2Float(\"5e-324\")>,\"N2\");after=1;}}"
+  },
+  {
+    "name": "rotation_26",
+    "kind": "Rotation",
+    "method": "xmrRotation2String",
+    "value": [
+      "NaN",
+      "Infinity",
+      "-Infinity",
+      "5e-324"
+    ],
+    "format": "E3",
+    "coverage_group": "rotation_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrRotation2String(<xmrString2Float(\"NaN\"),xmrString2Float(\"Infinity\"),xmrString2Float(\"-Infinity\"),xmrString2Float(\"5e-324\")>,\"E3\");after=1;}}"
+  },
+  {
+    "name": "rotation_27",
+    "kind": "Rotation",
+    "method": "xmrRotation2String",
+    "value": [
+      "NaN",
+      "Infinity",
+      "-Infinity",
+      "5e-324"
+    ],
+    "format": "0.00;[0.00];'zero'",
+    "coverage_group": "rotation_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrRotation2String(<xmrString2Float(\"NaN\"),xmrString2Float(\"Infinity\"),xmrString2Float(\"-Infinity\"),xmrString2Float(\"5e-324\")>,\"0.00;[0.00];'zero'\");after=1;}}"
+  },
+  {
+    "name": "rotation_28",
+    "kind": "Rotation",
+    "method": "xmrRotation2String",
+    "value": [
+      "NaN",
+      "Infinity",
+      "-Infinity",
+      "5e-324"
+    ],
+    "format": "0.0%",
+    "coverage_group": "rotation_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrRotation2String(<xmrString2Float(\"NaN\"),xmrString2Float(\"Infinity\"),xmrString2Float(\"-Infinity\"),xmrString2Float(\"5e-324\")>,\"0.0%\");after=1;}}"
+  },
+  {
+    "name": "rotation_29",
+    "kind": "Rotation",
+    "method": "xmrRotation2String",
+    "value": [
+      "NaN",
+      "Infinity",
+      "-Infinity",
+      "5e-324"
+    ],
+    "format": "Q",
+    "coverage_group": "rotation_components",
+    "source": "string result;integer after;default{state_entry(){result=xmrRotation2String(<xmrString2Float(\"NaN\"),xmrString2Float(\"Infinity\"),xmrString2Float(\"-Infinity\"),xmrString2Float(\"5e-324\")>,\"Q\");after=1;}}"
+  },
+  {
+    "name": "argument_order",
+    "kind": "Source",
+    "method": "xmrFloat2String",
+    "value": "1.25",
+    "format": "F2",
+    "coverage_group": "argument_order",
+    "source": "integer order;string result;float value(){order=order*10+1;return 1.25;}string format(){order=order*10+2;return \"F2\";}default{state_entry(){result=xmrFloat2String(value(),format());}}"
+  }
+]

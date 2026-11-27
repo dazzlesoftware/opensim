@@ -31,45 +31,55 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdexcept>
 using namespace opensim::services;
 using opensim::framework::Uuid;
+
 namespace {
 int failures = 0;
-void check(bool value, const char* name) {
+
+void check(bool value, const char *name) {
     if (!value) {
         ++failures;
         std::cerr << "FAIL: " << name << '\n';
     }
 }
+
 class FaultStore : public PresenceStore {
   public:
     NullPresenceStore backing;
     bool store_result = false, report_throws = false, get_throws = false;
-    bool store(const std::shared_ptr<PresenceData>& data) override {
+
+    bool store(const std::shared_ptr<PresenceData> &data) override {
         return store_result ? backing.store(data) : false;
     }
-    std::shared_ptr<PresenceData> get(const Uuid& session) override {
+
+    std::shared_ptr<PresenceData> get(const Uuid &session) override {
         if (get_throws)
             throw std::runtime_error("get failed");
         return backing.get(session);
     }
-    std::vector<std::shared_ptr<PresenceData>> get(const std::string& field,
-                                                   const std::string& value) override {
+
+    std::vector<std::shared_ptr<PresenceData>> get(const std::string &field, const std::string &value) override {
         return backing.get(field, value);
     }
-    bool erase(const std::string& field, const std::string& value) override {
+
+    bool erase(const std::string &field, const std::string &value) override {
         return backing.erase(field, value);
     }
-    void logout_region(const Uuid& region) override {
+
+    void logout_region(const Uuid &region) override {
         backing.logout_region(region);
     }
-    bool report(const Uuid& session, const Uuid& region) override {
+
+    bool report(const Uuid &session, const Uuid &region) override {
         if (report_throws)
             throw std::runtime_error("report failed");
         return backing.report(session, region);
     }
-    bool verify(const Uuid& agent, const Uuid& session) override {
+
+    bool verify(const Uuid &agent, const Uuid &session) override {
         return backing.verify(agent, session);
     }
 };
+
 void tests() {
     double now = 0;
     auto cache = std::make_shared<PresenceCache>([&] { return now; });
@@ -77,21 +87,19 @@ void tests() {
     PresenceService service(store, false, cache);
     const auto session = Uuid::random(), secure = Uuid::random(), region = Uuid::random();
     const auto user = Uuid::random().str();
-    check(service.login(user, session, secure) && !store.backing.get(session) &&
-              service.agent(session).has_value(),
+    check(service.login(user, session, secure) && !store.backing.get(session) && service.agent(session).has_value(),
           "login preserves source success/cache behavior when Store returns false");
     store.report_throws = true;
     check(!service.report(session, region) && service.agent(session).has_value(),
           "report exception returns false and retains cached record");
     store.report_throws = false;
-    check(!service.report(session, region) && !service.agent(session),
-          "failed report evicts phantom cached presence");
+    check(!service.report(session, region) && !service.agent(session), "failed report evicts phantom cached presence");
     store.get_throws = true;
     check(!service.report(session, region), "report catches provider lookup exception");
     bool propagated = false;
     try {
         service.agent(session);
-    } catch (const std::runtime_error&) {
+    } catch (const std::runtime_error &) {
         propagated = true;
     }
     check(propagated, "GetAgent propagates provider lookup failure like source");
@@ -121,11 +129,12 @@ void tests() {
     check(std::chrono::steady_clock::now() - before < std::chrono::seconds(1),
           "background cache worker joins promptly with live entries");
 }
-}
+} // namespace
+
 int main() {
     try {
         tests();
-    } catch (const std::exception& error) {
+    } catch (const std::exception &error) {
         std::cerr << error.what() << '\n';
         return 1;
     }

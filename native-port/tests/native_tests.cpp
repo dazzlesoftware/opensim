@@ -46,22 +46,26 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using namespace opensim::framework;
 using namespace opensim::network;
+
 namespace {
 int failures = 0;
-void check(bool condition, const char* description) {
+
+void check(bool condition, const char *description) {
     if (!condition) {
         std::cerr << "FAIL: " << description << '\n';
         ++failures;
     }
 }
-template <class F> bool throws(F&& action) {
+
+template <class F> bool throws(F &&action) {
     try {
         action();
-    } catch (const std::exception&) {
+    } catch (const std::exception &) {
         return true;
     }
     return false;
 }
+
 void crc_tests() {
     const std::array<std::uint8_t, 9> digits{'1', '2', '3', '4', '5', '6', '7', '8', '9'};
     check(Crc32::compute(digits) == 0xcbf43926u, "CRC32 published check vector");
@@ -72,25 +76,21 @@ void crc_tests() {
     incremental.update(std::span(digits).first(4));
     incremental.update(std::span(digits).subspan(4));
     check(incremental.value() == Crc32::compute(digits), "CRC32 segmented hashing");
-    check(incremental.hash_final() == std::array<std::uint8_t, 4>{0xcb, 0xf4, 0x39, 0x26},
-          "CRC32 big endian digest");
+    check(incremental.hash_final() == std::array<std::uint8_t, 4>{0xcb, 0xf4, 0x39, 0x26}, "CRC32 big endian digest");
     incremental.initialize();
     check(incremental.value() == 0, "CRC32 reset");
     incremental.hash_core(digits, 2, 4);
     check(incremental.value() == Crc32::compute(std::span(digits).subspan(2, 2)),
           "CRC32 source nonzero-offset behavior retained");
-    check(throws([&] {
-              incremental.hash_core(digits, 0, 10);
-          }),
-          "CRC32 rejects out of bounds access");
+    check(throws([&] { incremental.hash_core(digits, 0, 10); }), "CRC32 rejects out of bounds access");
 }
+
 void permission_tests() {
     auto target = 0xffffffffu;
     PermissionsUtil::apply_folded_permissions(1, target);
     check((target & bits(PermissionMask::UnfoldedMask)) == bits(PermissionMask::Transfer),
           "folded transfer restriction");
-    check((target & ~bits(PermissionMask::UnfoldedMask)) ==
-              (0xffffffffu & ~bits(PermissionMask::UnfoldedMask)),
+    check((target & ~bits(PermissionMask::UnfoldedMask)) == (0xffffffffu & ~bits(PermissionMask::UnfoldedMask)),
           "folded restriction preserves unrelated bits");
     target = 0xffffffffu;
     PermissionsUtil::apply_no_mod_folded_permissions(1, target);
@@ -106,20 +106,18 @@ void permission_tests() {
         check((fixed & bits(PermissionMask::Move)) != 0, "fixed permissions allow move");
         check((fixed & (bits(PermissionMask::Copy) | bits(PermissionMask::Transfer))) != 0,
               "fixed permissions obey copy-transfer rule");
-        check(PermissionsUtil::fix_and_fold_permissions(fixed) == fixed,
-              "permission normalization idempotent");
+        check(PermissionsUtil::fix_and_fold_permissions(fixed) == fixed, "permission normalization idempotent");
     }
     check(PermissionsUtil::permissions_to_string(0) == ".", "empty permissions display");
     check(PermissionsUtil::permissions_to_string(0xffffffffu) == "MCTX", "permission display ordering");
-    check(
-        PermissionsUtil::log_permissions("object", "transfer", 0, 0x8e000, 0x2000) ==
-            "Permissions of \"object\" at \"transfer\": Base . (0000), Current MCT (8E000), NextOwner T (2000)",
-        "permission log compatibility");
+    check(PermissionsUtil::log_permissions("object", "transfer", 0, 0x8e000, 0x2000) ==
+              "Permissions of \"object\" at \"transfer\": Base . (0000), Current MCT (8E000), NextOwner T (2000)",
+          "permission log compatibility");
 }
+
 void prime_tests() {
     check(PrimeNumberHelper::get_prime(7919) == 8419, "existing GetPrime regression");
-    check(PrimeNumberHelper::get_prime(std::numeric_limits<std::int32_t>::max() - 1) == -1,
-          "prime upper boundary");
+    check(PrimeNumberHelper::get_prime(std::numeric_limits<std::int32_t>::max() - 1) == -1, "prime upper boundary");
     check(PrimeNumberHelper::get_prime(3) == 3, "source GetPrime(3) retained");
     check(PrimeNumberHelper::is_prime(1), "source IsPrime(1) retained");
     check(PrimeNumberHelper::is_prime(9), "source sqrt boundary retained");
@@ -127,11 +125,10 @@ void prime_tests() {
     check(!PrimeNumberHelper::is_prime(27), "divisible odd candidate rejected");
     check(PrimeNumberHelper::get_prime(-100) == 2, "negative minimum");
 }
+
 void bucket_tests() {
     double now = 100;
-    auto clock = [&now] {
-        return now;
-    };
+    auto clock = [&now] { return now; };
     TokenBucket root(nullptr, 6000, 10000, clock);
     TokenBucket a(&root, 3000, 3000, clock), b(&root, 5000, 5000, clock);
     check(root.total_drip_request() == 8000, "child request aggregation");
@@ -153,10 +150,7 @@ void bucket_tests() {
     check(a.get_cat_bytes_can_send(20) == 10, "category rate conversion");
     a.requested_burst(-1);
     check(a.requested_burst() == 0, "negative burst clamp");
-    check(throws([&] {
-              root.parent(&a);
-          }),
-          "native cycle guard");
+    check(throws([&] { root.parent(&a); }), "native cycle guard");
 
     AdaptiveTokenBucket adaptive(nullptr, 200000, 7500, true, clock);
     check(adaptive.adjusted_drip_rate() == 100000, "adaptive initial rate");
@@ -186,15 +180,13 @@ void bucket_tests() {
     child.reset();
     old_parent.reset();
 }
+
 void circular_buffer_tests() {
     CircularBuffer<int> buffer(3);
     buffer.put(1);
     buffer.put(2);
     buffer.put(3);
-    check(throws([&] {
-              buffer.put(4);
-          }),
-          "bounded buffer overflow");
+    check(throws([&] { buffer.put(4); }), "bounded buffer overflow");
     check(buffer.get() == 1, "buffer head read");
     buffer.put(4);
     check(buffer.to_array() == std::vector<int>{2, 3, 4}, "buffer wrap order");
@@ -204,14 +196,8 @@ void circular_buffer_tests() {
     check(enumerated == buffer.to_array(), "buffer enumeration order");
     check(buffer.remove(999) && buffer.get() == 3, "collection removal ignores supplied item");
     check(buffer.get(3) == std::vector<int>{4, 0, 0}, "bulk read pads unfilled result with default values");
-    check(throws([&] {
-              buffer.get();
-          }),
-          "empty buffer read");
-    check(throws([&] {
-              buffer.capacity(-1);
-          }),
-          "negative capacity");
+    check(throws([&] { buffer.get(); }), "empty buffer read");
+    check(throws([&] { buffer.capacity(-1); }), "negative capacity");
     CircularBuffer<int> overflow(2, true);
     overflow.put(1);
     overflow.put(2);
@@ -234,10 +220,7 @@ void circular_buffer_tests() {
     copied.capacity(5);
     check(copied.to_array() == std::vector<int>{3, 0}, "source resize retains head index");
     CircularBuffer<int> zero(0);
-    check(throws([&] {
-              zero.put(1);
-          }),
-          "zero capacity bounded write");
+    check(throws([&] { zero.put(1); }), "zero capacity bounded write");
     check(!zero.is_synchronized() && !zero.is_read_only(), "collection metadata");
     CircularBuffer<bool> booleans(3);
     const std::array<bool, 3> boolean_values{true, false, true};
@@ -252,19 +235,17 @@ void circular_buffer_tests() {
     CircularBuffer<std::shared_ptr<int>> references(2);
     references.put(std::make_shared<int>(7));
     references.put(std::shared_ptr<int>{});
-    check(references.contains({}) && references.to_array()[1] == nullptr,
-          "reference-type buffer null equality");
+    check(references.contains({}) && references.to_array()[1] == nullptr, "reference-type buffer null equality");
     CircularBuffer<double> floating(2);
     floating.put(std::numeric_limits<double>::quiet_NaN());
     check(floating.contains(std::numeric_limits<double>::quiet_NaN()), "managed floating-point NaN equality");
 }
+
 void throttle_tests() {
     ThrottleRates defaults;
     check(defaults.client_max_rate == 640000 && defaults.minimum_adaptive_throttle_rate == 0,
           "absent throttle section");
-    ThrottleRates present([](std::string_view, std::int32_t fallback) {
-        return fallback;
-    });
+    ThrottleRates present([](std::string_view, std::int32_t fallback) { return fallback; });
     check(present.minimum_adaptive_throttle_rate == 32000, "present throttle section defaults");
     for (const auto value : {-1, 0, 6250, 640000, 1000001}) {
         ThrottleRates rates([value](std::string_view key, std::int32_t fallback) {
@@ -272,26 +253,21 @@ void throttle_tests() {
         });
         check(rates.client_max_rate == std::clamp(value, 6250, 1000000), "client bandwidth bounds");
     }
-    ThrottleRates malformed([](std::string_view, std::int32_t) -> std::int32_t {
-        throw std::invalid_argument("bad integer");
-    });
+    ThrottleRates malformed(
+        [](std::string_view, std::int32_t) -> std::int32_t { throw std::invalid_argument("bad integer"); });
     check(malformed.client_max_rate == 640000 && malformed.minimum_adaptive_throttle_rate == 0,
           "configuration exception preserves partial state");
     check(defaults.get_rate(ThrottleOutPacketType::Resend) == 6625, "resend default");
     check(defaults.get_rate(ThrottleOutPacketType::Unknown) == 0, "unknown category rate");
 }
+
 void dos_tests() {
     auto options = std::make_shared<BasicDosProtectorOptions>();
     options->max_requests_in_timeframe = 1;
     options->request_time_span_ms = 1000;
     options->forget_time_span_ms = 100;
     std::int32_t tick = 100;
-    BasicDOSProtector protector(
-        options,
-        [&tick] {
-            return tick;
-        },
-        false);
+    BasicDOSProtector protector(options, [&tick] { return tick; }, false);
     check(protector.process("A", "/test"), "request protection first request");
     check(!protector.process("A", "/test") && protector.is_blocked("A"), "per-client request block");
     check(protector.process("B", "/test"), "blocked client does not block another client");
@@ -299,7 +275,7 @@ void dos_tests() {
     bool throttled = false;
     try {
         protector.process("A", "/test");
-    } catch (const ThrottledError& error) {
+    } catch (const ThrottledError &error) {
         throttled = std::string(error.what()) == "Throttled";
     }
     check(throttled, "throw action preserves throttled exception message");
@@ -321,12 +297,8 @@ void dos_tests() {
     std::promise<void> cleaned;
     auto cleanup = cleaned.get_future();
     BasicDOSProtector timed(
-        timed_options,
-        [] {
-            return 100;
-        },
-        true,
-        [&cleaned](const std::string& level, const std::string&) {
+        timed_options, [] { return 100; }, true,
+        [&cleaned](const std::string &level, const std::string &) {
             if (level == "info")
                 cleaned.set_value();
         });
@@ -337,7 +309,8 @@ void dos_tests() {
           "native cleanup timer executes without host pumping");
     check(!timed.is_blocked("A"), "native timer runs the source cleanup algorithm");
 }
-}
+} // namespace
+
 int main() {
     crc_tests();
     permission_tests();

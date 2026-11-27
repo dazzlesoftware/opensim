@@ -1,0 +1,27 @@
+{
+  "accepted": true,
+  "executed": true,
+  "globals": {
+    "result": {
+      "type": "other",
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types+list",
+      "text": ""
+    }
+  },
+  "errors": [],
+  "exception": "Unknown type in List.Size: System.Char",
+  "exceptionType": "System.Exception",
+  "stackSize": 1000000,
+  "stackLimit": 1024,
+  "finalStackLeft": 1000000,
+  "stackSamples": [],
+  "name": "list_boxing",
+  "source": "YOption chars;list result;default{state_entry(){result=['A', (char)0];}}",
+  "sha256": {
+    "original.il.txt": "0560fcadab95774001fca97241c570ab24b9656f9562096f3293d6160be118cf",
+    "original.yobj": "583dba8b9c6748b8d47a1cd42da68a891c560149ee8191f6fb906963685e3ee9",
+    "source.lsl": "24698f7de585ad4ded85d2ae48f387e3fac88b387e13c12d8ed1d0b6683803ec",
+    "source_hash.txt": "06c4a9b07a20da8e49b9db4e608830ce0cf5d63189fed8fa7d9af46537337a0e",
+    "generator_source": "d86517a13d8f4094e933279614d487a0e69d44a49f2296c4af7562bf7386d651"
+  }
+}

@@ -35,8 +35,8 @@ bool redirect_status(int status) {
 
 bool is_content_header(std::string_view name) {
     constexpr std::array<std::string_view, 10> content_headers{
-        "content-disposition", "content-encoding", "content-language", "content-length",
-        "content-location", "content-md5", "content-range", "content-type", "expires", "last-modified",
+        "content-disposition", "content-encoding", "content-language", "content-length", "content-location",
+        "content-md5",         "content-range",    "content-type",     "expires",        "last-modified",
     };
     return std::ranges::any_of(content_headers, [&](auto header) { return header_is(name, header); });
 }
@@ -49,8 +49,9 @@ std::string response_text(std::string_view bytes) {
         const auto value = decoded[index];
         if (value == u'\r' && index + 1 < decoded.size() && decoded[index + 1] == u'\n')
             ++index;
-        normalized += value == u'\r' || value == u'\f' || value == u'\u0085' ||
-                      value == u'\u2028' || value == u'\u2029' ? u'\n' : value;
+        normalized += value == u'\r' || value == u'\f' || value == u'\u0085' || value == u'\u2028' || value == u'\u2029'
+                          ? u'\n'
+                          : value;
     }
     return utf8(normalized);
 }
@@ -59,7 +60,7 @@ std::int32_t narrow_length(std::int64_t value) {
     return std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(value));
 }
 
-}
+} // namespace
 
 ScriptHttpTransport::ScriptHttpTransport(std::shared_ptr<const framework::OutboundUrlFilter> filter,
                                          WebHttpClients::HandlerFactory handlers, std::int32_t timeout_ms,
@@ -81,32 +82,32 @@ ScriptHttpTransport::ScriptHttpTransport(std::shared_ptr<const framework::Outbou
     unverified_ = std::make_shared<WebHttpClient>(handlers(settings), timeout_ms, 32768);
 }
 
-std::optional<ScriptHttpReply> ScriptHttpTransport::send(
-    const ScriptHttpRequest& request, const std::function<bool()>& cancelled) const {
+std::optional<ScriptHttpReply> ScriptHttpTransport::send(const ScriptHttpRequest &request,
+                                                         const std::function<bool()> &cancelled) const {
     auto current = request;
     for (unsigned redirects = 0;; ++redirects) {
         auto attempt = send_attempt(current, redirects, cancelled);
-        if (auto* reply = std::get_if<ScriptHttpReply>(&attempt))
+        if (auto *reply = std::get_if<ScriptHttpReply>(&attempt))
             return std::move(*reply);
-        if (auto* next = std::get_if<ConfigUriObjectPtr>(&attempt))
+        if (auto *next = std::get_if<ConfigUriObjectPtr>(&attempt))
             current.uri = std::move(*next);
         else
             return std::nullopt;
     }
 }
 
-ScriptHttpAttempt ScriptHttpTransport::send_attempt(
-    const ScriptHttpRequest& request, unsigned redirects, const std::function<bool()>& cancelled) const {
+ScriptHttpAttempt ScriptHttpTransport::send_attempt(const ScriptHttpRequest &request, unsigned redirects,
+                                                    const std::function<bool()> &cancelled) const {
     const auto stopped = [&] { return cancelled && cancelled(); };
     if (stopped())
         return {};
     if (trim_utf8(request.method).empty())
-        return ScriptHttpReply{499,
-            "The value cannot be an empty string or composed entirely of whitespace. (Parameter 'method')"};
+        return ScriptHttpReply{
+            499, "The value cannot be an empty string or composed entirely of whitespace. (Parameter 'method')"};
     if (!httplib::detail::fields::is_token(request.method))
         return ScriptHttpReply{499, "The format of the HTTP method is invalid."};
-    const auto& uri = request.uri;
-    const auto& client = request.verify_certificate ? verified_ : unverified_;
+    const auto &uri = request.uri;
+    const auto &client = request.verify_certificate ? verified_ : unverified_;
     const ConfigHttpLocationAdapter locations(*uris_);
     ConfigXmlHttpOperation operation;
     operation.method = request.method;
@@ -114,27 +115,25 @@ ScriptHttpAttempt ScriptHttpTransport::send_attempt(
         "get", "head", "post", "put", "delete", "connect", "options", "trace", "patch",
     };
     if (std::ranges::any_of(known_methods, [&](auto method) { return header_is(request.method, method); })) {
-        for (auto& character : operation.method)
+        for (auto &character : operation.method)
             if (character >= 'a' && character <= 'z')
                 character -= 'a' - 'A';
     }
     operation.body = request.body;
     const auto add_header = [&](std::string_view name, std::string_view value) {
-        const auto existing = std::ranges::find_if(operation.headers, [&](const auto& header) {
-            return header_is(header.first, name);
-        });
+        const auto existing =
+            std::ranges::find_if(operation.headers, [&](const auto &header) { return header_is(header.first, name); });
         if (existing == operation.headers.end()) {
             operation.headers.emplace_back(name, text(value));
             return;
         }
-        const auto separator = header_is(name, "user-agent") ? u" " :
-                               header_is(name, "cookie") ? u"; " : u", ";
+        const auto separator = header_is(name, "user-agent") ? u" " : header_is(name, "cookie") ? u"; " : u", ";
         existing->second = nini_writer_text(*existing->second + separator + *text(value));
     };
     bool has_content_headers = false;
     std::vector<std::int64_t> content_lengths;
     std::vector<std::u16string> transfer_encodings;
-    for (const auto& [name, value] : request.headers) {
+    for (const auto &[name, value] : request.headers) {
         // HttpRequestHeaders rejects Allow as content-only. The managed script
         // worker does not route it to HttpContentHeaders.
         if (!httplib::detail::fields::is_field_name(name) || header_is(name, "allow"))
@@ -153,7 +152,7 @@ ScriptHttpAttempt ScriptHttpTransport::send_attempt(
         else
             add_header(name, value);
     }
-    for (const auto& coding : config_http_disable_chunked_request_encoding(transfer_encodings))
+    for (const auto &coding : config_http_disable_chunked_request_encoding(transfer_encodings))
         add_header("Transfer-Encoding", utf8(coding));
     add_header("Connection", "close");
     if (request.pragma_no_cache)
@@ -167,7 +166,8 @@ ScriptHttpAttempt ScriptHttpTransport::send_attempt(
                     throw std::runtime_error(
                         "Unable to write content to request stream; content would exceed Content-Length.");
                 throw std::runtime_error("Sent " + std::to_string(body_size) +
-                    " request content bytes, but Content-Length promised " + std::to_string(promised) + ".");
+                                         " request content bytes, but Content-Length promised " +
+                                         std::to_string(promised) + ".");
             };
         }
         if (!request.body.empty())
@@ -188,7 +188,7 @@ ScriptHttpAttempt ScriptHttpTransport::send_attempt(
     std::optional<Clock::time_point> deadline;
     bool body_timed_out = false;
     const auto timed_out = [&] { return deadline && Clock::now() >= *deadline; };
-    operation.response_headers = [&](const ConfigHttpResponseHead& response) { head = response; };
+    operation.response_headers = [&](const ConfigHttpResponseHead &response) { head = response; };
     operation.body_interrupted = [&] { return stopped() || timed_out(); };
     ScriptHttpReply reply{499, {}};
     try {
@@ -198,7 +198,7 @@ ScriptHttpAttempt ScriptHttpTransport::send_attempt(
         reply.status = head.status == 0 ? 499 : head.status;
         if (body) {
             std::vector<std::u16string> lengths;
-            for (const auto& header : head.headers)
+            for (const auto &header : head.headers)
                 if (header_is(header.name, "content-length"))
                     lengths.push_back(header.value);
             const auto length = config_http_content_length(lengths);
@@ -215,7 +215,7 @@ ScriptHttpAttempt ScriptHttpTransport::send_attempt(
             if (size < 0)
                 throw std::overflow_error("Arithmetic operation resulted in an overflow.");
             std::string bytes(static_cast<std::size_t>(size), '\0');
-            auto remaining = std::span(reinterpret_cast<std::uint8_t*>(bytes.data()), bytes.size());
+            auto remaining = std::span(reinterpret_cast<std::uint8_t *>(bytes.data()), bytes.size());
             while (!remaining.empty() && !stopped()) {
                 const auto count = body->read(remaining);
                 if (count <= 0)
@@ -228,9 +228,9 @@ ScriptHttpAttempt ScriptHttpTransport::send_attempt(
             body->close();
             reply.body = response_text(bytes);
         }
-    } catch (const ConfigXmlHttpError& error) {
+    } catch (const ConfigXmlHttpError &error) {
         reply = {error.status.value_or(499), error.what()};
-    } catch (const std::exception& error) {
+    } catch (const std::exception &error) {
         reply = {499, error.what()};
     }
     if (stopped())
@@ -242,7 +242,7 @@ ScriptHttpAttempt ScriptHttpTransport::send_attempt(
     if (redirects >= 10)
         return ScriptHttpReply{499, "Number of redirects exceeded max redirects"};
     ConfigUriObjectPtr next;
-    for (const auto& header : head.headers) {
+    for (const auto &header : head.headers) {
         if (header_is(header.name, "location")) {
             next = locations.parse_value(std::make_shared<const std::u16string>(header.value));
             break;
@@ -253,20 +253,21 @@ ScriptHttpAttempt ScriptHttpTransport::send_attempt(
     if (!next->is_absolute()) {
         const auto previous = uri->http_components();
         auto absolute = *previous->scheme() + u"://" + *previous->dns_safe_host() + u":" +
-            *text(std::to_string(previous->port())) + u"/" + *next->original_string();
+                        *text(std::to_string(previous->port())) + u"/" + *next->original_string();
         next = uris_->try_create(std::make_shared<const std::u16string>(std::move(absolute)),
-                                ConfigUriObjectKind::RelativeOrAbsolute);
+                                 ConfigUriObjectKind::RelativeOrAbsolute);
         if (!next)
             return ScriptHttpReply{499, "HTTP redirect code but invalid location header"};
     }
     const auto target = next->http_components();
-    const bool allowed = target ? filter_->allows(*target) :
-        config_generic_uri_owns(next) &&
-            filter_->allows(utf8(*config_generic_uri_component(next, ConfigGenericUriComponent::Host)),
-                            config_generic_uri_port(next));
+    const bool allowed =
+        target ? filter_->allows(*target)
+               : config_generic_uri_owns(next) &&
+                     filter_->allows(utf8(*config_generic_uri_component(next, ConfigGenericUriComponent::Host)),
+                                     config_generic_uri_port(next));
     if (!allowed)
         return ScriptHttpReply{499, "URL from HTTP redirect blocked: " + utf8(*next->absolute_uri())};
     return next;
 }
 
-}
+} // namespace opensim::network

@@ -60,20 +60,21 @@ int socket_error_code(int code) {
 #endif
     throw std::logic_error("Exact native connection-error provider is required for this socket code");
 }
-}
+} // namespace
+
 ConfigHttpSocketError config_http_socket_error(int native_error) {
     const int socket_error = socket_error_code(native_error);
 #ifdef _WIN32
-    wchar_t* raw = nullptr;
-    auto count = FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
-                                    FORMAT_MESSAGE_IGNORE_INSERTS,
-                                nullptr, native_error, 0, reinterpret_cast<wchar_t*>(&raw), 0, nullptr);
+    wchar_t *raw = nullptr;
+    auto count =
+        FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                       nullptr, native_error, 0, reinterpret_cast<wchar_t *>(&raw), 0, nullptr);
     std::unique_ptr<wchar_t, decltype(&LocalFree)> buffer(raw, &LocalFree);
     if (!count) {
         auto failure_code = GetLastError();
         throw std::system_error(failure_code, std::system_category(), "Socket message lookup");
     }
-    std::u16string message(reinterpret_cast<const char16_t*>(buffer.get()), count);
+    std::u16string message(reinterpret_cast<const char16_t *>(buffer.get()), count);
     while (!message.empty() && message.back() <= u' ')
         message.pop_back();
 #else
@@ -81,6 +82,7 @@ ConfigHttpSocketError config_http_socket_error(int native_error) {
 #endif
     return ConfigHttpSocketError(std::move(message), native_error, socket_error);
 }
+
 std::exception_ptr config_http_connect_error(std::string host, int port, int native_error) {
     auto socket = config_http_socket_error(native_error);
     auto message = socket.message;
@@ -91,4 +93,4 @@ std::exception_ptr config_http_connect_error(std::string host, int port, int nat
     return std::make_exception_ptr(
         ConfigHttpConnectionError(message + u" (" + utf16_replacing(endpoint) + u")", std::move(cause)));
 }
-}
+} // namespace opensim::framework

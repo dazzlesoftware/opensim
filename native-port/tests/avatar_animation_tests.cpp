@@ -6,13 +6,15 @@
 #include <stdexcept>
 using namespace opensim;
 using namespace scene;
-static std::string hex(const std::vector<std::uint8_t>& bytes) {
+
+static std::string hex(const std::vector<std::uint8_t> &bytes) {
     std::ostringstream s;
     for (auto b : bytes)
         s << std::hex << std::setfill('0') << std::setw(2) << unsigned(b);
     return s.str();
 }
-static std::string unhex(const std::string& text) {
+
+static std::string unhex(const std::string &text) {
     if (text == "-")
         return {};
     std::string result;
@@ -20,11 +22,13 @@ static std::string unhex(const std::string& text) {
         result += char(std::stoi(text.substr(i, 2), nullptr, 16));
     return result;
 }
+
 static framework::Uuid id(unsigned value) {
     std::ostringstream s;
     s << "00000000-0000-0000-0000-" << std::hex << std::setfill('0') << std::setw(12) << value;
     return framework::Uuid(s.str());
 }
+
 static std::vector<AvatarAnimationEntry> entries(int count, int mode) {
     std::vector<AvatarAnimationEntry> out;
     auto source = id(999);
@@ -56,22 +60,24 @@ static std::vector<AvatarAnimationEntry> entries(int count, int mode) {
     }
     return out;
 }
+
 static std::string packet(int count, int mode) {
     try {
         auto source = id(999);
         auto p = avatar_animations(source, mode & 1 ? source : id(998), entries(count, mode));
         return hex(network::lludp::encode_packet(p));
-    } catch (const std::length_error&) {
+    } catch (const std::length_error &) {
         return "BUFFER";
-    } catch (const std::out_of_range&) {
+    } catch (const std::out_of_range &) {
         return "COUNT";
     }
 }
+
 static std::string codec() {
     using namespace network;
     auto p = lludp::make_packet("AvatarAnimation");
     p.block("Sender")["ID"] = id(999);
-    for (const auto& e : entries(255, 0)) {
+    for (const auto &e : entries(255, 0)) {
         auto b = lludp::make_block(p.spec->blocks[1]);
         b["AnimID"] = e.animation;
         b["AnimSequenceID"] = std::int64_t(e.sequence);
@@ -79,7 +85,8 @@ static std::string codec() {
     }
     return hex(lludp::encode_packet(p));
 }
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string(argv[1]) == "--packets") {
             int n, mode;
@@ -93,11 +100,11 @@ int main(int argc, char** argv) {
         }
         if (argc > 2 && std::string(argv[1]) == "--catalog") {
             DefaultAnimations catalog(argv[2]);
-            for (const auto& [name, id] : catalog.by_name)
+            for (const auto &[name, id] : catalog.by_name)
                 std::cout << "N:" << name << ":" << id.str() << "\n";
-            for (const auto& [id, name] : catalog.by_id)
+            for (const auto &[id, name] : catalog.by_id)
                 std::cout << "I:" << id.str() << ":" << name << "\n";
-            for (const auto& [id, state] : catalog.states)
+            for (const auto &[id, state] : catalog.states)
                 std::cout << "S:" << id.str() << ":" << state << "\n";
             std::string op, value;
             while (std::cin >> op >> value) {
@@ -119,14 +126,14 @@ int main(int argc, char** argv) {
         if (codec().size() != 10252)
             throw std::runtime_error("generic codec255 remains valid");
         auto a = avatar_animations(id(999), id(999), entries(4, 7));
-        auto& blocks = a.blocks.at("AnimationList");
+        auto &blocks = a.blocks.at("AnimationList");
         if (std::get<framework::Uuid>(blocks[0].at("AnimID")) != id(1) ||
             std::get<framework::Uuid>(blocks[1].at("AnimID")) != id(4) ||
             a.blocks.at("AnimationSourceList").size() != 2)
             throw std::runtime_error("stable source ordering");
         const auto input = entries(4, 7);
         const auto observer = avatar_animations(id(999), id(998), input);
-        const auto& observed = observer.blocks.at("AnimationList");
+        const auto &observed = observer.blocks.at("AnimationList");
         for (std::size_t i = 0; i < input.size(); ++i)
             if (std::get<framework::Uuid>(observed[i].at("AnimID")) != input[i].animation ||
                 std::get<std::int64_t>(observed[i].at("AnimSequenceID")) != input[i].sequence)
@@ -135,7 +142,7 @@ int main(int argc, char** argv) {
         if (wire.size() != 26 + 20 * input.size() || wire[wire.size() - 2] != 0 || wire.back() != 0)
             throw std::runtime_error("observer packet must omit animation sources and physical events");
         std::cout << "PASS: avatar animation ordering/count/source capacity and generic255 codec\n";
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << "\n";
         return 1;
     }

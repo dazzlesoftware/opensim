@@ -1,6 +1,6 @@
 """Complete original AgentData/CompleteAgentData with real appearance/SDK and controlled scene callbacks."""
 
-import argparse, hashlib, itertools, json, subprocess, xml.etree.ElementTree as ET
+import argparse, hashlib, itertools, json, re, subprocess, xml.etree.ElementTree as ET
 from pathlib import Path
 from compare_asset_model import ROOT, reference
 
@@ -30,12 +30,15 @@ def build_reference(dotnet, w, extra_files=(), startup="DataReference", referenc
     ET.SubElement(project.getroot().find('PropertyGroup'), 'StartupObject').text = startup
     appearance = w / 'AppearanceReference.cs'
     s = (ROOT / 'native-port/tests/avatar_appearance_reference.cs').read_text(encoding='utf-8')
-    s = s.replace(
-        'void ErrorFormat(string f,params object[] a);',
+    s = re.sub(
+        r'void ErrorFormat\(string f,\s*params object\[\] a\);',
         'void ErrorFormat(string f,params object[] a);void WarnFormat(string f,params object[] a);',
-    ).replace(
-        'public void ErrorFormat(string f,params object[] a){}',
+        s,
+    )
+    s = re.sub(
+        r'public void ErrorFormat\(string f,\s*params object\[\] a\)\s*\{\s*\}',
         'public void ErrorFormat(string f,params object[] a){}public void WarnFormat(string f,params object[] a){}',
+        s,
     )
     s = s.replace(
         'void WarnFormat(string f,params object[] a);',

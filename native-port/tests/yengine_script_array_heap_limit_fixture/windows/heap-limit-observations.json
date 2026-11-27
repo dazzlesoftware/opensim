@@ -1,0 +1,330 @@
+[
+  {
+    "name": "generated_constructor_limit_7",
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=4, newtotal=8, limit=7",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.AllocVarArrays(XMRInstArSizes ars) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 115\r\n   at integer[].$new(integer)(EventHelpersInstance, Int32)\r\n   at default state_entry(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 558\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstance.StartEx() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRScriptUThread.cs:line 52",
+      "inner": null
+    },
+    "state": {
+      "heapLimit": 7,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 3,
+      "classesDistinct": false,
+      "classes": [
+        null,
+        null
+      ]
+    }
+  },
+  {
+    "name": "generated_constructor_limit_8",
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=4, newtotal=16, limit=8",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at integer[].$ctor(integer)(XMRSDTypeClObj, Int32)\r\n   at integer[].$new(integer)(EventHelpersInstance, Int32)\r\n   at default state_entry(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 558\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstance.StartEx() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRScriptUThread.cs:line 52",
+      "inner": null
+    },
+    "state": {
+      "heapLimit": 8,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 4,
+      "classesDistinct": false,
+      "classes": [
+        null,
+        null
+      ]
+    }
+  },
+  {
+    "name": "generated_constructor_limit_15",
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=4, newtotal=16, limit=15",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at integer[].$ctor(integer)(XMRSDTypeClObj, Int32)\r\n   at integer[].$new(integer)(EventHelpersInstance, Int32)\r\n   at default state_entry(XMRInstAbstract)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.CallSEH() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 558\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstance.StartEx() in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRScriptUThread.cs:line 52",
+      "inner": null
+    },
+    "state": {
+      "heapLimit": 15,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 11,
+      "classesDistinct": false,
+      "classes": [
+        null,
+        null
+      ]
+    }
+  },
+  {
+    "name": "generated_constructor_limit_16",
+    "error": null,
+    "state": {
+      "heapLimit": 16,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 12,
+      "classesDistinct": true,
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        },
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "reject_positive_delta",
+    "before": {
+      "heapLimit": 8,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 4,
+      "classesDistinct": true,
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        },
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    },
+    "error": {
+      "type": "OpenSim.Region.ScriptEngine.Yengine.OutOfHeapException",
+      "message": "(OWNER)oldtotal=4, newtotal=12, limit=8",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.UpdateArraysHeapUse(Int32 olduse, Int32 newuse) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 511\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstArrays.PopObject(Int32 index, Object obj) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 147\r\n   at FixedArrayReference.Run(String output, String generator, String sourceRoot) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-array-heap-limit-phase34-reference\\Reference.cs:line 557",
+      "inner": null
+    },
+    "oldPreserved": true,
+    "newStored": false,
+    "state": {
+      "heapLimit": 8,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 4,
+      "classesDistinct": true,
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        },
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "accept_delta_not_own_total",
+    "before": {
+      "heapLimit": 8,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 4,
+      "classesDistinct": true,
+      "classes": [
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        },
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    },
+    "error": null,
+    "oldPreserved": false,
+    "newStored": true,
+    "state": {
+      "heapLimit": 8,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": 4,
+      "classesDistinct": true,
+      "classes": [
+        {
+          "ownUsage": 20,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 4
+            }
+          ]
+        },
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "negative_delta_below_global_limit",
+    "before": {
+      "heapLimit": 0,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": -4,
+      "classesDistinct": true,
+      "classes": [
+        {
+          "ownUsage": 20,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 4
+            }
+          ]
+        },
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    },
+    "error": null,
+    "oldPreserved": false,
+    "newStored": true,
+    "state": {
+      "heapLimit": 0,
+      "globalUsage": 4,
+      "localsUsage": 0,
+      "heapUsed": 4,
+      "heapLeft": -4,
+      "classesDistinct": true,
+      "classes": [
+        {
+          "ownUsage": 4,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 0
+            }
+          ]
+        },
+        {
+          "ownUsage": 16,
+          "dimensions": [
+            3
+          ],
+          "objects": [
+            {
+              "type": "System.Int32[]",
+              "length": 3
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

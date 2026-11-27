@@ -11,7 +11,7 @@
 namespace opensim::framework {
 namespace {
 
-std::uint32_t network_order(const IpAddress& address) {
+std::uint32_t network_order(const IpAddress &address) {
     const auto bytes = address.bytes();
     std::uint32_t result = 0;
     for (std::size_t index = 0; index < 4; ++index)
@@ -19,7 +19,7 @@ std::uint32_t network_order(const IpAddress& address) {
     return result;
 }
 
-std::optional<std::vector<HostResolver::Address>> lookup_host(const std::string& host) {
+std::optional<std::vector<HostResolver::Address>> lookup_host(const std::string &host) {
     if (const auto literal = IpAddress::parse(host)) {
         if (literal->unspecified())
             return std::nullopt;
@@ -31,9 +31,8 @@ std::optional<std::vector<HostResolver::Address>> lookup_host(const std::string&
 std::optional<std::pair<std::uint32_t, std::uint32_t>> parse_ipv4_network(std::string_view entry) {
     // The bundled LukeSkywalker parser keeps only IPv4 digits and separators.
     std::string cleaned;
-    std::ranges::copy_if(entry, std::back_inserter(cleaned), [](char c) {
-        return (c >= '0' && c <= '9') || c == '.' || c == '/' || c == ' ';
-    });
+    std::ranges::copy_if(entry, std::back_inserter(cleaned),
+                         [](char c) { return (c >= '0' && c <= '9') || c == '.' || c == '/' || c == ' '; });
     const auto first = cleaned.find_first_not_of(' ');
     if (first == cleaned.npos)
         return std::nullopt;
@@ -52,7 +51,7 @@ std::optional<std::pair<std::uint32_t, std::uint32_t>> parse_ipv4_network(std::s
 
     std::uint32_t mask = 0;
     unsigned prefix = 0;
-    const auto* end = suffix.data() + suffix.size();
+    const auto *end = suffix.data() + suffix.size();
     const auto parsed = std::from_chars(suffix.data(), end, prefix);
     if (parsed.ec == std::errc{} && parsed.ptr == end && prefix <= 255) {
         if (prefix > 32)
@@ -71,15 +70,15 @@ std::optional<std::pair<std::uint32_t, std::uint32_t>> parse_ipv4_network(std::s
     return std::pair{network_order(*address) & mask, mask};
 }
 
-}
+} // namespace
 
 OutboundUrlFilter::OutboundUrlFilter(std::string_view disallow, std::string_view exceptions,
                                      HostResolver::Lookup lookup, InvalidEntry invalid_entry)
     : lookup_(lookup ? std::move(lookup) : HostResolver::Lookup(lookup_host)),
       disallowed_(parse(disallow, invalid_entry)), exceptions_(parse(exceptions, invalid_entry)) {}
 
-std::vector<OutboundUrlFilter::Rule> OutboundUrlFilter::parse(
-    std::string_view entries, const InvalidEntry& invalid_entry) const {
+std::vector<OutboundUrlFilter::Rule> OutboundUrlFilter::parse(std::string_view entries,
+                                                              const InvalidEntry &invalid_entry) const {
     std::vector<Rule> rules;
     const auto uris = native_config_uri_object_backend();
     while (!entries.empty()) {
@@ -111,14 +110,14 @@ std::vector<OutboundUrlFilter::Rule> OutboundUrlFilter::parse(
         const auto addresses = lookup_(host);
         if (!addresses)
             throw std::runtime_error("Unable to resolve outbound filter endpoint: " + host);
-        for (const auto& address : *addresses)
+        for (const auto &address : *addresses)
             if (address && !address->v6())
                 rules.push_back({network_order(*address), 0xffffffffu, endpoint->port()});
     }
     return rules;
 }
 
-bool OutboundUrlFilter::allows(const ConfigUriComponents& url) const {
+bool OutboundUrlFilter::allows(const ConfigUriComponents &url) const {
     const auto host = url.host();
     return allows(host ? utf8(*host) : std::string{}, url.port());
 }
@@ -134,12 +133,12 @@ bool OutboundUrlFilter::allows(std::string_view host, std::int32_t port) const {
         return true;
 
     bool has_ipv4 = false;
-    for (const auto& address : *addresses) {
+    for (const auto &address : *addresses) {
         if (!address || address->v6())
             continue;
         has_ipv4 = true;
         const auto number = network_order(*address);
-        const auto matches = [&](const Rule& rule) {
+        const auto matches = [&](const Rule &rule) {
             return (number & rule.mask) == rule.address && (!rule.port || *rule.port == port);
         };
         if (std::ranges::any_of(disallowed_, matches) && !std::ranges::any_of(exceptions_, matches))
@@ -148,4 +147,4 @@ bool OutboundUrlFilter::allows(std::string_view host, std::int32_t port) const {
     return has_ipv4;
 }
 
-}
+} // namespace opensim::framework

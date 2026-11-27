@@ -5,12 +5,14 @@
 using namespace opensim;
 using namespace framework;
 using namespace scene;
+
 Uuid id(int n) {
     std::ostringstream s;
     s << "00000000-0000-0000-0000-" << std::hex << std::setw(12) << std::setfill('0') << n;
     return Uuid(s.str());
 }
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string(argv[1]) == "--probe") {
             int seed, mode;
@@ -46,12 +48,12 @@ int main(int argc, char** argv) {
         auto texture = a.texture->bakes_bytes();
         p = avatar_appearance(id(1), *a.visual_params, texture, 0);
         auto decoded = network::lludp::decode_datagram(network::lludp::encode_datagram(p), 65536, false);
-        if (decoded.blocks.at("VisualParam").size() != 218 ||
-            decoded.blocks.at("AppearanceHover").size() != 1 || !decoded.blocks.at("AppearanceData").empty())
+        if (decoded.blocks.at("VisualParam").size() != 218 || decoded.blocks.at("AppearanceHover").size() != 1 ||
+            !decoded.blocks.at("AppearanceData").empty())
             throw std::runtime_error("Source appearance blocks");
         std::cout << "PASS: native wearable/appearance packets\n";
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

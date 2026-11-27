@@ -1,0 +1,334 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "fullParityVerified": false,
+  "nativeParityVerified": false,
+  "scope": "Actual original independently compiled/loaded caller integer[] index0 and foreign float[]/char[] index0; source-created wrappers injected through unchanged PopObject before captured caller cast; compiled static method/index/compound accessors.24cases Win/Linux.",
+  "generatorSha256": "58bb2998f8420aeac639b02632ff168c8d134f5c4ab9162b9f794baa923da945",
+  "generatorAssemblySha256": "4db23b308addb47a34dd54a5fa9e869a36872c9d0610de28960e1d684673f023",
+  "verifierSha256": "8d4e7336c19532080cea9055d48abf74e374f4463a293c28e886df0cb997804e",
+  "originalBackendAssemblySha256": {
+    "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+    "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+    "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a"
+  },
+  "originalSourceSha256": {
+    "XMRSDTypeClObj.cs": "526bcaa0bac500bdce6bc0ada35eb22f1bef5d4f645f71f73ea0113ed8e9811c",
+    "MMRScriptCompValu.cs": "fdcdd217a80052b3f36f4cc16a41a680b10795b7adbc9374c3c211c17ba43705",
+    "MMRScriptReduce.cs": "7830d49846c4050ec71af9b3e16c8b281a4b775b7842497f99a29787511c3c9d",
+    "XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00"
+  },
+  "platforms": {
+    "windows": {
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "cases": [
+        {
+          "name": "float_cast_length",
+          "sourceSha256": "86f1eb4c95cdf41a7696f8c097bdd6dc7f2b00d38542b4d1a696c973973b9e29",
+          "objectSha256": "33aafb4d842d2d392e61877c283f0626298485161679ddc5f5f0419d13c3784b",
+          "snapshotSha256": "32b0792ac38d4f8aa85ae0b1d79bf3de663598ab792cd3b2b1a57ba5a42e4ba6",
+          "metadataSha256": "dc681003fd54ed7370acc598d64d5184cc8d3b53176a196b75686a82546beb8a",
+          "foreignSourceSha256": "1d61f6d57af4bab2b4999f3f9474816bc2b5a6070ffc70e2bb01dc8ee21cf7a2",
+          "foreignObjectSha256": "8cad3876bfe799795f41ff6e9189e0346d5316dcb9cb36a99f3875447929ff69",
+          "injectionSha256": "e7d2bd0014b9a08491e26459defaba5ef6a3a210d3ae20e3384b704268c596c2",
+          "liveCastAccepted": true,
+          "accessorFault": null
+        },
+        {
+          "name": "float_method_get",
+          "sourceSha256": "15875b713f7317c2da12be2498cbaeb8832427126a67b20affde5968216ea8d8",
+          "objectSha256": "10395c2b192d3e74634c5eee04c8b9dc2135f1a414feaaf1d844d6d5e1c41231",
+          "snapshotSha256": "32b0792ac38d4f8aa85ae0b1d79bf3de663598ab792cd3b2b1a57ba5a42e4ba6",
+          "metadataSha256": "11961dbe752dd2dd98b586a2e8c0878189362489b5d1ea4a723ae1d7ee255710",
+          "foreignSourceSha256": "1d61f6d57af4bab2b4999f3f9474816bc2b5a6070ffc70e2bb01dc8ee21cf7a2",
+          "foreignObjectSha256": "8cad3876bfe799795f41ff6e9189e0346d5316dcb9cb36a99f3875447929ff69",
+          "injectionSha256": "33e662f273506f06c8673fa7191c4a9257af583488828ace79fc32e7671a13cf",
+          "liveCastAccepted": true,
+          "accessorFault": "Unable to cast object of type 'System.Double[]' to type 'System.Int32[]'."
+        },
+        {
+          "name": "float_method_set",
+          "sourceSha256": "68ce582e9c570f468b9114bbac40d4ae7d2fd485db5d012a27a999b1334387a9",
+          "objectSha256": "3a1a5efc23b849d24b8b665a326b3e0eca2d96db220d956e749cd88a82a4f442",
+          "snapshotSha256": "32b0792ac38d4f8aa85ae0b1d79bf3de663598ab792cd3b2b1a57ba5a42e4ba6",
+          "metadataSha256": "982c1b79a0931bdb3389a9ee1fe1b421319e05a6e7ac113351d25a8a127aadfd",
+          "foreignSourceSha256": "1d61f6d57af4bab2b4999f3f9474816bc2b5a6070ffc70e2bb01dc8ee21cf7a2",
+          "foreignObjectSha256": "8cad3876bfe799795f41ff6e9189e0346d5316dcb9cb36a99f3875447929ff69",
+          "injectionSha256": "33e662f273506f06c8673fa7191c4a9257af583488828ace79fc32e7671a13cf",
+          "liveCastAccepted": true,
+          "accessorFault": "Unable to cast object of type 'System.Double[]' to type 'System.Int32[]'."
+        },
+        {
+          "name": "float_index_get",
+          "sourceSha256": "e2066fe607e9de6a1e05723b8a530377653b92575b459d96c1f836fb2e35916e",
+          "objectSha256": "6dfd1c95b966e5f1c8e2eb0b6a16ffed5e341c9ccdb8ad93d526962f06e1a913",
+          "snapshotSha256": "32b0792ac38d4f8aa85ae0b1d79bf3de663598ab792cd3b2b1a57ba5a42e4ba6",
+          "metadataSha256": "7862a21f0ea7ca61dde2815b02fd33e6ceaab6d2737436bc13bc24c7fbd58594",
+          "foreignSourceSha256": "1d61f6d57af4bab2b4999f3f9474816bc2b5a6070ffc70e2bb01dc8ee21cf7a2",
+          "foreignObjectSha256": "8cad3876bfe799795f41ff6e9189e0346d5316dcb9cb36a99f3875447929ff69",
+          "injectionSha256": "33e662f273506f06c8673fa7191c4a9257af583488828ace79fc32e7671a13cf",
+          "liveCastAccepted": true,
+          "accessorFault": "Unable to cast object of type 'System.Double[]' to type 'System.Int32[]'."
+        },
+        {
+          "name": "float_index_set",
+          "sourceSha256": "2113400d3e4c90b59688fabc61bd40088028234affdf365213236c1822639be9",
+          "objectSha256": "090c23a5b042d163ff649f936c737b7c99f9c78ff69578a0e0c13ce8284b37cd",
+          "snapshotSha256": "32b0792ac38d4f8aa85ae0b1d79bf3de663598ab792cd3b2b1a57ba5a42e4ba6",
+          "metadataSha256": "9d3acf461c4b583a2c5d59681bd5214fec6569002858d163ec55b56a013718eb",
+          "foreignSourceSha256": "1d61f6d57af4bab2b4999f3f9474816bc2b5a6070ffc70e2bb01dc8ee21cf7a2",
+          "foreignObjectSha256": "8cad3876bfe799795f41ff6e9189e0346d5316dcb9cb36a99f3875447929ff69",
+          "injectionSha256": "33e662f273506f06c8673fa7191c4a9257af583488828ace79fc32e7671a13cf",
+          "liveCastAccepted": true,
+          "accessorFault": "Unable to cast object of type 'System.Double[]' to type 'System.Int32[]'."
+        },
+        {
+          "name": "float_compound",
+          "sourceSha256": "e465f76981f98493ff9254184b02f13ac75721b8c76186e3486d0b7d5ea3ab03",
+          "objectSha256": "7cd0d9a3ace9074a6b5c0c6c26e25fc7893a952f76b1fee26d267c0930f20795",
+          "snapshotSha256": "32b0792ac38d4f8aa85ae0b1d79bf3de663598ab792cd3b2b1a57ba5a42e4ba6",
+          "metadataSha256": "813cfdf42549377e4abb569452658714e283bf8dfaecc6005d752bda5e0a3fbb",
+          "foreignSourceSha256": "1d61f6d57af4bab2b4999f3f9474816bc2b5a6070ffc70e2bb01dc8ee21cf7a2",
+          "foreignObjectSha256": "8cad3876bfe799795f41ff6e9189e0346d5316dcb9cb36a99f3875447929ff69",
+          "injectionSha256": "33e662f273506f06c8673fa7191c4a9257af583488828ace79fc32e7671a13cf",
+          "liveCastAccepted": true,
+          "accessorFault": "Unable to cast object of type 'System.Double[]' to type 'System.Int32[]'."
+        },
+        {
+          "name": "char_cast_length",
+          "sourceSha256": "86f1eb4c95cdf41a7696f8c097bdd6dc7f2b00d38542b4d1a696c973973b9e29",
+          "objectSha256": "33aafb4d842d2d392e61877c283f0626298485161679ddc5f5f0419d13c3784b",
+          "snapshotSha256": "43d7a5eb0ea74a7c0132cf01bc3ca094fad19a3ca94b2456105b960e96c1abd2",
+          "metadataSha256": "3e7a7972954a0f1124d634e6d483ff6e5bbb18be28ddedca4dcaa189462998f5",
+          "foreignSourceSha256": "bb0dbd1d681596e36e8fa657ec4ee243db5155976d554cfe15560a3e7bd21122",
+          "foreignObjectSha256": "b3358c990f87019826d7e4b537fc62432166e54868a24724fd1d4bba0df6783b",
+          "injectionSha256": "97c52171b73b19a5785d35506cfb441d8c4a4d83965e036a62bfbb9856262db2",
+          "liveCastAccepted": true,
+          "accessorFault": null
+        },
+        {
+          "name": "char_method_get",
+          "sourceSha256": "15875b713f7317c2da12be2498cbaeb8832427126a67b20affde5968216ea8d8",
+          "objectSha256": "10395c2b192d3e74634c5eee04c8b9dc2135f1a414feaaf1d844d6d5e1c41231",
+          "snapshotSha256": "43d7a5eb0ea74a7c0132cf01bc3ca094fad19a3ca94b2456105b960e96c1abd2",
+          "metadataSha256": "34df725ca61901e79987f03c9eddea34c3a0543d175bc93f4cf69f56d385292a",
+          "foreignSourceSha256": "bb0dbd1d681596e36e8fa657ec4ee243db5155976d554cfe15560a3e7bd21122",
+          "foreignObjectSha256": "b3358c990f87019826d7e4b537fc62432166e54868a24724fd1d4bba0df6783b",
+          "injectionSha256": "97c52171b73b19a5785d35506cfb441d8c4a4d83965e036a62bfbb9856262db2",
+          "liveCastAccepted": true,
+          "accessorFault": "Unable to cast object of type 'System.Char[]' to type 'System.Int32[]'."
+        },
+        {
+          "name": "char_method_set",
+          "sourceSha256": "68ce582e9c570f468b9114bbac40d4ae7d2fd485db5d012a27a999b1334387a9",
+          "objectSha256": "3a1a5efc23b849d24b8b665a326b3e0eca2d96db220d956e749cd88a82a4f442",
+          "snapshotSha256": "43d7a5eb0ea74a7c0132cf01bc3ca094fad19a3ca94b2456105b960e96c1abd2",
+          "metadataSha256": "c5ab3e6220a62c5ee844216cfc6baf5dbabc1ebdffdf02aa8f0a82b31b48c5ce",
+          "foreignSourceSha256": "bb0dbd1d681596e36e8fa657ec4ee243db5155976d554cfe15560a3e7bd21122",
+          "foreignObjectSha256": "b3358c990f87019826d7e4b537fc62432166e54868a24724fd1d4bba0df6783b",
+          "injectionSha256": "97c52171b73b19a5785d35506cfb441d8c4a4d83965e036a62bfbb9856262db2",
+          "liveCastAccepted": true,
+          "accessorFault": "Unable to cast object of type 'System.Char[]' to type 'System.Int32[]'."
+        },
+        {
+          "name": "char_index_get",
+          "sourceSha256": "e2066fe607e9de6a1e05723b8a530377653b92575b459d96c1f836fb2e35916e",
+          "objectSha256": "6dfd1c95b966e5f1c8e2eb0b6a16ffed5e341c9ccdb8ad93d526962f06e1a913",
+          "snapshotSha256": "43d7a5eb0ea74a7c0132cf01bc3ca094fad19a3ca94b2456105b960e96c1abd2",
+          "metadataSha256": "b163642ddbe6cbc21d424b34d9e6a94f8577b2948d320de5c4a3a09c24bef048",
+          "foreignSourceSha256": "bb0dbd1d681596e36e8fa657ec4ee243db5155976d554cfe15560a3e7bd21122",
+          "foreignObjectSha256": "b3358c990f87019826d7e4b537fc62432166e54868a24724fd1d4bba0df6783b",
+          "injectionSha256": "97c52171b73b19a5785d35506cfb441d8c4a4d83965e036a62bfbb9856262db2",
+          "liveCastAccepted": true,
+          "accessorFault": "Unable to cast object of type 'System.Char[]' to type 'System.Int32[]'."
+        },
+        {
+          "name": "char_index_set",
+          "sourceSha256": "2113400d3e4c90b59688fabc61bd40088028234affdf365213236c1822639be9",
+          "objectSha256": "090c23a5b042d163ff649f936c737b7c99f9c78ff69578a0e0c13ce8284b37cd",
+          "snapshotSha256": "43d7a5eb0ea74a7c0132cf01bc3ca094fad19a3ca94b2456105b960e96c1abd2",
+          "metadataSha256": "a374a3987ebcca208c0de67a19dd16210a84298f1fa5b9e298dab059ad884e68",
+          "foreignSourceSha256": "bb0dbd1d681596e36e8fa657ec4ee243db5155976d554cfe15560a3e7bd21122",
+          "foreignObjectSha256": "b3358c990f87019826d7e4b537fc62432166e54868a24724fd1d4bba0df6783b",
+          "injectionSha256": "97c52171b73b19a5785d35506cfb441d8c4a4d83965e036a62bfbb9856262db2",
+          "liveCastAccepted": true,
+          "accessorFault": "Unable to cast object of type 'System.Char[]' to type 'System.Int32[]'."
+        },
+        {
+          "name": "char_compound",
+          "sourceSha256": "e465f76981f98493ff9254184b02f13ac75721b8c76186e3486d0b7d5ea3ab03",
+          "objectSha256": "7cd0d9a3ace9074a6b5c0c6c26e25fc7893a952f76b1fee26d267c0930f20795",
+          "snapshotSha256": "43d7a5eb0ea74a7c0132cf01bc3ca094fad19a3ca94b2456105b960e96c1abd2",
+          "metadataSha256": "dce29ea9284232fe2b38e67fa59385ec33457cf48f5f2112f367553020378b9a",
+          "foreignSourceSha256": "bb0dbd1d681596e36e8fa657ec4ee243db5155976d554cfe15560a3e7bd21122",
+          "foreignObjectSha256": "b3358c990f87019826d7e4b537fc62432166e54868a24724fd1d4bba0df6783b",
+          "injectionSha256": "97c52171b73b19a5785d35506cfb441d8c4a4d83965e036a62bfbb9856262db2",
+          "liveCastAccepted": true,
+          "accessorFault": "Unable to cast object of type 'System.Char[]' to type 'System.Int32[]'."
+        }
+      ]
+    },
+    "linux": {
+      "runtime": ".NET 8.0.34",
+      "architecture": "X64",
+      "cases": [
+        {
+          "name": "float_cast_length",
+          "sourceSha256": "86f1eb4c95cdf41a7696f8c097bdd6dc7f2b00d38542b4d1a696c973973b9e29",
+          "objectSha256": "33aafb4d842d2d392e61877c283f0626298485161679ddc5f5f0419d13c3784b",
+          "snapshotSha256": "32b0792ac38d4f8aa85ae0b1d79bf3de663598ab792cd3b2b1a57ba5a42e4ba6",
+          "metadataSha256": "2dc88ebb1e53d427b1e52296802fc0627b1adc5a85a1ee482e15697a8c69860a",
+          "foreignSourceSha256": "1d61f6d57af4bab2b4999f3f9474816bc2b5a6070ffc70e2bb01dc8ee21cf7a2",
+          "foreignObjectSha256": "8cad3876bfe799795f41ff6e9189e0346d5316dcb9cb36a99f3875447929ff69",
+          "injectionSha256": "ee90936745f90a33f2c386acda941606e2f8f36a0436a20618b814153dee7102",
+          "liveCastAccepted": true,
+          "accessorFault": null
+        },
+        {
+          "name": "float_method_get",
+          "sourceSha256": "15875b713f7317c2da12be2498cbaeb8832427126a67b20affde5968216ea8d8",
+          "objectSha256": "10395c2b192d3e74634c5eee04c8b9dc2135f1a414feaaf1d844d6d5e1c41231",
+          "snapshotSha256": "32b0792ac38d4f8aa85ae0b1d79bf3de663598ab792cd3b2b1a57ba5a42e4ba6",
+          "metadataSha256": "620c3e79a7b29b2714cff2b9713cd66452419832eaa08eebb0221fc6c5e9767d",
+          "foreignSourceSha256": "1d61f6d57af4bab2b4999f3f9474816bc2b5a6070ffc70e2bb01dc8ee21cf7a2",
+          "foreignObjectSha256": "8cad3876bfe799795f41ff6e9189e0346d5316dcb9cb36a99f3875447929ff69",
+          "injectionSha256": "ab1b6ab2afb57283f3b2e50a27f52470e185a8fcf7fb759c0b7a7bd32398442e",
+          "liveCastAccepted": true,
+          "accessorFault": "Unable to cast object of type 'System.Double[]' to type 'System.Int32[]'."
+        },
+        {
+          "name": "float_method_set",
+          "sourceSha256": "68ce582e9c570f468b9114bbac40d4ae7d2fd485db5d012a27a999b1334387a9",
+          "objectSha256": "3a1a5efc23b849d24b8b665a326b3e0eca2d96db220d956e749cd88a82a4f442",
+          "snapshotSha256": "32b0792ac38d4f8aa85ae0b1d79bf3de663598ab792cd3b2b1a57ba5a42e4ba6",
+          "metadataSha256": "d014f3e22399e4448b7c5ae6de7b11d8b02e5cc84de40c78c49d187d52453cd2",
+          "foreignSourceSha256": "1d61f6d57af4bab2b4999f3f9474816bc2b5a6070ffc70e2bb01dc8ee21cf7a2",
+          "foreignObjectSha256": "8cad3876bfe799795f41ff6e9189e0346d5316dcb9cb36a99f3875447929ff69",
+          "injectionSha256": "ab1b6ab2afb57283f3b2e50a27f52470e185a8fcf7fb759c0b7a7bd32398442e",
+          "liveCastAccepted": true,
+          "accessorFault": "Unable to cast object of type 'System.Double[]' to type 'System.Int32[]'."
+        },
+        {
+          "name": "float_index_get",
+          "sourceSha256": "e2066fe607e9de6a1e05723b8a530377653b92575b459d96c1f836fb2e35916e",
+          "objectSha256": "6dfd1c95b966e5f1c8e2eb0b6a16ffed5e341c9ccdb8ad93d526962f06e1a913",
+          "snapshotSha256": "32b0792ac38d4f8aa85ae0b1d79bf3de663598ab792cd3b2b1a57ba5a42e4ba6",
+          "metadataSha256": "51bde191cf3095e07febe7d419bb198d56f11fc53967ce03cdafe7d8aa8662ac",
+          "foreignSourceSha256": "1d61f6d57af4bab2b4999f3f9474816bc2b5a6070ffc70e2bb01dc8ee21cf7a2",
+          "foreignObjectSha256": "8cad3876bfe799795f41ff6e9189e0346d5316dcb9cb36a99f3875447929ff69",
+          "injectionSha256": "ab1b6ab2afb57283f3b2e50a27f52470e185a8fcf7fb759c0b7a7bd32398442e",
+          "liveCastAccepted": true,
+          "accessorFault": "Unable to cast object of type 'System.Double[]' to type 'System.Int32[]'."
+        },
+        {
+          "name": "float_index_set",
+          "sourceSha256": "2113400d3e4c90b59688fabc61bd40088028234affdf365213236c1822639be9",
+          "objectSha256": "090c23a5b042d163ff649f936c737b7c99f9c78ff69578a0e0c13ce8284b37cd",
+          "snapshotSha256": "32b0792ac38d4f8aa85ae0b1d79bf3de663598ab792cd3b2b1a57ba5a42e4ba6",
+          "metadataSha256": "e960a8c7d1756f4d2919bac3272acf003a309ce3707ce8902a188d09f7b2cde1",
+          "foreignSourceSha256": "1d61f6d57af4bab2b4999f3f9474816bc2b5a6070ffc70e2bb01dc8ee21cf7a2",
+          "foreignObjectSha256": "8cad3876bfe799795f41ff6e9189e0346d5316dcb9cb36a99f3875447929ff69",
+          "injectionSha256": "ab1b6ab2afb57283f3b2e50a27f52470e185a8fcf7fb759c0b7a7bd32398442e",
+          "liveCastAccepted": true,
+          "accessorFault": "Unable to cast object of type 'System.Double[]' to type 'System.Int32[]'."
+        },
+        {
+          "name": "float_compound",
+          "sourceSha256": "e465f76981f98493ff9254184b02f13ac75721b8c76186e3486d0b7d5ea3ab03",
+          "objectSha256": "7cd0d9a3ace9074a6b5c0c6c26e25fc7893a952f76b1fee26d267c0930f20795",
+          "snapshotSha256": "32b0792ac38d4f8aa85ae0b1d79bf3de663598ab792cd3b2b1a57ba5a42e4ba6",
+          "metadataSha256": "4ad09d290c8c0cb5f7a04fe2efdcff9b6acafdd93c35bbd43e04276d52cc0e17",
+          "foreignSourceSha256": "1d61f6d57af4bab2b4999f3f9474816bc2b5a6070ffc70e2bb01dc8ee21cf7a2",
+          "foreignObjectSha256": "8cad3876bfe799795f41ff6e9189e0346d5316dcb9cb36a99f3875447929ff69",
+          "injectionSha256": "ab1b6ab2afb57283f3b2e50a27f52470e185a8fcf7fb759c0b7a7bd32398442e",
+          "liveCastAccepted": true,
+          "accessorFault": "Unable to cast object of type 'System.Double[]' to type 'System.Int32[]'."
+        },
+        {
+          "name": "char_cast_length",
+          "sourceSha256": "86f1eb4c95cdf41a7696f8c097bdd6dc7f2b00d38542b4d1a696c973973b9e29",
+          "objectSha256": "33aafb4d842d2d392e61877c283f0626298485161679ddc5f5f0419d13c3784b",
+          "snapshotSha256": "43d7a5eb0ea74a7c0132cf01bc3ca094fad19a3ca94b2456105b960e96c1abd2",
+          "metadataSha256": "800e3c7fd704cb391c38e4070b378b2b63db8e2c3af5d21f802cd2b045c5d201",
+          "foreignSourceSha256": "bb0dbd1d681596e36e8fa657ec4ee243db5155976d554cfe15560a3e7bd21122",
+          "foreignObjectSha256": "b3358c990f87019826d7e4b537fc62432166e54868a24724fd1d4bba0df6783b",
+          "injectionSha256": "0200c6c272a1383deaf8ea31aa07a849ecf50f8a60aca3ebb34e9fcd4c2808e3",
+          "liveCastAccepted": true,
+          "accessorFault": null
+        },
+        {
+          "name": "char_method_get",
+          "sourceSha256": "15875b713f7317c2da12be2498cbaeb8832427126a67b20affde5968216ea8d8",
+          "objectSha256": "10395c2b192d3e74634c5eee04c8b9dc2135f1a414feaaf1d844d6d5e1c41231",
+          "snapshotSha256": "43d7a5eb0ea74a7c0132cf01bc3ca094fad19a3ca94b2456105b960e96c1abd2",
+          "metadataSha256": "9a750cc33300d17624ab43bda9eac730f48b98d93d9fcdbd9d51f7c394c1b3ae",
+          "foreignSourceSha256": "bb0dbd1d681596e36e8fa657ec4ee243db5155976d554cfe15560a3e7bd21122",
+          "foreignObjectSha256": "b3358c990f87019826d7e4b537fc62432166e54868a24724fd1d4bba0df6783b",
+          "injectionSha256": "0200c6c272a1383deaf8ea31aa07a849ecf50f8a60aca3ebb34e9fcd4c2808e3",
+          "liveCastAccepted": true,
+          "accessorFault": "Unable to cast object of type 'System.Char[]' to type 'System.Int32[]'."
+        },
+        {
+          "name": "char_method_set",
+          "sourceSha256": "68ce582e9c570f468b9114bbac40d4ae7d2fd485db5d012a27a999b1334387a9",
+          "objectSha256": "3a1a5efc23b849d24b8b665a326b3e0eca2d96db220d956e749cd88a82a4f442",
+          "snapshotSha256": "43d7a5eb0ea74a7c0132cf01bc3ca094fad19a3ca94b2456105b960e96c1abd2",
+          "metadataSha256": "027626dd2d9f71c9c745ff3be5c61c78d6e3e0ad56d6427345e109e0bdb7e2dd",
+          "foreignSourceSha256": "bb0dbd1d681596e36e8fa657ec4ee243db5155976d554cfe15560a3e7bd21122",
+          "foreignObjectSha256": "b3358c990f87019826d7e4b537fc62432166e54868a24724fd1d4bba0df6783b",
+          "injectionSha256": "0200c6c272a1383deaf8ea31aa07a849ecf50f8a60aca3ebb34e9fcd4c2808e3",
+          "liveCastAccepted": true,
+          "accessorFault": "Unable to cast object of type 'System.Char[]' to type 'System.Int32[]'."
+        },
+        {
+          "name": "char_index_get",
+          "sourceSha256": "e2066fe607e9de6a1e05723b8a530377653b92575b459d96c1f836fb2e35916e",
+          "objectSha256": "6dfd1c95b966e5f1c8e2eb0b6a16ffed5e341c9ccdb8ad93d526962f06e1a913",
+          "snapshotSha256": "43d7a5eb0ea74a7c0132cf01bc3ca094fad19a3ca94b2456105b960e96c1abd2",
+          "metadataSha256": "0bb031c91b7189c31380a108dccf867357ff4d06b4b44709fe789d5bce38e40f",
+          "foreignSourceSha256": "bb0dbd1d681596e36e8fa657ec4ee243db5155976d554cfe15560a3e7bd21122",
+          "foreignObjectSha256": "b3358c990f87019826d7e4b537fc62432166e54868a24724fd1d4bba0df6783b",
+          "injectionSha256": "0200c6c272a1383deaf8ea31aa07a849ecf50f8a60aca3ebb34e9fcd4c2808e3",
+          "liveCastAccepted": true,
+          "accessorFault": "Unable to cast object of type 'System.Char[]' to type 'System.Int32[]'."
+        },
+        {
+          "name": "char_index_set",
+          "sourceSha256": "2113400d3e4c90b59688fabc61bd40088028234affdf365213236c1822639be9",
+          "objectSha256": "090c23a5b042d163ff649f936c737b7c99f9c78ff69578a0e0c13ce8284b37cd",
+          "snapshotSha256": "43d7a5eb0ea74a7c0132cf01bc3ca094fad19a3ca94b2456105b960e96c1abd2",
+          "metadataSha256": "8dbbbc86b99ed083787c0118958901c866f3da0d0269c069fd62e0d44106a2ba",
+          "foreignSourceSha256": "bb0dbd1d681596e36e8fa657ec4ee243db5155976d554cfe15560a3e7bd21122",
+          "foreignObjectSha256": "b3358c990f87019826d7e4b537fc62432166e54868a24724fd1d4bba0df6783b",
+          "injectionSha256": "0200c6c272a1383deaf8ea31aa07a849ecf50f8a60aca3ebb34e9fcd4c2808e3",
+          "liveCastAccepted": true,
+          "accessorFault": "Unable to cast object of type 'System.Char[]' to type 'System.Int32[]'."
+        },
+        {
+          "name": "char_compound",
+          "sourceSha256": "e465f76981f98493ff9254184b02f13ac75721b8c76186e3486d0b7d5ea3ab03",
+          "objectSha256": "7cd0d9a3ace9074a6b5c0c6c26e25fc7893a952f76b1fee26d267c0930f20795",
+          "snapshotSha256": "43d7a5eb0ea74a7c0132cf01bc3ca094fad19a3ca94b2456105b960e96c1abd2",
+          "metadataSha256": "dfa95079a419a4c6a9b9c02d0765ec1654ed2448a8d42c651ef32b4098493f05",
+          "foreignSourceSha256": "bb0dbd1d681596e36e8fa657ec4ee243db5155976d554cfe15560a3e7bd21122",
+          "foreignObjectSha256": "b3358c990f87019826d7e4b537fc62432166e54868a24724fd1d4bba0df6783b",
+          "injectionSha256": "0200c6c272a1383deaf8ea31aa07a849ecf50f8a60aca3ebb34e9fcd4c2808e3",
+          "liveCastAccepted": true,
+          "accessorFault": "Unable to cast object of type 'System.Char[]' to type 'System.Int32[]'."
+        }
+      ]
+    }
+  },
+  "findings": [
+    "Same numeric classindex0 cast succeeds despite foreign float[]/char[] logical name; wrapper aliases retained; Length returns1 without backing-family cast.",
+    "Live dynamic typename remainsforeignfloat[]/char[]. Caller statically bound integer[].Get/Set/indexGet/indexSet/compound all throw exact raw Double[]/Char[] toInt32[] cast faults; compound RHS runs once first.",
+    "Actual original caller MigrateIn resolves raw classindex0 in caller objectcode, changing wrapper logicaltype tointeger[] but preserving raw Double[]/Char[] backing and ownheap12/6; same statically bound accessorfaults follow.",
+    "No backing writes occur before any failing accessor; original cells remain11.5 binary64 orchar65."
+  ],
+  "pending": [
+    "Native foreign livecast/staticaccessor checks not run by this reference harness.",
+    "Cross-instance reference injection is a backend test boundary, not ordinary source transfer acceptance.",
+    "No arbitrary classindex layouts, ranks, delegates, macOS orARM64 scope."
+  ]
+}

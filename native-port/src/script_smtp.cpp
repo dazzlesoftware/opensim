@@ -19,8 +19,7 @@ struct MailboxAddress {
 
 std::string_view trim_mailbox(std::string_view value) {
     const auto begin = value.find_first_not_of(" \t");
-    return begin == value.npos ? std::string_view{} :
-        value.substr(begin, value.find_last_not_of(" \t") - begin + 1);
+    return begin == value.npos ? std::string_view{} : value.substr(begin, value.find_last_not_of(" \t") - begin + 1);
 }
 
 MailboxAddress parse_mailbox(std::string_view value) {
@@ -49,9 +48,8 @@ MailboxAddress parse_mailbox(std::string_view value) {
     const auto separator = mailbox.address.find('@');
     if (separator == value.npos || separator == 0 || separator + 1 == mailbox.address.size() ||
         mailbox.address.find('@', separator + 1) != value.npos ||
-        !std::ranges::all_of(mailbox.address, [](unsigned char c) {
-            return c > 32 && c < 127 && c != '<' && c != '>';
-        }))
+        !std::ranges::all_of(mailbox.address,
+                             [](unsigned char c) { return c > 32 && c < 127 && c != '<' && c != '>'; }))
         throw std::invalid_argument("Invalid SMTP envelope address");
     return mailbox;
 }
@@ -72,7 +70,7 @@ std::string encode_header(std::string_view value) {
     return encoded;
 }
 
-std::string mailbox_header(const MailboxAddress& mailbox) {
+std::string mailbox_header(const MailboxAddress &mailbox) {
     auto name = encode_header(mailbox.name);
     if (!name.empty())
         name += ' ';
@@ -81,7 +79,7 @@ std::string mailbox_header(const MailboxAddress& mailbox) {
 
 enum class BodyEncoding { SevenBit, EightBit, Base64 };
 
-std::string smtp_body(std::string_view body, bool supports_eight_bit, BodyEncoding& encoding) {
+std::string smtp_body(std::string_view body, bool supports_eight_bit, BodyEncoding &encoding) {
     std::string canonical;
     std::size_t line_length = 0;
     encoding = BodyEncoding::SevenBit;
@@ -94,8 +92,7 @@ std::string smtp_body(std::string_view body, bool supports_eight_bit, BodyEncodi
             line_length = 0;
         } else {
             ++line_length;
-            if ((c < 32 && c != '\t') || c == 127 || line_length > 998 ||
-                (c >= 128 && !supports_eight_bit)) {
+            if ((c < 32 && c != '\t') || c == 127 || line_length > 998 || (c >= 128 && !supports_eight_bit)) {
                 encoding = BodyEncoding::Base64;
             } else if (c >= 128 && encoding == BodyEncoding::SevenBit) {
                 encoding = BodyEncoding::EightBit;
@@ -118,12 +115,11 @@ std::string smtp_body(std::string_view body, bool supports_eight_bit, BodyEncodi
     }
     return stuffed;
 }
-}
+} // namespace
 
-void send_script_smtp(const std::string& host, int port, std::string_view from, std::string_view to,
-                      std::string_view subject, std::string_view body,
-                      std::string_view owner, std::string_view object,
-                      const ScriptSmtpSecurity& security) {
+void send_script_smtp(const std::string &host, int port, std::string_view from, std::string_view to,
+                      std::string_view subject, std::string_view body, std::string_view owner, std::string_view object,
+                      const ScriptSmtpSecurity &security) {
     const auto sender = parse_mailbox(from);
     const auto recipient = parse_mailbox(to);
     if (owner.find_first_of("\r\n") != owner.npos || object.find_first_of("\r\n") != object.npos)
@@ -139,21 +135,26 @@ void send_script_smtp(const std::string& host, int port, std::string_view from, 
     std::ostringstream date;
     date.imbue(std::locale::classic());
     date << std::put_time(&utc, "%a, %d %b %Y %H:%M:%S +0000");
-    const auto message_id = framework::Uuid::random().str() + "@" +
-        std::string(sender.address.substr(sender.address.find('@') + 1));
+    const auto message_id =
+        framework::Uuid::random().str() + "@" + std::string(sender.address.substr(sender.address.find('@') + 1));
 
     httplib::Error error = httplib::Error::Success;
-    const auto socket = httplib::detail::create_client_socket(
-        host, "", port, AF_UNSPEC, true, false, nullptr, 10, 0, 10, 0, 10, 0, "", error);
+    const auto socket = httplib::detail::create_client_socket(host, "", port, AF_UNSPEC, true, false, nullptr, 10, 0,
+                                                              10, 0, 10, 0, "", error);
     if (socket == INVALID_SOCKET)
         throw std::runtime_error("Could not connect to SMTP server");
+
     struct Connection {
         socket_t socket;
-        ~Connection() { httplib::detail::close_socket(socket); }
+
+        ~Connection() {
+            httplib::detail::close_socket(socket);
+        }
     } connection{socket};
+
     httplib::detail::SocketStream plain_stream(socket, 10, 0, 10, 0);
     plain_stream.opensim_disable_read_buffer();
-    httplib::Stream* stream = &plain_stream;
+    httplib::Stream *stream = &plain_stream;
     const auto write = [&](std::string_view data) {
         while (!data.empty()) {
             const auto size = stream->write(data.data(), data.size());
@@ -162,10 +163,12 @@ void send_script_smtp(const std::string& host, int port, std::string_view from, 
             data.remove_prefix(static_cast<std::size_t>(size));
         }
     };
+
     struct Reply {
         std::string code;
         std::vector<std::string> lines;
     };
+
     const auto read_reply = [&] {
         Reply reply;
         for (int lines = 0; lines < 100; ++lines) {
@@ -177,9 +180,7 @@ void send_script_smtp(const std::string& host, int port, std::string_view from, 
                     break;
             }
             if (line.size() < 5 || !line.ends_with("\r\n") ||
-                !std::ranges::all_of(std::string_view(line).substr(0, 3), [](char c) {
-                    return c >= '0' && c <= '9';
-                }))
+                !std::ranges::all_of(std::string_view(line).substr(0, 3), [](char c) { return c >= '0' && c <= '9'; }))
                 break;
             const auto code = line.substr(0, 3);
             if (!reply.code.empty() && reply.code != code)
@@ -211,14 +212,12 @@ void send_script_smtp(const std::string& host, int port, std::string_view from, 
             throw std::runtime_error("Could not initialize SMTP TLS trust");
         tls::set_verify_client(context.get(), security.verify_chain);
         session.reset(tls::create_session(context.get(), socket));
-        if (!session || (!httplib::detail::is_ip_address(host) &&
-                         !tls::set_sni(session.get(), host.c_str(), false)))
+        if (!session || (!httplib::detail::is_ip_address(host) && !tls::set_sni(session.get(), host.c_str(), false)))
             throw std::runtime_error("Could not initialize SMTP TLS session");
         tls::TlsError tls_error;
         if (!tls::connect_nonblocking(session.get(), socket, 10, 0, &tls_error))
             throw std::runtime_error("SMTP TLS handshake failed");
-        std::unique_ptr<void, decltype(&tls::free_cert)> certificate(
-            tls::get_peer_cert(session.get()), tls::free_cert);
+        std::unique_ptr<void, decltype(&tls::free_cert)> certificate(tls::get_peer_cert(session.get()), tls::free_cert);
         if (!certificate || (security.verify_name && !tls::verify_hostname(certificate.get(), host.c_str())))
             throw std::runtime_error("SMTP TLS server name verification failed");
         encrypted = std::make_unique<httplib::detail::SSLSocketStream>(socket, session.get(), 10, 0, 10, 0);
@@ -243,7 +242,7 @@ void send_script_smtp(const std::string& host, int port, std::string_view from, 
     };
     auto capabilities = ehlo();
     if (!implicit_tls) {
-        const bool offers_start_tls = std::ranges::any_of(capabilities, [](const auto& capability) {
+        const bool offers_start_tls = std::ranges::any_of(capabilities, [](const auto &capability) {
             return httplib::detail::case_ignore::equal(capability, "STARTTLS");
         });
         if (security.tls == ScriptSmtpTls::StartTls && !offers_start_tls)
@@ -258,7 +257,7 @@ void send_script_smtp(const std::string& host, int port, std::string_view from, 
     if (!security.login.empty() && !security.password.empty()) {
         bool plain = false;
         bool login = false;
-        for (const auto& capability : capabilities) {
+        for (const auto &capability : capabilities) {
             std::istringstream words(capability);
             std::string word;
             if (!(words >> word) || !httplib::detail::case_ignore::equal(word, "AUTH"))
@@ -282,7 +281,7 @@ void send_script_smtp(const std::string& host, int port, std::string_view from, 
         }
         expect("235");
     }
-    const bool supports_eight_bit = std::ranges::any_of(capabilities, [](const auto& capability) {
+    const bool supports_eight_bit = std::ranges::any_of(capabilities, [](const auto &capability) {
         return httplib::detail::case_ignore::equal(capability, "8BITMIME");
     });
     BodyEncoding body_encoding;
@@ -295,9 +294,10 @@ void send_script_smtp(const std::string& host, int port, std::string_view from, 
     write("DATA\r\n");
     expect("354");
     std::string data = "From: " + mailbox_header(sender) + "\r\nTo: " + mailbox_header(recipient) +
-        "\r\nDate: " + date.str() + "\r\nMessage-ID: <" + message_id + ">\r\nSubject: " + encode_header(subject);
+                       "\r\nDate: " + date.str() + "\r\nMessage-ID: <" + message_id +
+                       ">\r\nSubject: " + encode_header(subject);
     data += "\r\nX-Owner-ID: " + std::string(owner) + "\r\nX-Task-ID: " + std::string(object) +
-        "\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=utf-8\r\n";
+            "\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=utf-8\r\n";
     if (body_encoding == BodyEncoding::EightBit)
         data += "Content-Transfer-Encoding: 8bit\r\n";
     if (body_encoding != BodyEncoding::Base64) {
@@ -312,4 +312,4 @@ void send_script_smtp(const std::string& host, int port, std::string_view from, 
     expect("250");
     write("QUIT\r\n");
 }
-}
+} // namespace opensim::network

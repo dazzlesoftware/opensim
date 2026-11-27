@@ -7,14 +7,16 @@
 #include <sstream>
 #include <iomanip>
 using namespace opensim::framework;
-std::string encode(const std::string& value) {
+
+std::string encode(const std::string &value) {
     std::ostringstream out;
     out << std::hex << std::setfill('0');
     for (auto c : utf16(value))
         out << std::setw(4) << static_cast<unsigned>(c);
     return out.str();
 }
-std::string list(const std::vector<std::string>& values) {
+
+std::string list(const std::vector<std::string> &values) {
     std::string text;
     for (std::size_t i = 0; i < values.size(); ++i) {
         if (i)
@@ -23,6 +25,7 @@ std::string list(const std::vector<std::string>& values) {
     }
     return text;
 }
+
 int main() {
     std::string row;
     while (std::getline(std::cin, row)) {
@@ -39,12 +42,10 @@ int main() {
             return ConsoleCommandDescription{module, "run", "run", "description", "", shared};
         };
         ConsoleCommandResolver::Callback a, b, c;
-        c = std::make_shared<
-            std::function<void(const std::optional<std::string>&, std::vector<std::string>&)>>(
-            [&](const auto& module, auto&) { events.push_back("C:" + module.value_or("")); });
-        a = std::make_shared<
-            std::function<void(const std::optional<std::string>&, std::vector<std::string>&)>>(
-            [&](const auto& module, auto& words) {
+        c = std::make_shared<std::function<void(const std::optional<std::string> &, std::vector<std::string> &)>>(
+            [&](const auto &module, auto &) { events.push_back("C:" + module.value_or("")); });
+        a = std::make_shared<std::function<void(const std::optional<std::string> &, std::vector<std::string> &)>>(
+            [&](const auto &module, auto &words) {
                 events.push_back("A:" + module.value_or(""));
                 if (seed & 32)
                     words[0] = "changed";
@@ -57,9 +58,8 @@ int main() {
                 if (seed & 512)
                     commands.add({"Other", "other", "other", "", "", false}, c);
             });
-        b = std::make_shared<
-            std::function<void(const std::optional<std::string>&, std::vector<std::string>&)>>(
-            [&](const auto& module, auto& words) {
+        b = std::make_shared<std::function<void(const std::optional<std::string> &, std::vector<std::string> &)>>(
+            [&](const auto &module, auto &words) {
                 events.push_back("B:" + module.value_or(""));
                 if ((seed & 1024) && words.size() > 1)
                     words[1] = "tail";
@@ -87,11 +87,11 @@ int main() {
                 aliased = invoked && &invoked->get() == &words;
                 if (invoked)
                     result = invoked->get();
-            } catch (const std::exception&) {
+            } catch (const std::exception &) {
                 status = "EX";
             }
-            std::cout << status << ';' << has << ';' << aliased << ';' << list(result) << ';' << list(words)
-                      << ';' << list(events) << (iteration == 0 ? '/' : '\n');
+            std::cout << status << ';' << has << ';' << aliased << ';' << list(result) << ';' << list(words) << ';'
+                      << list(events) << (iteration == 0 ? '/' : '\n');
         }
     }
 }

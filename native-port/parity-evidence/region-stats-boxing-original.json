@@ -1,0 +1,80 @@
+{
+  "method": "osGetRegionStats",
+  "actual_original_permission_check": "Initialize with real Nini OSSL enabled/Moderate configuration; unchanged CheckThreatLevel executed",
+  "methodology": "Real original OSSL_Api \u002B Scene \u002B SimStatsReporter objects. Controlled float[] field, actual LastReportedSimStats getter, no producer or permission-method override. No viewer/network claim.",
+  "values": [
+    {
+      "index": 0,
+      "source_type": "System.Single",
+      "source_bits": "3fa00000",
+      "returned_clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLFloat",
+      "value": 1.25,
+      "bits": "3ff4000000000000",
+      "text": "1.250000"
+    },
+    {
+      "index": 1,
+      "source_type": "System.Single",
+      "source_bits": "3f9e0652",
+      "returned_clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLFloat",
+      "value": 1.2345678806304932,
+      "bits": "3ff3c0ca40000000",
+      "text": "1.234568"
+    },
+    {
+      "index": 2,
+      "source_type": "System.Single",
+      "source_bits": "80000000",
+      "returned_clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLFloat",
+      "value": -0,
+      "bits": "8000000000000000",
+      "text": "-0.000000"
+    },
+    {
+      "index": 3,
+      "source_type": "System.Single",
+      "source_bits": "350637bd",
+      "returned_clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLFloat",
+      "value": 4.999999987376214E-07,
+      "bits": "3ea0c6f7a0000000",
+      "text": "0.000000"
+    },
+    {
+      "index": 4,
+      "source_type": "System.Single",
+      "source_bits": "ffc00000",
+      "returned_clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLFloat",
+      "value": null,
+      "bits": "fff8000000000000",
+      "text": "NaN"
+    },
+    {
+      "index": 5,
+      "source_type": "System.Single",
+      "source_bits": "7f800000",
+      "returned_clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLFloat",
+      "value": null,
+      "bits": "7ff0000000000000",
+      "text": "Infinity"
+    }
+  ],
+  "dumped": "1.250000|1.234568|-0.000000|0.000000|NaN|Infinity",
+  "csv": "1.250000, 1.234568, -0.000000, 0.000000, NaN, Infinity",
+  "source": [
+    {
+      "path": "OpenSim/Region/ScriptEngine/Shared/Api/Implementation/OSSL_Api.cs",
+      "line": 3648,
+      "boxing_line": 3657,
+      "sha256": "7f01f9c546c9d18f358227c95d2f76169d0db9cf2f4c1c5d6631ccc0102725e2"
+    },
+    {
+      "path": "OpenSim/Region/Framework/Scenes/SimStatsReporter.cs",
+      "line": 75,
+      "boxing_line": 0,
+      "sha256": "1be78700c527da858bbe9503d06e928f06e1626f5c0f21bb3f773ba023356e6a"
+    }
+  ],
+  "original_api_assembly_sha256": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+  "original_scene_assembly_sha256": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+  "generator_sha256": "6642e4a540cd73b26f686a1fe24f393a43a50555ccc4d8ceaaeb902328bef928"
+}

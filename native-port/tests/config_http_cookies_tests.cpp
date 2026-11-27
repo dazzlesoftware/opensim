@@ -9,6 +9,7 @@
 #include <chrono>
 using namespace opensim::framework;
 using Text = ConfigCookieText;
+
 Text dec(std::string s) {
     if (s == "~")
         return {};
@@ -18,6 +19,7 @@ Text dec(std::string s) {
             r += char16_t(std::stoul(s.substr(i, 4), nullptr, 16));
     return std::make_shared<const std::u16string>(r);
 }
+
 std::string hex(Text s) {
     if (!s)
         return "~";
@@ -29,8 +31,9 @@ std::string hex(Text s) {
         out << std::setw(4) << unsigned(c);
     return out.str();
 }
-std::string error(const std::exception& exception) {
-    if (auto e = dynamic_cast<const ConfigHttpCookieError*>(&exception)) {
+
+std::string error(const std::exception &exception) {
+    if (auto e = dynamic_cast<const ConfigHttpCookieError *>(&exception)) {
         std::ostringstream out;
         out << e->source_type << ':' << std::hex << e->hresult << ':'
             << hex(std::make_shared<const std::u16string>(e->message)) << ':'
@@ -38,7 +41,7 @@ std::string error(const std::exception& exception) {
         if (e->inner)
             try {
                 std::rethrow_exception(e->inner);
-            } catch (const std::exception& nested) {
+            } catch (const std::exception &nested) {
                 out << error(nested);
             }
         else
@@ -47,7 +50,9 @@ std::string error(const std::exception& exception) {
     }
     return "NATIVE:" + std::string(exception.what());
 }
+
 std::optional<std::uint64_t> source_seed;
+
 std::shared_ptr<ConfigHttpCookiesBackend> backend(Text fqdn) {
     ConfigHttpCookieNativeOptions options;
     options.fqdn_snapshot = fqdn;
@@ -63,7 +68,7 @@ std::shared_ptr<ConfigHttpCookiesBackend> backend(Text fqdn) {
     return native_invariant_config_http_cookies_backend(std::move(options));
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
     if (argc > 1 && std::string_view(argv[1]) == "--fqdn") {
         std::cout << hex(native_config_http_cookie_fqdn_domain()) << '\n';
         return 0;
@@ -123,16 +128,16 @@ int main(int argc, char** argv) {
                 else if (command == "G") {
                     auto values = jar->cookies(uri());
                     std::string s;
-                    for (auto& c : values)
-                        s += hex(c.name) + ',' + hex(c.value) + ',' + hex(c.domain) + ',' + hex(c.path) +
-                             ',' + hex(c.port) + ',' + std::to_string(c.version) + ',' +
-                             std::to_string(c.variant) + ',' + (c.secure ? "1" : "0") + ',' +
-                             (c.http_only ? "1" : "0") + ',' + (c.discard ? "1" : "0") + ';';
+                    for (auto &c : values)
+                        s += hex(c.name) + ',' + hex(c.value) + ',' + hex(c.domain) + ',' + hex(c.path) + ',' +
+                             hex(c.port) + ',' + std::to_string(c.version) + ',' + std::to_string(c.variant) + ',' +
+                             (c.secure ? "1" : "0") + ',' + (c.http_only ? "1" : "0") + ',' + (c.discard ? "1" : "0") +
+                             ';';
                     out.push_back(s);
                 } else if (command == "C")
                     out.push_back(std::to_string(jar->count()));
                 out.push_back("ok");
-            } catch (const std::exception& e) {
+            } catch (const std::exception &e) {
                 out.push_back(error(e));
             }
         }

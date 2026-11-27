@@ -8,7 +8,7 @@
 
 namespace opensim::services {
 class FsAssetFiles {
-public:
+  public:
     FsAssetFiles(std::filesystem::path base, std::filesystem::path spool, bool osgrid_layout);
     static std::string digest(std::string_view bytes);
     std::filesystem::path relative_path(std::string_view hash) const;
@@ -16,11 +16,11 @@ public:
     bool stage(std::string_view hash, std::string_view bytes) const;
     std::size_t flush() const;
 
-private:
+  private:
     std::filesystem::path spool_path(std::string_view hash) const;
 
     std::filesystem::path base_;
     std::filesystem::path spool_;
     bool osgrid_layout_;
 };
-}
+} // namespace opensim::services

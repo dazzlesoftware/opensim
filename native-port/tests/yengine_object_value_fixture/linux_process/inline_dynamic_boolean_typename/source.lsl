@@ -1,0 +1,1 @@
+YOption arrays;integer source=1;object input;string result;integer after;default{state_entry(){result=xmrTypeName((object)(source<2));after=1;}}

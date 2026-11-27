@@ -1,0 +1,2277 @@
+[
+  {
+    "name": "null",
+    "family": "I",
+    "boundary": "Direct original backend with explicitly boxed CLR/SDK source element",
+    "source": {
+      "type": "null",
+      "clr": null,
+      "value": null
+    },
+    "source_start": 0,
+    "destination_start": 1,
+    "count": 1,
+    "source_data_null_before": false,
+    "source_data_null_after": false,
+    "before": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "after": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "error": null,
+    "own_before": 16,
+    "own_after": 16,
+    "global_before": 16,
+    "global_after": 16,
+    "object_destination_stored_is_source": null,
+    "sdk_string_stored_is_field": null
+  },
+  {
+    "name": "raw_char",
+    "family": "I",
+    "boundary": "Direct original backend with explicitly boxed CLR/SDK source element",
+    "source": {
+      "type": "char",
+      "clr": "System.Char",
+      "value": 65,
+      "utf16": 65
+    },
+    "source_start": 0,
+    "destination_start": 1,
+    "count": 1,
+    "source_data_null_before": false,
+    "source_data_null_after": false,
+    "before": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "after": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 65
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "error": null,
+    "own_before": 16,
+    "own_after": 16,
+    "global_before": 16,
+    "global_after": 16,
+    "object_destination_stored_is_source": null,
+    "sdk_string_stored_is_field": null
+  },
+  {
+    "name": "raw_int",
+    "family": "I",
+    "boundary": "Direct original backend with explicitly boxed CLR/SDK source element",
+    "source": {
+      "type": "integer",
+      "clr": "System.Int32",
+      "value": 7
+    },
+    "source_start": 0,
+    "destination_start": 1,
+    "count": 1,
+    "source_data_null_before": false,
+    "source_data_null_after": false,
+    "before": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "after": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 7
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "error": null,
+    "own_before": 16,
+    "own_after": 16,
+    "global_before": 16,
+    "global_after": 16,
+    "object_destination_stored_is_source": null,
+    "sdk_string_stored_is_field": null
+  },
+  {
+    "name": "raw_single",
+    "family": "I",
+    "boundary": "Direct original backend with explicitly boxed CLR/SDK source element",
+    "source": {
+      "type": "single",
+      "clr": "System.Single",
+      "value": 1.5,
+      "bits": "3fc00000"
+    },
+    "source_start": 0,
+    "destination_start": 1,
+    "count": 1,
+    "source_data_null_before": false,
+    "source_data_null_after": false,
+    "before": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "after": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "error": {
+      "type": "System.ArgumentException",
+      "message": "Cannot widen from source type to target type either because the source type is a not a primitive type or the conversion cannot be accomplished.",
+      "stack": "   at System.Array.InternalSetValue(Object value, IntPtr flattenedIndex)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrList2Array(list srclist, Int32 srcstart, Object dstobj, Int32 dststart, Int32 count) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1176\r\n   at FixedArrayReference.\u003C\u003Ec__DisplayClass19_1.\u003CRun\u003Eg__DirectListMatrix|9(\u003C\u003Ec__DisplayClass19_0\u0026) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-list-to-array-phase40-reference\\Reference.cs:line 1158"
+    },
+    "own_before": 16,
+    "own_after": 16,
+    "global_before": 16,
+    "global_after": 16,
+    "object_destination_stored_is_source": null,
+    "sdk_string_stored_is_field": null
+  },
+  {
+    "name": "raw_double",
+    "family": "I",
+    "boundary": "Direct original backend with explicitly boxed CLR/SDK source element",
+    "source": {
+      "type": "float",
+      "clr": "System.Double",
+      "value": 2.5,
+      "bits": "4004000000000000"
+    },
+    "source_start": 0,
+    "destination_start": 1,
+    "count": 1,
+    "source_data_null_before": false,
+    "source_data_null_after": false,
+    "before": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "after": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "error": {
+      "type": "System.ArgumentException",
+      "message": "Cannot widen from source type to target type either because the source type is a not a primitive type or the conversion cannot be accomplished.",
+      "stack": "   at System.Array.InternalSetValue(Object value, IntPtr flattenedIndex)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrList2Array(list srclist, Int32 srcstart, Object dstobj, Int32 dststart, Int32 count) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1176\r\n   at FixedArrayReference.\u003C\u003Ec__DisplayClass19_1.\u003CRun\u003Eg__DirectListMatrix|9(\u003C\u003Ec__DisplayClass19_0\u0026) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-list-to-array-phase40-reference\\Reference.cs:line 1158"
+    },
+    "own_before": 16,
+    "own_after": 16,
+    "global_before": 16,
+    "global_after": 16,
+    "object_destination_stored_is_source": null,
+    "sdk_string_stored_is_field": null
+  },
+  {
+    "name": "raw_bool",
+    "family": "I",
+    "boundary": "Direct original backend with explicitly boxed CLR/SDK source element",
+    "source": {
+      "type": "boolean",
+      "clr": "System.Boolean",
+      "value": true
+    },
+    "source_start": 0,
+    "destination_start": 1,
+    "count": 1,
+    "source_data_null_before": false,
+    "source_data_null_after": false,
+    "before": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "after": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "error": {
+      "type": "System.ArgumentException",
+      "message": "Cannot widen from source type to target type either because the source type is a not a primitive type or the conversion cannot be accomplished.",
+      "stack": "   at System.Array.InternalSetValue(Object value, IntPtr flattenedIndex)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrList2Array(list srclist, Int32 srcstart, Object dstobj, Int32 dststart, Int32 count) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1176\r\n   at FixedArrayReference.\u003C\u003Ec__DisplayClass19_1.\u003CRun\u003Eg__DirectListMatrix|9(\u003C\u003Ec__DisplayClass19_0\u0026) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-list-to-array-phase40-reference\\Reference.cs:line 1158"
+    },
+    "own_before": 16,
+    "own_after": 16,
+    "global_before": 16,
+    "global_after": 16,
+    "object_destination_stored_is_source": null,
+    "sdk_string_stored_is_field": null
+  },
+  {
+    "name": "raw_string",
+    "family": "I",
+    "boundary": "Direct original backend with explicitly boxed CLR/SDK source element",
+    "source": {
+      "type": "string",
+      "clr": "System.String",
+      "value": "raw",
+      "utf16": [
+        114,
+        97,
+        119
+      ]
+    },
+    "source_start": 0,
+    "destination_start": 1,
+    "count": 1,
+    "source_data_null_before": false,
+    "source_data_null_after": false,
+    "before": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "after": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "error": {
+      "type": "System.InvalidCastException",
+      "message": "Object cannot be stored in an array of this type.",
+      "stack": "   at System.Array.InternalSetValue(Object value, IntPtr flattenedIndex)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrList2Array(list srclist, Int32 srcstart, Object dstobj, Int32 dststart, Int32 count) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1176\r\n   at FixedArrayReference.\u003C\u003Ec__DisplayClass19_1.\u003CRun\u003Eg__DirectListMatrix|9(\u003C\u003Ec__DisplayClass19_0\u0026) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-list-to-array-phase40-reference\\Reference.cs:line 1158"
+    },
+    "own_before": 16,
+    "own_after": 16,
+    "global_before": 16,
+    "global_after": 16,
+    "object_destination_stored_is_source": null,
+    "sdk_string_stored_is_field": null
+  },
+  {
+    "name": "sdk_int",
+    "family": "I",
+    "boundary": "Direct original backend with explicitly boxed CLR/SDK source element",
+    "source": {
+      "type": "integer",
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+      "value": 9
+    },
+    "source_start": 0,
+    "destination_start": 1,
+    "count": 1,
+    "source_data_null_before": false,
+    "source_data_null_after": false,
+    "before": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "after": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 9
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "error": null,
+    "own_before": 16,
+    "own_after": 16,
+    "global_before": 16,
+    "global_after": 16,
+    "object_destination_stored_is_source": null,
+    "sdk_string_stored_is_field": null
+  },
+  {
+    "name": "sdk_float",
+    "family": "I",
+    "boundary": "Direct original backend with explicitly boxed CLR/SDK source element",
+    "source": {
+      "type": "float",
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLFloat",
+      "value": 3.5,
+      "bits": "400c000000000000"
+    },
+    "source_start": 0,
+    "destination_start": 1,
+    "count": 1,
+    "source_data_null_before": false,
+    "source_data_null_after": false,
+    "before": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "after": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "error": {
+      "type": "System.ArgumentException",
+      "message": "Cannot widen from source type to target type either because the source type is a not a primitive type or the conversion cannot be accomplished.",
+      "stack": "   at System.Array.InternalSetValue(Object value, IntPtr flattenedIndex)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrList2Array(list srclist, Int32 srcstart, Object dstobj, Int32 dststart, Int32 count) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1176\r\n   at FixedArrayReference.\u003C\u003Ec__DisplayClass19_1.\u003CRun\u003Eg__DirectListMatrix|9(\u003C\u003Ec__DisplayClass19_0\u0026) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-list-to-array-phase40-reference\\Reference.cs:line 1158"
+    },
+    "own_before": 16,
+    "own_after": 16,
+    "global_before": 16,
+    "global_after": 16,
+    "object_destination_stored_is_source": null,
+    "sdk_string_stored_is_field": null
+  },
+  {
+    "name": "sdk_string",
+    "family": "I",
+    "boundary": "Direct original backend with explicitly boxed CLR/SDK source element",
+    "source": {
+      "type": "string",
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": "sdk",
+      "utf16": [
+        115,
+        100,
+        107
+      ]
+    },
+    "source_start": 0,
+    "destination_start": 1,
+    "count": 1,
+    "source_data_null_before": false,
+    "source_data_null_after": false,
+    "before": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "after": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "error": {
+      "type": "System.InvalidCastException",
+      "message": "Object cannot be stored in an array of this type.",
+      "stack": "   at System.Array.InternalSetValue(Object value, IntPtr flattenedIndex)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrList2Array(list srclist, Int32 srcstart, Object dstobj, Int32 dststart, Int32 count) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1176\r\n   at FixedArrayReference.\u003C\u003Ec__DisplayClass19_1.\u003CRun\u003Eg__DirectListMatrix|9(\u003C\u003Ec__DisplayClass19_0\u0026) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-list-to-array-phase40-reference\\Reference.cs:line 1158"
+    },
+    "own_before": 16,
+    "own_after": 16,
+    "global_before": 16,
+    "global_after": 16,
+    "object_destination_stored_is_source": null,
+    "sdk_string_stored_is_field": null
+  },
+  {
+    "name": "sdk_null_string",
+    "family": "I",
+    "boundary": "Direct original backend with explicitly boxed CLR/SDK source element",
+    "source": {
+      "type": "string",
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLString",
+      "value": null,
+      "utf16": null
+    },
+    "source_start": 0,
+    "destination_start": 1,
+    "count": 1,
+    "source_data_null_before": false,
+    "source_data_null_after": false,
+    "before": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "after": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "error": null,
+    "own_before": 16,
+    "own_after": 16,
+    "global_before": 16,
+    "global_after": 16,
+    "object_destination_stored_is_source": null,
+    "sdk_string_stored_is_field": null
+  },
+  {
+    "name": "sdk_key",
+    "family": "I",
+    "boundary": "Direct original backend with explicitly boxed CLR/SDK source element",
+    "source": {
+      "type": "key",
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Bkey",
+      "value": "11111111-2222-3333-4444-555555555555"
+    },
+    "source_start": 0,
+    "destination_start": 1,
+    "count": 1,
+    "source_data_null_before": false,
+    "source_data_null_after": false,
+    "before": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "after": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "error": {
+      "type": "System.InvalidCastException",
+      "message": "Object cannot be stored in an array of this type.",
+      "stack": "   at System.Array.InternalSetValue(Object value, IntPtr flattenedIndex)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrList2Array(list srclist, Int32 srcstart, Object dstobj, Int32 dststart, Int32 count) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1176\r\n   at FixedArrayReference.\u003C\u003Ec__DisplayClass19_1.\u003CRun\u003Eg__DirectListMatrix|9(\u003C\u003Ec__DisplayClass19_0\u0026) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-list-to-array-phase40-reference\\Reference.cs:line 1158"
+    },
+    "own_before": 16,
+    "own_after": 16,
+    "global_before": 16,
+    "global_after": 16,
+    "object_destination_stored_is_source": null,
+    "sdk_string_stored_is_field": null
+  },
+  {
+    "name": "vector",
+    "family": "I",
+    "boundary": "Direct original backend with explicitly boxed CLR/SDK source element",
+    "source": {
+      "type": "vector",
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+      "value": [
+        {
+          "clr": "System.Double",
+          "value": 1,
+          "bits": "3ff0000000000000",
+          "text": "1"
+        },
+        {
+          "clr": "System.Double",
+          "value": 2,
+          "bits": "4000000000000000",
+          "text": "2"
+        },
+        {
+          "clr": "System.Double",
+          "value": 3,
+          "bits": "4008000000000000",
+          "text": "3"
+        }
+      ]
+    },
+    "source_start": 0,
+    "destination_start": 1,
+    "count": 1,
+    "source_data_null_before": false,
+    "source_data_null_after": false,
+    "before": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "after": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "error": {
+      "type": "System.InvalidCastException",
+      "message": "Object cannot be stored in an array of this type.",
+      "stack": "   at System.Array.InternalSetValue(Object value, IntPtr flattenedIndex)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrList2Array(list srclist, Int32 srcstart, Object dstobj, Int32 dststart, Int32 count) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1176\r\n   at FixedArrayReference.\u003C\u003Ec__DisplayClass19_1.\u003CRun\u003Eg__DirectListMatrix|9(\u003C\u003Ec__DisplayClass19_0\u0026) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-list-to-array-phase40-reference\\Reference.cs:line 1158"
+    },
+    "own_before": 16,
+    "own_after": 16,
+    "global_before": 16,
+    "global_after": 16,
+    "object_destination_stored_is_source": null,
+    "sdk_string_stored_is_field": null
+  },
+  {
+    "name": "rotation",
+    "family": "I",
+    "boundary": "Direct original backend with explicitly boxed CLR/SDK source element",
+    "source": {
+      "type": "rotation",
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+      "value": [
+        {
+          "clr": "System.Double",
+          "value": 0,
+          "bits": "0000000000000000",
+          "text": "0"
+        },
+        {
+          "clr": "System.Double",
+          "value": 0,
+          "bits": "0000000000000000",
+          "text": "0"
+        },
+        {
+          "clr": "System.Double",
+          "value": 0,
+          "bits": "0000000000000000",
+          "text": "0"
+        },
+        {
+          "clr": "System.Double",
+          "value": 1,
+          "bits": "3ff0000000000000",
+          "text": "1"
+        }
+      ]
+    },
+    "source_start": 0,
+    "destination_start": 1,
+    "count": 1,
+    "source_data_null_before": false,
+    "source_data_null_after": false,
+    "before": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "after": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "error": {
+      "type": "System.InvalidCastException",
+      "message": "Object cannot be stored in an array of this type.",
+      "stack": "   at System.Array.InternalSetValue(Object value, IntPtr flattenedIndex)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrList2Array(list srclist, Int32 srcstart, Object dstobj, Int32 dststart, Int32 count) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1176\r\n   at FixedArrayReference.\u003C\u003Ec__DisplayClass19_1.\u003CRun\u003Eg__DirectListMatrix|9(\u003C\u003Ec__DisplayClass19_0\u0026) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-list-to-array-phase40-reference\\Reference.cs:line 1158"
+    },
+    "own_before": 16,
+    "own_after": 16,
+    "global_before": 16,
+    "global_after": 16,
+    "object_destination_stored_is_source": null,
+    "sdk_string_stored_is_field": null
+  },
+  {
+    "name": "list",
+    "family": "I",
+    "boundary": "Direct original backend with explicitly boxed CLR/SDK source element",
+    "source": {
+      "type": "list",
+      "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+      "value": [
+        {
+          "type": "integer",
+          "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BLSLInteger",
+          "value": 5
+        }
+      ]
+    },
+    "source_start": 0,
+    "destination_start": 1,
+    "count": 1,
+    "source_data_null_before": false,
+    "source_data_null_after": false,
+    "before": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "after": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "error": {
+      "type": "System.InvalidCastException",
+      "message": "Object cannot be stored in an array of this type.",
+      "stack": "   at System.Array.InternalSetValue(Object value, IntPtr flattenedIndex)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrList2Array(list srclist, Int32 srcstart, Object dstobj, Int32 dststart, Int32 count) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1176\r\n   at FixedArrayReference.\u003C\u003Ec__DisplayClass19_1.\u003CRun\u003Eg__DirectListMatrix|9(\u003C\u003Ec__DisplayClass19_0\u0026) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-list-to-array-phase40-reference\\Reference.cs:line 1158"
+    },
+    "own_before": 16,
+    "own_after": 16,
+    "global_before": 16,
+    "global_after": 16,
+    "object_destination_stored_is_source": null,
+    "sdk_string_stored_is_field": null
+  },
+  {
+    "name": "class",
+    "family": "I",
+    "boundary": "Direct original backend with explicitly boxed CLR/SDK source element",
+    "source": {
+      "type": "script_class",
+      "clr": "OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj",
+      "reference_id": 1,
+      "script_type": "integer[]",
+      "class_index": 0,
+      "rank": 1,
+      "element_type": "integer",
+      "arrays_heap_use": 16,
+      "integers": [
+        3
+      ],
+      "objects": [
+        {
+          "type": "clr_array",
+          "clr": "System.Int32[]",
+          "reference_id": 2,
+          "element_type": "System.Int32",
+          "length": 3,
+          "items": [
+            {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            },
+            {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            },
+            {
+              "type": "integer",
+              "clr": "System.Int32",
+              "value": 0
+            }
+          ]
+        }
+      ]
+    },
+    "source_start": 0,
+    "destination_start": 1,
+    "count": 1,
+    "source_data_null_before": false,
+    "source_data_null_after": false,
+    "before": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "after": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "error": {
+      "type": "System.InvalidCastException",
+      "message": "Object cannot be stored in an array of this type.",
+      "stack": "   at System.Array.InternalSetValue(Object value, IntPtr flattenedIndex)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrList2Array(list srclist, Int32 srcstart, Object dstobj, Int32 dststart, Int32 count) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1176\r\n   at FixedArrayReference.\u003C\u003Ec__DisplayClass19_1.\u003CRun\u003Eg__DirectListMatrix|9(\u003C\u003Ec__DisplayClass19_0\u0026) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-list-to-array-phase40-reference\\Reference.cs:line 1158"
+    },
+    "own_before": 16,
+    "own_after": 16,
+    "global_before": 16,
+    "global_after": 16,
+    "object_destination_stored_is_source": null,
+    "sdk_string_stored_is_field": null
+  },
+  {
+    "name": "zero_bad_indices",
+    "family": "I",
+    "boundary": "Derived direct original helper range/null/count control",
+    "source": null,
+    "source_start": -1,
+    "destination_start": -1,
+    "count": 0,
+    "source_data_null_before": false,
+    "source_data_null_after": false,
+    "before": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "after": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "error": null,
+    "own_before": 16,
+    "own_after": 16,
+    "global_before": 16,
+    "global_after": 16,
+    "object_destination_stored_is_source": null,
+    "sdk_string_stored_is_field": null
+  },
+  {
+    "name": "negative_count",
+    "family": "I",
+    "boundary": "Derived direct original helper range/null/count control",
+    "source": null,
+    "source_start": 0,
+    "destination_start": 0,
+    "count": -1,
+    "source_data_null_before": false,
+    "source_data_null_after": false,
+    "before": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "after": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "error": null,
+    "own_before": 16,
+    "own_after": 16,
+    "global_before": 16,
+    "global_after": 16,
+    "object_destination_stored_is_source": null,
+    "sdk_string_stored_is_field": null
+  },
+  {
+    "name": "partial_source",
+    "family": "I",
+    "boundary": "Derived direct original helper range/null/count control",
+    "source": null,
+    "source_start": 0,
+    "destination_start": 0,
+    "count": 2,
+    "source_data_null_before": false,
+    "source_data_null_after": false,
+    "before": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "after": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 7
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "error": {
+      "type": "System.IndexOutOfRangeException",
+      "message": "Index was outside the bounds of the array.",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrList2Array(list srclist, Int32 srcstart, Object dstobj, Int32 dststart, Int32 count) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1157\r\n   at FixedArrayReference.\u003C\u003Ec__DisplayClass19_1.\u003CRun\u003Eg__DirectListMatrix|9(\u003C\u003Ec__DisplayClass19_0\u0026) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-list-to-array-phase40-reference\\Reference.cs:line 1158"
+    },
+    "own_before": 16,
+    "own_after": 16,
+    "global_before": 16,
+    "global_after": 16,
+    "object_destination_stored_is_source": null,
+    "sdk_string_stored_is_field": null
+  },
+  {
+    "name": "partial_destination",
+    "family": "I",
+    "boundary": "Derived direct original helper range/null/count control",
+    "source": null,
+    "source_start": 0,
+    "destination_start": 2,
+    "count": 2,
+    "source_data_null_before": false,
+    "source_data_null_after": false,
+    "before": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "after": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 7
+        }
+      ]
+    },
+    "error": {
+      "type": "System.IndexOutOfRangeException",
+      "message": "Index was outside the bounds of the array.",
+      "stack": "   at System.Array.GetFlattenedIndex(Int32 rawIndex)\r\n   at System.Array.SetValue(Object value, Int32 index)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrList2Array(list srclist, Int32 srcstart, Object dstobj, Int32 dststart, Int32 count) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1176\r\n   at FixedArrayReference.\u003C\u003Ec__DisplayClass19_1.\u003CRun\u003Eg__DirectListMatrix|9(\u003C\u003Ec__DisplayClass19_0\u0026) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-list-to-array-phase40-reference\\Reference.cs:line 1158"
+    },
+    "own_before": 16,
+    "own_after": 16,
+    "global_before": 16,
+    "global_after": 16,
+    "object_destination_stored_is_source": null,
+    "sdk_string_stored_is_field": null
+  },
+  {
+    "name": "negative_source",
+    "family": "I",
+    "boundary": "Derived direct original helper range/null/count control",
+    "source": null,
+    "source_start": -1,
+    "destination_start": 0,
+    "count": 1,
+    "source_data_null_before": false,
+    "source_data_null_after": false,
+    "before": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "after": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "error": {
+      "type": "System.IndexOutOfRangeException",
+      "message": "Index was outside the bounds of the array.",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrList2Array(list srclist, Int32 srcstart, Object dstobj, Int32 dststart, Int32 count) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1157\r\n   at FixedArrayReference.\u003C\u003Ec__DisplayClass19_1.\u003CRun\u003Eg__DirectListMatrix|9(\u003C\u003Ec__DisplayClass19_0\u0026) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-list-to-array-phase40-reference\\Reference.cs:line 1158"
+    },
+    "own_before": 16,
+    "own_after": 16,
+    "global_before": 16,
+    "global_after": 16,
+    "object_destination_stored_is_source": null,
+    "sdk_string_stored_is_field": null
+  },
+  {
+    "name": "negative_destination",
+    "family": "I",
+    "boundary": "Derived direct original helper range/null/count control",
+    "source": null,
+    "source_start": 0,
+    "destination_start": -1,
+    "count": 1,
+    "source_data_null_before": false,
+    "source_data_null_after": false,
+    "before": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "after": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "error": {
+      "type": "System.IndexOutOfRangeException",
+      "message": "Index was outside the bounds of the array.",
+      "stack": "   at System.Array.GetFlattenedIndex(Int32 rawIndex)\r\n   at System.Array.SetValue(Object value, Int32 index)\r\n   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrList2Array(list srclist, Int32 srcstart, Object dstobj, Int32 dststart, Int32 count) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1176\r\n   at FixedArrayReference.\u003C\u003Ec__DisplayClass19_1.\u003CRun\u003Eg__DirectListMatrix|9(\u003C\u003Ec__DisplayClass19_0\u0026) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-list-to-array-phase40-reference\\Reference.cs:line 1158"
+    },
+    "own_before": 16,
+    "own_after": 16,
+    "global_before": 16,
+    "global_after": 16,
+    "object_destination_stored_is_source": null,
+    "sdk_string_stored_is_field": null
+  },
+  {
+    "name": "null_list_zero",
+    "family": "I",
+    "boundary": "Derived direct original helper range/null/count control",
+    "source": null,
+    "source_start": 0,
+    "destination_start": 0,
+    "count": 0,
+    "source_data_null_before": null,
+    "source_data_null_after": null,
+    "before": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "after": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "error": {
+      "type": "System.NullReferenceException",
+      "message": "Object reference not set to an instance of an object.",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrList2Array(list srclist, Int32 srcstart, Object dstobj, Int32 dststart, Int32 count) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1160\r\n   at FixedArrayReference.\u003C\u003Ec__DisplayClass19_1.\u003CRun\u003Eg__DirectListMatrix|9(\u003C\u003Ec__DisplayClass19_0\u0026) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-list-to-array-phase40-reference\\Reference.cs:line 1158"
+    },
+    "own_before": 16,
+    "own_after": 16,
+    "global_before": 16,
+    "global_after": 16,
+    "object_destination_stored_is_source": null,
+    "sdk_string_stored_is_field": null
+  },
+  {
+    "name": "null_data_zero",
+    "family": "I",
+    "boundary": "Derived direct original helper range/null/count control",
+    "source": null,
+    "source_start": 0,
+    "destination_start": 0,
+    "count": 0,
+    "source_data_null_before": true,
+    "source_data_null_after": false,
+    "before": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "after": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "error": null,
+    "own_before": 16,
+    "own_after": 16,
+    "global_before": 16,
+    "global_after": 16,
+    "object_destination_stored_is_source": null,
+    "sdk_string_stored_is_field": null
+  },
+  {
+    "name": "null_data_one",
+    "family": "I",
+    "boundary": "Derived direct original helper range/null/count control",
+    "source": null,
+    "source_start": 0,
+    "destination_start": 0,
+    "count": 1,
+    "source_data_null_before": true,
+    "source_data_null_after": false,
+    "before": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "after": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "error": {
+      "type": "System.IndexOutOfRangeException",
+      "message": "Index was outside the bounds of the array.",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrList2Array(list srclist, Int32 srcstart, Object dstobj, Int32 dststart, Int32 count) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1157\r\n   at FixedArrayReference.\u003C\u003Ec__DisplayClass19_1.\u003CRun\u003Eg__DirectListMatrix|9(\u003C\u003Ec__DisplayClass19_0\u0026) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-list-to-array-phase40-reference\\Reference.cs:line 1158"
+    },
+    "own_before": 16,
+    "own_after": 16,
+    "global_before": 16,
+    "global_after": 16,
+    "object_destination_stored_is_source": null,
+    "sdk_string_stored_is_field": null
+  },
+  {
+    "name": "null_backing_zero",
+    "family": "I",
+    "boundary": "Derived direct original helper range/null/count control",
+    "source": null,
+    "source_start": 0,
+    "destination_start": 0,
+    "count": 0,
+    "source_data_null_before": false,
+    "source_data_null_after": false,
+    "before": {
+      "type": "null",
+      "clr": null,
+      "value": null
+    },
+    "after": {
+      "type": "null",
+      "clr": null,
+      "value": null
+    },
+    "error": null,
+    "own_before": 4,
+    "own_after": 4,
+    "global_before": 16,
+    "global_after": 16,
+    "object_destination_stored_is_source": null,
+    "sdk_string_stored_is_field": null
+  },
+  {
+    "name": "null_backing_one",
+    "family": "I",
+    "boundary": "Derived direct original helper range/null/count control",
+    "source": null,
+    "source_start": 0,
+    "destination_start": 0,
+    "count": 1,
+    "source_data_null_before": false,
+    "source_data_null_after": false,
+    "before": {
+      "type": "null",
+      "clr": null,
+      "value": null
+    },
+    "after": {
+      "type": "null",
+      "clr": null,
+      "value": null
+    },
+    "error": {
+      "type": "System.NullReferenceException",
+      "message": "Object reference not set to an instance of an object.",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrList2Array(list srclist, Int32 srcstart, Object dstobj, Int32 dststart, Int32 count) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1176\r\n   at FixedArrayReference.\u003C\u003Ec__DisplayClass19_1.\u003CRun\u003Eg__DirectListMatrix|9(\u003C\u003Ec__DisplayClass19_0\u0026) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-list-to-array-phase40-reference\\Reference.cs:line 1158"
+    },
+    "own_before": 4,
+    "own_after": 4,
+    "global_before": 16,
+    "global_after": 16,
+    "object_destination_stored_is_source": null,
+    "sdk_string_stored_is_field": null
+  },
+  {
+    "name": "null_backing_bad_source",
+    "family": "I",
+    "boundary": "Derived direct original helper range/null/count control",
+    "source": null,
+    "source_start": -1,
+    "destination_start": 0,
+    "count": 1,
+    "source_data_null_before": false,
+    "source_data_null_after": false,
+    "before": {
+      "type": "null",
+      "clr": null,
+      "value": null
+    },
+    "after": {
+      "type": "null",
+      "clr": null,
+      "value": null
+    },
+    "error": {
+      "type": "System.IndexOutOfRangeException",
+      "message": "Index was outside the bounds of the array.",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrList2Array(list srclist, Int32 srcstart, Object dstobj, Int32 dststart, Int32 count) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1157\r\n   at FixedArrayReference.\u003C\u003Ec__DisplayClass19_1.\u003CRun\u003Eg__DirectListMatrix|9(\u003C\u003Ec__DisplayClass19_0\u0026) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-list-to-array-phase40-reference\\Reference.cs:line 1158"
+    },
+    "own_before": 4,
+    "own_after": 4,
+    "global_before": 16,
+    "global_after": 16,
+    "object_destination_stored_is_source": null,
+    "sdk_string_stored_is_field": null
+  },
+  {
+    "name": "wrong_backing_zero",
+    "family": "I",
+    "boundary": "Derived direct original helper range/null/count control",
+    "source": null,
+    "source_start": 0,
+    "destination_start": 0,
+    "count": 0,
+    "source_data_null_before": false,
+    "source_data_null_after": false,
+    "before": {
+      "type": "string",
+      "clr": "System.String",
+      "value": "wrong",
+      "utf16": [
+        119,
+        114,
+        111,
+        110,
+        103
+      ]
+    },
+    "after": {
+      "type": "string",
+      "clr": "System.String",
+      "value": "wrong",
+      "utf16": [
+        119,
+        114,
+        111,
+        110,
+        103
+      ]
+    },
+    "error": {
+      "type": "System.InvalidCastException",
+      "message": "Unable to cast object of type \u0027System.String\u0027 to type \u0027System.Array\u0027.",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrList2Array(list srclist, Int32 srcstart, Object dstobj, Int32 dststart, Int32 count) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1160\r\n   at FixedArrayReference.\u003C\u003Ec__DisplayClass19_1.\u003CRun\u003Eg__DirectListMatrix|9(\u003C\u003Ec__DisplayClass19_0\u0026) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-list-to-array-phase40-reference\\Reference.cs:line 1158"
+    },
+    "own_before": 14,
+    "own_after": 14,
+    "global_before": 16,
+    "global_after": 16,
+    "object_destination_stored_is_source": null,
+    "sdk_string_stored_is_field": null
+  },
+  {
+    "name": "wrong_backing_null_list",
+    "family": "I",
+    "boundary": "Derived direct original helper range/null/count control",
+    "source": null,
+    "source_start": 0,
+    "destination_start": 0,
+    "count": 0,
+    "source_data_null_before": null,
+    "source_data_null_after": null,
+    "before": {
+      "type": "string",
+      "clr": "System.String",
+      "value": "wrong",
+      "utf16": [
+        119,
+        114,
+        111,
+        110,
+        103
+      ]
+    },
+    "after": {
+      "type": "string",
+      "clr": "System.String",
+      "value": "wrong",
+      "utf16": [
+        119,
+        114,
+        111,
+        110,
+        103
+      ]
+    },
+    "error": {
+      "type": "System.NullReferenceException",
+      "message": "Object reference not set to an instance of an object.",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrList2Array(list srclist, Int32 srcstart, Object dstobj, Int32 dststart, Int32 count) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1160\r\n   at FixedArrayReference.\u003C\u003Ec__DisplayClass19_1.\u003CRun\u003Eg__DirectListMatrix|9(\u003C\u003Ec__DisplayClass19_0\u0026) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-list-to-array-phase40-reference\\Reference.cs:line 1158"
+    },
+    "own_before": 14,
+    "own_after": 14,
+    "global_before": 16,
+    "global_after": 16,
+    "object_destination_stored_is_source": null,
+    "sdk_string_stored_is_field": null
+  },
+  {
+    "name": "null_wrapper_zero",
+    "family": "I",
+    "boundary": "Derived direct original helper range/null/count control",
+    "source": null,
+    "source_start": 0,
+    "destination_start": 0,
+    "count": 0,
+    "source_data_null_before": false,
+    "source_data_null_after": false,
+    "before": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "after": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "error": {
+      "type": "System.NullReferenceException",
+      "message": "Object reference not set to an instance of an object.",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrList2Array(list srclist, Int32 srcstart, Object dstobj, Int32 dststart, Int32 count) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1157\r\n   at FixedArrayReference.\u003C\u003Ec__DisplayClass19_1.\u003CRun\u003Eg__DirectListMatrix|9(\u003C\u003Ec__DisplayClass19_0\u0026) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-list-to-array-phase40-reference\\Reference.cs:line 1158"
+    },
+    "own_before": 16,
+    "own_after": 16,
+    "global_before": 16,
+    "global_after": 16,
+    "object_destination_stored_is_source": null,
+    "sdk_string_stored_is_field": null
+  },
+  {
+    "name": "raw_array_wrapper_zero",
+    "family": "I",
+    "boundary": "Derived direct original helper range/null/count control",
+    "source": null,
+    "source_start": 0,
+    "destination_start": 0,
+    "count": 0,
+    "source_data_null_before": false,
+    "source_data_null_after": false,
+    "before": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "after": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "error": {
+      "type": "System.InvalidCastException",
+      "message": "Unable to cast object of type \u0027System.Int32[]\u0027 to type \u0027OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj\u0027.",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrList2Array(list srclist, Int32 srcstart, Object dstobj, Int32 dststart, Int32 count) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1157\r\n   at FixedArrayReference.\u003C\u003Ec__DisplayClass19_1.\u003CRun\u003Eg__DirectListMatrix|9(\u003C\u003Ec__DisplayClass19_0\u0026) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-list-to-array-phase40-reference\\Reference.cs:line 1158"
+    },
+    "own_before": 16,
+    "own_after": 16,
+    "global_before": 16,
+    "global_after": 16,
+    "object_destination_stored_is_source": null,
+    "sdk_string_stored_is_field": null
+  },
+  {
+    "name": "raw_string_wrapper_zero",
+    "family": "I",
+    "boundary": "Derived direct original helper range/null/count control",
+    "source": null,
+    "source_start": 0,
+    "destination_start": 0,
+    "count": 0,
+    "source_data_null_before": false,
+    "source_data_null_after": false,
+    "before": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "after": {
+      "type": "clr_array",
+      "clr": "System.Int32[]",
+      "reference_id": 1,
+      "element_type": "System.Int32",
+      "length": 3,
+      "items": [
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        },
+        {
+          "type": "integer",
+          "clr": "System.Int32",
+          "value": 0
+        }
+      ]
+    },
+    "error": {
+      "type": "System.InvalidCastException",
+      "message": "Unable to cast object of type \u0027System.String\u0027 to type \u0027OpenSim.Region.ScriptEngine.Yengine.XMRSDTypeClObj\u0027.",
+      "stack": "   at OpenSim.Region.ScriptEngine.Yengine.XMRInstAbstract.xmrList2Array(list srclist, Int32 srcstart, Object dstobj, Int32 dststart, Int32 count) in G:\\GitHub\\SecondLife\\opensim\\OpenSim\\Region\\ScriptEngine\\YEngine\\XMRInstAbstract.cs:line 1157\r\n   at FixedArrayReference.\u003C\u003Ec__DisplayClass19_1.\u003CRun\u003Eg__DirectListMatrix|9(\u003C\u003Ec__DisplayClass19_0\u0026) in G:\\GitHub\\SecondLife\\opensim\\native-port\\build-https\\script-list-to-array-phase40-reference\\Reference.cs:line 1158"
+    },
+    "own_before": 16,
+    "own_after": 16,
+    "global_before": 16,
+    "global_after": 16,
+    "object_destination_stored_is_source": null,
+    "sdk_string_stored_is_field": null
+  }
+]

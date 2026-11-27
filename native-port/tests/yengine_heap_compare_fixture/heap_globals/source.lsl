@@ -1,0 +1,1 @@
+string text="abcdef";list data=[1,2,"ghi",<1,2,3>];integer aliasLeft;integer intrinsicLeft;integer aliasUsed;integer intrinsicUsed;integer sum;integer ok;default{state_entry(){aliasLeft=xmrHeapLeft();intrinsicLeft=llGetFreeMemory();aliasUsed=xmrHeapUsed();intrinsicUsed=llGetUsedMemory();sum=aliasLeft+aliasUsed;ok=(aliasLeft==intrinsicLeft)&&(aliasUsed==intrinsicUsed);}}

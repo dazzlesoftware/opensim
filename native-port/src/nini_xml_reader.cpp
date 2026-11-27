@@ -11,18 +11,22 @@
 #include <limits>
 #include <sstream>
 #include <iomanip>
+
 namespace opensim::framework {
 namespace {
 using Text = NiniWriterText;
 constexpr std::u16string_view xml_uri = u"http://www.w3.org/XML/1998/namespace";
 constexpr std::u16string_view xmlns_uri = u"http://www.w3.org/2000/xmlns/";
+
 std::int32_t unchecked_add(std::int32_t a, std::int32_t b) {
     return std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(a) + static_cast<std::uint32_t>(b));
 }
+
 std::u16string decimal(std::int64_t n) {
     auto s = std::to_string(n);
     return {s.begin(), s.end()};
 }
+
 std::pair<std::u16string, std::u16string> character_arguments(char16_t ch, char16_t next = 0) {
     std::u16string display;
     std::uint32_t code = ch;
@@ -36,7 +40,8 @@ std::pair<std::u16string, std::u16string> character_arguments(char16_t ch, char1
     auto v = h.str();
     return {display, {v.begin(), v.end()}};
 }
-}
+} // namespace
+
 NiniXmlReaderSettings NiniXmlReaderSettings::legacy_document() {
     NiniXmlReaderSettings s;
     s.dtd_processing = NiniXmlDtdProcessing::Parse;
@@ -48,6 +53,7 @@ NiniXmlReaderSettings NiniXmlReaderSettings::legacy_document() {
     s.max_characters_from_entities = 0;
     return s;
 }
+
 struct NativeNiniXmlReader::State {
     struct Frame {
         std::u16string name, prefix, local, uri;
@@ -55,16 +61,19 @@ struct NativeNiniXmlReader::State {
         bool preserve = false;
         std::int32_t line = 0, position = 0;
     };
+
     struct ReaderEntity {
         std::size_t frame_depth;
         bool manual, empty_pending;
         std::u16string name;
         int reference_line = 0, reference_position = 0;
     };
+
     struct AttributeChunk {
         int type, line, position;
         std::u16string value;
     };
+
     std::vector<std::vector<AttributeChunk>> attribute_chunks;
     std::size_t attribute_chunk_index = 0, attribute_entity_base_depth = 0;
     std::vector<ReaderEntity> reader_entities;
@@ -86,15 +95,14 @@ struct NativeNiniXmlReader::State {
     std::size_t source_index = 0;
     NiniXmlReadState state = NiniXmlReadState::Initial;
     std::ptrdiff_t attribute = -1;
-    bool attribute_value = false, root_seen = false, pop_frame = false, doctype_seen = false,
-         parsing_error = false, entity_eol_normalized = false;
+    bool attribute_value = false, root_seen = false, pop_frame = false, doctype_seen = false, parsing_error = false,
+         entity_eol_normalized = false;
     std::shared_ptr<NativeNiniXmlByteInput> stream;
     std::shared_ptr<NativeNiniXmlTextInput> text_input;
     std::vector<std::uint8_t> bytes;
-    bool byte_mode = false, byte_eof = false, char_eof = true, append_mode = true,
-         declaration_checked = false;
-    std::size_t byte_position = 0, bytes_used = 0, document_start_byte_position = 0,
-                character_capacity = 4097, buffer_origin = 0, read_data_calls = 0, text_position = 0;
+    bool byte_mode = false, byte_eof = false, char_eof = true, append_mode = true, declaration_checked = false;
+    std::size_t byte_position = 0, bytes_used = 0, document_start_byte_position = 0, character_capacity = 4097,
+                buffer_origin = 0, read_data_calls = 0, text_position = 0;
     std::u16string text_source;
     std::optional<std::size_t> buffer_anchor;
     std::int64_t consumed_characters = 0;
@@ -106,7 +114,8 @@ struct NativeNiniXmlReader::State {
     std::int32_t current_entity_id = 0, next_entity_id = 1;
     std::int64_t characters_from_entities = 0;
     std::map<std::u16string, NiniWriterText> interned_names;
-    std::map<const NiniXmlDtdEntity*, std::shared_ptr<NiniXmlDtdEntity>> active_entities;
+    std::map<const NiniXmlDtdEntity *, std::shared_ptr<NiniXmlDtdEntity>> active_entities;
+
     struct InputSnapshot {
         std::u16string input, text_source;
         std::vector<std::uint8_t> bytes;
@@ -124,12 +133,13 @@ struct NativeNiniXmlReader::State {
         std::shared_ptr<NiniXmlDtdEntity> current_entity;
         std::int32_t current_entity_id = 0;
     };
+
     std::vector<InputSnapshot> entity_inputs;
 
     explicit State(NiniXmlReaderSettings s)
         : settings(std::move(s)), entity_eol_normalized(!settings.normalize),
-          input_base_uri(settings.base_uri ? settings.base_uri : nini_writer_text(u"")) {
-    }
+          input_base_uri(settings.base_uri ? settings.base_uri : nini_writer_text(u"")) {}
+
     [[noreturn]] void error(std::u16string message, std::int32_t ln = -1, std::int32_t pos = -1,
                             std::string resource = {}) {
         if (ln < 0) {
@@ -149,23 +159,22 @@ struct NativeNiniXmlReader::State {
         current.line_position = pos;
         throw e;
     }
+
     void register_characters(std::int64_t count, bool entity) {
-        auto add = [&](std::int64_t& total, std::int64_t maximum, std::u16string_view setting) {
+        auto add = [&](std::int64_t &total, std::int64_t maximum, std::u16string_view setting) {
             if (maximum <= 0)
                 return;
             if (count > std::numeric_limits<std::int64_t>::max() - total)
-                error(u"The input document has exceeded a limit set by " + std::u16string(setting) + u".", 0,
-                      0);
+                error(u"The input document has exceeded a limit set by " + std::u16string(setting) + u".", 0, 0);
             total += count;
             if (total > maximum)
-                error(u"The input document has exceeded a limit set by " + std::u16string(setting) + u".", 0,
-                      0);
+                error(u"The input document has exceeded a limit set by " + std::u16string(setting) + u".", 0, 0);
         };
         add(consumed_characters, settings.max_characters_in_document, u"MaxCharactersInDocument");
         if (entity)
-            add(characters_from_entities, settings.max_characters_from_entities,
-                u"MaxCharactersFromEntities");
+            add(characters_from_entities, settings.max_characters_from_entities, u"MaxCharactersFromEntities");
     }
+
     InputSnapshot save_input() {
         InputSnapshot x;
         x.input = std::move(input);
@@ -197,7 +206,8 @@ struct NativeNiniXmlReader::State {
         x.current_entity_id = std::move(current_entity_id);
         return x;
     }
-    void restore_input(InputSnapshot&& x) {
+
+    void restore_input(InputSnapshot &&x) {
         input = std::move(x.input);
         text_source = std::move(x.text_source);
         bytes = std::move(x.bytes);
@@ -226,6 +236,7 @@ struct NativeNiniXmlReader::State {
         current_entity = std::move(x.current_entity);
         current_entity_id = std::move(x.current_entity_id);
     }
+
     void push_string_input(Text base, Text text, bool normalized, bool internal_dtd = false) {
         if (entity_inputs.size() == entity_inputs.capacity())
             entity_inputs.reserve(entity_inputs.capacity() ? entity_inputs.capacity() * 2 : 2);
@@ -240,8 +251,7 @@ struct NativeNiniXmlReader::State {
         stream.reset();
         text_input.reset();
         decoder.reset();
-        cursor = byte_position = bytes_used = document_start_byte_position = buffer_origin = text_position =
-            0;
+        cursor = byte_position = bytes_used = document_start_byte_position = buffer_origin = text_position = 0;
         character_capacity = 0;
         line = column = 1;
         previous_cr = false;
@@ -272,7 +282,8 @@ struct NativeNiniXmlReader::State {
         char_eof = true;
         buffer_anchor.reset();
     }
-    bool push_dtd_entity(const std::shared_ptr<NiniXmlDtdEntity>& entity, std::int32_t& id) {
+
+    bool push_dtd_entity(const std::shared_ptr<NiniXmlDtdEntity> &entity, std::int32_t &id) {
         if (!entity)
             throw NiniXmlProviderError("System.NullReferenceException", 0x80004003,
                                        u"Object reference not set to an instance of an object.");
@@ -283,9 +294,8 @@ struct NativeNiniXmlReader::State {
         push_string_input(entity->declared_uri ? entity->declared_uri : nini_writer_text(u""), entity->text,
                           !settings.normalize);
         if (active_entities.contains(entity.get()))
-            error(entity->parameter
-                      ? u"Parameter entity '" + entity->name.local_name + u"' references itself."
-                      : u"General entity '" + entity->name.local_name + u"' references itself.",
+            error(entity->parameter ? u"Parameter entity '" + entity->name.local_name + u"' references itself."
+                                    : u"General entity '" + entity->name.local_name + u"' references itself.",
                   entity_inputs.back().line, entity_inputs.back().column);
         current_entity = entity;
         current_entity_id = next_entity_id;
@@ -298,7 +308,8 @@ struct NativeNiniXmlReader::State {
         id = current_entity_id;
         return true;
     }
-    bool pop_dtd_entity(std::shared_ptr<NiniXmlDtdEntity>& old, std::int32_t& id) {
+
+    bool pop_dtd_entity(std::shared_ptr<NiniXmlDtdEntity> &old, std::int32_t &id) {
         if (entity_inputs.empty()) {
             old.reset();
             id = -1;
@@ -317,12 +328,14 @@ struct NativeNiniXmlReader::State {
         id = current_entity_id;
         return true;
     }
+
     std::int32_t input_read(std::span<std::uint8_t> target) {
         auto count = stream->read(target);
         if (count < 0 || static_cast<std::size_t>(count) > target.size())
             throw std::invalid_argument("Native XML byte input returned an invalid Read count");
         return count;
     }
+
     std::size_t read_data() {
         if (char_eof)
             return 0;
@@ -396,8 +409,7 @@ struct NativeNiniXmlReader::State {
         auto result = decoder->convert(
             std::span<const std::uint8_t>(bytes).subspan(byte_position, bytes_used - byte_position), maximum);
         if (result.fault == NiniXmlDecodeFault::Xml) {
-            NiniXmlProviderError e("System.Xml.XmlException", 0x80131940,
-                                   u"Invalid character in the given encoding.");
+            NiniXmlProviderError e("System.Xml.XmlException", 0x80131940, u"Invalid character in the given encoding.");
             e.source_uri = u"";
             e.line_number = 0;
             e.line_position = 0;
@@ -416,6 +428,7 @@ struct NativeNiniXmlReader::State {
             char_eof = true;
         return count;
     }
+
     void initialize_stream() {
         byte_mode = true;
         char_eof = false;
@@ -456,11 +469,12 @@ struct NativeNiniXmlReader::State {
         document_start_byte_position = byte_position;
         read_data();
     }
+
     void check_encoding(std::u16string_view value, std::int32_t ln, std::int32_t pos) {
         if (!byte_mode)
             return;
         std::u16string lower(value);
-        for (auto& c : lower)
+        for (auto &c : lower)
             if (c >= u'A' && c <= u'Z')
                 c += 32;
         if (lower == u"ucs-2" || lower == u"utf-16" || lower == u"iso-10646-ucs-2" || lower == u"ucs-4") {
@@ -476,13 +490,13 @@ struct NativeNiniXmlReader::State {
             error(u"System does not support '" + std::u16string(value) + u"' encoding.", ln, pos);
         declaration_encoding = *found;
     }
+
     void switch_encoding(NiniXmlEncoding next) {
         if (next.web_name != encoding.web_name || encoding.kind == NiniXmlEncodingKind::SafeAscii) {
             if (settings.max_characters_in_document > 0)
                 consumed_characters -= static_cast<std::int64_t>(input.size() - cursor);
-            byte_position =
-                document_start_byte_position +
-                nini_xml_encoded_byte_count(std::u16string_view(input).substr(0, cursor), encoding.kind);
+            byte_position = document_start_byte_position +
+                            nini_xml_encoded_byte_count(std::u16string_view(input).substr(0, cursor), encoding.kind);
             input.resize(cursor);
             if (byte_position > bytes_used)
                 throw std::out_of_range("XML source encoding rewind exceeded the current byte buffer");
@@ -494,6 +508,7 @@ struct NativeNiniXmlReader::State {
         }
         append_mode = false;
     }
+
     [[noreturn]] void unexpected_end(bool pending = false) {
         if (frames.empty()) {
             if (pending)
@@ -508,32 +523,38 @@ struct NativeNiniXmlReader::State {
         }
         error(u"Unexpected end of file has occurred. The following elements are not closed: " + names + u".");
     }
+
     bool ensure(std::size_t count) {
         while (input.size() - cursor < count && !char_eof)
             if (read_data() == 0)
                 break;
         return input.size() - cursor >= count;
     }
+
     bool at_end() {
         return !ensure(1);
     }
+
     bool zero_ending_stream() {
-        if (settings.legacy_compatibility && cursor + 1 == input.size() && input[cursor] == 0 &&
-            read_data() == 0 && byte_eof) {
+        if (settings.legacy_compatibility && cursor + 1 == input.size() && input[cursor] == 0 && read_data() == 0 &&
+            byte_eof) {
             input.pop_back();
             return true;
         }
         return false;
     }
+
     char16_t peek(std::size_t n = 0) {
         return ensure(n + 1) ? input[cursor + n] : 0;
     }
+
     bool starts(std::u16string_view value) {
         auto available = std::min(value.size(), input.size() - cursor);
         if (std::u16string_view(input).substr(cursor, available) != value.substr(0, available))
             return false;
         return ensure(value.size()) && std::u16string_view(input).substr(cursor).starts_with(value);
     }
+
     char16_t take() {
         if (at_end())
             error(u"Unexpected end of file.");
@@ -553,13 +574,16 @@ struct NativeNiniXmlReader::State {
         }
         return c;
     }
+
     void consume(std::size_t n) {
         while (n--)
             take();
     }
+
     bool white(char16_t c) const {
         return (nini_xml_character_properties(c) & 1) != 0;
     }
+
     bool skip_white() {
         bool any = false;
         while (!at_end() && white(peek())) {
@@ -568,6 +592,7 @@ struct NativeNiniXmlReader::State {
         }
         return any;
     }
+
     std::u16string unexpected_token() const {
         if (cursor == input.size())
             return {};
@@ -579,6 +604,7 @@ struct NativeNiniXmlReader::State {
         }
         return std::u16string(1, input[cursor]);
     }
+
     void require(char16_t c) {
         if (at_end())
             error(u"Unexpected end of file has occurred.");
@@ -589,12 +615,12 @@ struct NativeNiniXmlReader::State {
         }
         take();
     }
+
     void valid_character() {
         auto c = peek();
         if (c >= 0xd800 && c <= 0xdbff && !ensure(2))
             error(u"Unexpected end of file has occurred.");
-        if (c >= 0xd800 && c <= 0xdbff && cursor + 1 < input.size() &&
-            (peek(1) < 0xdc00 || peek(1) > 0xdfff)) {
+        if (c >= 0xd800 && c <= 0xdbff && cursor + 1 < input.size() && (peek(1) < 0xdc00 || peek(1) > 0xdfff)) {
             auto a = character_arguments(peek(1), cursor + 2 < input.size() ? input[cursor + 2] : 0);
             error(u"'" + a.first + u"', hexadecimal value " + a.second + u", is an invalid character.", line,
                   column + 1);
@@ -606,6 +632,7 @@ struct NativeNiniXmlReader::State {
         auto a = character_arguments(c, cursor + 1 < input.size() ? input[cursor + 1] : 0);
         error(u"'" + a.first + u"', hexadecimal value " + a.second + u", is an invalid character.");
     }
+
     std::u16string read_character(bool attribute_context = false) {
         valid_character();
         auto c = take();
@@ -624,18 +651,23 @@ struct NativeNiniXmlReader::State {
         value.assign(1, c);
         return value;
     }
+
     std::u16string name(bool qname = true) {
         auto begin = cursor;
+
         struct Anchor {
-            State& state;
+            State &state;
             std::optional<std::size_t> previous;
-            explicit Anchor(State& s) : state(s), previous(s.buffer_anchor) {
+
+            explicit Anchor(State &s) : state(s), previous(s.buffer_anchor) {
                 s.buffer_anchor = s.cursor;
             }
+
             ~Anchor() {
                 state.buffer_anchor = previous;
             }
         } anchor(*this);
+
         bool start = true, colon = false;
         while (true) {
             if (at_end())
@@ -644,8 +676,8 @@ struct NativeNiniXmlReader::State {
             if (start) {
                 if ((nini_xml_character_properties(c) & 4) == 0) {
                     auto a = character_arguments(c, peek(1));
-                    error(u"Name cannot begin with the '" + a.first + u"' character, hexadecimal value " +
-                          a.second + u".");
+                    error(u"Name cannot begin with the '" + a.first + u"' character, hexadecimal value " + a.second +
+                          u".");
                 }
                 take();
                 start = false;
@@ -665,11 +697,13 @@ struct NativeNiniXmlReader::State {
         }
         return input.substr(begin, cursor - begin);
     }
-    static std::pair<std::u16string, std::u16string> split(const std::u16string& name) {
+
+    static std::pair<std::u16string, std::u16string> split(const std::u16string &name) {
         auto c = name.find(u':');
         return c == name.npos ? std::pair<std::u16string, std::u16string>{{}, name}
                               : std::pair{name.substr(0, c), name.substr(c + 1)};
     }
+
     std::u16string reference(bool attribute_context = false) {
         auto reference_line = line, reference_position = column;
         require(u'&');
@@ -693,8 +727,7 @@ struct NativeNiniXmlReader::State {
                     error(hex ? u"Invalid syntax for a hexadecimal numeric entity reference."
                               : u"Invalid syntax for a decimal numeric entity reference.");
                 if (hex) {
-                    if (code >
-                        (std::numeric_limits<std::int32_t>::max() - static_cast<std::int32_t>(digit)) / 16)
+                    if (code > (std::numeric_limits<std::int32_t>::max() - static_cast<std::int32_t>(digit)) / 16)
                         error(u"Invalid value of a character entity reference.");
                     code = code * 16 + static_cast<std::int32_t>(digit);
                 } else {
@@ -707,8 +740,7 @@ struct NativeNiniXmlReader::State {
                 take();
             }
             if (at_end())
-                error(u"Unexpected end of file while parsing  has occurred.", reference_line,
-                      reference_position);
+                error(u"Unexpected end of file while parsing  has occurred.", reference_line, reference_position);
             if (!any)
                 error(hex ? u"Invalid syntax for a hexadecimal numeric entity reference."
                           : u"Invalid syntax for a decimal numeric entity reference.");
@@ -718,15 +750,13 @@ struct NativeNiniXmlReader::State {
                 if ((nini_xml_character_properties(c) & 16) == 0 &&
                     (!settings.legacy_compatibility || settings.normalize)) {
                     auto a = character_arguments(c);
-                    error(u"'" + a.first + u"', hexadecimal value " + a.second +
-                              u", is an invalid character.",
+                    error(u"'" + a.first + u"', hexadecimal value " + a.second + u", is an invalid character.",
                           reference_line, reference_position + 2 + (hex ? 1 : 0));
                 }
                 return std::u16string(1, c);
             }
             auto n = code - 65536;
-            auto low = static_cast<char16_t>(0xdc00 + n % 1024),
-                 high = static_cast<char16_t>(0xd800 + n / 1024);
+            auto low = static_cast<char16_t>(0xdc00 + n % 1024), high = static_cast<char16_t>(0xd800 + n / 1024);
             if (settings.normalize && (high < 0xd800 || high > 0xdbff || low < 0xdc00 || low > 0xdfff)) {
                 auto a = character_arguments(high, low);
                 error(u"'" + a.first + u"', hexadecimal value " + a.second + u", is an invalid character.",
@@ -737,7 +767,7 @@ struct NativeNiniXmlReader::State {
         std::u16string entity;
         try {
             entity = name(false);
-        } catch (const NiniXmlProviderError&) {
+        } catch (const NiniXmlProviderError &) {
             error(u"An error occurred while parsing EntityName.", reference_line, reference_position + 1);
         }
         if (peek() != u';')
@@ -759,6 +789,7 @@ struct NativeNiniXmlReader::State {
         }
         error(u"Reference to undeclared entity '" + entity + u"'.", reference_line, reference_position + 1);
     }
+
     bool numeric_reference_incomplete() const {
         auto i = cursor + 2;
         if (i >= input.size())
@@ -776,8 +807,7 @@ struct NativeNiniXmlReader::State {
             if (digit >= unsigned(hex ? 16 : 10))
                 break;
             if (hex) {
-                if (value >
-                    (std::numeric_limits<std::int32_t>::max() - static_cast<std::int32_t>(digit)) / 16)
+                if (value > (std::numeric_limits<std::int32_t>::max() - static_cast<std::int32_t>(digit)) / 16)
                     return false;
                 value = value * 16 + static_cast<std::int32_t>(digit);
             } else {
@@ -790,6 +820,7 @@ struct NativeNiniXmlReader::State {
         }
         return i == input.size();
     }
+
     bool unexpanded_reference() {
         if (settings.entity_handling != NiniXmlEntityHandling::ExpandCharEntities || peek() != u'&')
             return false;
@@ -797,16 +828,16 @@ struct NativeNiniXmlReader::State {
             error(u"Unexpected end of file has occurred.");
         if (peek(1) == u'#')
             return false;
-        return !starts(u"&lt;") && !starts(u"&gt;") && !starts(u"&amp;") && !starts(u"&apos;") &&
-               !starts(u"&quot;");
+        return !starts(u"&lt;") && !starts(u"&gt;") && !starts(u"&amp;") && !starts(u"&apos;") && !starts(u"&quot;");
     }
+
     bool entity_reference_token() {
         take();
         auto ln = line, pos = column;
         std::u16string entity;
         try {
             entity = name(false);
-        } catch (const NiniXmlProviderError&) {
+        } catch (const NiniXmlProviderError &) {
             error(u"An error occurred while parsing EntityName.");
         }
         if (peek() != u';')
@@ -818,11 +849,11 @@ struct NativeNiniXmlReader::State {
             state = NiniXmlReadState::Interactive;
         return true;
     }
-    std::shared_ptr<NiniXmlDtdEntity> lookup_general(std::u16string_view name, int position,
-                                                     bool attribute_context) {
+
+    std::shared_ptr<NiniXmlDtdEntity> lookup_general(std::u16string_view name, int position, bool attribute_context) {
         std::shared_ptr<NiniXmlDtdEntity> found;
         if (dtd_info)
-            for (auto& entity : dtd_info->general_entities)
+            for (auto &entity : dtd_info->general_entities)
                 if (entity->name.local_name == name) {
                     found = entity;
                     break;
@@ -832,12 +863,12 @@ struct NativeNiniXmlReader::State {
         if (found->unparsed())
             error(u"Reference to unparsed entity '" + std::u16string(name) + u"'.", line, position);
         if (attribute_context && found->external)
-            error(u"External entity '" + std::u16string(name) +
-                      u"' reference cannot appear in the attribute value.",
+            error(u"External entity '" + std::u16string(name) + u"' reference cannot appear in the attribute value.",
                   line, position);
         return found;
     }
-    bool enter_general(const std::shared_ptr<NiniXmlDtdEntity>& entity, bool manual) {
+
+    bool enter_general(const std::shared_ptr<NiniXmlDtdEntity> &entity, bool manual) {
         if (entity->external && !manual)
             return false;
         auto depth = frames.size();
@@ -859,6 +890,7 @@ struct NativeNiniXmlReader::State {
             ++manual_entity_depth;
         return true;
     }
+
     bool leave_general() {
         auto entry = reader_entities.back();
         if (frames.size() != entry.frame_depth)
@@ -875,6 +907,7 @@ struct NativeNiniXmlReader::State {
         }
         return false;
     }
+
     bool content_general_reference() {
         auto reference_line = line, reference_position = column;
         take();
@@ -884,7 +917,7 @@ struct NativeNiniXmlReader::State {
         std::u16string entity;
         try {
             entity = name(false);
-        } catch (const NiniXmlProviderError&) {
+        } catch (const NiniXmlProviderError &) {
             error(u"An error occurred while parsing EntityName.", reference_line, reference_position + 1);
         }
         if (peek() != u';')
@@ -892,6 +925,7 @@ struct NativeNiniXmlReader::State {
         take();
         return enter_general(lookup_general(entity, position, false), false);
     }
+
     void finish_attribute_value() {
         if (attribute_value) {
             while (manual_entity_depth > attribute_entity_base_depth && !reader_entities.empty()) {
@@ -905,6 +939,7 @@ struct NativeNiniXmlReader::State {
             attribute_chunk_index = 0;
         }
     }
+
     void attribute_value_token(int type, std::u16string value, int ln, int pos, std::u16string name = {}) {
         current.node_type = type;
         current.name = current.local_name = std::move(name);
@@ -912,17 +947,17 @@ struct NativeNiniXmlReader::State {
         current.namespace_uri.clear();
         current.value = std::move(value);
         current.is_empty_element = false;
-        current.depth =
-            element.depth + 2 + static_cast<int>(manual_entity_depth - attribute_entity_base_depth);
+        current.depth = element.depth + 2 + static_cast<int>(manual_entity_depth - attribute_entity_base_depth);
         current.line_number = ln;
         current.line_position = pos;
-        auto slot = static_cast<std::size_t>(element.depth) + element.attributes.size() + 1 +
-                    manual_entity_depth - attribute_entity_base_depth;
+        auto slot = static_cast<std::size_t>(element.depth) + element.attributes.size() + 1 + manual_entity_depth -
+                    attribute_entity_base_depth;
         if (node_slots.size() <= slot)
             node_slots.resize(slot + 1);
         node_slots[slot] = current;
         node_slots[slot].attributes.clear();
     }
+
     bool next_attribute_value() {
         if (attribute < 0)
             return false;
@@ -944,8 +979,7 @@ struct NativeNiniXmlReader::State {
                 reader_entities.pop_back();
                 --manual_entity_depth;
                 attribute_value_token(16, u"", entry.reference_line,
-                                      entry.reference_position + static_cast<int>(entry.name.size()),
-                                      entry.name);
+                                      entry.reference_position + static_cast<int>(entry.name.size()), entry.name);
                 return true;
             }
             auto ln = line, pos = column;
@@ -959,7 +993,7 @@ struct NativeNiniXmlReader::State {
                     std::u16string entity;
                     try {
                         entity = name(false);
-                    } catch (const NiniXmlProviderError&) {
+                    } catch (const NiniXmlProviderError &) {
                         error(u"An error occurred while parsing EntityName.");
                     }
                     if (peek() != u';')
@@ -980,20 +1014,21 @@ struct NativeNiniXmlReader::State {
         }
         auto index = static_cast<std::size_t>(attribute);
         if (index < attribute_chunks.size() && !attribute_chunks[index].empty()) {
-            auto& chunks = attribute_chunks[index];
+            auto &chunks = attribute_chunks[index];
             if (attribute_chunk_index >= chunks.size())
                 return false;
-            auto& chunk = chunks[attribute_chunk_index++];
+            auto &chunk = chunks[attribute_chunk_index++];
             attribute_value_token(chunk.type, chunk.type == 5 ? u"" : chunk.value, chunk.line, chunk.position,
                                   chunk.type == 5 ? chunk.value : u"");
             return true;
         }
         if (attribute_chunk_index++ != 0)
             return false;
-        auto& value = element.attributes[index];
+        auto &value = element.attributes[index];
         attribute_value_token(3, value.value, value.value_line_number, value.value_line_position);
         return true;
     }
+
     void reset_token(std::int32_t type, std::int32_t ln, std::int32_t pos) {
         current = {};
         if (type != 1 && type != 17 && type != 10)
@@ -1006,6 +1041,7 @@ struct NativeNiniXmlReader::State {
         attribute = -1;
         attribute_value = false;
     }
+
     void parse_element() {
         attribute_chunks.clear();
         const auto ln = line, pos = column;
@@ -1026,7 +1062,7 @@ struct NativeNiniXmlReader::State {
             frame.preserve = frames.back().preserve;
         } else
             frame.namespaces[u"xml"] = xml_uri;
-        auto namespace_attribute = [&](NiniXmlReadAttribute& a) {
+        auto namespace_attribute = [&](NiniXmlReadAttribute &a) {
             if (a.prefix == u"xmlns" || (a.prefix.empty() && a.local_name == u"xmlns")) {
                 a.namespace_uri = xmlns_uri;
                 auto prefix = a.prefix.empty() ? std::u16string{} : a.local_name;
@@ -1047,9 +1083,9 @@ struct NativeNiniXmlReader::State {
                 if (prefix == u"xmlns")
                     error(u"Prefix \"xmlns\" is reserved for use by XML.", a.line_number, a.line_position);
                 if (prefix == u"xml" && a.value != xml_uri)
-                    error(
-                        u"Prefix \"xml\" is reserved for use by XML and can be mapped only to namespace name \"http://www.w3.org/XML/1998/namespace\".",
-                        a.line_number, a.line_position);
+                    error(u"Prefix \"xml\" is reserved for use by XML and can be mapped only to namespace name "
+                          u"\"http://www.w3.org/XML/1998/namespace\".",
+                          a.line_number, a.line_position);
                 frame.namespaces[prefix] = a.value;
             }
         };
@@ -1085,8 +1121,8 @@ struct NativeNiniXmlReader::State {
                 if (!current.attributes.empty() && (nini_xml_character_properties(peek()) & 4) != 0)
                     error(u"'" + unexpected_token() + u"' is an unexpected token. Expecting whitespace.");
                 if (!current.attributes.empty())
-                    error(u"Name cannot begin with the '" + a.first + u"' character, hexadecimal value " +
-                          a.second + u".");
+                    error(u"Name cannot begin with the '" + a.first + u"' character, hexadecimal value " + a.second +
+                          u".");
                 error(u"The '" + a.first + u"' character, hexadecimal value " + a.second +
                       u", cannot be included in a name.");
             }
@@ -1140,7 +1176,7 @@ struct NativeNiniXmlReader::State {
                     std::u16string entity;
                     try {
                         entity = name(false);
-                    } catch (const NiniXmlProviderError&) {
+                    } catch (const NiniXmlProviderError &) {
                         error(u"An error occurred while parsing EntityName.");
                     }
                     if (peek() != u';')
@@ -1160,8 +1196,7 @@ struct NativeNiniXmlReader::State {
                         if (current_entity_id != old_entity_id) {
                             has_general_chunks = true;
                             flush_outer();
-                            value_chunks.push_back(
-                                {5, ref_line, ref_pos + 1, current_entity->name.local_name});
+                            value_chunks.push_back({5, ref_line, ref_pos + 1, current_entity->name.local_name});
                             outer_line = entity_inputs.back().line;
                             outer_position = entity_inputs.back().column;
                         } else
@@ -1192,8 +1227,7 @@ struct NativeNiniXmlReader::State {
                 else if (value == u"default")
                     frame.preserve = false;
                 else
-                    error(u"'" + a.value + u"' is an invalid xml:space value.", a.line_number,
-                          a.line_position);
+                    error(u"'" + a.value + u"' is an invalid xml:space value.", a.line_number, a.line_position);
             }
             current.attributes.push_back(std::move(a));
         }
@@ -1201,9 +1235,8 @@ struct NativeNiniXmlReader::State {
         if (dtd_info && (!settings.legacy_compatibility || settings.validating_reader_compatibility)) {
             std::shared_ptr<NiniXmlDtdAttributeList> declarations;
             NiniXmlDtdName ename{current.local_name, current.prefix};
-            for (auto* lists :
-                 {&dtd_info->element_declarations, &dtd_info->undeclared_element_declarations}) {
-                for (auto& candidate : *lists)
+            for (auto *lists : {&dtd_info->element_declarations, &dtd_info->undeclared_element_declarations}) {
+                for (auto &candidate : *lists)
                     if (candidate->name == ename) {
                         declarations = candidate;
                         break;
@@ -1213,11 +1246,11 @@ struct NativeNiniXmlReader::State {
             }
             if (declarations) {
                 if (settings.normalize && declarations->has_non_cdata_attributes)
-                    for (auto& attribute : current.attributes)
-                        for (auto& declared : declarations->attributes)
+                    for (auto &attribute : current.attributes)
+                        for (auto &declared : declarations->attributes)
                             if (declared->name == NiniXmlDtdName{attribute.local_name, attribute.prefix} &&
                                 declared->non_cdata()) {
-                                auto& value = attribute.value;
+                                auto &value = attribute.value;
                                 auto begin = value.find_first_not_of(u' ');
                                 if (begin == value.npos) {
                                     if (!value.empty())
@@ -1235,11 +1268,10 @@ struct NativeNiniXmlReader::State {
                                 }
                                 break;
                             }
-                for (auto& def : declarations->default_attributes) {
-                    if (std::any_of(
-                            current.attributes.begin(), current.attributes.end(), [&](auto& attribute) {
-                                return NiniXmlDtdName{attribute.local_name, attribute.prefix} == def->name;
-                            }))
+                for (auto &def : declarations->default_attributes) {
+                    if (std::any_of(current.attributes.begin(), current.attributes.end(), [&](auto &attribute) {
+                            return NiniXmlDtdName{attribute.local_name, attribute.prefix} == def->name;
+                        }))
                         continue;
                     NiniXmlReadAttribute attribute;
                     attribute.name = def->name.qualified();
@@ -1263,14 +1295,14 @@ struct NativeNiniXmlReader::State {
                         else if (value == u"default")
                             frame.preserve = false;
                         else
-                            error(u"'" + attribute.value + u"' is an invalid xml:space value.",
-                                  attribute.line_number, attribute.line_position);
+                            error(u"'" + attribute.value + u"' is an invalid xml:space value.", attribute.line_number,
+                                  attribute.line_position);
                     }
                     current.attributes.push_back(std::move(attribute));
                 }
             }
         }
-        auto lookup = [&](const std::u16string& prefix, std::int32_t l, std::int32_t p) {
+        auto lookup = [&](const std::u16string &prefix, std::int32_t l, std::int32_t p) {
             auto i = frame.namespaces.find(prefix);
             if (i == frame.namespaces.end()) {
                 if (prefix.empty())
@@ -1283,7 +1315,7 @@ struct NativeNiniXmlReader::State {
             error(u"Prefix \"xmlns\" is reserved for use by XML.", ln, pos);
         current.namespace_uri = lookup(current.prefix, ln, pos);
         frame.uri = current.namespace_uri;
-        for (auto& a : current.attributes) {
+        for (auto &a : current.attributes) {
             if (a.namespace_uri.empty() && !a.prefix.empty())
                 a.namespace_uri = lookup(a.prefix, a.line_number, a.line_position);
         }
@@ -1298,6 +1330,7 @@ struct NativeNiniXmlReader::State {
         pop_frame = current.is_empty_element;
         element = current;
     }
+
     void skip_until(char16_t stop, bool recognize_literals) {
         bool literal = false, comment = false, pi = false;
         char16_t quote = u'"';
@@ -1368,11 +1401,12 @@ struct NativeNiniXmlReader::State {
             read_character();
         }
     }
+
     std::u16string cdata_or_comment(bool comment) {
         auto label = comment ? u"Comment" : u"CDATA";
         auto unexpected = [&]() {
-            error(u"Unexpected end of file while parsing " + std::u16string(label) + u" has occurred.", -1,
-                  -1, "Xml_UnexpectedEOF");
+            error(u"Unexpected end of file while parsing " + std::u16string(label) + u" has occurred.", -1, -1,
+                  "Xml_UnexpectedEOF");
         };
         if (input.size() - cursor < 3 && read_data() == 0)
             unexpected();
@@ -1403,6 +1437,7 @@ struct NativeNiniXmlReader::State {
             value += read_character();
         }
     }
+
     void parse_declaration(std::int32_t ln, std::int32_t pos) {
         reset_token(17, ln, pos);
         current.name = current.local_name = u"xml";
@@ -1419,8 +1454,7 @@ struct NativeNiniXmlReader::State {
                 break;
             }
             if (!separated && phase != 0)
-                error(u"'" + std::u16string(1, peek()) +
-                      u"' is an unexpected token. The expected token is '?>'.");
+                error(u"'" + std::u16string(1, peek()) + u"' is an unexpected token. The expected token is '?>'.");
             NiniXmlReadAttribute a;
             a.line_number = line;
             a.line_position = column;
@@ -1494,6 +1528,7 @@ struct NativeNiniXmlReader::State {
         }
         append_mode = false;
     }
+
     // The remaining synchronous reader branches and native loader publication are
     // being translated against the pinned source; this module is not registered
     // as a complete/default XML backend while that closure is unfinished.
@@ -1504,7 +1539,7 @@ struct NativeNiniXmlReader::State {
         node_slots[source_index] = current;
         node_slots[source_index].attributes.clear();
         for (std::size_t i = 0; i < current.attributes.size(); ++i) {
-            auto& a = current.attributes[i];
+            auto &a = current.attributes[i];
             NiniXmlReadToken slot;
             slot.node_type = 2;
             slot.depth = current.depth + 1;
@@ -1519,6 +1554,7 @@ struct NativeNiniXmlReader::State {
             node_slots[source_index + i + 1] = std::move(slot);
         }
     }
+
     void prepare_node() {
         remember_node();
         if (current.node_type == 1 && !current.is_empty_element) {
@@ -1531,29 +1567,32 @@ struct NativeNiniXmlReader::State {
             current.is_empty_element = false;
         element = {};
     }
+
     bool read();
 };
+
 NativeNiniXmlReader::NativeNiniXmlReader(std::unique_ptr<State> s) : state_(std::move(s)) {
     state_->parse_dtd = [this] {
         auto adapter = native_nini_xml_dtd_adapter(shared_from_this());
         return native_nini_xml_parse_dtd(*adapter, true);
     };
 }
+
 NativeNiniXmlReader::~NativeNiniXmlReader() = default;
-std::shared_ptr<NativeNiniXmlReader> NativeNiniXmlReader::from_text(Text text,
-                                                                    NiniXmlReaderSettings settings) {
+
+std::shared_ptr<NativeNiniXmlReader> NativeNiniXmlReader::from_text(Text text, NiniXmlReaderSettings settings) {
     if (!text)
-        throw NiniXmlProviderError("System.ArgumentNullException", 0x80004003,
-                                   u"Value cannot be null. (Parameter 's')", u"s");
+        throw NiniXmlProviderError("System.ArgumentNullException", 0x80004003, u"Value cannot be null. (Parameter 's')",
+                                   u"s");
     auto s = std::make_unique<State>(std::move(settings));
     s->text_source = *text;
     s->char_eof = false;
     s->read_data();
     return std::shared_ptr<NativeNiniXmlReader>(new NativeNiniXmlReader(std::move(s)));
 }
-std::shared_ptr<NativeNiniXmlReader>
-NativeNiniXmlReader::from_text_input(std::shared_ptr<NativeNiniXmlTextInput> input,
-                                     NiniXmlReaderSettings settings) {
+
+std::shared_ptr<NativeNiniXmlReader> NativeNiniXmlReader::from_text_input(std::shared_ptr<NativeNiniXmlTextInput> input,
+                                                                          NiniXmlReaderSettings settings) {
     if (!input)
         throw NiniXmlProviderError("System.ArgumentNullException", 0x80004003,
                                    u"Value cannot be null. (Parameter 'input')", u"input");
@@ -1563,34 +1602,37 @@ NativeNiniXmlReader::from_text_input(std::shared_ptr<NativeNiniXmlTextInput> inp
     s->read_data();
     return std::shared_ptr<NativeNiniXmlReader>(new NativeNiniXmlReader(std::move(s)));
 }
+
 namespace {
 class BufferedXmlInput final : public NativeNiniXmlByteInput {
     std::vector<std::uint8_t> bytes_;
     std::size_t position_ = 0;
 
   public:
-    explicit BufferedXmlInput(std::span<const std::uint8_t> bytes) : bytes_(bytes.begin(), bytes.end()) {
-    }
+    explicit BufferedXmlInput(std::span<const std::uint8_t> bytes) : bytes_(bytes.begin(), bytes.end()) {}
+
     std::int32_t read(std::span<std::uint8_t> destination) override {
         auto count = std::min(destination.size(), bytes_.size() - position_);
         std::copy_n(bytes_.begin() + static_cast<std::ptrdiff_t>(position_), count, destination.begin());
         position_ += count;
         return static_cast<std::int32_t>(count);
     }
-    void close() override {
-    }
+
+    void close() override {}
+
     std::optional<std::int64_t> length_hint() const override {
         return static_cast<std::int64_t>(bytes_.size());
     }
 };
-}
+} // namespace
+
 std::shared_ptr<NativeNiniXmlReader> NativeNiniXmlReader::from_bytes(std::span<const std::uint8_t> bytes,
                                                                      NiniXmlReaderSettings settings) {
     return from_stream(std::make_shared<BufferedXmlInput>(bytes), std::move(settings));
 }
-std::shared_ptr<NativeNiniXmlReader>
-NativeNiniXmlReader::from_stream(std::shared_ptr<NativeNiniXmlByteInput> input,
-                                 NiniXmlReaderSettings settings) {
+
+std::shared_ptr<NativeNiniXmlReader> NativeNiniXmlReader::from_stream(std::shared_ptr<NativeNiniXmlByteInput> input,
+                                                                      NiniXmlReaderSettings settings) {
     if (!input)
         throw NiniXmlProviderError("System.ArgumentNullException", 0x80004003,
                                    u"Value cannot be null. (Parameter 'input')", u"input");
@@ -1599,9 +1641,9 @@ NativeNiniXmlReader::from_stream(std::shared_ptr<NativeNiniXmlByteInput> input,
     s->initialize_stream();
     return std::shared_ptr<NativeNiniXmlReader>(new NativeNiniXmlReader(std::move(s)));
 }
+
 std::shared_ptr<NativeNiniXmlReader>
-NativeNiniXmlReader::from_deferred_uri(Text base,
-                                       std::function<std::shared_ptr<NativeNiniXmlByteInput>()> open,
+NativeNiniXmlReader::from_deferred_uri(Text base, std::function<std::shared_ptr<NativeNiniXmlByteInput>()> open,
                                        NiniXmlReaderSettings settings) {
     if (!open)
         throw std::invalid_argument("Deferred URI reader requires an opener");
@@ -1613,15 +1655,19 @@ NativeNiniXmlReader::from_deferred_uri(Text base,
     state->current.base_uri = base ? *base : u"";
     return std::shared_ptr<NativeNiniXmlReader>(new NativeNiniXmlReader(std::move(state)));
 }
-const NiniXmlReadToken& NativeNiniXmlReader::token() const {
+
+const NiniXmlReadToken &NativeNiniXmlReader::token() const {
     return state_->current;
 }
+
 NiniXmlReadState NativeNiniXmlReader::read_state() const {
     return state_->state;
 }
+
 bool NativeNiniXmlReader::eof() const {
     return state_->state == NiniXmlReadState::EndOfFile;
 }
+
 bool NativeNiniXmlReader::State::read() {
     if (state == NiniXmlReadState::Closed || state == NiniXmlReadState::EndOfFile || parsing_error)
         return false;
@@ -1645,8 +1691,7 @@ bool NativeNiniXmlReader::State::read() {
     if (!declaration_checked) {
         declaration_checked = true;
         ensure(6);
-        bool declaration =
-            starts(u"<?xml") && (nini_xml_character_properties(peek(5)) & 8) == 0 && peek(5) != u':';
+        bool declaration = starts(u"<?xml") && (nini_xml_character_properties(peek(5)) & 8) == 0 && peek(5) != u':';
         if (!declaration) {
             if (byte_mode && encoding.kind == NiniXmlEncodingKind::SafeAscii)
                 switch_encoding({NiniXmlEncodingKind::Utf8Strict, 0, "utf-8"});
@@ -1695,8 +1740,7 @@ bool NativeNiniXmlReader::State::read() {
                         names += u", ";
                     names += i->name;
                 }
-                error(u"Unexpected end of file has occurred. The following elements are not closed: " +
-                      names + u".");
+                error(u"Unexpected end of file has occurred. The following elements are not closed: " + names + u".");
             }
             if (!root_seen)
                 error(u"Root element is missing.", 0, 0);
@@ -1799,9 +1843,8 @@ bool NativeNiniXmlReader::State::read() {
                     append_text(reference());
                 } else {
                     auto c = peek();
-                    if (!char_eof &&
-                        ((c == u']' && input.size() - cursor < 3) ||
-                         ((c == u'\r' || (c >= 0xd800 && c <= 0xdbff)) && input.size() - cursor < 2)))
+                    if (!char_eof && ((c == u']' && input.size() - cursor < 3) ||
+                                      ((c == u'\r' || (c >= 0xd800 && c <= 0xdbff)) && input.size() - cursor < 2)))
                         mark_partial();
                     if (starts(u"]]>"))
                         error(u"']]>' is not allowed in character data.");
@@ -1815,8 +1858,7 @@ bool NativeNiniXmlReader::State::read() {
                     all_white = false;
             if (frames.empty() && (!all_white || has_reference))
                 error(u"Data at the root level is invalid.", ln, pos);
-            auto type =
-                all_white && !decimal_reference ? (frames.empty() || !frames.back().preserve ? 13 : 14) : 3;
+            auto type = all_white && !decimal_reference ? (frames.empty() || !frames.back().preserve ? 13 : 14) : 3;
             if (!frames.empty() && !settings.legacy_compatibility && all_white && value.size() >= 4096 &&
                 read_data_calls != initial_read_calls)
                 type = 3;
@@ -1871,14 +1913,13 @@ bool NativeNiniXmlReader::State::read() {
             auto target = name(false);
             bool is_xml = target == u"xml";
             bool reserved = target.size() == 3 && (target[0] == u'x' || target[0] == u'X') &&
-                            (target[1] == u'm' || target[1] == u'M') &&
-                            (target[2] == u'l' || target[2] == u'L');
+                            (target[1] == u'm' || target[1] == u'M') && (target[2] == u'l' || target[2] == u'L');
             if (reserved && !is_xml)
                 error(u"'" + target + u"' is an invalid name for processing instructions.", ln, pos);
             if (is_xml && (!initial_read || ln != 1 || pos != 3))
-                error(
-                    u"Unexpected XML declaration. The XML declaration must be the first node in the document, and no whitespace characters are allowed to appear before it.",
-                    ln, pos);
+                error(u"Unexpected XML declaration. The XML declaration must be the first node in the document, and no "
+                      u"whitespace characters are allowed to appear before it.",
+                      ln, pos);
             if (is_xml) {
                 parse_declaration(ln, pos);
                 if (state != NiniXmlReadState::Error)
@@ -1934,13 +1975,11 @@ bool NativeNiniXmlReader::State::read() {
                 }
                 if (peek() == u'-' && peek(1) != u'-') {
                     take();
-                    error(u"'" + unexpected_token() +
-                          u"' is an unexpected token. The expected token is '-'.");
+                    error(u"'" + unexpected_token() + u"' is an unexpected token. The expected token is '-'.");
                 }
                 if (peek() == u'[' && !starts(u"[CDATA[")) {
                     take();
-                    error(u"'" + unexpected_token() +
-                          u"' is an unexpected token. The expected token is 'CDATA['.");
+                    error(u"'" + unexpected_token() + u"' is an unexpected token. The expected token is 'CDATA['.");
                 }
             }
             if (frames.empty() && peek() == u'[')
@@ -1981,7 +2020,9 @@ bool NativeNiniXmlReader::State::read() {
                 if (settings.legacy_compatibility)
                     error(u"DTD is prohibited in this XML document.", 0, 0);
                 error(
-                    u"For security reasons DTD is prohibited in this XML document. To enable DTD processing set the DtdProcessing property on XmlReaderSettings to Parse and pass the settings into XmlReader.Create method.",
+                    u"For security reasons DTD is prohibited in this XML document. To enable DTD processing set the "
+                    u"DtdProcessing property on XmlReaderSettings to Parse and pass the settings into XmlReader.Create"
+                    u" method.",
                     0, 0);
             }
             if (!ensure(8))
@@ -2071,25 +2112,28 @@ bool NativeNiniXmlReader::State::read() {
 // holds mutable buffer views, including across provider callbacks.
 class NativeNiniXmlReaderDtdAdapter final : public NiniXmlDtdAdapter {
     std::shared_ptr<NativeNiniXmlReader> owner_;
-    NativeNiniXmlReader::State& s_;
+    NativeNiniXmlReader::State &s_;
     std::vector<char16_t> buffer_;
     bool exposed_ = false;
     std::int64_t line_start_ = 0;
+
     void sync() {
         if (!exposed_)
             return;
         auto count = s_.input.size() - s_.buffer_origin;
         std::copy_n(buffer_.begin(), count, s_.input.begin() + static_cast<std::ptrdiff_t>(s_.buffer_origin));
     }
+
     void invalidate() {
         exposed_ = false;
         line_start_ = static_cast<std::int64_t>(s_.cursor) - s_.column;
     }
+
     std::int32_t relative(std::size_t position) const {
         return static_cast<std::int32_t>(position - s_.buffer_origin);
     }
-    void id_attribute(std::u16string_view name, NiniWriterText value, NiniXmlDtdLine keyword,
-                      NiniXmlDtdLine literal) {
+
+    void id_attribute(std::u16string_view name, NiniWriterText value, NiniXmlDtdLine keyword, NiniXmlDtdLine literal) {
         NiniXmlReadAttribute a;
         a.name = a.local_name = name;
         a.value = value ? *value : u"";
@@ -2099,7 +2143,8 @@ class NativeNiniXmlReaderDtdAdapter final : public NiniXmlDtdAdapter {
         a.value_line_position = literal.position;
         s_.current.attributes.push_back(std::move(a));
     }
-    std::int32_t reference(std::u16string* builder) {
+
+    std::int32_t reference(std::u16string *builder) {
         sync();
         exposed_ = false;
         auto start = s_.cursor;
@@ -2120,34 +2165,39 @@ class NativeNiniXmlReaderDtdAdapter final : public NiniXmlDtdAdapter {
         : owner_(std::move(reader)), s_(*owner_->state_) {
         invalidate();
     }
+
     ~NativeNiniXmlReaderDtdAdapter() override {
         sync();
     }
+
     NiniWriterText intern(std::u16string_view value) override {
         auto [it, inserted] = s_.interned_names.try_emplace(std::u16string(value));
         if (inserted)
             it->second = nini_writer_text(it->first);
         return it->second;
     }
+
     NiniWriterText lookup_namespace(std::u16string_view prefix) override {
         if (prefix == u"xml")
             return intern(xml_uri);
         if (prefix == u"xmlns")
             return intern(xmlns_uri);
         if (!s_.frames.empty()) {
-            auto& ns = s_.frames.back().namespaces;
+            auto &ns = s_.frames.back().namespaces;
             auto found = ns.find(std::u16string(prefix));
             if (found != ns.end())
                 return intern(found->second);
         }
         return prefix.empty() ? intern(u"") : NiniWriterText{};
     }
+
     NiniWriterText base_uri() const override {
         if (!s_.input_base_uri)
             throw NiniXmlProviderError("System.NullReferenceException", 0x80004003,
                                        u"Object reference not set to an instance of an object.");
         return s_.materialized_uri;
     }
+
     std::span<char16_t> parsing_buffer() override {
         if (s_.character_capacity == 0 && s_.input.empty())
             return {};
@@ -2161,48 +2211,62 @@ class NativeNiniXmlReaderDtdAdapter final : public NiniXmlDtdAdapter {
         }
         return buffer_;
     }
+
     std::int32_t parsing_buffer_length() const override {
         return static_cast<std::int32_t>(s_.input.size() - s_.buffer_origin);
     }
+
     std::int32_t current_position() const override {
         return relative(s_.cursor);
     }
+
     void current_position(std::int32_t value) override {
         sync();
         s_.cursor = s_.buffer_origin + static_cast<std::size_t>(value);
         s_.column = static_cast<std::int32_t>(static_cast<std::int64_t>(s_.cursor) - line_start_);
     }
+
     std::int32_t line_number() const override {
         return s_.line;
     }
+
     std::int32_t line_start_position() const override {
         return static_cast<std::int32_t>(static_cast<std::int64_t>(s_.cursor) - s_.column -
                                          static_cast<std::int64_t>(s_.buffer_origin));
     }
+
     bool is_eof() const override {
         return s_.char_eof;
     }
+
     std::int32_t entity_stack_length() const override {
         return static_cast<std::int32_t>(s_.entity_inputs.size());
     }
+
     bool entity_eol_normalized() const override {
         return s_.entity_eol_normalized;
     }
+
     bool v1_compatibility() const override {
         return s_.settings.legacy_compatibility;
     }
+
     bool normalization() const override {
         return s_.settings.normalize;
     }
+
     bool namespaces() const override {
         return true;
     }
+
     bool validation_enabled() const override {
         return false;
     }
+
     bool has_validation_handler() const override {
         return false;
     }
+
     std::int32_t read_data() override {
         sync();
         exposed_ = false;
@@ -2210,13 +2274,15 @@ class NativeNiniXmlReaderDtdAdapter final : public NiniXmlDtdAdapter {
         invalidate();
         return static_cast<std::int32_t>(count);
     }
+
     void on_new_line(std::int32_t next) override {
         s_.line = unchecked_add(s_.line, 1);
         line_start_ = static_cast<std::int64_t>(s_.buffer_origin) + next - 1;
         s_.column = static_cast<std::int32_t>(static_cast<std::int64_t>(s_.cursor) - line_start_);
         s_.previous_cr = false;
     }
-    std::int32_t parse_numeric_reference(std::u16string* builder) override {
+
+    std::int32_t parse_numeric_reference(std::u16string *builder) override {
         sync();
         exposed_ = false;
         for (;;) {
@@ -2242,8 +2308,7 @@ class NativeNiniXmlReaderDtdAdapter final : public NiniXmlDtdAdapter {
                 if (digit >= unsigned(hex ? 16 : 10))
                     break;
                 if (hex) {
-                    if (code >
-                        (std::numeric_limits<std::int32_t>::max() - static_cast<std::int32_t>(digit)) / 16)
+                    if (code > (std::numeric_limits<std::int32_t>::max() - static_cast<std::int32_t>(digit)) / 16)
                         bad(u"Invalid value of a character entity reference.", i);
                     code = code * 16 + static_cast<std::int32_t>(digit);
                 } else {
@@ -2270,19 +2335,15 @@ class NativeNiniXmlReaderDtdAdapter final : public NiniXmlDtdAdapter {
                 if ((nini_xml_character_properties(c) & 16) == 0 &&
                     (!s_.settings.legacy_compatibility || s_.settings.normalize)) {
                     auto a = character_arguments(c);
-                    bad(u"'" + a.first + u"', hexadecimal value " + a.second + u", is an invalid character.",
-                        digits);
+                    bad(u"'" + a.first + u"', hexadecimal value " + a.second + u", is an invalid character.", digits);
                 }
                 value += c;
             } else {
                 auto n = code - 65536;
-                auto low = static_cast<char16_t>(0xdc00 + n % 1024),
-                     high = static_cast<char16_t>(0xd800 + n / 1024);
-                if (s_.settings.normalize &&
-                    (high < 0xd800 || high > 0xdbff || low < 0xdc00 || low > 0xdfff)) {
+                auto low = static_cast<char16_t>(0xdc00 + n % 1024), high = static_cast<char16_t>(0xd800 + n / 1024);
+                if (s_.settings.normalize && (high < 0xd800 || high > 0xdbff || low < 0xdc00 || low > 0xdfff)) {
                     auto a = character_arguments(high, low);
-                    bad(u"'" + a.first + u"', hexadecimal value " + a.second + u", is an invalid character.",
-                        digits);
+                    bad(u"'" + a.first + u"', hexadecimal value " + a.second + u", is an invalid character.", digits);
                 }
                 value = {high, low};
             }
@@ -2297,7 +2358,8 @@ class NativeNiniXmlReaderDtdAdapter final : public NiniXmlDtdAdapter {
             return relative(end);
         }
     }
-    std::int32_t parse_named_reference(bool expand, std::u16string* builder) override {
+
+    std::int32_t parse_named_reference(bool expand, std::u16string *builder) override {
         sync();
         exposed_ = false;
         for (;;) {
@@ -2359,7 +2421,8 @@ class NativeNiniXmlReaderDtdAdapter final : public NiniXmlDtdAdapter {
             return relative(end);
         }
     }
-    void parse_processing_instruction(std::u16string* builder) override {
+
+    void parse_processing_instruction(std::u16string *builder) override {
         sync();
         exposed_ = false;
         s_.current.line_number = s_.line;
@@ -2373,10 +2436,9 @@ class NativeNiniXmlReaderDtdAdapter final : public NiniXmlDtdAdapter {
         if (reserved) {
             s_.cursor = target_start;
             s_.column = static_cast<std::int32_t>(static_cast<std::int64_t>(target_start) - line_start_);
-            s_.error(
-                target == u"xml"
-                    ? u"Unexpected XML declaration. The XML declaration must be the first node in the document, and no whitespace characters are allowed to appear before it."
-                    : u"'" + target + u"' is an invalid name for processing instructions.");
+            s_.error(target == u"xml" ? u"Unexpected XML declaration. The XML declaration must be the first node in "
+                                        u"the document, and no whitespace characters are allowed to appear before it."
+                                      : u"'" + target + u"' is an invalid name for processing instructions.");
         }
         if (builder)
             *builder += target;
@@ -2399,7 +2461,8 @@ class NativeNiniXmlReaderDtdAdapter final : public NiniXmlDtdAdapter {
         invalidate();
         scan_markup(true, builder);
     }
-    void scan_markup(bool pi, std::u16string* builder) {
+
+    void scan_markup(bool pi, std::u16string *builder) {
         sync();
         exposed_ = false;
         std::u16string value;
@@ -2408,14 +2471,12 @@ class NativeNiniXmlReaderDtdAdapter final : public NiniXmlDtdAdapter {
                 if (s_.input.size() - s_.cursor < (pi ? 2u : 3u) && s_.read_data() == 0) {
                     if (pi) {
                         s_.cursor = s_.input.size();
-                        s_.column =
-                            static_cast<std::int32_t>(static_cast<std::int64_t>(s_.cursor) - line_start_);
+                        s_.column = static_cast<std::int32_t>(static_cast<std::int64_t>(s_.cursor) - line_start_);
                     }
                     s_.error(pi ? u"Unexpected end of file while parsing PI has occurred."
                                 : u"Unexpected end of file while parsing Comment has occurred.",
                              s_.line,
-                             pi ? static_cast<std::int32_t>(static_cast<std::int64_t>(s_.input.size()) -
-                                                            line_start_)
+                             pi ? static_cast<std::int32_t>(static_cast<std::int64_t>(s_.input.size()) - line_start_)
                                 : s_.column,
                              "Xml_UnexpectedEOF");
                 }
@@ -2448,8 +2509,7 @@ class NativeNiniXmlReaderDtdAdapter final : public NiniXmlDtdAdapter {
                             }
                             if (i + 2 == s_.input.size())
                                 break;
-                            bad(u"An XML comment cannot contain '--', and '-' cannot be the last character.",
-                                i);
+                            bad(u"An XML comment cannot contain '--', and '-' cannot be the last character.", i);
                         } else if (i + 1 == s_.input.size())
                             break;
                         ++i;
@@ -2469,8 +2529,7 @@ class NativeNiniXmlReaderDtdAdapter final : public NiniXmlDtdAdapter {
                                         removed = 1;
                                         shift = i;
                                     } else {
-                                        std::move(s_.input.begin() +
-                                                      static_cast<std::ptrdiff_t>(shift + removed),
+                                        std::move(s_.input.begin() + static_cast<std::ptrdiff_t>(shift + removed),
                                                   s_.input.begin() + static_cast<std::ptrdiff_t>(i),
                                                   s_.input.begin() + static_cast<std::ptrdiff_t>(shift));
                                         shift = i - removed;
@@ -2509,8 +2568,7 @@ class NativeNiniXmlReaderDtdAdapter final : public NiniXmlDtdAdapter {
                         }
                     }
                     auto a = character_arguments(get(i), get(i + 1));
-                    bad(u"'" + a.first + u"', hexadecimal value " + a.second + u", is an invalid character.",
-                        i);
+                    bad(u"'" + a.first + u"', hexadecimal value " + a.second + u", is an invalid character.", i);
                 }
                 if (removed)
                     std::move(s_.input.begin() + static_cast<std::ptrdiff_t>(shift + removed),
@@ -2525,33 +2583,38 @@ class NativeNiniXmlReaderDtdAdapter final : public NiniXmlDtdAdapter {
                     break;
                 }
             }
-        } catch (const NiniXmlDtdError& e) {
+        } catch (const NiniXmlDtdError &e) {
             if (pi || e.resource_name != "Xml_UnexpectedEOF" || !s_.current_entity)
                 throw;
             s_.parsing_error = false;
         }
         invalidate();
     }
-    void parse_comment(std::u16string* builder) override {
+
+    void parse_comment(std::u16string *builder) override {
         scan_markup(false, builder);
     }
-    bool push_entity(const std::shared_ptr<NiniXmlDtdEntity>& entity, std::int32_t& id) override {
+
+    bool push_entity(const std::shared_ptr<NiniXmlDtdEntity> &entity, std::int32_t &id) override {
         sync();
         exposed_ = false;
         auto result = s_.push_dtd_entity(entity, id);
         invalidate();
         return result;
     }
-    bool pop_entity(std::shared_ptr<NiniXmlDtdEntity>& old, std::int32_t& id) override {
+
+    bool pop_entity(std::shared_ptr<NiniXmlDtdEntity> &old, std::int32_t &id) override {
         sync();
         auto result = s_.pop_dtd_entity(old, id);
         if (result)
             invalidate();
         return result;
     }
+
     bool push_external_subset(NiniWriterText, NiniWriterText) override {
         return false;
     }
+
     void push_internal_dtd(NiniWriterText base, NiniWriterText subset) override {
         sync();
         exposed_ = false;
@@ -2560,14 +2623,17 @@ class NativeNiniXmlReaderDtdAdapter final : public NiniXmlDtdAdapter {
         s_.current_entity_id = 0;
         invalidate();
     }
+
     void on_system_id(NiniWriterText text, NiniXmlDtdLine keyword, NiniXmlDtdLine literal) override {
         id_attribute(u"SYSTEM", std::move(text), keyword, literal);
     }
+
     void on_public_id(NiniWriterText text, NiniXmlDtdLine keyword, NiniXmlDtdLine literal) override {
         id_attribute(u"PUBLIC", std::move(text), keyword, literal);
     }
-    void validation_event(const NiniXmlProviderError&, std::int32_t) override {
-    }
+
+    void validation_event(const NiniXmlProviderError &, std::int32_t) override {}
+
     [[noreturn]] void throw_error(NiniXmlDtdError e) override {
         s_.state = NiniXmlReadState::Error;
         s_.parsing_error = true;
@@ -2576,26 +2642,30 @@ class NativeNiniXmlReaderDtdAdapter final : public NiniXmlDtdAdapter {
         throw e;
     }
 };
-std::unique_ptr<NiniXmlDtdAdapter>
-native_nini_xml_dtd_adapter(const std::shared_ptr<NativeNiniXmlReader>& reader) {
+
+std::unique_ptr<NiniXmlDtdAdapter> native_nini_xml_dtd_adapter(const std::shared_ptr<NativeNiniXmlReader> &reader) {
     if (!reader)
         throw std::invalid_argument("Native DTD adapter requires a reader");
     return std::make_unique<NativeNiniXmlReaderDtdAdapter>(reader);
 }
+
 bool NativeNiniXmlReader::is_default() const {
-    auto& s = *state_;
+    auto &s = *state_;
     return s.attribute >= 0 && !s.attribute_value &&
            s.element.attributes[static_cast<std::size_t>(s.attribute)].is_default;
 }
+
 std::shared_ptr<NiniXmlDtdInfo> NativeNiniXmlReader::dtd_info() const {
     return state_->dtd_info;
 }
+
 bool NativeNiniXmlReader::read() {
     const auto lifetime = shared_from_this();
     auto result = state_->read();
     state_->remember_node();
     return result;
 }
+
 bool NativeNiniXmlReader::move_to_first_attribute() {
     if (state_->element.attributes.empty())
         return false;
@@ -2603,15 +2673,16 @@ bool NativeNiniXmlReader::move_to_first_attribute() {
     state_->attribute = -1;
     return move_to_next_attribute();
 }
+
 bool NativeNiniXmlReader::move_to_next_attribute() {
-    auto& s = *state_;
+    auto &s = *state_;
     s.finish_attribute_value();
     if ((s.element.node_type != 1 && s.element.node_type != 17 && s.element.node_type != 10) ||
         s.attribute + 1 >= static_cast<std::ptrdiff_t>(s.element.attributes.size()))
         return false;
     ++s.attribute;
     s.attribute_value = false;
-    auto& a = s.element.attributes[static_cast<std::size_t>(s.attribute)];
+    auto &a = s.element.attributes[static_cast<std::size_t>(s.attribute)];
     s.current = s.element;
     s.current.node_type = 2;
     s.current.depth = s.element.depth + 1;
@@ -2625,8 +2696,9 @@ bool NativeNiniXmlReader::move_to_next_attribute() {
     s.current.is_empty_element = false;
     return true;
 }
+
 bool NativeNiniXmlReader::move_to_element() {
-    auto& s = *state_;
+    auto &s = *state_;
     if (s.attribute < 0)
         return false;
     s.finish_attribute_value();
@@ -2635,11 +2707,13 @@ bool NativeNiniXmlReader::move_to_element() {
     s.current = s.element;
     return true;
 }
+
 bool NativeNiniXmlReader::read_attribute_value() {
     return state_->next_attribute_value();
 }
+
 void NativeNiniXmlReader::resolve_entity() {
-    auto& s = *state_;
+    auto &s = *state_;
     if (s.current.node_type != 5)
         throw NiniXmlProviderError("System.InvalidOperationException", 0x80131509,
                                    u"Operation is not valid due to the current state of the object.");
@@ -2651,9 +2725,10 @@ void NativeNiniXmlReader::resolve_entity() {
     if (!s.attribute_value)
         s.after_resolve_content = true;
 }
+
 void NativeNiniXmlReader::close() {
     const auto lifetime = shared_from_this();
-    auto& s = *state_;
+    auto &s = *state_;
     if (s.state == NiniXmlReadState::Closed)
         return;
     while (!s.entity_inputs.empty()) {
@@ -2674,13 +2749,14 @@ void NativeNiniXmlReader::close() {
     s.attribute = -1;
     s.state = NiniXmlReadState::Closed;
 }
+
 std::vector<NiniXmlReadAttribute> native_nini_xml_declaration_attributes(Text value) {
     auto wrapped = nini_writer_text(u"<?xml " + (value ? *value : u"") + u"?>");
     auto reader = NativeNiniXmlReader::from_text(wrapped, NiniXmlReaderSettings::legacy_document());
     try {
         reader->read();
         return reader->token().attributes;
-    } catch (const NiniXmlProviderError& original) {
+    } catch (const NiniXmlProviderError &original) {
         auto line = original.line_number.value_or(0), position = original.line_position.value_or(0);
         auto message = original.message;
         auto suffix = u" Line " + decimal(line) + u", position " + decimal(position) + u".";
@@ -2689,15 +2765,15 @@ std::vector<NiniXmlReadAttribute> native_nini_xml_declaration_attributes(Text va
         position -= 6;
         if (line != 0)
             message += u" Line " + decimal(line) + u", position " + decimal(position) + u".";
-        NiniXmlProviderError e(original.source_type, original.hresult, std::move(message),
-                               original.parameter);
+        NiniXmlProviderError e(original.source_type, original.hresult, std::move(message), original.parameter);
         e.source_uri = original.source_uri;
         e.line_number = line;
         e.line_position = position;
         throw e;
     }
 }
-void native_nini_xml_load(NiniXmlDom& document, const std::shared_ptr<NativeNiniXmlReader>& reader,
+
+void native_nini_xml_load(NiniXmlDom &document, const std::shared_ptr<NativeNiniXmlReader> &reader,
                           bool preserve_whitespace) {
     auto collection = document.defer_collection();
     document.clear();
@@ -2705,7 +2781,7 @@ void native_nini_xml_load(NiniXmlDom& document, const std::shared_ptr<NativeNini
         throw NiniXmlProviderError("System.NullReferenceException", 0x80004003,
                                    u"Object reference not set to an instance of an object.");
     using Node = std::shared_ptr<NiniXmlDomNode>;
-    auto text = [](const std::u16string& value) { return nini_writer_text(value); };
+    auto text = [](const std::u16string &value) { return nini_writer_text(value); };
     // XmlLoader uses reader attribute navigation/value iteration. Besides entity
     // chunks, those calls affect the source reader's reusable NodeData slots.
     auto load_attribute = [&]() -> Node {
@@ -2731,8 +2807,7 @@ void native_nini_xml_load(NiniXmlDom& document, const std::shared_ptr<NativeNini
                     parent->append_child_for_load(document.create_text(text(u"")));
                 parent = parent->parent();
             } else
-                throw NiniXmlProviderError("System.InvalidOperationException", 0x80131509,
-                                           u"Unexpected XmlNodeType.");
+                throw NiniXmlProviderError("System.InvalidOperationException", 0x80131509, u"Unexpected XmlNodeType.");
         }
         attribute->specified_for_load(!is_default);
         return attribute;
@@ -2741,7 +2816,7 @@ void native_nini_xml_load(NiniXmlDom& document, const std::shared_ptr<NativeNini
         auto token = reader->token();
         Text pub, sys;
         while (reader->move_to_next_attribute()) {
-            auto& attr = reader->token();
+            auto &attr = reader->token();
             if (attr.name == u"PUBLIC")
                 pub = text(attr.value);
             else if (attr.name == u"SYSTEM")
@@ -2753,7 +2828,7 @@ void native_nini_xml_load(NiniXmlDom& document, const std::shared_ptr<NativeNini
     auto load_declaration = [&]() -> Node {
         Text version, encoding, standalone;
         while (reader->move_to_next_attribute()) {
-            const auto& a = reader->token();
+            const auto &a = reader->token();
             if (a.name == u"version")
                 version = text(a.value);
             else if (a.name == u"encoding")
@@ -2772,8 +2847,8 @@ void native_nini_xml_load(NiniXmlDom& document, const std::shared_ptr<NativeNini
             Node node;
             switch (token.node_type) {
             case 1: {
-                auto element = document.create_element(text(token.prefix), text(token.local_name),
-                                                       text(token.namespace_uri));
+                auto element =
+                    document.create_element(text(token.prefix), text(token.local_name), text(token.namespace_uri));
                 element->is_empty_element(token.is_empty_element);
                 if (reader->move_to_first_attribute()) {
                     do {
@@ -2851,8 +2926,7 @@ void native_nini_xml_load(NiniXmlDom& document, const std::shared_ptr<NativeNini
                 node = load_document_type();
                 break;
             default:
-                throw NiniXmlProviderError("System.InvalidOperationException", 0x80131509,
-                                           u"Unexpected XmlNodeType.");
+                throw NiniXmlProviderError("System.InvalidOperationException", 0x80131509, u"Unexpected XmlNodeType.");
             }
             if (parent) {
                 parent->append_child_for_load(node);
@@ -2876,4 +2950,4 @@ void native_nini_xml_load(NiniXmlDom& document, const std::shared_ptr<NativeNini
         document.document_node()->append_child(node);
     } while (reader->read());
 }
-}
+} // namespace opensim::framework

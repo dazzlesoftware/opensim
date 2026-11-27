@@ -7,11 +7,13 @@
 #include "opensim/services/asset_service.hpp"
 #include "opensim/framework/asset_cache.hpp"
 #include "opensim/server/config.hpp"
+
 namespace opensim::services {
 struct AssetConnectorCache {
     std::shared_ptr<framework::IAssetCache> cache;
     bool shared_module = false;
 };
+
 class AssetConnectorScene {
   public:
     virtual ~AssetConnectorScene() = default;
@@ -19,80 +21,93 @@ class AssetConnectorScene {
     virtual AssetConnectorCache asset_cache() = 0;
     virtual std::optional<std::string> region_name() = 0;
 };
+
 class AssetConnectorBackend {
   public:
     virtual ~AssetConnectorBackend() = default;
-    virtual std::shared_ptr<AssetService> load_service(const std::string& module,
-                                                       const server::IniConfig* config) = 0;
-    virtual void error(const std::string& message) = 0;
-    virtual void info(const std::string& message) = 0;
-    virtual void debug(const std::string& message) = 0;
-    virtual void post(std::function<void()> callback, const std::string& name) = 0;
-    virtual bool try_post(std::function<void()> callback, const std::string& name) {
+    virtual std::shared_ptr<AssetService> load_service(const std::string &module, const server::IniConfig *config) = 0;
+    virtual void error(const std::string &message) = 0;
+    virtual void info(const std::string &message) = 0;
+    virtual void debug(const std::string &message) = 0;
+    virtual void post(std::function<void()> callback, const std::string &name) = 0;
+
+    virtual bool try_post(std::function<void()> callback, const std::string &name) {
         post(std::move(callback), name);
         return true;
     }
+
     virtual bool queue_asset_read(std::function<void()> callback, bool) {
         return try_post(std::move(callback), "RegionAssetConnector.AssetRead");
     }
 };
+
 class LocalAssetConnector : public AssetService, public std::enable_shared_from_this<LocalAssetConnector> {
   public:
     explicit LocalAssetConnector(std::shared_ptr<AssetConnectorBackend> backend,
                                  bool service_handles_mutations = false);
-    using ForeignFetch = std::function<Asset(const std::string&, const std::optional<std::string>&, bool)>;
+    using ForeignFetch = std::function<Asset(const std::string &, const std::optional<std::string> &, bool)>;
+
     void foreign_fetch(ForeignFetch fetch) {
         foreign_fetch_ = std::move(fetch);
     }
-    void foreign_url_fetch(std::function<Asset(const std::string&)> fetch) {
+
+    void foreign_url_fetch(std::function<Asset(const std::string &)> fetch) {
         foreign_url_fetch_ = std::move(fetch);
     }
+
     void foreign_store(std::function<std::optional<std::string>(Asset)> store) {
         foreign_store_ = std::move(store);
     }
-    void foreign_exists(std::function<std::vector<bool>(const std::vector<std::string>&)> exists) {
+
+    void foreign_exists(std::function<std::vector<bool>(const std::vector<std::string> &)> exists) {
         foreign_exists_ = std::move(exists);
     }
+
     static constexpr std::string_view name = "LocalAssetServicesConnector";
+
     std::nullptr_t replaceable_interface() const {
         return nullptr;
     }
-    void initialise(const server::IniConfig* config);
-    void initialise_service(const server::IniConfig* config, const std::string& module);
+
+    void initialise(const server::IniConfig *config);
+    void initialise_service(const server::IniConfig *config, const std::string &module);
+
     void post_initialise() {}
+
     void close();
+
     void remove_region(std::shared_ptr<AssetConnectorScene>) {}
+
     void add_region(std::shared_ptr<AssetConnectorScene> scene);
     void region_loaded(std::shared_ptr<AssetConnectorScene> scene);
-    Asset get_asset(const std::string& id) override;
-    Asset get_foreign(const std::string&, const std::optional<std::string>&, bool) override;
-    Asset get_cached(const std::string& id) override;
-    std::shared_ptr<framework::AssetMetadata> get_metadata(const std::string& id) override;
-    framework::AssetBytes get_data(const std::string& id) override;
-    bool get_async(const std::string& id, std::any sender, Retrieved callback) override;
-    void get(const std::string& id, const std::optional<std::string>& foreign, bool local,
-             Complete callback) override;
-    std::vector<bool> assets_exist(const std::vector<std::string>& ids) override;
+    Asset get_asset(const std::string &id) override;
+    Asset get_foreign(const std::string &, const std::optional<std::string> &, bool) override;
+    Asset get_cached(const std::string &id) override;
+    std::shared_ptr<framework::AssetMetadata> get_metadata(const std::string &id) override;
+    framework::AssetBytes get_data(const std::string &id) override;
+    bool get_async(const std::string &id, std::any sender, Retrieved callback) override;
+    void get(const std::string &id, const std::optional<std::string> &foreign, bool local, Complete callback) override;
+    std::vector<bool> assets_exist(const std::vector<std::string> &ids) override;
     std::optional<std::string> store(Asset asset) override;
-    bool update_content(const std::string& id, framework::AssetBytes data) override;
-    bool erase(const std::string& id) override;
+    bool update_content(const std::string &id, framework::AssetBytes data) override;
+    bool erase(const std::string &id) override;
 
   private:
     friend struct LocalAssetConnectorProbe;
     std::shared_ptr<AssetConnectorBackend> backend_;
     bool service_handles_mutations_;
     ForeignFetch foreign_fetch_;
-    std::function<Asset(const std::string&)> foreign_url_fetch_;
+    std::function<Asset(const std::string &)> foreign_url_fetch_;
     std::function<std::optional<std::string>(Asset)> foreign_store_;
-    std::function<std::vector<bool>(const std::vector<std::string>&)> foreign_exists_;
+    std::function<std::vector<bool>(const std::vector<std::string> &)> foreign_exists_;
     std::mutex pending_reads_mutex_;
     std::unordered_map<std::string, std::vector<Complete>> pending_reads_;
     bool reads_closed_ = false;
-    void deliver_reads(const std::vector<Complete>&, const Asset&);
-    void complete_read(const std::string&, const Asset&);
-    void queue_read(const std::string&, const std::optional<std::string>&, bool, bool, Complete);
+    void deliver_reads(const std::vector<Complete> &, const Asset &);
+    void complete_read(const std::string &, const Asset &);
+    void queue_read(const std::string &, const std::optional<std::string> &, bool, bool, Complete);
     opensim::framework::AtomicSharedPtr<AssetService> service_;
     opensim::framework::AtomicSharedPtr<framework::IAssetCache> cache_;
     bool enabled_ = false;
 };
-}
+} // namespace opensim::services

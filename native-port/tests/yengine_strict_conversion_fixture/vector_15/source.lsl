@@ -1,0 +1,1 @@
+vector result;integer after;default{state_entry(){result=xmrString2Vector("<1,234,5,6>");after=1;}}

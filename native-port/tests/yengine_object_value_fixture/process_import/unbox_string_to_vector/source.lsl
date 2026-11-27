@@ -1,0 +1,1 @@
+YOption arrays;YOption chars;object input=(object)"12";vector result;integer after;default{state_entry(){result=(vector)input;after=1;}}

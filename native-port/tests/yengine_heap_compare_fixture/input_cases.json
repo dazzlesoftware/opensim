@@ -1,0 +1,285 @@
+[
+  {
+    "name": "compare_0",
+    "kind": "compare",
+    "left": "",
+    "right": "",
+    "source": "integer result;integer after;default{state_entry(){result=xmrStringCompare(\"\",\"\");after=1;}}"
+  },
+  {
+    "name": "compare_1",
+    "kind": "compare",
+    "left": "a",
+    "right": "a",
+    "source": "integer result;integer after;default{state_entry(){result=xmrStringCompare(\"a\",\"a\");after=1;}}"
+  },
+  {
+    "name": "compare_2",
+    "kind": "compare",
+    "left": "abc",
+    "right": "abd",
+    "source": "integer result;integer after;default{state_entry(){result=xmrStringCompare(\"abc\",\"abd\");after=1;}}"
+  },
+  {
+    "name": "compare_3",
+    "kind": "compare",
+    "left": "abd",
+    "right": "abc",
+    "source": "integer result;integer after;default{state_entry(){result=xmrStringCompare(\"abd\",\"abc\");after=1;}}"
+  },
+  {
+    "name": "compare_4",
+    "kind": "compare",
+    "left": "a",
+    "right": "A",
+    "source": "integer result;integer after;default{state_entry(){result=xmrStringCompare(\"a\",\"A\");after=1;}}"
+  },
+  {
+    "name": "compare_5",
+    "kind": "compare",
+    "left": "A",
+    "right": "a",
+    "source": "integer result;integer after;default{state_entry(){result=xmrStringCompare(\"A\",\"a\");after=1;}}"
+  },
+  {
+    "name": "compare_6",
+    "kind": "compare",
+    "left": "a-b",
+    "right": "ab",
+    "source": "integer result;integer after;default{state_entry(){result=xmrStringCompare(\"a-b\",\"ab\");after=1;}}"
+  },
+  {
+    "name": "compare_7",
+    "kind": "compare",
+    "left": "a_b",
+    "right": "a b",
+    "source": "integer result;integer after;default{state_entry(){result=xmrStringCompare(\"a_b\",\"a b\");after=1;}}"
+  },
+  {
+    "name": "compare_8",
+    "kind": "compare",
+    "left": "2",
+    "right": "10",
+    "source": "integer result;integer after;default{state_entry(){result=xmrStringCompare(\"2\",\"10\");after=1;}}"
+  },
+  {
+    "name": "compare_9",
+    "kind": "compare",
+    "left": "02",
+    "right": "2",
+    "source": "integer result;integer after;default{state_entry(){result=xmrStringCompare(\"02\",\"2\");after=1;}}"
+  },
+  {
+    "name": "compare_10",
+    "kind": "compare",
+    "left": "a\u0000b",
+    "right": "ab",
+    "source": "integer result;integer after;default{state_entry(){result=xmrStringCompare(\"a\u0000b\",\"ab\");after=1;}}"
+  },
+  {
+    "name": "compare_11",
+    "kind": "compare",
+    "left": "a\u0000c",
+    "right": "ab",
+    "source": "integer result;integer after;default{state_entry(){result=xmrStringCompare(\"a\u0000c\",\"ab\");after=1;}}"
+  },
+  {
+    "name": "compare_12",
+    "kind": "compare",
+    "left": "a\u0000",
+    "right": "a",
+    "source": "integer result;integer after;default{state_entry(){result=xmrStringCompare(\"a\u0000\",\"a\");after=1;}}"
+  },
+  {
+    "name": "compare_13",
+    "kind": "compare",
+    "left": "a\u00adb",
+    "right": "ab",
+    "source": "integer result;integer after;default{state_entry(){result=xmrStringCompare(\"a\u00adb\",\"ab\");after=1;}}"
+  },
+  {
+    "name": "compare_14",
+    "kind": "compare",
+    "left": "a\u200bb",
+    "right": "ab",
+    "source": "integer result;integer after;default{state_entry(){result=xmrStringCompare(\"a\u200bb\",\"ab\");after=1;}}"
+  },
+  {
+    "name": "compare_15",
+    "kind": "compare",
+    "left": "a\u200db",
+    "right": "ab",
+    "source": "integer result;integer after;default{state_entry(){result=xmrStringCompare(\"a\u200db\",\"ab\");after=1;}}"
+  },
+  {
+    "name": "compare_16",
+    "kind": "compare",
+    "left": "a\ufeffb",
+    "right": "ab",
+    "source": "integer result;integer after;default{state_entry(){result=xmrStringCompare(\"a\ufeffb\",\"ab\");after=1;}}"
+  },
+  {
+    "name": "compare_17",
+    "kind": "compare",
+    "left": "\u00e9",
+    "right": "e\u0301",
+    "source": "integer result;integer after;default{state_entry(){result=xmrStringCompare(\"\u00e9\",\"e\u0301\");after=1;}}"
+  },
+  {
+    "name": "compare_18",
+    "kind": "compare",
+    "left": "\u00c9",
+    "right": "e\u0301",
+    "source": "integer result;integer after;default{state_entry(){result=xmrStringCompare(\"\u00c9\",\"e\u0301\");after=1;}}"
+  },
+  {
+    "name": "compare_19",
+    "kind": "compare",
+    "left": "I",
+    "right": "\u0131",
+    "source": "integer result;integer after;default{state_entry(){result=xmrStringCompare(\"I\",\"\u0131\");after=1;}}"
+  },
+  {
+    "name": "compare_20",
+    "kind": "compare",
+    "left": "i",
+    "right": "\u0130",
+    "source": "integer result;integer after;default{state_entry(){result=xmrStringCompare(\"i\",\"\u0130\");after=1;}}"
+  },
+  {
+    "name": "compare_21",
+    "kind": "compare",
+    "left": "i",
+    "right": "I",
+    "source": "integer result;integer after;default{state_entry(){result=xmrStringCompare(\"i\",\"I\");after=1;}}"
+  },
+  {
+    "name": "compare_22",
+    "kind": "compare",
+    "left": "\u00e6",
+    "right": "ae",
+    "source": "integer result;integer after;default{state_entry(){result=xmrStringCompare(\"\u00e6\",\"ae\");after=1;}}"
+  },
+  {
+    "name": "compare_23",
+    "kind": "compare",
+    "left": "\u00df",
+    "right": "ss",
+    "source": "integer result;integer after;default{state_entry(){result=xmrStringCompare(\"\u00df\",\"ss\");after=1;}}"
+  },
+  {
+    "name": "compare_24",
+    "kind": "compare",
+    "left": "\u6c49",
+    "right": "\u6f22",
+    "source": "integer result;integer after;default{state_entry(){result=xmrStringCompare(\"\u6c49\",\"\u6f22\");after=1;}}"
+  },
+  {
+    "name": "compare_25",
+    "kind": "compare",
+    "left": "\ud83d\ude00",
+    "right": "\ud83d\ude01",
+    "source": "integer result;integer after;default{state_entry(){result=xmrStringCompare(\"\ud83d\ude00\",\"\ud83d\ude01\");after=1;}}"
+  },
+  {
+    "name": "compare_26",
+    "kind": "compare",
+    "left": "\ud83d\ude00",
+    "right": "\ufffd",
+    "source": "integer result;integer after;default{state_entry(){result=xmrStringCompare(\"\ud83d\ude00\",\"\ufffd\");after=1;}}"
+  },
+  {
+    "name": "compare_27",
+    "kind": "compare",
+    "left": "\u00a0",
+    "right": " ",
+    "source": "integer result;integer after;default{state_entry(){result=xmrStringCompare(\"\u00a0\",\" \");after=1;}}"
+  },
+  {
+    "name": "compare_28",
+    "kind": "compare",
+    "left": "a\u00a0b",
+    "right": "a b",
+    "source": "integer result;integer after;default{state_entry(){result=xmrStringCompare(\"a\u00a0b\",\"a b\");after=1;}}"
+  },
+  {
+    "name": "compare_29",
+    "kind": "compare",
+    "left": "\u03c3",
+    "right": "\u03c2",
+    "source": "integer result;integer after;default{state_entry(){result=xmrStringCompare(\"\u03c3\",\"\u03c2\");after=1;}}"
+  },
+  {
+    "name": "compare_30",
+    "kind": "compare",
+    "left": "\u00e4",
+    "right": "z",
+    "source": "integer result;integer after;default{state_entry(){result=xmrStringCompare(\"\u00e4\",\"z\");after=1;}}"
+  },
+  {
+    "name": "compare_31",
+    "kind": "compare",
+    "left": "z",
+    "right": "\u00e4",
+    "source": "integer result;integer after;default{state_entry(){result=xmrStringCompare(\"z\",\"\u00e4\");after=1;}}"
+  },
+  {
+    "name": "compare_32",
+    "kind": "compare",
+    "left": "a ",
+    "right": "a",
+    "source": "integer result;integer after;default{state_entry(){result=xmrStringCompare(\"a \",\"a\");after=1;}}"
+  },
+  {
+    "name": "compare_33",
+    "kind": "compare",
+    "left": "a\t",
+    "right": "a",
+    "source": "integer result;integer after;default{state_entry(){result=xmrStringCompare(\"a\\t\",\"a\");after=1;}}"
+  },
+  {
+    "name": "compare_argument_order",
+    "kind": "source",
+    "source": "integer order;integer result;string left(){order=order*10+1;return \"a\";}string right(){order=order*10+2;return \"b\";}default{state_entry(){result=xmrStringCompare(left(),right());}}"
+  },
+  {
+    "name": "heap_empty",
+    "kind": "heap",
+    "source": "integer aliasLeft;integer intrinsicLeft;integer aliasUsed;integer intrinsicUsed;integer sum;integer ok;default{state_entry(){aliasLeft=xmrHeapLeft();intrinsicLeft=llGetFreeMemory();aliasUsed=xmrHeapUsed();intrinsicUsed=llGetUsedMemory();sum=aliasLeft+aliasUsed;ok=(aliasLeft==intrinsicLeft)&&(aliasUsed==intrinsicUsed);}}"
+  },
+  {
+    "name": "heap_globals",
+    "kind": "heap",
+    "source": "string text=\"abcdef\";list data=[1,2,\"ghi\",<1,2,3>];integer aliasLeft;integer intrinsicLeft;integer aliasUsed;integer intrinsicUsed;integer sum;integer ok;default{state_entry(){aliasLeft=xmrHeapLeft();intrinsicLeft=llGetFreeMemory();aliasUsed=xmrHeapUsed();intrinsicUsed=llGetUsedMemory();sum=aliasLeft+aliasUsed;ok=(aliasLeft==intrinsicLeft)&&(aliasUsed==intrinsicUsed);}}"
+  },
+  {
+    "name": "heap_locals",
+    "kind": "heap",
+    "source": "integer aliasLeft;integer intrinsicLeft;integer aliasUsed;integer intrinsicUsed;integer sum;integer ok;probe(){string text=\"abcdef\";list data=[1,text,\"ghi\"];aliasLeft=xmrHeapLeft();intrinsicLeft=llGetFreeMemory();aliasUsed=xmrHeapUsed();intrinsicUsed=llGetUsedMemory();sum=aliasLeft+aliasUsed;ok=(aliasLeft==intrinsicLeft)&&(aliasUsed==intrinsicUsed);}default{state_entry(){probe();}}"
+  },
+  {
+    "name": "heap_nested",
+    "kind": "heap",
+    "source": "integer aliasLeft;integer intrinsicLeft;integer aliasUsed;integer intrinsicUsed;integer sum;integer ok;probe(string text,list data){aliasLeft=xmrHeapLeft();intrinsicLeft=llGetFreeMemory();aliasUsed=xmrHeapUsed();intrinsicUsed=llGetUsedMemory();sum=aliasLeft+aliasUsed;ok=(aliasLeft==intrinsicLeft)&&(aliasUsed==intrinsicUsed);}outer(){string text=\"abcdef\";list data=[1,text,\"ghi\"];probe(text,data);}default{state_entry(){outer();}}"
+  },
+  {
+    "name": "heap_sleep",
+    "kind": "heap",
+    "source": "integer aliasLeft;integer intrinsicLeft;integer aliasUsed;integer intrinsicUsed;integer sum;integer ok;integer beforeOK;integer beforeSum;probe(){string text=\"abcdef\";list data=[1,text,\"ghi\"];aliasLeft=xmrHeapLeft();intrinsicLeft=llGetFreeMemory();aliasUsed=xmrHeapUsed();intrinsicUsed=llGetUsedMemory();sum=aliasLeft+aliasUsed;ok=(aliasLeft==intrinsicLeft)&&(aliasUsed==intrinsicUsed);beforeOK=ok;beforeSum=sum;llSleep(1.0);aliasLeft=xmrHeapLeft();intrinsicLeft=llGetFreeMemory();aliasUsed=xmrHeapUsed();intrinsicUsed=llGetUsedMemory();sum=aliasLeft+aliasUsed;ok=(aliasLeft==intrinsicLeft)&&(aliasUsed==intrinsicUsed);}default{state_entry(){probe();}}"
+  },
+  {
+    "name": "heap_background",
+    "kind": "heap",
+    "source": "integer aliasLeft;integer intrinsicLeft;integer aliasUsed;integer intrinsicUsed;integer sum;integer ok;integer beforeOK;integer beforeSum;list result;default{state_entry(){xmrEventEnqueue([21,7]);xmrEventEnqueue([29,9]);result=xmrEventDequeue(600.0,536870912,0,2097152,0);}touch_start(integer n){string text=\"abcdef\";list data=[n,text,\"ghi\"];aliasLeft=xmrHeapLeft();intrinsicLeft=llGetFreeMemory();aliasUsed=xmrHeapUsed();intrinsicUsed=llGetUsedMemory();sum=aliasLeft+aliasUsed;ok=(aliasLeft==intrinsicLeft)&&(aliasUsed==intrinsicUsed);beforeOK=ok;beforeSum=sum;llSleep(1.0);aliasLeft=xmrHeapLeft();intrinsicLeft=llGetFreeMemory();aliasUsed=xmrHeapUsed();intrinsicUsed=llGetUsedMemory();sum=aliasLeft+aliasUsed;ok=(aliasLeft==intrinsicLeft)&&(aliasUsed==intrinsicUsed);}touch_end(integer n){}}"
+  },
+  {
+    "name": "heap_sleep_live",
+    "kind": "heap",
+    "source": "integer alive;integer aliasLeft;integer intrinsicLeft;integer aliasUsed;integer intrinsicUsed;integer sum;integer ok;integer beforeOK;integer beforeSum;probe(){string text=\"abcdef\";list data=[1,text,\"ghi\"];aliasLeft=xmrHeapLeft();intrinsicLeft=llGetFreeMemory();aliasUsed=xmrHeapUsed();intrinsicUsed=llGetUsedMemory();sum=aliasLeft+aliasUsed;ok=(aliasLeft==intrinsicLeft)&&(aliasUsed==intrinsicUsed);beforeOK=ok;beforeSum=sum;llSleep(1.0);alive=llStringLength(text)+llGetListLength(data);aliasLeft=xmrHeapLeft();intrinsicLeft=llGetFreeMemory();aliasUsed=xmrHeapUsed();intrinsicUsed=llGetUsedMemory();sum=aliasLeft+aliasUsed;ok=(aliasLeft==intrinsicLeft)&&(aliasUsed==intrinsicUsed);}default{state_entry(){probe();}}"
+  },
+  {
+    "name": "heap_background_live",
+    "kind": "heap",
+    "source": "integer alive;integer aliasLeft;integer intrinsicLeft;integer aliasUsed;integer intrinsicUsed;integer sum;integer ok;integer beforeOK;integer beforeSum;list result;default{state_entry(){xmrEventEnqueue([21,7]);xmrEventEnqueue([29,9]);result=xmrEventDequeue(600.0,536870912,0,2097152,0);}touch_start(integer n){string text=\"abcdef\";list data=[n,text,\"ghi\"];aliasLeft=xmrHeapLeft();intrinsicLeft=llGetFreeMemory();aliasUsed=xmrHeapUsed();intrinsicUsed=llGetUsedMemory();sum=aliasLeft+aliasUsed;ok=(aliasLeft==intrinsicLeft)&&(aliasUsed==intrinsicUsed);beforeOK=ok;beforeSum=sum;llSleep(1.0);alive=llStringLength(text)+llGetListLength(data);aliasLeft=xmrHeapLeft();intrinsicLeft=llGetFreeMemory();aliasUsed=xmrHeapUsed();intrinsicUsed=llGetUsedMemory();sum=aliasLeft+aliasUsed;ok=(aliasLeft==intrinsicLeft)&&(aliasUsed==intrinsicUsed);}touch_end(integer n){}}"
+  }
+]

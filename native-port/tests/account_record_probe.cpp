@@ -3,13 +3,14 @@
 #include <sqlite3.h>
 #include <iostream>
 using namespace opensim;
+
 int main(int argc, char **) {
     bool source_accounts = argc > 1;
     for (int mode = 0; mode < 24; ++mode) {
         services::AccountStore store(":memory:", ":memory:", true, source_accounts);
         services::UserAccount a(framework::Uuid(framework::ZeroUuid),
-                                framework::Uuid("00000000-0000-0000-0000-000000000007"), "First", "Last",
-                                "mail", [] { return 123; });
+                                framework::Uuid("00000000-0000-0000-0000-000000000007"), "First", "Last", "mail",
+                                [] { return 123; });
         a.user_level = -4;
         a.user_flags = 17;
         a.user_title = "Title";
@@ -42,15 +43,15 @@ int main(int argc, char **) {
         std::cout << '\n';
     }
     services::AccountStore store(":memory:", ":memory:", true, source_accounts);
-    const std::vector<std::string> scopes = {
-        std::string(framework::ZeroUuid), "00000000-0000-0000-0000-000000000001",
-        "00000000-0000-0000-0000-000000000002", "00000000-0000-0000-0000-000000000003"};
+    const std::vector<std::string> scopes = {std::string(framework::ZeroUuid), "00000000-0000-0000-0000-000000000001",
+                                             "00000000-0000-0000-0000-000000000002",
+                                             "00000000-0000-0000-0000-000000000003"};
     const std::vector<std::string> ids = {
         "00000000-0000-0000-0000-000000000011", "00000000-0000-0000-0000-000000000012",
         "00000000-0000-0000-0000-000000000013", "00000000-0000-0000-0000-000000000014"};
     for (int i = 0; i < 3; ++i) {
-        services::UserAccount a(framework::Uuid(scopes[i]), framework::Uuid(ids[i]), "First", "Last",
-                                "shared@example", [] { return 123; });
+        services::UserAccount a(framework::Uuid(scopes[i]), framework::Uuid(ids[i]), "First", "Last", "shared@example",
+                                [] { return 123; });
         store.store_account(a);
     }
     for (const auto &scope : scopes) {

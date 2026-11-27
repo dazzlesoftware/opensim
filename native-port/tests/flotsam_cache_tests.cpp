@@ -14,18 +14,22 @@ using namespace opensim;
 using namespace services;
 using Asset = FlotsamMemoryCache::Asset;
 using Path = std::filesystem::path;
+
 namespace {
 std::string key(int n) {
     return n == 7 ? framework::Uuid{}.str() : "key" + std::to_string(n);
 }
-std::string label(const std::string& k) {
+
+std::string label(const std::string &k) {
     framework::Uuid id;
     return framework::try_parse_sdk_uuid(k, id) && !id.is_zero() ? "R" : k;
 }
-std::string group(const std::string& k) {
+
+std::string group(const std::string &k) {
     return k == key(7) ? "root" : k == key(0) || k == key(2) || k == key(4) || k == key(6) ? "a" : "b";
 }
-std::string bytes(const framework::AssetBytes& data) {
+
+std::string bytes(const framework::AssetBytes &data) {
     if (!data)
         return "-";
     std::string s;
@@ -35,15 +39,18 @@ std::string bytes(const framework::AssetBytes& data) {
     }
     return s;
 }
-std::string show(const Asset& a) {
+
+std::string show(const Asset &a) {
     return a ? label(a->id()) + ":" + a->name().value_or("") + ":" + bytes(a->data) : "-";
 }
-Asset clone(const Asset& a) {
-    auto copy = std::make_shared<framework::AssetBase>(std::optional<std::string>(a->id()), a->name(),
-                                                       a->type(), a->creator_id());
+
+Asset clone(const Asset &a) {
+    auto copy = std::make_shared<framework::AssetBase>(std::optional<std::string>(a->id()), a->name(), a->type(),
+                                                       a->creator_id());
     copy->data = a->data ? std::make_shared<std::vector<std::uint8_t>>(*a->data) : nullptr;
     return copy;
 }
+
 struct Probe {
     double now = 0;
     int serial = 0, point = 0;
@@ -52,34 +59,37 @@ struct Probe {
     std::map<int, Asset> held;
     std::vector<std::string> trace;
     std::unique_ptr<FlotsamMemoryCache> cache;
-    void add(const std::string& s) {
+
+    void add(const std::string &s) {
         trace.push_back(s);
     }
+
     void fail(int p) {
         if (point == p || (point == 11 && p == 5))
             throw std::runtime_error("fault");
     }
+
     Asset make(int n) {
         auto a = std::make_shared<framework::AssetBase>(std::optional<std::string>(key(n)),
-                                                        "asset" + std::to_string(++serial), std::int8_t(0),
-                                                        "creator");
+                                                        "asset" + std::to_string(++serial), std::int8_t(0), "creator");
         a->data = std::make_shared<std::vector<std::uint8_t>>(
             std::initializer_list<std::uint8_t>{static_cast<std::uint8_t>(serial), 0, 255});
         return a;
     }
+
     std::shared_ptr<FlotsamMemoryCache::FileOperations> operations() {
         auto backend = native_flotsam_file_backend({});
-        backend->directory_exists = [this](auto&) {
+        backend->directory_exists = [this](auto &) {
             add("E");
             fail(6);
             return root_exists;
         };
-        backend->list_directories = [this](auto& root) {
+        backend->list_directories = [this](auto &root) {
             add("D");
             fail(7);
             return std::vector<Path>{root / "a", root / "b"};
         };
-        backend->remove_directory_tree = [this](auto& dir) {
+        backend->remove_directory_tree = [this](auto &dir) {
             auto name = dir.filename().string();
             add("R:" + name);
             fail(name == "a" ? 8 : 9);
@@ -89,32 +99,32 @@ struct Probe {
                 else
                     ++it;
         };
-        auto store = std::make_shared<FlotsamFileStore>(FlotsamFileStore::Options{Path("cache"), 1, 3, false},
-                                                        backend, std::make_shared<FlotsamFileState>());
+        auto store = std::make_shared<FlotsamFileStore>(FlotsamFileStore::Options{Path("cache"), 1, 3, false}, backend,
+                                                        std::make_shared<FlotsamFileState>());
         auto files = flotsam_cache_files(
             store, backend,
-            [this](auto& s) {
+            [this](auto &s) {
                 add("L:" + s);
                 fail(10);
             },
-            [this](auto& s) {
+            [this](auto &s) {
                 add("W:" + s);
                 fail(11);
             });
-        files->cache = [this](auto& id, auto& a, bool replace) {
+        files->cache = [this](auto &id, auto &a, bool replace) {
             add("F:" + label(id) + ":" + (replace ? "1" : "0"));
             fail(1);
             disk[id] = clone(a);
             if (rename)
                 a->id(key(6));
         };
-        files->read = [this](auto& id) {
+        files->read = [this](auto &id) {
             add("G:" + label(id));
             fail(3);
             auto it = disk.find(id);
             return it == disk.end() ? Asset{} : clone(it->second);
         };
-        files->check = [this](auto& id) {
+        files->check = [this](auto &id) {
             add("H:" + label(id));
             try {
                 fail(4);
@@ -123,12 +133,12 @@ struct Probe {
                 return false;
             }
         };
-        files->touch = [this](auto& id) {
+        files->touch = [this](auto &id) {
             add("P:" + label(id));
             fail(2);
             add("T:" + label(id));
         };
-        files->expire = [this](auto& id) {
+        files->expire = [this](auto &id) {
             add("P:" + label(id));
             fail(2);
             add("X:" + label(id));
@@ -137,7 +147,8 @@ struct Probe {
         };
         return files;
     }
-    std::string execute(const std::string& line) {
+
+    std::string execute(const std::string &line) {
         std::istringstream in(line);
         std::string op;
         in >> op;
@@ -156,8 +167,7 @@ struct Probe {
             rename = false;
             root_exists = true;
             cache = std::make_unique<FlotsamMemoryCache>(
-                FlotsamMemoryCache::Options{memory != 0, negative != 0, seconds, negms, file != 0, touch != 0,
-                                            log},
+                FlotsamMemoryCache::Options{memory != 0, negative != 0, seconds, negms, file != 0, touch != 0, log},
                 [this] { return now; }, false, operations());
             return "init";
         }
@@ -233,9 +243,8 @@ struct Probe {
         if (op == "async" || op == "async-null") {
             AssetService::Retrieved callback;
             if (op == "async")
-                callback = [this](auto& id, std::any sender, Asset asset) {
-                    add("C:" + label(id) + ":" + std::to_string(std::any_cast<int>(sender)) + ":" +
-                        show(asset));
+                callback = [this](auto &id, std::any sender, Asset asset) {
+                    add("C:" + label(id) + ":" + std::to_string(std::any_cast<int>(sender)) + ":" + show(asset));
                     fail(12);
                 };
             return cache->get_async(key(n), 63, callback) ? "1" : "0";
@@ -266,10 +275,9 @@ struct Probe {
             return "unexpected";
         }
         if (op == "update" || op == "update-null")
-            return cache->update_content(key(n), op == "update"
-                                                     ? std::make_shared<std::vector<std::uint8_t>>(
-                                                           std::initializer_list<std::uint8_t>{9, 8, 7})
-                                                     : nullptr)
+            return cache->update_content(key(n), op == "update" ? std::make_shared<std::vector<std::uint8_t>>(
+                                                                      std::initializer_list<std::uint8_t>{9, 8, 7})
+                                                                : nullptr)
                        ? "1"
                        : "0";
         if (op == "delete")
@@ -292,7 +300,8 @@ struct Probe {
         }
         throw std::runtime_error("Unknown combined cache operation");
     }
-    std::string run(const std::string& line) {
+
+    std::string run(const std::string &line) {
         trace.clear();
         std::string result;
         try {
@@ -302,59 +311,64 @@ struct Probe {
         }
         auto stats = cache->statistics();
         std::string t;
-        for (auto& s : trace) {
+        for (auto &s : trace) {
             if (!t.empty())
                 t += ';';
             t += s;
         }
         std::vector<std::string> values;
-        for (auto& [id, a] : disk)
+        for (auto &[id, a] : disk)
             values.push_back(show(a));
         std::sort(values.begin(), values.end());
         std::string d;
-        for (auto& s : values) {
+        for (auto &s : values) {
             if (!d.empty())
                 d += ',';
             d += s;
         }
-        return result + "|" + t + "|" + std::to_string(stats.requests) + "," +
-               std::to_string(stats.memory_hits) + "," + std::to_string(stats.weak_hits) + "|" + d;
+        return result + "|" + t + "|" + std::to_string(stats.requests) + "," + std::to_string(stats.memory_hits) + "," +
+               std::to_string(stats.weak_hits) + "|" + d;
     }
 };
+
 void actual() {
-    auto root = std::filesystem::temp_directory_path() /
-                ("opensim-composed-cache-" + framework::Uuid::random().str());
+    auto root = std::filesystem::temp_directory_path() / ("opensim-composed-cache-" + framework::Uuid::random().str());
     std::filesystem::create_directory(root);
+
     struct Cleanup {
         Path p;
+
         ~Cleanup() {
             std::error_code e;
             std::filesystem::remove_all(p, e);
         }
     } cleanup{root};
+
     auto jobs = std::make_shared<framework::ObjectJobEngine>(
         [](std::any job) { std::any_cast<std::function<void()>>(job)(); }, "ComposedFlotsamCache", 1000, 1);
+
     struct StopJobs {
         std::shared_ptr<framework::ObjectJobEngine> q;
+
         ~StopJobs() {
             q->dispose();
             while (q->active_threads())
                 std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     } stop{jobs};
+
     auto backend = native_flotsam_file_backend(jobs);
-    auto access =
-        std::make_shared<FlotsamFileAccess>(flotsam_access_entries(), native_flotsam_set_access_time);
+    auto access = std::make_shared<FlotsamFileAccess>(flotsam_access_entries(), native_flotsam_set_access_time);
     attach_flotsam_file_access(backend, access);
     auto store = std::make_shared<FlotsamFileStore>(FlotsamFileStore::Options{root, 1, 3, true}, backend,
                                                     std::make_shared<FlotsamFileState>());
     auto files = flotsam_cache_files(store, backend);
     FlotsamMemoryCache cache({false, true, .016, 120000, true, true, 2}, {}, true, files);
-    auto a = std::make_shared<framework::AssetBase>(framework::Uuid::random(), "Disk roundtrip",
-                                                    std::int8_t(7), "creator");
+    auto a =
+        std::make_shared<framework::AssetBase>(framework::Uuid::random(), "Disk roundtrip", std::int8_t(7), "creator");
     a->data = std::make_shared<std::vector<std::uint8_t>>(std::initializer_list<std::uint8_t>{1, 0, 255});
     auto id = a->id();
-    auto wait = [&](const std::string& key) {
+    auto wait = [&](const std::string &key) {
         auto end = std::chrono::steady_clock::now() + std::chrono::seconds(5);
         while (store->writing(key) && std::chrono::steady_clock::now() < end)
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -385,8 +399,8 @@ void actual() {
         throw std::runtime_error("Combined negative cache bypass");
     cache.cache(value);
     wait(id);
-    if (!cache.update_content(
-            id, std::make_shared<std::vector<std::uint8_t>>(std::initializer_list<std::uint8_t>{9, 8})))
+    if (!cache.update_content(id,
+                              std::make_shared<std::vector<std::uint8_t>>(std::initializer_list<std::uint8_t>{9, 8})))
         throw std::runtime_error("Combined content update");
     wait(id);
     std::weak_ptr<framework::AssetBase> updated = value;
@@ -413,15 +427,15 @@ void actual() {
     if (called || cache.get_foreign("absent", "foreign", true))
         throw std::runtime_error("Foreign source no-op methods");
     bool miss_called = false;
-    if (!cache.get_async("absent", 63,
-                         [&](auto&, std::any sender, auto asset) {
-                             miss_called = std::any_cast<int>(sender) == 63 && !asset;
-                         }) ||
+    if (!cache.get_async(
+            "absent", 63,
+            [&](auto &, std::any sender, auto asset) { miss_called = std::any_cast<int>(sender) == 63 && !asset; }) ||
         !miss_called)
         throw std::runtime_error("Ordinary miss must invoke original callback");
 }
-}
-int main(int argc, char** argv) {
+} // namespace
+
+int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string_view(argv[1]) == "--probe") {
             Probe p;
@@ -430,11 +444,11 @@ int main(int argc, char** argv) {
                 std::cout << p.run(line) << '\n';
         } else {
             actual();
-            std::cout
-                << "PASS: composed cache actual queue/file retrieval, replacement, expiration, directory clearing and source service behavior\n";
+            std::cout << "PASS: composed cache actual queue/file retrieval, replacement, expiration, directory "
+                         "clearing and source service behavior\n";
         }
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

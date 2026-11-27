@@ -2,6 +2,7 @@
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/services/local_asset_connector.hpp"
 #include <algorithm>
+
 namespace opensim::services {
 namespace {
 template <class T> T &required(const std::shared_ptr<T> &value) {
@@ -9,19 +10,23 @@ template <class T> T &required(const std::shared_ptr<T> &value) {
         throw std::invalid_argument("Null local asset connector dependency");
     return *value;
 }
+
 constexpr auto zero = "00000000-0000-0000-0000-000000000000";
+
 bool is_foreign_asset_id(std::string_view id) {
     return id.starts_with('h') || id.starts_with('H');
 }
+
 AssetService::Asset asset_with_payload(AssetService::Asset asset) {
     return asset && asset->data && !asset->data->empty() ? asset : nullptr;
 }
-}
-LocalAssetConnector::LocalAssetConnector(std::shared_ptr<AssetConnectorBackend> backend,
-                                         bool service_handles_mutations)
+} // namespace
+
+LocalAssetConnector::LocalAssetConnector(std::shared_ptr<AssetConnectorBackend> backend, bool service_handles_mutations)
     : backend_(std::move(backend)), service_handles_mutations_(service_handles_mutations) {
     required(backend_);
 }
+
 void LocalAssetConnector::initialise(const server::IniConfig *config) {
     if (!config)
         throw std::invalid_argument("Null asset connector configuration");
@@ -35,12 +40,12 @@ void LocalAssetConnector::initialise(const server::IniConfig *config) {
     }
     auto module = config->get("AssetService", "LocalServiceModule", "");
     if (module.empty()) {
-        backend_->error(
-            "[LOCAL ASSET SERVICES CONNECTOR]: No LocalServiceModule named in section AssetService");
+        backend_->error("[LOCAL ASSET SERVICES CONNECTOR]: No LocalServiceModule named in section AssetService");
         return;
     }
     initialise_service(config, module);
 }
+
 void LocalAssetConnector::initialise_service(const server::IniConfig *config, const std::string &module) {
     service_ = backend_->load_service(module, config);
     if (!service_.load()) {
@@ -50,11 +55,13 @@ void LocalAssetConnector::initialise_service(const server::IniConfig *config, co
     enabled_ = true;
     backend_->info("[LOCAL ASSET SERVICES CONNECTOR]: Local asset connector enabled");
 }
+
 void LocalAssetConnector::add_region(std::shared_ptr<AssetConnectorScene> scene) {
     if (!enabled_)
         return;
     required(scene).register_service(shared_from_this());
 }
+
 void LocalAssetConnector::region_loaded(std::shared_ptr<AssetConnectorScene> scene) {
     if (!enabled_)
         return;
@@ -64,12 +71,12 @@ void LocalAssetConnector::region_loaded(std::shared_ptr<AssetConnectorScene> sce
         if (!value.shared_module)
             cache_.store(nullptr);
     }
-    auto prefix =
-        cache_.load()
-            ? "[LOCAL ASSET SERVICES CONNECTOR]: Enabled asset connector without caching for region "
-            : "[LOCAL ASSET SERVICES CONNECTOR]: Enabled asset connector with caching for region ";
+    auto prefix = cache_.load()
+                      ? "[LOCAL ASSET SERVICES CONNECTOR]: Enabled asset connector without caching for region "
+                      : "[LOCAL ASSET SERVICES CONNECTOR]: Enabled asset connector with caching for region ";
     backend_->debug(prefix + required(scene).region_name().value_or(""));
 }
+
 AssetService::Asset LocalAssetConnector::get_asset(const std::string &id) {
     if (foreign_url_fetch_ && is_foreign_asset_id(id))
         return foreign_url_fetch_(id);
@@ -89,10 +96,12 @@ AssetService::Asset LocalAssetConnector::get_asset(const std::string &id) {
     }
     return asset;
 }
-AssetService::Asset LocalAssetConnector::get_foreign(const std::string &id,
-                                                     const std::optional<std::string> &foreign, bool local) {
+
+AssetService::Asset LocalAssetConnector::get_foreign(const std::string &id, const std::optional<std::string> &foreign,
+                                                     bool local) {
     return foreign_fetch_ ? foreign_fetch_(id, foreign, local) : nullptr;
 }
+
 void LocalAssetConnector::complete_read(const std::string &id, const Asset &asset) {
     std::vector<Complete> waiters;
     {
@@ -105,8 +114,9 @@ void LocalAssetConnector::complete_read(const std::string &id, const Asset &asse
     }
     deliver_reads(waiters, asset);
 }
-void LocalAssetConnector::deliver_reads(const std::vector<Complete>& waiters, const Asset& asset) {
-    for (const auto& callback : waiters) {
+
+void LocalAssetConnector::deliver_reads(const std::vector<Complete> &waiters, const Asset &asset) {
+    for (const auto &callback : waiters) {
         try {
             callback(asset);
         } catch (const std::exception &error) {
@@ -116,6 +126,7 @@ void LocalAssetConnector::deliver_reads(const std::vector<Complete>& waiters, co
         }
     }
 }
+
 void LocalAssetConnector::close() {
     decltype(pending_reads_) cancelled;
     {
@@ -123,9 +134,10 @@ void LocalAssetConnector::close() {
         reads_closed_ = true;
         cancelled.swap(pending_reads_);
     }
-    for (const auto& entry : cancelled)
+    for (const auto &entry : cancelled)
         deliver_reads(entry.second, {});
 }
+
 AssetService::Asset LocalAssetConnector::get_cached(const std::string &id) {
     Asset asset;
     auto cache = cache_.load();
@@ -133,6 +145,7 @@ AssetService::Asset LocalAssetConnector::get_cached(const std::string &id) {
         cache->get(id, asset);
     return asset;
 }
+
 std::shared_ptr<framework::AssetMetadata> LocalAssetConnector::get_metadata(const std::string &id) {
     if (foreign_url_fetch_ && is_foreign_asset_id(id)) {
         const auto asset = foreign_url_fetch_(id);
@@ -153,6 +166,7 @@ std::shared_ptr<framework::AssetMetadata> LocalAssetConnector::get_metadata(cons
     }
     return {};
 }
+
 framework::AssetBytes LocalAssetConnector::get_data(const std::string &id) {
     if (foreign_url_fetch_ && is_foreign_asset_id(id)) {
         const auto asset = foreign_url_fetch_(id);
@@ -173,6 +187,7 @@ framework::AssetBytes LocalAssetConnector::get_data(const std::string &id) {
     }
     return {};
 }
+
 bool LocalAssetConnector::get_async(const std::string &id, std::any sender, Retrieved callback) {
     if (service_handles_mutations_) {
         if (auto cache = cache_.load()) {
@@ -193,9 +208,9 @@ bool LocalAssetConnector::get_async(const std::string &id, std::any sender, Retr
     }
     if (service_handles_mutations_ || (foreign_url_fetch_ && is_foreign_asset_id(id))) {
         queue_read(id, std::nullopt, false, false,
-            [id, sender = std::move(sender), callback = std::move(callback)](Asset asset) {
-                callback(id, sender, std::move(asset));
-            });
+                   [id, sender = std::move(sender), callback = std::move(callback)](Asset asset) {
+                       callback(id, sender, std::move(asset));
+                   });
         return true;
     }
     auto self = shared_from_this();
@@ -205,32 +220,30 @@ bool LocalAssetConnector::get_async(const std::string &id, std::any sender, Retr
         if (!cache->get(id, asset))
             return false;
         if (asset) {
-            backend_->post(
-                [id, sender = std::move(sender), asset, callback = std::move(callback)]() mutable {
-                    callback(id, std::move(sender), asset);
-                },
-                "LocalAssetServiceConnector.GotFromCacheCallback");
+            backend_->post([id, sender = std::move(sender), asset,
+                            callback = std::move(callback)]() mutable { callback(id, std::move(sender), asset); },
+                           "LocalAssetServiceConnector.GotFromCacheCallback");
             return true;
         }
     }
     if (id == zero)
         return false;
     return required(service_.load())
-        .get_async(
-            id, std::move(sender),
-            [self, callback = std::move(callback)](const std::string &key, std::any source, Asset asset) {
-                auto cache = self->cache_.load();
-                if (cache) {
-                    if (!asset)
-                        cache->cache_negative(key);
-                    else
-                        cache->cache(asset);
-                }
-                self->backend_->post([key, source = std::move(source), asset,
-                                      callback]() mutable { callback(key, std::move(source), asset); },
-                                     "LocalAssetServiceConnector.GotFromServiceCallback");
-            });
+        .get_async(id, std::move(sender),
+                   [self, callback = std::move(callback)](const std::string &key, std::any source, Asset asset) {
+                       auto cache = self->cache_.load();
+                       if (cache) {
+                           if (!asset)
+                               cache->cache_negative(key);
+                           else
+                               cache->cache(asset);
+                       }
+                       self->backend_->post([key, source = std::move(source), asset,
+                                             callback]() mutable { callback(key, std::move(source), asset); },
+                                            "LocalAssetServiceConnector.GotFromServiceCallback");
+                   });
 }
+
 void LocalAssetConnector::get(const std::string &id, const std::optional<std::string> &foreign, bool local,
                               Complete callback) {
     const bool explicit_foreign = foreign_fetch_ && foreign && !foreign->empty() && id != zero;
@@ -271,27 +284,27 @@ void LocalAssetConnector::get(const std::string &id, const std::optional<std::st
         return;
     }
     required(service_.load())
-        .get_async(id, {},
-                   [self, callback = std::move(callback)](const std::string &key, std::any, Asset asset) {
-                       auto cache = self->cache_.load();
-                       if (cache) {
-                           if (!asset)
-                               cache->cache_negative(key);
-                           else
-                               cache->cache(asset);
-                       }
-                       self->backend_->post([asset, callback] { callback(asset); },
-                                            "LocalAssetServiceConnector.GotFromServiceCallback");
-                   });
+        .get_async(id, {}, [self, callback = std::move(callback)](const std::string &key, std::any, Asset asset) {
+            auto cache = self->cache_.load();
+            if (cache) {
+                if (!asset)
+                    cache->cache_negative(key);
+                else
+                    cache->cache(asset);
+            }
+            self->backend_->post([asset, callback] { callback(asset); },
+                                 "LocalAssetServiceConnector.GotFromServiceCallback");
+        });
 }
-void LocalAssetConnector::queue_read(const std::string& id, const std::optional<std::string>& foreign,
-                                        bool local, bool explicit_foreign, Complete callback) {
+
+void LocalAssetConnector::queue_read(const std::string &id, const std::optional<std::string> &foreign, bool local,
+                                     bool explicit_foreign, Complete callback) {
     bool closed;
     {
         std::lock_guard lock(pending_reads_mutex_);
         closed = reads_closed_;
         if (!closed) {
-            auto& waiters = pending_reads_[id];
+            auto &waiters = pending_reads_[id];
             waiters.push_back(std::move(callback));
             if (waiters.size() != 1)
                 return;
@@ -306,20 +319,21 @@ void LocalAssetConnector::queue_read(const std::string& id, const std::optional<
                 Asset asset;
                 try {
                     asset = explicit_foreign ? self->get_foreign(id, foreign, local) : self->get_asset(id);
-                } catch (const std::exception&) {
+                } catch (const std::exception &) {
                 }
                 self->complete_read(id, asset);
             },
             explicit_foreign))
         complete_read(id, {});
 }
+
 std::vector<bool> LocalAssetConnector::assets_exist(const std::vector<std::string> &ids) {
-    if (service_handles_mutations_ && std::any_of(ids.begin(), ids.end(), [](const auto& id) {
-            return id.starts_with('h') || id.starts_with('H');
-        }))
+    if (service_handles_mutations_ &&
+        std::any_of(ids.begin(), ids.end(), [](const auto &id) { return id.starts_with('h') || id.starts_with('H'); }))
         return foreign_exists_ ? foreign_exists_(ids) : std::vector<bool>{};
     return required(service_.load()).assets_exist(ids);
 }
+
 std::optional<std::string> LocalAssetConnector::store(Asset asset) {
     auto cache = cache_.load();
     if (service_handles_mutations_ && is_foreign_asset_id(required(asset).id())) {
@@ -348,6 +362,7 @@ std::optional<std::string> LocalAssetConnector::store(Asset asset) {
         return asset->id();
     return required(service_.load()).store(asset);
 }
+
 bool LocalAssetConnector::update_content(const std::string &id, framework::AssetBytes data) {
     // RegionAssetConnector delegates mutations to its local service without touching the region cache.
     if (service_handles_mutations_) {
@@ -367,6 +382,7 @@ bool LocalAssetConnector::update_content(const std::string &id, framework::Asset
     }
     return required(service_.load()).update_content(id, std::move(data));
 }
+
 bool LocalAssetConnector::erase(const std::string &id) {
     if (service_handles_mutations_) {
         if (id.starts_with('h') || id.starts_with('H'))
@@ -377,4 +393,4 @@ bool LocalAssetConnector::erase(const std::string &id) {
     }
     return required(service_.load()).erase(id);
 }
-}
+} // namespace opensim::services

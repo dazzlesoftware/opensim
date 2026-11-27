@@ -3,8 +3,10 @@
 #include "opensim/framework/atomic_shared_ptr.hpp"
 #include "opensim/framework/config_http_environment_proxy_native.hpp"
 #include <mutex>
+
 namespace opensim::framework {
 enum class ConfigHttpSystemProxyPlatform { Windows, Linux, MacOS };
+
 class ConfigHttpNoProxy final : public ConfigHttpProxy {
     opensim::framework::AtomicSharedPtr<ConfigXmlCredentials> credentials_;
 
@@ -12,16 +14,20 @@ class ConfigHttpNoProxy final : public ConfigHttpProxy {
     ConfigUriObjectPtr get_proxy(ConfigUriObjectPtr) const override {
         return {};
     }
+
     bool is_bypassed(ConfigUriObjectPtr) const override {
         return true;
     }
+
     std::shared_ptr<ConfigXmlCredentials> credentials() const override {
         return credentials_.load();
     }
+
     void credentials(std::shared_ptr<ConfigXmlCredentials> value) override {
         credentials_.store(std::move(value));
     }
 };
+
 struct ConfigHttpDefaultProxyOptions {
     std::shared_ptr<ConfigHttpEnvironmentProxyBackend> environment;
     ConfigHttpSystemProxyPlatform platform =
@@ -36,7 +42,9 @@ struct ConfigHttpDefaultProxyOptions {
     // misses; macOS still requires its explicit OS provider.
     std::function<std::shared_ptr<ConfigHttpProxy>()> system_proxy;
 };
-std::shared_ptr<ConfigHttpProxy> config_http_construct_default_proxy(const ConfigHttpDefaultProxyOptions&);
+
+std::shared_ptr<ConfigHttpProxy> config_http_construct_default_proxy(const ConfigHttpDefaultProxyOptions &);
+
 class ConfigHttpDefaultProxy final {
     ConfigHttpDefaultProxyOptions options_;
     std::mutex mutex_;
@@ -50,6 +58,7 @@ class ConfigHttpDefaultProxy final {
     std::shared_ptr<ConfigHttpProxy> get();
     void set(std::shared_ptr<ConfigHttpProxy>);
 };
+
 std::shared_ptr<ConfigHttpDefaultProxy> native_config_http_default_proxy_selector();
 
-}
+} // namespace opensim::framework

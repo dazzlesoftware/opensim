@@ -30,6 +30,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iomanip>
 #include <stdexcept>
 using namespace opensim::framework;
+
 std::optional<std::string> text(std::string_view input) {
     if (input == "N")
         return std::nullopt;
@@ -38,6 +39,7 @@ std::optional<std::string> text(std::string_view input) {
         result += static_cast<char>(std::stoi(std::string(input.substr(i, 2)), nullptr, 16));
     return result;
 }
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -46,7 +48,7 @@ int main() {
             const auto a = line.find('|'), b = line.find('|', a + 1);
             const int mode = std::stoi(line.substr(0, a));
             std::string dns;
-            RegionUri::Resolver resolver = [&](const std::string& host) -> std::optional<std::string> {
+            RegionUri::Resolver resolver = [&](const std::string &host) -> std::optional<std::string> {
                 if (!dns.empty())
                     dns += ",";
                 dns += host;
@@ -54,16 +56,15 @@ int main() {
                     throw std::runtime_error("dns");
                 return host == "bad.invalid" ? std::nullopt : std::optional<std::string>{"203.0.113.7"};
             };
-            HttpUri uri(text(std::string_view(line).substr(a + 1, b - a - 1)), mode == 1 || mode == 4,
-                        resolver);
+            HttpUri uri(text(std::string_view(line).substr(a + 1, b - a - 1)), mode == 1 || mode == 4, resolver);
             if (mode == 2 || mode == 5)
                 uri.resolve_dns(resolver);
             std::string error;
             uri.valid_and_resolved(error);
-            result = std::to_string(uri.flags) + "|" + std::to_string(uri.port) + "|" + uri.host + "|" +
-                     uri.url + "|" + uri.path + "|" + uri.uri + "|" + uri.ip.value_or("NULL") + "|" +
-                     uri.uri_slash() + "|" + uri.host_port() + "|" + (uri.valid() ? "1" : "0") + "|" +
-                     (uri.resolved() ? "1" : "0") + "|" + error + "|" + dns;
+            result = std::to_string(uri.flags) + "|" + std::to_string(uri.port) + "|" + uri.host + "|" + uri.url + "|" +
+                     uri.path + "|" + uri.uri + "|" + uri.ip.value_or("NULL") + "|" + uri.uri_slash() + "|" +
+                     uri.host_port() + "|" + (uri.valid() ? "1" : "0") + "|" + (uri.resolved() ? "1" : "0") + "|" +
+                     error + "|" + dns;
             if (mode == 3) {
                 HttpUri other(text(std::string_view(line).substr(b + 1)));
                 const int compared = uri.compare(other);

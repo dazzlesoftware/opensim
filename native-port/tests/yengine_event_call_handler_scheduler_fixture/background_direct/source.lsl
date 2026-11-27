@@ -1,0 +1,1 @@
+integer count;integer after;list result;default{state_entry(){xmrEventEnqueue([21,7]);xmrEventEnqueue([29,3]);result=xmrEventDequeue(600.0,536870912,0,2097152,0);after=1;}touch_start(integer n){count+=n;xmrEventCallHandler([29,9]);count+=100;}touch_end(integer n){count+=n;llSleep(1.0);count+=1000;}}

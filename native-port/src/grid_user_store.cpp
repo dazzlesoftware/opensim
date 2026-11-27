@@ -32,9 +32,10 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <mutex>
 #include <set>
 #include <stdexcept>
+
 namespace opensim::services {
 namespace {
-std::string quoted(const std::string& name) {
+std::string quoted(const std::string &name) {
     std::string value = "\"";
     for (auto c : name) {
         if (c == '\0')
@@ -45,22 +46,26 @@ std::string quoted(const std::string& name) {
     }
     return value + '\"';
 }
+
 struct Statement {
-    sqlite3* db;
-    sqlite3_stmt* value = nullptr;
-    Statement(sqlite3* database, const std::string& sql) : db(database) {
+    sqlite3 *db;
+    sqlite3_stmt *value = nullptr;
+
+    Statement(sqlite3 *database, const std::string &sql) : db(database) {
         if (sqlite3_prepare_v2(db, sql.c_str(), -1, &value, nullptr) != SQLITE_OK)
             throw std::runtime_error(sqlite3_errmsg(db));
     }
+
     ~Statement() {
         sqlite3_finalize(value);
     }
-    void bind(int index, const std::optional<std::string>& text) {
-        if ((text ? sqlite3_bind_text(value, index, text->data(), static_cast<int>(text->size()),
-                                      SQLITE_TRANSIENT)
+
+    void bind(int index, const std::optional<std::string> &text) {
+        if ((text ? sqlite3_bind_text(value, index, text->data(), static_cast<int>(text->size()), SQLITE_TRANSIENT)
                   : sqlite3_bind_null(value, index)) != SQLITE_OK)
             throw std::runtime_error(sqlite3_errmsg(db));
     }
+
     bool row() {
         const auto result = sqlite3_step(value);
         if (result == SQLITE_ROW)
@@ -69,24 +74,27 @@ struct Statement {
             return false;
         throw std::runtime_error(sqlite3_errmsg(db));
     }
+
     std::string text(int index) {
-        const auto* bytes = sqlite3_column_text(value, index);
-        return bytes ? std::string(reinterpret_cast<const char*>(bytes), sqlite3_column_bytes(value, index))
+        const auto *bytes = sqlite3_column_text(value, index);
+        return bytes ? std::string(reinterpret_cast<const char *>(bytes), sqlite3_column_bytes(value, index))
                      : std::string{};
     }
 };
-}
+} // namespace
+
 struct SqliteGridUserStore::State {
-    sqlite3* db = nullptr;
+    sqlite3 *db = nullptr;
     std::recursive_mutex mutex;
     std::string table;
     std::set<std::string> columns;
+
     ~State() {
         if (db)
             sqlite3_close(db);
     }
-    std::vector<std::shared_ptr<GridUserData>> query(const std::string& condition,
-                                                     const std::string& argument) {
+
+    std::vector<std::shared_ptr<GridUserData>> query(const std::string &condition, const std::string &argument) {
         Statement statement(db, "SELECT * FROM " + table + " WHERE " + condition);
         statement.bind(1, argument);
         std::vector<std::shared_ptr<GridUserData>> result;
@@ -104,7 +112,8 @@ struct SqliteGridUserStore::State {
         return result;
     }
 };
-SqliteGridUserStore::SqliteGridUserStore(const std::string& path, bool initialize, const std::string& realm)
+
+SqliteGridUserStore::SqliteGridUserStore(const std::string &path, bool initialize, const std::string &realm)
     : state_(std::make_unique<State>()) {
     if (path.empty() || realm.empty())
         throw std::invalid_argument("Grid-user database and realm must not be empty");
@@ -117,19 +126,18 @@ SqliteGridUserStore::SqliteGridUserStore(const std::string& path, bool initializ
         throw std::runtime_error(state_->db ? sqlite3_errmsg(state_->db) : "SQLite allocation failed");
     sqlite3_busy_timeout(state_->db, 5000);
     if (initialize) {
-        Statement create(
-            state_->db,
-            "CREATE TABLE " + state_->table +
-                "(UserID VARCHAR(255) NOT NULL PRIMARY KEY,"
-                "HomeRegionID CHAR(36) NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',"
-                "HomePosition CHAR(64) NOT NULL DEFAULT '<0,0,0>',"
-                "HomeLookAt CHAR(64) NOT NULL DEFAULT '<0,0,0>',"
-                "LastRegionID CHAR(36) NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',"
-                "LastPosition CHAR(64) NOT NULL DEFAULT '<0,0,0>',"
-                "LastLookAt CHAR(64) NOT NULL DEFAULT '<0,0,0>',"
-                "Online CHAR(5) NOT NULL DEFAULT 'false',"
-                "Login CHAR(16) NOT NULL DEFAULT '0',"
-                "Logout CHAR(16) NOT NULL DEFAULT '0')");
+        Statement create(state_->db,
+                         "CREATE TABLE " + state_->table +
+                             "(UserID VARCHAR(255) NOT NULL PRIMARY KEY,"
+                             "HomeRegionID CHAR(36) NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',"
+                             "HomePosition CHAR(64) NOT NULL DEFAULT '<0,0,0>',"
+                             "HomeLookAt CHAR(64) NOT NULL DEFAULT '<0,0,0>',"
+                             "LastRegionID CHAR(36) NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',"
+                             "LastPosition CHAR(64) NOT NULL DEFAULT '<0,0,0>',"
+                             "LastLookAt CHAR(64) NOT NULL DEFAULT '<0,0,0>',"
+                             "Online CHAR(5) NOT NULL DEFAULT 'false',"
+                             "Login CHAR(16) NOT NULL DEFAULT '0',"
+                             "Logout CHAR(16) NOT NULL DEFAULT '0')");
         create.row();
     }
     Statement columns(state_->db, "PRAGMA table_info(" + state_->table + ")");
@@ -138,34 +146,37 @@ SqliteGridUserStore::SqliteGridUserStore(const std::string& path, bool initializ
     if (!state_->columns.contains("UserID"))
         throw std::runtime_error("Grid-user table is missing UserID");
 }
+
 SqliteGridUserStore::~SqliteGridUserStore() = default;
-std::shared_ptr<GridUserData> SqliteGridUserStore::get(const std::string& user) {
+
+std::shared_ptr<GridUserData> SqliteGridUserStore::get(const std::string &user) {
     std::lock_guard lock(state_->mutex);
     auto rows = state_->query("UserID=?", user);
     return rows.empty() ? nullptr : rows.front();
 }
-std::vector<std::shared_ptr<GridUserData>> SqliteGridUserStore::get_all(const std::string& prefix) {
+
+std::vector<std::shared_ptr<GridUserData>> SqliteGridUserStore::get_all(const std::string &prefix) {
     std::lock_guard lock(state_->mutex);
     return state_->query("UserID LIKE ?", prefix + "%");
 }
-bool SqliteGridUserStore::store(const std::shared_ptr<GridUserData>& row) {
+
+bool SqliteGridUserStore::store(const std::shared_ptr<GridUserData> &row) {
     if (!row || !row->data)
         throw std::invalid_argument("Missing grid-user data");
     std::lock_guard lock(state_->mutex);
     std::string names = "UserID", values = "?";
-    for (const auto& [name, value] : *row->data) {
+    for (const auto &[name, value] : *row->data) {
         if (name == "UserID" || !state_->columns.contains(name))
             throw std::invalid_argument("Unknown grid-user data column");
         names += ',' + quoted(name);
         values += ",?";
     }
-    Statement statement(state_->db,
-                        "REPLACE INTO " + state_->table + "(" + names + ") VALUES(" + values + ")");
+    Statement statement(state_->db, "REPLACE INTO " + state_->table + "(" + names + ") VALUES(" + values + ")");
     statement.bind(1, row->user_id);
     int index = 2;
-    for (const auto& pair : *row->data)
+    for (const auto &pair : *row->data)
         statement.bind(index++, pair.second);
     statement.row();
     return sqlite3_changes(state_->db) > 0;
 }
-}
+} // namespace opensim::services

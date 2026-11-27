@@ -3,6 +3,7 @@
 #include "osd_fixture_value.hpp"
 #include <iostream>
 using namespace opensim;
+
 std::string hex(std::string_view s) {
     constexpr char d[] = "0123456789abcdef";
     std::string r;
@@ -12,7 +13,8 @@ std::string hex(std::string_view s) {
     }
     return r;
 }
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
     try {
         auto config = server::IniConfig::load(framework::utf8_path(argv[1]));
         std::string line;
@@ -46,9 +48,9 @@ int main(int argc, char** argv) {
                     (*a->data)["controls"] = std::string("\0\x01\x0b\x1f", 4) + "\xef\xbf\xbe\xef\xbf\xbf";
                 return a;
             };
-            ops.set = [&](auto id, auto& a) {
+            ops.set = [&](auto id, auto &a) {
                 trace += "set:" + id.str() + ":" + std::to_string(a.avatar_type) + ":";
-                for (const auto& [key, value] : *a.data)
+                for (const auto &[key, value] : *a.data)
                     trace += hex(key) + "=" + (value ? hex(*value) : "null") + ",";
                 trace += ';';
                 return touch(id);
@@ -57,18 +59,18 @@ int main(int argc, char** argv) {
                 trace += "reset:" + id.str() + ";";
                 return touch(id);
             };
-            auto list = [&](const auto& values) {
-                for (const auto& s : values)
+            auto list = [&](const auto &values) {
+                for (const auto &s : values)
                     trace += hex(s.value()) + ",";
                 trace += ';';
             };
-            ops.set_items = [&](auto id, const auto& names, const auto& values) {
+            ops.set_items = [&](auto id, const auto &names, const auto &values) {
                 trace += "items:" + id.str() + ":";
                 list(names);
                 list(values);
                 return touch(id) && names.size() == values.size();
             };
-            ops.remove_items = [&](auto id, const auto& names) {
+            ops.remove_items = [&](auto id, const auto &names) {
                 trace += "remove:" + id.str() + ":";
                 list(names);
                 return touch(id);
@@ -79,7 +81,7 @@ int main(int argc, char** argv) {
             std::cout << hex(response.body) << '|' << hex(trace) << '\n';
         }
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what();
         return 1;
     }

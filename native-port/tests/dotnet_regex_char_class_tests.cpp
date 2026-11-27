@@ -7,7 +7,8 @@
 #include <sstream>
 #include <thread>
 using namespace opensim::framework;
-std::u16string decode(const std::string& text) {
+
+std::u16string decode(const std::string &text) {
     if (text == ".")
         return {};
     std::u16string result;
@@ -15,7 +16,8 @@ std::u16string decode(const std::string& text) {
         result.push_back(static_cast<char16_t>(std::stoul(text.substr(i, 4), nullptr, 16)));
     return result;
 }
-std::string cache_text(const std::shared_ptr<DotnetRegexAsciiCache>& cache) {
+
+std::string cache_text(const std::shared_ptr<DotnetRegexAsciiCache> &cache) {
     if (!cache)
         return "-";
     if (cache->empty())
@@ -28,12 +30,14 @@ std::string cache_text(const std::shared_ptr<DotnetRegexAsciiCache>& cache) {
     }
     return out.str();
 }
+
 std::string hex(std::u16string_view text) {
     std::ostringstream out;
     for (auto c : text)
         out << std::hex << std::setfill('0') << std::setw(4) << unsigned(c);
     return out.str();
 }
+
 int main() {
     for (std::string row; std::getline(std::cin, row);) {
         DotnetRegexAsciiCacheSlot cache;
@@ -45,8 +49,7 @@ int main() {
                 std::cout << "W:";
                 for (unsigned i = 0; i < 65536; ++i) {
                     auto c = static_cast<char16_t>(i);
-                    unsigned flags = unsigned(dotnet_regex_ecma_word_char(c)) |
-                                     (dotnet_regex_word_char(c) << 1) |
+                    unsigned flags = unsigned(dotnet_regex_ecma_word_char(c)) | (dotnet_regex_word_char(c) << 1) |
                                      (dotnet_regex_boundary_word_char(c) << 2) | (unicode_whitespace(c) << 3);
                     std::cout << std::hex << std::setfill('0') << std::setw(2)
                               << unsigned(dotnet_regex_unicode_category(c)) << flags;
@@ -72,12 +75,11 @@ int main() {
                     threads.emplace_back([&, n]() {
                         for (unsigned i = 0; i < 4096; ++i) {
                             auto c = static_cast<char16_t>((i * 31 + n * 17) % 128);
-                            if (dotnet_regex_char_in_class(c, set, cache) !=
-                                dotnet_regex_char_in_class(c, set))
+                            if (dotnet_regex_char_in_class(c, set, cache) != dotnet_regex_char_in_class(c, set))
                                 ++errors;
                         }
                     });
-                for (auto& thread : threads)
+                for (auto &thread : threads)
                     thread.join();
                 std::cout << "T:" << errors.load() << ':' << cache_text(cache.load()) << '\n';
             } else {
@@ -99,10 +101,10 @@ int main() {
                 bool result = dotnet_regex_char_in_class(static_cast<char16_t>(c), decode(text), cache);
                 std::cout << "L:" << (result ? 1 : 0) << ':' << cache_text(cache.load()) << '\n';
             }
-        } catch (const DotnetRegexClassError& e) {
+        } catch (const DotnetRegexClassError &e) {
             std::cout << "E:" << e.source_type << ':' << std::hex << e.hresult << std::dec << ':'
                       << hex(utf16(e.what())) << ':' << cache_text(cache.load()) << '\n';
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
             std::cout << "NATIVE:" << e.what() << '\n';
         }
     }

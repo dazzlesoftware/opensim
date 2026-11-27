@@ -1,0 +1,21 @@
+{
+  "accepted": false,
+  "executed": false,
+  "globals": {},
+  "errors": [
+    "illegal to cast from char to bool"
+  ],
+  "exception": null,
+  "exceptionType": null,
+  "stackSize": 1000000,
+  "stackLimit": 1024,
+  "finalStackLeft": null,
+  "stackSamples": [],
+  "name": "variable_condition",
+  "source": "YOption chars;integer result;char value;default{state_entry(){value='A';result=value?1:2;}}",
+  "sha256": {
+    "source.lsl": "dc44e790f1fb300827639e687987d5ab0f9fb2f735fc3231fd2d01c8065f7840",
+    "source_hash.txt": "07b2d47b57d7036c828301a6b5bcd536ca740c339ea24a59a8d047ebe85b87f3",
+    "generator_source": "7673d801dbf8417561ec385e5286206a754c6c479cb723b7ca2535509236e6c4"
+  }
+}

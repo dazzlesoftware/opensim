@@ -15,6 +15,7 @@
 #include <thread>
 using namespace opensim;
 using namespace services;
+
 std::string hex(std::string_view s) {
     std::string out;
     for (unsigned char c : s) {
@@ -23,6 +24,7 @@ std::string hex(std::string_view s) {
     }
     return out;
 }
+
 std::string unhex(const std::string &s) {
     if (s == ".")
         return "";
@@ -31,41 +33,49 @@ std::string unhex(const std::string &s) {
         out += char(std::stoi(s.substr(i, 2), nullptr, 16));
     return out;
 }
+
 struct Context {
     std::string trace;
     int mode, exist;
     bool stored, deleted;
     std::string fail;
-    AssetService::Asset a = std::make_shared<framework::AssetBase>(),
-                        b = std::make_shared<framework::AssetBase>();
+    AssetService::Asset a = std::make_shared<framework::AssetBase>(), b = std::make_shared<framework::AssetBase>();
+
     Context() {
         a->id("00000000-0000-0000-0000-000000000001");
         b->id("00000000-0000-0000-0000-000000000002");
         a->data = std::make_shared<std::vector<uint8_t>>(std::initializer_list<uint8_t>{1});
         b->data = std::make_shared<std::vector<uint8_t>>(std::initializer_list<uint8_t>{2});
     }
+
     void event(const std::string &value) {
         trace += value + ";";
         if (value.starts_with(fail + ":") && !fail.empty())
             throw std::runtime_error("log");
     }
+
     std::string name(const AssetService::Asset &value) {
         return !value ? "N" : value == a ? "A" : value == b ? "B" : "?";
     }
 };
+
 struct Store : AssetStore {
     Context &c;
+
     explicit Store(Context &value) : c(value) {}
+
     AssetService::Asset get(framework::Uuid id) override {
         c.event("get:" + id.str());
         if (c.mode == 2)
             throw std::runtime_error("get");
         return c.mode == 1 ? nullptr : c.mode == 3 ? c.b : c.a;
     }
+
     bool store(AssetService::Asset a) override {
         c.event("store:" + c.name(a));
         return c.stored;
     }
+
     std::vector<bool> exists(const std::vector<framework::Uuid> &ids) override {
         std::string value = "exists:";
         for (auto id : ids)
@@ -75,14 +85,17 @@ struct Store : AssetStore {
             throw std::runtime_error("exists");
         return c.exist == 0 ? std::vector<bool>{} : std::vector<bool>{c.exist == 2};
     }
+
     std::vector<std::shared_ptr<framework::AssetMetadata>> metadata_set(int32_t, int32_t) override {
         return {};
     }
+
     bool erase(const std::string &id) override {
         c.event("delete:" + id);
         return c.deleted;
     }
 };
+
 int main(int argc, char **argv) try {
     if (argc == 7 && std::string_view(argv[1]) == "--fs-files") {
         const auto operation = std::string_view(argv[2]);
@@ -115,8 +128,8 @@ int main(int argc, char **argv) try {
         if (!store->store(asset))
             throw std::runtime_error("MySQL provider replacement failed");
         const auto stored = store->get(id);
-        if (!stored || stored->flags() != framework::Rewritable ||
-            stored->description() != "Provider replacement" || !stored->data || *stored->data != *asset->data)
+        if (!stored || stored->flags() != framework::Rewritable || stored->description() != "Provider replacement" ||
+            !stored->data || *stored->data != *asset->data)
             throw std::runtime_error("MySQL provider did not replace the asset fields");
         const auto first = store->metadata_set(0, 1);
         if (first.size() != 1 || first[0]->full_id() != id || first[0]->flags != framework::Rewritable ||
@@ -140,8 +153,8 @@ int main(int argc, char **argv) try {
         if (!store->store(asset))
             throw std::runtime_error("PostgreSQL provider update failed");
         const auto stored = store->get(id);
-        if (!stored || stored->flags() != flags || stored->description() != "Provider update" ||
-            !stored->data || *stored->data != *asset->data)
+        if (!stored || stored->flags() != flags || stored->description() != "Provider update" || !stored->data ||
+            *stored->data != *asset->data)
             throw std::runtime_error("PostgreSQL provider did not preserve the original update semantics");
         const auto first = store->metadata_set(0, 2);
         if (!store->metadata_set(0, 1).empty() || first.size() != 1 || first[0]->full_id() != id ||
@@ -167,17 +180,18 @@ int main(int argc, char **argv) try {
         }
         auto local_result = std::make_shared<std::promise<AssetService::Asset>>();
         auto local = local_result->get_future();
-        if (!service->get_async(local_id, {}, [local_result](const auto&, std::any, auto asset) {
-                local_result->set_value(std::move(asset));
-            }) || local.wait_for(std::chrono::seconds(8)) != std::future_status::ready || !local.get())
+        if (!service->get_async(
+                local_id, {},
+                [local_result](const auto &, std::any, auto asset) { local_result->set_value(std::move(asset)); }) ||
+            local.wait_for(std::chrono::seconds(8)) != std::future_status::ready || !local.get())
             throw std::runtime_error("Local asset read was blocked by remote reads");
-        for (auto& result : results)
+        for (auto &result : results)
             if (result.wait_for(std::chrono::seconds(8)) != std::future_status::ready || !result.get())
                 throw std::runtime_error("Remote asset read did not complete");
         return 0;
     }
-    if (argc == 4 && (std::string_view(argv[1]) == "--foreign-read" ||
-                      std::string_view(argv[1]) == "--foreign-read-async")) {
+    if (argc == 4 &&
+        (std::string_view(argv[1]) == "--foreign-read" || std::string_view(argv[1]) == "--foreign-read-async")) {
         auto clients = std::make_shared<network::WebHttpClients>(network::native_web_http_handler_factory());
         clients->setup(false, false, nullptr, 32);
         const auto config = server::IniConfig::load(argv[2]);
@@ -189,10 +203,12 @@ int main(int argc, char **argv) try {
         if (std::string_view(argv[1]) == "--foreign-read-async") {
             auto result = std::make_shared<std::promise<AssetService::Asset>>();
             auto future = result->get_future();
-            if (!service->get_async(id, 42, [result, id](const auto& requested, std::any sender, auto value) {
-                    if (requested == id && std::any_cast<int>(sender) == 42)
-                        result->set_value(std::move(value));
-                }) || future.wait_for(std::chrono::seconds(5)) != std::future_status::ready)
+            if (!service->get_async(id, 42,
+                                    [result, id](const auto &requested, std::any sender, auto value) {
+                                        if (requested == id && std::any_cast<int>(sender) == 42)
+                                            result->set_value(std::move(value));
+                                    }) ||
+                future.wait_for(std::chrono::seconds(5)) != std::future_status::ready)
                 throw std::runtime_error("Foreign URL read did not deliver its callback");
             asset = future.get();
         } else {
@@ -254,8 +270,7 @@ int main(int argc, char **argv) try {
             if (std::any_cast<int>(sender) == 42)
                 throw std::runtime_error("Fixture callback failure");
         };
-        if (!connector->get_async(key, 42, callback) || !connector->get_async(key, 43, callback) ||
-            queued.size() != 1)
+        if (!connector->get_async(key, 42, callback) || !connector->get_async(key, 43, callback) || queued.size() != 1)
             throw std::runtime_error("Duplicate grid asset reads were not coalesced");
         queued.front()();
         queued.clear();
@@ -286,7 +301,7 @@ int main(int argc, char **argv) try {
         });
         const std::string key = argv[3];
         std::vector<int> delivered;
-        const auto callback = [&](const auto& requested, std::any sender, const auto& asset) {
+        const auto callback = [&](const auto &requested, std::any sender, const auto &asset) {
             const auto index = std::any_cast<int>(sender);
             if (requested == key && static_cast<bool>(asset) == (index == 3))
                 delivered.push_back(index);
@@ -294,8 +309,7 @@ int main(int argc, char **argv) try {
         if (connector->get_async(key, 0, callback) || !delivered.empty())
             throw std::runtime_error("Rejected queue request was accepted");
         accept = true;
-        if (!connector->get_async(key, 1, callback) || !connector->get_async(key, 2, callback) ||
-            queued.size() != 1)
+        if (!connector->get_async(key, 1, callback) || !connector->get_async(key, 2, callback) || queued.size() != 1)
             throw std::runtime_error("Failed grid read was not coalesced");
         queued.front()();
         queued.clear();
@@ -316,15 +330,15 @@ int main(int argc, char **argv) try {
         const auto metadata = connector->get_metadata(argv[3]);
         if (!metadata || !metadata->sha1 || metadata->type != 10)
             throw std::runtime_error("Managed asset metadata or its SHA1 was lost");
-        const auto& bytes = *metadata->sha1;
-        const auto sha1 = hex({reinterpret_cast<const char*>(bytes.data()), bytes.size()});
+        const auto &bytes = *metadata->sha1;
+        const auto sha1 = hex({reinterpret_cast<const char *>(bytes.data()), bytes.size()});
         std::cout << metadata->creation_date.ticks() << '|' << metadata->creation_date.kind() << '|'
                   << metadata->content_type() << '|' << sha1 << '\n'
                   << serialize_remote_asset_metadata(*metadata);
         return 0;
     }
-    if (argc == 4 && (std::string_view(argv[1]) == "--grid-mutate" ||
-                      std::string_view(argv[1]) == "--grid-mutation-reply")) {
+    if (argc == 4 &&
+        (std::string_view(argv[1]) == "--grid-mutate" || std::string_view(argv[1]) == "--grid-mutation-reply")) {
         auto clients = std::make_shared<network::WebHttpClients>(network::native_web_http_handler_factory());
         clients->setup(false, false, nullptr, 32);
         const auto config = server::IniConfig::load(argv[2]);
@@ -355,8 +369,8 @@ int main(int argc, char **argv) try {
             throw std::runtime_error("Deleted grid asset was still available");
         return 0;
     }
-    if ((argc == 3 && (std::string_view(argv[1]) == "--grid-store" ||
-                       std::string_view(argv[1]) == "--grid-store-reply")) ||
+    if ((argc == 3 &&
+         (std::string_view(argv[1]) == "--grid-store" || std::string_view(argv[1]) == "--grid-store-reply")) ||
         (argc == 4 && std::string_view(argv[1]) == "--foreign-store")) {
         auto clients = std::make_shared<network::WebHttpClients>(network::native_web_http_handler_factory());
         clients->setup(false, false, nullptr, 32);
@@ -367,8 +381,7 @@ int main(int argc, char **argv) try {
         auto asset = std::make_shared<framework::AssetBase>(id, "Grid write & read", 10, id.str());
         if (argc == 4)
             asset->id(argv[3]);
-        asset->data = std::make_shared<std::vector<std::uint8_t>>(
-            std::initializer_list<std::uint8_t>{0, 1, 255});
+        asset->data = std::make_shared<std::vector<std::uint8_t>>(std::initializer_list<std::uint8_t>{0, 1, 255});
         const auto stored = runtime.store(asset);
         if (argc == 4 || std::string_view(argv[1]) == "--grid-store-reply") {
             std::cout << stored.value_or("") << '\n';
@@ -379,8 +392,8 @@ int main(int argc, char **argv) try {
             return 0;
         }
         const auto received = runtime.get(framework::Uuid(*stored));
-        if (!received || received->full_id().str() != *stored || !received->data ||
-            *received->data != *asset->data || received->name() != asset->name())
+        if (!received || received->full_id().str() != *stored || !received->data || *received->data != *asset->data ||
+            received->name() != asset->name())
             throw std::runtime_error("Stored grid asset could not be read back");
         std::cout << "stored|" << *stored << '\n';
         return 0;
@@ -407,8 +420,7 @@ int main(int argc, char **argv) try {
             RegionAssetRuntime runtime(config, events, "Foreign asset test", {}, {}, {}, clients,
                                        [url = std::string(argv[2])](auto) { return url; });
             const auto agent = framework::Uuid::random();
-            auto listener =
-                std::make_shared<server::RegistryCapabilityListener>(server::CapabilityListenerInfo{});
+            auto listener = std::make_shared<server::RegistryCapabilityListener>(server::CapabilityListenerInfo{});
             auto caps = std::make_shared<Caps>(listener, "127.0.0.1", 80, "seed", agent, "Foreign asset test",
                                                [listener] { return listener; });
             events->trigger_register(agent, caps);
@@ -422,37 +434,50 @@ int main(int argc, char **argv) try {
             request->request.method = "GET";
             request->request.path = *poll->url;
             request->request.raw_target = request->request.path + "?texture_id=" + id.str();
+
             struct TestChannel final : network::HttpResponseChannel {
                 bool can_send() const override {
                     return true;
                 }
+
                 bool is_sending() const override {
                     return false;
                 }
+
                 bool is_closed() const override {
                     return false;
                 }
+
                 bool complete(network::HttpResponse) override {
                     return true;
                 }
+
                 bool complete_raw(network::RawHttpResponse) override {
                     return true;
                 }
+
                 int requests_remaining() const override {
                     return 1;
                 }
+
                 int idle_timeout_ms() const override {
                     return 5000;
                 }
+
                 void idle_timeout_ms(int) override {}
+
                 bool send_chunk(std::shared_ptr<const std::vector<std::uint8_t>>, std::size_t, std::size_t,
                                 std::function<void()>) override {
                     return true;
                 }
+
                 void finish_response(bool) override {}
+
                 void on_disconnect(std::function<void()>) override {}
+
                 void cancel() override {}
             };
+
             request->request.response_channel = std::make_shared<TestChannel>();
             poll->receive(request->request_id, request->request);
             const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
@@ -462,8 +487,8 @@ int main(int argc, char **argv) try {
                 std::this_thread::sleep_for(std::chrono::milliseconds(1));
             }
             const auto response = poll->events(request->request_id, agent);
-            const auto state = server::PollHttpService::response_state(
-                std::any_cast<server::PollResponsePtr>(response->get("h")));
+            const auto state =
+                server::PollHttpService::response_state(std::any_cast<server::PollResponsePtr>(response->get("h")));
             const bool denied = !config.get("HGAssetService", "DisallowImport").empty();
             if (state->status() != (denied ? 404 : 200))
                 throw std::runtime_error("Unexpected foreign texture capability status");
@@ -506,9 +531,8 @@ int main(int argc, char **argv) try {
             c.fail = "";
         id = unhex(id);
         auto data = std::make_shared<Store>(c);
-        StoredAssetService service(data,
-                                   {[&](const auto &message) { c.event("warn:" + message); },
-                                    [&](const auto &message, const auto &) { c.event("error:" + message); }});
+        StoredAssetService service(data, {[&](const auto &message) { c.event("warn:" + message); },
+                                          [&](const auto &message, const auto &) { c.event("error:" + message); }});
         std::string result;
         for (char op : ops) {
             std::string value = "-";
@@ -536,8 +560,7 @@ int main(int argc, char **argv) try {
                     AssetService::Retrieved cb;
                     if (op != 'Q')
                         cb = [&](const auto &key, std::any sender, auto asset) {
-                            c.event("callback:" + key + ":" + std::any_cast<std::string>(sender) + ":" +
-                                    c.name(asset));
+                            c.event("callback:" + key + ":" + std::any_cast<std::string>(sender) + ":" + c.name(asset));
                             if (op == 'R')
                                 throw std::runtime_error("callback");
                         };
@@ -578,6 +601,7 @@ int main(int argc, char **argv) try {
         std::cout << result << '|' << hex(c.trace) << '\n';
     }
 } catch (const std::exception &error) {
+
     std::cerr << error.what() << "\n";
     return 1;
 }

@@ -1,0 +1,1 @@
+YOption chars;integer input=-1;integer result;integer after;integer echo(integer value){while(FALSE){}return value;}default{state_entry(){result=echo((char)input);after=1;}}

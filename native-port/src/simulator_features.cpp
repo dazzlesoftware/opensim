@@ -5,46 +5,55 @@
 #include "opensim/server/poll_http_service.hpp"
 #include <fstream>
 #include <algorithm>
+
 namespace opensim::services {
 namespace {
 using network::Value;
 using K = Value::Kind;
 using S = std::optional<std::string>;
-template <class T> T& required(const std::shared_ptr<T>& value) {
+
+template <class T> T &required(const std::shared_ptr<T> &value) {
     if (!value)
         throw EventQueueNullReference();
     return *value;
 }
-const std::string& key(const S& value) {
+
+const std::string &key(const S &value) {
     if (!value)
         throw std::invalid_argument("Null feature key");
     return *value;
 }
-SimulatorFeatureValue& object(const FeatureData& value) {
-    auto& node = required(value);
+
+SimulatorFeatureValue &object(const FeatureData &value) {
+    auto &node = required(value);
     if (node.scalar.kind != K::Map)
         throw EventQueueNullReference();
     return node;
 }
+
 FeatureData val(Value value) {
     return SimulatorFeatureValue::from_value(value);
 }
+
 FeatureData real(double number) {
     Value value;
     value.kind = K::Real;
     value.real = number;
     return val(value);
 }
-void utf8append(std::string& out, const std::string& text) {
+
+void utf8append(std::string &out, const std::string &text) {
     for (auto c : framework::utf8(framework::utf16_replacing(text)))
         if (c)
             out += c;
 }
-void asciiappend(std::string& out, const std::string& text) {
+
+void asciiappend(std::string &out, const std::string &text) {
     for (auto c : framework::utf16_replacing(text))
         out += char(c & 255);
 }
-void escape(std::string& out, const std::string& text) {
+
+void escape(std::string &out, const std::string &text) {
     for (char c : framework::utf8(framework::utf16_replacing(text))) {
         switch (c) {
         case '<':
@@ -67,20 +76,21 @@ void escape(std::string& out, const std::string& text) {
         }
     }
 }
-void serialize(std::string& out, const FeatureData& data, unsigned depth) {
+
+void serialize(std::string &out, const FeatureData &data, unsigned depth) {
     if (depth > 512)
         throw std::invalid_argument("Feature XML nesting");
-    const auto& node = required(data);
+    const auto &node = required(data);
     if (node.wire_kind == SimulatorFeatureValue::WireKind::RawXml) {
         utf8append(out, node.scalar.text);
         return;
     }
     if (node.wire_kind == SimulatorFeatureValue::WireKind::Utf8)
         return;
-    const auto& value = node.scalar;
+    const auto &value = node.scalar;
     if (value.kind == K::Map) {
         out += "<map>";
-        for (auto& [feature_name, item] : node.map) {
+        for (auto &[feature_name, item] : node.map) {
             out += "<key>";
             utf8append(out, feature_name);
             out += "</key>";
@@ -91,7 +101,7 @@ void serialize(std::string& out, const FeatureData& data, unsigned depth) {
     }
     if (value.kind == K::Array) {
         out += "<array>";
-        for (auto& item : node.array)
+        for (auto &item : node.array)
             serialize(out, item, depth + 1);
         out += "</array>";
         return;
@@ -100,7 +110,7 @@ void serialize(std::string& out, const FeatureData& data, unsigned depth) {
         out += "<undef/>";
         return;
     }
-    const char* tag = value.kind == K::Boolean                           ? "boolean"
+    const char *tag = value.kind == K::Boolean                           ? "boolean"
                       : value.kind == K::Integer                         ? "integer"
                       : value.kind == K::Real                            ? "real"
                       : value.kind == K::Uuid                            ? "uuid"
@@ -125,7 +135,8 @@ void serialize(std::string& out, const FeatureData& data, unsigned depth) {
     out += tag;
     out += '>';
 }
-FeatureData from_node(const server::SdkLlsdNode& node) {
+
+FeatureData from_node(const server::SdkLlsdNode &node) {
     if (!node.value)
         return {};
     auto value = val(*node.value);
@@ -140,7 +151,8 @@ FeatureData from_node(const server::SdkLlsdNode& node) {
     }
     return value;
 }
-bool boolean(const S& text) {
+
+bool boolean(const S &text) {
     if (!text)
         return false;
     auto u = framework::utf16_replacing(*text);
@@ -150,12 +162,13 @@ bool boolean(const S& text) {
     while (end > start && (u[end - 1] == 0 || framework::unicode_whitespace(u[end - 1])))
         --end;
     auto trimmed = framework::utf8(std::u16string_view(u).substr(start, end - start));
-    for (auto& c : trimmed)
+    for (auto &c : trimmed)
         if (c >= 'A' && c <= 'Z')
             c += 32;
     return trimmed == "true";
 }
-S string_cast(const std::any& value) {
+
+S string_cast(const std::any &value) {
     if (server::poll_object_null(value))
         return {};
     if (auto s = std::any_cast<std::string>(&value))
@@ -164,7 +177,8 @@ S string_cast(const std::any& value) {
         return *s;
     throw std::bad_any_cast();
 }
-S object_text(const std::any& value) {
+
+S object_text(const std::any &value) {
     if (auto s = std::any_cast<server::PollStringObject>(&value))
         return s->to_string();
     if (auto s = std::any_cast<S>(&value))
@@ -173,18 +187,20 @@ S object_text(const std::any& value) {
         return s->type_name;
     return framework::service_url_object_text(value);
 }
+
 std::shared_ptr<SimulatorSyntaxState> shared_syntax() {
     static auto state = std::make_shared<SimulatorSyntaxState>();
     return state;
 }
+
 class FileReader : public SimulatorSyntaxReader {
     std::string text_;
     size_t at_ = 0;
     bool disposed_ = false;
 
   public:
-    explicit FileReader(std::string text) : text_(std::move(text)) {
-    }
+    explicit FileReader(std::string text) : text_(std::move(text)) {}
+
     std::optional<std::string> read_line() override {
         if (disposed_)
             throw std::runtime_error("Disposed syntax reader");
@@ -202,13 +218,14 @@ class FileReader : public SimulatorSyntaxReader {
         }
         return line;
     }
+
     void dispose() override {
         disposed_ = true;
     }
 };
+
 std::string decode_file(std::string bytes) {
-    if (bytes.starts_with(std::string("\xff\xfe\0\0", 4)) ||
-        bytes.starts_with(std::string("\0\0\xfe\xff", 4))) {
+    if (bytes.starts_with(std::string("\xff\xfe\0\0", 4)) || bytes.starts_with(std::string("\0\0\xfe\xff", 4))) {
         bool little = uint8_t(bytes[0]) == 255;
         std::u16string units;
         size_t i = 4;
@@ -245,18 +262,20 @@ std::string decode_file(std::string bytes) {
     }
     return framework::utf8(framework::utf16_replacing(bytes));
 }
+
 class FeatureRoute : public server::CapabilitySimpleHandler {
     std::string path_;
-    std::function<void(const network::HttpRequest&, SimulatorFeaturesResponse&)> callback_;
+    std::function<void(const network::HttpRequest &, SimulatorFeaturesResponse &)> callback_;
 
   public:
     FeatureRoute(std::string path, decltype(callback_) callback)
-        : path_(std::move(path)), callback_(std::move(callback)) {
-    }
+        : path_(std::move(path)), callback_(std::move(callback)) {}
+
     std::optional<std::string> path() const override {
         return path_;
     }
-    network::HttpResponse handle(const network::HttpRequest& request) override {
+
+    network::HttpResponse handle(const network::HttpRequest &request) override {
         received++;
         SimulatorFeaturesResponse response;
         try {
@@ -278,25 +297,30 @@ class FeatureRoute : public server::CapabilitySimpleHandler {
             result.body.assign(response.raw_buffer->begin(), response.raw_buffer->end());
         return result;
     }
+
     framework::AtomicInt32Property received, handled;
 };
-}
+} // namespace
+
 FeatureData SimulatorFeatureValue::object() {
     auto value = std::make_shared<SimulatorFeatureValue>();
     value->scalar.kind = K::Map;
     return value;
 }
+
 FeatureData SimulatorFeatureValue::list() {
     auto value = std::make_shared<SimulatorFeatureValue>();
     value->scalar.kind = K::Array;
     return value;
 }
-FeatureData SimulatorFeatureValue::raw_xml(const S& text) {
+
+FeatureData SimulatorFeatureValue::raw_xml(const S &text) {
     auto value = std::make_shared<SimulatorFeatureValue>();
     value->wire_kind = WireKind::RawXml;
     value->scalar.text = text.value_or("");
     return value;
 }
+
 FeatureData SimulatorFeatureValue::utf8(server::PollBytes bytes) {
     auto value = std::make_shared<SimulatorFeatureValue>();
     value->wire_kind = WireKind::Utf8;
@@ -304,28 +328,32 @@ FeatureData SimulatorFeatureValue::utf8(server::PollBytes bytes) {
         value->scalar.text.assign(bytes->begin(), bytes->end());
     return value;
 }
-FeatureData SimulatorFeatureValue::from_value(const Value& input) {
+
+FeatureData SimulatorFeatureValue::from_value(const Value &input) {
     auto result = std::make_shared<SimulatorFeatureValue>();
-    const auto& v = input.view();
+    const auto &v = input.view();
     result->scalar = v;
     if (v.kind == K::Map)
-        for (auto& feature_name : v.ordered_keys())
+        for (auto &feature_name : v.ordered_keys())
             result->map[feature_name] = from_value(v.map.at(feature_name));
     else if (v.kind == K::Array)
-        for (auto& item : v.array)
+        for (auto &item : v.array)
             result->array.push_back(from_value(item));
     return result;
 }
-server::PollBytes simulator_feature_xml(const FeatureData& value) {
+
+server::PollBytes simulator_feature_xml(const FeatureData &value) {
     std::string text = "<llsd>";
     serialize(text, value, 0);
     text += "</llsd>";
     return std::make_shared<std::vector<uint8_t>>(text.begin(), text.end());
 }
+
 bool SimulatorFeaturesBackend::syntax_exists() {
     std::error_code ec;
     return std::filesystem::is_regular_file("ScriptSyntax.xml", ec);
 }
+
 std::shared_ptr<SimulatorSyntaxReader> SimulatorFeaturesBackend::open_syntax() {
     std::ifstream file("ScriptSyntax.xml", std::ios::binary);
     if (!file)
@@ -335,12 +363,14 @@ std::shared_ptr<SimulatorSyntaxReader> SimulatorFeaturesBackend::open_syntax() {
         throw std::runtime_error("Cannot read ScriptSyntax.xml");
     return std::make_shared<FileReader>(decode_file(std::move(bytes)));
 }
+
 SimulatorFeaturesModule::SimulatorFeaturesModule(std::shared_ptr<SimulatorFeaturesBackend> backend,
                                                  std::shared_ptr<SimulatorSyntaxState> state)
     : backend_(std::move(backend)), syntax_(state ? std::move(state) : shared_syntax()) {
     required(backend_);
 }
-void SimulatorFeaturesModule::initialise(const server::IniConfig* source) {
+
+void SimulatorFeaturesModule::initialise(const server::IniConfig *source) {
     [[maybe_unused]] const auto lifetime = shared_from_this();
     if (!source)
         throw EventQueueNullReference();
@@ -351,6 +381,7 @@ void SimulatorFeaturesModule::initialise(const server::IniConfig* source) {
     read_syntax();
     defaults();
 }
+
 void SimulatorFeaturesModule::add_region(std::shared_ptr<SimulatorFeaturesScene> scene) {
     [[maybe_unused]] const auto lifetime = shared_from_this();
     {
@@ -365,6 +396,7 @@ void SimulatorFeaturesModule::add_region(std::shared_ptr<SimulatorFeaturesScene>
          }});
     required(scene).register_module(this);
 }
+
 void SimulatorFeaturesModule::remove_region(std::shared_ptr<SimulatorFeaturesScene>) {
     [[maybe_unused]] const auto lifetime = shared_from_this();
     std::shared_ptr<SimulatorFeaturesScene> scene;
@@ -372,12 +404,12 @@ void SimulatorFeaturesModule::remove_region(std::shared_ptr<SimulatorFeaturesSce
         std::lock_guard lock(scene_mutex_);
         scene = scene_;
     }
-    required(scene).events().on_register_caps.remove(
-        SceneDelegateIdentity{this, "SimulatorFeatures.RegisterCaps"});
+    required(scene).events().on_register_caps.remove(SceneDelegateIdentity{this, "SimulatorFeatures.RegisterCaps"});
 }
+
 void SimulatorFeaturesModule::defaults() {
     std::lock_guard lock(features_mutex_);
-    auto& map = features_->map;
+    auto &map = features_->map;
     auto animated = SimulatorFeatureValue::object();
     animated->map["AnimatedObjectMaxTris"] = val(Value(int32_t(150000)));
     animated->map["MaxAgentAnimatedObjectAttachments"] = val(Value(int32_t(3)));
@@ -392,24 +424,24 @@ void SimulatorFeaturesModule::defaults() {
         }
     }
     for (auto [feature_name, value] :
-         std::initializer_list<std::pair<const char*, int>>{{"MaxAgentAttachments", 38},
-                                                            {"MaxAgentGroups", 60},
-                                                            {"MaxAgentGroupsBasic", 60},
-                                                            {"MaxAgentGroupsPremium", 60},
-                                                            {"MaxEstateAccessIds", 500},
-                                                            {"MaxEstateManagers", 20},
-                                                            {"MaxTextureResolution", 2048},
-                                                            {"MaxProfilePicks", 20}})
+         std::initializer_list<std::pair<const char *, int>>{{"MaxAgentAttachments", 38},
+                                                             {"MaxAgentGroups", 60},
+                                                             {"MaxAgentGroupsBasic", 60},
+                                                             {"MaxAgentGroupsPremium", 60},
+                                                             {"MaxEstateAccessIds", 500},
+                                                             {"MaxEstateManagers", 20},
+                                                             {"MaxTextureResolution", 2048},
+                                                             {"MaxProfilePicks", 20}})
         map[feature_name] = val(Value(int32_t(value)));
-    for (auto feature_name : {"MeshRezEnabled", "MeshUploadEnabled", "MeshXferEnabled", "MirrorsEnabled",
-                              "PhysicsMaterialsEnabled"})
+    for (auto feature_name :
+         {"MeshRezEnabled", "MeshUploadEnabled", "MeshXferEnabled", "MirrorsEnabled", "PhysicsMaterialsEnabled"})
         map[feature_name] = val(Value(true));
     auto shapes = SimulatorFeatureValue::object();
     for (auto feature_name : {"convex", "none", "prim"})
         shapes->map[feature_name] = val(Value(true));
     map["PhysicsShapeTypes"] = shapes;
     auto extras = map.contains("OpenSimExtras") ? map.at("OpenSimExtras") : SimulatorFeatureValue::object();
-    auto& extra = object(extras).map;
+    auto &extra = object(extras).map;
     extra["AvatarSkeleton"] = val(Value(true));
     extra["AnimationSet"] = val(Value(true));
     extra["MinSimHeight"] = real(-100);
@@ -420,11 +452,13 @@ void SimulatorFeaturesModule::defaults() {
         extra["ExportSupported"] = val(Value(true));
     map["OpenSimExtras"] = extras;
 }
-void SimulatorFeaturesModule::add_feature(const S& feature_name, FeatureData value) {
+
+void SimulatorFeaturesModule::add_feature(const S &feature_name, FeatureData value) {
     std::lock_guard lock(features_mutex_);
     features_->map[key(feature_name)] = std::move(value);
 }
-void SimulatorFeaturesModule::add_extra(const S& feature_name, FeatureData value) {
+
+void SimulatorFeaturesModule::add_extra(const S &feature_name, FeatureData value) {
     std::lock_guard lock(features_mutex_);
     FeatureData extras;
     if (features_->map.contains("OpenSimExtras"))
@@ -435,13 +469,15 @@ void SimulatorFeaturesModule::add_extra(const S& feature_name, FeatureData value
     }
     object(extras).map[key(feature_name)] = std::move(value);
 }
-bool SimulatorFeaturesModule::remove_feature(const S& feature_name) {
+
+bool SimulatorFeaturesModule::remove_feature(const S &feature_name) {
     std::lock_guard lock(features_mutex_);
     return features_->map.erase(key(feature_name));
 }
-bool SimulatorFeaturesModule::try_feature(const S& feature_name, FeatureData& value) {
+
+bool SimulatorFeaturesModule::try_feature(const S &feature_name, FeatureData &value) {
     std::lock_guard lock(features_mutex_);
-    const auto& k = key(feature_name);
+    const auto &k = key(feature_name);
     if (features_->map.contains(k)) {
         value = features_->map.at(k);
         return true;
@@ -449,14 +485,15 @@ bool SimulatorFeaturesModule::try_feature(const S& feature_name, FeatureData& va
     value = nullptr;
     return false;
 }
-bool SimulatorFeaturesModule::try_extra(const S& feature_name, FeatureData& value) {
+
+bool SimulatorFeaturesModule::try_extra(const S &feature_name, FeatureData &value) {
     value = nullptr;
     std::lock_guard lock(features_mutex_);
     if (features_->map.contains("OpenSimExtras")) {
         auto extra = features_->map.at("OpenSimExtras");
         if (extra && extra->scalar.kind == K::Map) {
-            auto& map = extra->map;
-            const auto& k = key(feature_name);
+            auto &map = extra->map;
+            const auto &k = key(feature_name);
             if (map.contains(k)) {
                 value = map.at(k);
                 return true;
@@ -465,7 +502,8 @@ bool SimulatorFeaturesModule::try_extra(const S& feature_name, FeatureData& valu
     }
     return false;
 }
-bool SimulatorFeaturesModule::extra_contains(const S& feature_name) {
+
+bool SimulatorFeaturesModule::extra_contains(const S &feature_name) {
     std::lock_guard lock(features_mutex_);
     if (features_->map.contains("OpenSimExtras")) {
         auto extra = features_->map.at("OpenSimExtras");
@@ -474,15 +512,17 @@ bool SimulatorFeaturesModule::extra_contains(const S& feature_name) {
     }
     return false;
 }
+
 FeatureData SimulatorFeaturesModule::get_features() {
     std::lock_guard lock(features_mutex_);
     return SimulatorFeatureValue::object();
 }
+
 FeatureData SimulatorFeaturesModule::deep_copy() {
     auto bytes = simulator_feature_xml(features_);
     try {
         auto copy = from_node(server::deserialize_sdk_llsd_node(
-            std::string_view(reinterpret_cast<const char*>(bytes->data()), bytes->size())));
+            std::string_view(reinterpret_cast<const char *>(bytes->data()), bytes->size())));
         if (!copy || copy->scalar.kind != K::Map)
             throw std::invalid_argument("Feature copy is not OSDMap");
         return copy;
@@ -490,11 +530,12 @@ FeatureData SimulatorFeaturesModule::deep_copy() {
         throw std::invalid_argument("Feature copy is not OSDMap");
     }
 }
+
 void SimulatorFeaturesModule::register_caps(framework::Uuid, std::shared_ptr<Caps> caps) {
     auto self = shared_from_this();
     auto route = std::make_shared<FeatureRoute>(
         "/" + backend_->random_uuid().str(),
-        [self, caps](const auto& request, auto& response) { self->process(request, response, caps); });
+        [self, caps](const auto &request, auto &response) { self->process(request, response, caps); });
     required(caps).register_simple("SimulatorFeatures", route);
     bool enabled;
     {
@@ -504,12 +545,13 @@ void SimulatorFeaturesModule::register_caps(framework::Uuid, std::shared_ptr<Cap
     if (enabled) {
         auto syntax = std::make_shared<FeatureRoute>(
             "/" + backend_->random_uuid().str(),
-            [self](const auto& request, auto& response) { self->process_syntax(request, response); });
+            [self](const auto &request, auto &response) { self->process_syntax(request, response); });
         required(caps).register_simple("LSLSyntax", syntax);
     }
 }
-void SimulatorFeaturesModule::process(const network::HttpRequest& request,
-                                      SimulatorFeaturesResponse& response, std::shared_ptr<Caps> caps) {
+
+void SimulatorFeaturesModule::process(const network::HttpRequest &request, SimulatorFeaturesResponse &response,
+                                      std::shared_ptr<Caps> caps) {
     [[maybe_unused]] const auto lifetime = shared_from_this();
     if (request.method != "GET") {
         response.status = 404;
@@ -521,7 +563,7 @@ void SimulatorFeaturesModule::process(const network::HttpRequest& request,
         copy->map["PBRTerrainEnabled"] = val(Value(true));
     }
     if (copy->map.contains("OpenSimExtras")) {
-        auto& extras = object(copy->map.at("OpenSimExtras")).map;
+        auto &extras = object(copy->map.at("OpenSimExtras")).map;
         if (extras.contains("destination-guide-url")) {
             auto node = extras.at("destination-guide-url");
             auto text = network::osd_string(required(node).scalar);
@@ -534,7 +576,7 @@ void SimulatorFeaturesModule::process(const network::HttpRequest& request,
             extras["destination-guide-url"] = val(Value(text));
         }
     }
-    for (auto& callback : on_request.snapshot())
+    for (auto &callback : on_request.snapshot())
         try {
             callback.invoke(caps->agent_id(), copy);
         } catch (...) {
@@ -542,8 +584,8 @@ void SimulatorFeaturesModule::process(const network::HttpRequest& request,
     response.raw_buffer = simulator_feature_xml(copy);
     response.status = 200;
 }
-void SimulatorFeaturesModule::process_syntax(const network::HttpRequest& request,
-                                             SimulatorFeaturesResponse& response) {
+
+void SimulatorFeaturesModule::process_syntax(const network::HttpRequest &request, SimulatorFeaturesResponse &response) {
     std::lock_guard lock(syntax_->mutex);
     if (request.method != "GET" || !syntax_->xml) {
         response.status = 404;
@@ -552,10 +594,11 @@ void SimulatorFeaturesModule::process_syntax(const network::HttpRequest& request
     response.raw_buffer = syntax_->xml;
     response.status = 200;
 }
+
 void SimulatorFeaturesModule::region_loaded(std::shared_ptr<SimulatorFeaturesScene> scene) {
     [[maybe_unused]] const auto lifetime = shared_from_this();
     auto extras = required(scene).extra_features();
-    auto& fields = required(extras);
+    auto &fields = required(extras);
     if (fields.contains("Result") && !server::poll_object_null(fields.at("Result")) &&
         object_text(fields.at("Result")) == S("Failure")) {
         backend_->warn("[SIMULATOR FEATURES MODULE]: Unable to retrieve grid-wide features");
@@ -571,7 +614,7 @@ void SimulatorFeaturesModule::region_loaded(std::shared_ptr<SimulatorFeaturesSce
     }
     if (!extra)
         extra = SimulatorFeatureValue::object();
-    for (auto& [feature_name, value] : fields) {
+    for (auto &[feature_name, value] : fields) {
         auto text = string_cast(value);
         if (feature_name == "GridName" || feature_name == "GridNick" || feature_name == "GridURL" ||
             feature_name == "search-server-url" || feature_name == "destination-guide-url")
@@ -599,6 +642,7 @@ void SimulatorFeaturesModule::region_loaded(std::shared_ptr<SimulatorFeaturesSce
     }
     features_->map["OpenSimExtras"] = extra;
 }
+
 void SimulatorFeaturesModule::read_syntax() {
     std::lock_guard lock(syntax_->mutex);
     if (!do_syntax_ || !syntax_->id.is_zero())
@@ -644,4 +688,4 @@ void SimulatorFeaturesModule::read_syntax() {
         syntax_->xml = nullptr;
     }
 }
-}
+} // namespace opensim::services

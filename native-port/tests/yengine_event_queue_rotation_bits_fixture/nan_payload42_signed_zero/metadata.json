@@ -1,0 +1,41 @@
+{
+  "name": "nan_payload42_signed_zero",
+  "input": {
+    "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+    "bits": [
+      "7ff8000000000042",
+      "0000000000000000",
+      "8000000000000000",
+      "8000000000000000"
+    ],
+    "text": "\u003CNaN, 0.000000, -0.000000, -0.000000\u003E"
+  },
+  "append_exception": null,
+  "outer_xml_exception": null,
+  "load_xml_exception": null,
+  "restore_event_queue_exception": null,
+  "restored": {
+    "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+    "bits": [
+      "fff8000000000000",
+      "0000000000000000",
+      "8000000000000000",
+      "8000000000000000"
+    ],
+    "text": "\u003CNaN, 0.000000, -0.000000, -0.000000\u003E"
+  },
+  "strict_xml_reader_control_exception": null,
+  "strict_xml_reader_control_restored": {
+    "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+    "bits": [
+      "fff8000000000000",
+      "0000000000000000",
+      "8000000000000000",
+      "8000000000000000"
+    ],
+    "text": "\u003CNaN, 0.000000, -0.000000, -0.000000\u003E"
+  },
+  "sha256": {
+    "serialized.xml": "43190facb8552d31b2a302d6ee2c4cb3ab96d389dcfe63076319b9a6399dea55"
+  }
+}

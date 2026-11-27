@@ -1,17 +1,20 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/framework/asset_nrbf.hpp"
+#include "opensim/framework/nrbf_graph.hpp"
 #include "opensim/framework/text.hpp"
 #include <algorithm>
 #include <bit>
 #include <map>
 #include <tuple>
 #include <stdexcept>
+
 namespace opensim::framework {
 namespace {
 [[noreturn]] void bad() {
     throw std::invalid_argument("Invalid or unsupported AssetBase NRBF graph");
 }
+
 // Decimal values can occur in ignored legacy members. Preserve the original
 // decimal.Parse validation rather than rejecting every such graph.
 void decimal(std::string value) {
@@ -69,8 +72,8 @@ void decimal(std::string value) {
         if (drop && drop <= digits.size()) {
             auto at = digits.size() - drop;
             char c = digits[at];
-            up = c > '5' || (c == '5' && (digits.find_first_not_of('0', at + 1) != digits.npos ||
-                                          ((rounded.back() - '0') & 1)));
+            up = c > '5' ||
+                 (c == '5' && (digits.find_first_not_of('0', at + 1) != digits.npos || ((rounded.back() - '0') & 1)));
         }
         if (up) {
             std::size_t i = rounded.size();
@@ -89,25 +92,16 @@ void decimal(std::string value) {
         --target;
     }
 }
-struct Node;
+
+using Node = NrbfNode;
 using N = std::shared_ptr<Node>;
-struct Node {
-    int kind = 0;
-    std::uint64_t bits = 0;
-    std::string text;
-    AssetBytes bytes;
-    std::vector<std::string> names;
-    std::vector<N> values;
-    N get(const std::string &name) const {
-        auto it = std::find(names.begin(), names.end(), name);
-        return it == names.end() ? N{} : values.at(static_cast<std::size_t>(it - names.begin()));
-    }
-};
+
 N node(int kind) {
     auto n = std::make_shared<Node>();
     n->kind = kind;
     return n;
 }
+
 AssetBytes byte_array(std::span<const std::uint8_t> data) {
     if (data.empty()) {
         static const auto empty = std::make_shared<std::vector<std::uint8_t>>();
@@ -115,17 +109,22 @@ AssetBytes byte_array(std::span<const std::uint8_t> data) {
     }
     return std::make_shared<std::vector<std::uint8_t>>(data.begin(), data.end());
 }
+
 struct Reader {
     struct Class {
         std::string name;
+        int library_id = 0;
         std::vector<std::string> names;
         std::vector<std::uint8_t> types, extra;
     };
+
     std::span<const std::uint8_t> data;
     std::size_t pos = 0;
     int nulls = 0, root = 0;
     std::map<int, N> objects;
     std::map<int, Class> classes;
+    std::map<int, std::string> libraries;
+
     std::span<const std::uint8_t> take(std::size_t count) {
         if (count > data.size() - pos)
             bad();
@@ -133,9 +132,11 @@ struct Reader {
         pos += count;
         return s;
     }
+
     std::uint8_t byte() {
         return take(1)[0];
     }
+
     std::uint64_t number(std::size_t count) {
         auto s = take(count);
         std::uint64_t v = 0;
@@ -143,15 +144,18 @@ struct Reader {
             v |= std::uint64_t(s[i]) << (i * 8);
         return v;
     }
+
     std::int32_t integer() {
         return std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(number(4)));
     }
+
     int count() {
         auto n = integer();
         if (n < 0 || static_cast<std::size_t>(n) > data.size() - pos)
             bad();
         return n;
     }
+
     std::string string() {
         std::uint32_t len = 0;
         for (int shift = 0;; shift += 7) {
@@ -167,6 +171,7 @@ struct Reader {
         auto s = take(len);
         return utf8(utf16_replacing(std::string_view(reinterpret_cast<const char *>(s.data()), s.size())));
     }
+
     N resolve(N n) const {
         if (n && n->kind == 101) {
             auto it = objects.find(std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(n->bits)));
@@ -174,9 +179,11 @@ struct Reader {
         }
         return n;
     }
+
     N field(N n, const std::string &name) const {
         return n ? resolve(n->get(name)) : N{};
     }
+
     std::uint8_t info(std::uint8_t type) {
         switch (type) {
         case 0:
@@ -198,6 +205,7 @@ struct Reader {
             bad();
         }
     }
+
     N primitive(std::uint8_t type) {
         auto n = node(type);
         switch (type) {
@@ -213,8 +221,7 @@ struct Reader {
                 bad();
             auto c = data[pos];
             auto s = take(c < 128 ? 1 : c < 224 ? 2 : c < 240 ? 3 : 4);
-            auto chars =
-                utf16_replacing(std::string_view(reinterpret_cast<const char *>(s.data()), s.size()));
+            auto chars = utf16_replacing(std::string_view(reinterpret_cast<const char *>(s.data()), s.size()));
             if (chars.empty())
                 bad();
             n->bits = chars[0];
@@ -253,6 +260,7 @@ struct Reader {
         }
         return n;
     }
+
     N array(int len, int depth, std::optional<std::uint8_t> primitive_type = {}) {
         if (primitive_type && *primitive_type == 2) {
             auto n = node(102);
@@ -271,9 +279,12 @@ struct Reader {
         nulls = 0;
         return n;
     }
+
     N members(int id, const Class &c, int depth) {
         auto n = node(100);
         n->text = c.name;
+        if (const auto library = libraries.find(c.library_id); library != libraries.end())
+            n->library = library->second;
         n->names = c.names;
         n->values.resize(c.names.size());
         objects[id] = n;
@@ -282,12 +293,12 @@ struct Reader {
                 --nulls;
                 continue;
             }
-            n->values[i] =
-                !c.types.empty() && c.types[i] == 0 ? primitive(c.extra[i]) : record(byte(), depth);
+            n->values[i] = !c.types.empty() && c.types[i] == 0 ? primitive(c.extra[i]) : record(byte(), depth);
         }
         nulls = 0;
         return n;
     }
+
     N record(std::uint8_t type, int depth) {
         if (++depth > 64)
             bad();
@@ -318,7 +329,7 @@ struct Reader {
                     c.extra.push_back(info(t));
             }
             if (type == 3 || type == 5)
-                integer();
+                c.library_id = integer();
             classes[id] = c;
             return members(id, c, depth);
         }
@@ -348,10 +359,11 @@ struct Reader {
         }
         case 10:
             return {};
-        case 12:
-            integer();
-            string();
+        case 12: {
+            const auto id = integer();
+            libraries[id] = string();
             return record(byte(), depth);
+        }
         case 13:
         case 14: {
             auto n = type == 13 ? int(byte()) : integer();
@@ -378,6 +390,7 @@ struct Reader {
             bad();
         }
     }
+
     N read() {
         if (byte() != 0)
             bad();
@@ -395,6 +408,7 @@ struct Reader {
             nulls = 0;
         }
     }
+
     bool uuid(N value, Uuid &result, bool strict) {
         auto u = resolve(value);
         if (!u || u->kind != 100 || (strict && u->text != "OpenMetaverse.UUID"))
@@ -403,14 +417,13 @@ struct Reader {
         if (!g || g->kind != 100 || (strict && g->text != "System.Guid"))
             return false;
         std::array<std::uint8_t, 16> b{};
-        for (auto [name, kind, start, len] : std::vector<std::tuple<std::string, int, int, int>>{
-                 {"_a", 8, 0, 4}, {"_b", 7, 4, 2}, {"_c", 7, 6, 2}}) {
+        for (auto [name, kind, start, len] :
+             std::vector<std::tuple<std::string, int, int, int>>{{"_a", 8, 0, 4}, {"_b", 7, 4, 2}, {"_c", 7, 6, 2}}) {
             auto n = g->get(name);
             if (!n || n->kind != kind)
                 return false;
             for (int i = 0; i < len; ++i)
-                b[static_cast<std::size_t>(start + i)] =
-                    static_cast<std::uint8_t>(n->bits >> ((len - i - 1) * 8));
+                b[static_cast<std::size_t>(start + i)] = static_cast<std::uint8_t>(n->bits >> ((len - i - 1) * 8));
         }
         for (int i = 0; i < 8; ++i) {
             auto n = g->get(std::string("_") + char('d' + i));
@@ -422,21 +435,26 @@ struct Reader {
         return true;
     }
 };
+
 std::optional<std::string> text(N n) {
     return n && n->kind == 18 ? std::optional(n->text) : std::nullopt;
 }
+
 struct Writer {
     std::vector<std::uint8_t> out;
     int next = 20;
     std::map<const void *, int> arrays;
     std::vector<std::pair<int, AssetBytes>> pending;
+
     void byte(std::uint8_t b) {
         out.push_back(b);
     }
+
     void num(std::uint64_t n, int len = 4) {
         for (int i = 0; i < len; ++i)
             byte(static_cast<std::uint8_t>(n >> (8 * i)));
     }
+
     void str(std::string_view s) {
         auto normalized = utf8(utf16_replacing(s));
         auto len = normalized.size();
@@ -449,11 +467,13 @@ struct Writer {
         byte(static_cast<std::uint8_t>(len));
         out.insert(out.end(), normalized.begin(), normalized.end());
     }
+
     void library(int id, const std::string &name) {
         byte(12);
         num(id);
         str(name);
     }
+
     void string(const std::optional<std::string> &s) {
         if (!s) {
             byte(10);
@@ -463,6 +483,7 @@ struct Writer {
         num(next++);
         str(*s);
     }
+
     void data(const AssetBytes &bytes) {
         if (!bytes) {
             byte(10);
@@ -480,6 +501,7 @@ struct Writer {
         byte(9);
         num(id);
     }
+
     void flush_arrays() {
         for (const auto &[id, bytes] : pending) {
             byte(15);
@@ -491,12 +513,14 @@ struct Writer {
             out.insert(out.end(), bytes->begin(), bytes->end());
         }
     }
+
     struct Member {
         std::string name;
         std::uint8_t type, primitive = 0;
         std::string klass;
         int lib = 0;
     };
+
     void klass(int id, const std::string &name, const std::vector<Member> &members, int library) {
         byte(library ? 5 : 4);
         num(static_cast<std::uint32_t>(id));
@@ -520,7 +544,34 @@ struct Writer {
             num(library);
     }
 };
+} // namespace
+
+std::optional<NrbfGraph> NrbfGraph::decode(std::span<const std::uint8_t> data) {
+    try {
+        Reader reader{data};
+        auto root = reader.read();
+        if (!root)
+            return std::nullopt;
+        return NrbfGraph{std::move(root), std::move(reader.objects)};
+    } catch (...) {
+        return std::nullopt;
+    }
 }
+
+std::shared_ptr<NrbfNode> NrbfGraph::resolve(std::shared_ptr<NrbfNode> node) const {
+    if (node && node->kind == 101) {
+        const auto found = objects.find(std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(node->bits)));
+        if (found == objects.end())
+            throw std::invalid_argument("Unresolved NRBF reference");
+        return found->second;
+    }
+    return node;
+}
+
+std::shared_ptr<NrbfNode> NrbfGraph::field(const std::shared_ptr<NrbfNode> &node, const std::string &name) const {
+    return node ? resolve(node->get(name)) : nullptr;
+}
+
 std::vector<std::uint8_t> AssetNrbfCodec::encode(const AssetBase &asset) {
     Writer w;
     w.byte(0);
@@ -531,9 +582,7 @@ std::vector<std::uint8_t> AssetNrbfCodec::encode(const AssetBase &asset) {
     w.library(1, "OpenSim.Framework, Version=0.9.3.1, Culture=neutral, PublicKeyToken=null");
     w.library(2, "OpenMetaverseTypes, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null");
     w.klass(1, "OpenSim.Framework.AssetBase",
-            {{"m_data", 7, 2},
-             {"m_metadata", 4, 0, "OpenSim.Framework.AssetMetadata", 1},
-             {"m_uploadAttempts", 0, 8}},
+            {{"m_data", 7, 2}, {"m_metadata", 4, 0, "OpenSim.Framework.AssetMetadata", 1}, {"m_uploadAttempts", 0, 8}},
             1);
     w.data(asset.data);
     auto meta = asset.metadata();
@@ -586,8 +635,8 @@ std::vector<std::uint8_t> AssetNrbfCodec::encode(const AssetBase &asset) {
     w.byte(11);
     return std::move(w.out);
 }
-bool AssetNrbfCodec::decode(std::span<const std::uint8_t> data, std::shared_ptr<AssetBase> &asset,
-                            bool file) {
+
+bool AssetNrbfCodec::decode(std::span<const std::uint8_t> data, std::shared_ptr<AssetBase> &asset, bool file) {
     asset.reset();
     try {
         Reader p{data};
@@ -650,8 +699,8 @@ bool AssetNrbfCodec::decode(std::span<const std::uint8_t> data, std::shared_ptr<
                 m->type = std::bit_cast<std::int8_t>(static_cast<std::uint8_t>(type->bits));
             else if (file)
                 bad();
-            for (auto [name, value] : std::vector<std::pair<const char *, bool *>>{
-                     {"m_local", &m->local}, {"m_temporary", &m->temporary}}) {
+            for (auto [name, value] :
+                 std::vector<std::pair<const char *, bool *>>{{"m_local", &m->local}, {"m_temporary", &m->temporary}}) {
                 auto n = meta->get(name);
                 if (n && n->kind == 1)
                     *value = n->bits != 0;
@@ -683,10 +732,12 @@ bool AssetNrbfCodec::decode(std::span<const std::uint8_t> data, std::shared_ptr<
         return false;
     }
 }
+
 bool AssetNrbfCodec::decode_file(std::span<const std::uint8_t> data, std::shared_ptr<AssetBase> &asset) {
     return decode(data, asset, true);
 }
+
 bool AssetNrbfCodec::decode_legacy(std::span<const std::uint8_t> data, std::shared_ptr<AssetBase> &asset) {
     return decode(data, asset, false);
 }
-}
+} // namespace opensim::framework

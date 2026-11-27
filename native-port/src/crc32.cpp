@@ -39,10 +39,16 @@ Crc32::Crc32(std::uint32_t polynomial, std::uint32_t seed) : seed_(seed), hash_(
         table_[i] = entry;
     }
 }
-void Crc32::initialize() noexcept { hash_ = seed_; }
-void Crc32::update(std::span<const std::uint8_t> buffer) noexcept {
-    for (auto byte : buffer) hash_ = (hash_ >> 8) ^ table_[(byte ^ hash_) & 0xffu];
+
+void Crc32::initialize() noexcept {
+    hash_ = seed_;
 }
+
+void Crc32::update(std::span<const std::uint8_t> buffer) noexcept {
+    for (auto byte : buffer)
+        hash_ = (hash_ >> 8) ^ table_[(byte ^ hash_) & 0xffu];
+}
+
 void Crc32::hash_core(std::span<const std::uint8_t> buffer, std::int32_t start, std::int32_t length) {
     for (auto i = start; i < length; ++i) {
         if (i < 0 || static_cast<std::size_t>(i) >= buffer.size())
@@ -50,22 +56,28 @@ void Crc32::hash_core(std::span<const std::uint8_t> buffer, std::int32_t start, 
         hash_ = (hash_ >> 8) ^ table_[(buffer[static_cast<std::size_t>(i)] ^ hash_) & 0xffu];
     }
 }
-std::uint32_t Crc32::value() const noexcept { return ~hash_; }
+
+std::uint32_t Crc32::value() const noexcept {
+    return ~hash_;
+}
+
 std::array<std::uint8_t, 4> Crc32::hash_final() const noexcept {
     const auto result = value();
     return {static_cast<std::uint8_t>(result >> 24), static_cast<std::uint8_t>(result >> 16),
-        static_cast<std::uint8_t>(result >> 8), static_cast<std::uint8_t>(result)};
+            static_cast<std::uint8_t>(result >> 8), static_cast<std::uint8_t>(result)};
 }
+
 std::uint32_t Crc32::compute(std::span<const std::uint8_t> buffer) {
     return compute(DefaultPolynomial, DefaultSeed, buffer);
 }
+
 std::uint32_t Crc32::compute(std::uint32_t seed, std::span<const std::uint8_t> buffer) {
     return compute(DefaultPolynomial, seed, buffer);
 }
-std::uint32_t Crc32::compute(std::uint32_t polynomial, std::uint32_t seed,
-    std::span<const std::uint8_t> buffer) {
+
+std::uint32_t Crc32::compute(std::uint32_t polynomial, std::uint32_t seed, std::span<const std::uint8_t> buffer) {
     Crc32 crc(polynomial, seed);
     crc.update(buffer);
     return crc.value();
 }
-}
+} // namespace opensim::framework

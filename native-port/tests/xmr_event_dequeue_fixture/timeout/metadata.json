@@ -1,0 +1,233 @@
+{
+  "migration_version": 12,
+  "reserved": 16,
+  "event_arguments": {
+    "kind": 9,
+    "id": 0,
+    "element_type": "ob",
+    "children": []
+  },
+  "initialize_globals": false,
+  "state_index": 0,
+  "event_code": 30,
+  "globals": [
+    {
+      "kind": 9,
+      "id": 1,
+      "element_type": "xa",
+      "children": []
+    },
+    {
+      "kind": 9,
+      "id": 2,
+      "element_type": "ch",
+      "children": []
+    },
+    {
+      "kind": 9,
+      "id": 3,
+      "element_type": "do",
+      "children": []
+    },
+    {
+      "kind": 9,
+      "id": 4,
+      "element_type": "in",
+      "children": [
+        {
+          "kind": 12,
+          "value": 1
+        },
+        {
+          "kind": 12,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "kind": 9,
+      "id": 5,
+      "element_type": "li",
+      "children": [
+        {
+          "kind": 0
+        }
+      ]
+    },
+    {
+      "kind": 15,
+      "reference": 0
+    },
+    {
+      "kind": 9,
+      "id": 6,
+      "element_type": "ro",
+      "children": []
+    },
+    {
+      "kind": 9,
+      "id": 7,
+      "element_type": "st",
+      "children": []
+    },
+    {
+      "kind": 9,
+      "id": 8,
+      "element_type": "ve",
+      "children": []
+    },
+    {
+      "kind": 9,
+      "id": 9,
+      "element_type": "sc",
+      "children": []
+    },
+    {
+      "kind": 9,
+      "id": 10,
+      "element_type": "de[]",
+      "children": []
+    }
+  ],
+  "frames": [
+    {
+      "function": "default state_entry",
+      "call_no": 1,
+      "slots": {
+        "kind": 9,
+        "id": 11,
+        "element_type": "ob",
+        "children": [
+          {
+            "kind": 17
+          },
+          {
+            "kind": 12,
+            "value": 0
+          }
+        ]
+      }
+    },
+    {
+      "function": "xmrEventDequeue",
+      "call_no": 0,
+      "slots": {
+        "kind": 9,
+        "id": 12,
+        "element_type": "ob",
+        "children": [
+          {
+            "kind": 13,
+            "id": 13,
+            "value": "2026-11-26 1:47:44 AM"
+          },
+          {
+            "kind": 12,
+            "value": 0
+          },
+          {
+            "kind": 12,
+            "value": 0
+          },
+          {
+            "kind": 12,
+            "value": 0
+          },
+          {
+            "kind": 12,
+            "value": 0
+          },
+          {
+            "kind": 0
+          },
+          {
+            "kind": 0
+          },
+          {
+            "kind": 0
+          },
+          {
+            "kind": 0
+          }
+        ]
+      }
+    }
+  ],
+  "source_hash": "D1D68081202A46A9CC8885EFE6C71E5C",
+  "captured_checks": 2,
+  "original_method": "list xmrEventDequeue(Double, Int32, Int32, Int32, Int32)",
+  "frame_summary": [
+    {
+      "function": "default state_entry",
+      "call_no": 1,
+      "slots": [
+        {
+          "type": "FunctionExecutionReferenceInstance",
+          "value": "FunctionExecutionReferenceInstance"
+        },
+        {
+          "type": "System.Int32",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "function": "xmrEventDequeue",
+      "call_no": 0,
+      "slots": [
+        {
+          "type": "System.String",
+          "value": "2026-11-26 1:47:44 AM"
+        },
+        {
+          "type": "System.Int32",
+          "value": "0"
+        },
+        {
+          "type": "System.Int32",
+          "value": "0"
+        },
+        {
+          "type": "System.Int32",
+          "value": "0"
+        },
+        {
+          "type": "System.Int32",
+          "value": "0"
+        },
+        null,
+        null,
+        null,
+        null
+      ]
+    }
+  ],
+  "original_deadline_utc_ticks": 639312544640000000,
+  "original_resume_globals": {
+    "background": 0,
+    "count": 11,
+    "result": ""
+  },
+  "original_resume_result_items": [],
+  "remaining_queue": [
+    "timer"
+  ],
+  "detect_name_after_resume": "outer detect marker",
+  "original_resume_check_count": 1,
+  "event_codes": {
+    "touch_start": 21,
+    "touch_end": 29,
+    "timer": 2
+  },
+  "sha256": {
+    "source.lsl": "A49C046BA52F7A779706EE6B11DE19D81875AE257B191F771BB838FA2A533D8F",
+    "snapshot.bin": "F9D19B59D087AFCF09F006497033244F0744C96B800419C2B95BCF3CEE490219",
+    "original.yobj": "8EF385994F6D29AA2E6CC9091909023CC8DA0E0217CA1273536A2D7101360987",
+    "original.il.txt": "444C6751A4F1EA12B850E59FAB877DE9E8C00D8A55CC1CC172282E837C56C0EA",
+    "state.xml": "DDF2AB15FE72027A8AF324721027367065826A9A53488D9B93BB2B39164937FC",
+    "cache_key.txt": "1A29B9D7081B4C4BCFDECDC521019B8C55D7CC500CCB77A25F61E101E420A630",
+    "original_yengine_assembly": "25D54EAE1428018C259AA00632342E41B17A3041472F65A8EC2F31E8A8811056",
+    "generator_source": "F1318460DC922CBC893371D37890CFCDB6D8AC3813D392BC5B97675D0F0BC3F7",
+    "generator_assembly": "43AAE259FAAE06A946D772E0663B7B8776B6672062AC6A2797BF160301FB262F"
+  }
+}

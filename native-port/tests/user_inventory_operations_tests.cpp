@@ -5,11 +5,13 @@
 #include <iostream>
 using namespace opensim;
 using namespace scene;
+
 namespace {
 framework::Uuid id(int n) {
     auto s = std::to_string(n);
     return framework::Uuid("11223344-5566-7788-99aa-" + std::string(12 - s.size(), '0') + s);
 }
+
 std::string hex(std::string_view s) {
     std::string out;
     for (unsigned char c : s) {
@@ -18,17 +20,18 @@ std::string hex(std::string_view s) {
     }
     return out;
 }
+
 std::string dump(UserInventoryItem i) {
     if (!i)
         return "NULL";
     auto u = [](int n) { return std::to_string(static_cast<std::uint32_t>(n)); };
-    return hex(i->name) + ":" + hex(i->description) + ":" + u(i->base_permissions) + "," +
-           u(i->current_permissions) + "," + u(i->next_permissions) + "," + u(i->everyone_permissions) + "," +
-           u(i->group_permissions) + "," + u(i->flags) + "," + std::to_string(i->creation_date) + "," +
-           std::to_string(i->inventory_type) + "," + std::to_string(i->sale_price) + "," +
-           std::to_string(i->sale_type) + "," + std::to_string(i->group_owned) + "," + i->group_id.str() +
-           "," + i->owner.str() + "," + i->parent.str() + "," + i->asset_id.str();
+    return hex(i->name) + ":" + hex(i->description) + ":" + u(i->base_permissions) + "," + u(i->current_permissions) +
+           "," + u(i->next_permissions) + "," + u(i->everyone_permissions) + "," + u(i->group_permissions) + "," +
+           u(i->flags) + "," + std::to_string(i->creation_date) + "," + std::to_string(i->inventory_type) + "," +
+           std::to_string(i->sale_price) + "," + std::to_string(i->sale_type) + "," + std::to_string(i->group_owned) +
+           "," + i->group_id.str() + "," + i->owner.str() + "," + i->parent.str() + "," + i->asset_id.str();
 }
+
 std::string probe(int kind, int mode, int text, int failure) {
     auto bit = [&](int b) { return (mode & b) != 0; };
     std::string trace;
@@ -42,8 +45,8 @@ std::string probe(int kind, int mode, int text, int failure) {
     const std::string descriptions[] = {
         "original @ http://grid", "old @ h­ttp://grid", "😀 @ httone @ htttwo",          "old @ ＨＴＴgrid",
         "old ­@ httlink",         "description",        std::string("a\0@ httlink", 11), "old @ httend"};
-    const std::string incoming[] = {
-        "edited", "", "edited @ embedded", " \t　", std::string("a\0b", 3), "新しい", "😃", "@"};
+    const std::string incoming[] = {"edited", "", "edited @ embedded", " \t　", std::string("a\0b", 3), "新しい",
+                                    "😃",     "@"};
     auto current = std::make_shared<services::InventoryItem>();
     current->id = id(2);
     current->owner = id(bit(2) ? 9 : 1);
@@ -137,13 +140,9 @@ std::string probe(int kind, int mode, int text, int failure) {
         return 111;
     };
     b.delete_items = [&](auto, const auto &ids) { step(10, "DELETE:" + ids[0].str() + "," + ids[1].str()); };
-    b.delete_folders = [&](auto, const auto &ids) {
-        step(11, "FOLDERS:" + ids[0].str() + "," + ids[1].str());
-    };
+    b.delete_folders = [&](auto, const auto &ids) { step(11, "FOLDERS:" + ids[0].str() + "," + ids[1].str()); };
     b.error = [&](auto) { step(6, "ERROR"); };
-    b.debug = [&](auto s) {
-        step(8, "DEBUG:" + std::string(kind == 1 ? std::to_string(list->size()) : "2"));
-    };
+    b.debug = [&](auto s) { step(8, "DEBUG:" + std::string(kind == 1 ? std::to_string(list->size()) : "2")); };
     b.warn = [&](auto) { step(9, "WARN"); };
     std::string result = "OK";
     try {
@@ -161,7 +160,8 @@ std::string probe(int kind, int mode, int text, int failure) {
     }
     return result + ":" + dump(current) + ":" + dump(input) + trace;
 }
-}
+} // namespace
+
 int main(int argc, char **argv) {
     try {
         if (argc > 1 && std::string_view(argv[1]) == "--probe") {

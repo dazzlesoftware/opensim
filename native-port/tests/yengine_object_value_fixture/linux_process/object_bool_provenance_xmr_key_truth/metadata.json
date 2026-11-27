@@ -1,0 +1,601 @@
+{
+  "name": "object_bool_provenance_xmr_key_truth",
+  "process_id": 1,
+  "marvin_seed": "c8ab89a0ecfc4983",
+  "imported_capture": false,
+  "imported_from": null,
+  "direct_object_input": {
+    "type": "integer",
+    "clr": "System.Int32",
+    "value": 7
+  },
+  "direct_object_hash": 7,
+  "direct_object_exception": null,
+  "hash_call_lines": [
+    "  007C    call        XMRInstAbstract:xmrHashCode(Object) -\u003E Int32"
+  ],
+  "production_culture": "",
+  "runtime": ".NET 8.0.34",
+  "architecture": "X64",
+  "accepted": true,
+  "diagnostics": [],
+  "compile_exception": null,
+  "source_hash": "173DFA2AF3815B31F0A807016092950F",
+  "compiled_version": -11,
+  "suspended": false,
+  "migrated": false,
+  "production_write_exception": null,
+  "permissive_write_exception": null,
+  "permissive_control_resume": null,
+  "permissive_control_resume_exception": null,
+  "production_writer": "Unchanged private XMRInstance.MigrateOutEventHandler(Stream): new BinaryWriter(stream)",
+  "initial_exception": null,
+  "live_cycles": [],
+  "migrated_cycles": [],
+  "prefix_resume": null,
+  "live_resume_exception": null,
+  "live_resume": null,
+  "direct_reset_scheduler_boundary": false,
+  "initial": {
+    "globals": {
+      "after": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 1
+      },
+      "alias": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 7
+      },
+      "ch": {
+        "type": "char",
+        "clr": "System.Char",
+        "value": 65,
+        "utf16": 65
+      },
+      "input": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 7
+      },
+      "items": {
+        "type": "list",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+        "value": []
+      },
+      "other": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 0
+      },
+      "real": {
+        "type": "float",
+        "clr": "System.Double",
+        "value": 1,
+        "bits": "3ff0000000000000"
+      },
+      "result": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 1
+      },
+      "rot": {
+        "type": "rotation",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+        "value": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 1,
+            "bits": "3ff0000000000000",
+            "text": "1"
+          }
+        ]
+      },
+      "source": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 1
+      },
+      "text": {
+        "type": "string",
+        "clr": "System.String",
+        "value": "x",
+        "utf16": [
+          120
+        ]
+      },
+      "typename": {
+        "type": "string",
+        "clr": "System.String",
+        "value": "bool",
+        "utf16": [
+          98,
+          111,
+          111,
+          108
+        ]
+      },
+      "vec": {
+        "type": "vector",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+        "value": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ]
+      }
+    },
+    "object_hash": {
+      "input": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 7
+      },
+      "direct_hash": 7,
+      "direct_exception": null,
+      "component_hashes": null,
+      "formula": null,
+      "alias_same_backing": null
+    },
+    "object_reference_pairs": [
+      {
+        "left": "text",
+        "right": "typename",
+        "same_reference": false,
+        "object_equals": false
+      },
+      {
+        "left": "text",
+        "right": "input",
+        "same_reference": false,
+        "object_equals": false
+      },
+      {
+        "left": "text",
+        "right": "alias",
+        "same_reference": false,
+        "object_equals": false
+      },
+      {
+        "left": "typename",
+        "right": "input",
+        "same_reference": false,
+        "object_equals": false
+      },
+      {
+        "left": "typename",
+        "right": "alias",
+        "same_reference": false,
+        "object_equals": false
+      },
+      {
+        "left": "input",
+        "right": "alias",
+        "same_reference": true,
+        "object_equals": true
+      }
+    ],
+    "event_code": "None",
+    "call_mode": 0,
+    "sleep_until_ticks": 0,
+    "object_description": "",
+    "event_arguments": null,
+    "state_index": 0,
+    "new_state_index": -1,
+    "initialize_globals": false,
+    "running": true,
+    "detectors": [
+      {
+        "key": "11111111-2222-3333-4444-555555555555",
+        "owner": "22222222-3333-4444-5555-666666666666",
+        "group": "33333333-4444-5555-6666-777777777777",
+        "name": "original rich detector 3",
+        "link_number": 5,
+        "type": 11,
+        "grab": [
+          3.125,
+          3.25,
+          3.5
+        ],
+        "position": [
+          13.00000003,
+          14.00000003,
+          15.00000003
+        ],
+        "rotation": [
+          {
+            "clr": "System.Double",
+            "value": 0.125,
+            "bits": "3fc0000000000000",
+            "text": "0.125"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.25,
+            "bits": "3fd0000000000000",
+            "text": "0.25"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.5,
+            "bits": "3fe0000000000000",
+            "text": "0.5"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.875,
+            "bits": "3fec000000000000",
+            "text": "0.875"
+          }
+        ],
+        "velocity": [
+          23.00000003,
+          24.00000003,
+          25.00000003
+        ],
+        "touch_st": [
+          4.00000003,
+          5.00000003,
+          6.00000003
+        ],
+        "touch_normal": [
+          7.00000003,
+          8.000000029999999,
+          9.000000029999999
+        ],
+        "touch_binormal": [
+          10.000000029999999,
+          11.000000029999999,
+          12.000000029999999
+        ],
+        "touch_pos": [
+          13.000000029999999,
+          14.000000029999999,
+          15.000000029999999
+        ],
+        "touch_uv": [
+          16.00000003,
+          17.00000003,
+          18.00000003
+        ],
+        "touch_face": 6
+      }
+    ],
+    "queue": [],
+    "frames": []
+  },
+  "after_followup": null,
+  "after_load": null,
+  "after_stop": null,
+  "after_restart_wait": null,
+  "resume_exception": null,
+  "final": {
+    "globals": {
+      "after": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 1
+      },
+      "alias": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 7
+      },
+      "ch": {
+        "type": "char",
+        "clr": "System.Char",
+        "value": 65,
+        "utf16": 65
+      },
+      "input": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 7
+      },
+      "items": {
+        "type": "list",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002Blist",
+        "value": []
+      },
+      "other": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 0
+      },
+      "real": {
+        "type": "float",
+        "clr": "System.Double",
+        "value": 1,
+        "bits": "3ff0000000000000"
+      },
+      "result": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 1
+      },
+      "rot": {
+        "type": "rotation",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BQuaternion",
+        "value": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 1,
+            "bits": "3ff0000000000000",
+            "text": "1"
+          }
+        ]
+      },
+      "source": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 1
+      },
+      "text": {
+        "type": "string",
+        "clr": "System.String",
+        "value": "x",
+        "utf16": [
+          120
+        ]
+      },
+      "typename": {
+        "type": "string",
+        "clr": "System.String",
+        "value": "bool",
+        "utf16": [
+          98,
+          111,
+          111,
+          108
+        ]
+      },
+      "vec": {
+        "type": "vector",
+        "clr": "OpenSim.Region.ScriptEngine.Shared.LSL_Types\u002BVector3",
+        "value": [
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0,
+            "bits": "0000000000000000",
+            "text": "0"
+          }
+        ]
+      }
+    },
+    "object_hash": {
+      "input": {
+        "type": "integer",
+        "clr": "System.Int32",
+        "value": 7
+      },
+      "direct_hash": 7,
+      "direct_exception": null,
+      "component_hashes": null,
+      "formula": null,
+      "alias_same_backing": null
+    },
+    "object_reference_pairs": [
+      {
+        "left": "text",
+        "right": "typename",
+        "same_reference": false,
+        "object_equals": false
+      },
+      {
+        "left": "text",
+        "right": "input",
+        "same_reference": false,
+        "object_equals": false
+      },
+      {
+        "left": "text",
+        "right": "alias",
+        "same_reference": false,
+        "object_equals": false
+      },
+      {
+        "left": "typename",
+        "right": "input",
+        "same_reference": false,
+        "object_equals": false
+      },
+      {
+        "left": "typename",
+        "right": "alias",
+        "same_reference": false,
+        "object_equals": false
+      },
+      {
+        "left": "input",
+        "right": "alias",
+        "same_reference": true,
+        "object_equals": true
+      }
+    ],
+    "event_code": "None",
+    "call_mode": 0,
+    "sleep_until_ticks": 0,
+    "object_description": "",
+    "event_arguments": null,
+    "state_index": 0,
+    "new_state_index": -1,
+    "initialize_globals": false,
+    "running": true,
+    "detectors": [
+      {
+        "key": "11111111-2222-3333-4444-555555555555",
+        "owner": "22222222-3333-4444-5555-666666666666",
+        "group": "33333333-4444-5555-6666-777777777777",
+        "name": "original rich detector 3",
+        "link_number": 5,
+        "type": 11,
+        "grab": [
+          3.125,
+          3.25,
+          3.5
+        ],
+        "position": [
+          13.00000003,
+          14.00000003,
+          15.00000003
+        ],
+        "rotation": [
+          {
+            "clr": "System.Double",
+            "value": 0.125,
+            "bits": "3fc0000000000000",
+            "text": "0.125"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.25,
+            "bits": "3fd0000000000000",
+            "text": "0.25"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.5,
+            "bits": "3fe0000000000000",
+            "text": "0.5"
+          },
+          {
+            "clr": "System.Double",
+            "value": 0.875,
+            "bits": "3fec000000000000",
+            "text": "0.875"
+          }
+        ],
+        "velocity": [
+          23.00000003,
+          24.00000003,
+          25.00000003
+        ],
+        "touch_st": [
+          4.00000003,
+          5.00000003,
+          6.00000003
+        ],
+        "touch_normal": [
+          7.00000003,
+          8.000000029999999,
+          9.000000029999999
+        ],
+        "touch_binormal": [
+          10.000000029999999,
+          11.000000029999999,
+          12.000000029999999
+        ],
+        "touch_pos": [
+          13.000000029999999,
+          14.000000029999999,
+          15.000000029999999
+        ],
+        "touch_uv": [
+          16.00000003,
+          17.00000003,
+          18.00000003
+        ],
+        "touch_face": 6
+      }
+    ],
+    "queue": [],
+    "frames": []
+  },
+  "incomplete_scene_resource_boundary": false,
+  "scheduler_guard_boundary": false,
+  "stop_scheduler_context": null,
+  "methodology": "Actual original full Object value source controls, gated YOption arrays. Scalar boxes/unboxes, defaults/locals/parameters/returns, CLR reference vs object.Equals and string identity observed from original object/string storage only (no synthetic boxing of value-storage during observation). RealSleep/privateproductionbinary/SAME-live and optional separateprocessimport; hash numbers are not assumed portable for identity-bearing values. Preserved separate hash baseline/gating groups.",
+  "sha256": {
+    "cache_key.txt": "0a9ee67e02164ad02ca09e66a31eab978ea5bafeb3621c59102b2adb2c7748e5",
+    "detect-array.xml": "a54ca4e5f26d31a98b63cca7e3c95a199a39e5bdc40fb23eb9c8287d8de2c615",
+    "original.il.txt": "b997958c1a631d75057b631f7f26d1e741902c69a16fdb9f66d140ac53f1453e",
+    "original.yobj": "9a6b24d8b92e9f0dcd3b68dad756891f3f6120fc1042c771129758b415d032ce",
+    "source.lsl": "b4fce723eac11ea2ae1628804e74357045845ad1be0a4dd648fbdc4802b9d395",
+    "generator_source": "e9711a2ec5669dfb39b3be7b9cd8968163891779e821922757dc98f610e4d9cf",
+    "generator_assembly": "2b634bcec3490a72edbfb19854bafd777c7f5ec237422bc97cbbe6c76516e2f2",
+    "original_yengine_assembly": "25d54eae1428018c259aa00632342e41b17a3041472f65a8ec2f31e8a8811056",
+    "original_scene_assembly": "48fe68b1711789d7f0ca676f3532f4daba29e5c08359dbbec5857c75bc358d33",
+    "original_plugins_assembly": "095a9679bb640e102f825fec58f4b8fe153d67dbaee0135dfe23ba294a1cbf6a",
+    "original_source_MMRScriptCodeGen.cs": "f972a4b95102f39add65a00be54f066c4e2a0dc79e14993ab641e696b67a19de",
+    "original_source_XMRInstAbstract.cs": "415830462f0d5d97161e46140ac7411e38ecdd6261d4055046685ca49fc95b00",
+    "original_source_XMRInstCtor.cs": "5803dad9f5f947d908027a1836fe0f5d3aee97cbba6df3c3fa381e45ad3c7a52",
+    "original_source_XMRInstBackend.cs": "c60e312394f2b48fef3d253667a8f579765b86aa717900ea611454a7df859e6f",
+    "original_source_XMRInstRun.cs": "b474599ceedaaf2bfa00cb757309883f2e03f867b28d71af0d7b73acfd4f38d8",
+    "original_source_XMRInstMisc.cs": "ecc63e82bfc85089b7125bbc5c1aa60321d39765bc51a6b2e053975c61b90d3c",
+    "original_source_XMRInstCapture.cs": "775f1d83bd4610f788891269ea9ea08b1f79cf4bf3b44300d926f49c8a277cbd",
+    "original_source_XMRScriptUThread.cs": "5dc5fa79aa383b076f453ff53cb78bf2e701e7fe092f48e8502b2987095b5dcf",
+    "original_source_LSL_Types.cs": "6a32df423bde6c68186a0496159017406c6a26e85e1b3121ccf795e3b413f781",
+    "original_source_Helpers.cs": "96b7c3090cdded9c12e986bc538705272eae4c0fc12f01deab8f0f1bb94c7bcf",
+    "original_source_MMRScriptTypeCast.cs": "92716d17b6ac479565b19474937c651b3192508f713f21fd05774ddf6d2405d5",
+    "original_source_Scene.cs": "41da53885e8f73687b058e836db850bb5cee2a5a19590fe4005cd779934a50e2",
+    "original_source_SceneObjectPart.cs": "88a0d2afea08f7c3dbcacffe447ef6e82a22a5634e7ae0d66807914a9ad23016",
+    "original_source_AsyncCommandManager.cs": "29359901dcfa1c91369205acde1e690f72e121d161d8ccd04d6e180b0557afad",
+    "original_source_ScriptTimer.cs": "229bcb335b32bd497bf48b200a5d61bfce5df4cb39cc7a66adc1d46eb06cd8f7",
+    "original_source_Dataserver.cs": "04d8882cd2b70882897df2f6f6841c27ae90f46d99e2fff2f21e885bb5276e08",
+    "original_source_SensorRepeat.cs": "2778dcfadbb6ade41ae69850eaaa1701418d6f332e523de7a4804f4ea6c661d3"
+  }
+}

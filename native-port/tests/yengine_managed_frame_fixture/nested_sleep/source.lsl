@@ -1,0 +1,1 @@
+integer result;integer count;integer inner(integer n){count++;llSleep(2.0);count+=10;return n+count;}integer outer(integer n){return inner(n)+1;}default{state_entry(){result=outer(5);}}

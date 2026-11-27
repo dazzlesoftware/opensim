@@ -1,0 +1,1 @@
+rotation result;integer after;default{state_entry(){result=xmrString2Rotation("<1e309,1e-400,-1e-400,-Infinity>");after=1;}}

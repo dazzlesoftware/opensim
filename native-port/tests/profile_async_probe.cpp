@@ -5,15 +5,16 @@
 #include "opensim/scene/profile_user_agent.hpp"
 #include <future>
 #include <thread>
+
 namespace opensim::scene {
 struct UserProfileAsyncProbe {
-    static std::recursive_mutex& gate(UserProfileRequests& m, bool hg) {
+    static std::recursive_mutex &gate(UserProfileRequests &m, bool hg) {
         return (hg ? m.hg_ : m.local_).gate;
     }
-    static std::string
-    queues(UserProfileRequests& m,
-           const std::function<std::string(const UserProfileRequests::AsyncRequest&)>& row) {
-        auto one = [&](auto& q) {
+
+    static std::string queues(UserProfileRequests &m,
+                              const std::function<std::string(const UserProfileRequests::AsyncRequest &)> &row) {
+        auto one = [&](auto &q) {
             std::string out;
             std::lock_guard lock(q.stack);
             for (auto i = q.items.rbegin(); i != q.items.rend(); ++i) {
@@ -27,7 +28,8 @@ struct UserProfileAsyncProbe {
         return a + ";" + b;
     }
 };
-}
+} // namespace opensim::scene
+
 namespace {
 std::uint64_t extra;
 int info_kind;
@@ -40,13 +42,16 @@ std::vector<std::function<void()>> jobs;
 std::array<bool, 5> active;
 struct AsyncClient;
 std::array<std::shared_ptr<AsyncClient>, 5> clients;
+
 bool X(int bit) {
     return (extra & (std::uint64_t{1} << bit)) != 0;
 }
-void AsyncFail(int bit, const char* text) {
+
+void AsyncFail(int bit, const char *text) {
     if (X(bit))
         throw std::runtime_error(text);
 }
+
 std::shared_ptr<UserProfileProperties> FillProps(Uuid id) {
     auto p = std::make_shared<UserProfileProperties>();
     p->UserId = id;
@@ -65,7 +70,8 @@ std::shared_ptr<UserProfileProperties> FillProps(Uuid id) {
     p->FirstLifeText = text;
     return p;
 }
-std::string DumpProps(const std::shared_ptr<server::JsonRpcMembers>& data) {
+
+std::string DumpProps(const std::shared_ptr<server::JsonRpcMembers> &data) {
     if (!data)
         return "N";
     auto p = std::dynamic_pointer_cast<UserProfileProperties>(data);
@@ -73,11 +79,11 @@ std::string DumpProps(const std::shared_ptr<server::JsonRpcMembers>& data) {
         return "X";
     return p->UserId.str() + ":" + p->PartnerId.str() + ":" + (p->PublishProfile ? "1" : "0") + ":" +
            (p->PublishMature ? "1" : "0") + ":" + T(p->WebUrl) + ":" + std::to_string(p->WantToMask) + ":" +
-           T(p->WantToText) + ":" + std::to_string(p->SkillsMask) + ":" + T(p->SkillsText) + ":" +
-           T(p->Language) + ":" + p->ImageId.str() + ":" + T(p->AboutText) + ":" + p->FirstLifeImageId.str() +
-           ":" + T(p->FirstLifeText);
+           T(p->WantToText) + ":" + std::to_string(p->SkillsMask) + ":" + T(p->SkillsText) + ":" + T(p->Language) +
+           ":" + p->ImageId.str() + ":" + T(p->AboutText) + ":" + p->FirstLifeImageId.str() + ":" + T(p->FirstLifeText);
 }
-std::string Bytes(const std::shared_ptr<std::vector<std::uint8_t>>& data) {
+
+std::string Bytes(const std::shared_ptr<std::vector<std::uint8_t>> &data) {
     if (!data)
         return "N";
     std::string out;
@@ -87,28 +93,34 @@ std::string Bytes(const std::shared_ptr<std::vector<std::uint8_t>>& data) {
     }
     return out;
 }
-std::string Groups(const std::shared_ptr<ProfileMemberships>& data) {
+
+std::string Groups(const std::shared_ptr<ProfileMemberships> &data) {
     if (!data)
         return "N";
     std::string out;
-    for (auto& g : *data) {
+    for (auto &g : *data) {
         if (!out.empty())
             out += ',';
         out += g ? Group(*g) : "N";
     }
     return out;
 }
-std::string ClientName(const std::shared_ptr<ProfileRequestClient>& client);
+
+std::string ClientName(const std::shared_ptr<ProfileRequestClient> &client);
+
 struct AsyncModule : UserProfileRequests {
     using UserProfileRequests::UserProfileRequests;
+
     bool is_friend_online(std::shared_ptr<ProfileRequestClient> c, Uuid id) override {
         trace += "online:" + ClientName(c) + ":" + id.str() + ";";
         return !X(51);
     }
 };
+
 std::shared_ptr<AsyncModule> current;
 std::thread locker;
 std::shared_ptr<std::promise<void>> released;
+
 void Release() {
     if (!locker.joinable())
         return;
@@ -116,6 +128,7 @@ void Release() {
     locker.join();
     released.reset();
 }
+
 void Hold(bool hg) {
     Release();
     auto entered = std::make_shared<std::promise<void>>();
@@ -137,29 +150,34 @@ struct AsyncNpc : ProfileNpcClient {
         AsyncFail(36, "npcabout");
         return text;
     }
+
     ProfileText born() override {
         trace += "npcborn;";
         AsyncFail(37, "npcborn");
         return u"npc born";
     }
+
     Uuid image() override {
         trace += "npcimage;";
         AsyncFail(38, "npcimage");
         return Id(9);
     }
 };
+
 struct AsyncPresence : FixturePresence {
     std::shared_ptr<ProfileNpcClient> npc_client() override {
         trace += "npc;";
         AsyncFail(35, "npc");
         return X(34) ? nullptr : std::make_shared<AsyncNpc>();
     }
+
     bool viewer_ui_god() override {
         trace += "god;";
         AsyncFail(23, "god");
         return X(22);
     }
 };
+
 struct AsyncAccounts : ProfileAccountService {
     std::shared_ptr<ProfileAccountData> get(Uuid scope, Uuid id) override {
         trace += "account:" + scope.str() + ":" + id.str() + ";";
@@ -167,13 +185,14 @@ struct AsyncAccounts : ProfileAccountService {
         return X(2) ? nullptr : account_data;
     }
 };
+
 struct BridgeClient : network::XmlRpcRequesterClient {
     std::shared_ptr<network::Value> reply;
-    explicit BridgeClient(std::shared_ptr<network::Value> value) : reply(std::move(value)) {
-    }
-    std::shared_ptr<network::NwcXmlRpcResponse>
-    send(const std::shared_ptr<network::NwcXmlRpcRequest>& request,
-         const std::optional<std::u16string>&) override {
+
+    explicit BridgeClient(std::shared_ptr<network::Value> value) : reply(std::move(value)) {}
+
+    std::shared_ptr<network::NwcXmlRpcResponse> send(const std::shared_ptr<network::NwcXmlRpcRequest> &request,
+                                                     const std::optional<std::u16string> &) override {
         if (info_kind == 20)
             throw std::runtime_error("bridge");
         if (request->method_name != u"get_user_info")
@@ -182,9 +201,10 @@ struct BridgeClient : network::XmlRpcRequesterClient {
         response->set_value(reply);
         return response;
     }
-    void close() override {
-    }
+
+    void close() override {}
 };
+
 std::shared_ptr<ProfileUserInfo> BridgeInfo(Uuid id) {
     using network::Value;
     auto fields = std::make_shared<Value>(Value::object({}));
@@ -230,10 +250,11 @@ std::shared_ptr<ProfileUserInfo> BridgeInfo(Uuid id) {
             throw std::logic_error("Unexpected bridge timeout");
         return std::make_shared<BridgeClient>(fields);
     };
-    services.debug = services.error = services.warn = [](const auto&) {};
+    services.debug = services.error = services.warn = [](const auto &) {};
     ConnectorProfileUserAgent adapter(u"http://home/", std::move(services));
     return adapter.get_info(id);
 }
+
 struct AsyncAgent : ProfileUserAgent {
     std::shared_ptr<ProfileUserInfo> get_info(Uuid id) override {
         trace += "userinfo:" + id.str() + ";";
@@ -270,11 +291,11 @@ struct AsyncAgent : ProfileUserAgent {
             }
             (*info)["user_flags"] = value;
         }
-        (*info)["user_created"] =
-            info_kind == 7 ? std::any(std::string("1")) : std::any(account_data->created);
+        (*info)["user_created"] = info_kind == 7 ? std::any(std::string("1")) : std::any(account_data->created);
         return info;
     }
 };
+
 struct AsyncFriends : ProfileFriends {
     bool online(Uuid owner, Uuid id) override {
         trace += "friends:" + owner.str() + ":" + id.str() + ";";
@@ -282,8 +303,9 @@ struct AsyncFriends : ProfileFriends {
         return X(19);
     }
 };
+
 struct AsyncPresenceService : ProfilePresenceService {
-    std::shared_ptr<ProfileAgents> agents(const std::vector<std::string>& ids) override {
+    std::shared_ptr<ProfileAgents> agents(const std::vector<std::string> &ids) override {
         trace += "agents:" + ids.at(0) + ";";
         AsyncFail(27, "agents");
         if (X(25))
@@ -293,6 +315,7 @@ struct AsyncPresenceService : ProfilePresenceService {
         return value;
     }
 };
+
 struct AsyncGroups : ProfileRequestGroups {
     std::shared_ptr<ProfileMemberships> memberships(Uuid id) override {
         trace += "members:" + id.str() + ";";
@@ -300,23 +323,29 @@ struct AsyncGroups : ProfileRequestGroups {
         return X(15) ? nullptr : ::memberships;
     }
 };
+
 struct AsyncDirectory : Directory {
     void web_failed(Uuid id) override {
         trace += "webfailed:" + id.str() + ";";
         AsyncFail(13, "webfailed");
     }
 };
+
 struct AsyncContext : Context {
     std::shared_ptr<AsyncDirectory> directory = std::make_shared<AsyncDirectory>();
+
     std::shared_ptr<ProfileUserDirectory> users() override {
         return flags & 128 ? nullptr : directory;
     }
+
     bool allow_web_urls() override {
         return !X(0);
     }
+
     ProfileText system_agent_born() override {
         return u"01/01/2007 00:00:00";
     }
+
     std::shared_ptr<ProfileRequestPresence> presence(Uuid id) override {
         auto p = Context::presence(id);
         if (!p)
@@ -328,63 +357,69 @@ struct AsyncContext : Context {
         value->deleted = X(33);
         return value;
     }
+
     Uuid region_scope() override {
         if ((flags & 4194304) || X(4))
             throw std::runtime_error("Object reference not set to an instance of an object.");
         trace += "scope;";
         return Id(8);
     }
+
     std::shared_ptr<ProfileAccountService> account_service() override {
         if (flags & 4194304)
             throw std::runtime_error("Object reference not set to an instance of an object.");
         trace += "accounts;";
         return X(1) ? nullptr : std::make_shared<AsyncAccounts>();
     }
-    std::shared_ptr<ProfileUserAgent> user_agent(const ProfileText& url) override {
+
+    std::shared_ptr<ProfileUserAgent> user_agent(const ProfileText &url) override {
         trace += "connector:" + T(url) + ";";
         AsyncFail(5, "connector");
         return std::make_shared<AsyncAgent>();
     }
+
     std::shared_ptr<ProfileFriends> friends() override {
         if (flags & 4194304)
             throw std::runtime_error("Object reference not set to an instance of an object.");
         return X(18) ? nullptr : std::make_shared<AsyncFriends>();
     }
+
     std::shared_ptr<ProfilePresenceService> presence_service() override {
         if (flags & 4194304)
             throw std::runtime_error("Object reference not set to an instance of an object.");
         return X(24) ? nullptr : std::make_shared<AsyncPresenceService>();
     }
+
     std::shared_ptr<ProfileRequestGroups> groups() override {
         return X(14) ? nullptr : std::make_shared<AsyncGroups>();
     }
-    bool legacy_profile(std::shared_ptr<UserProfileProperties>& props, const ProfileText& uri) override {
+
+    bool legacy_profile(std::shared_ptr<UserProfileProperties> &props, const ProfileText &uri) override {
         trace += "legacy:" + DumpProps(props) + ";";
         AsyncFail(10, "legacy");
         if (X(52)) {
             services::OpenProfileClient client(
                 uri,
-                [&](const network::Value& request, std::u16string_view,
-                    const ProfileText& server) -> std::shared_ptr<network::Value> {
+                [&](const network::Value &request, std::u16string_view,
+                    const ProfileText &server) -> std::shared_ptr<network::Value> {
                     trace += "legacyrpc:" + request.get("avatar_id").text + ":" + T(server) + ";";
                     if (!X(9))
                         return {};
-                    auto value = [](const ProfileText& t) {
+                    auto value = [](const ProfileText &t) {
                         if (!t)
                             return network::Value::null_reference();
                         network::Value v(utf8(*t));
                         v.sdk_string = std::make_shared<const std::u16string>(*t);
                         return v;
                     };
-                    auto row =
-                        network::Value::object({{"ProfileUrl", value(text)},
-                                                {"AboutText", value(text)},
-                                                {"Image", X(54) ? value(text) : network::Value(Id(9).str())},
-                                                {"FirstLifeImage", Id(8).str()},
-                                                {"wantmask", X(53) ? value(text) : network::Value("-12")},
-                                                {"wanttext", value(text)},
-                                                {"skillsmask", "17"},
-                                                {"languages", value(text)}});
+                    auto row = network::Value::object({{"ProfileUrl", value(text)},
+                                                       {"AboutText", value(text)},
+                                                       {"Image", X(54) ? value(text) : network::Value(Id(9).str())},
+                                                       {"FirstLifeImage", Id(8).str()},
+                                                       {"wantmask", X(53) ? value(text) : network::Value("-12")},
+                                                       {"wanttext", value(text)},
+                                                       {"skillsmask", "17"},
+                                                       {"languages", value(text)}});
                     network::Value array;
                     array.kind = network::Value::Kind::Array;
                     array.array.push_back(row);
@@ -400,14 +435,17 @@ struct AsyncContext : Context {
             props->AboutText = u"legacy";
         return X(9);
     }
-    void debug(const ProfileText& value, const std::optional<std::u16string>& error) override {
+
+    void debug(const ProfileText &value, const std::optional<std::u16string> &error) override {
         trace += "debug:" + T(value) + ":" + T(error) + ";";
         AsyncFail(29, "debug");
     }
-    void process_error(const std::exception& error) override {
+
+    void process_error(const std::exception &error) override {
         trace += "error:" + T(utf16_replacing(error.what())) + ";";
         AsyncFail(28, "processerror");
     }
+
     void schedule(std::function<void()> work) override {
         trace += "schedule;";
         AsyncFail(30, "schedule");
@@ -416,14 +454,16 @@ struct AsyncContext : Context {
         else
             jobs.push_back(std::move(work));
     }
-    void get_foreign_image(Uuid image, const ProfileText& url, bool local) override {
+
+    void get_foreign_image(Uuid image, const ProfileText &url, bool local) override {
         if (flags & (4194304 | 67108864))
             throw std::runtime_error("Object reference not set to an instance of an object.");
         trace += "asset:" + image.str() + ":" + T(url) + ":" + (local ? "1" : "0") + ";";
         Fail(134217728, "asset");
     }
-    bool request_object(std::shared_ptr<server::JsonRpcMembers>& data, const ProfileText& method,
-                        const ProfileText& url, const ProfileText& id) override {
+
+    bool request_object(std::shared_ptr<server::JsonRpcMembers> &data, const ProfileText &method,
+                        const ProfileText &url, const ProfileText &id) override {
         Uuid g;
         trace += "props-rpc:" + utf8(method.value_or(u"")) + ":" + T(url) + ":" + DumpProps(data) + ":" +
                  (id && try_parse_sdk_uuid(*id, g) && !g.is_zero() ? "1" : "0") + ";";
@@ -458,11 +498,13 @@ struct AsyncContext : Context {
         return mode != 2 && mode != 4 && mode != 9;
     }
 };
+
 struct AsyncClient : Client {
     int id;
     bool callback = false;
-    explicit AsyncClient(int value) : id(value) {
-    }
+
+    explicit AsyncClient(int value) : id(value) {}
+
     Uuid agent_id() override {
         if (id == 1)
             return Client::agent_id();
@@ -470,20 +512,22 @@ struct AsyncClient : Client {
         Fail(8192, "agent");
         return Id(id);
     }
+
     bool is_active() override {
         trace += "active:" + std::to_string(id) + ";";
         AsyncFail(39, "active");
         return active[id];
     }
+
     std::shared_ptr<ProfileRequestPresence> scene_presence() override {
         return X(21) ? nullptr : std::make_shared<AsyncPresence>();
     }
-    void send_properties(const AvatarProfileProperties& p) override {
+
+    void send_properties(const AvatarProfileProperties &p) override {
         auto member = Identity(p.membership);
-        trace += "props:" + std::to_string(id) + ":" + p.avatar.str() + ":" + T(p.about) + ":" + T(p.born) +
-                 ":" + member + ":" + Bytes(p.membership) + ":" + T(p.first_life_about) + ":" +
-                 std::to_string(p.flags) + ":" + p.first_life_image.str() + ":" + p.image.str() + ":" +
-                 T(p.url) + ":" + p.partner.str() + ";";
+        trace += "props:" + std::to_string(id) + ":" + p.avatar.str() + ":" + T(p.about) + ":" + T(p.born) + ":" +
+                 member + ":" + Bytes(p.membership) + ":" + T(p.first_life_about) + ":" + std::to_string(p.flags) +
+                 ":" + p.first_life_image.str() + ":" + p.image.str() + ":" + T(p.url) + ":" + p.partner.str() + ";";
         AsyncFail(40, "props");
         if (X(43)) {
             std::shared_ptr<UserProfileCacheEntry> e;
@@ -507,27 +551,29 @@ struct AsyncClient : Client {
             callback = false;
         }
     }
-    void send_interests(const AvatarProfileInterests& p) override {
-        trace += "interests:" + std::to_string(id) + ":" + p.avatar.str() + ":" + std::to_string(p.wants) +
-                 ":" + T(p.want_text) + ":" + std::to_string(p.skills) + ":" + T(p.skill_text) + ":" +
-                 T(p.languages) + ";";
+
+    void send_interests(const AvatarProfileInterests &p) override {
+        trace += "interests:" + std::to_string(id) + ":" + p.avatar.str() + ":" + std::to_string(p.wants) + ":" +
+                 T(p.want_text) + ":" + std::to_string(p.skills) + ":" + T(p.skill_text) + ":" + T(p.languages) + ";";
         AsyncFail(41, "interests");
         if (X(45) && !memberships->empty() && memberships->at(0))
             memberships->at(0)->GroupName = u"mutated group";
     }
+
     void send_groups(Uuid avatar, std::shared_ptr<ProfileMemberships> groups) override {
-        for (auto& g : *groups)
+        for (auto &g : *groups)
             if (!g)
                 throw std::runtime_error("Object reference not set to an instance of an object.");
         auto identity = Identity(groups);
-        trace +=
-            "groups:" + std::to_string(id) + ":" + avatar.str() + ":" + identity + ":" + Groups(groups) + ";";
+        trace += "groups:" + std::to_string(id) + ":" + avatar.str() + ":" + identity + ":" + Groups(groups) + ";";
         AsyncFail(42, "groups");
     }
 };
-std::string ClientName(const std::shared_ptr<ProfileRequestClient>& client) {
+
+std::string ClientName(const std::shared_ptr<ProfileRequestClient> &client) {
     return client ? std::to_string(std::dynamic_pointer_cast<AsyncClient>(client)->id) : "0";
 }
+
 std::string AsyncState() {
     auto one = [&](int n) {
         std::shared_ptr<UserProfileCacheEntry> e;
@@ -538,14 +584,14 @@ std::string AsyncState() {
              wait = Identity(e->ClientsWaitingProps), groups = Identity(e->avatarGroups);
         std::string rows;
         if (e->ClientsWaitingProps)
-            for (auto& c : *e->ClientsWaitingProps) {
+            for (auto &c : *e->ClientsWaitingProps) {
                 if (!rows.empty())
                     rows += ',';
                 rows += ClientName(c);
             }
         return identity + ":" + props + ":" + DumpProps(e->props) + ":" + T(e->born) + ":" + member + ":" +
-               Bytes(e->membershipType) + ":" + std::to_string(e->flags) + ":" + wait + ":" + rows + ":" +
-               groups + ":" + Groups(e->avatarGroups) + ":" + DumpList(e->picksList);
+               Bytes(e->membershipType) + ":" + std::to_string(e->flags) + ":" + wait + ":" + rows + ":" + groups +
+               ":" + Groups(e->avatarGroups) + ":" + DumpList(e->picksList);
     };
     std::string rows;
     for (int i = 0; i < 5; ++i) {
@@ -553,7 +599,7 @@ std::string AsyncState() {
             rows += ';';
         rows += std::to_string(i) + "=" + one(i);
     }
-    auto queue = UserProfileAsyncProbe::queues(*current, [](const auto& r) {
+    auto queue = UserProfileAsyncProbe::queues(*current, [](const auto &r) {
         auto presence = Identity(r.presence);
         return r.agent.str() + ":" + ClientName(r.client) + ":" + presence + ":" + std::to_string(r.type);
     });
@@ -561,11 +607,12 @@ std::string AsyncState() {
     return std::to_string(current->profile_cache().count()) + ":" + rows + "|" + queue + "|" +
            std::to_string(jobs.size()) + "|" + input + ":" + DumpProps(input_props) + "|" + last + ":" +
            DumpProps(last_props) + "|" + T(message) + "|" + account + ":" +
-           (last_account ? std::to_string(last_account->flags) + ":" + std::to_string(last_account->created) +
-                               ":" + T(last_account->title)
+           (last_account ? std::to_string(last_account->flags) + ":" + std::to_string(last_account->created) + ":" +
+                               T(last_account->title)
                          : "N");
 }
-}
+} // namespace
+
 int main() {
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -634,8 +681,7 @@ int main() {
                         current->request_avatar_properties(client, {});
                         break;
                     case 'S':
-                        current->request_avatar_properties(client,
-                                                           Uuid("11111111-1111-0000-0000-000100bba000"));
+                        current->request_avatar_properties(client, Uuid("11111111-1111-0000-0000-000100bba000"));
                         break;
                     case 'D':
                         current->process_request({client, nullptr, Id(3), 0});
@@ -696,8 +742,8 @@ int main() {
                     auto e = std::make_shared<UserProfileCacheEntry>();
                     e->flags = 39;
                     e->born = u"seed";
-                    e->membershipType = std::make_shared<std::vector<std::uint8_t>>(
-                        std::initializer_list<std::uint8_t>{1, 2, 0});
+                    e->membershipType =
+                        std::make_shared<std::vector<std::uint8_t>>(std::initializer_list<std::uint8_t>{1, 2, 0});
                     e->picksList = std::make_shared<UserProfileNameList>();
                     (*e->picksList)[Id(7)] = u"other";
                     if (token == "E") {
@@ -711,7 +757,7 @@ int main() {
                     }
                     current->profile_cache().add_or_update(Id(3), e, 300.0);
                 }
-            } catch (const std::exception& error) {
+            } catch (const std::exception &error) {
                 result = "EX:" + H(error.what());
             }
             if (!output.empty())
